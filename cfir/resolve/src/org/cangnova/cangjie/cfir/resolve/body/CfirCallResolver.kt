@@ -3859,7 +3859,7 @@ class CfirCallResolver(
         /** 名字已发现但未创建 Candidate 的结构化 callable 查找结果。 */
         val callableLookupOutcomes: List<CfirCallableLookupOutcome.Excluded> = emptyList(),
     ) {
-        /** 当前名称是否已经在某个 tower group 形成 callable 排除截止面。 */
+        /** 当前名称已有被排除的结构性 callable，最终无可用候选时由它们产生 no-match。 */
         val hasExcludedCallableLookup: Boolean
             get() = callableLookupOutcomes.isNotEmpty()
     }

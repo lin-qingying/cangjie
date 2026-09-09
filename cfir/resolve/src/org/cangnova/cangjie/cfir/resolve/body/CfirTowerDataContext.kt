@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -50,6 +51,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
+import java.util.IdentityHashMap
 
 /**
  * body resolve 中的 tower data 上下文。
@@ -89,6 +91,30 @@ data class CfirTowerDataContext private constructor(
         nonLocalTowerDataElements = persistentListOf(),
         localVariableScopeStorage = LocalVariableScopeStorage(),
     )
+
+    /**
+     * 为带实例 receiver 的上下文保存只含 static 成员的静态视图。
+     * 实例成员由 receiver scope 唯一提供；静态成员和类型限定符上下文保留原诊断视图。
+     */
+    fun withStaticScopesForInstanceLookup(): CfirTowerDataContext {
+        val replacements = IdentityHashMap<CfirTowerDataElement, CfirTowerDataElement>()
+        fun replace(element: CfirTowerDataElement): CfirTowerDataElement {
+            val scope = element.scope as? CfirClassStaticScope ?: return element
+            return replacements.getOrPut(element) {
+                CfirTowerDataElement(
+                    scope = scope.withoutInstanceMemberDiagnostics(),
+                    implicitReceiver = element.implicitReceiver,
+                    isLocal = element.isLocal,
+                    staticScopeOwnerSymbol = element.staticScopeOwnerSymbol,
+                )
+            }
+        }
+        return copy(
+            towerDataElements = towerDataElements.map(::replace).toPersistentList(),
+            nonLocalTowerDataElements = nonLocalTowerDataElements.map(::replace).toPersistentList(),
+        )
+    }
+
     /**
      * 将局部变量加入最后一个局部作用域。
      */

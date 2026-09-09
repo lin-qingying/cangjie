@@ -54,9 +54,11 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.impl.CfirMemberLookupCompletenessScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
@@ -180,7 +182,7 @@ internal class ScopeBasedTowerLevel(
         if (
             processor.callInfo.explicitReceiver == null &&
             givenExtensionReceiver == null &&
-            dispatchReceiver != null &&
+            (dispatchReceiver != null || scope is CfirClassStaticScope) &&
             components.fieldBeingInitialized?.symbol == symbol
         ) {
             return CallableCandidateDiscovery.NOT_DISCOVERABLE
@@ -593,6 +595,7 @@ internal class TowerLevelProcessor(
                 symbol = symbol,
                 lookupProvenance = lookupProvenance,
                 accessibilityResult = accessibilityResult,
+                restrictsOuterScopes = callInfo.explicitReceiver != null || symbol !is CfirNamedFunctionSymbol,
             )
         )
     }
@@ -608,6 +611,9 @@ internal class TowerLevelProcessor(
         accessibilityResult: CfirAccessibilityResult? = null,
         lookupProvenance: CfirCallableLookupProvenance = CfirCallableLookupProvenance.None,
     ): CandidateApplicability {
+        if (callInfo.explicitReceiver == null && resultCollector.isShadowedInCloserScope(group, symbol)) {
+            return CandidateApplicability.HIDDEN
+        }
         return resultCollector.consumeCandidate(
             group,
             candidateFactory.createCandidate(

@@ -66,7 +66,19 @@ class CfirClassStaticScope(
      * 已完成 use-site 和类型替换的委托 scope。
      */
     private val delegateScope: CfirContainingNamesAwareScope,
+    /** 类型限定符和无 this 的静态语境保留实例成员用于访问错误诊断。 */
+    private val includeInstanceMemberDiagnostics: Boolean = true,
 ) : CfirTypeScope(), CfirMemberLookupCompletenessScope {
+    private val staticOnlyView by lazy(LazyThreadSafetyMode.NONE) {
+        if (includeInstanceMemberDiagnostics) CfirClassStaticScope(delegateScope, false) else this
+    }
+
+    /**
+     * 已有实例 receiver 的语境只从静态通道读取真实 static 成员。
+     * 此视图保存在 tower context 中，lambda 快照和 session 替换也保持相同的查找契约。
+     */
+    fun withoutInstanceMemberDiagnostics(): CfirClassStaticScope = staticOnlyView
+
     /** static qualifier scope 复用 delegate 的声明父类型 lookup completeness。 */
     override val memberLookupBlockers: List<CfirMemberLookupBlocker>
         get() = (delegateScope as? CfirMemberLookupCompletenessScope)
@@ -176,7 +188,9 @@ class CfirClassStaticScope(
         newSession: CfirSession,
         newScopeSession: ScopeSession,
     ): CfirClassStaticScope? =
-        delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let(::CfirClassStaticScope)
+        delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let {
+            CfirClassStaticScope(it, includeInstanceMemberDiagnostics)
+        }
 
     /**
      * 官方先过滤出 static 候选；过滤后为空才报告“类型名访问实例成员”。
@@ -193,11 +207,11 @@ class CfirClassStaticScope(
             if (callable.isStaticCallableForClassQualifier()) {
                 hasStatic = true
                 processor(callable)
-            } else {
+            } else if (includeInstanceMemberDiagnostics) {
                 nonStaticCandidates.add(callable)
             }
         }
-        if (!hasStatic) {
+        if (!hasStatic && includeInstanceMemberDiagnostics) {
             nonStaticCandidates.forEach(processor)
         }
     }

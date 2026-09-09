@@ -13,7 +13,7 @@
 data class CfirTowerGroup(
     /** 层级种类。 */
     val kind: Kind,
-    /** 嵌套深度，值越大表示越靠内层。 */
+    /** 距当前词法位置的深度，值越小越靠近。 */
     val depth: Int = 0,
 ) : Comparable<CfirTowerGroup> {
 
@@ -30,10 +30,10 @@ data class CfirTowerGroup(
         LOCAL,
         /** `extend` 声明引入的成员，仓颉特有。 */
         EXTEND,
-        /** 普通非局部 scope，例如类型参数、静态 scope 等。 */
-        NON_LOCAL,
         /** 隐式接收者成员，例如当前类的 `this` 成员。 */
         IMPLICIT_MEMBER,
+        /** 普通非局部 scope，例如文件和包中的顶层声明。 */
+        NON_LOCAL,
         /** import 引入的声明。 */
         IMPORTED,
         /** 包级声明。 */

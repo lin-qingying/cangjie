@@ -6536,6 +6536,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/call/inferred_and_explicit_constraints.cj")
         }
 
+        @TestMetadata("lexical_function_shadowing.cj")
+        @Test
+        fun testLexicalFunctionShadowing() {
+            runTest("cfir/analysis-tests/testData/llt/call/lexical_function_shadowing.cj")
+        }
+
         @TestMetadata("member_overload_declaration_scope.cj")
         @Test
         fun testMemberOverloadDeclarationScope() {

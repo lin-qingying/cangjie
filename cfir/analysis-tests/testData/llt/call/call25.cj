@@ -16,7 +16,7 @@ class A {
     }
     public func aaa(): Int64 {
         let x: () -> Int64 = <!TYPE_MISMATCH!>f<!>
-        return <!TYPE_MISMATCH!>f()<!>
+        return <!RETURN_TYPE_MISMATCH!>f()<!>
     }
 }
 

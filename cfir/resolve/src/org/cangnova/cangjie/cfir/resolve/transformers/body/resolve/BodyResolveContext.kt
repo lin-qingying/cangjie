@@ -665,6 +665,7 @@ class BodyResolveContext(
         }
 
         val forMembersResolution = withTypeParameters
+            .withStaticScopesForInstanceLookup()
             .addReceiver(null, towerElementsForClass.thisReceiver)
 
         val forNestedClasses = statics
@@ -691,6 +692,7 @@ class BodyResolveContext(
                 .addNonLocalTowerDataElements(towerElementsForClass.superClassesStaticScopes)
                 .addNonLocalScopeIfNotNull(towerElementsForClass.staticScope)
                 .addNonLocalScopeIfNotNull(typeParameterScope)
+                .withStaticScopesForInstanceLookup()
         } else {
             withTypeParameters
         }
@@ -709,6 +711,7 @@ class BodyResolveContext(
                 .addNonLocalTowerDataElements(towerElementsForClass.superClassesStaticScopes)
                 .addNonLocalScopeIfNotNull(towerElementsForClass.staticScope)
                 .addNonLocalScopeIfNotNull(typeParameterScope)
+                .withStaticScopesForInstanceLookup()
         } else {
             withTypeParameters
         }
@@ -722,7 +725,7 @@ class BodyResolveContext(
                 holder.scopeSession,
             )
 
-            withTypeParameters.addReceiver(null, inaccessibleReceiver)
+            withTypeParameters.withStaticScopesForInstanceLookup().addReceiver(null, inaccessibleReceiver)
         } else {
             forMembersResolution
         }

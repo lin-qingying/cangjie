@@ -5510,3 +5510,46 @@ XML 均为 8473 records，另含一条 skipped 聚合记录（skipped=308），e
 
 - remaining failures: Call 10 项（call25、call_inference_02、call_inference_11、call22、call_fuzz01 的双入口），其它 556 项保持既有状态。
 - change isolation: 本项只提交上述两份 fixture 和本日志；所有用户 WIP 保持独立。
+
+## 2026-09-09：函数词法遮蔽先于适用性，成员发现保留正确归属
+
+- problem type: Call / Lexical Lookup / Member Discovery。call25 的内层函数或当前类成员即使返回类型不兼容，也不能改选外层同参数签名函数；不同签名的外层重载仍可参与解析。
+- root cause:
+  - collector 只比较候选适用性，内层不匹配后外层同签名函数会胜出；隐式成员和类静态 scope 的优先级也低于文件函数。
+  - 类型限定符的 static scope 为访问错误诊断保留实例候选。将该通道按正确词法顺序处理后，实例语境会与 this receiver 重复发现成员，并错误捕获字段自身的初始化器引用。
+  - private 类函数不进入继承/override 图，但同包调用仍需要其结构发现结果；旧静态通道意外承担了这个责任。不可访问函数又被当成整个名称的截止面，错误阻断外层不同签名重载。
+- official Cangjie evidence:
+  - call25 的 cjc 输出有六处 sema_mismatched_types。lexical_function_shadowing、call_scope_hiding、call_shadow_signatures 与 private_parent_lexical_overloads 探针证明同签名先遮蔽，不同参数形状仍可选择外层函数；泛型参数个数不决定遮蔽，普通类型参数保留身份，enum 参数内部按上界比较。
+  - static_field_initializer_scope 官方成功，静态字段初始化器读取外层同名变量。package-evidence/27-private-member-visibility 按 hidden.cj/use.cj 的真实文件边界编译，确认私有顶层函数不可发现、继承私有成员调用为 no-match；private_parent_lexical_overloads 确认私有成员不能阻断不同签名的全局函数。
+  - external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:1684-1743 的 RemoveShadowedFunc/FilterShadowedFunc，TypeManager.cpp:1101-1189 的参数类型比较，TypeCheckReference.cpp 的目标过滤与可访问性处理。全部原始源码、命令和诊断位于 build/repair-20260906/evidence 或 package-evidence。
+- Kotlin counterpart files consulted: CandidateCollector.kt、TowerLevels.kt、FirTowerResolveTask.kt、FirStaticScope.kt、FirClassUseSiteMemberScope.kt、ResolutionStages.kt 的 CheckVisibility。采用 scope/候选/可见性分层，遮蔽规则取自仓颉官方。
+- CFIR owner files changed:
+  - CfirFunctionScopeShadowing.kt：无返回类型推断副作用的声明参数签名比较，区分普通类型参数身份与 enum 泛型参数的上界规则。
+  - CfirCandidateCollector.kt、TowerLevelHandler.kt：创建 Candidate 前过滤外层同签名函数；签名判断同时消费可用与被排除的声明；分离排除结果和真正的外层查找截止面。
+  - CfirTowerGroup.kt、CfirTowerResolveTask.kt：隐式及类静态成员优先于文件/包级声明；词法声明层级与 import/extend 搜索优先级分别处理。
+  - CfirClassStaticScope.kt、CfirTowerDataContext.kt、BodyResolveContext.kt：有实例 receiver 的上下文保存只含静态成员的不可变视图，lambda 快照与 session 替换保留该语义；静态成员语境及显式类型限定符保留访问错误所需的诊断候选。
+  - CfirClassUseSiteMemberScope.kt：private 类函数只进入结构发现，不进入继承/override 图，交由统一 accessibility checker 判定。TowerLevelHandler 的字段初始化器排除也覆盖静态字段。
+- repair principle: 先按声明的词法身份确定候选范围，再执行适用性检查；真实成员、静态视图、诊断用声明各有唯一来源，不能用返回类型或诊断候选改变名称绑定。
+- fixtures covered:
+  - call/call25.cj；新增 call/lexical_function_shadowing.cj，覆盖静态/实例成员、局部同签名、不同参数形状、普通泛型参数、enum 泛型参数、泛型实参数量、静态字段初始化、私有父成员同签名与不同签名。
+  - accessibility/common_super_type4/test.cj；class/open_modifier/class_open_modifier3.cj；class/super_this/super_this_10.cj；var/var2.cj；diagnostics/visibility/invisibleReferenceAndMemberRich.cj。上述既有回归 fixture 期望均保持原样。
+- fixture correction: call25 的 return f() 使用项目已有 RETURN_TYPE_MISMATCH，其余五处 TYPE_MISMATCH 不变。官方仍为 sema_mismatched_types；DiagnosticNameMapper 与重新 cjc 验证的 generics/class3.cj 证明返回语境的既有项目映射。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:resolve:test --tests '*CfirTowerGroupTest*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：BUILD SUCCESSFUL，9/9。
+  - Call/TypeInfer/Generics/Typealias/Function 切片 1411 项，FIXED=2、REGRESSED=0、新增2项通过。初次全量暴露的8条实例通道重复发现及随后2条私有成员诊断差异均已修复，未提交中间版本。
+  - 扩大 Class/Var/Accessibility/Lambda/Enum/Record 后，27-static-view-family 为3230项，3097 PASS、111原有FAIL、22SKIP，无回归；完整可见性相关406项及私有重载补充后的348项也无回归，后者证据27-private-overload-family。
+  - 最终同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'` 用时13m 46s正常结束。26-generic-reference-full → 27-shadow-full：FIXED=2（Call25双入口）、REGRESSED=0、NEW_KEYS=2（PASS）、REMOVED_KEYS=0、其它状态变化=0；564项剩余失败消息全部不变。
+  - Call 172/180；TypeInfer 76/76、Generics 680/680、非宏 Typealias 110/110 均通过。快照另保存未跟踪新增源码的 SHA-256，完整键与 XML 均在 build/repair-20260906。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8472 | 8474 |
+| 通过 | 7599 | 7603 |
+| 失败 | 566 | 564 |
+| 跳过 | 307 | 307 |
+
+XML 为8473 → 8475 records，均另含一条 skipped 聚合记录（skipped=308），errors=0。
+
+- remaining failures: Call 8项，为call_inference_02（非泛型成员类型实参）、call_inference_11（参数诊断期望）、call22（递归构造诊断期望）、call_fuzz01（语法恢复契约）的双入口；其它556项保持原状态。
+- change isolation: 只提交本项 owner、优先级单测、两份Call fixture、对应生成方法和本日志；用户其它 WIP 保持独立。
