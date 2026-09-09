@@ -5858,3 +5858,31 @@ XML 为 8483 → 8485 records，均有 308 skipped（另含一条聚合记录）
 
 - remaining failures: IfLetExpr 100/100、WhileLetExpr 64/64、Loops 26/26 全部通过；If 剩 2 项，Match 剩 18 项，PatternMatching 剩 46 项，共 66 项。Call 184/184、Generics 680/680、TypeInfer 76/76、Typealias 独立组 110/110 保持通过。
 - change isolation: 提交本类共享实现、新增回归、两套生成入口及本条日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：函数与元组 Join 使用真实结构下界并验证候选
+
+- problem type: Type Inference / Structural bounds（If、Match、Try 中函数或元组分支的公共类型）。
+- root cause: CommonSuperTypeCalculator 把函数参数的 Meet 简化为任意交叉类型，且函数、元组 Join 构造后未检查其是否真是全部输入的上界。装箱关系因而被错误带入结构类型内部：if_check_type8 的合并结果被保留为函数类型，实际应为 Any，继而产生了错误的实参诊断。
+- official Cangjie evidence: cjc 1.0.5 的 34-if-function-join-type 探针明确输出 selected 的类型是 Interface-Any；原 if_check_type8 只报告 f 上的 sema_no_match_operator_function_call。34-structural-bounds / 34-structural-bounds-fixture 覆盖 If、Match、Try、高阶函数、不可比较参数、原始类型返回值、原始类型元组，以及合法的类返回 Join、元组参数 Meet、函数参数 Meet。源码、命令及 JSON 均保存在 build/repair-20260906/evidence 对应 .official.*。34-function-value-errors 另确认普通函数值参数不匹配仍使用实参诊断，不能把所有函数值失败都改写成 invoke 错误。
+- official implementation: external/cangjie_compiler/src/Sema/JoinAndMeet.cpp 的 BatchMeet、JoinOrMeetFuncTy、JoinOrMeetTupleTy。Meet 先查询输入中真实下界，再递归求函数/元组结构下界；候选必须满足全部子类型约束，否则函数/元组 Join 为 Any。TypeManager.cpp:866-899 的 IsFuncSubtype / IsFuncParametersSubtype 对函数内部使用禁止隐式装箱的比较。
+- Kotlin counterpart files consulted: external/kotlin/compiler/resolution.common/src/org/jetbrains/kotlin/resolve/calls/NewCommonSuperTypeCalculator.kt 的递归类型参数合并与 calculateArgument。类型上下文和算法分层沿用 K2；仓颉函数参数的可表示 Meet 和候选验证来自上述官方算法，不能直接套用 Kotlin 的交叉类型参数。
+- CFIR owner file changed: resolution.common/src/org/cangnova/cangjie/resolve/calls/CommonSuperTypeCalculator.kt。新增递归 commonSubtypeOrNull，展开已有交叉输入但不制造新交叉下界；函数 Join 参数使用 Meet，函数 Meet 参数使用 Join，元组逐分量处理；每个函数/元组候选均经共享 AbstractTypeChecker 验证。
+- repair principle: 所有表达式和推断调用共享同一结构类型边界算法，只返回语言可表示且满足输入约束的类型，不在单个 if 或调用诊断处改写结果。
+- fixtures covered: llt/if/if_check_type8.cj；新增 llt/if/structural_branch_bounds.cj，10 个函数覆盖上述正反例，两套入口由生成器更新。if_check_type8 删除 fp 上多余的 ARGUMENT_TYPE_MISMATCH，保留 f 上官方确认的 NO_MATCHING_OPERATOR_INVOKE。已检索 invoke 诊断同族，普通函数值、operator 和嵌套实参错误均保持原路径。
+- verification commands and outcome:
+  - 两份 fixture 双入口：34-bounds-before 为 4/4 失败，34-bounds-targeted 为 4/4 通过；目标过滤器为 `*CfirAnalysisLLT*Generated$If.testIfCheckType8` 和 `*CfirAnalysisLLT*Generated$If.testStructuralBranchBounds`。
+  - 34-bounds-family：3111 项，2741 通过、64 项既有失败、306 跳过；FIXED=2、REGRESSED=0、新增 2 项通过、剩余消息全部不变。覆盖 If/IfLetExpr、WhileLetExpr、Loops、Match、PatternMatching、Call、Function、FlowExpr、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用 `--no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：13m 46s 正常结束。33-bindings-full → 34-bounds-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8484 | 8486 |
+| 通过 | 7634 | 7638 |
+| 失败 | 543 | 541 |
+| 跳过 | 307 | 307 |
+
+XML 为 8485 → 8487 records，均为 308 skipped（含一条聚合记录）。快照 34-bounds-full；完整比较为 33-bindings-full--34-bounds-full.json。
+
+- remaining failures: If 54/54、IfLetExpr 100/100、WhileLetExpr 64/64、Loops 26/26 全部通过。目标剩余 Match 18、PatternMatching 46，共 64 项；Call、Generics、TypeInfer、Typealias 保持通过。其余 477 项既有失败不变。
+- change isolation: 仅提交公共边界算法、两份 fixture、两套生成入口及本条日志，.idea/workspace.xml 保持独立。

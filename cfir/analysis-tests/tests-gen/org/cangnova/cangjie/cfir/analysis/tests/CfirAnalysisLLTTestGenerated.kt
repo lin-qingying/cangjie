@@ -15094,6 +15094,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/if/if_check_type8.cj")
         }
 
+        @TestMetadata("structural_branch_bounds.cj")
+        @Test
+        fun testStructuralBranchBounds() {
+            runTest("cfir/analysis-tests/testData/llt/if/structural_branch_bounds.cj")
+        }
+
         @TestMetadata("target_typed_tail_contexts.cj")
         @Test
         fun testTargetTypedTailContexts() {

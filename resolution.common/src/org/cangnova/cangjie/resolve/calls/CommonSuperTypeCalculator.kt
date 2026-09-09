@@ -13,6 +13,7 @@ import org.cangnova.cangjie.type.model.extractElementsForTupleType
 import org.cangnova.cangjie.type.model.getArgumentOrNull
 import org.cangnova.cangjie.type.model.getType
 import org.cangnova.cangjie.type.model.isFunctionType
+import org.cangnova.cangjie.type.model.isIntersection
 import org.cangnova.cangjie.type.model.isTupleType
 import org.cangnova.cangjie.type.model.parametersCount
 import org.cangnova.cangjie.type.model.supertypes
@@ -84,7 +85,7 @@ object CommonSuperTypeCalculator {
      *   3. 快速路径（findSmallestSupertype）：在输入中直接找最小公共父类型
      *   4. 过滤严格父类型（filterStrictSupertypes）：移除冗余的父类型
      *   5. 整数字面量特殊处理
-     *   6. 函数类型特化（joinFunctionTypes）：参数逆变 + 返回值协变
+     *   6. 函数类型特化（joinFunctionTypes）：参数求可表示的 Meet，返回值求 Join，并验证所得上界
      *   7. 元组类型特化（joinTupleTypes）：各分量协变 Join
      *   8. 通用路径：计算所有类型共同的父类型构造器集合
      *   9. 为每个公共构造器推断出带类型参数的具体父类型（递归检测到环则丢弃）
@@ -219,13 +220,13 @@ object CommonSuperTypeCalculator {
         return null
     }
 
-    // TODO: 实现完整 Meet（GLB），对齐官方 DualMode 设计，替换参数位的 intersectTypes 近似
     /**
      * 函数类型 Join 特化。
      *
      * 对齐官方 C++ JoinOrMeetFuncTy：
-     * - 所有输入都是同参数数量的函数类型时，参数位逆变取交叉类型，返回值协变递归 CST
-     * - 非全部为函数类型或参数数量不同时返回 null，继续后续通用路径
+     * - 参数位逆变求可表示的最大公共子类型，返回值协变递归 CST；
+     * - 构造出的函数必须确实是全部输入的父类型，函数内部不能借用值到接口的装箱；
+     * - 函数形状不一致、Meet 不存在或候选不是公共上界时，语言定义的 Join 是 Any。
      *
      * @return 函数类型 Join 结果，或 null 表示不适用
      */
@@ -234,26 +235,28 @@ object CommonSuperTypeCalculator {
         types: List<RigidTypeMarker>,
         depth: Int,
     ): CangJieTypeMarker? {
-        if (types.any { !(it as CangJieTypeMarker).isFunctionType() }) return null
+        if (types.none { (it as CangJieTypeMarker).isFunctionType() }) return null
+        if (types.any { !(it as CangJieTypeMarker).isFunctionType() }) return c.anyType()
 
         // 提取所有函数类型的参数列表（含返回值类型，最后一个为返回值）
         val allArgs = types.map { (it as CangJieTypeMarker).extractArgumentsForFunctionType() }
         val paramCount = allArgs.first().size - 1 // 最后一个是返回值类型
 
-        // 参数数量不同时，无法特化，回退通用路径
-        if (allArgs.any { it.size - 1 != paramCount }) return null
+        if (allArgs.any { it.size - 1 != paramCount }) return c.anyType()
 
-        // 参数位：逆变 → 取交叉类型（Meet 的近似）
+        // 官方 BatchMeet 只接受真实可表示的下界，不能把任意交叉类型放入函数参数。
         val joinedParams = (0 until paramCount).map { i ->
             val paramTypes = allArgs.map { it[i] }
-            c.intersectTypes(paramTypes)
+            commonSubtypeOrNull(paramTypes, depth + 1) ?: return c.anyType()
         }
 
         // 返回值位：协变 → 递归 CST
         val returnTypes = allArgs.map { it.last() }
         val joinedReturn = commonSuperTypeInternal(returnTypes, depth + 1)
 
-        return c.createFunctionType(joinedParams, joinedReturn)
+        val result = c.createFunctionType(joinedParams, joinedReturn)
+        val state = c.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
+        return if (types.all { AbstractTypeChecker.isSubtypeOf(state, it, result) }) result else c.anyType()
     }
 
     /**
@@ -261,7 +264,7 @@ object CommonSuperTypeCalculator {
      *
      * 对齐官方 C++ JoinOrMeetTupleTy：
      * - 所有输入都是同元素数量的元组类型时，各分量协变递归 CST
-     * - 非全部为元组类型或元素数量不同时返回 null，继续后续通用路径
+     * - 构造出的元组仍须满足全部输入的子类型约束，否则 Join 为 Any
      *
      * @return 元组类型 Join 结果，或 null 表示不适用
      */
@@ -270,14 +273,14 @@ object CommonSuperTypeCalculator {
         types: List<RigidTypeMarker>,
         depth: Int,
     ): CangJieTypeMarker? {
-        if (types.any { !(it as CangJieTypeMarker).isTupleType() }) return null
+        if (types.none { (it as CangJieTypeMarker).isTupleType() }) return null
+        if (types.any { !(it as CangJieTypeMarker).isTupleType() }) return c.anyType()
 
         // 提取所有元组类型的元素列表
         val allElements = types.map { (it as CangJieTypeMarker).extractElementsForTupleType() }
         val elementCount = allElements.first().size
 
-        // 元素数量不同时，无法特化，回退通用路径
-        if (allElements.any { it.size != elementCount }) return null
+        if (allElements.any { it.size != elementCount }) return c.anyType()
 
         // 各分量协变 → 递归 CST
         val joinedElements = (0 until elementCount).map { i ->
@@ -285,7 +288,67 @@ object CommonSuperTypeCalculator {
             commonSuperTypeInternal(elementTypes, depth + 1)
         }
 
-        return c.createTupleType(joinedElements)
+        val result = c.createTupleType(joinedElements)
+        val state = c.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
+        return if (types.all { AbstractTypeChecker.isSubtypeOf(state, it, result) }) result else c.anyType()
+    }
+
+    /**
+     * 官方 BatchMeet：先从输入中寻找最大公共子类型，再递归求函数或元组的结构下界。
+     *
+     * 函数 Meet 的参数协变求 Join、返回值逆变求 Meet；元组分量分别求 Meet。每个结构
+     * 候选都重新验证子类型关系，因此装箱、函数种类和变参标记仍由共享类型检查器决定。
+     * 不存在可表示下界时返回 null，供外层 Join 使用官方规定的 Any 上界。
+     */
+    context(c: TypeSystemCommonSuperTypesContext)
+    private fun commonSubtypeOrNull(
+        types: List<CangJieTypeMarker>,
+        depth: Int,
+    ): CangJieTypeMarker? {
+        val rigidTypes = mutableListOf<RigidTypeMarker>()
+        fun collect(type: CangJieTypeMarker): Boolean {
+            val rigid = type.asRigidType() ?: return false
+            val constructor = rigid.typeConstructor()
+            if (constructor.isIntersection()) {
+                for (component in constructor.supertypes()) {
+                    if (!collect(component)) return false
+                }
+            } else {
+                rigidTypes += rigid
+            }
+            return true
+        }
+        if (types.any { !collect(it) } || rigidTypes.isEmpty()) return null
+
+        val state = c.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
+        val uniqueTypes = uniquify(rigidTypes, state)
+        uniqueTypes.firstOrNull { candidate ->
+            uniqueTypes.all { AbstractTypeChecker.isSubtypeOf(state, candidate, it) }
+        }?.let { return it }
+
+        val result = when {
+            uniqueTypes.all { (it as CangJieTypeMarker).isFunctionType() } -> {
+                val allArguments = uniqueTypes.map { (it as CangJieTypeMarker).extractArgumentsForFunctionType() }
+                val parameterCount = allArguments.first().size - 1
+                if (allArguments.any { it.size - 1 != parameterCount }) return null
+                val parameters = (0 until parameterCount).map { index ->
+                    commonSuperTypeInternal(allArguments.map { it[index] }, depth + 1)
+                }
+                val returnType = commonSubtypeOrNull(allArguments.map { it.last() }, depth + 1) ?: return null
+                c.createFunctionType(parameters, returnType)
+            }
+            uniqueTypes.all { (it as CangJieTypeMarker).isTupleType() } -> {
+                val allElements = uniqueTypes.map { (it as CangJieTypeMarker).extractElementsForTupleType() }
+                val elementCount = allElements.first().size
+                if (allElements.any { it.size != elementCount }) return null
+                val elements = (0 until elementCount).map { index ->
+                    commonSubtypeOrNull(allElements.map { it[index] }, depth + 1) ?: return null
+                }
+                c.createTupleType(elements)
+            }
+            else -> return null
+        }
+        return result.takeIf { uniqueTypes.all { AbstractTypeChecker.isSubtypeOf(state, result, it) } }
     }
 
     /**
