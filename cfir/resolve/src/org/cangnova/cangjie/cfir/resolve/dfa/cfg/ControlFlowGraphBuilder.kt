@@ -663,18 +663,6 @@ class ControlFlowGraphBuilder private constructor(
         )
         addEdge(conditionEnter, decisionEntry)
 
-        // 通配/纯绑定模式没有原子判定，却仍须保留一条结构上的 failure 边：CFG 冻结按
-        // 前驱计数排序，缺少这条边会让 failureNode 成为不可达孤点。该边是语义上的死边，
-        // 因而不会参与 CFA 传播，也不会让后续 case 重新变成可达。
-        if (decisionEntry === conditionExit) {
-            addEdge(
-                conditionExit,
-                failureNode,
-                preferredKind = EdgeKind.DeadForward,
-                label = MatchBranchFailure,
-            )
-        }
-
         val resultEnter = createMatchBranchResultEnterNode(branch)
         addEdge(conditionExit, resultEnter, label = MatchBranchSuccess)
         // 分支体解析期间 resultEnter 必须是当前 last node；退出分支体后留下 failureNode，
@@ -685,9 +673,9 @@ class ControlFlowGraphBuilder private constructor(
     }
 
     /**
-     * 为一个模式递归建立判定图，返回其入口节点；没有运行时判定的绑定/通配模式直接返回
-     * [successTarget]。所有原子节点保留外层 [reportSource]，对应 CHIR 为同一 case pattern
-     * 写入的 block debug location。
+     * 为一个模式递归建立判定图，返回其独立入口节点。不失败的绑定/通配模式也保留入口，
+     * 并用死亡 failure 边连接后续 alternative；因此任意 OR 顺序和嵌套层次都保有完整的
+     * 图结构。所有原子节点保留外层 [reportSource]，对应 CHIR 的模式 debug location。
      */
     private fun createPatternDecisionGraph(
         branch: CfirMatchBranch,
@@ -698,19 +686,25 @@ class ControlFlowGraphBuilder private constructor(
         failureTarget: CFGNode<*>,
         matchExpression: CfirMatchExpression,
     ): CFGNode<*> = when (pattern) {
-        is CfirWildcardPattern -> successTarget
-
-        is CfirBindingPattern -> pattern.nestedPattern?.let { nestedPattern ->
-            createPatternDecisionGraph(
-                branch,
-                nestedPattern,
-                subjectPath,
-                reportSource,
-                successTarget,
-                failureTarget,
-                matchExpression,
-            )
-        } ?: successTarget
+        is CfirWildcardPattern, is CfirBindingPattern -> {
+            val nestedPattern = (pattern as? CfirBindingPattern)?.nestedPattern
+            if (nestedPattern != null) {
+                createPatternDecisionGraph(
+                    branch,
+                    nestedPattern,
+                    subjectPath,
+                    reportSource,
+                    successTarget,
+                    failureTarget,
+                    matchExpression,
+                )
+            } else {
+                createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
+                    addEdge(decision, successTarget, label = MatchBranchSuccess)
+                    addEdge(decision, failureTarget, preferredKind = EdgeKind.DeadForward, label = MatchBranchFailure)
+                }
+            }
+        }
 
         is CfirTuplePattern -> {
             var continuation = successTarget

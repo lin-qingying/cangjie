@@ -17144,6 +17144,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/match/matchpattern_guard.cj")
         }
 
+        @TestMetadata("or_pattern_control_flow.cj")
+        @Test
+        fun testOrPatternControlFlow() {
+            runTest("cfir/analysis-tests/testData/llt/match/or_pattern_control_flow.cj")
+        }
+
         @TestMetadata("bugfix")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested

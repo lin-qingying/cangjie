@@ -5955,3 +5955,31 @@ XML 均为 8489 records、308 skipped（含一条聚合记录）。最终快照 
 
 - remaining failures: Match 12、PatternMatching 44，共 56 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。
 - change isolation: 仅提交两处共享诊断实现、19 份经官方取证的 fixture 期望与本条日志，.idea/workspace.xml 保持独立。
+
+## 2026-09-10：不可失败模式保留完整 OR 控制流结构
+
+- problem type: Flow Analysis / CFG（OR 模式中的不可失败 alternative 导致孤立节点，诊断收集前触发 orderNodes 断言）。
+- root cause: createPatternDecisionGraph 对 wildcard / 纯绑定直接返回 successTarget，丢失独立模式入口。OR 开头出现这种模式会遗留后续孤立判定，OR 末尾出现它则会使 failure 汇合点失去前驱；旧代码只修补根 decisionEntry 等于 conditionExit 的情况，不能覆盖嵌套模式。
+- official Cangjie evidence: cjc 1.0.5 对 37-cfg-fixture 仅报告两处 sema_var_in_or_pattern，合法 tuple、嵌套 Option payload 均无错误；37-or-pattern-cfg 还验证了其它 alternative 顺序。完整源码、命令及 JSON 在 build/repair-20260906/evidence/37-*.official.*。原 err_different_pattern_00 同样只应报告 VAR_IN_OR_PATTERN。
+- official implementation: external/cangjie_compiler/src/CHIR/AST2CHIR/TranslateASTNode/TranslateMatchExpr.cpp 的 TranslateComplicatedOrPattern / TranslateNestingCasePattern 保留每个 alternative 的 true/false 控制流归属；无实际条件的模式使用无条件流。CHIR/Checker/UnreachableBranchCheck.cpp 只沿真实终结符扩张死区。
+- Kotlin counterpart files consulted: FirControlFlowStatementsResolveTransformer.kt、ControlFlowGraphBuilder.kt:1050-1095，条件入口/出口与分支结果各自有稳定节点；常量条件的死亡路径由边种类表达。
+- CFIR owner files changed: ControlFlowGraphBuilder.kt 给 wildcard / 纯绑定建立独立 MatchPatternDecisionNode，false 边标为 DeadForward；CFGNode.kt 显式提供 isAlwaysSuccessful；CfirControlFlowConstAnalysis.kt 对此类结构节点仅沿 success 方向扩张运行时死区，避免把结构性 failure 边当作实际条件失败。
+- repair principle: 模式本身保留结构身份，可达性通过边表达；不丢节点、不捕获 CFG 异常，也不靠单个 fixture 的图形特征修补。
+- fixtures covered: 原 PatternMatching/MatchExpression/err_different_pattern_00.cj；新增 match/or_pattern_control_flow.cj，覆盖 OR 首尾绑定、尾部不可失败 tuple、纯 tuple 和嵌套 enum payload。原期望未改，两套生成方法由工具生成。
+- verification commands and outcome:
+  - 37-cfg-before 双入口 4/4 失败，包含 CFG 断言；37-cfg-targeted 4/4 通过。
+  - 37-cfg-family：3125 项，2761 通过、58 既有失败、306 跳过；FIXED=2、REGRESSED=0、新增 2 项通过、剩余消息不变。覆盖控制流/模式家族、Enum、Box、IsOrAsExpr、Call、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用标准单 worker 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：13m 56s 正常结束。36-literal-full → 37-cfg-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8488 | 8490 |
+| 通过 | 7648 | 7652 |
+| 失败 | 533 | 531 |
+| 跳过 | 307 | 307 |
+
+XML 为 8489 → 8491 records，均为 308 skipped（含一条聚合记录）。完整证据为 37-cfg-full 与 36-literal-full--37-cfg-full.json。
+
+- remaining failures: Match 12、PatternMatching 42，共 54 项；其它已清零家族保持通过。OR 内部冗余 alternative 的 warning、常量模式规范化及其它模式类型问题继续按独立语义类型处理。
+- change isolation: 仅提交上述三个共享实现、新回归、两套生成入口与日志，.idea/workspace.xml 保持独立。
