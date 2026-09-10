@@ -4420,6 +4420,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             fun testOkRune00() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/ConstPattern/ok_rune_00.cj")
             }
+
+            @TestMetadata("signed_integer_patterns.cj")
+            @Test
+            fun testSignedIntegerPatterns() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/ConstPattern/signed_integer_patterns.cj")
+            }
         }
 
         @TestMetadata("EnumPattern")

@@ -35,13 +35,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
+import java.math.BigInteger
 
 /**
  * match 穷尽性算法使用的模式矩阵。
@@ -284,6 +287,17 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
      */
     companion object {
         /**
+         * 从模式表达式恢复字面量值。一元正负号是表达式结构的一部分，不能把合法的
+         * 负整数当成错误模式；进制、后缀与符号统一由共享整数解析器解释。
+         */
+        fun fromExpression(expression: CfirExpression, expectedType: ConeCangJieType?): CfirConstantValue? {
+            if (expression is CfirWrappedExpression) return fromExpression(expression.expression, expectedType)
+            if (expression is CfirLiteralExpression) return fromLiteral(expression, expectedType)
+            val integer = CfirIntConstantEvalUtils.parseSignedIntExpression(expression) ?: return null
+            return fromIntegerValue(integer.value, expectedType)
+        }
+
+        /**
          * 从 CFIR 字面量表达式恢复常量值。
          */
         fun fromLiteral(literal: CfirLiteralExpression, fallbackType: ConeCangJieType?): CfirConstantValue? {
@@ -326,7 +340,13 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
          * 从整数字面量值恢复有符号或无符号常量。
          */
         private fun fromIntLiteral(value: Any?, fallbackType: ConeCangJieType?): CfirConstantValue? {
-            val primitive = fallbackType as? ConePrimitiveType
+            val parsed = CfirIntConstantEvalUtils.parseIntLiteralValue(value) ?: return null
+            return fromIntegerValue(parsed.value, fallbackType)
+        }
+
+        /** 按已检查的目标整数类型选择有符号或无符号值域，保留完整的 64 位边界。 */
+        private fun fromIntegerValue(value: BigInteger, expectedType: ConeCangJieType?): CfirConstantValue? {
+            val primitive = expectedType as? ConePrimitiveType
             val unsigned = primitive?.kind in setOf(
                 PrimitiveTypeKind.UINT8,
                 PrimitiveTypeKind.UINT16,
@@ -334,12 +354,11 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
                 PrimitiveTypeKind.UINT64,
                 PrimitiveTypeKind.UINT_NATIVE,
             )
-            val parsed = CfirIntConstantEvalUtils.parseIntLiteralValue(value) ?: return null
             return if (unsigned) {
-                parsed.value.toString().toULongOrNull()?.let(::UnsignedIntConst)
+                value.toString().toULongOrNull()?.let(::UnsignedIntConst)
             } else {
                 try {
-                    SignedIntConst(parsed.value.longValueExact())
+                    SignedIntConst(value.longValueExact())
                 } catch (_: ArithmeticException) {
                     null
                 }
@@ -555,8 +574,7 @@ fun convertPattern(
         }
 
         is CfirConstPattern -> {
-            val literal = pattern.expression as? CfirLiteralExpression
-            val const = literal?.let { CfirConstantValue.fromLiteral(it, expectedType) }
+            val const = CfirConstantValue.fromExpression(pattern.expression, expectedType.fullyExpandedType(session))
             if (const != null) {
                 listOf(CfirMatchPattern(expectedType, CfirMatchPatternKind.Const(const), pattern))
             } else {
@@ -636,8 +654,7 @@ fun convertPattern(
         }
 
         is CfirExpressionPattern -> {
-            val expr = pattern.expression as? CfirLiteralExpression
-            val const = expr?.let { CfirConstantValue.fromLiteral(it, expectedType) }
+            val const = CfirConstantValue.fromExpression(pattern.expression, expectedType.fullyExpandedType(session))
             if (const != null) {
                 listOf(CfirMatchPattern(expectedType, CfirMatchPatternKind.Const(const), pattern))
             } else {
