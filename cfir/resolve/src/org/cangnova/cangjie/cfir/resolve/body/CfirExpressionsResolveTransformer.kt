@@ -2652,8 +2652,9 @@ open class CfirExpressionsResolveTransformer(
             val patternError = resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
 
-            branch.transformGuard(transformer, withExpectedType(builtinTypes.boolType))
-            components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
+            components.dataFlowAnalyzer.exitMatchBranchCondition(branch) {
+                branch.transformGuard(transformer, withExpectedType(builtinTypes.boolType))
+            }
             // 模式绑定和直接分支体属于同一作用域，嵌套 block 再自行引入新作用域。
             transformBlock(branch.body, bodyResolutionMode)
             components.dataFlowAnalyzer.exitMatchBranchResult(branch)

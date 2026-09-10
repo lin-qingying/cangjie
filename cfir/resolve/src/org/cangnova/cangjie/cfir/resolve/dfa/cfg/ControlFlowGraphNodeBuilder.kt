@@ -179,6 +179,12 @@ fun ControlFlowGraphBuilder.createMatchBranchConditionEnterNode(
 ): MatchBranchConditionEnterNode =
     MatchBranchConditionEnterNode(currentGraph, fir, matchExpression, levelCounter)
 
+/** 创建模式成功路径上的 guard 求值入口。 */
+fun ControlFlowGraphBuilder.createMatchBranchGuardEnterNode(
+    fir: CfirMatchBranch,
+    matchExpression: CfirMatchExpression,
+): MatchBranchGuardEnterNode = MatchBranchGuardEnterNode(currentGraph, fir, matchExpression, levelCounter)
+
 /** 创建 match 分支条件出口节点。 */
 fun ControlFlowGraphBuilder.createMatchBranchConditionExitNode(
     fir: CfirMatchBranch,
@@ -191,7 +197,7 @@ fun ControlFlowGraphBuilder.createMatchPatternDecisionNode(
     branch: CfirMatchBranch,
     pattern: CfirPattern,
     subjectPath: List<Int>,
-    reportSource: CfirPattern,
+    reportSource: CfirPattern?,
     matchExpression: CfirMatchExpression,
 ): MatchPatternDecisionNode =
     MatchPatternDecisionNode(currentGraph, branch, pattern, null, subjectPath, reportSource, matchExpression, levelCounter)
@@ -200,7 +206,7 @@ fun ControlFlowGraphBuilder.createMatchPatternDecisionNode(
 fun ControlFlowGraphBuilder.createMatchGuardDecisionNode(
     branch: CfirMatchBranch,
     guard: CfirExpression,
-    reportSource: CfirPattern,
+    reportSource: CfirPattern?,
     matchExpression: CfirMatchExpression,
 ): MatchPatternDecisionNode =
     MatchPatternDecisionNode(currentGraph, branch, null, guard, emptyList(), reportSource, matchExpression, levelCounter)

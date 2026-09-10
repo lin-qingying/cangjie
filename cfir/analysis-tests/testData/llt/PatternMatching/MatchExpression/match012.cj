@@ -2,7 +2,7 @@
 
 main(): Int64 {
     var result = match (50) {
-        case 60 => "pass"
+        case <!UNREACHABLE_PATTERN!>60<!> => "pass"
         case 70 | 80 =>
             "yes";
             var a = 1;

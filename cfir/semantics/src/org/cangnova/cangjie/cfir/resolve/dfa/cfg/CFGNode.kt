@@ -2,6 +2,10 @@
 
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
+import org.cangnova.cangjie.cfir.resolve.match.CfirOrPatternLoweringKind
+import org.cangnova.cangjie.cfir.resolve.match.loweringKind
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
@@ -568,7 +572,17 @@ class MatchBranchConditionEnterNode(
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchConditionEnterNode(this, data)
 }
 
-/** match 分支条件出口节点。 */
+/** 模式成功后的 guard 求值入口；失败路径不经过该节点。 */
+class MatchBranchGuardEnterNode(
+    owner: ControlFlowGraph,
+    override val fir: CfirMatchBranch,
+    val matchExpression: CfirMatchExpression,
+    level: Int,
+) : CFGNode<CfirMatchBranch>(owner, level), EnterNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitMatchBranchGuardEnterNode(this, data)
+}
+
+/** 模式和 guard 均成功后的分支条件出口。 */
 class MatchBranchConditionExitNode(
     owner: ControlFlowGraph,
     override val fir: CfirMatchBranch,
@@ -600,7 +614,7 @@ class MatchPatternDecisionNode(
     /** 该原子模式在 match subject 中的 payload 路径。 */
     val subjectPath: List<Int>,
     /** 对应 CHIR block debug location 的 source pattern。 */
-    val reportSource: CfirPattern,
+    val reportSource: CfirPattern?,
     /** 当前判定所属的 match。 */
     val matchExpression: CfirMatchExpression,
     level: Int,
@@ -608,7 +622,12 @@ class MatchPatternDecisionNode(
     /** 不失败模式仍保留结构节点，其 failure 边为死亡边，不代表运行时条件分支。 */
     val isAlwaysSuccessful: Boolean
         get() = guard == null && (pattern is CfirWildcardPattern ||
-                pattern is CfirBindingPattern && pattern.nestedPattern == null)
+                pattern is CfirBindingPattern && pattern.nestedPattern == null ||
+                pattern is CfirOrPattern && pattern.loweringKind() == CfirOrPatternLoweringKind.UNCONDITIONAL)
+
+    /** guard 和合并 OR 的成功块没有模式 debug location。 */
+    val successReportSource: CfirPattern?
+        get() = reportSource.takeIf { guard == null && pattern !is CfirOrPattern && !isAlwaysSuccessful }
 
     /** CFG 节点的通用 CFIR owner 与 [branch] 保持一致。 */
     override val fir: CfirMatchBranch

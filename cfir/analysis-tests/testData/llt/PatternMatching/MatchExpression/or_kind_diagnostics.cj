@@ -19,3 +19,11 @@ func ifKinds(value: Bool): Unit {
 func whileKinds(value: Bool): Unit {
     while (let <!DIFFERENT_OR_PATTERN!>true | E.A | (_, _)<!> <- value) { break }
 }
+
+func leadingWildcard(value: Bool): Unit {
+    match (value) { case <!DIFFERENT_OR_PATTERN!>_ | true<!> => () }
+}
+
+func trailingWildcard(value: Bool): Unit {
+    match (value) { case <!DIFFERENT_OR_PATTERN!>true | _<!> => () }
+}

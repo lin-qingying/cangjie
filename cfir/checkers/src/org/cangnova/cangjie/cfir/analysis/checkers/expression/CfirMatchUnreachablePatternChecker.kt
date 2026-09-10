@@ -6,6 +6,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatrix
 import org.cangnova.cangjie.cfir.resolve.match.CfirMatchPattern
 import org.cangnova.cangjie.cfir.resolve.match.calculateMatrix
@@ -41,22 +43,32 @@ object CfirMatchUnreachablePatternChecker : CfirMatchExpressionChecker() {
         val previousRows = mutableListOf<List<CfirMatchPattern>>()
 
         for (branch in expression.branches) {
-            val branchRows = runCatching {
-                branch.pattern.calculateMatrix(subjectType, context.session)
-            }.getOrElse { emptyList() }
-            val unreachable = branchRows.isNotEmpty() && branchRows.all { row ->
-                row.isCoveredBy(previousRows, matchContext)
+            val orPattern = branch.pattern as? CfirOrPattern
+            val alternatives = orPattern?.alternatives ?: listOf(branch.pattern)
+            // guard 不贡献后续 case 覆盖，但同组 OR 内仍需记录前一项的覆盖范围。
+            val localRows = if (branch.guard == null) previousRows else previousRows.toMutableList()
+            val unreachableAlternatives = mutableListOf<CfirPattern>()
+            var hasReachableAlternative = false
+            for (alternative in alternatives) {
+                val rows = alternative.calculateMatrix(subjectType, context.session)
+                val unreachable = rows.isNotEmpty() && rows.all { row -> row.isCoveredBy(localRows, matchContext) }
+                if (unreachable) {
+                    unreachableAlternatives += alternative
+                } else {
+                    hasReachableAlternative = true
+                    localRows += rows
+                }
             }
-            if (unreachable) {
+            if (!hasReachableAlternative) {
+                // 官方对整组无 witness 的 OR 只报告完整模式一次。
                 reporter.reportOn(
-                    source = branch.pattern.source ?: branch.source,
+                    source = orPattern?.patternRangeSource() ?: branch.pattern.source,
                     factory = CfirErrors.UNREACHABLE_PATTERN,
                 )
-            }
-
-            // 只有可达且无 guard 的模式才能构成后续 Sema 覆盖矩阵。
-            if (branch.guard == null && !unreachable) {
-                previousRows += branchRows
+            } else {
+                for (alternative in unreachableAlternatives) {
+                    reporter.reportOn(alternative.source, CfirErrors.UNREACHABLE_PATTERN)
+                }
             }
         }
     }

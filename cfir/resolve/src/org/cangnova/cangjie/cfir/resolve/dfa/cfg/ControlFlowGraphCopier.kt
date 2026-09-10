@@ -198,6 +198,10 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: Unit): CFGNode<*> =
         MatchBranchConditionEnterNode(get(node.owner), node.fir, node.matchExpression, node.level)
 
+    /** 复制 guard 求值入口及其所属 Match。 */
+    override fun visitMatchBranchGuardEnterNode(node: MatchBranchGuardEnterNode, data: Unit): CFGNode<*> =
+        MatchBranchGuardEnterNode(get(node.owner), node.fir, node.matchExpression, node.level)
+
     /** 复制 match 分支条件出口节点。 */
     override fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: Unit): CFGNode<*> =
         MatchBranchConditionExitNode(get(node.owner), node.fir, node.matchExpression, node.level)

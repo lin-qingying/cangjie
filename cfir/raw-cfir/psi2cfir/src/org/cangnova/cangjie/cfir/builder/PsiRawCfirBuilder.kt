@@ -3026,16 +3026,12 @@ class PsiRawCfirBuilder(
 
             val branches = psi.entries.map { entry ->
                 val (pattern, guard) = when {
-                    // ── case _ ────────────────────────────────────────────────────────
-                    entry.isElse -> {
+                    // 无主语的默认分支。带主语时必须保留全部模式，不能把含 `_` 的 OR 压成单个 wildcard。
+                    entry.isElse && !hasSubject -> {
                         val conditions = entry.conditions.toList()
-                        val p = if (hasSubject && conditions.size == 1) {
-                            convertCasePattern(conditions.first())
-                        } else {
-                            buildWildcardPattern {
-                                source = conditions.firstOrNull()?.toCjPsiSourceElement()
-                                    ?: entry.toCjPsiSourceElement()
-                            }
+                        val p = buildWildcardPattern {
+                            source = conditions.firstOrNull()?.toCjPsiSourceElement()
+                                ?: entry.toCjPsiSourceElement()
                         }
                         val g = entry.patternGuard
                             ?.children?.filterIsInstance<CjExpression>()?.firstOrNull()

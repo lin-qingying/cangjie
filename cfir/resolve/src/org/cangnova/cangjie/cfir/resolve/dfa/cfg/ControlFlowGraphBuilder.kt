@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.dfa.cfg
 
+import org.cangnova.cangjie.cfir.resolve.match.CfirOrPatternLoweringKind
+import org.cangnova.cangjie.cfir.resolve.match.loweringKind
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -641,33 +644,44 @@ class ControlFlowGraphBuilder private constructor(
      * [MatchPatternDecisionNode] 保留该结构，而 [MatchBranchFailureNode] 统一承接每个原子
      * 判定的 failure 边，供下一 case 或 synthetic else 连接。
      */
-    fun exitMatchBranchCondition(branch: CfirMatchBranch): Pair<MatchBranchConditionExitNode, MatchBranchResultEnterNode> {
+    fun exitMatchBranchCondition(
+        branch: CfirMatchBranch,
+        resolveGuard: () -> Unit,
+    ): Pair<MatchBranchConditionExitNode, MatchBranchResultEnterNode> {
         val matchExpression = matchExitNodes.top().fir
         val conditionEnter = lastNodes.pop()
         val conditionExit = createMatchBranchConditionExitNode(branch, matchExpression)
         val failureNode = createMatchBranchFailureNode(branch, matchExpression)
-        val guardTarget = branch.guard?.let { guard ->
-            createMatchGuardDecisionNode(branch, guard, branch.pattern, matchExpression).also { guardDecision ->
-                addEdge(guardDecision, conditionExit, label = MatchBranchSuccess)
-                addEdge(guardDecision, failureNode, label = MatchBranchFailure)
-            }
-        } ?: conditionExit
+        val guardEnter = branch.guard?.let { createMatchBranchGuardEnterNode(branch, matchExpression) }
         val decisionEntry = createPatternDecisionGraph(
             branch = branch,
             pattern = branch.pattern,
             subjectPath = emptyList(),
             reportSource = branch.pattern,
-            successTarget = guardTarget,
+            successTarget = guardEnter ?: conditionExit,
             failureTarget = failureNode,
             matchExpression = matchExpression,
         )
         addEdge(conditionEnter, decisionEntry)
 
+        lastNodes.push(failureNode)
+        if (guardEnter != null) {
+            lastNodes.push(guardEnter)
+            // guard 的普通表达式节点只能挂在模式成功路径，不能提前产生赋值/调用效应。
+            resolveGuard()
+            val guard = checkNotNull(branch.guard)
+            val guardDecision = createMatchGuardDecisionNode(
+                branch, guard, branch.pattern.takeUnless { it is CfirOrPattern }, matchExpression,
+            )
+            addEdge(lastNodes.pop(), guardDecision)
+            addEdge(guardDecision, conditionExit, label = MatchBranchSuccess)
+            addEdge(guardDecision, failureNode, label = MatchBranchFailure)
+        }
+
         val resultEnter = createMatchBranchResultEnterNode(branch)
         addEdge(conditionExit, resultEnter, label = MatchBranchSuccess)
         // 分支体解析期间 resultEnter 必须是当前 last node；退出分支体后留下 failureNode，
         // 后续 case 会从该汇合点继续构图。
-        lastNodes.push(failureNode)
         lastNodes.push(resultEnter)
         return conditionExit to resultEnter
     }
@@ -742,19 +756,26 @@ class ControlFlowGraphBuilder private constructor(
         }
 
         is CfirOrPattern -> {
-            var continuation = failureTarget
-            for (alternative in pattern.alternatives.asReversed()) {
-                continuation = createPatternDecisionGraph(
-                    branch,
-                    alternative,
-                    subjectPath,
-                    alternative,
-                    successTarget,
-                    continuation,
-                    matchExpression,
-                )
+            val loweringKind = pattern.loweringKind()
+            if (loweringKind == CfirOrPatternLoweringKind.SEQUENTIAL) {
+                var continuation = failureTarget
+                for (alternative in pattern.alternatives.asReversed()) {
+                    continuation = createPatternDecisionGraph(
+                        branch, alternative, subjectPath, alternative, successTarget, continuation, matchExpression,
+                    )
+                }
+                continuation
+            } else {
+                // 官方 MultiBranch/GoTo 共用无模式位置的成功块，不产生逐 alternative 的 CFA 警告。
+                createMatchPatternDecisionNode(branch, pattern, subjectPath, null, matchExpression).also { decision ->
+                    addEdge(decision, successTarget, label = MatchBranchSuccess)
+                    addEdge(
+                        decision, failureTarget,
+                        preferredKind = if (loweringKind == CfirOrPatternLoweringKind.UNCONDITIONAL) EdgeKind.DeadForward else EdgeKind.Forward,
+                        label = MatchBranchFailure,
+                    )
+                }
             }
-            continuation
         }
 
         else -> createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
