@@ -6081,3 +6081,31 @@ XML 为 8497 → 8499 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 8、PatternMatching 34，共 42 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过，另外 473 项既有全量失败不变。
 - change isolation: 仅提交本类六处共享实现、八份 fixture、两套生成入口及日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：OR 种类约束统一诊断次数与范围
+
+- problem type: Diagnostics / OR pattern kind consistency。
+- root cause: Match 和 let-condition 使用不同的范围开关，前者把同一个 OR 约束拆到各异类 alternative；循环还会为多个异类重复报告同一根错误。
+- official Cangjie evidence: cjc 1.0.5 的 41-or-kind-diagnostics、41-or-kind-fixture（build/repair-20260906/evidence 对应 .official.*）及原两份 fixture 的 32-flow-syntax-before 记录。每组 OR 只报告一次 sema_different_or_pattern，多种异类并存也不增加次数。测试源码均语法合法。
+- official implementation: external/cangjie_compiler/src/Sema/TypeCheckMatchExpr.cpp 的 ChkPatternsSameASTKind 在首个异类处诊断并返回；ChkMatchCasePatterns 在变量绑定约束失败后不再检查种类。
+- Kotlin counterpart files consulted: FirWhenConditionChecker.kt、FirHelpers.kt:560 的 condition.source 诊断归属；PsiRawFirBuilder.kt:3203 区分 branch source、condition 和 body；ConversionUtils.kt:718 以 WhenCondition fake source 合成 OR。仓颉种类约束针对完整 OR，本次复用此前 let-condition 已使用的首末 alternative 范围策略，排除 case/guard/body；未宣称 Kotlin 的合成 OR 自身具有相同完整范围。
+- CFIR owner file changed: CfirPatternExpressionChecker.kt 的共享 CfirOrPatternConstraintReporter；移除入口间范围差异，首个种类错误后结束报告。VAR_IN_OR_PATTERN 及其检查顺序保持不变。
+- repair principle: 同一 OR 约束由一个共享 owner 报告一次，在所有控制结构中使用完整模式范围，不按调用入口分叉诊断行为。
+- fixtures covered: 原 PatternMatching/MatchExpression/err_different_pattern_01.cj、match023.cj；新增 or_kind_diagnostics.cj，四个函数覆盖多个异类、tuple、IfLet、WhileLet。match023 的范围从整条 case 修正为 Some(true) | false | 0，符合项目范围策略；同族 if-let-expr/enhancedcondition/patterns/enumorwildcard.cj 保持通过。
+- verification commands and outcome:
+  - 41-or-kinds-targeted：6/6 通过，覆盖两份原失败 fixture 及新 fixture 双入口。
+  - 41-or-kinds-family：3013 项，2669 通过、38 既有失败、306 跳过；FIXED=4、REGRESSED=0、新增 2 项通过，剩余消息不变。覆盖 If/While/Loops、Match/PatternMatching、Enum、Call、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：18m 10s 正常结束。40-literals-full → 41-or-kinds-full：FIXED=4、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8498 | 8500 |
+| 通过 | 7676 | 7682 |
+| 失败 | 515 | 511 |
+| 跳过 | 307 | 307 |
+
+XML 为 8499 → 8501 records，均为 308 skipped（含一条聚合记录）。完整证据为 41-or-kinds-full 与 40-literals-full--41-or-kinds-full.json。
+
+- remaining failures: 目标剩余 Match 8、PatternMatching 30，共 38 项；已清零家族保持通过，另外 473 项既有全量失败不变。
+- change isolation: 仅提交共享 OR checker、match023 范围修正、新 fixture、两套生成入口及日志；.idea/workspace.xml 独立保留。

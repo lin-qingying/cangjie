@@ -166,7 +166,6 @@ object CfirLetConditionPatternChecker : CfirBasicExpressionChecker() {
         CfirOrPatternConstraintReporter.checkOrPatternConstraints(
             pattern = expression.pattern,
             reportVariableBindings = false,
-            reportKindOnWholePattern = true,
         )
         val initializerType = expression.initializer.coneTypeOrNull ?: return
         if (initializerType is ConeErrorType) return
@@ -243,7 +242,6 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
             CfirOrPatternConstraintReporter.checkOrPatternConstraints(
                 pattern = branch.pattern,
                 reportVariableBindings = true,
-                reportKindOnWholePattern = false,
             )
         }
     }
@@ -263,7 +261,6 @@ private object CfirOrPatternConstraintReporter {
     fun checkOrPatternConstraints(
         pattern: CfirPattern,
         reportVariableBindings: Boolean,
-        reportKindOnWholePattern: Boolean,
     ) {
         when (pattern) {
             is CfirOrPattern -> {
@@ -275,25 +272,25 @@ private object CfirOrPatternConstraintReporter {
                     )
                 } else if (firstBinding == null) {
                     // 官方 ChkMatchCasePatterns 中变量绑定检查失败后会短路，不继续检查 kind 一致性。
-                    checkOrPatternKindConsistency(pattern, reportKindOnWholePattern)
+                    checkOrPatternKindConsistency(pattern)
                 }
                 for (alt in pattern.alternatives) {
-                    checkOrPatternConstraints(alt, reportVariableBindings, reportKindOnWholePattern)
+                    checkOrPatternConstraints(alt, reportVariableBindings)
                 }
             }
             is CfirTuplePattern -> {
                 for (element in pattern.elements) {
-                    checkOrPatternConstraints(element, reportVariableBindings, reportKindOnWholePattern)
+                    checkOrPatternConstraints(element, reportVariableBindings)
                 }
             }
             is CfirEnumPattern -> {
                 for (argument in pattern.arguments) {
-                    checkOrPatternConstraints(argument, reportVariableBindings, reportKindOnWholePattern)
+                    checkOrPatternConstraints(argument, reportVariableBindings)
                 }
             }
             is CfirBindingPattern -> {
                 pattern.nestedPattern?.let {
-                    checkOrPatternConstraints(it, reportVariableBindings, reportKindOnWholePattern)
+                    checkOrPatternConstraints(it, reportVariableBindings)
                 }
             }
             else -> Unit
@@ -303,7 +300,6 @@ private object CfirOrPatternConstraintReporter {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkOrPatternKindConsistency(
         orPattern: CfirOrPattern,
-        reportKindOnWholePattern: Boolean,
     ) {
         val alternatives = orPattern.alternatives
         if (alternatives.size < 2) return
@@ -313,21 +309,19 @@ private object CfirOrPatternConstraintReporter {
             val altKind = patternKindKey(alternatives[i])
             if (altKind != firstKind) {
                 reporter.reportOn(
-                    source = if (reportKindOnWholePattern) {
-                        orPattern.patternRangeSource() ?: orPattern.source
-                    } else {
-                        alternatives[i].source
-                    },
+                    source = orPattern.patternRangeSource() ?: orPattern.source,
                     factory = CfirErrors.DIFFERENT_OR_PATTERN,
                     a = "expected '${patternKindName(alternatives.first())}' but found '${patternKindName(alternatives[i])}'",
                 )
+                // 官方 ChkPatternsSameASTKind 在首个异类处结束，每组 OR 只拥有一个根诊断。
+                return
             }
         }
     }
 
     /**
-     * let-condition 的 `CfirOrPattern.source` 可能锚定整棵 `let` 表达式。
-     * 诊断需要覆盖用户写下的 pattern 段，因此用首尾 alternative source 合成稳定范围。
+     * Match/let-condition 的 `CfirOrPattern.source` 可能覆盖整条 case 或 let 表达式。
+     * 按项目范围策略覆盖完整 OR 模式，不包含 case 关键字、guard 或分支体。
      */
     private fun CfirOrPattern.patternRangeSource(): CjSourceElement? {
         val first = alternatives.firstOrNull()?.source ?: return null

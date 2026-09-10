@@ -4819,6 +4819,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/match031.cj")
             }
 
+            @TestMetadata("or_kind_diagnostics.cj")
+            @Test
+            fun testOrKindDiagnostics() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/or_kind_diagnostics.cj")
+            }
+
             @TestMetadata("pattern_binding_scope.cj")
             @Test
             fun testPatternBindingScope() {
