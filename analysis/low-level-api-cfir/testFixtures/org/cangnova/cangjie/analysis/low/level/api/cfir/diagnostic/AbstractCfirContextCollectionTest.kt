@@ -20,6 +20,7 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModul
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
@@ -138,7 +139,11 @@ abstract class AbstractCfirContextCollectionTest : AbstractAnalysisApiBasedTest(
         /**
          * 在诊断检查器即将进入嵌套声明时，确认上下文回放结果与运行时上下文完全一致。
          */
-        override fun beforeGoingNestedDeclaration(declaration: CfirDeclaration, context: CheckerContext) {
+        override fun beforeGoingNestedDeclaration(
+            declaration: CfirDeclaration,
+            context: CheckerContext,
+            phase: DiagnosticCollectionPhase,
+        ) {
             if (declaration is CfirFile || declaration !in elementsToCheckContext) {
                 return
             }

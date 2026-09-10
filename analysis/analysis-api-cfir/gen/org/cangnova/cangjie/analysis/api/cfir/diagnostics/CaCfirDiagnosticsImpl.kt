@@ -16,6 +16,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
@@ -760,6 +761,16 @@ internal class TuplePatternNotMatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TuplePatternNotMatch
 
+internal class TuplePatternWithCorrectSizeExpectedImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TuplePatternWithCorrectSizeExpected
+
+internal class MismatchedTypeForPatternInVardeclImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MismatchedTypeForPatternInVardecl
+
 internal class PatternNotMatchImpl(
     override val patternText: String,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -780,6 +791,11 @@ internal class MatchCaseHasNoTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MatchCaseHasNoType
+
+internal class MatchCaseMustHaveDefaultImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjMatchExpression>(cfirDiagnostic, token), CaCfirDiagnostic.MatchCaseMustHaveDefault
 
 internal class NameInConstraintIsNotATypeParameterImpl(
     override val name: Name,

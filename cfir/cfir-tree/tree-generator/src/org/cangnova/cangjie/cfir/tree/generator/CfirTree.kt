@@ -1597,6 +1597,9 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val typePattern: Element by element(Pattern, name = "TypePattern") {
         parent(pattern)
+        +field("matchingKind", typePatternMatchingKindType, withReplace = true) {
+            defaultValueInBuilder = "CfirTypePatternMatchingKind.UNKNOWN"
+        }
         +field("typeRef", typeRef, withTransform = true)
         +field("bindingName", nameType, nullable = true)
         +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)

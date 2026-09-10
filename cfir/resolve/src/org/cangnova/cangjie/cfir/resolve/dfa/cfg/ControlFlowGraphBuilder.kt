@@ -780,7 +780,11 @@ class ControlFlowGraphBuilder private constructor(
 
         else -> createMatchPatternDecisionNode(branch, pattern, subjectPath, reportSource, matchExpression).also { decision ->
             addEdge(decision, successTarget, label = MatchBranchSuccess)
-            addEdge(decision, failureTarget, label = MatchBranchFailure)
+            addEdge(
+                decision, failureTarget,
+                preferredKind = if (decision.isAlwaysSuccessful) EdgeKind.DeadForward else EdgeKind.Forward,
+                label = MatchBranchFailure,
+            )
         }
     }
 

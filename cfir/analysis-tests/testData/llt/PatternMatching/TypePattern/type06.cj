@@ -21,7 +21,7 @@ main(): Int64 {
     var target = Family.son(Son())
     var res = match (target) {
         case <!UNREACHABLE_PATTERN!>son(uncle: Uncle)<!> => 0
-        case son(father: Father) => father.age
+        case <!UNREACHABLE_PATTERN!>son(father: Father)<!> => father.age
         case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     if (res == 20) {

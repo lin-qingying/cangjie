@@ -15,6 +15,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
@@ -637,6 +638,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val actualTypeText: String
     }
 
+    interface TuplePatternWithCorrectSizeExpected : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TuplePatternWithCorrectSizeExpected::class
+    }
+
+    interface MismatchedTypeForPatternInVardecl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MismatchedTypeForPatternInVardecl::class
+    }
+
     interface PatternNotMatch : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = PatternNotMatch::class
         val patternText: String
@@ -652,6 +661,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface MatchCaseHasNoType : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = MatchCaseHasNoType::class
+    }
+
+    interface MatchCaseMustHaveDefault : CaCfirDiagnostic<CjMatchExpression> {
+        override val diagnosticClass get() = MatchCaseMustHaveDefault::class
     }
 
     interface NameInConstraintIsNotATypeParameter : CaCfirDiagnostic<PsiElement> {

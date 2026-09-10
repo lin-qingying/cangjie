@@ -19,6 +19,7 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisA
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollectorVisitor
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.SessionHolderImpl
@@ -30,7 +31,7 @@ import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
 
 /**
- * 验证 diagnostic collection 对应 CFIR 元素只访问一次。
+ * 验证每个诊断阶段内的 CFIR 元素只访问一次，且 Sema 遍历没有遗漏。
  */
 abstract class AbstractDiagnosticTraversalCounterTest : AbstractAnalysisApiBasedTest() {
     /**
@@ -55,11 +56,11 @@ abstract class AbstractDiagnosticTraversalCounterTest : AbstractAnalysisApiBased
             val message = buildString {
                 if (zeroElements.isNotEmpty()) {
                     appendLine("The following elements were not visited")
-                    appendLine(zeroElements.joinToString(separator = "\n\n") { it.first.renderForMessage() })
+                    appendLine(zeroElements.joinToString(separator = "\n\n") { it.first })
                 }
                 if (nonZeroElements.isNotEmpty()) {
                     appendLine("The following elements were visited more than one time")
-                    appendLine(nonZeroElements.joinToString(separator = "\n\n") { "${it.second} times ${it.first.renderForMessage()}" })
+                    appendLine(nonZeroElements.joinToString(separator = "\n\n") { "${it.second} times ${it.first}" })
                 }
             }
             testServices.assertions.fail { message }
@@ -69,7 +70,7 @@ abstract class AbstractDiagnosticTraversalCounterTest : AbstractAnalysisApiBased
     /**
      * 收集所有访问次数不符合预期的 CFIR 元素及其实际访问次数。
      */
-    private fun collectErrorElements(cfirFile: CfirFile): List<Pair<CfirElement, Int>> {
+    private fun collectErrorElements(cfirFile: CfirFile): List<Pair<String, Int>> {
         val handler = cfirFile.moduleData.session.beforeElementDiagnosticCollectionHandler
             as BeforeElementTestDiagnosticCollectionHandler
         val nonDuplicatingElements = findNonDuplicatingCfirElements(cfirFile).filter { element ->
@@ -81,13 +82,17 @@ abstract class AbstractDiagnosticTraversalCounterTest : AbstractAnalysisApiBased
             }
         }.toSet()
 
-        val errorElements = mutableListOf<Pair<CfirElement, Int>>()
+        val errorElements = mutableListOf<Pair<String, Int>>()
         cfirFile.accept(object : CfirVisitorVoid() {
             override fun visitElement(element: CfirElement) {
                 if (element in nonDuplicatingElements) {
-                    val visitedTimes = handler.visitedTimes[element] ?: 0
-                    if (visitedTimes != 1) {
-                        errorElements += element to visitedTimes
+                    for (phase in DiagnosticCollectionPhase.entries) {
+                        val visitedTimes = handler.visitedTimes[phase to element]
+                        // Sema 必须覆盖所有元素；后续阶段允许因 Sema 错误而不进入，
+                        // 一旦进入，同一阶段内仍禁止重复运行 checker。
+                        if (visitedTimes != 1 && (visitedTimes != null || phase == DiagnosticCollectionPhase.SEMA)) {
+                            errorElements += "$phase: ${element.renderForMessage()}" to (visitedTimes ?: 0)
+                        }
                     }
                 }
                 element.acceptChildren(this)
@@ -164,13 +169,13 @@ abstract class AbstractDiagnosticTraversalCounterTest : AbstractAnalysisApiBased
         /**
          * 以 CFIR 元素实例为键保存访问计数，供测试结束后与预期遍历集合比较。
          */
-        val visitedTimes: MutableMap<CfirElement, Int> = mutableMapOf()
+        val visitedTimes: MutableMap<Pair<DiagnosticCollectionPhase, CfirElement>, Int> = mutableMapOf()
 
         /**
          * 在诊断收集器处理元素前递增对应元素的访问次数。
          */
-        override fun beforeCollectingForElement(element: CfirElement) {
-            visitedTimes.compute(element) { _, count -> (count ?: 0) + 1 }
+        override fun beforeCollectingForElement(element: CfirElement, phase: DiagnosticCollectionPhase) {
+            visitedTimes.compute(phase to element) { _, count -> (count ?: 0) + 1 }
         }
     }
 }

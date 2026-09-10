@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.patterns.impl.CfirTypePatternImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 @CfirBuilderDsl
 class CfirTypePatternBuilder {
     var source: CjSourceElement? = null
+    var matchingKind: CfirTypePatternMatchingKind = CfirTypePatternMatchingKind.UNKNOWN
     lateinit var typeRef: CfirTypeRef
     var bindingName: Name? = null
     var bindingVariable: CfirPatternBindingVariable? = null
@@ -28,6 +30,7 @@ class CfirTypePatternBuilder {
     fun build(): CfirTypePattern {
         return CfirTypePatternImpl(
             source,
+            matchingKind,
             typeRef,
             bindingName,
             bindingVariable,
@@ -51,6 +54,7 @@ inline fun buildTypePatternCopy(original: CfirTypePattern, init: CfirTypePattern
     }
     val copyBuilder = CfirTypePatternBuilder()
     copyBuilder.source = original.source
+    copyBuilder.matchingKind = original.matchingKind
     copyBuilder.typeRef = original.typeRef
     copyBuilder.bindingName = original.bindingName
     copyBuilder.bindingVariable = original.bindingVariable

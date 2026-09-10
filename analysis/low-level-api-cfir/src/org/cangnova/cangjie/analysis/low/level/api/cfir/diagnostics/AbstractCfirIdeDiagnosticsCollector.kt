@@ -90,11 +90,13 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
             add(ExpressionCheckersDiagnosticComponent(session, reporter, expressionCheckers))
             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
-            add(ControlFlowAnalysisDiagnosticComponent(session, reporter))
         }.toTypedArray()
 
         val postSemaComponents = if (filter.runDefaultCheckers) {
-            arrayOf<AbstractDiagnosticCollectorComponent>(CfirChirArithmeticDiagnosticCollectorComponent(session, reporter))
+            arrayOf<AbstractDiagnosticCollectorComponent>(
+                ControlFlowAnalysisDiagnosticComponent(session, reporter),
+                CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
+            )
         } else {
             emptyArray()
         }

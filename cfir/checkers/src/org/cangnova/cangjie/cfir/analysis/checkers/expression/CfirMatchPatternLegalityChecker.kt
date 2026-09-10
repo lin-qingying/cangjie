@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
+import org.cangnova.cangjie.cfir.resolve.match.needsRuntimeTypeCheckAgainst
 import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
 import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
 import org.cangnova.cangjie.cfir.resolve.match.CfirPatternLiteralTypeResolution
@@ -46,8 +47,6 @@ import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -366,90 +365,9 @@ private fun typesMayOverlap(
     val accessContext = context.accessContext(CfirAccessKind.EXTEND)
     if (patternType.isMatchSubtypeOf(expectedType, context.session, accessContext)) return true
     if (expectedType.isMatchSubtypeOf(patternType, context.session, accessContext)) return true
-    return expectedType.needsRuntimeTypeCheckAgainst(patternType, context)
+    return expectedType.needsRuntimeTypeCheckAgainst(patternType, context.session)
 }
 
-/**
- * 对齐官方 `IsNeedRuntimeCheck`。
- *
- * 双方都是 final 且至少一方有声明身份时，只有同一声明才可能运行期匹配；
- * 其它 class-like 或泛型形态都不能在 legality 阶段静态判为不匹配。
- */
-private fun ConeCangJieType.needsRuntimeTypeCheckAgainst(
-    targetType: ConeCangJieType,
-    context: CheckerContext,
-): Boolean {
-    if (isFinalForRuntimeTypeCheck(context) && targetType.isFinalForRuntimeTypeCheck(context)) {
-        val sourceDeclaration = runtimeDeclarationClassIdOrNull()
-        val targetDeclaration = targetType.runtimeDeclarationClassIdOrNull()
-        if (sourceDeclaration != null || targetDeclaration != null) {
-            return sourceDeclaration == targetDeclaration
-        }
-    }
-
-    return (isRuntimeClassLike() && targetType.isRuntimeClassLike()) ||
-            hasRuntimeGenericShape() ||
-            targetType.hasRuntimeGenericShape()
-}
-
-/**
- * 官方 runtime type check 中视作 final 的类型集合。
- */
-private fun ConeCangJieType.isFinalForRuntimeTypeCheck(context: CheckerContext): Boolean {
-    return when (this) {
-        is ConePrimitiveType,
-        is ConeStructType,
-        is ConeEnumType,
-        is ConeVArrayType,
-        -> true
-
-        is ConeTypeAliasType -> expandedType?.isFinalForRuntimeTypeCheck(context) == true
-        is ConeClassLikeType -> {
-            if (classId == StdlibClassIds.Array) return true
-            val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return false
-            if (!symbol.isBound) return false
-            symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
-            val declaration = symbol.cfir as? CfirMemberDeclaration ?: return false
-            !declaration.status.isAbstract && !declaration.status.isOpen
-        }
-
-        else -> false
-    }
-}
-
-/**
- * 取得运行期声明身份；primitive/tuple/function 等无声明身份类型返回 null。
- */
-private fun ConeCangJieType.runtimeDeclarationClassIdOrNull(): ClassId? = when (this) {
-    is ConeClassLikeType -> classId
-    is ConeStructType -> classId
-    is ConeEnumType -> classId
-    is ConeTypeAliasType -> expandedType?.runtimeDeclarationClassIdOrNull()
-    else -> null
-}
-
-/**
- * 官方 `IsClassLike` 在 pattern runtime check 中覆盖具名分类器形态。
- */
-private fun ConeCangJieType.isRuntimeClassLike(): Boolean =
-    this is ConeClassifierType || (this as? ConeTypeAliasType)?.expandedType?.isRuntimeClassLike() == true
-
-/**
- * 判断类型本身或其结构分量中是否保留泛型运行期可能性。
- */
-private fun ConeCangJieType.hasRuntimeGenericShape(): Boolean = when (this) {
-    is ConeTypeParameterType,
-    is ConeTypeVariableType,
-    is ConeStubType,
-    -> true
-
-    is ConeTupleType -> elementTypes.any { it.hasRuntimeGenericShape() }
-    is ConeFunctionType -> parameterTypes.any { it.hasRuntimeGenericShape() } || returnType.hasRuntimeGenericShape()
-    is ConeTypeAliasType -> expandedType?.hasRuntimeGenericShape() == true ||
-            typeArguments.any { it.type.hasRuntimeGenericShape() }
-
-    else -> typeArguments.any { it.type.hasRuntimeGenericShape() }
-}
 
 /**
  * 取得 pattern 的源码展示文本。

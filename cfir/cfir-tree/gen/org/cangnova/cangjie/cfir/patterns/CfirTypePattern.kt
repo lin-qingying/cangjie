@@ -18,6 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirTypePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
+    abstract val matchingKind: CfirTypePatternMatchingKind
     abstract val typeRef: CfirTypeRef
     abstract val bindingName: Name?
     abstract val bindingVariable: CfirPatternBindingVariable?
@@ -28,6 +29,8 @@ abstract class CfirTypePattern : CfirPattern() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTypePattern(this, data) as E
+
+    abstract fun replaceMatchingKind(newMatchingKind: CfirTypePatternMatchingKind)
 
     abstract fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePattern
 

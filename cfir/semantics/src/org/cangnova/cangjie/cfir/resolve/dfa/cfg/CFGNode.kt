@@ -42,6 +42,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.dfa.FlowPath
 import org.cangnova.cangjie.cfir.resolve.dfa.PersistentFlow
@@ -623,6 +625,7 @@ class MatchPatternDecisionNode(
     val isAlwaysSuccessful: Boolean
         get() = guard == null && (pattern is CfirWildcardPattern ||
                 pattern is CfirBindingPattern && pattern.nestedPattern == null ||
+                pattern is CfirTypePattern && pattern.matchingKind == CfirTypePatternMatchingKind.ALWAYS ||
                 pattern is CfirOrPattern && pattern.loweringKind() == CfirOrPatternLoweringKind.UNCONDITIONAL)
 
     /** guard 和合并 OR 的成功块没有模式 debug location。 */
