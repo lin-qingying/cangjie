@@ -15,8 +15,8 @@ enum TimeUnit3 {
 main(): Int64 {
     var time = TimeUnit1.One(TimeUnit2.Two(TimeUnit3.Three))
     var d = match (time) {
-        case <!UNREACHABLE_PATTERN!>One(Two(Four))<!> => 1
-        case One(Two(Three)) => 0
+        case One(Two(Four)) => 1
+        case <!UNREACHABLE_PATTERN!>One(Two(Three))<!> => 0
         case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     return d

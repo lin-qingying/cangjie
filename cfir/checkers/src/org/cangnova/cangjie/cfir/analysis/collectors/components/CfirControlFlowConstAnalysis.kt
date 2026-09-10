@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.collectors.components
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
 import org.cangnova.cangjie.cfir.declarations.payloadArity
@@ -42,6 +43,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.OperatorNameConventions
 import java.math.BigInteger
 import java.util.ArrayDeque
@@ -64,6 +66,9 @@ import java.util.IdentityHashMap
 internal class CfirControlFlowConstAnalysis {
     /** 缓存 enum 是否在官方常量域中保留 constructor tag，避免重复查询宿主声明。 */
     private val constructorTagTracking = IdentityHashMap<CfirEnumConstructorSymbol, Boolean>()
+
+    /** 模式求值指令与最终判定属于同一个条件区域；用树节点身份限定，不包含分支体。 */
+    private val patternEvaluationElements = IdentityHashMap<CfirMatchExpression, Set<CfirElement>>()
 
     /** 返回由 CFG 常量分支效应证明不可达的 pattern source。 */
     fun collectUnreachablePatterns(graph: ControlFlowGraph): Set<CfirPattern> {
@@ -198,16 +203,11 @@ internal class CfirControlFlowConstAnalysis {
     /**
      * 死块所承载的模式位置。
      *
-     * CHIR 把 case 的模式位置写到该 case 的判定块上；没有原子判定的通配/纯绑定 case
-     * 只生成一条 `GoTo`，其模式位置只存在于 case 入口块。因此有判定的 case 由判定节点的
-     * [MatchPatternDecisionNode.reportSource] 表达（or-pattern 下精确到 alternative），
-     * 无判定的 case 才回到分支入口节点取整条模式。
+     * 所有合法模式（含通配/绑定）都有独立判定节点，位置由其 reportSource 提供。
+     * 条件入口和判定之间可能先经过字面量等求值节点，不能因此把整条 case 当作模式位置。
      */
     private fun CFGNode<*>.deadRegionPatternOrNull(owner: CfirMatchExpression): CfirPattern? = when {
         this is MatchPatternDecisionNode && matchExpression === owner -> reportSource
-        this is MatchBranchConditionEnterNode && matchExpression === owner &&
-            followingNodes.none { successor -> successor is MatchPatternDecisionNode } -> fir.pattern
-
         else -> null
     }
 
@@ -216,8 +216,22 @@ internal class CfirControlFlowConstAnalysis {
         is MatchPatternDecisionNode -> matchExpression === owner
         is MatchBranchFailureNode -> matchExpression === owner
         is MatchBranchConditionEnterNode -> matchExpression === owner
-        else -> false
+        // literal/operator 等模式求值指令不是 CHIR 基本块终结符，不应在它们处截断死区。
+        else -> fir in owner.patternElements()
     }
+
+    /** 收集模式自身的元素；分支体、guard 和相邻 Match 不会因源码范围重叠混入。 */
+    private fun CfirMatchExpression.patternElements(): Set<CfirElement> =
+        patternEvaluationElements.getOrPut(this) {
+            val elements = Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
+            val visitor = object : CfirVisitorVoid() {
+                override fun visitElement(element: CfirElement) {
+                    if (elements.add(element)) element.acceptChildren(this, null)
+                }
+            }
+            branches.forEach { branch -> branch.pattern.accept(visitor, null) }
+            elements
+        }
 
     /** 对 CFG 节点执行常量状态 transfer；只在节点的正规求值位置读写局部事实。 */
     private fun ConstState.transfer(node: CFGNode<*>): ConstState = when (node) {

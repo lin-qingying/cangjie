@@ -6138,3 +6138,32 @@ XML 为 8501 → 8503 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 6、PatternMatching 30，共 36 项；已清零家族保持通过，另外 473 项既有全量失败不变。
 - change isolation: 仅提交共享 CFA 实现、新 fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：CFA 穿过模式求值指令，按实际判定归属死区
+
+- problem type: Flow Analysis / Pattern condition regions。
+- root cause: 模式中的 literal/operator 在正式判定节点之前已有 CFG 求值节点，死区遍历却只经过 Match* 节点，导致在条件块内部提前停止；条件入口未直接连接判定时，又错误使用整条 case 的 source，扩大了 OR 警告范围。
+- official Cangjie evidence: cjc 1.0.5 的 43-cfa-condition-chain、43-cfa-condition-fixture、43-tuple-pattern-001、43-match025、43-match026、43-join-ordered 证明死区必须继续遍历后续条件及 wildcard，并分别定位 OR alternatives。另重新取证 43-match011、43-enum12，确认两份同族 fixture 的旧警告期望错误。全部源码、命令和 JSON 在 build/repair-20260906/evidence，均无语法错误。
+- official implementation: external/cangjie_compiler/src/CHIR/Checker/UnreachableBranchCheck.cpp 的 PrintWarning 以基本块终结符决定递归，普通求值指令不截断遍历；TranslateNestingCasePattern 按具体 pattern 设置 debug location。CFIR 的 transformLiteralExpression/exitLiteralExpression 在 exitMatchBranchCondition 之前添加普通 LiteralExpressionNode，必须保留相同的条件区域语义。
+- Kotlin counterpart files consulted: FirDataFlowAnalyzer.kt 的 CFG 程序点遍历与表达式/赋值 flow 分层；ControlFlowGraphBuilder 的条件入口、出口和分支体边界。诊断归属继续由独立判定节点提供。
+- CFIR owner file changed: CfirControlFlowConstAnalysis.kt，按模式 AST 元素身份缓存识别同一条件区域的求值节点，继续穿过非终结指令；删除条件入口回退到整条 case 的 source 逻辑。所有合法 wildcard/binding 在此前修复中已有独立判定节点，继续使用其 reportSource。
+- repair principle: 用真实树节点身份和 CFG 角色表达条件块边界，不把普通 literal 当成终结符，也不按源码字符串或测试路径决定遍历范围。
+- fixtures covered / corrections: 原 tuple_pattern_001、match025、match026、EnumPattern/enum07，以及 JoinMeet/join_ordered_problem_2；新增 MatchExpression/cfa_condition_chain.cj，验证普通及 OR 条件链。前三份按官方补齐缺失 warning；enum07 和 join_ordered_problem_2 的原期望未改。另对 MatchExpression/match011 补齐官方的 0/wildcard 警告；EnumPattern/enum12 将旧 One(Two(Four)) 警告修正为官方 One(Two(Three))，此两份属于独立可证的 fixture correction，不计作新增算法能力。
+- verification commands and outcome:
+  - 43-cfa-chain-targeted：12/12 通过，覆盖新 fixture、四份原失败及前一类 value-domain 回归；43-cfa-expectations-targeted：两份期望修正双入口 4/4 通过。
+  - 43-cfa-chain-family：3163 项，2819 通过、38 既有失败、306 跳过；FIXED=8、REGRESSED=0、新增 2 项通过，仅 match006 双入口增加官方应有的 wildcard 警告。覆盖控制流/模式、Enum、Box、IsOrAsExpr、NonExhaustiveEnum、Call、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：24m 36s 正常结束。42-cfa-domain-full → 43-cfa-chain-full：FIXED=14（实现修复 10，额外 fixture correction 4）、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - changed_failure_messages 仅 match006 双入口，补出官方 wildcard 警告；既有 OR/guard 误报留待后续类型处理。其余 493 项失败消息不变。JoinMeet 两套入口共 18 项全部通过。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8502 | 8504 |
+| 通过 | 7686 | 7702 |
+| 失败 | 509 | 495 |
+| 跳过 | 307 | 307 |
+
+XML 为 8503 → 8505 records，均为 308 skipped（含一条聚合记录）。完整证据为 43-cfa-chain-full 与 42-cfa-domain-full--43-cfa-chain-full.json。
+
+- remaining failures: 目标剩余 Match 4、PatternMatching 20，共 24 项；已清零家族保持通过，另外 471 项既有全量失败保留。
+- change isolation: 仅提交共享 CFA 遍历、新 fixture、五份官方期望修正、两套生成入口及日志；.idea/workspace.xml 独立保留。
