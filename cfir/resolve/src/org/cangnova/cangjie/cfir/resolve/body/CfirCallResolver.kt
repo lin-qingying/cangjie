@@ -433,17 +433,16 @@ class CfirCallResolver(
     /**
      * 在不重复 tower discovery 的前提下，用已发现重载集合和新的 expected type 重建候选。
      *
-     * 官方调用检查先发现声明集合，再在候选局部 checkpoint 中按目标返回类型检查；这里仅当
-     * 所有已有候选的返回类型都可确定分类且得到唯一 survivor 时，读取 discovery 的不可变字段
-     * 创建 fresh candidate。旧候选的约束系统、stage 进度、诊断和 replacement 均不会复用。
-     * 返回类型仍含推断变量、错误恢复分量或无法唯一规约时返回 null，由调用方执行完整 resolver。
+     * 官方调用检查先发现声明集合，再在候选局部 checkpoint 中按目标返回类型检查。
+     * 普通返回类型细化先筛出唯一 survivor；primitive operand check-mode 则保留发现的整个集合，
+     * 用新目标重跑共享适用性与最具体规约。两种路径均创建 fresh candidate，不复用旧约束和诊断。
      */
     fun resolveCallFromPrecollectedCandidates(
         functionCall: CfirFunctionCall,
         resolutionMode: ResolutionMode,
         discoveries: List<CfirCallableCandidateDiscovery>,
     ): Pair<Candidate, CfirFunctionCall>? {
-        if (discoveries.size <= 1) return null
+        if (discoveries.isEmpty() || discoveries.size == 1 && !resolutionMode.isOperatorOperandInference) return null
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return null
         val callKind = when {
             discoveries.all { discovery ->
@@ -463,14 +462,17 @@ class CfirCallResolver(
             origin = functionCall.origin,
             resolutionMode = resolutionMode,
         )
-        val discovery = uniquePrecollectedCandidateByExpectedReturnType(info, discoveries)
-            ?: return null
-        val freshCandidate = CandidateFactory(transformer.resolutionContext, info).createCandidateFromDiscovery(
-            callInfo = info,
-            discovery = discovery,
-        )
+        val selectedDiscoveries = if (resolutionMode.isOperatorOperandInference) {
+            discoveries
+        } else {
+            listOf(uniquePrecollectedCandidateByExpectedReturnType(info, discoveries) ?: return null)
+        }
+        val factory = CandidateFactory(transformer.resolutionContext, info)
+        val freshCandidates = selectedDiscoveries.map { discovery ->
+            factory.createCandidateFromDiscovery(callInfo = info, discovery = discovery)
+        }
         val (reducedCandidates, applicability) = reduceCandidateSet(
-            candidates = listOf(freshCandidate),
+            candidates = freshCandidates,
             info = info,
             collectorApplicability = CandidateApplicability.HIDDEN,
         )
@@ -1599,7 +1601,9 @@ class CfirCallResolver(
         candidates: Collection<Candidate>,
     ): List<CfirCallableCandidateDiscovery> {
         if (info.callKind != CallKind.Function && info.callKind != CallKind.EnumConstructorCall) return emptyList()
-        if (candidates.size <= 1 || candidates.any { !it.isSuccessful }) return emptyList()
+        if (candidates.isEmpty() || candidates.any { !it.isSuccessful }) return emptyList()
+        // 单个泛型调用同样可能在外层运算目标到达后重新定型；保存 discovery 而非已固定的 Candidate。
+        if (candidates.size == 1 && candidates.single().freshVariables.isEmpty()) return emptyList()
 
         val discoveries = ArrayList<CfirCallableCandidateDiscovery>(candidates.size)
         for (candidate in candidates) {
