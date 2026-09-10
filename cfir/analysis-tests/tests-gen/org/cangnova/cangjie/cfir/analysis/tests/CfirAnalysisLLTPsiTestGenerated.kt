@@ -4633,6 +4633,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/as_expr_00.cj")
             }
 
+            @TestMetadata("cfa_pattern_value_domain.cj")
+            @Test
+            fun testCfaPatternValueDomain() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/cfa_pattern_value_domain.cj")
+            }
+
             @TestMetadata("err_different_pattern_00.cj")
             @Test
             fun testErrDifferentPattern00() {

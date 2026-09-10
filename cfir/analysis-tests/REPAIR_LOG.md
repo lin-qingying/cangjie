@@ -6109,3 +6109,32 @@ XML 为 8499 → 8501 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 8、PatternMatching 30，共 38 项；已清零家族保持通过，另外 473 项既有全量失败不变。
 - change isolation: 仅提交共享 OR checker、match023 范围修正、新 fixture、两套生成入口及日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：CFA 的 String 比较和字段抽象域
+
+- problem type: Flow Analysis / Constant abstract domain。
+- root cause: CFA 把 String pattern 当作内建值比较，并在 tuple 的深层路径及投影后的 enum 中继续保留内部值信息，超出了官方 ValueAnalysis 的可知范围，造成错误的不可达模式警告。
+- official Cangjie evidence: cjc 1.0.5 的 42-cfa-value-domain、42-cfa-projection-values（build/repair-20260906/evidence 对应 .official.*）以不同 Int64 分支结果验证：String 比较未知、深层 tuple 投影未知、单层标量投影仍已知、直接 enum tag 仍已知、tuple 中投影出的 enum 内部信息未知。原 tuple_pattern_006 官方没有不可达模式 warning；tuple_pattern_001/match025 的 Bob 分支也不应警告。原证据见 32-flow-syntax-before。源码均语法合法。
+- official implementation: external/cangjie_compiler/src/CHIR/AST2CHIR/TranslateASTNode/TranslateMatchExpr.cpp 的 HandleConstPattern 对 String 使用 operatorCallExpr；CHIR/Analysis/ConstAnalysis.cpp 对普通 APPLY 不求返回值；include/cangjie/CHIR/Analysis/ValueAnalysis.h:901-920 的 PreHandleFieldExpr 对多索引 Field 使用 Top，单索引只 PropagateWithoutChildren。
+- Kotlin counterpart files consulted: FirDataFlowAnalyzer.kt 的 exitQualifiedAccessExpression、exitVariableAssignment 和 exitVariableInitialization，将访问、赋值和流事实放在相应 CFG 程序点处理；仓颉常量域的边界取自上述官方 CHIR 规则。
+- CFIR owner file changed: CfirControlFlowConstAnalysis.kt。String 的判断使用实际类型而非原 literal kind，保留 Rune/UInt8 字符模式的内建比较路径；payloadAt 只保留单层标量投影，直接 selector 的 enum tag 保持原路径。
+- repair principle: 只在官方分析实际拥有值信息时裁剪控制流，不能用额外推测的值关系制造不可达警告；Sema 覆盖矩阵不受该 CFA 规则影响。
+- fixtures covered: 原 llt/match/tuple_pattern/tuple_pattern_006.cj、tuple_pattern_001.cj、PatternMatching/MatchExpression/match025.cj；新增 cfa_pattern_value_domain.cj，六个函数同时验证该保留与该丢弃的事实。原 fixture 均未修改，新入口自动生成。
+- verification commands and outcome:
+  - 42-cfa-domain-targeted：8 项，4 通过、4 既有失败；新 fixture 与 tuple_pattern_006 双入口通过，另外两份文件仍缺 CFG 遍历应报告的 wildcard 警告。
+  - 42-cfa-domain-family：3161 项，2809 通过、46 既有失败、306 跳过；FIXED=2、REGRESSED=0、新增 2 项通过。覆盖控制流/模式、Enum、Box、IsOrAsExpr、NonExhaustiveEnum、Call、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：21m 2s 正常结束。41-or-kinds-full → 42-cfa-domain-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - changed_failure_messages 共 4 项：tuple_pattern_001、match025 双入口删除 Bob 误报，match025 的 OR 警告改为两个独立 alternative；这些现有警告均获官方确认，但最后 wildcard 的漏报仍待 CFG 遍历修复。其余 505 项失败消息不变。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8500 | 8502 |
+| 通过 | 7682 | 7686 |
+| 失败 | 511 | 509 |
+| 跳过 | 307 | 307 |
+
+XML 为 8501 → 8503 records，均为 308 skipped（含一条聚合记录）。完整证据为 42-cfa-domain-full 与 41-or-kinds-full--42-cfa-domain-full.json。
+
+- remaining failures: 目标剩余 Match 6、PatternMatching 30，共 36 项；已清零家族保持通过，另外 473 项既有全量失败不变。
+- change isolation: 仅提交共享 CFA 实现、新 fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。
