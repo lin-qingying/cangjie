@@ -6047,3 +6047,37 @@ XML 为 8495 → 8497 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 10、PatternMatching 38，共 48 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。常量模式类型检查、OR 约束、CFA 警告及分支 Join 等仍分别处理。
 - change isolation: 仅提交共享模式规范化、新 fixture、两套生成入口和本条日志；.idea/workspace.xml 保持独立。
+
+## 2026-09-10：常量模式按目标类型检查并传播失败状态
+
+- problem type: Pattern Matching / Literal types and error propagation。
+- root cause: 常量模式独立解析后仅用宽松的 literal kind 判断兼容性，漏掉 Float/Int 等跨类别错误、显式后缀差异和装箱限制；模式失败没有进入分支结果类型，也未阻止后续延迟绑定发布。模式值未在首次解析时获得 payload 目标类型，数值范围检查因而不完整。
+- official Cangjie evidence: cjc 1.0.5 的 39-literal-pattern-types、40-pattern-literal-bindings、40-character-pattern-limits、40-pattern-type-short-circuit、40-literal-pattern-fixture-final、40-tuple1、40-match002、40-pattern-legality、40-pattern-generic-literal、40-recursive-return，源码、命令及 JSON 位于 build/repair-20260906/evidence 对应 .official.*，均无语法错误。证据区分普通 Check 的字面量转换错误与常量模式额外的精确类型要求；确认内建 Option 可装箱但仍不能直接匹配字面量，用户自定义 Option 不享有该规则，byte 字面量固定 UInt8，字符串可按单码点匹配 Rune/UInt8；类型失败后不发布延迟绑定、不追加后续分量的范围错误，也不能覆盖递归返回类型的根错误。
+- official implementation: external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp:240-277 的 ChkConstPattern；TypeCheckExpr/LitConstExpr.cpp:26-130；TypeManager.cpp:1077-1100 的 IsLitBoxableType；ChkTuplePattern/ChkEnumPattern 的逐分量检查顺序；TypeCheckMatchExpr.cpp 的 SynNormalMatchCaseBody 在模式失败时使整个 Match 无效。
+- Kotlin counterpart files consulted: FirWhenConditionChecker.kt、FirControlFlowStatementsResolveTransformer.kt、IntegerLiteralAndOperatorApproximationTransformer.kt。按目标类型解析值表达式、再由共享诊断层报告失败；数值 operator 的 receiver/callee 与结果类型须来自同一解析过程，不能只在事后替换结果类型。
+- CFIR owner files changed:
+  - semantics/CfirPatternLiteralTypes.kt：共用目标类型选择与检查结论，区分 CannotConvert、TypeMismatch、OutOfRange、AlreadyReported；展开 alias，保留原 literal kind，并对包含错误或未固定变量的目标延后判断。
+  - CfirPatternBindingResolution：按 tuple/enum payload 投影目标类型后首次解析值表达式，数值 operator 走原有表达式解析；收集模式错误并短路后续分量的目标定型。
+  - CfirPatternBindingScope：常量模式失败后停止发布后续延迟绑定，显式类型模式的预声明继续保留。
+  - CfirExpressionsResolveTransformer / CfirDeclarationsResolveTransformer：Match、IfLet/WhileLet、声明和 for-in 使用共享入口，模式错误进入 Match/条件结果状态。
+  - CfirMatchPatternLegalityChecker：共用类型结论和检查顺序，转换失败先于相等重载检查，数值越界继续交给已有 literal overflow checker。
+- repair principle: 用同一目标类型和失败结论贯穿值解析、绑定发布、覆盖分析与诊断；不在单个 Match 用例处重写诊断或隐藏错误。
+- fixtures covered: 新增 llt/PatternMatching/ConstPattern/literal_pattern_types.cj，27 个函数覆盖标量/后缀/范围、Any/接口/类型参数、内建嵌套 Option、byte 和字符模式、tuple/IfLet/WhileLet 绑定及短路。修正原 Tuple1 三处、Match002 两处、matchcase2 一处字面量诊断；按 cjc 修正 diagnostics2/match/notOverloadInMatch.cj、diagnostics/pattern/notOverloadInMatchRich.cj、diagnostics2/pattern/patternLegality.cj、diagnostics/pattern/patternLegalityRich.cj 的 NOT_OVERLOAD_IN_MATCH 旧期望为 CANNOT_CONVERT_LITERAL。源码语法不变。TypeInfer/infer_return_fail 的原期望未修改。
+- verification commands and outcome:
+  - 40-literals-targeted-initial：12/12 通过，含新 fixture、signed_integer_patterns、Tuple1、Match002、matchcase2 和 pattern_binding_scope 两套入口；Match002 的派生 INVALID_BINARY_OPERATOR 消失。
+  - 首次家族暴露八项旧诊断期望与两项递归返回推断回归；据官方修正四份期望，并保留目标类型中已有递归错误后，40-literals-targeted-final：107 项，101 通过、6 跳过、0 失败，包含完整 TypeInfer 及 Diagnostics 的 Pattern/Match 组。
+  - 40-literals-family-final：3823 项，3435 通过、82 既有失败、306 跳过；FIXED=6、REGRESSED=0、新增 2 项通过、剩余消息全部不变。覆盖 If/While/For/Loops、Match/PatternMatching、Enum、Call、Generics、TypeInfer、Typealias、Function、Var、Array、Const、InitializationCheck 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：19m 18s 正常结束。39-signed-full → 40-literals-full：FIXED=6、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8496 | 8498 |
+| 通过 | 7668 | 7676 |
+| 失败 | 521 | 515 |
+| 跳过 | 307 | 307 |
+
+XML 为 8497 → 8499 records，均为 308 skipped（含一条聚合记录）。完整证据为 40-literals-full 与 39-signed-full--40-literals-full.json。
+
+- remaining failures: 目标剩余 Match 8、PatternMatching 34，共 42 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过，另外 473 项既有全量失败不变。
+- change isolation: 仅提交本类六处共享实现、八份 fixture、两套生成入口及日志；.idea/workspace.xml 独立保留。

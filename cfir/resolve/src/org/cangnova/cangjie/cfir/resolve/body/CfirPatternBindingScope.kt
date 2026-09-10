@@ -119,6 +119,7 @@ internal fun CfirPartialBodyResolveTransformer.registerScopedPatternBindings(
             }
             firstError
         }
-        is CfirWildcardPattern, is CfirConstPattern, is CfirExpressionPattern -> null
+        is CfirConstPattern -> constantPatternErrorType(pattern, expectedType)
+        is CfirWildcardPattern, is CfirExpressionPattern -> null
     }
 }

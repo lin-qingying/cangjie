@@ -2645,16 +2645,11 @@ open class CfirExpressionsResolveTransformer(
     ): ConeCangJieType {
         return withNewLocalScope {
             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
-            val conditionMode = if (branch.pattern is CfirExpressionPattern) {
-                withExpectedType(builtinTypes.boolType)
-            } else {
-                ResolutionMode.ContextIndependent
-            }
-            branch.transformPattern(transformer, conditionMode)
+            resolvePatternValueExpressions(branch.pattern, subjectType)
             if (branch is org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl) {
                 branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
             }
-            resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
+            val patternError = resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
 
             branch.transformGuard(transformer, withExpectedType(builtinTypes.boolType))
@@ -2663,7 +2658,7 @@ open class CfirExpressionsResolveTransformer(
             transformBlock(branch.body, bodyResolutionMode)
             components.dataFlowAnalyzer.exitMatchBranchResult(branch)
 
-            val bodyType = bindingError ?: matchGuardErrorType(branch.guard)
+            val bodyType = patternError ?: bindingError ?: matchGuardErrorType(branch.guard)
                 ?: branch.body.coneTypeOrNull ?: builtinTypes.unitType
             branch.replaceConeTypeOrNull(bodyType)
             bodyType
@@ -3133,7 +3128,7 @@ open class CfirExpressionsResolveTransformer(
         bindingScope: CfirPatternBindingScope?,
     ) {
         letPatternExpression.transformInitializer(transformer, ResolutionMode.ContextIndependent)
-        letPatternExpression.transformPattern(transformer, ResolutionMode.ContextIndependent)
+        resolvePatternValueExpressions(letPatternExpression.pattern, letPatternExpression.initializer.coneTypeOrNull)
         val patternExpectedType = inferPatternExpectedTypeFromFreshInitializer(
             pattern = letPatternExpression.pattern,
             initializerType = letPatternExpression.initializer.coneTypeOrNull,
@@ -3144,7 +3139,7 @@ open class CfirExpressionsResolveTransformer(
                 expectedType = patternExpectedType,
             )
         }
-        resolvePatternBindingTypes(
+        val patternError = resolvePatternBindingTypes(
             pattern = letPatternExpression.pattern,
             expectedType = patternExpectedType,
             typeResolver = specificTypeResolverTransformer,
@@ -3153,7 +3148,7 @@ open class CfirExpressionsResolveTransformer(
             registerScopedPatternBindings(letPatternExpression.pattern, it, patternExpectedType)
         }
         letPatternExpression.replaceConeTypeOrNull(
-            bindingError ?: letPatternExpression.initializer.coneTypeOrNull?.propagatedErrorTypeOrNull()
+            patternError ?: bindingError ?: letPatternExpression.initializer.coneTypeOrNull?.propagatedErrorTypeOrNull()
                 ?: builtinTypes.boolType
         )
     }
@@ -4811,7 +4806,7 @@ open class CfirExpressionsResolveTransformer(
             )
         }
 
-        varDecl.transformPattern(transformer, ResolutionMode.ContextIndependent)
+        resolvePatternValueExpressions(varDecl.pattern, varDecl.returnTypeRef.coneTypeOrNull)
         if (varDecl is org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl) {
             varDecl.pattern = resolveDeferredMatchPattern(
                 pattern = varDecl.pattern,
