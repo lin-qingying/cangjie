@@ -755,16 +755,16 @@ open class CfirExpressionsResolveTransformer(
                 components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
 
                 /*
-                 * 内建同构 primitive binary operator 需要按官方 type-check 的方向解析：
-                 * 先综合右操作数获得 primitive target，再用该 target 检查左侧树。这样
+                 * 内建同构 primitive binary operator 先从上下文或右侧源码形态取得
+                 * primitive target，再按实际求值顺序检查两侧。这样
                  * `id(1) + id(2) + Int32(3)` 的最右侧 Int32 能在左树中的泛型调用被
                  * receiver completion 固定前参与推断。
                  */
-                val operandsResolvedRightToLeft =
+                val operandsResolvedAgainstTarget =
                     callResolutionMode != CallResolutionMode.PROVIDE_DELEGATE &&
                             functionCall.tryTransformHomogeneousBuiltinOperatorOperands(data)
                 val withResolvedExplicitReceiver = when {
-                    operandsResolvedRightToLeft -> functionCall
+                    operandsResolvedAgainstTarget -> functionCall
                     callResolutionMode == CallResolutionMode.PROVIDE_DELEGATE -> functionCall
                     else -> transformExplicitReceiverOf(
                         functionCall,
@@ -774,9 +774,17 @@ open class CfirExpressionsResolveTransformer(
 
                 components.dataFlowAnalyzer.exitCallExplicitReceiver()
                 if (withResolvedExplicitReceiver.hasErrorExplicitReceiver()) {
+                    if (!operandsResolvedAgainstTarget && withResolvedExplicitReceiver.origin == CfirFunctionCallOrigin.Operator) {
+                        // 官方 SynLiteralInBinaryExprFromLeft 在左侧失败后仍独立综合右侧，
+                        // 以保留两侧各自的名字绑定/调用错误；此时不能继续传递无效的左侧类型。
+                        val arguments: CfirArgumentList = context.withCallArgumentResolution {
+                            withResolvedExplicitReceiver.argumentList.transform(transformer, ResolutionMode.ContextIndependent)
+                        }
+                        withResolvedExplicitReceiver.replaceArgumentList(arguments)
+                    }
                     components.dataFlowAnalyzer.exitCallArguments()
                     withResolvedExplicitReceiver
-                } else if (operandsResolvedRightToLeft) {
+                } else if (operandsResolvedAgainstTarget) {
                     components.dataFlowAnalyzer.exitCallArguments()
                     withResolvedExplicitReceiver
                 } else {
@@ -1142,16 +1150,16 @@ open class CfirExpressionsResolveTransformer(
             return false
         }
         val target = receiverTarget ?: expectedTarget ?: syntacticRightTarget ?: return false
-        // 先确定 binary operator 的统一 primitive target，再按该 target 检查右操作数。
-        // 同一调用树只做一轮，避免嵌套 operator 在每层复制、回滚并再次遍历。
+        // target 已由外层上下文或源码形态确定；两侧均继承它，但 CFG 必须按先左后右求值。
+        // 官方 TranslateBinaryExpr 同样先保存 lhs 的值，右侧的赋值不能改变该值。
+        if (receiverTarget == null) {
+            transformExplicitReceiver(transformer, withExpectedType(target))
+        }
         val argumentResolutionMode = withExpectedType(target)
         val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
             argumentList.transform(transformer, argumentResolutionMode)
         }
         replaceArgumentList(transformedArgumentList)
-        if (receiverTarget == null) {
-            transformExplicitReceiver(transformer, withExpectedType(target))
-        }
         explicitReceiver?.materializeResolvedReceiverType()
         return true
     }
@@ -2533,10 +2541,7 @@ open class CfirExpressionsResolveTransformer(
             return matchExpression
         }
 
-        val branchResolutionMode = (data as? ResolutionMode.WithExpectedType)
-            ?.takeUnless { it.fromCast }
-            ?.copy(forceFullCompletion = false)
-            ?: ResolutionMode.ContextDependent
+        val branchResolutionMode = controlFlowBranchResolutionMode(data)
         val patternSubjectType = inferOptionSubjectTypeFromFreshSelector(matchExpression, subjectType) ?: subjectType
         val branchTypes = matchExpression.branches.map { branch ->
             resolveBranch(branch, patternSubjectType, branchResolutionMode)
@@ -2917,6 +2922,18 @@ open class CfirExpressionsResolveTransformer(
     }
 
     /**
+     * 控制流表达式的分支继承外层完成义务。
+     *
+     * 官方 SynNormalMatchCaseBody / SynIfExpr / SynTryExpr 独立综合各分支后再 Join。
+     * 只有外层仍依赖调用上下文时才允许延迟分支 lambda；独立表达式没有后续候选替它完成。
+     */
+    private fun controlFlowBranchResolutionMode(data: ResolutionMode): ResolutionMode =
+        (data as? ResolutionMode.WithExpectedType)
+            ?.takeUnless { it.fromCast }
+            ?.copy(forceFullCompletion = false)
+            ?: if (data.forceFullCompletion) ResolutionMode.ContextIndependent else ResolutionMode.ContextDependent
+
+    /**
      * 合成 `match` 表达式结果类型。
      *
      * 分支错误以未上报重复诊断传播；理想类型会结合外层 expected type 归一化；
@@ -2995,12 +3012,9 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         val isIfWithoutEndingElse = ifExpression.isIfExpressionWithoutEndingElse()
         val branchResolutionMode = if (isIfWithoutEndingElse) {
-            ResolutionMode.ContextDependent
+            ResolutionMode.ContextIndependent
         } else {
-            (data as? ResolutionMode.WithExpectedType)
-                ?.takeUnless { it.fromCast }
-                ?.copy(forceFullCompletion = false)
-                ?: ResolutionMode.ContextDependent
+            controlFlowBranchResolutionMode(data)
         }
 
         if (ifExpression.condition.containsLetPatternCondition()) {
@@ -4979,12 +4993,9 @@ open class CfirExpressionsResolveTransformer(
         val isTryWithResources = tryExpression.resources.isNotEmpty()
         val expectedType = data.expectedTypeOrNull
         val branchResolutionMode = if (isTryWithResources) {
-            ResolutionMode.ContextDependent
+            ResolutionMode.ContextIndependent
         } else {
-            (data as? ResolutionMode.WithExpectedType)
-                ?.takeUnless { it.fromCast }
-                ?.copy(forceFullCompletion = false)
-                ?: ResolutionMode.ContextDependent
+            controlFlowBranchResolutionMode(data)
         }
         context.forBlock(session) {
             tryExpression.transformResources(transformer, ResolutionMode.ContextIndependent)

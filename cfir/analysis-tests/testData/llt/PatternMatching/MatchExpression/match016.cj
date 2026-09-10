@@ -12,13 +12,13 @@ func test<T>(i_: T) {
         case e(v) =>
             print("matched");
             i
-        case e =>
+        case <!UNREACHABLE_PATTERN!>e<!> =>
             print("fail");
             i
     }
     match (res) {
         case e => 1
-        case e(_) => 0
+        case <!UNREACHABLE_PATTERN!>e(_)<!> => 0
     }
 }
 

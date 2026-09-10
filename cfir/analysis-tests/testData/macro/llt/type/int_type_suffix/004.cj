@@ -14,7 +14,7 @@ main() {
     let char: UInt8 = 97
     var res = match (char) {
         case 'a' => 0
-        case _ => 1
+        case <!UNREACHABLE_PATTERN!>_<!> => 1
     }
     if (res != 0) {
         return 1

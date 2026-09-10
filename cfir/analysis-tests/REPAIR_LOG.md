@@ -6196,3 +6196,33 @@ XML 为 8505 → 8507 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 4、PatternMatching 10，共 14 项，涉及整数/转换与 Match 结果常量传播、tuple selector 默认类型、静态 type pattern、可见公共类型、复合赋值目标类型及一份类型名诊断期望。已清零家族保持通过，另外 471 项既有全量失败保留。
 - change isolation: 仅提交上述 OR/guard 实现、fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：整数与 Match 结果的常量传播、完整函数 CFG 生命周期
+
+- problem type: Flow Analysis / Integer values and expression results。
+- root cause: 常量域按整数字面量源码文本比较，缺少整数运算和类型转换；只保存变量状态，没有在分支出口记录 Match 结果。已解析函数体重复遍历时，引用快速路径跳过求值节点，残缺 CFG 覆盖了完整图。独立控制流分支中的 lambda 还可能被无主地延期，而合成 return 错把返回值类型当成自身类型。
+- official Cangjie evidence: build/repair-20260906/evidence 中的 45-cfa-integer-results、45-integer-operators、45-integer-boundaries、45-cfa-integer-fixture、45-cfa-integer-boundary-fixture 验证所有新增整数/结果场景；45-match001/003/005/016、45-fuzz03、45-non-exhaustive-base-match、45-char-suffix-004 验证旧 fixture 警告修正。45-variadic-ambiguity 确认二元表达式两侧独立报告歧义；45-independent-branch-lambdas、45-let001、45-err-lambda 确认分支 lambda 必须完整解析、不可变绑定不能赋值，引用已有错误值不能复制原错误。所修改 fixture 语法均正确。
+- official implementation: CHIR/Analysis/ConstAnalysis.cpp 与 ConstAnalysis.h 的整数算术、位运算、有限范围转换和恒定结果规则；ValueAnalysis.h 的 Load/Store、子字段 join；TranslateMatchExpr.cpp:122-195 的结果存储及末尾不可达失败块；TranslateBinaryExpr.cpp:65-81 的先左后右求值。Sema/TypeCheckExpr/BinaryExpr.cpp:644-657 在左侧失败后仍综合右侧；SynNormalMatchCaseBody、SynIfExpr、SynTryExpr 独立综合分支后再 Join。
+- Kotlin counterpart files consulted: FirDataFlowAnalyzer.kt 的赋值和分支出口 flow；ControlFlowGraphBuilder.kt 的穷尽 when 出口；FirDeclarationsResolveTransformer.kt:1090-1126/1671 的 bodyResolved 与 CFG 保留；ResolveUtils.kt 的 addReturnToLastStatementIfNeeded 和 FirReturnExpressionImpl.kt 固定 Nothing 类型。Kotlin 延迟 when 分支有 synthetic call completion，CFIR 直接 Join 的路径必须在独立解析时完成其分支。
+- CFIR owner files changed: CfirControlFlowConstAnalysis 新增规范化 Integer 域、读取值快照、Block 尾值与 Match 结果，持久映射和 tuple 分量 join；新 CfirControlFlowIntegerOperations 集中整数运算，按真实 primitive 签名及目标范围计算；ControlFlowGraphBuilder 排除穷尽 Match 的未命中路径。CfirDeclarationsResolveTransformer 保留已完成 body/CFG；CfirExpressionsResolveTransformer 让同构操作数在同一目标下先左后右求值、保留两侧错误、共享控制流分支完成模式；CfirCallCompletionResultsWriterTransformer 将合成 return 建模为 Nothing。
+- repair principle: 在正规 CFG 求值位置保存已读取的值和分支结果，保留完整解析结果及完成义务，不通过再次遍历、文本比较或丢弃诊断来补偿缺失的状态。
+- fixtures covered / corrections: 原 matchcase_fuzz_03、match016 恢复；match001/003/005 与 nonExhaustiveEnum/base_match 补齐官方警告，macro/llt/type/int_type_suffix/004 的 UInt8 字符模式补 wildcard 警告。ErrMsgs/member_access_1、lambda_0 原期望不变。新增 cfa_integer_results（20 函数）、cfa_integer_boundaries（7 函数）、independent_branch_lambdas（5 函数），覆盖整数范围/后缀/位移/幂、未知结果、循环、求值顺序、enum tag、tuple 分量与控制流中 lambda 完成。let001、variadic_err_ambiguous 未修改期望。
+- verification commands and outcome:
+  - 标准单 worker / 1 GiB / in-process 的 45-integer-targeted-final：1190/1190 通过，完整 Call/Generics/TypeInfer/Typealias/Operator 和整数用例通过。
+  - 首轮全量 45-integer-full 揭示 let001 两入口漏报，以及 lambda_0 的重复错误；已从真实 CFG/引用跟踪定位并修复，未作为验收结果。
+  - 45-lifecycle-targeted：30/30 通过，let001、lambda_0、macro004、三个新 fixture 双入口通过。
+  - 45-lifecycle-family：3763 项，3379 通过、78 既有失败、306 跳过。相对 44-or-full FIXED=10、REGRESSED=0、NEW_KEYS=6（全部 PASS）、changed_failure_messages=[]；覆盖控制流/模式、Enum、Call、Generics、TypeInfer、Typealias、Function/Lambda/FlowExpr、InitializationCheck/Exception、Let/ErrMsgs、Diagnostics 与 macro004。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：21m 17s 正常完成。44-or-full → 45-integer-full-final：FIXED=10、REGRESSED=0、NEW_KEYS=6（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8506 | 8512 |
+| 通过 | 7714 | 7730 |
+| 失败 | 485 | 475 |
+| 跳过 | 307 | 307 |
+
+XML 为 8507 → 8513 records，均为 308 skipped（含一条聚合记录）。完整证据为 45-integer-full-final 与 44-or-full--45-integer-full-final.json。
+
+- remaining failures: 目标剩余 Match 2、PatternMatching 8，共 10 项；If/IfLet/WhileLet/Loops、Call、Generics、TypeInfer、Typealias 保持通过。另外 465 项既有全量失败保留。
+- change isolation: 仅提交共享常量/解析/CFG 修复、七份官方期望修正、三个新 fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。

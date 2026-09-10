@@ -317,6 +317,9 @@ protected open fun transformFunctionContent(
         resolutionModeForBody: ResolutionMode,
         shouldResolveEverything: Boolean,
     ): CfirFunction {
+        // 对位 Kotlin FirDeclarationsResolveTransformer.bodyResolved：隐式返回类型阶段已完成
+        // 的 body 与 CFG 是同一份分析结果。再次遍历会跳过已解析访问，却用残缺的新图覆盖旧图。
+        val bodyResolved = function.body?.coneTypeOrNull != null
         dataFlowAnalyzer.enterFunction(function)
         context.loopJumpScopes.addLast(LoopJumpScope.FunctionBoundary)
         try {
@@ -330,7 +333,7 @@ protected open fun transformFunctionContent(
             }
 
             val body = function.body
-            if (body != null) {
+            if (body != null && !bodyResolved) {
                 val declaredReturnTypeRef = function.returnTypeRef
                     .takeUnless { function.hasImplicitOrInferredReturnType() }
                 val bodyResolutionMode = when {
@@ -341,7 +344,8 @@ protected open fun transformFunctionContent(
                 }
                 function.transformBody(transformer, bodyResolutionMode)
             }
-            function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
+            val graphReference = dataFlowAnalyzer.exitFunction(function)
+            if (!bodyResolved) function.replaceControlFlowGraphReference(graphReference)
             return function
         } finally {
             context.loopJumpScopes.removeLast()

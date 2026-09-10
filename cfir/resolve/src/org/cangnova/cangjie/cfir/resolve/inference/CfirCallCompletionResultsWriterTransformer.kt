@@ -1479,7 +1479,8 @@ class CfirCallCompletionResultsWriterTransformer(
                                 ?: currentBody.source
                                 ?: this@addReturnToLastStatementIfNeeded.source
                             )?.fakeElement(CjFakeSourceElementKind.ImplicitReturn.FromLastStatement)
-                        coneTypeOrNull = lastStatement.coneTypeOrNull
+                        // return 自身终止控制流，值及其错误归 result 所有；与显式 return 使用相同类型。
+                        coneTypeOrNull = ConePrimitiveType.NOTHING
                         target = CfirFunctionTarget(labelName = null, isLambda = this@addReturnToLastStatementIfNeeded.isLambda).also {
                             it.bind(this@addReturnToLastStatementIfNeeded)
                         }
