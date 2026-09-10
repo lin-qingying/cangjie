@@ -6296,3 +6296,39 @@ XML 为 8521 → 8525 records，均为 308 skipped（含一条聚合记录）。
 - remaining failures: 目标剩 Match 2、PatternMatching 4，共6项（match_no_selector_fuzz_001、match029、match031 双入口）；其余已清零家族保持通过，另有465项既有全量失败。IDE上下文旧失败及多语句显式返回类型的partial-body限制另行保留记录。
 - change isolation: 提交静态类型模式、诊断阶段及IDE观测接口、官方期望修正、新回归和生成入口；.idea/workspace.xml 独立保留。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（17s）；`git diff --check` 通过。
+
+## 2026-09-11：控制流操作数的目标类型完成与候选试算状态
+
+- problem type: Type Inference / Control-flow operator operands。
+- root cause: 复合赋值和普通二元运算独立综合了 Match 结果后，没有把最终 primitive 目标传给分支结果；旧 If 路径通过再次解析分支补类型，会重复构建 CFG。泛型分支还需要在目标确定后用初次发现的候选重新定型，并隔离失败试算；仅近似运算根的 ideal 类型会绕过子操作数检查，错误改变异构整数移位链。
+- official Cangjie evidence: build/repair-20260906/evidence 中48-branch-operand-targets、48-branch-operand-completion、48-operand-inferred-results证明局部/下标复合赋值、左右Match/If/Try及泛型分支合法，左右求值顺序分别得到4和5。48-branch-operand-errors、48-operand-failed-candidate、48-operand-refinement-fixture证明具体返回值、已声明变量、显式后缀和失败generic目标检查保留外层INVALID_BINARY_OPERATOR。48-operand-scope-and-overload覆盖分支局部泛型函数、用户operator及双方控制流结果。所加fixture语法均经官方cjc确认。
+- official implementation: Sema/TypeCheckExpr/AssignExpr.cpp:329-396先处理重载，再按lhs类型检查内建复合赋值rhs；BinaryExpr.cpp:231-266、603-672分别负责目标检查、候选诊断隔离和左右方向的综合/检查。失败的检查不能只改根类型；BINARY_EXPR_TYPE_MAP的shift保持左操作数结果类型，计数允许不同整数类型。
+- Kotlin counterpart files consulted: IntegerLiteralAndOperatorApproximationTransformer.kt将类型近似与body求值分离；FirCallCompletionResultsWriterTransformer.kt:1186-1234/1339-1374完成block、when、try结果及literal类型，不重复执行控制流；FirCallResolver.kt:311-364保留候选阶段、适用性分组和最具体规约。
+- CFIR owner files changed: CfirExpressionsResolveTransformer拆分resolveLiteralType与CFG事件，独立综合控制流操作数，再只沿block尾值和If/Match/Try结果分支完成类型；selector、条件、guard、非尾语句、finally不重跑。内建运算、泛型调用和整个控制流结果均使用CfirResolutionSnapshot隔离失败试算；内建子树目标失败后不能仅近似根ideal类型。裸左literal保留原binary综合边界。
+- candidate lifecycle: CfirCallResolver既有expected-return discovery额外保留单泛型候选；目标完成使用原symbol、receiver、originScope等不可变发现信息创建fresh candidate，运行共享stages和most-specific规约，不重复tower名字查找。completion生成的无source类型实参与源码显式实参区分，显式类型实参不重新推断。CfirCheckExpectedReturnTypeBeforeArguments允许operator operand的block尾值参与早期泛型约束，普通声明返回目标保留原阶段规则。
+- repair principle: 求值与目标类型完成分开，候选检查只能提交整棵结果树通过后的状态，不能通过重复body遍历、只改根类型或保留失败候选诊断改变程序语义。
+- fixtures covered: 原PatternMatching/MatchExpression/match031不改期望；新增branch_operand_completion（左右控制流、泛型、复合赋值、求值顺序）、branch_operand_errors（四种确定类型不匹配）、branch_operand_refinement（局部generic、用户operator、双方控制流、候选失败）。既有cfa_integer_boundaries、IfLetExpr/bugfix1、WhileLetExpr/while_let7、Operator/mod_overflow、int_division_mod_zero、bitwise_typematch、OperatorOverload/add_00作为回归保护，均不改期望。
+- verification commands and outcome:
+  - 48-operand-before：8项4失败；48-operand-targeted-final：扩展后的10/10通过。
+  - 初次家族进程中断，没有产生完整XML，48-operand-family-initial仅含旧定向结果，已明确标为无效。重跑48-operand-family-retry的4405项发现12回归，且曾与IDEA发起的测试并发，只用于定位、不作最终验收；12项均已从primitive目标边界定位处理。
+  - 48-bitwise-trace精确记录IdealInt在失败Int8试算后被错误改成Int8，再与Int64异或失败。临时OPTRACE/CFIR_OPERATOR_TRACE已移除，原有PROBE日志保留。
+  - 48-operand-regression-final：24/24通过，全部12回归恢复，新增三个fixture双入口通过。
+  - 48-operand-regression-final：最后的异构移位链修正后24/24通过；失败内建运算试算不再只改变根ideal类型。
+  - 48-operand-family-final：6m43s完成4405项，4011通过、88既有失败、306跳过；相对47全量FIXED2、REGRESSED0、新增6全部通过、changed_failure_messages=[]，覆盖If/While/Loops/Forin/Match/PatternMatching/Enum、类型/调用/函数/运算、初始化/异常/ErrMsgs/Let/Array及Diagnostics。启动前确认没有其它测试worker。
+  - 首轮48-operand-full-final为8530项7754通过/469失败/307跳过，状态无回归，但Macro DefaultParameterPkg02/testTestMacro从原assertion变为snapshot异常，未作验收。已修CfirResolutionSnapshot：派生只读的ErrorExpression类型不作为可写字段捕获，仍恢复其子树；该类型getter及setter协议与Kotlin FirErrorExpressionImpl一致。
+  - 48-snapshot-derived-types：42项32通过、10既有宏失败，对47切片FIXED2、REGRESSED0、新增6通过、changed_failure_messages=[]，宏已恢复原来的完整诊断差异。同步运行`:cfir:resolve:test --tests '*CfirResolutionSnapshotTest'`两项通过，覆盖固定错误与代理子表达式类型的重复恢复。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：最终48-operand-full-verified，18m41s正常结束；对47 FIXED=2、REGRESSED=0、NEW_KEYS=6（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - 失败消息变化只有Annotation/err_custom_annotation_place_var_02双入口：原MultipleFailuresError中的同类CfirErrorExpression状态恢复异常被消除，现仅保留正常fixture assertion，完整检查相应暴露尚未解决的宏/名称诊断。这两项仍计为失败，不计为已修复测试；其它既有失败消息全部相同，包括首次全量发生新异常的DefaultParameterPkg02/testTestMacro。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8524 | 8530 |
+| 通过 | 7746 | 7754 |
+| 失败 | 471 | 469 |
+| 跳过 | 307 | 307 |
+
+XML 为8525 → 8531 records，均为308 skipped（含一条聚合记录）。完整逐项证据为48-operand-full-verified与47-type-flow-full-final--48-operand-full-verified.json；两条既有宏消息变化均已逐项审查。
+
+- remaining failures: 目标剩4项，即match029和match_no_selector_fuzz_001各双入口；If/IfLet/While/WhileLet以及Call/Generics/TypeInfer/Typealias保持通过。另有465项既有全量失败。
+- change isolation: 仅提交共享操作数完成、候选及快照修复、三份新LLT fixture、两套生成入口、两项快照unit和日志；既有fixture期望未改，.idea/workspace.xml独立保留。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（9s）；`git diff --check`通过。

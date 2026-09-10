@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFuncti
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
@@ -56,7 +57,7 @@ import java.util.IdentityHashMap
 internal class CfirResolutionSnapshot private constructor(
     /** 带 resolve state 元素的阶段状态快照。 */
     private val resolveStates: IdentityHashMap<CfirElementWithResolveState, CfirResolveState>,
-    /** 表达式到其 cone type 的快照。 */
+    /** 只捕获可写的表达式类型；代理到子节点或诊断的派生类型由其真实 owner 恢复。 */
     private val expressionTypes: IdentityHashMap<CfirExpression, ConeCangJieType?>,
     /** 可解析表达式到 callee reference 的快照。 */
     private val calleeReferences: IdentityHashMap<CfirResolvable, CfirReference>,
@@ -193,7 +194,12 @@ internal class CfirResolutionSnapshot private constructor(
                         if (element is CfirElementWithResolveState) {
                             resolveStates[element] = element.resolveState
                         }
-                        if (element is CfirExpression && element !is CfirAnonymousFunctionExpression) {
+                        // error/anonymous-function expression 的类型是派生只读属性。
+                        // 错误节点每次读取还会生成新的诊断包装，不能把读出的对象当成可写字段恢复；
+                        // 仍继续访问子树，使真正承载类型的子表达式或匿名函数参与快照。
+                        if (element is CfirExpression &&
+                            element !is CfirAnonymousFunctionExpression && element !is CfirErrorExpression
+                        ) {
                             expressionTypes[element] = element.coneTypeOrNull
                         }
                         if (element is CfirResolvable) {

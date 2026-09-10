@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.initialTypeOfCandidate
+import org.cangnova.cangjie.cfir.resolve.isOperatorOperandInference
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
 import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForEnumConstructor
@@ -46,9 +47,12 @@ object CfirCheckExpectedReturnTypeBeforeArguments : ResolutionStage() {
         // 非泛型成员实例化已终止，不能在错误候选重放时再触发返回类型推断。
         if (NonGenericFunctionWithTypeArguments in candidate.diagnostics) return
         val resolutionMode = candidate.callInfo.resolutionMode
-        if (resolutionMode is ResolutionMode.WithExpectedType && resolutionMode.lastStatementInBlock) {
+        if (resolutionMode is ResolutionMode.WithExpectedType && resolutionMode.lastStatementInBlock &&
+            !resolutionMode.isOperatorOperandInference
+        ) {
             // 见类 KDoc：尾表达式的返回类型细化由候选完成后的 reduceCandidatesByExpectedReturnType
-            // 负责，并在没有匹配返回类型时保留原候选集合。
+            // 负责，并在没有匹配返回类型时保留原候选集合。控制流操作数的尾表达式仍是
+            // operator 的推断输入，必须在字面量实参默认化之前获得该 operand target。
             return
         }
         val expectedType = resolutionMode.expectedType ?: return

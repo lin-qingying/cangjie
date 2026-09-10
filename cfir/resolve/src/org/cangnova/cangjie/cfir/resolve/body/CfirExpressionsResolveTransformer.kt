@@ -349,8 +349,14 @@ open class CfirExpressionsResolveTransformer(
         literalExpression: CfirLiteralExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        resolveLiteralType(literalExpression, data.expectedTypeOrNull)
+        components.dataFlowAnalyzer.exitLiteralExpression(literalExpression)
+        return literalExpression
+    }
+
+    /** 字面量定型与 CFG 求值分离；后续 operand completion 只更新类型，不重复创建求值节点。 */
+    private fun resolveLiteralType(literalExpression: CfirLiteralExpression, expectedType: ConeCangJieType?) {
         val synthesized = literalExpression.explicitNumericLiteralType() ?: synthesizeLiteralType(literalExpression.kind)
-        val expectedType = data.expectedTypeOrNull
         val boxedNumericType = expectedType?.let { literalExpression.numericLiteralBoxTargetType(it, session) }
         val resolvedType = when {
             boxedNumericType != null -> boxedNumericType
@@ -366,8 +372,6 @@ open class CfirExpressionsResolveTransformer(
         }
         literalExpression.replaceConeTypeOrNull(resolvedType)
         recordAssignmentRhsLiteralMismatch(literalExpression, resolvedType)
-        components.dataFlowAnalyzer.exitLiteralExpression(literalExpression)
-        return literalExpression
     }
 
     /**
@@ -802,6 +806,7 @@ open class CfirExpressionsResolveTransformer(
                     }
 
                     val argumentResolutionMode = withResolvedExplicitReceiver.builtinExponentiationArgumentResolutionMode()
+                        ?: withResolvedExplicitReceiver.controlFlowOperatorArgumentResolutionMode()
                         ?: ResolutionMode.ContextDependent
                     val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
                         withResolvedExplicitReceiver.argumentList.transform(transformer, argumentResolutionMode)
@@ -1046,9 +1051,10 @@ open class CfirExpressionsResolveTransformer(
             val rightCheckTarget = functionCall.argumentList.arguments.singleOrNull()
                 ?.coneTypeOrNull
                 ?.primitiveOperatorCheckTargetOrNull()
-            val nestedReceiver = explicitReceiver as? CfirFunctionCall
-            if (rightCheckTarget != null && nestedReceiver != null) {
-                nestedReceiver.resolveHomogeneousBuiltinOperatorAgainst(rightCheckTarget)
+            if (rightCheckTarget != null &&
+                (explicitReceiver is CfirFunctionCall || explicitReceiver.hasControlFlowResult())
+            ) {
+                explicitReceiver.resolvePrimitiveOperatorOperandAgainst(rightCheckTarget)
             }
         }
 
@@ -1157,15 +1163,40 @@ open class CfirExpressionsResolveTransformer(
         // target 已由外层上下文或源码形态确定；两侧均继承它，但 CFG 必须按先左后右求值。
         // 官方 TranslateBinaryExpr 同样先保存 lhs 的值，右侧的赋值不能改变该值。
         if (receiverTarget == null) {
-            transformExplicitReceiver(transformer, withExpectedType(target))
+            val receiverMode = if (explicitReceiver?.hasControlFlowResult() == true) {
+                ResolutionMode.ContextIndependent
+            } else {
+                withExpectedType(target, isOperatorOperandInference = true)
+            }
+            transformExplicitReceiver(transformer, receiverMode)
         }
-        val argumentResolutionMode = withExpectedType(target)
+        // 控制流的 target check 可能失败；先保留合法综合结果，再由结果完成事务检查目标。
+        val argumentResolutionMode = if (argumentList.arguments.single().hasControlFlowResult()) {
+            ResolutionMode.ContextIndependent
+        } else {
+            withExpectedType(target, isOperatorOperandInference = true)
+        }
         val transformedArgumentList: CfirArgumentList = context.withCallArgumentResolution {
             argumentList.transform(transformer, argumentResolutionMode)
         }
         replaceArgumentList(transformedArgumentList)
         explicitReceiver?.materializeResolvedReceiverType()
         return true
+    }
+
+    /** 控制流操作数先完整综合，之后的 primitive target check 只提交成功的结果完成事务。 */
+    private fun CfirFunctionCall.controlFlowOperatorArgumentResolutionMode(): ResolutionMode? {
+        if (origin != CfirFunctionCallOrigin.Operator) return null
+        return ResolutionMode.ContextIndependent.takeIf {
+            argumentList.arguments.singleOrNull()?.hasControlFlowResult() == true
+        }
+    }
+
+    /** 只识别具有独立结果分支的语法结构，不从文本或最终偶然类型猜测。 */
+    private fun CfirExpression.hasControlFlowResult(): Boolean = when (this) {
+        is CfirMatchExpression, is CfirIfExpression, is CfirTryExpression, is CfirBlock -> true
+        is CfirWrappedExpression -> expression.hasControlFlowResult()
+        else -> false
     }
 
     /** 判断给定 primitive 类型能否形成 receiver、实参与返回值完全同构的内建签名。 */
@@ -1237,6 +1268,7 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun CfirFunctionCall.resolveHomogeneousBuiltinOperatorAgainst(expectedType: ConePrimitiveType): Boolean {
         if (origin != CfirFunctionCallOrigin.Operator) return false
+        if (coneTypeOrNull == expectedType) return true
         val callee = calleeReference as? CfirNamedReference ?: return false
         val argumentExpressions = argumentList.arguments
         val signature = BuiltinPrimitiveOperators.signaturesForOperator(callee.name, argumentExpressions.size)
@@ -1246,25 +1278,28 @@ open class CfirExpressionsResolveTransformer(
                         candidate.parameterKinds.all { parameterKind -> parameterKind == expectedType.kind }
             } ?: return false
         val receiver = explicitReceiver ?: return false
-        val receiverResolved = receiver.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(signature.receiverKind))
-        if (!receiverResolved) {
-            return false
-        }
-        for ((argument, parameterKind) in argumentExpressions.zip(signature.parameterKinds)) {
-            val argumentResolved = argument.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(parameterKind))
-            if (!argumentResolved) {
-                return false
+        val snapshot = CfirResolutionSnapshot.capture(this)
+        var committed = false
+        try {
+            val receiverResolved = receiver.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(signature.receiverKind))
+            if (!receiverResolved) return false
+            for ((argument, parameterKind) in argumentExpressions.zip(signature.parameterKinds)) {
+                val argumentResolved = argument.resolvePrimitiveOperatorOperandAgainst(ConePrimitiveType(parameterKind))
+                if (!argumentResolved) return false
             }
-        }
 
-        replaceCalleeReference(
-            buildNamedReference {
-                source = callee.source
-                name = callee.name
-            }
-        )
-        replaceConeTypeOrNull(ConePrimitiveType(signature.returnKind))
-        return true
+            replaceCalleeReference(
+                buildNamedReference {
+                    source = callee.source
+                    name = callee.name
+                }
+            )
+            replaceConeTypeOrNull(ConePrimitiveType(signature.returnKind))
+            committed = true
+            return true
+        } finally {
+            if (!committed) snapshot.restore()
+        }
     }
 
     /** 将单个表达式按确定 primitive operator 形参类型检查并写回。 */
@@ -1275,20 +1310,22 @@ open class CfirExpressionsResolveTransformer(
              * 这里不能直接复用第一次综合得到的 Int64/Float64，否则裸字面量无法
              * 接受当前候选的窄 primitive target。
              */
-            transformLiteralExpression(this, withExpectedType(expectedType))
+            resolveLiteralType(this, expectedType)
         }
         if (this is CfirFunctionCall && resolveHomogeneousBuiltinOperatorAgainst(expectedType)) return true
-        if (this is CfirIfExpression) {
-            /*
-             * 官方 CheckWithNegCache 会把 primitive target 继续传入控制流表达式的
-             * 两个分支。if 在第一次独立综合时可能已因裸字面量得到 Int64；仅查看
-             * 合并后的 cone type 会错过重新检查分支的机会，因此必须重新走 if 的
-             * target-driven resolve 入口，让其 block 尾表达式也继承同一 target。
-             */
-            transformIfExpression(this, withExpectedType(expectedType))
-            val refreshedType = coneTypeOrNull ?: return false
-            val actualKind = BuiltinPrimitiveOperators.primitiveOperandKind(refreshedType)
-            return actualKind == expectedType.kind || actualKind == PrimitiveTypeKind.NOTHING
+        if (this is CfirFunctionCall && origin == CfirFunctionCallOrigin.Operator &&
+            coneTypeOrNull?.let(BuiltinPrimitiveOperators::primitiveOperandKind)?.isIdeal == true
+        ) {
+            // 子树的目标检查已失败，不能只把根 IdealInt/IdealFloat 改成目标类型而绕过子操作数。
+            return false
+        }
+        if (this is CfirFunctionCall && refineGenericOperatorOperand(expectedType)) return true
+        if (this is CfirFunctionCall && calleeReference is CfirNamedReferenceWithCandidate) {
+            // 完成首次解析留下的同一个候选；不重新解析实参，也不再次退出 call 的 CFG 节点。
+            components.callCompleter.completeCall(this, withExpectedType(expectedType, isOperatorOperandInference = true))
+        }
+        if (hasControlFlowResult() || this is CfirWrappedExpression) {
+            if (!completePrimitiveControlFlowResult(expectedType)) return false
         }
         val operandType = coneTypeOrNull ?: return false
         return when (val operand = operandType.classifyOperatorOperand(session)) {
@@ -1307,6 +1344,80 @@ open class CfirExpressionsResolveTransformer(
             is ConeOperatorOperandClassification.Error,
             is ConeOperatorOperandClassification.Other,
             -> false
+        }
+    }
+
+    /**
+     * 用首次名字查找的 discovery 重新定型泛型操作数，不再遍历已经求值的实参或改变作用域。
+     * 官方 binary check-mode 对失败候选不提交试算诊断；同样通过完整节点快照保留原始综合结果。
+     */
+    private fun CfirFunctionCall.refineGenericOperatorOperand(expectedType: ConePrimitiveType): Boolean {
+        val actualType = coneTypeOrNull ?: return false
+        if (actualType is ConeErrorType || actualType == expectedType) return false
+        val discoveries = callResolver.expectedTypeRefinementDiscovery(this) ?: return false
+        if (discoveries.none { it.deterministicReturnType == null }) return false
+        if (typeArguments.any { it.source != null }) return false
+
+        val snapshot = CfirResolutionSnapshot.capture(this)
+        var committed = false
+        try {
+            // completion 写回的无 source 类型实参不属于源码显式实例化。
+            replaceTypeArguments(typeArguments.filter { it.source != null })
+            val mode = withExpectedType(expectedType, isOperatorOperandInference = true)
+            val (candidate, call) = callResolver.resolveCallFromPrecollectedCandidates(this, mode, discoveries)
+                ?: return false
+            if (!candidate.isSuccessful) return false
+            components.callCompleter.completeCall(call, mode)
+            val kind = call.coneTypeOrNull?.let(BuiltinPrimitiveOperators::primitiveOperandKind)
+            committed = kind == expectedType.kind || kind == PrimitiveTypeKind.NOTHING
+            return committed
+        } finally {
+            if (!committed) snapshot.restore()
+        }
+    }
+
+    /**
+     * 对齐 Kotlin completion writer 的分支结果写回：只完成 block 尾表达式及结果分支。
+     * selector、condition、guard、非尾语句和 finally 已按源码顺序求值，不得二次解析或重建 CFG。
+     */
+    private fun CfirExpression.completePrimitiveControlFlowResult(expectedType: ConePrimitiveType): Boolean {
+        val results: List<CfirExpression> = when (this) {
+            is CfirWrappedExpression -> listOf(expression)
+            is CfirBlock -> listOfNotNull(statements.lastOrNull() as? CfirExpression)
+            is CfirIfExpression -> {
+                if (isIfExpressionWithoutEndingElse() || condition.coneTypeOrNull is ConeErrorType) return false
+                listOfNotNull(thenBranch, elseBranch)
+            }
+            is CfirMatchExpression -> {
+                if (subject?.coneTypeOrNull is ConeErrorType || exhaustiveness is CfirMatchExhaustivenessStatus.NonExhaustive) {
+                    return false
+                }
+                branches.map { it.body }
+            }
+            is CfirTryExpression -> {
+                if (resources.isNotEmpty() || handlers.isNotEmpty()) return false
+                listOf(tryBlock) + catches.map { it.body }
+            }
+            else -> return false
+        }
+        if (results.isEmpty()) return false
+        val snapshot = CfirResolutionSnapshot.capture(this)
+        var committed = false
+        try {
+            val completed = results.map { it.resolvePrimitiveOperatorOperandAgainst(expectedType) }
+            if (completed.any { !it }) return false
+            val resultTypes = results.map { requireNotNull(it.coneTypeOrNull) }
+            val resultType = when (this) {
+                is CfirMatchExpression -> computeMatchResultType(resultTypes, expectedType)
+                is CfirTryExpression -> expectedType
+                else -> commonSupertype(resultTypes)
+            }
+            replaceConeTypeOrNull(resultType)
+            committed = true
+            return true
+        } finally {
+            // 任一分支不能接受目标时，整棵结果树恢复综合状态；试算不能泄露类型和诊断。
+            if (!committed) snapshot.restore()
         }
     }
 
@@ -2938,7 +3049,6 @@ open class CfirExpressionsResolveTransformer(
     private fun controlFlowBranchResolutionMode(data: ResolutionMode): ResolutionMode =
         (data as? ResolutionMode.WithExpectedType)
             ?.takeUnless { it.fromCast }
-            ?.copy(forceFullCompletion = false)
             ?: if (data.forceFullCompletion) ResolutionMode.ContextIndependent else ResolutionMode.ContextDependent
 
     /**

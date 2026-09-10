@@ -4633,6 +4633,24 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/as_expr_00.cj")
             }
 
+            @TestMetadata("branch_operand_completion.cj")
+            @Test
+            fun testBranchOperandCompletion() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/branch_operand_completion.cj")
+            }
+
+            @TestMetadata("branch_operand_errors.cj")
+            @Test
+            fun testBranchOperandErrors() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/branch_operand_errors.cj")
+            }
+
+            @TestMetadata("branch_operand_refinement.cj")
+            @Test
+            fun testBranchOperandRefinement() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/branch_operand_refinement.cj")
+            }
+
             @TestMetadata("cfa_condition_chain.cj")
             @Test
             fun testCfaConditionChain() {
