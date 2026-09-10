@@ -1030,7 +1030,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
         val initType = initializer?.coneTypeOrNull
         val resolvedTypeRef = if (initType != null) {
-            val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
+            val resolvedType = IdealTypeResolver.replaceIdealTypes(initType).approximateThisTypeForDeclaration()
             implicitTypeRef.resolvedTypeFromPrototype(resolvedType, implicitTypeRef.source)
         } else {
             buildErrorTypeRef {

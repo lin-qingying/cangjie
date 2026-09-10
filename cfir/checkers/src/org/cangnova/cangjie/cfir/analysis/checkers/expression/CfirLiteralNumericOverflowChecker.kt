@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirAssignmentTypeMismatchPrimaryDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -43,12 +44,12 @@ object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
 
         val source = expression.source as? AbstractCjSourceElement ?: return
         val parsed = CfirIntConstantEvalUtils.parseIntLiteral(expression) ?: return
-        val suffixType = CfirIntConstantEvalUtils.coneTypeForExplicitSuffix(parsed.explicitSuffix)
+        val suffixType = expression.explicitIntegerRangeType(parsed.explicitSuffix)
         val targetType = suffixType
             ?: context.binaryDivisionOperandTargetTypeFor(source, isSigned = false)
             ?: expression.coneTypeOrNull
             ?: ConePrimitiveType.INT64
-        val range = CfirIntConstantEvalUtils.rangeForExplicitSuffix(parsed.explicitSuffix)
+        val range = suffixType?.let(CfirIntConstantEvalUtils::rangeForLiteralTargetType)
             ?: CfirIntConstantEvalUtils.rangeForPositiveLiteralTargetType(targetType)
             ?: return
 
@@ -74,13 +75,13 @@ object CfirLiteralNumericOverflowChecker : CfirLiteralExpressionChecker() {
         if (context.isInsideInvalidBinaryOperator(source)) return true
         val parsed = CfirIntConstantEvalUtils.parseIntLiteral(expression) ?: return false
         val signedValue = if (sign.char == '-') parsed.value.negate() else parsed.value
-        val suffixType = CfirIntConstantEvalUtils.coneTypeForExplicitSuffix(parsed.explicitSuffix)
+        val suffixType = expression.explicitIntegerRangeType(parsed.explicitSuffix)
         val targetType = suffixType
             ?: context.binaryDivisionOperandTargetTypeFor(source, isSigned = true)
             ?: context.expectedInitializerTypeFor(source)
             ?: expression.coneTypeOrNull
             ?: ConePrimitiveType.INT64
-        val range = CfirIntConstantEvalUtils.rangeForExplicitSuffix(parsed.explicitSuffix)
+        val range = suffixType?.let(CfirIntConstantEvalUtils::rangeForLiteralTargetType)
             ?: CfirIntConstantEvalUtils.rangeForSignedLiteralTargetType(targetType)
             ?: return true
 
@@ -138,13 +139,13 @@ object CfirSignedLiteralNumericOverflowChecker : CfirFunctionCallChecker() {
         val source = expression.source as? AbstractCjSourceElement ?: return
         if (context.isInsideInvalidBinaryOperator(source)) return
         val parsed = CfirIntConstantEvalUtils.parseSignedIntExpression(expression) ?: return
-        val suffixType = CfirIntConstantEvalUtils.coneTypeForExplicitSuffix(parsed.explicitSuffix)
+        val suffixType = expression.explicitIntegerRangeType(parsed.explicitSuffix)
         val targetType = suffixType
             ?: context.binaryDivisionOperandTargetTypeFor(source, isSigned = true)
             ?: context.expectedInitializerTypeFor(source)
             ?: expression.coneTypeOrNull
             ?: ConePrimitiveType.INT64
-        val range = CfirIntConstantEvalUtils.rangeForExplicitSuffix(parsed.explicitSuffix)
+        val range = suffixType?.let(CfirIntConstantEvalUtils::rangeForLiteralTargetType)
             ?: CfirIntConstantEvalUtils.rangeForSignedLiteralTargetType(targetType)
             ?: return
 
@@ -157,6 +158,13 @@ object CfirSignedLiteralNumericOverflowChecker : CfirFunctionCallChecker() {
             )
         }
     }
+}
+
+/** 后缀先确定源码类型，成功的 Option 数值定型则以实际内层类型检查范围。 */
+private fun CfirExpression.explicitIntegerRangeType(suffix: String?): ConePrimitiveType? {
+    val sourceType = CfirIntConstantEvalUtils.coneTypeForExplicitSuffix(suffix) ?: return null
+    val actual = coneTypeOrNull as? ConePrimitiveType
+    return if (actual != null && actual.kind.isInteger && !actual.kind.isIdeal) actual else sourceType
 }
 
 /**

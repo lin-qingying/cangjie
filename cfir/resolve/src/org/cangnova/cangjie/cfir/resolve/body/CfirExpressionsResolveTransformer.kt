@@ -53,6 +53,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.futureTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.synthesizeSpawnType
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.constants.explicitNumericLiteralType
+import org.cangnova.cangjie.cfir.resolve.constants.numericLiteralBoxTargetType
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
@@ -347,9 +349,11 @@ open class CfirExpressionsResolveTransformer(
         literalExpression: CfirLiteralExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        val synthesized = synthesizeLiteralType(literalExpression.kind)
+        val synthesized = literalExpression.explicitNumericLiteralType() ?: synthesizeLiteralType(literalExpression.kind)
         val expectedType = data.expectedTypeOrNull
+        val boxedNumericType = expectedType?.let { literalExpression.numericLiteralBoxTargetType(it, session) }
         val resolvedType = when {
+            boxedNumericType != null -> boxedNumericType
             // 官方声明初始化/赋值消费点上的单字符 String 目标类型改写（Rune/UInt8）。
             expectedType != null &&
                     (context.variableBeingInitialized != null ||
@@ -2526,7 +2530,11 @@ open class CfirExpressionsResolveTransformer(
         components.dataFlowAnalyzer.enterMatchExpression(matchExpression)
         matchExpression.subject?.resolveIndependently()
         val subjectType = matchExpression.subject?.coneTypeOrNull
+            ?.fullyExpandedType(session)
+            ?.let { IdealTypeResolver.replaceIdealTypes(it) }
             ?: matchExpression.subject?.lambdaPrimitiveOperandTypeOrNull()
+        // Syn/ChkMatchExpr 都先完成 selector 默认化，pattern 不得反向把其中的 ideal 改成其它 primitive。
+        if (subjectType != null) matchExpression.subject?.replaceConeTypeOrNull(subjectType)
         val subjectErrorType = subjectType as? ConeErrorType
         if (matchExpression.subject != null && subjectErrorType != null) {
             matchExpression.replaceExhaustiveness(CfirMatchExhaustivenessStatus.Unknown)
@@ -3700,11 +3708,10 @@ open class CfirExpressionsResolveTransformer(
         val elements = tupleLiteral.elements as? MutableList<CfirExpression>
             ?: error("CfirTupleLiteral elements must be mutable during body resolve")
         for (index in elements.indices) {
-            val elementMode = expectedElementTypes
-                ?.getOrNull(index)
-                ?.takeUnless { it is ConeErrorType }
-                ?.let(::withExpectedType)
-                ?: ResolutionMode.ContextIndependent
+            val elementMode = elements[index].literalElementResolutionMode(
+                expectedElementTypes?.getOrNull(index)?.takeUnless { it is ConeErrorType },
+                data,
+            )
             elements[index] = elements[index].transform(transformer, elementMode)
         }
         val elementTypes = tupleLiteral.elements.map {
@@ -3728,6 +3735,21 @@ open class CfirExpressionsResolveTransformer(
         recordAssignmentRhsTypeMismatchIfNeeded(tupleLiteral, resultType)
         tupleLiteral.replaceConeTypeOrNull(resultType)
         return tupleLiteral
+    }
+
+    /**
+     * 嵌套字面量保留父容器的目标等待状态；普通元素先综合出供数组 Join 使用的值类型。
+     * lambda 有自己的 synthetic call 完成入口，不能无主地挂起后让数组失去元素类型。
+     */
+    private fun CfirExpression.literalElementResolutionMode(
+        expectedType: ConeCangJieType?,
+        outerMode: ResolutionMode,
+    ): ResolutionMode = when {
+        expectedType != null -> withExpectedType(expectedType)
+        this is CfirWrappedExpression -> expression.literalElementResolutionMode(null, outerMode)
+        !outerMode.forceFullCompletion && (this is CfirArrayLiteral || this is CfirTupleLiteral) ->
+            ResolutionMode.ContextDependent
+        else -> ResolutionMode.ContextIndependent
     }
 
     /**
@@ -3800,7 +3822,13 @@ open class CfirExpressionsResolveTransformer(
             if (trialResult.stoppedOnFailure) return trialResult.arrayLiteral
             trialResult.arrayLiteral
         } else {
-            arrayLiteral.transformChildren(transformer, elementResolutionMode) as CfirArrayLiteral
+            arrayLiteral.transformAnnotations(transformer, elementResolutionMode)
+            arrayLiteral.replaceElementsIfNeeded(arrayLiteral.elements.map { element ->
+                element.transform<CfirExpression, ResolutionMode>(
+                    transformer,
+                    element.literalElementResolutionMode(expectedElementType, data),
+                )
+            })
         }
         resolvedArrayLiteral.ensureQuoteElementTypes()
 
@@ -3863,6 +3891,15 @@ open class CfirExpressionsResolveTransformer(
             return arrayLiteralWithElementDiagnostics
         }
 
+        if (expectedElementType == null && data.forceFullCompletion) {
+            // 官方 SynArrayLit 对每个已综合元素执行 ReplaceIdealTy，再构造标准库 Array struct。
+            // 调用实参的 ContextDependent 阶段仍需等待 Collection/Iterable 等形参提供元素目标。
+            for (element in arrayLiteralWithElementDiagnostics.elements) {
+                element.coneTypeOrNull?.let { type ->
+                    element.replaceConeTypeOrNull(IdealTypeResolver.replaceIdealTypes(type))
+                }
+            }
+        }
         val elementTypes = arrayLiteralWithElementDiagnostics.elements
             .mapNotNull { it.coneTypeOrNull }
             .filterNot { it is ConeErrorType }

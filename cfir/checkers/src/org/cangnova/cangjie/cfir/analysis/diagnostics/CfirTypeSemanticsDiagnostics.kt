@@ -9,10 +9,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.constants.explicitNumericLiteralType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.isBoolean
 import org.cangnova.cangjie.cfir.types.isFloatType
@@ -100,6 +102,13 @@ internal fun literalConversionMismatch(
 ): CfirSpecificTypeMismatch.CannotConvertLiteral? {
     val literal = expression?.unwrapWrappedExpression() as? CfirLiteralExpression ?: return null
     val target = expectedType.fullyExpandedType(session)
+    val explicitType = literal.explicitNumericLiteralType()
+    val targetKind = BuiltinPrimitiveOperators.primitiveOperandKind(target)
+    if (explicitType != null && targetKind != null && explicitType.kind != targetKind &&
+        (explicitType.kind.isInteger && targetKind.isInteger || explicitType.kind.isFloat && targetKind.isFloat)
+    ) {
+        return CfirSpecificTypeMismatch.CannotConvertLiteral(literal.value.toString(), expectedType)
+    }
     if (target !is ConeTypeParameterType &&
         !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune
     ) return null

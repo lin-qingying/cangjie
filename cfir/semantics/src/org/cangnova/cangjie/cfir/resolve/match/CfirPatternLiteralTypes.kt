@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.constants.explicitNumericLiteralType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.*
@@ -64,7 +65,7 @@ fun CfirConstPattern.constantPatternLiteralExpectedType(
 ): ConeCangJieType? {
     val literal = constantPatternLiteral() ?: return null
     val target = expectedType?.fullyExpandedType(session)?.let(IdealTypeResolver::resolveIfIdeal)
-    val explicitType = literal.explicitPatternLiteralType()
+    val explicitType = literal.explicitNumericLiteralType()
     val defaultType = literal.defaultPatternLiteralType(explicitType)
     if (target == null || target.contains { it is ConeErrorType || it is ConeTypeVariableType }) return explicitType
 
@@ -93,7 +94,7 @@ fun CfirConstPattern.resolveLiteralPatternType(
     if (expressionType is ConeErrorType) {
         return CfirPatternLiteralTypeResolution(expressionType, target, CfirPatternLiteralTypeResolution.Failure.AlreadyReported)
     }
-    val explicitType = literal.explicitPatternLiteralType()
+    val explicitType = literal.explicitNumericLiteralType()
     val actualType = constantPatternLiteralExpectedType(target, session) ?: expressionType ?: return null
     val failure = when {
         literal.isNumericPatternKindOf(target) && explicitType != null && explicitType != target ->
@@ -130,23 +131,6 @@ private fun CfirLiteralExpression.isNumericPatternKindOf(target: ConeCangJieType
     CfirLiteralKind.INT, CfirLiteralKind.BYTE -> target.isIntegerType
     CfirLiteralKind.FLOAT -> target.isFloatType
     else -> false
-}
-
-private val floatPatternSuffix = Regex("(?i)(f16|f32|f64)$")
-
-/** byte 字面量相当于显式 UInt8 后缀，不能按任意整数目标重新定型。 */
-private fun CfirLiteralExpression.explicitPatternLiteralType(): ConePrimitiveType? = when (kind) {
-    CfirLiteralKind.INT -> CfirIntConstantEvalUtils.coneTypeForExplicitSuffix(
-        CfirIntConstantEvalUtils.parseIntLiteral(this)?.explicitSuffix,
-    )
-    CfirLiteralKind.BYTE -> ConePrimitiveType.UINT8
-    CfirLiteralKind.FLOAT -> when (floatPatternSuffix.find(value as? String ?: "")?.value?.lowercase()) {
-        "f16" -> ConePrimitiveType.FLOAT16
-        "f32" -> ConePrimitiveType.FLOAT32
-        "f64" -> ConePrimitiveType.FLOAT64
-        else -> null
-    }
-    else -> null
 }
 
 private fun CfirLiteralExpression.defaultPatternLiteralType(explicitType: ConePrimitiveType?): ConeCangJieType? =
