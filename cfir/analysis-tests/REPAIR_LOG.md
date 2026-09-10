@@ -6018,3 +6018,32 @@ XML 为 8491 → 8495 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 10、PatternMatching 40，共 50 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。其余 473 项既有全量失败保留。
 - change isolation: 仅提交本类共享实现、诊断生成输入/产物、四份 fixture、生成入口、上下文测试桩及日志；.idea/workspace.xml 保持独立。
+
+## 2026-09-10：带符号整数模式统一规范化
+
+- problem type: Pattern Matching / Signed integer normalization。
+- root cause: 覆盖矩阵只从直接 CfirLiteralExpression 提取常量；合法负整数在 CFIR 中是 unary operator call，被错误转成带默认 Error 类型的矩阵行，和正常 selector 列混合后触发 MarangetException。
+- official Cangjie evidence: cjc 1.0.5 的 39-signed-pattern-fixture 编译成功，只对 -121/-121i16、-0x10/-16 两组等值模式报告后项不可达；Int64 最小值、UInt64 最大值、tuple/Option 嵌套及 IfLet/WhileLet 均合法。源码、命令及 JSON 在 build/repair-20260906/evidence/39-signed-pattern-fixture.official.*。原 match005、matchcase_fuzz_03 的官方完整证据在 32-flow-syntax-before；它们仍有另属 CFA 的警告差异，本次未按局部输出改写 fixture。
+- official implementation: external/cangjie_compiler/src/Parse/ParsePattern.cpp:96-103 通过 ParseLitConst 创建常量模式；AST/Utils.cpp 的 InitializeLitConstValue 填充整数值；Sema/PatternUsefulness.cpp:145-175 按整数值比较覆盖关系，显式后缀和不同进制写法不改变等值关系。
+- Kotlin counterpart files consulted: FirWhenConditionChecker.kt 将已归一化值用于重复条件判断；IntegerLiteralAndOperatorApproximationTransformer.kt 为 integer literal 与 operator 提供统一入口，并在目标类型判断前展开别名。仓颉的进制、符号、后缀规则来自官方与已有共享整数解析器。
+- CFIR owner file changed: semantics/.../resolve/match/CfirMatchPatternModel.kt。新增 CfirConstantValue.fromExpression，通过 CfirIntConstantEvalUtils.parseSignedIntExpression 处理一元符号；普通与带符号整数共同从 BigInteger 进入 signed/unsigned 值域，ConstPattern 和 ExpressionPattern 统一消费此入口，保留完整 64 位边界。
+- repair principle: 在覆盖矩阵的共享规范化入口恢复真实整数值，消除合法模式的错误行，而不是捕获覆盖算法异常或特判某份测试。
+- fixtures covered: 原 llt/PatternMatching/MatchExpression/match005.cj、llt/match/matchcase_fuzz_03.cj；新增 PatternMatching/ConstPattern/signed_integer_patterns.cj，七个函数覆盖后缀、进制、边界、嵌套和条件模式。宏 Function/DefaultParameterPkg02/test_mutation 与 F2/test3 同样受此共享入口修复。原 fixture 均未修改，两套新增测试入口自动生成。
+- verification commands and outcome:
+  - 39-signed-targeted：6 项，4 通过、2 既有失败。新 fixture 与 match005 双入口通过；matchcase_fuzz_03 双入口从异常变为正常诊断断言，仅缺已获官方确认的 wildcard 警告期望。该文件还缺 CFA 的 -121 警告，留待对应问题完整修复。
+  - 39-signed-family：3155 项，2791 通过、58 项既有失败、306 跳过；FIXED=2、REGRESSED=0、新增 2 项通过。覆盖 If/IfLetExpr、WhileLetExpr、Loops、Match、PatternMatching、Enum、NonExhaustiveEnum、Box、IsOrAsExpr、Call、Generics、TypeInfer、Typealias 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：19m 53s 正常结束。38-tuple-full-final → 39-signed-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - changed_failure_messages 共 6 项，均从 FileAnalysisException 推进到完整诊断断言：matchcase_fuzz_03 双入口，以及 Macro 的 test_mutation、F2/test3 双入口；后四项保留各自大量既有语义差异，未改写宏期望。其余 515 项失败消息不变。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8494 | 8496 |
+| 通过 | 7664 | 7668 |
+| 失败 | 523 | 521 |
+| 跳过 | 307 | 307 |
+
+XML 为 8495 → 8497 records，均为 308 skipped（含一条聚合记录）。完整证据为 39-signed-full 与 38-tuple-full-final--39-signed-full.json。
+
+- remaining failures: 目标剩余 Match 10、PatternMatching 38，共 48 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。常量模式类型检查、OR 约束、CFA 警告及分支 Join 等仍分别处理。
+- change isolation: 仅提交共享模式规范化、新 fixture、两套生成入口和本条日志；.idea/workspace.xml 保持独立。
