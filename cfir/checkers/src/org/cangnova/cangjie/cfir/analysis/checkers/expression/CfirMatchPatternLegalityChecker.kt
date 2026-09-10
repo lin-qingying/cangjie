@@ -37,6 +37,8 @@ import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
 import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
+import org.cangnova.cangjie.cfir.resolve.match.CfirPatternLiteralTypeResolution
+import org.cangnova.cangjie.cfir.resolve.match.resolveLiteralPatternType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
@@ -134,6 +136,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 val tupleType = (shape as CfirTuplePatternShape.Matched).tupleType
                 pattern.elements.forEachIndexed { index, element ->
                     checkPattern(element, tupleType.elementTypes[index])
+                    if (element.hasPatternLegalityProblem(tupleType.elementTypes[index], context)) return
                 }
             }
 
@@ -159,21 +162,31 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 val argumentTypes = (resolution as EnumPatternConstructorResolution.Resolved).argumentTypes
                 pattern.arguments.forEachIndexed { index, argument ->
                     checkPattern(argument, argumentTypes[index])
+                    if (argument.hasPatternLegalityProblem(argumentTypes[index], context)) return
                 }
             }
 
             is CfirConstPattern -> {
-                if (pattern.shouldReportMissingEqualityOverload(expectedType, context)) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.NOT_OVERLOAD_IN_MATCH,
+                val resolution = pattern.resolveLiteralPatternType(expectedType, context.session)
+                when (val failure = resolution?.failure) {
+                    is CfirPatternLiteralTypeResolution.Failure.CannotConvert -> reporter.reportOn(
+                        pattern.expression.source ?: pattern.source,
+                        CfirErrors.CANNOT_CONVERT_LITERAL,
+                        failure.description,
+                        resolution.expectedType,
                     )
-                } else if (!pattern.isCompatibleWith(expectedType)) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
+                    CfirPatternLiteralTypeResolution.Failure.TypeMismatch -> reporter.reportOn(
+                        pattern.expression.source ?: pattern.source,
+                        CfirErrors.TYPE_MISMATCH,
+                        resolution.expectedType,
+                        resolution.actualType,
+                        false,
                     )
+                    CfirPatternLiteralTypeResolution.Failure.OutOfRange,
+                    CfirPatternLiteralTypeResolution.Failure.AlreadyReported -> Unit
+                    null -> if (pattern.shouldReportMissingEqualityOverload(expectedType, context)) {
+                        reporter.reportOn(pattern.source, CfirErrors.NOT_OVERLOAD_IN_MATCH)
+                    }
                 }
             }
 
@@ -258,7 +271,7 @@ private fun CfirPattern.hasPatternLegalityProblem(
             }
         }
 
-        is CfirConstPattern -> !isCompatibleWith(expectedType)
+        is CfirConstPattern -> resolveLiteralPatternType(expectedType, context.session)?.failure != null
         is CfirExpressionPattern -> !isCompatibleWith(expectedType)
         is CfirOrPattern -> {
             hasVariableBindingInOrPattern() ||
@@ -533,21 +546,11 @@ private fun resolveStdlibOptionArgumentTypes(
 }
 
 /**
- * 判断常量 pattern 是否与期望类型兼容。
- */
-private fun CfirConstPattern.isCompatibleWith(expectedType: ConeCangJieType): Boolean {
-    val literal = expression as? CfirLiteralExpression ?: return true
-    return literal.isCompatibleWith(expectedType)
-}
-
-/**
  * 对齐官方 `sema_not_overload_in_match`：
  * selector-based match 的 const pattern 如果不是内建可比较类型，
  * 就必须能在接收者 use-site scope 中找到可用的 `==`。
  *
- * 这里刻意只对“引用型 const pattern”启用该规则：
- * - 字面量 pattern 继续沿用现有 `PATTERN_NOT_MATCH` 路径，避免回归当前基础行为；
- * - 类成员与 extend 成员统一通过 use-site scope 观察，避免退化为只看声明体。
+ * 字面量类型检查成功后才检查比较能力；类成员与 extend 成员统一通过 use-site scope 观察。
  */
 private fun CfirConstPattern.shouldReportMissingEqualityOverload(
     expectedType: ConeCangJieType,

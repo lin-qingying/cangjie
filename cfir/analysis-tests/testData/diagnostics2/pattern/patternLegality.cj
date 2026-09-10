@@ -11,7 +11,7 @@ func tuplePatternOnInt(v: Int64): Int64 {
 
 func constPatternOnEnum(v: Option<Int64>): Int64 {
     return match (v) {
-        case <!NOT_OVERLOAD_IN_MATCH!>1<!> => 0
+        case <!CANNOT_CONVERT_LITERAL!>1<!> => 0
         case Some(value) => value
         case None => 2
     }

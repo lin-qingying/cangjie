@@ -26,11 +26,22 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
+import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteralExpectedType
+import org.cangnova.cangjie.cfir.resolve.match.resolveLiteralPatternType
+import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
+import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
+import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 
@@ -44,11 +55,92 @@ private val OPTION_SOME_CONSTRUCTOR_NAME = Name.identifier("Some")
 private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
 
 /**
+ * 按 selector/initializer 的结构投影目标类型，再首次解析模式的值表达式。
+ *
+ * 数值一元运算必须从首次调用解析就获得正确目标类型，不能只在事后修改返回类型而
+ * 留下另一种整数宽度的 receiver/callee。声明、Match、IfLet/WhileLet 和 for-in 共用此入口。
+ * 返回已确定的值/形状检查是否成功；分量失败后只解析剩余节点，不再向它们传递目标类型。
+ */
+internal fun CfirPartialBodyResolveTransformer.resolvePatternValueExpressions(
+    pattern: CfirPattern,
+    expectedType: ConeCangJieType?,
+): Boolean {
+    return when (pattern) {
+        is CfirConstPattern -> {
+            val literalType = pattern.constantPatternLiteralExpectedType(expectedType, session)
+            val mode = literalType?.let { withExpectedType(it) } ?: ResolutionMode.ContextIndependent
+            pattern.transformExpression(transformer, mode)
+            val literal = pattern.constantPatternLiteral()
+            // 官方字符类目标只改变字符串 literal 的类型，保留 STRING kind 用于 Sema 比较。
+            if (literal?.kind == CfirLiteralKind.STRING && literalType != null) {
+                literal.replaceConeTypeOrNull(literalType)
+            }
+            constantPatternErrorType(pattern, expectedType) == null
+        }
+        is CfirTuplePattern -> {
+            val shape = pattern.resolveTupleShape(expectedType, session)
+            val tupleType = (shape as? CfirTuplePatternShape.Matched)?.tupleType
+            var valid = shape !is CfirTuplePatternShape.NotTuple && shape !is CfirTuplePatternShape.WrongSize
+            pattern.elements.forEachIndexed { index, element ->
+                val elementType = tupleType?.elementTypes?.getOrNull(index).takeIf { valid }
+                if (!resolvePatternValueExpressions(element, elementType)) valid = false
+            }
+            valid
+        }
+        is CfirEnumPattern -> {
+            pattern.transformConstructorReference(transformer, ResolutionMode.ContextIndependent)
+            val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
+            var valid = true
+            pattern.arguments.forEachIndexed { index, argument ->
+                val argumentType = argumentTypes.getOrNull(index).takeIf { valid }
+                if (!resolvePatternValueExpressions(argument, argumentType)) valid = false
+            }
+            valid
+        }
+        is CfirBindingPattern -> {
+            pattern.transformTypeRef(transformer, ResolutionMode.ContextIndependent)
+            pattern.transformBindingVariable(transformer, ResolutionMode.ContextIndependent)
+            pattern.nestedPattern?.let {
+                resolvePatternValueExpressions(it, pattern.typeRef?.coneTypeOrNull ?: expectedType)
+            } ?: true
+        }
+        is CfirOrPattern -> {
+            var valid = true
+            // OR 各项独立检查，不能因前一 alternative 失败而跳过后一项的目标类型。
+            for (alternative in pattern.alternatives) {
+                if (!resolvePatternValueExpressions(alternative, expectedType)) valid = false
+            }
+            valid
+        }
+        is CfirExpressionPattern -> {
+            pattern.transformExpression(transformer, withExpectedType(session.builtinTypes.boolType))
+            true
+        }
+        is CfirTypePattern, is CfirVarOrEnumPattern, is CfirWildcardPattern -> {
+            pattern.transformChildren(transformer, ResolutionMode.ContextIndependent)
+            true
+        }
+    }
+}
+
+/** 字面量模式失败只传播错误状态；具体诊断由常量模式/数值范围 checker 拥有。 */
+internal fun CfirPartialBodyResolveTransformer.constantPatternErrorType(
+    pattern: CfirConstPattern,
+    expectedType: ConeCangJieType?,
+): ConeErrorType? {
+    val expressionError = pattern.expression.coneTypeOrNull as? ConeErrorType
+    if (expressionError != null) return expressionError
+    if (pattern.resolveLiteralPatternType(expectedType, session)?.failure == null) return null
+    return ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("Invalid constant pattern type")))
+}
+
+/**
  * 统一的模式绑定解析支持。
  *
  * 这里负责两件事：
  * 1. 解析 pattern 自身携带的显式类型约束；
- * 2. 按 selector / initializer 的形状，把投影后的子类型写回每个 binding variable。
+ * 2. 按 selector / initializer 的形状，把投影后的子类型写回每个 binding variable；
+ * 3. 收集常量模式失败状态，阻止依赖无效模式的表达式结果类型合成。
  *
  * 这样 `let/var pattern`、`match`、`for-in` 都复用同一套绑定模型。
  */
@@ -56,7 +148,11 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
     pattern: CfirPattern,
     expectedType: ConeCangJieType?,
     typeResolver: CfirSpecificTypeResolverTransformer,
-) {
+): ConeErrorType? {
+    var firstError: ConeErrorType? = null
+    fun recordError(error: ConeErrorType?) {
+        if (firstError == null) firstError = error
+    }
     when (pattern) {
         is CfirVarOrEnumPattern -> Unit
         is CfirConstPattern -> {
@@ -71,6 +167,7 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
                     )
                 }
             }
+            recordError(constantPatternErrorType(pattern, expectedType))
         }
         is CfirBindingPattern -> {
             val resolvedTypeRef = pattern.typeRef?.let { resolvePatternTypeRefIfNeeded(it, typeResolver) }
@@ -80,7 +177,9 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 
             val bindingType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: expectedType
             pattern.bindingVariable?.replaceBindingType(bindingType)
-            pattern.nestedPattern?.let { resolvePatternBindingTypes(it, bindingType ?: expectedType, typeResolver) }
+            pattern.nestedPattern?.let {
+                recordError(resolvePatternBindingTypes(it, bindingType ?: expectedType, typeResolver))
+            }
         }
 
         is CfirTypePattern -> {
@@ -94,33 +193,34 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
         }
 
         is CfirTuplePattern -> {
-            val tupleType = expectedType as? ConeTupleType
+            val tupleType = expectedType?.fullyExpandedType(session) as? ConeTupleType
             pattern.elements.forEachIndexed { index, element ->
-                resolvePatternBindingTypes(
+                recordError(resolvePatternBindingTypes(
                     pattern = element,
                     expectedType = tupleType?.elementTypes?.getOrNull(index),
                     typeResolver = typeResolver,
-                )
+                ))
             }
         }
 
         is CfirEnumPattern -> {
             val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
             pattern.arguments.forEachIndexed { index, argument ->
-                resolvePatternBindingTypes(
+                recordError(resolvePatternBindingTypes(
                     pattern = argument,
                     expectedType = argumentTypes.getOrNull(index),
                     typeResolver = typeResolver,
-                )
+                ))
             }
         }
 
         is CfirOrPattern -> pattern.alternatives.forEach { alternative ->
-            resolvePatternBindingTypes(alternative, expectedType, typeResolver)
+            recordError(resolvePatternBindingTypes(alternative, expectedType, typeResolver))
         }
 
         else -> Unit
     }
+    return firstError
 }
 
 /**

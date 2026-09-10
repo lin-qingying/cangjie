@@ -20,7 +20,7 @@ func case60_2() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
         case ("a", 90) => "Yes"
-        case (<!TYPE_MISMATCH!>50<!>, 90) => "No"
+        case (<!CANNOT_CONVERT_LITERAL!>50<!>, 90) => "No"
         case (_, _) => "None"
     }
 }
@@ -37,7 +37,7 @@ func case60_3() {
 func case60_4() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
-        case (<!TYPE_MISMATCH!>50<!>, 90) => "No"
+        case (<!CANNOT_CONVERT_LITERAL!>50<!>, 90) => "No"
         case (_, _) => "None"
     }
 }
@@ -47,7 +47,7 @@ func case60_5() {
     let b: Int32 = 0
     let scoreTuple = ("a", a)
     var result: String = match (scoreTuple) {
-        case ("a", <!TYPE_MISMATCH!>0<!>) => "No"
+        case ("a", <!CANNOT_CONVERT_LITERAL!>0<!>) => "No"
         case (_, _) => "None"
     }
 }

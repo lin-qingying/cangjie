@@ -4415,6 +4415,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/ConstPattern/err_string_interpolation_00.cj")
             }
 
+            @TestMetadata("literal_pattern_types.cj")
+            @Test
+            fun testLiteralPatternTypes() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/ConstPattern/literal_pattern_types.cj")
+            }
+
             @TestMetadata("ok_rune_00.cj")
             @Test
             fun testOkRune00() {
