@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
@@ -65,6 +66,8 @@ abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val container: CfirDeclaration
     /** 当前正在解析 initializer 的成员字段；非字段 initializer 时为 null。 */
     open val fieldBeingInitialized: CfirFieldVariable? get() = null
+    /** 当前所在的全部初始化器声明；嵌套 lambda 或局部初始化器仍属于外层声明。 */
+    abstract val variablesBeingInitialized: List<CfirVariable>
     /** 调用解析阶段 runner。 */
     abstract val resolutionStageRunner: ResolutionStageRunner
     /** SAM 转换解析器。 */

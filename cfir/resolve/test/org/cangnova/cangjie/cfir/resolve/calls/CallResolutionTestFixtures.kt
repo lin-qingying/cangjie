@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.declarations.DeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirNamedFunctionImpl
 import org.cangnova.cangjie.cfir.declarations.impl.CfirValueParameterImpl
@@ -498,6 +499,7 @@ object CallResolutionTestFixtures {
         override val symbolProvider: CfirSymbolProvider get() = error("not used in call resolution tests")
         override val file: CfirFile get() = error("not used in call resolution tests")
         override val container: CfirDeclaration get() = error("not used in call resolution tests")
+        override val variablesBeingInitialized: List<CfirVariable> get() = error("not used in call resolution tests")
         override val resolutionStageRunner: ResolutionStageRunner get() = error("not used in call resolution tests")
         override val samResolver: CfirSamResolver get() = error("not used in call resolution tests")
         override val callResolver: CfirCallResolver get() = error("not used in call resolution tests")

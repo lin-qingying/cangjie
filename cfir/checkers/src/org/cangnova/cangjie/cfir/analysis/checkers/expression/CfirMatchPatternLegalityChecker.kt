@@ -35,6 +35,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
+import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
+import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
@@ -110,8 +112,9 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             is CfirTypePattern -> Unit
 
             is CfirTuplePattern -> {
-                val tupleType = expectedType as? ConeTupleType
-                if (tupleType == null) {
+                val shape = pattern.resolveTupleShape(expectedType, context.session)
+                if (shape is CfirTuplePatternShape.Unresolved) return
+                if (shape is CfirTuplePatternShape.NotTuple) {
                     reporter.reportOn(
                         source = pattern.source,
                         factory = CfirErrors.TYPE_MISMATCH,
@@ -121,14 +124,14 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                     )
                     return
                 }
-                if (pattern.elements.size != tupleType.elementTypes.size) {
+                if (shape is CfirTuplePatternShape.WrongSize) {
                     reporter.reportOn(
                         source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
+                        factory = CfirErrors.TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED,
                     )
                     return
                 }
+                val tupleType = (shape as CfirTuplePatternShape.Matched).tupleType
                 pattern.elements.forEachIndexed { index, element ->
                     checkPattern(element, tupleType.elementTypes[index])
                 }
@@ -233,11 +236,13 @@ private fun CfirPattern.hasPatternLegalityProblem(
         is CfirTypePattern -> false
 
         is CfirTuplePattern -> {
-            val tupleType = expectedType as? ConeTupleType ?: return true
-            elements.size != tupleType.elementTypes.size ||
-                    elements.withIndex().any { (index, element) ->
-                        element.hasPatternLegalityProblem(tupleType.elementTypes[index], context)
+            when (val shape = resolveTupleShape(expectedType, context.session)) {
+                CfirTuplePatternShape.Unresolved -> false
+                is CfirTuplePatternShape.NotTuple, is CfirTuplePatternShape.WrongSize -> true
+                is CfirTuplePatternShape.Matched -> elements.withIndex().any { (index, element) ->
+                        element.hasPatternLegalityProblem(shape.tupleType.elementTypes[index], context)
                     }
+            }
         }
 
         is CfirEnumPattern -> {

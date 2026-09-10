@@ -333,9 +333,9 @@ private fun CfirExpression.lastNestedReturnExpression(): CfirReturnExpression? {
 }
 
 /**
- * 尾表达式子树已经携带解析/约束诊断时，不再从函数体返回类型检查追加级联 mismatch。
+ * 表达式子树已经携带解析/约束诊断时，调用方不应继续追加依赖其有效类型的级联诊断。
  */
-private fun CfirExpression.containsReportedErrorDiagnostic(): Boolean {
+internal fun CfirExpression.containsReportedErrorDiagnostic(): Boolean {
     if (this is CfirDiagnosticHolder) return true
     if (this is CfirResolvable && calleeReference is CfirDiagnosticHolder) return true
 

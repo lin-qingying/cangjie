@@ -572,6 +572,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "{0} isn't a tuple to match tuple pattern.",
             RENDER_STRING,
         )
+        map.put(CfirErrors.TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED, "Tuple pattern with correct size expected.")
+        map.put(CfirErrors.MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL, "The pattern in this variable declaration cannot match its type.")
         map.put(
             CfirErrors.PATTERN_NOT_MATCH,
             "{0} pattern is not matched.",

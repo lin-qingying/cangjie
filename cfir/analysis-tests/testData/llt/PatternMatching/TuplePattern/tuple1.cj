@@ -29,7 +29,7 @@ func case60_2() {
 func case60_3() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
-        case <!TUPLE_PATTERN_NOT_MATCH!>("a", 50, 90)<!> => "No"
+        case <!TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED!>("a", 50, 90)<!> => "No"
         case (_, _) => "None"
     }
 }

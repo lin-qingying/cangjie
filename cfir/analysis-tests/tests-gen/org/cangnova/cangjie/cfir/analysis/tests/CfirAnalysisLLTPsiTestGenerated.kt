@@ -3804,6 +3804,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/InitializationCheck/capture_super_member.cj")
         }
 
+        @TestMetadata("initializer_binding_scope.cj")
+        @Test
+        fun testInitializerBindingScope() {
+            runTest("cfir/analysis-tests/testData/llt/InitializationCheck/initializer_binding_scope.cj")
+        }
+
         @TestMetadata("localfuncinvarinit.cj")
         @Test
         fun testLocalfuncinvarinit() {
@@ -4961,6 +4967,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             @Test
             fun testTuple4() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/tuple4.cj")
+            }
+
+            @TestMetadata("tuple_shape_validation.cj")
+            @Test
+            fun testTupleShapeValidation() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/tuple_shape_validation.cj")
             }
         }
 

@@ -2655,7 +2655,7 @@ open class CfirExpressionsResolveTransformer(
                 branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
             }
             resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
-            val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body))
+            val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
 
             branch.transformGuard(transformer, withExpectedType(builtinTypes.boolType))
             components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
@@ -3150,7 +3150,7 @@ open class CfirExpressionsResolveTransformer(
             typeResolver = specificTypeResolverTransformer,
         )
         val bindingError = bindingScope?.let {
-            registerScopedPatternBindings(letPatternExpression.pattern, it)
+            registerScopedPatternBindings(letPatternExpression.pattern, it, patternExpectedType)
         }
         letPatternExpression.replaceConeTypeOrNull(
             bindingError ?: letPatternExpression.initializer.coneTypeOrNull?.propagatedErrorTypeOrNull()

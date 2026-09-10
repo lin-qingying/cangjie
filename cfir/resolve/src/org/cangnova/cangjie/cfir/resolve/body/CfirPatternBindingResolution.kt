@@ -175,7 +175,7 @@ private fun CfirPartialBodyResolveTransformer.patternTypeResolutionConfiguration
 /**
  * 根据 enum pattern 和期望类型计算每个 payload 参数的期望类型。
  */
-private fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
+internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType?,
 ): List<ConeCangJieType> {

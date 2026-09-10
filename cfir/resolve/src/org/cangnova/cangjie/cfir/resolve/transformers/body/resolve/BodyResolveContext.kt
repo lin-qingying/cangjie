@@ -235,7 +235,7 @@ class BodyResolveContext(
     @set:PrivateForInline
     var isInsideAssignmentOrInitializerValue: Boolean = false
 
-    /** 当前正在解析 initializer 的局部变量栈。 */
+    /** 当前正在解析 initializer 的变量或模式绑定栈。 */
     private val variableInitializerStack: ArrayDeque<List<CfirVariable>> = ArrayDeque()
 
     /** 当前正在解析 initializer 的字段变量栈。 */
@@ -245,9 +245,9 @@ class BodyResolveContext(
     val variableBeingInitialized: CfirVariable?
         get() = variableInitializerStack.lastOrNull()?.singleOrNull()
 
-    /** 当前正在解析 initializer 的最内层变量集合。 */
+    /** 当前所在的全部 initializer 声明；嵌套函数与局部初始化器不能重新暴露外层自身。 */
     val variablesBeingInitialized: List<CfirVariable>
-        get() = variableInitializerStack.lastOrNull().orEmpty()
+        get() = variableInitializerStack.flatten()
 
     /** 当前正在解析 initializer 的最内层字段。 */
     val fieldBeingInitialized: CfirFieldVariable?
@@ -455,10 +455,10 @@ class BodyResolveContext(
     }
 
     /**
-     * 在局部变量 initializer 上下文内执行解析。
+     * 在变量 initializer 上下文内执行解析。
      *
-     * 变量声明会先进入当前 scope 以遮蔽外层同名绑定，但 initializer 内对该变量自身的访问
-     * 不能解析为有效引用；表达式解析层据此产生 unresolved 诊断。
+     * 局部声明在 initializer 完成后才进入作用域；顶层声明已由 provider 预先收集，
+     * tower 必须排除正在初始化的声明自身，再继续查找外层同名声明。
      */
     fun <T> withVariableInitializer(variable: CfirVariable, f: () -> T): T =
         withVariableInitializer(listOf(variable), f)
@@ -466,8 +466,8 @@ class BodyResolveContext(
     /**
      * 在一组 pattern binding 的 initializer 上下文内执行解析。
      *
-     * `let (a, b) = ...` 这类声明会同时把多个 binding 引入当前声明作用域；initializer
-     * 中对这些名字的访问必须命中内层声明并报告 unresolved，而不是退回外层同名变量。
+     * `let (a, b) = ...` 的多个 binding 共享 initializer。查找其中任一名字时都应排除
+     * 本次声明；有合法外层声明则正常解析，否则由名称解析报告 unresolved。
      */
     fun <T> withVariableInitializer(variables: Collection<CfirVariable>, f: () -> T): T {
         if (variables.isEmpty()) return f()

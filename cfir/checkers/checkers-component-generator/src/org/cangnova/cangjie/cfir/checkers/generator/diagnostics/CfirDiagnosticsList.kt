@@ -701,6 +701,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val TUPLE_PATTERN_NOT_MATCH by error<PsiElement> {
             parameter<String>("actualTypeText")
         }
+        val TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED by error<PsiElement>()
+        val MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL by error<PsiElement>()
 
         val PATTERN_NOT_MATCH by error<PsiElement> {
             parameter<String>("patternText")
