@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.patterns.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirTypePatternImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
+    override var matchingKind: CfirTypePatternMatchingKind,
     override var typeRef: CfirTypeRef,
     override val bindingName: Name?,
     override var bindingVariable: CfirPatternBindingVariable?,
@@ -42,5 +44,9 @@ class CfirTypePatternImpl @CfirImplementationDetail constructor(
     override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirTypePatternImpl {
         bindingVariable = bindingVariable?.transform(transformer, data)
         return this
+    }
+
+    override fun replaceMatchingKind(newMatchingKind: CfirTypePatternMatchingKind) {
+        matchingKind = newMatchingKind
     }
 }

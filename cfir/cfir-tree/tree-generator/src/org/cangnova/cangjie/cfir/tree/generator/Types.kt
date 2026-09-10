@@ -61,6 +61,9 @@ val emptyArgumentListType = type("expressions", "CfirEmptyArgumentList")
  */
 val patternBindingVariableSymbolType = type("symbols", "CfirPatternBindingSymbol")
 
+/** 类型模式的静态/动态判定形式。 */
+val typePatternMatchingKindType = type("patterns", "CfirTypePatternMatchingKind")
+
 /**
  * CFIR 根元素类型引用。
  */

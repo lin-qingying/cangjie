@@ -5063,6 +5063,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/TypePattern")
             }
 
+            @TestMetadata("cfa_after_sema.cj")
+            @Test
+            fun testCfaAfterSema() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/cfa_after_sema.cj")
+            }
+
             @TestMetadata("exhaustive_enum.cj")
             @Test
             fun testExhaustiveEnum() {
@@ -5127,6 +5133,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             @Test
             fun testNonExhaustivePublic01() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/non_exhaustive_public_01.cj")
+            }
+
+            @TestMetadata("static_type_pattern_flow.cj")
+            @Test
+            fun testStaticTypePatternFlow() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/static_type_pattern_flow.cj")
             }
 
             @TestMetadata("type01.cj")

@@ -32,6 +32,9 @@ abstract class AbstractDiagnosticCollectorComponent(
     /** 执行不依赖具体 CFIR 元素的全局设置检查。 */
     open fun checkSettings(data: CheckerContext) {}
 
+    /** 后续阶段是否可在 IDE 的单声明诊断根上运行；依赖完整文件的组件保持 false。 */
+    open val supportsDeclarationPostSemaPass: Boolean get() = false
+
     /**
      * 在一个声明的完整子树已完成普通 checker 遍历后执行声明级分析。
      *

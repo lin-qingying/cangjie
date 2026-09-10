@@ -12,7 +12,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
 /**
  * 函数 CFG 的控制流诊断组件。
  *
- * 它在函数子树的 Sema checker 已完成后消费完整 CFG。这样 matrix 覆盖诊断与常量分支
+ * 它在当前诊断根的全部 Sema checker 已完成后消费完整 CFG。这样 matrix 覆盖诊断与常量分支
  * 可达性各自保有独立 owner：前者属于表达式 checker，后者对位官方 CHIR
  * `ConstAnalysis` 加 `UnreachableBranchCheck` 的后端控制流阶段。
  *
@@ -23,19 +23,19 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
  *
  * 偏差说明：官方按整个 package 门控，而 CFIR 的诊断收集以 structure element 为粒度、
  * 每次收集使用独立 reporter（见 `collectForStructureElement`），无法观察兄弟声明的
- * 错误。这里退到"当前声明子树无错误"这一可在本架构中稳定观察的范围；它比官方门控更窄，
- * 只会保留更多诊断，不会凭空抑制。
+ * 错误。完整文件以文件错误状态门控；单声明根以本次收集已知的文件错误状态门控。
+ * 阶段顺序由 collector 统一保证，声明遍历先后不能让 CFA 抢在后面的 Sema 错误之前运行。
  */
 class ControlFlowAnalysisDiagnosticComponent(
     session: CfirSession,
     reporter: PendingDiagnosticReporter,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
+    override val supportsDeclarationPostSemaPass: Boolean get() = true
+
     /** 退出函数后才能得到完整且冻结的 CFG。 */
     override fun onDeclarationExit(declaration: CfirDeclaration, data: CheckerContext) {
         val function = declaration as? CfirFunction ?: return
-        // 官方按 package/file 的 Sema 结果门控 CHIR；同一文件中前一个函数的
-        // pending/committed error 也必须阻断当前函数的 CFA，不能只看全局 reporter。
-        if (data.containingFilePath?.let(reporter::hasErrorsInFile) == true) return
+        // Sema 错误门控已经在进入本阶段前完成，后续阶段自身的诊断不改变这个决定。
         val graph = function.controlFlowGraphReference?.controlFlowGraph ?: return
         // 与官方 CHIR UnreachableBranchCheck 相同，CFA 只消费 CFG 常量分支目标；
         // Sema pattern legality 诊断不参与这一后端控制流判定。

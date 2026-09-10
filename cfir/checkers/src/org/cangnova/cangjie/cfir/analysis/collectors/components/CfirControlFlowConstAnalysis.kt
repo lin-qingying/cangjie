@@ -27,6 +27,8 @@ import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -160,6 +162,15 @@ internal class CfirControlFlowConstAnalysis {
             guard.constantBoolean(state)
         } else {
             val pattern = decisionNode.pattern ?: return null
+            if (pattern is CfirTypePattern) {
+                val matches = when (pattern.matchingKind) {
+                    CfirTypePatternMatchingKind.ALWAYS -> true
+                    CfirTypePatternMatchingKind.NEVER -> false
+                    CfirTypePatternMatchingKind.RUNTIME, CfirTypePatternMatchingKind.UNKNOWN -> return null
+                }
+                val label = if (matches) MatchBranchSuccess else MatchBranchFailure
+                return followingNodes.singleOrNull { edgeTo(it).label == label }
+            }
             val subject = decisionNode.matchExpression.subject ?: return null
             val subjectValue = subject.constantValue(state) ?: return null
             val selectedValue = subjectValue.payloadAt(decisionNode.subjectPath) ?: return null

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 
 /**
@@ -16,14 +17,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
  */
 abstract class BeforeElementDiagnosticCollectionHandler: CfirSessionComponent {
     /**
-     * 在对某个 CFIR 元素执行诊断收集前调用。
+     * 在对某个 CFIR 元素执行当前阶段的诊断收集前调用。
      */
-    open fun beforeCollectingForElement(element: CfirElement) {}
+    open fun beforeCollectingForElement(element: CfirElement, phase: DiagnosticCollectionPhase) {}
 
     /**
      * 在 collector 进入嵌套声明前调用，并提供当前 checker context。
      */
-    open fun beforeGoingNestedDeclaration(declaration: CfirDeclaration, context: CheckerContext) {}
+    open fun beforeGoingNestedDeclaration(
+        declaration: CfirDeclaration,
+        context: CheckerContext,
+        phase: DiagnosticCollectionPhase,
+    ) {}
 }
 
 /**

@@ -108,6 +108,10 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             default("exhaustiveness", "CfirMatchExhaustivenessStatus.Unknown")
         }
 
+        builder(typePattern) {
+            default("matchingKind", "CfirTypePatternMatchingKind.UNKNOWN")
+        }
+
         builder(valueParameter) {
             default("status", "DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS")
             additionalImports(defaultStatusForStatuslessDeclarationsType)

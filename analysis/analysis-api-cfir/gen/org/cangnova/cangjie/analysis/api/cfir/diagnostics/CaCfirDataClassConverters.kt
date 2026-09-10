@@ -10,6 +10,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
@@ -588,6 +589,12 @@ private fun CaDiagnosticConverterBuilder.addConversions18() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions19() {
+    add(CfirErrors.TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED) { cfirDiagnostic ->
+        TuplePatternWithCorrectSizeExpectedImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.INVALID_NODE_AFTER_CHECK) { cfirDiagnostic ->
         InvalidNodeAfterCheckImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -767,6 +774,12 @@ private fun CaDiagnosticConverterBuilder.addConversions25() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions26() {
+    add(CfirErrors.MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL) { cfirDiagnostic ->
+        MismatchedTypeForPatternInVardeclImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.PROPERTY_MUST_IMPLEMENT_BOTH) { cfirDiagnostic ->
         PropertyMustImplementBothImpl(
             cfirDiagnostic.a,
@@ -3660,6 +3673,12 @@ private fun CaDiagnosticConverterBuilder.addConversions172() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions173() {
+    add(CfirErrors.MATCH_CASE_MUST_HAVE_DEFAULT) { cfirDiagnostic ->
+        MatchCaseMustHaveDefaultImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN) { cfirDiagnostic ->
         MismatchedTypesMultipleAssignImpl(
             cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),

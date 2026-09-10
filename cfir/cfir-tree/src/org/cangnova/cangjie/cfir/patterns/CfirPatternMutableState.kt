@@ -45,6 +45,7 @@ interface CfirPatternMutableState {
                     pattern = impl,
                     typeRef = impl.typeRef,
                     bindingVariable = impl.bindingVariable,
+                    matchingKind = impl.matchingKind,
                 )
             }
 
@@ -109,13 +110,16 @@ private class CfirTypePatternMutableState(
      * 捕获时的绑定变量。
      */
     private val bindingVariable: CfirPatternBindingVariable?,
+    /** 捕获时的类型模式判定形式。 */
+    private val matchingKind: CfirTypePatternMatchingKind,
 ) : CfirPatternMutableState {
     /**
-     * 恢复 type pattern 的类型引用和绑定变量。
+     * 恢复 type pattern 的类型引用、绑定变量和判定形式。
      */
     override fun restore() {
         pattern.typeRef = typeRef
         pattern.bindingVariable = bindingVariable
+        pattern.replaceMatchingKind(matchingKind)
     }
 }
 

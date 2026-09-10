@@ -56,7 +56,7 @@ interface Z1<M> where M <: I1 {
         var v4 = v1 is Option<M>
         var v5 = v2 as Option<(M) -> M>
         var v6 = match (v3) {
-            case _: Option<C<M>> => false
+            case <!UNREACHABLE_PATTERN!>_: Option<C<M>><!> => false
             case _: C<M> => true
         }
         var v7 = v1.p1 + M.p2 + v1.f1() + M.f3() + M.f4<Int64>(0)

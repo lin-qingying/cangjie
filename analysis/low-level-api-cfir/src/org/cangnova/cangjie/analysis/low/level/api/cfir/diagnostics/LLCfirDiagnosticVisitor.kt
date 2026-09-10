@@ -41,7 +41,7 @@ internal open class LLCfirDiagnosticVisitor(
      */
     override fun visitNestedElements(element: CfirElement) {
         if (element is CfirDeclaration) {
-            beforeElementDiagnosticCollectionHandler?.beforeGoingNestedDeclaration(element, context)
+            beforeElementDiagnosticCollectionHandler?.beforeGoingNestedDeclaration(element, context, components.phase)
         }
 
         super.visitNestedElements(element)
@@ -51,7 +51,7 @@ internal open class LLCfirDiagnosticVisitor(
      * 对当前 CFIR 元素运行所有 diagnostics 组件并提交嵌套声明上的 pending diagnostics。
      */
     override fun checkElement(element: CfirElement) {
-        beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element)
+        beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element, components.phase)
         components.regularComponents.forEach { diagnosticVisitor ->
             checkCanceled()
             suppressAndLogExceptions {

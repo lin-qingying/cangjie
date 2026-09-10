@@ -16,7 +16,7 @@ class Uncle {}
 main(): Int64 {
     var son = Son()
     var res = match (son) {
-        case uncle: Uncle => 0
+        case <!UNREACHABLE_PATTERN!>uncle: Uncle<!> => 0
         case father: Father => father.age
         case <!UNREACHABLE_PATTERN!>_<!> => 1
     }

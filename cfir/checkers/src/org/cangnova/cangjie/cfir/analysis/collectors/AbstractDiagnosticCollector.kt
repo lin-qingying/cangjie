@@ -29,15 +29,17 @@ abstract class AbstractDiagnosticCollector(
     /** 对一个 CFIR 声明子树执行完整诊断收集流程。 */
     fun collectDiagnostics(cfirDeclaration: CfirDeclaration, reporter: PendingDiagnosticReporter) {
         val components = createComponents(reporter)
-        runDiagnosticPass(cfirDeclaration, reporter, components)
+        val contextFilePath = runDiagnosticPass(cfirDeclaration, reporter, components)
 
         if (components.postSemaComponents.isEmpty()) return
-        val file = cfirDeclaration as? CfirFile ?: return
-        val sourceFile = file.sourceFile ?: return
-        val filePath = sourceFile.path ?: return
+        val file = cfirDeclaration as? CfirFile
+        val filePath = if (file != null) file.sourceFile?.path else contextFilePath
+        if (filePath == null) return
         if (reporter.hasErrorsInFile(filePath)) return
 
-        runDiagnosticPass(cfirDeclaration, reporter, components.postSemaPass())
+        val postSemaPass = components.postSemaPass(forPartialDeclaration = file == null)
+        if (postSemaPass.regularComponents.isEmpty()) return
+        runDiagnosticPass(cfirDeclaration, reporter, postSemaPass)
     }
 
     /**
@@ -50,12 +52,13 @@ abstract class AbstractDiagnosticCollector(
         cfirDeclaration: CfirDeclaration,
         reporter: PendingDiagnosticReporter,
         components: DiagnosticCollectorComponents,
-    ) {
+    ): String? {
         val visitor = createVisitor(components, reporter)
         visitor.checkSettings()
         session.lazyDeclarationResolver.disableLazyResolveContractChecksInside {
             cfirDeclaration.accept(visitor, null)
         }
+        return visitor.context.containingFilePath
     }
 
     /** 仅执行不依赖具体声明节点的 session/语言设置诊断检查。 */

@@ -9,7 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterD
  * @param regularComponents 常规检查组件，如声明检查器、表达式检查器等
  * @param reportCommitter 诊断提交组件，在每个元素检查完成后提交 pending 诊断
  */
-class  DiagnosticCollectorComponents(
+class DiagnosticCollectorComponents(
     /** 常规检查组件，如声明检查器、表达式检查器、类型检查器等。 */
     val regularComponents: Array<AbstractDiagnosticCollectorComponent>,
     /**
@@ -21,11 +21,14 @@ class  DiagnosticCollectorComponents(
     val postSemaComponents: Array<AbstractDiagnosticCollectorComponent>,
     /** 诊断提交组件，在元素或文件遍历结束时提交 pending 诊断。 */
     val reportCommitter: ReportCommitterDiagnosticComponent,
+    /** 当前组件集合所属的阶段，供 IDE 宿主区分各阶段的遍历与诊断。 */
+    val phase: DiagnosticCollectionPhase = DiagnosticCollectionPhase.SEMA,
 ) {
     /** 创建只执行后续阶段检查器的一次诊断遍历配置。 */
-    fun postSemaPass(): DiagnosticCollectorComponents = DiagnosticCollectorComponents(
-        regularComponents = postSemaComponents,
+    fun postSemaPass(forPartialDeclaration: Boolean = false): DiagnosticCollectorComponents = DiagnosticCollectorComponents(
+        regularComponents = postSemaComponents.filter { !forPartialDeclaration || it.supportsDeclarationPostSemaPass }.toTypedArray(),
         postSemaComponents = emptyArray(),
         reportCommitter = reportCommitter,
+        phase = DiagnosticCollectionPhase.POST_SEMA,
     )
 }

@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
+import org.cangnova.cangjie.cfir.resolve.match.resolveTypePatternMatchingKind
 import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteralExpectedType
 import org.cangnova.cangjie.cfir.resolve.match.resolveLiteralPatternType
 import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
@@ -190,6 +191,7 @@ internal fun CfirPartialBodyResolveTransformer.resolvePatternBindingTypes(
 
             val bindingType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType ?: expectedType
             pattern.bindingVariable?.replaceBindingType(bindingType)
+            pattern.replaceMatchingKind(resolveTypePatternMatchingKind(expectedType, bindingType, session))
         }
 
         is CfirTuplePattern -> {

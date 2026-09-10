@@ -6261,3 +6261,38 @@ XML 为 8513 → 8521 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 2、PatternMatching 6，共 8 项；其余已清零家族保持通过，另有 465 项既有全量失败。
 - change isolation: 提交共享默认类型/数值字面量/容器解析修复、四份新 fixture、两套生成入口与日志；原失败 fixture 期望未改，.idea/workspace.xml 独立保留。
+
+## 2026-09-11：类型模式静态判定与完整 Sema 后的常量流分析
+
+- problem type: Flow Analysis / Static type patterns。
+- root cause: CFG/CFA 没有保存类型模式是否静态成功、静态失败或需要运行期检查，且 CFA 在主语值未知时提前返回，导致已能由类型关系证明不匹配的 enum payload 模式漏报。CFA 原先在各函数退出时立即执行，后续声明的 Sema 错误尚未上报，产生了官方在 Sema 失败后不会执行的 CHIR 警告。
+- official Cangjie evidence: 47-static-type-patterns-valid、47-type06、47-type05（build/repair-20260906/evidence 对应 .official.*）确认 Son/Uncle 静态不相容、Son/Father 静态成功，open class 与泛型保留运行期可能性。已知 enum 的后续 Father case 仍按官方结构死区规则警告；未知 enum 的同类例子仅警告 Uncle。fixture 源码均语法合法。
+- official implementation: TypeCheckPattern.cpp:311-332 的 matchBeforeRuntime / needRuntimeTypeCheck；TypeCheckUtil.cpp:860-884 的 final、声明身份、泛型及正反普通 subtype 规则；TranslateMatchExpr.cpp:580-608 分别生成无条件流、InstanceOf 或 false 条件。
+- Kotlin counterpart files consulted: FirCastOperatorsChecker.kt 先分类静态可用性再由 checker 报告；FirDataFlowAnalyzer.kt:543-589 在正式 type-operator CFG 节点上记录真假类型事实。
+- CFIR owner files changed: CfirTypePatternMatchingKind 与 CfirTypePattern.matchingKind 正规 IR 字段；tree-generator/BuilderConfigurator、生成 builder/copy/impl 和 CfirPatternMutableState 同步生命周期。新 CfirTypePatternMatching 共享分类，CfirPatternBindingResolution 写入解析结论，CfirMatchPatternLegalityChecker 复用运行期关系并删除重复私有逻辑。CFG 对 ALWAYS 使用无条件流，CFA 对 NEVER 不再要求主语常量值；RUNTIME/UNKNOWN 保留后继。
+- repair principle: 类型判定属于模式解析结果，在 CFG/CFA 中保留其真实控制流形态，不从某个 fixture 的值或文本猜测可达性。
+- phase ownership: CLI 与 IDE 的 CFA 都移入已有 postSemaComponents。AbstractDiagnosticCollector 完成当前诊断根的全部 Sema 后，以当前文件错误状态决定是否执行后续阶段，不能在遍历每个函数时提前判断。单声明根复用持久上下文的文件路径，只运行支持该范围的组件；依赖完整文件的 CHIR 算术组件仍以文件为入口。官方按 package 门控，IDE structure element 的独立 reporter 只能观察当前收集范围，该现存架构边界在组件 KDoc 中明确记录。
+- phase observation: DiagnosticCollectionPhase 区分 SEMA/POST_SEMA，IDE 宿主回调显式接收阶段。计数测试逐阶段验证不得重复执行，Sema 仍验证全部应检查节点都被访问。未通过省略后续阶段回调来掩盖真实遍历。
+- fixtures covered / corrections: 原 TypePattern/type06 恢复；type05 补 Uncle 警告、type06 补 Father 警告，均来自官方重新取证。新增 static_type_pattern_flow.cj 五函数，覆盖已知/未知 enum、open class、静态子类型与泛型。
+- additional fixtures: Extend/generic_param_decl_call_in_member_func 的 generics_00012、00035、00051（两处）、00065、00100 按各自 47-generics-* 官方成功编译结果补齐 CFA warning；00038 官方只报两个 EXTEND_MEMBER_CANNOT_SHADOW，保持原期望。新 cfa_after_sema.cj 验证文件后面的 Sema 错误阻断前面函数的 CFA；官方 47-cfa-after-sema 确认只报未声明名字。
+- IDE coverage: SourcePostSemaDiagnosticsTest 的 constantPattern.cj、laterSemanticError.cj 分别验证单声明根的 CFA 及后分支 Sema 错误门控，官方证据为 47-ide-constant-pattern / 47-ide-later-semantic-branch。IDE 构建同时重新生成了之前已增加的三个模式诊断的 Analysis API 声明/实现/转换映射。
+- verification commands and outcome:
+  - 生成器默认值接入问题修复后，47-type-flow-targeted：92项90通过；两项 type05 仅缺官方 warning，补正后进入完整家族验证。
+  - 47-type-flow-family：3235项2913通过、16既有失败、306跳过；相对46全量FIXED2、REGRESSED0、新增2全部通过、changed_failure_messages=[]。覆盖模式/条件/循环/Enum/Box/IsOrAs/NonExhaustiveEnum、Generics/TypeInfer/Typealias/Call及Diagnostics。
+  - 47-post-sema-family：PatternMatching、Extend/GenericParamDeclCallInMemberFunc、Generics/TypeInfer/Typealias/Call 和 Diagnostics 双入口2521项，2211通过、4既有失败、306跳过；相对46全量FIXED2、REGRESSED0、新增4全部通过、changed_failure_messages=[]。
+  - `gradlew-queue.bat :analysis:low-level-api-cfir:test --tests '*SourceDiagnosticTraversalCounterTestGenerated' --tests '*SourceCfirContextCollectionTestGenerated' --tests '*SourceFileStructureTestGenerated' --tests '*SourcePostSemaDiagnosticsTest' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：最终8项7通过1既有失败。恢复原阶段配置的对照47-ide-original-phase为6项4通过2失败；最终47-ide-phase-final相对对照FIXED1、REGRESSED0、新增2通过、剩余失败消息不变。临时对照配置已完整恢复。
+  - IDE剩余的SourceCfirContextCollectionTestGenerated/testInterfaceStatus()在调整前后的失败消息完全相同：expected file->Child but actual file。首次多语句探针还暴露LLCfirBodyLazyResolver.kt:192对ContextIndependent的既有硬性前置条件，显式返回类型提供WithExpectedType会异常；保留47-ide-later-semantic-error官方探针，未在本次修改惰性解析协议，最终门控测试用单Match内的后分支错误隔离该问题。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：30m 20s 正常结束。46-defaults-full-final → 47-type-flow-full-final：FIXED=2、REGRESSED=0、NEW_KEYS=4（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8520 | 8524 |
+| 通过 | 7740 | 7746 |
+| 失败 | 473 | 471 |
+| 跳过 | 307 | 307 |
+
+XML 为 8521 → 8525 records，均为 308 skipped（含一条聚合记录）。完整逐项证据为 47-type-flow-full-final 与 46-defaults-full-final--47-type-flow-full-final.json。
+
+- remaining failures: 目标剩 Match 2、PatternMatching 4，共6项（match_no_selector_fuzz_001、match029、match031 双入口）；其余已清零家族保持通过，另有465项既有全量失败。IDE上下文旧失败及多语句显式返回类型的partial-body限制另行保留记录。
+- change isolation: 提交静态类型模式、诊断阶段及IDE观测接口、官方期望修正、新回归和生成入口；.idea/workspace.xml 独立保留。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（17s）；`git diff --check` 通过。
