@@ -4639,6 +4639,18 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/cfa_condition_chain.cj")
             }
 
+            @TestMetadata("cfa_integer_boundaries.cj")
+            @Test
+            fun testCfaIntegerBoundaries() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/cfa_integer_boundaries.cj")
+            }
+
+            @TestMetadata("cfa_integer_results.cj")
+            @Test
+            fun testCfaIntegerResults() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/cfa_integer_results.cj")
+            }
+
             @TestMetadata("cfa_pattern_value_domain.cj")
             @Test
             fun testCfaPatternValueDomain() {
@@ -4655,6 +4667,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testErrDifferentPattern01() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/err_different_pattern_01.cj")
+            }
+
+            @TestMetadata("independent_branch_lambdas.cj")
+            @Test
+            fun testIndependentBranchLambdas() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/independent_branch_lambdas.cj")
             }
 
             @TestMetadata("is_expr_00.cj")

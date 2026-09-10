@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.collectors.components
 
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.persistentMapOf
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
@@ -7,36 +9,45 @@ import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirTypeConversion
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.expressions.toOperatorName
 import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.CFGNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.BlockExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.ControlFlowGraph
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.EdgeLabel
-import org.cangnova.cangjie.cfir.resolve.dfa.cfg.FunctionCallExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IncrementDecrementNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchConditionEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchGuardEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailure
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailureNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchSuccess
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchResultExitNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchEnterNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchPatternDecisionNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.QualifiedAccessNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.VariableAssignmentNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.VariableDeclarationExitNode
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -44,12 +55,17 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.isIntegerType
 import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.name.Name
 import java.math.BigInteger
 import java.util.ArrayDeque
 import java.util.Collections
@@ -263,16 +279,23 @@ internal class CfirControlFlowConstAnalysis {
         is VariableDeclarationExitNode -> assign(node.fir.symbol, node.fir.initializer)
         is VariableAssignmentNode -> assign(node.fir.assignedVariableSymbolOrNull(), node.fir.rValue)
         is IncrementDecrementNode -> incrementOrDecrement(node.fir)
+        // Load 产生独立的值；后续 Store 不得改变已求值的 receiver/argument/selector。
+        is QualifiedAccessNode -> withResult(node.fir, node.fir.resolvedVariableSymbolOrNull()?.let(::get))
+        is BlockExitNode -> withResult(node.fir, (node.fir.statements.lastOrNull() as? CfirExpression)?.constantValue(this))
+        is MatchEnterNode -> withResult(node.fir, null)
+        is MatchBranchResultExitNode -> {
+            // 对位 TranslateMatchCaseBody 的 Store：先写当前分支结果，再由 MatchExit 汇合。
+            val match = node.followingNodes.filterIsInstance<MatchExitNode>().single().fir
+            withResult(match, node.fir.body.constantValue(this))
+        }
         // 官方 ConstAnalysis 不会因普通 APPLY 擦除其他局部变量的已知事实。
-        is FunctionCallExitNode -> this
         else -> this
     }
 
     /** 把一个已知表达式值写入局部变量；未知值会清除旧事实。 */
     private fun ConstState.assign(variable: CfirVariableSymbol<*>?, expression: CfirExpression?): ConstState {
         if (variable == null) return this
-        val value = expression?.constantValue(this) ?: ConstValue.Unknown
-        return copy().also { state -> state.put(variable, value) }
+        return withVariable(variable, expression?.constantValue(this))
     }
 
     /**
@@ -283,31 +306,22 @@ internal class CfirControlFlowConstAnalysis {
      */
     private fun ConstState.incrementOrDecrement(expression: CfirIncrementDecrementExpression): ConstState {
         val variable = expression.expression.referencedVariableSymbolOrNull() ?: return this
-        val nextValue = (get(variable) as? ConstValue.Literal)
+        val nextValue = (get(variable) as? ConstValue.Integer)
             ?.incrementedOrDecremented(expression)
-            ?: ConstValue.Unknown
-        return copy().also { state -> state.put(variable, nextValue) }
+        return withVariable(variable, nextValue)
     }
 
-    /** 计算官方 `x += 1` 降糖的整数结果；不能精确表示时回退为未知状态。 */
-    private fun ConstValue.Literal.incrementedOrDecremented(
+    /** 计算官方 `x += 1` 降糖的整数结果，越界时没有正常结果。 */
+    private fun ConstValue.Integer.incrementedOrDecremented(
         expression: CfirIncrementDecrementExpression,
-    ): ConstValue.Literal? {
-        if (kind != CfirLiteralKind.INT) return null
+    ): ConstValue.Integer? {
         val delta = when (expression.operationName) {
             OperatorNameConventions.INC -> BigInteger.ONE
             OperatorNameConventions.DEC -> BigInteger.ONE.negate()
             else -> return null
         }
-        val parsed = CfirIntConstantEvalUtils.parseIntLiteralValue(value) ?: return null
-        val next = parsed.value + delta
-        val range = CfirIntConstantEvalUtils.rangeForLiteralTargetType(expression.expression.coneTypeOrNull)
-            ?: return null
-        if (!range.contains(next)) return null
-        return ConstValue.Literal(
-            kind = CfirLiteralKind.INT,
-            value = next.toString() + parsed.explicitSuffix.orEmpty(),
-        )
+        val type = expression.expression.integerTypeOrNull() ?: return null
+        return CfirControlFlowIntegerOperations.checked(value + delta, type)?.let(ConstValue::Integer)
     }
 
     /** 常量 bool 仅接受已知 Boolean 字面量。 */
@@ -342,12 +356,11 @@ internal class CfirControlFlowConstAnalysis {
 
     /** MultiBranch 先把离散 selector 转成 UInt64；只保留官方 TypeCast 可求值的整数域。 */
     private fun CfirOrPattern.matchesMultiOrConstant(value: ConstValue, state: ConstState): Boolean? {
-        if (value is ConstValue.Literal && (value.kind == CfirLiteralKind.INT || value.kind == CfirLiteralKind.BYTE)) {
-            val selector = CfirIntConstantEvalUtils.parseIntLiteralValue(value.value)?.value ?: return null
+        if (value is ConstValue.Integer) {
             val alternatives = alternatives.map { alternative ->
                 (alternative as? CfirConstPattern)?.integerSwitchConstant() ?: return null
             }
-            return selector in alternatives
+            return value.value in alternatives
         }
         if (value is ConstValue.Enum && value.constructor.hasIntegerSelectorTag()) {
             val matches = alternatives.map { it.matchesAtomicConstant(value, state) }
@@ -402,14 +415,99 @@ internal class CfirControlFlowConstAnalysis {
     /** 从 CFG 节点拥有的已解析表达式计算常量 domain。 */
     private fun CfirExpression.constantValue(state: ConstState): ConstValue? = when (this) {
         is CfirWrappedExpression -> expression.constantValue(state)
-        is CfirBlock -> (statements.singleOrNull() as? CfirExpression)?.constantValue(state)
-        is CfirLiteralExpression -> ConstValue.Literal(kind, value)
+        is CfirBlock, is CfirMatchExpression -> state.result(this)
+        is CfirLiteralExpression -> literalConstantValue()
         is CfirTupleLiteral -> ConstValue.Tuple(elements.map { element -> element.constantValue(state) ?: ConstValue.Unknown })
-        is CfirFunctionCall -> trackedEnumConstructorOrNull()?.let(ConstValue::Enum)
+        is CfirTypeConversion -> {
+            val targetType = integerTypeOrNull()
+            val argumentValue = (argument.constantValue(state) as? ConstValue.Integer)?.value
+            if (argument.integerTypeOrNull() != null && targetType != null && argumentValue != null) {
+                CfirControlFlowIntegerOperations.checked(argumentValue, targetType)?.let(ConstValue::Integer)
+            } else null
+        }
+        is CfirFunctionCall -> trackedEnumConstructorOrNull()?.let(ConstValue::Enum) ?: primitiveOperatorValue(state)
+        is CfirComparisonExpression -> integerComparisonValue(state)
 
         else -> trackedEnumConstructorOrNull()?.let(ConstValue::Enum)
-            ?: referencedVariableSymbolOrNull()?.let(state::get)
+            ?: state.result(this)
     }
+
+    /** 整数值在进入抽象域时规范化，后缀、进制和字符源码写法不参与值比较。 */
+    private fun CfirLiteralExpression.literalConstantValue(): ConstValue? {
+        val integerType = integerTypeOrNull() ?: return ConstValue.Literal(kind, value)
+        val integer = when (kind) {
+            CfirLiteralKind.INT, CfirLiteralKind.BYTE -> CfirIntConstantEvalUtils.parseIntLiteralValue(value)?.value
+            CfirLiteralKind.STRING -> (value as? String)?.takeIf { it.codePointCount(0, it.length) == 1 }
+                ?.let { BigInteger.valueOf(it.codePointAt(0).toLong()) }
+            else -> null
+        } ?: return null
+        return CfirControlFlowIntegerOperations.checked(integer, integerType)?.let(ConstValue::Integer)
+    }
+
+    /** 仅完整匹配 primitive 签名的源级 operator 才能进入内建整数求值。 */
+    private fun CfirFunctionCall.primitiveOperatorValue(state: ConstState): ConstValue? {
+        if (origin != CfirFunctionCallOrigin.Operator || coneTypeOrNull is ConeErrorType) return null
+        val name = (calleeReference as? CfirNamedReference)?.name ?: return null
+        val receiver = explicitReceiver ?: return null
+        val argumentTypes = argumentList.arguments.map { it.coneTypeOrNull ?: return null }
+        val signature = BuiltinPrimitiveOperators.resolve(name, receiver.coneTypeOrNull, argumentTypes)?.signature ?: return null
+        val left = receiver.constantValue(state)
+        if (signature.parameterKinds.isEmpty()) {
+            if (name == OperatorNameConventions.NOT && left is ConstValue.Literal && left.kind == CfirLiteralKind.BOOLEAN) {
+                return (left.value as? Boolean)?.let { ConstValue.Literal(CfirLiteralKind.BOOLEAN, !it) }
+            }
+            val targetType = integerTypeOrNull() ?: return null
+            // 官方将带符号 literal 直接建成值；CFIR 一元节点必须保留最小有符号整数的合法性。
+            CfirIntConstantEvalUtils.parseSignedIntExpression(this)?.let { literal ->
+                return CfirControlFlowIntegerOperations.checked(literal.value, targetType)?.let(ConstValue::Integer)
+            }
+            return CfirControlFlowIntegerOperations.unary(name, (left as? ConstValue.Integer)?.value, targetType)
+                ?.let(ConstValue::Integer)
+        }
+        val right = argumentList.arguments.singleOrNull()?.constantValue(state)
+        if (!signature.receiverKind.isInteger) return null
+        val leftInteger = (left as? ConstValue.Integer)?.value
+        val rightInteger = (right as? ConstValue.Integer)?.value
+        if (signature.returnKind == PrimitiveTypeKind.BOOLEAN) {
+            return compareIntegers(name, leftInteger, rightInteger)
+        }
+        val targetType = integerTypeOrNull() ?: return null
+        return CfirControlFlowIntegerOperations.binary(name, leftInteger, rightInteger, targetType)?.let(ConstValue::Integer)
+    }
+
+    /** 专用比较 IR 与 operator call 共用相同的内建签名和值域。 */
+    private fun CfirComparisonExpression.integerComparisonValue(state: ConstState): ConstValue? {
+        if (coneTypeOrNull is ConeErrorType) return null
+        val name = operation.toOperatorName()
+        val signature = BuiltinPrimitiveOperators.resolve(name, left.coneTypeOrNull, listOf(right.coneTypeOrNull ?: return null))
+            ?.signature ?: return null
+        if (!signature.receiverKind.isInteger) return null
+        return compareIntegers(
+            name,
+            (left.constantValue(state) as? ConstValue.Integer)?.value,
+            (right.constantValue(state) as? ConstValue.Integer)?.value,
+        )
+    }
+
+    /** 两个已知整数的内建比较；未知操作数不产生分支结论。 */
+    private fun compareIntegers(name: Name, left: BigInteger?, right: BigInteger?): ConstValue? {
+        left ?: return null
+        right ?: return null
+        val result = when (name) {
+            OperatorNameConventions.EQUALS -> left == right
+            OperatorNameConventions.NOT_EQUALS -> left != right
+            OperatorNameConventions.COMPARE_LT -> left < right
+            OperatorNameConventions.COMPARE_LTEQ -> left <= right
+            OperatorNameConventions.COMPARE_GT -> left > right
+            OperatorNameConventions.COMPARE_GTEQ -> left >= right
+            else -> return null
+        }
+        return ConstValue.Literal(CfirLiteralKind.BOOLEAN, result)
+    }
+
+    /** 已解析整数类型；未知/错误/非整数类型不采用默认数值域。 */
+    private fun CfirExpression.integerTypeOrNull(): ConePrimitiveType? =
+        BuiltinPrimitiveOperators.normalizePrimitiveOperand(coneTypeOrNull)?.takeIf { it.kind.isInteger }
 
     /** 常量状态中的局部变量引用。 */
     private fun CfirExpression.referencedVariableSymbolOrNull(): CfirVariableSymbol<*>? =
@@ -478,6 +576,9 @@ internal class CfirControlFlowConstAnalysis {
         /** 已知 enum constructor tag；payload 不属于抽象域。 */
         data class Enum(val constructor: CfirEnumConstructorSymbol) : ConstValue
 
+        /** 已规范化的整数值，类型范围在产生该值的运算处检查。 */
+        data class Integer(val value: BigInteger) : ConstValue
+
         /** 已知字面量。 */
         data class Literal(
             val kind: CfirLiteralKind,
@@ -489,6 +590,14 @@ internal class CfirControlFlowConstAnalysis {
 
         /** 当前 CFG 状态无法确定的值。 */
         data object Unknown : ConstValue
+
+        /** 官方对子字段独立求 join；tuple 的一个分量变化不应丢弃其它共同分量。 */
+        fun join(other: ConstValue?): ConstValue = when {
+            this == other -> this
+            this is Tuple && other is Tuple && elements.size == other.elements.size ->
+                Tuple(elements.zip(other.elements) { left, right -> left.join(right) })
+            else -> Unknown
+        }
     }
 
     /** 值本身及其全部分量是否都已确定，只有此时才允许做相等判定。 */
@@ -509,41 +618,47 @@ internal class CfirControlFlowConstAnalysis {
         if (path.isEmpty()) return this
         val index = path.singleOrNull() ?: return null
         val tuple = this as? ConstValue.Tuple ?: return null
-        return tuple.elements.getOrNull(index) as? ConstValue.Literal
+        return tuple.elements.getOrNull(index)?.takeIf { it is ConstValue.Literal || it is ConstValue.Integer }
     }
 
     /**
-     * CFG 程序点上的局部常量状态。
+     * CFG 程序点上的局部变量状态和已求值表达式结果。
      *
      * 多前驱汇合只保留每条路径都相同的事实，因而循环、异常或未知调用不会错误地
      * 把某一路径的局部常量推广到另一条路径。
+     * 持久映射共享未变化的条目，避免为每个节点复制全部变量和表达式记录。
      */
-    private class ConstState private constructor(
-        private val values: IdentityHashMap<CfirVariableSymbol<*>, ConstValue>,
+    private data class ConstState(
+        private val values: PersistentMap<CfirVariableSymbol<*>, ConstValue>,
+        private val results: PersistentMap<CfirExpression, ConstValue>,
     ) {
         operator fun get(variable: CfirVariableSymbol<*>): ConstValue? = values[variable]
 
-        fun put(variable: CfirVariableSymbol<*>, value: ConstValue) {
-            if (value === ConstValue.Unknown) values.remove(variable) else values[variable] = value
-        }
+        fun result(expression: CfirExpression): ConstValue? = results[expression]
 
-        fun copy(): ConstState = ConstState(IdentityHashMap(values))
+        fun withVariable(variable: CfirVariableSymbol<*>, value: ConstValue?): ConstState =
+            copy(values = values.withValue(variable, value))
 
-        fun join(other: ConstState): ConstState {
-            val result = copy()
-            result.values.entries.removeIf { (variable, value) -> other.values[variable] != value }
-            return result
-        }
+        fun withResult(expression: CfirExpression, value: ConstValue?): ConstState =
+            copy(results = results.withValue(expression, value))
 
-        override fun equals(other: Any?): Boolean =
-            other is ConstState && values.size == other.values.size && values.all { (variable, value) -> other.values[variable] == value }
+        fun join(other: ConstState): ConstState =
+            ConstState(values.join(other.values), results.join(other.results))
 
-        override fun hashCode(): Int = values.entries.fold(0) { result, (variable, value) ->
-            result + System.identityHashCode(variable) xor value.hashCode()
+        private fun <K> PersistentMap<K, ConstValue>.withValue(key: K, value: ConstValue?): PersistentMap<K, ConstValue> =
+            if (value == null || value === ConstValue.Unknown) remove(key) else put(key, value)
+
+        private fun <K> PersistentMap<K, ConstValue>.join(other: PersistentMap<K, ConstValue>): PersistentMap<K, ConstValue> {
+            val result = builder()
+            for ((key, value) in this) {
+                val joined = value.join(other[key])
+                if (joined === ConstValue.Unknown) result.remove(key) else result[key] = joined
+            }
+            return result.build()
         }
 
         companion object {
-            val EMPTY: ConstState = ConstState(IdentityHashMap())
+            val EMPTY: ConstState = ConstState(persistentMapOf(), persistentMapOf())
         }
     }
 }

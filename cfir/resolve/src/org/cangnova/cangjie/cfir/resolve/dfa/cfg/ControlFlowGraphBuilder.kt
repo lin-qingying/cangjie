@@ -807,7 +807,14 @@ class ControlFlowGraphBuilder private constructor(
                 addEdge(it, exitNode, propagateDeadness = false)
             }
         } else {
-            addEdge(lastConditionExit, exitNode, propagateDeadness = false, label = MatchBranchFailure)
+            // 官方 TranslateMatchWithSelector 将穷尽 match 的最后失败块标为 UNREACHABLE。
+            // 它不能把未写入结果的状态带到出口，也不能参与后续确定赋值/常量事实的汇合。
+            addEdge(
+                lastConditionExit, exitNode,
+                preferredKind = EdgeKind.DeadForward,
+                propagateDeadness = false,
+                label = MatchBranchFailure,
+            )
             null
         }
         mergeDataFlowFromPostponedLambdas(exitNode, callCompleted)

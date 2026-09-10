@@ -6,13 +6,13 @@ func test(): Int64 {
     var y: Bool = true
     var flag: Bool = true
     var res = match (i + 1) {
-        case 0 => 1
+        case <!UNREACHABLE_PATTERN!>0<!> => 1
         case 1 where if (flag) {
             x
         } else {
             y
         } => 0
-        case _ => -1
+        case <!UNREACHABLE_PATTERN!>_<!> => -1
     }
     if (res == -1) {
         return 0

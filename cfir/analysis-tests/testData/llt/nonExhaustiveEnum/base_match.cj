@@ -17,13 +17,13 @@ main() {
         case _ => 2
     })
     println(match (C(4)) {
-        case B => 0
+        case <!UNREACHABLE_PATTERN!>B<!> => 0
         case C(a) where a > 3 => 1
-        case _ => 2
+        case <!UNREACHABLE_PATTERN!>_<!> => 2
     })
     println(match (C(2)) {
-        case B => 0
+        case <!UNREACHABLE_PATTERN!>B<!> => 0
         case C(a) where a > 3 => 1
-        case _ => 2
+        case <!UNREACHABLE_PATTERN!>_<!> => 2
     })
 }
