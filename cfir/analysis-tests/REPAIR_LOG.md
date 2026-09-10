@@ -6167,3 +6167,32 @@ XML 为 8503 → 8505 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 4、PatternMatching 20，共 24 项；已清零家族保持通过，另外 471 项既有全量失败保留。
 - change isolation: 仅提交共享 CFA 遍历、新 fixture、五份官方期望修正、两套生成入口及日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：OR 模式覆盖、合并判定与 guard 求值顺序
+
+- problem type: Flow Analysis / OR pattern reachability。
+- root cause: Sema 只判断整条 OR，未用组内临时矩阵检查重复 alternative；CFG 把所有 OR 都展开成逐项判定，并在模式判定之前解析 guard 的赋值/调用；PSI 入口还把包含 wildcard 的 OR 当成单个默认分支。这些问题导致漏报组内冗余、错误的 CFA 警告及 guard 效应提前发生。
+- official Cangjie evidence: cjc 1.0.5 的 44-or-reachability、44-or-reachability-fixture、44-guard-evaluation-order、44-wildcard-or-kinds、44-overloaded-guard（build/repair-20260906/evidence 对应 .official.*）验证整数、Bool、Rune、enum、wildcard、tuple、guard 及重载 lambda guard。源码均语法合法。官方另有 chir_dce_unreachable_block_in_expression，目前项目没有该诊断 surface，未将其冒充 UNREACHABLE_PATTERN。
+- official implementation: PatternUsefulness.cpp:992-1074 使用组内临时覆盖矩阵，部分冗余逐项报告，整组无 witness 时整体报告一次，guard 不进入后续全局矩阵；TranslateMatchExpr.cpp 的 TranslateOrPattern / TranslateConstantMultiOr / TranslatePatternGuard / TranslateNestingCasePattern 区分合并判定、无条件流和顺序判定。Terminator.h:158 的 guard Branch 来源是 OTHER；CHIR/Utils.cpp:954 区分 Option-like 的 Bool tag 与其它 enum 的 UInt32 tag；ConstAnalysis.h:695 不保留 Bool/Rune 到 UInt64 的 TypeCast 值。
+- Kotlin counterpart files consulted: FirWhenConditionChecker.kt 的独立条件检查，FirDataFlowAnalyzer.kt 的分支入口/出口 flow，ControlFlowGraphBuilder.kt 的条件求值与分支结果边界，以及 PsiRawFirBuilder.kt / ConversionUtils.kt 的 branch、condition 和 OR 构建职责。仓颉 OR 的 lowering 和警告语义取自官方实现。
+- CFIR owner files changed: 新 semantics/resolve/match/CfirOrPatternLowering.kt 统一 CFG/CFA 的 OR 形态；CFGNode、ControlFlowGraphBuilder、NodeBuilder、Copier 及两类 Visitor 接入 MatchBranchGuardEnterNode，CfirDataFlowAnalyzer / CfirExpressionsResolveTransformer 在模式成功路径解析 guard；CfirControlFlowConstAnalysis 按终结符来源遍历死区，并使用官方允许的 switch 值域。CfirMatchUnreachablePatternChecker 使用组内覆盖矩阵并删除异常吞掉路径；CfirPatternSourceUtils 与 CfirPatternExpressionChecker 共用完整 OR 范围；PsiRawCfirBuilder 保留有 selector 的全部 conditions。
+- repair principle: 在共享模式语义层决定 OR 的控制流形态，由 CFG 表达真实求值顺序，再由 Sema 覆盖矩阵与 CFA 各自报告所属诊断。
+- fixtures covered / corrections: 原 PatternMatching/MatchExpression/match006、match012、match024、match027、match028；前三份按官方补正 warning 期望，后两份源码和期望不变。新增 or_reachability.cj，覆盖组内重复、整组不可达、整数/Bool/enum OR、wildcard、tuple、guard 条件链、未命中模式的 guard 副作用和重载 lambda guard；or_kind_diagnostics.cj 增加首尾 wildcard 的异类 OR。cfa_condition_chain 与既有 or_pattern_control_flow 双入口保持通过。
+- verification commands and outcome:
+  - 标准单 worker / 1 GiB Gradle 参数的 44-or-targeted-final：上述九份 fixture 双入口 18/18 通过；最后追加重载 guard 后，44-or-overloaded-guard 双入口 2/2 通过。
+  - 44-or-family：3641 项，3279 通过、56 既有失败、306 跳过；相对 43 全量 FIXED=10、REGRESSED=0、新增 2 项通过、changed_failure_messages=[]。覆盖控制流/模式、Enum、Call、Generics、TypeInfer、Typealias、Function、Lambda、FlowExpr、InitializationCheck、Exception 与 CfirAnalysisDiagnostics*。
+  - `gradlew-queue.bat :cfir:resolve:test --tests '*CfirDataFlowAnalyzerContextTest' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：三个既有快照/重置测试通过。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：22m 57s 正常完成。43-cfa-chain-full → 44-or-full：FIXED=10、REGRESSED=0、NEW_KEYS=2（均 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8504 | 8506 |
+| 通过 | 7702 | 7714 |
+| 失败 | 495 | 485 |
+| 跳过 | 307 | 307 |
+
+XML 为 8505 → 8507 records，均为 308 skipped（含一条聚合记录）。完整证据为 44-or-full 与 43-cfa-chain-full--44-or-full.json。
+
+- remaining failures: 目标剩余 Match 4、PatternMatching 10，共 14 项，涉及整数/转换与 Match 结果常量传播、tuple selector 默认类型、静态 type pattern、可见公共类型、复合赋值目标类型及一份类型名诊断期望。已清零家族保持通过，另外 471 项既有全量失败保留。
+- change isolation: 仅提交上述 OR/guard 实现、fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。

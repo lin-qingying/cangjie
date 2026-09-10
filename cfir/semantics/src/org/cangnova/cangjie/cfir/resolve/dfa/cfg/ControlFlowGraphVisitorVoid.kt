@@ -78,6 +78,8 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     open fun visitMatchExitNode(node: MatchExitNode) = visitNode(node)
     /** 访问 match 分支条件入口节点。 */
     open fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode) = visitNode(node)
+    /** 访问模式成功路径上的 guard 求值入口。 */
+    open fun visitMatchBranchGuardEnterNode(node: MatchBranchGuardEnterNode) = visitNode(node)
     /** 访问 match 分支条件出口节点。 */
     open fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode) = visitNode(node)
     /** 访问 match 原子模式判定节点。 */
@@ -243,6 +245,7 @@ abstract class ControlFlowGraphVisitorVoid : ControlFlowGraphVisitor<Unit, Nothi
     final override fun visitMatchExitNode(node: MatchExitNode, data: Nothing?) = visitMatchExitNode(node)
     /** 桥接 match 分支条件入口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchConditionEnterNode(node: MatchBranchConditionEnterNode, data: Nothing?) = visitMatchBranchConditionEnterNode(node)
+    final override fun visitMatchBranchGuardEnterNode(node: MatchBranchGuardEnterNode, data: Nothing?) = visitMatchBranchGuardEnterNode(node)
     /** 桥接 match 分支条件出口节点的双参数访问到无 data 访问。 */
     final override fun visitMatchBranchConditionExitNode(node: MatchBranchConditionExitNode, data: Nothing?) = visitMatchBranchConditionExitNode(node)
     /** 桥接 match 原子模式判定节点的双参数访问到无 data 访问。 */

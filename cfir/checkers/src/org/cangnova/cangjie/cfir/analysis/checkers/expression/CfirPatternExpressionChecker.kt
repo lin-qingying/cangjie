@@ -37,12 +37,9 @@ import org.cangnova.cangjie.psi.CjIfExpression
 import org.cangnova.cangjie.psi.CjLoopExpression
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.CjWhileExpression
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
-import org.cangnova.cangjie.source.fakeElement
 
 /**
  * if/while 条件中由 `||` 连接的 let-pattern 不能引入变量。
@@ -317,23 +314,6 @@ private object CfirOrPatternConstraintReporter {
                 return
             }
         }
-    }
-
-    /**
-     * Match/let-condition 的 `CfirOrPattern.source` 可能覆盖整条 case 或 let 表达式。
-     * 按项目范围策略覆盖完整 OR 模式，不包含 case 关键字、guard 或分支体。
-     */
-    private fun CfirOrPattern.patternRangeSource(): CjSourceElement? {
-        val first = alternatives.firstOrNull()?.source ?: return null
-        val last = alternatives.lastOrNull()?.source ?: return null
-        if (first.startOffset >= last.endOffset) return first
-        return first.fakeElement(
-            CjFakeSourceElementKind.SyntheticCall,
-            CjSourceElementOffsetStrategy.Custom.Initialized(
-                startOffset = first.startOffset,
-                endOffset = last.endOffset,
-            ),
-        )
     }
 
     /**

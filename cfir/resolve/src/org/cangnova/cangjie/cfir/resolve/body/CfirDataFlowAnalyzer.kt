@@ -368,9 +368,11 @@ class CfirDataFlowAnalyzer(
     /**
      * 退出 match 分支条件 CFG。
      */
-    fun exitMatchBranchCondition(branch: CfirMatchBranch) {
+    fun exitMatchBranchCondition(branch: CfirMatchBranch, resolveGuard: () -> Unit) {
         if (hasActiveGraph) {
-            graphBuilder.exitMatchBranchCondition(branch)
+            graphBuilder.exitMatchBranchCondition(branch, resolveGuard)
+        } else {
+            resolveGuard()
         }
     }
 

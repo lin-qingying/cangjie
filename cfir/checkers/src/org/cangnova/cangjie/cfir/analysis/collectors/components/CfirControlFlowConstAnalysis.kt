@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.collectors.components
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.enumPatternConstructorAccessOrNull
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
 import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -30,6 +32,7 @@ import org.cangnova.cangjie.cfir.resolve.dfa.cfg.EdgeLabel
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.FunctionCallExitNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.IncrementDecrementNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchConditionEnterNode
+import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchGuardEnterNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailure
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchFailureNode
 import org.cangnova.cangjie.cfir.resolve.dfa.cfg.MatchBranchSuccess
@@ -43,6 +46,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.isIntegerType
+import org.cangnova.cangjie.cfir.resolve.match.constantPatternLiteral
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.OperatorNameConventions
 import java.math.BigInteger
@@ -66,8 +71,10 @@ import java.util.IdentityHashMap
 internal class CfirControlFlowConstAnalysis {
     /** 缓存 enum 是否在官方常量域中保留 constructor tag，避免重复查询宿主声明。 */
     private val constructorTagTracking = IdentityHashMap<CfirEnumConstructorSymbol, Boolean>()
+    /** Option-like 的 Bool tag 转 UInt64 后未知，其它 enum 的 UInt32 tag 可以用于 MultiBranch。 */
+    private val integerConstructorTagTracking = IdentityHashMap<CfirEnumConstructorSymbol, Boolean>()
 
-    /** 模式求值指令与最终判定属于同一个条件区域；用树节点身份限定，不包含分支体。 */
+    /** 模式与 guard 的条件求值区域；用树节点身份限定，不包含分支体。 */
     private val patternEvaluationElements = IdentityHashMap<CfirMatchExpression, Set<CfirElement>>()
 
     /** 返回由 CFG 常量分支效应证明不可达的 pattern source。 */
@@ -163,10 +170,13 @@ internal class CfirControlFlowConstAnalysis {
         destination: MutableSet<CfirPattern>,
     ) {
         if (edgeLabel == MatchBranchSuccess) {
-            destination += reportSource
+            successReportSource?.let { destination += it }
         }
-        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, destination)
+        rejectedSuccessor.collectDeadRegionPatterns(matchExpression, destination, patternOrigin = guard == null)
     }
+
+    /** 前驱终结符决定当前块是否属于 pattern 警告；guard 的 Branch 来源是 OTHER。 */
+    private data class DeadRegionStep(val node: CFGNode<*>, val patternOrigin: Boolean)
 
     /**
      * 从被杀死的 successor 出发收集死区内承载模式位置的节点。
@@ -179,22 +189,33 @@ internal class CfirControlFlowConstAnalysis {
     private fun CFGNode<*>.collectDeadRegionPatterns(
         owner: CfirMatchExpression,
         destination: MutableSet<CfirPattern>,
+        patternOrigin: Boolean,
     ) {
         val visited = Collections.newSetFromMap(IdentityHashMap<CFGNode<*>, Boolean>())
-        val worklist = ArrayDeque<CFGNode<*>>()
-        worklist += this
+        val worklist = ArrayDeque<DeadRegionStep>()
+        worklist += DeadRegionStep(this, patternOrigin)
         while (worklist.isNotEmpty()) {
-            val node = worklist.removeFirst()
+            val (node, reportPattern) = worklist.removeLast()
             if (!visited.add(node)) continue
-            node.deadRegionPatternOrNull(owner)?.let { pattern -> destination += pattern }
+            if (reportPattern) node.deadRegionPatternOrNull(owner)?.let { pattern -> destination += pattern }
             if (!node.continuesDeadRegion(owner)) continue
-            node.followingNodes.forEach { successor ->
+            val decision = node as? MatchPatternDecisionNode
+            val successorPatternOrigin = decision?.let { it.guard == null } ?: reportPattern
+            node.followingNodes.asReversed().forEach { successor ->
                 val edge = node.edgeTo(successor)
-                // 不失败模式对应 CHIR 的无条件流，结构上的死亡 failure 边不能扩张运行时死区。
-                val structuralFailure = node is MatchPatternDecisionNode && node.isAlwaysSuccessful &&
-                        edge.label == MatchBranchFailure
-                if (edge.kind.usedInCfa && !structuralFailure) {
-                    worklist += successor
+                if (!edge.kind.usedInCfa) return@forEach
+                if (decision?.isAlwaysSuccessful == true) {
+                    // 中间 wildcard 不生成指令；最后一个 wildcard/binding 通过 GoTo 进入无位置的成功块。
+                    if (edge.label == MatchBranchSuccess && successor is MatchPatternDecisionNode &&
+                        successor.guard == null && successor.reportSource === decision.reportSource
+                    ) {
+                        worklist += DeadRegionStep(successor, reportPattern)
+                    }
+                } else {
+                    if (edge.label == MatchBranchSuccess && successorPatternOrigin) {
+                        decision?.successReportSource?.let { destination += it }
+                    }
+                    worklist += DeadRegionStep(successor, successorPatternOrigin)
                 }
             }
         }
@@ -216,11 +237,12 @@ internal class CfirControlFlowConstAnalysis {
         is MatchPatternDecisionNode -> matchExpression === owner
         is MatchBranchFailureNode -> matchExpression === owner
         is MatchBranchConditionEnterNode -> matchExpression === owner
+        is MatchBranchGuardEnterNode -> matchExpression === owner
         // literal/operator 等模式求值指令不是 CHIR 基本块终结符，不应在它们处截断死区。
         else -> fir in owner.patternElements()
     }
 
-    /** 收集模式自身的元素；分支体、guard 和相邻 Match 不会因源码范围重叠混入。 */
+    /** 按树身份收集条件中的普通求值节点，分支体不属于该区域。 */
     private fun CfirMatchExpression.patternElements(): Set<CfirElement> =
         patternEvaluationElements.getOrPut(this) {
             val elements = Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
@@ -229,7 +251,10 @@ internal class CfirControlFlowConstAnalysis {
                     if (elements.add(element)) element.acceptChildren(this, null)
                 }
             }
-            branches.forEach { branch -> branch.pattern.accept(visitor, null) }
+            branches.forEach { branch ->
+                branch.pattern.accept(visitor, null)
+                branch.guard?.accept(visitor, null)
+            }
             elements
         }
 
@@ -310,9 +335,54 @@ internal class CfirControlFlowConstAnalysis {
 
             is CfirConstPattern -> expression.matchesConstantExpression(value, state)
             is CfirExpressionPattern -> expression.matchesConstantExpression(value, state)
+            is CfirOrPattern -> matchesMultiOrConstant(value, state)
             else -> null
         }
     }
+
+    /** MultiBranch 先把离散 selector 转成 UInt64；只保留官方 TypeCast 可求值的整数域。 */
+    private fun CfirOrPattern.matchesMultiOrConstant(value: ConstValue, state: ConstState): Boolean? {
+        if (value is ConstValue.Literal && (value.kind == CfirLiteralKind.INT || value.kind == CfirLiteralKind.BYTE)) {
+            val selector = CfirIntConstantEvalUtils.parseIntLiteralValue(value.value)?.value ?: return null
+            val alternatives = alternatives.map { alternative ->
+                (alternative as? CfirConstPattern)?.integerSwitchConstant() ?: return null
+            }
+            return selector in alternatives
+        }
+        if (value is ConstValue.Enum && value.constructor.hasIntegerSelectorTag()) {
+            val matches = alternatives.map { it.matchesAtomicConstant(value, state) }
+            return when {
+                matches.any { it == true } -> true
+                matches.all { it == false } -> false
+                else -> null
+            }
+        }
+        // Bool/Rune 到 UInt64 的 TypeCast 不属于 ConstAnalysis 的已知域。
+        return null
+    }
+
+    /** 在整数 switch 中，字符类 String 已完成目标定型，数值按其实际码点取得。 */
+    private fun CfirConstPattern.integerSwitchConstant(): BigInteger? {
+        CfirIntConstantEvalUtils.parseSignedIntExpression(expression)?.let { return it.value }
+        val literal = constantPatternLiteral() ?: return null
+        if (literal.kind == CfirLiteralKind.BYTE) return CfirIntConstantEvalUtils.parseIntLiteralValue(literal.value)?.value
+        if (literal.kind == CfirLiteralKind.STRING && literal.coneTypeOrNull?.isIntegerType == true) {
+            val value = literal.value as? String ?: return null
+            if (value.codePointCount(0, value.length) == 1) return BigInteger.valueOf(value.codePointAt(0).toLong())
+        }
+        return null
+    }
+
+    /** 对齐 CHIR::GetSelectorType：非穷尽或非 Option-like enum 使用 UInt32 tag。 */
+    private fun CfirEnumConstructorSymbol.hasIntegerSelectorTag(): Boolean =
+        integerConstructorTagTracking.getOrPut(this) {
+            val classId = callableId.classId ?: return@getOrPut false
+            val declaration = cfir.moduleData.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirEnum
+                ?: return@getOrPut false
+            if (declaration.isNonExhaustive) return@getOrPut true
+            val arities = declaration.declarations.filterIsInstance<CfirEnumConstructor>().map { it.payloadArity() }.sorted()
+            arities != listOf(0, 1)
+        }
 
     /**
      * 内建比较只使用当前常量域中的值；String pattern 的相等运算由普通 APPLY 实现。
