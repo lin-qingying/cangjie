@@ -167,6 +167,8 @@ abstract class CfirAbstractBodyResolveTransformer(
         /** 当前字段 initializer 的语义上下文，供 tower 排除字段自身后继续向父 scope 查找。 */
         override val fieldBeingInitialized
             get() = context.fieldBeingInitialized
+        override val variablesBeingInitialized
+            get() = context.variablesBeingInitialized
 
         /** 调用解析阶段流水线执行器。 */
         override val resolutionStageRunner: ResolutionStageRunner = ResolutionStageRunner()

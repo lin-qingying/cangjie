@@ -76,9 +76,9 @@ fun CfirPattern.visibleBindingVariables(): List<CfirPatternBindingVariable> = wh
 /**
  * 收集 type-pattern 产生的绑定变量。
  *
- * 该入口只供 [visibleBindingVariables] 处理 or-pattern 特例使用。
+ * 显式类型模式的名字在语义检查前已经声明；形状检查失败也不能撤销这些名字。
  */
-private fun CfirPattern.typePatternBindingVariables(): List<CfirPatternBindingVariable> = when (this) {
+fun CfirPattern.typePatternBindingVariables(): List<CfirPatternBindingVariable> = when (this) {
     is CfirTypePattern -> bindingVariable?.let(::listOf).orEmpty()
     is CfirTuplePattern -> elements.flatMap(CfirPattern::typePatternBindingVariables)
     is CfirEnumPattern -> arguments.flatMap(CfirPattern::typePatternBindingVariables)

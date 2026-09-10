@@ -5,8 +5,12 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+import org.cangnova.cangjie.cfir.resolve.match.CfirTuplePatternShape
+import org.cangnova.cangjie.cfir.resolve.match.resolveTupleShape
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.name.Name
 
@@ -56,6 +60,7 @@ internal class CfirPatternBindingScope(body: CfirBlock) {
 internal fun CfirPartialBodyResolveTransformer.registerScopedPatternBindings(
     pattern: CfirPattern,
     bindingScope: CfirPatternBindingScope,
+    expectedType: ConeCangJieType?,
 ): ConeErrorType? {
     fun register(binding: CfirPatternBindingVariable?, retainOnConflict: Boolean): ConeErrorType? {
         if (binding == null) return null
@@ -76,16 +81,35 @@ internal fun CfirPartialBodyResolveTransformer.registerScopedPatternBindings(
         return errorType
     }
 
+    // 显式类型模式由 PreCheck 声明；即使前序子模式失败，它的名字仍然可见。
+    for (binding in pattern.typePatternBindingVariables()) {
+        bindingScope.record(binding)
+        context.storeVariable(binding, session)
+    }
+
     return when (pattern) {
         is CfirBindingPattern -> register(pattern.bindingVariable, retainOnConflict = false)
-            ?: pattern.nestedPattern?.let { registerScopedPatternBindings(it, bindingScope) }
+            ?: pattern.nestedPattern?.let {
+                registerScopedPatternBindings(it, bindingScope, pattern.typeRef?.coneTypeOrNull ?: expectedType)
+            }
         is CfirVarOrEnumPattern -> register(pattern.bindingVariable, retainOnConflict = false)
         is CfirTypePattern -> register(pattern.bindingVariable, retainOnConflict = true)
-        is CfirTuplePattern -> pattern.elements.firstNotNullOfOrNull {
-            registerScopedPatternBindings(it, bindingScope)
+        is CfirTuplePattern -> {
+            val shape = pattern.resolveTupleShape(expectedType, session)
+            if (shape is CfirTuplePatternShape.NotTuple || shape is CfirTuplePatternShape.WrongSize) {
+                ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("Invalid tuple pattern shape")))
+            } else {
+                val tupleType = (shape as? CfirTuplePatternShape.Matched)?.tupleType
+                pattern.elements.withIndex().firstNotNullOfOrNull { (index, element) ->
+                    registerScopedPatternBindings(element, bindingScope, tupleType?.elementTypes?.get(index))
+                }
+            }
         }
-        is CfirEnumPattern -> pattern.arguments.firstNotNullOfOrNull {
-            registerScopedPatternBindings(it, bindingScope)
+        is CfirEnumPattern -> {
+            val argumentTypes = resolveEnumArgumentTypes(pattern, expectedType)
+            pattern.arguments.withIndex().firstNotNullOfOrNull { (index, argument) ->
+                registerScopedPatternBindings(argument, bindingScope, argumentTypes.getOrNull(index))
+            }
         }
         is CfirOrPattern -> {
             var firstError: ConeErrorType? = null

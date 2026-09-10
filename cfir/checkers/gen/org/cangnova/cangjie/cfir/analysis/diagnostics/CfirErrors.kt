@@ -185,6 +185,8 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Match
     val NON_EXHAUSTIVE_MATCH: CjDiagnosticFactory1<Collection<String>> = CjDiagnosticFactory1("CFIR_NON_EXHAUSTIVE_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val TUPLE_PATTERN_NOT_MATCH: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_TUPLE_PATTERN_NOT_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PATTERN_NOT_MATCH: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_PATTERN_NOT_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ENUM_PATTERN_PARAM_SIZE_ERROR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ENUM_PATTERN_PARAM_SIZE_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NOT_OVERLOAD_IN_MATCH: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NOT_OVERLOAD_IN_MATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

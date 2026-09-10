@@ -5983,3 +5983,38 @@ XML 为 8489 → 8491 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: Match 12、PatternMatching 42，共 54 项；其它已清零家族保持通过。OR 内部冗余 alternative 的 warning、常量模式规范化及其它模式类型问题继续按独立语义类型处理。
 - change isolation: 仅提交上述三个共享实现、新回归、两套生成入口与日志，.idea/workspace.xml 保持独立。
+
+## 2026-09-10：元组模式形状检查与初始化器绑定作用域
+
+- problem type: Pattern Matching / Tuple shape and declaration initialization。
+- root cause: 元组声明没有检查 initializer 的整体形状；Match 的元数错误复用了错误的诊断，且形状失败后仍把延迟绑定发布到分支体。新增声明检查还暴露了顶层模式 initializer 自引用被 provider 预收集的绑定错误捕获，继而追加不应出现的形状错误。
+- official Cangjie evidence: cjc 1.0.5 的 38-tuple-pattern-shapes、38-typed-shape-bindings、38-tuple-fixture-final、38-initialization-match、38-initializer-assignment、38-initializer-lookup、38-initializer-scope-fixture 探针；源码、命令及 JSON 位于 build/repair-20260906/evidence 对应 .official.*，均无语法错误。证据确认非 tuple initializer、元数不等、嵌套形状失败的不同诊断；Match/IfLet 的延迟绑定在失败后不可见，而显式类型模式绑定仍可见；初始化器已有错误时不追加形状错误；初始化器中的自身声明应排除，合法外层同名变量仍可解析，包括 lambda 和嵌套 initializer。
+- official implementation: external/cangjie_compiler/src/Sema/TypeCheckPattern.cpp 的 ChkTuplePattern；TypeCheckDecl.cpp:263-285 的 CheckVarWithPatternDecl；LookUpImpl.cpp:449-563 的 IsNodeInVarDecl / FindRealResult。嵌套 tuple 检查失败后在根模式追加 MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL，首次根形状失败使用专用诊断。
+- Kotlin counterpart files consulted: FirDestructuringDeclarationChecker.kt 区分声明、initializer 和分量诊断归属；FirDeclarationsResolveTransformer.kt:656-703 在 initializer 之后发布局部变量；TowerLevelHandler.kt 的分层候选发现与消费。顶层自身候选排除规则来自仓颉官方 lookup，不把局部名字整体屏蔽。
+- CFIR owner files changed:
+  - semantics/CfirTuplePatternShape.kt：统一展开 alias，并区分未确定、非 tuple、元数错误和匹配四种形状。
+  - CfirTuplePatternDeclarationChecker / CommonDeclarationCheckers：声明形状与嵌套检查；复用表达式子树已有错误判定，避免追加级联错误。
+  - CfirMatchPatternLegalityChecker、CfirPatternBindingScope、CfirPatternBindingResolution、CfirExpressionsResolveTransformer 和 CfirPatternBindingUtils：合法性与绑定发布共用形状结论，按 tuple/enum payload 投影类型；显式类型绑定预发布，失败后不发布延迟绑定。
+  - BodyResolveComponents、CfirAbstractBodyResolveTransformer、BodyResolveContext、TowerLevelHandler：候选消费前排除全部嵌套 initializer 正在声明的符号；继续正常 tower 搜索。CallResolutionTestFixtures 的 stub 实现新增的抽象上下文属性。
+  - Diagnostics DSL、消息表和生成文件：新增 TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED、MISMATCHED_TYPE_FOR_PATTERN_IN_VARDECL。
+- repair principle: 形状结论由共享语义层提供并约束绑定发布，声明检查仅在有效 initializer 上消费该结论；名称解析按声明身份排除自身，不按测试或变量文字修补结果。
+- fixtures covered: 原 llt/PatternMatching/TuplePattern/tuple1.cj、tuple3.cj、llt/match/tuple_pattern/tuple_pattern_003.cj、llt/InitializationCheck/match.cj、variable_use_before_init_10.cj，以及 PatternMatching/MatchExpression/pattern_binding_scope.cj；新增 tuple_shape_validation.cj（11 个函数覆盖声明、嵌套、Match、IfLet、显式类型绑定和 alias）和 InitializationCheck/initializer_binding_scope.cj（顶层/元组自引用、嵌套 lambda、外层同名变量及正常捕获）。tuple1、tuple_pattern_003 的元数诊断按官方修正，其余原 fixture 未改，两套测试入口自动生成。
+- verification commands and outcome:
+  - 38-tuple-targeted-initial：16 项，12 通过、4 项既有常量模式/警告失败；补齐 initializer 检查后 38-initializer-targeted 为 8/8 通过，38-initializer-scope-targeted 为 6/6 通过。
+  - 38-tuple-family-final：3427 项，3037 通过、84 项既有失败、306 跳过；FIXED=8、REGRESSED=0、新增 4 项全部通过。覆盖 If/IfLetExpr、WhileLetExpr、Loops、Match、PatternMatching、InitializationCheck、Var、Call、Generics、TypeInfer、Typealias、Function、Lambda、Capture、Toplevel 和 CfirAnalysisDiagnostics*，使用标准单 worker / 1 GiB Gradle 参数。
+  - 同一全量命令 `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：13m 41s 正常结束。37-cfg-full → 38-tuple-full-final：FIXED=8、REGRESSED=0、NEW_KEYS=4（均 PASS）、REMOVED_KEYS=0、其它状态变化=0。
+  - changed_failure_messages 共 4 项：Tuple1 双入口的元数诊断更新；ErrMsgs/var_decl_0 双入口补出正确的根 tuple 形状诊断，范围覆盖完整模式，该文件原有其它期望/语义差异仍在。其余 519 项失败消息不变。
+  - 额外执行 `:cfir:resolve:test` 的 CfirCheckArgumentsTest、CfirMapArgumentsTest、CfirMapTypeArgumentsTest、CfirOverloadConflictResolverTest：19 项，18 通过、1 失败。失败为 Defaults.number of default arguments is counted，测试模型给 isNamed=false 的位置参数配置默认值，和已完成 Call 映射规则冲突；该测试与映射 owner 相对 HEAD 均未改，本轮未改写这项独立测试期望。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8490 | 8494 |
+| 通过 | 7652 | 7664 |
+| 失败 | 531 | 523 |
+| 跳过 | 307 | 307 |
+
+XML 为 8491 → 8495 records，均为 308 skipped（含一条聚合记录）。完整证据为 38-tuple-full-final 与 37-cfg-full--38-tuple-full-final.json。
+
+- remaining failures: 目标剩余 Match 10、PatternMatching 40，共 50 项；If、IfLetExpr、WhileLetExpr、Loops、Call、Generics、TypeInfer、Typealias 保持通过。其余 473 项既有全量失败保留。
+- change isolation: 仅提交本类共享实现、诊断生成输入/产物、四份 fixture、生成入口、上下文测试桩及日志；.idea/workspace.xml 保持独立。
