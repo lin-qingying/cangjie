@@ -40,6 +40,8 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.OperatorNameConventions
 import java.math.BigInteger
 import java.util.ArrayDeque
@@ -299,12 +301,15 @@ internal class CfirControlFlowConstAnalysis {
     }
 
     /**
-     * 常量 pattern 和 expression pattern 都按已知常量值精确比较。
+     * 内建比较只使用当前常量域中的值；String pattern 的相等运算由普通 APPLY 实现。
      *
      * 任一侧未知时结果必须是"未确定"。把已知字面量与 [ConstValue.Unknown] 判成不等会
      * 凭空造出死边，从而误报本可执行的分支。
      */
     private fun CfirExpression.matchesConstantExpression(value: ConstValue, state: ConstState): Boolean? {
+        // HandleConstPattern 为 String 生成 operatorCallExpr；ConstAnalysis 不求普通 APPLY 的返回值。
+        // 单字符 String 被定型成 Rune/UInt8 时仍是内建比较，不能仅按原 literal kind 判断。
+        if (coneTypeOrNull?.classIdOrPrimitiveClassId == StdlibClassIds.String) return null
         if (!value.isFullyKnown()) return null
         val expected = constantValue(state)?.takeIf { it.isFullyKnown() } ?: return null
         return expected == value
@@ -412,18 +417,15 @@ internal class CfirControlFlowConstAnalysis {
     /**
      * 根据原子模式节点记录的 payload 路径读取对应 abstract value。
      *
-     * enum payload 需要经 `TypeCast` 才能取出，官方常量域到此即止，因此任何进入 enum 的
-     * 路径都返回 null；tuple 的分量则由 `Field` 直接读取，可以继续下探。
+     * ValueAnalysis::PreHandleFieldExpr 只处理单索引 Field，并使用 PropagateWithoutChildren。
+     * 因此单层标量投影保留值，深层 tuple 路径以及投影后的 tuple/enum 的内部信息均不可知；
+     * enum payload 还需要 TypeCast，同样不会保留字段事实。直接 selector 的 enum tag 不受影响。
      */
     private fun ConstValue.payloadAt(path: List<Int>): ConstValue? {
-        var current = this
-        for (index in path) {
-            current = when (current) {
-                is ConstValue.Tuple -> current.elements.getOrNull(index) ?: return null
-                else -> return null
-            }
-        }
-        return current
+        if (path.isEmpty()) return this
+        val index = path.singleOrNull() ?: return null
+        val tuple = this as? ConstValue.Tuple ?: return null
+        return tuple.elements.getOrNull(index) as? ConstValue.Literal
     }
 
     /**
