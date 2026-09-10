@@ -4999,6 +4999,30 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern")
             }
 
+            @TestMetadata("collection_literal_targets.cj")
+            @Test
+            fun testCollectionLiteralTargets() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/collection_literal_targets.cj")
+            }
+
+            @TestMetadata("nested_array_targets.cj")
+            @Test
+            fun testNestedArrayTargets() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/nested_array_targets.cj")
+            }
+
+            @TestMetadata("numeric_suffix_contexts.cj")
+            @Test
+            fun testNumericSuffixContexts() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/numeric_suffix_contexts.cj")
+            }
+
+            @TestMetadata("selector_default_types.cj")
+            @Test
+            fun testSelectorDefaultTypes() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern/selector_default_types.cj")
+            }
+
             @TestMetadata("tuple1.cj")
             @Test
             fun testTuple1() {

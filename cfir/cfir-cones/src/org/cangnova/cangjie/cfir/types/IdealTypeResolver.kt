@@ -43,9 +43,10 @@ object IdealTypeResolver {
     }
 
     /**
-     * 如果 [type] 是理想类型则解析为具体类型，否则原样返回。
+     * 结合可用目标近似根 ideal 类型，保留仍参与调用推断的复合类型分量。
      *
      * 同时处理 [ConePrimitiveType]（IDEAL_INT/IDEAL_FLOAT）和 [ConeIdealLiteralType] 两种表示。
+     * 完成独立综合后的递归默认化由 [replaceIdealTypes] 负责，不能在实参获得目标前执行。
      */
     fun resolveIfIdeal(type: ConeCangJieType, targetType: ConeCangJieType? = null): ConeCangJieType {
         return when (type) {
@@ -57,5 +58,37 @@ object IdealTypeResolver {
             }
             else -> type
         }
+    }
+
+    /**
+     * 官方 ReplaceIdealTy 的综合完成边界：递归默认化允许的复合类型分量。
+     *
+     * 声明初始化器、match selector 等不再等待外部目标的位置使用此入口；
+     * 调用实参仍由根 ideal 近似和正常的目标类型完成过程处理。
+     */
+    fun replaceIdealTypes(type: ConeCangJieType): ConeCangJieType = when (type) {
+        is ConeIdealLiteralType, is ConePrimitiveType -> resolveIfIdeal(type)
+        is ConeTupleType -> type.elementTypes.defaultedTypesOrNull()
+            ?.let { ConeTupleType(it, type.attributes) } ?: type
+        is ConeClassLikeType -> type.typeArguments.map { it.type }.defaultedTypesOrNull()
+            ?.let { ConeClassLikeType(type.lookupTag, it, type.attributes, type.isInterface, type.isThisType) } ?: type
+        is ConeEnumType -> type.typeArguments.map { it.type }.defaultedTypesOrNull()
+            ?.let { ConeEnumType(type.lookupTag, it, type.attributes, type.isRefEnum) } ?: type
+        is ConeVArrayType -> replaceIdealTypes(type.elementType).let { elementType ->
+            if (elementType === type.elementType) type else ConeVArrayType(elementType, type.size, type.attributes)
+        }
+        is ConePointerType -> replaceIdealTypes(type.pointeeType).let { pointeeType ->
+            if (pointeeType === type.pointeeType) type else ConePointerType(pointeeType, type.attributes)
+        }
+        else -> type
+    }
+
+    /** 仅在分量发生变化时重建不可变类型；function/struct 不属于官方 ReplaceIdealTy 的递归集合。 */
+    private fun List<ConeCangJieType>.defaultedTypesOrNull(): List<ConeCangJieType>? {
+        var changed = false
+        val result = map { original ->
+            replaceIdealTypes(original).also { if (it !== original) changed = true }
+        }
+        return result.takeIf { changed }
     }
 }

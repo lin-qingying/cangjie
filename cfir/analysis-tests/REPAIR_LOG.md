@@ -6226,3 +6226,38 @@ XML 为 8507 → 8513 records，均为 308 skipped（含一条聚合记录）。
 
 - remaining failures: 目标剩余 Match 2、PatternMatching 8，共 10 项；If/IfLet/WhileLet/Loops、Call、Generics、TypeInfer、Typealias 保持通过。另外 465 项既有全量失败保留。
 - change isolation: 仅提交共享常量/解析/CFG 修复、七份官方期望修正、三个新 fixture、两套生成入口和日志；.idea/workspace.xml 独立保留。
+
+## 2026-09-10：复合 selector 的 ideal 默认化与显式数值后缀
+
+- problem type: Type Inference / Literal type normalization。
+- root cause: IdealTypeResolver 只处理根类型，Match 在模式检查前也未默认化 selector，tuple 内的 IdealInt 被错误当作可匹配 Int32；普通字面量综合只依据 INT/FLOAT 种类，忽略显式后缀。显式后缀类型确定后，直接数值目标与 Option 内层定型必须按各自规则处理，范围检查也必须使用最终数值类型。
+- official Cangjie evidence: 46-selector-default-types 与 46-selector-default-fixture 验证直接/嵌套 tuple、Float64 默认化、显式 i32、声明目标以及泛型 Box 中的 tuple；46-numeric-suffix-contexts-range 验证 f32/f64、直接目标后缀不匹配、Option 内层数值定型和 256i32→?UInt8 越界。源码与 JSON 均保存在 build/repair-20260906/evidence，所改 fixture 语法合法。
+- official implementation: TypeCheckMatchExpr.cpp:77/220 在模式检查前执行 ReplaceIdealTy；TypeManager.cpp:1197-1221 递归默认化 class/interface/enum/array/pointer/tuple 参数，未列入的 function/struct 保持原规则。LitConstExpr.cpp 的 SynLitConstExpr/GetNumLitTypeKind、ChkLitConstExprOfTypeInteger/Float 和 GetInnerNumericType 区分显式后缀、直接 primitive 目标与 Option 数值定型，最后 ChkLitConstExprRange 检查实际目标范围。
+- Kotlin counterpart files consulted: IntegerLiteralAndOperatorApproximationTransformer.kt 的字面量定型边界；AbstractConeSubstitutor.kt 的不可变类型分量重建、未变化类型复用及属性保留。
+- CFIR owner files changed: IdealTypeResolver 将根 ideal 近似与 replaceIdealTypes 递归默认化分层；Match selector 和 CfirDeclarationsResolveTransformer 的隐式声明初始化完成处使用递归入口，调用实参在获得目标前保留复合 ideal 分量。CfirExpressionsResolveTransformer 从共享数值字面量规则获取综合类型与 Option 内层目标。新 CfirNumericLiteralTypes 抽出普通表达式/模式共用的后缀规则，CfirPatternLiteralTypes 复用该入口；CfirTypeSemanticsDiagnostics 处理直接目标的后缀不匹配；CfirLiteralNumericOverflowChecker 使用已完成数值定型后的整数范围。
+- repair principle: 在共享类型综合/检查边界确定真实数值类型，模式矩阵只消费完成默认化的 selector，不按 fixture 或某一 tuple 元素修正结果。
+- completion boundaries: 官方 TypeCheckDecl.cpp:332 在独立初始化器完成处默认化；TypeCheckBuiltinExpr.cpp:130-160 的 SynArrayLit 对元素逐一 Synthesize+ReplaceIdealTy，再构造标准库 Array struct。CFIR 对 Array 字面量仅在 forceFullCompletion 且没有元素目标时默认化各元素，保留构造器实参等待 Collection/Iterable 目标的机会；不能用“所有 struct 都递归默认化”替代该表达式边界。
+- nested literal completion: 嵌套 array/tuple（含括号包装）保留父容器等待目标的状态；普通元素仍先综合值类型，lambda 经过自身 synthetic call 完成入口。46-varray-cstruct02、46-nested-array-targets-functions 官方证据证明深层 VArray 初始化器及函数数组实参均合法；新增 nested_array_targets.cj 独立覆盖这些无诊断场景。
+- fixtures covered: 原 TuplePattern/tuple4.cj 与 Class/static_call_non_static/class_static_call_non_static5.cj 均不改期望；新增 selector_default_types.cj（六函数）、numeric_suffix_contexts.cj（混合浮点后缀、两个合法 boxed 目标、两个直接目标错误、一个 boxed 范围错误）及 collection_literal_targets.cj（字面量的构造器目标与独立变量的默认化边界）。46-collection-target-boundary 官方输出确认直接数组可接受 Int32 目标，先保存的数组变量已为 Int64 元素类型。
+- verification commands and outcome:
+  - 46-defaults-family-initial：完整 PatternMatching/Match/TypeInfer/Generics/Typealias/Call 双入口 1416 项，1408 通过、8 既有失败；相对45全量FIXED2、REGRESSED0、新增2通过，剩余消息不变。
+  - 46-suffix-context-family：1310 项，1304 通过、6 既有失败；相对45全量FIXED2、REGRESSED0、新增4全部通过，剩余消息不变。
+  - 46-defaults-all-llt：7879项发现 class_static_call_non_static5 双入口回归。已修复递归默认化被用于实参推断阶段的问题，未通过修改旧 fixture 处理。
+  - 46-boundary-family：1322项1316通过、6既有失败；与45全量FIXED2、REGRESSED0、新增4通过、剩余失败消息不变，HashMap原用例恢复。
+  - 46-array-boundary-family：完整 Array、Class/StaticCallNonStatic、PatternMatching、Generics、TypeInfer、Typealias、Call 双入口 1388项，1376通过、12既有失败；相对45全量FIXED2、REGRESSED0、新增6全部通过、changed_failure_messages=[]。
+  - 首轮46-defaults-full状态无新增失败，但发现Macro VarrayCstruct02消息新增TYPE_MISMATCH；官方成功编译证明该诊断错误，已修复嵌套字面量过早完成。没有修改该宏 fixture。
+  - 46-nested-final-family：1440项1426通过、14既有失败；相对45全量FIXED2、REGRESSED0、新增8全部通过、changed_failure_messages=[]，含完整Array/Varray/类型/调用组和Macro VarrayCstruct02双入口。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：21m 41s 正常完成。45-integer-full-final → 46-defaults-full-final：FIXED=2、REGRESSED=0、NEW_KEYS=8（全部 PASS）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。
+  - `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'`：BUILD SUCCESSFUL；`git diff --check` 通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8512 | 8520 |
+| 通过 | 7730 | 7740 |
+| 失败 | 475 | 473 |
+| 跳过 | 307 | 307 |
+
+XML 为 8513 → 8521 records，均为 308 skipped（含一条聚合记录）。完整证据为 46-defaults-full-final 与 45-integer-full-final--46-defaults-full-final.json。
+
+- remaining failures: 目标剩余 Match 2、PatternMatching 6，共 8 项；其余已清零家族保持通过，另有 465 项既有全量失败。
+- change isolation: 提交共享默认类型/数值字面量/容器解析修复、四份新 fixture、两套生成入口与日志；原失败 fixture 期望未改，.idea/workspace.xml 独立保留。
