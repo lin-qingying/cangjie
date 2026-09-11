@@ -1,5 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// 测试 CST 可访问性过滤 — if 分支类型推断中过滤不可访问的公共父类型
+// 公开共同接口不保证唯一可见 Join；共同公开类与显式接口目标均应保持可访问。
 // FILE: common.cj
 package common
 
@@ -10,20 +10,34 @@ public interface Displayable {
 public class TextWidget <: Displayable {}
 public class ImageWidget <: Displayable {}
 
+public open class Widget <: Displayable {}
+public class TextWithParent <: Widget {}
+public class ImageWithParent <: Widget {}
+
 // FILE: main.cj
 package localmain
 
 import common.*
 
-// TextWidget 和 ImageWidget 都实现 Displayable（public + 已导入）
-// CST([TextWidget, ImageWidget]) 的结果应包含 Displayable
+// 官方 cjc 对这两个无共同类的实现报告无最小公共父类型。
 func cstPublicParent(flag: Bool): Displayable {
-    // if 分支推断时，公共父类型 Displayable 可访问
-    let widget = if (flag) {
+    let widget = <!TYPE_INCOMPATIBLE!>if (flag) {
         TextWidget()
     } else {
         ImageWidget()
-    }
+    }<!>
+    widget.display()
+    return widget
+}
+
+func cstPublicClassParent(flag: Bool): Displayable {
+    let widget = if (flag) { TextWithParent() } else { ImageWithParent() }
+    widget.display()
+    return widget
+}
+
+func explicitPublicInterface(flag: Bool): Displayable {
+    let widget: Displayable = if (flag) { TextWidget() } else { ImageWidget() }
     widget.display()
     return widget
 }

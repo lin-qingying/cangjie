@@ -15,11 +15,10 @@ class Class12 <: Interface15 & Interface17 {}
 // Class12 <: Interface16 & Interface17 {}
 
 main() {
-    let a = if (true) {
+    let a = <!TYPE_INCOMPATIBLE!>if (true) {
         Class824()
     } else {
         Class12()
-    }
+    }<!>
     0
 }
-

@@ -4675,6 +4675,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/cfa_pattern_value_domain.cj")
             }
 
+            @TestMetadata("discarded_branch_results.cj")
+            @Test
+            fun testDiscardedBranchResults() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/discarded_branch_results.cj")
+            }
+
             @TestMetadata("err_different_pattern_00.cj")
             @Test
             fun testErrDifferentPattern00() {
@@ -4889,6 +4895,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testVarPattern00() {
                 runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/var_pattern_00.cj")
+            }
+
+            @TestMetadata("visible_result_types.cj")
+            @Test
+            fun testVisibleResultTypes() {
+                runTest("cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression/visible_result_types.cj")
             }
         }
 

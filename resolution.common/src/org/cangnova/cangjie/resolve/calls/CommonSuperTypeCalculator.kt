@@ -13,6 +13,7 @@ import org.cangnova.cangjie.type.model.extractElementsForTupleType
 import org.cangnova.cangjie.type.model.getArgumentOrNull
 import org.cangnova.cangjie.type.model.getType
 import org.cangnova.cangjie.type.model.isFunctionType
+import org.cangnova.cangjie.type.model.isError
 import org.cangnova.cangjie.type.model.isIntersection
 import org.cangnova.cangjie.type.model.isTupleType
 import org.cangnova.cangjie.type.model.parametersCount
@@ -63,7 +64,23 @@ object CommonSuperTypeCalculator {
      * @return 所有输入类型的公共父类型
      */
     context(c: TypeSystemCommonSuperTypesContext)
-    fun commonSuperType(types: List<CangJieTypeMarker>): CangJieTypeMarker {
+    fun commonSuperType(types: List<CangJieTypeMarker>): CangJieTypeMarker =
+        calculateCommonSuperType(types, allowIntersections = true)
+
+    /**
+     * 仓颉可见 Join：无唯一最小候选时返回错误类型，不把内部 intersection 直接发布为表达式类型。
+     * 元组与函数的分量无解仍按官方 JoinOrMeetTupleTy / JoinOrMeetFuncTy 得到整体 Any。
+     */
+    context(c: TypeSystemCommonSuperTypesContext)
+    fun commonSuperTypeAsVisible(types: List<CangJieTypeMarker>): CangJieTypeMarker =
+        calculateCommonSuperType(types, allowIntersections = false)
+
+    /** 两种 Join 共用候选发现、结构递归和子类型关系，仅区分交集是否可作为最终结果。 */
+    context(c: TypeSystemCommonSuperTypesContext)
+    private fun calculateCommonSuperType(
+        types: List<CangJieTypeMarker>,
+        allowIntersections: Boolean,
+    ): CangJieTypeMarker {
         require(types.isNotEmpty()) { "Empty collection for common super type" }
 
         // 快速路径：只有一个类型，直接返回自身
@@ -73,7 +90,7 @@ object CommonSuperTypeCalculator {
         //   depth 从 -maxDepth 开始，每递归一层 +1
         //   当 depth > 0 时说明递归层数超过了输入类型的嵌套深度，丢弃该构造器
         val maxDepth = types.maxOfOrNull { it.typeDepth() } ?: 0
-        return commonSuperTypeInternal(types, -maxDepth)
+        return commonSuperTypeInternal(types, -maxDepth, allowIntersections)
     }
 
     /**
@@ -99,6 +116,7 @@ object CommonSuperTypeCalculator {
     private fun commonSuperTypeInternal(
         types: List<CangJieTypeMarker>,
         depth: Int,
+        allowIntersections: Boolean,
     ): CangJieTypeMarker {
         val rigidTypes = types.mapNotNull { it.asRigidType() }
         if (rigidTypes.size != types.size) {
@@ -128,11 +146,11 @@ object CommonSuperTypeCalculator {
 
         // 步骤五：函数类型特化 — 参数逆变 + 返回值协变
         // 对齐官方 C++ JoinOrMeetFuncTy
-        joinFunctionTypes(filteredTypes, depth)?.let { return it }
+        joinFunctionTypes(filteredTypes, depth, allowIntersections)?.let { return it }
 
         // 步骤六：元组类型特化 — 各分量协变 Join
         // 对齐官方 C++ JoinOrMeetTupleTy
-        joinTupleTypes(filteredTypes, depth)?.let { return it }
+        joinTupleTypes(filteredTypes, depth, allowIntersections)?.let { return it }
 
         // 步骤七：通用路径 — 祖先交集 + 按构造器推断类型参数
         val commonConstructors = allCommonSuperTypeConstructors(filteredTypes, typeCheckerState)
@@ -145,7 +163,9 @@ object CommonSuperTypeCalculator {
         // 步骤八：为每个公共构造器推断带类型参数的具体超类型
         // 使用 mapNotNull：检测到递归的构造器返回 null，直接从候选中过滤掉
         val candidateTypes = accessibleConstructors.mapNotNull { constructor ->
-            superTypeWithGivenConstructor(filteredTypes, constructor, typeCheckerState, depth)
+            superTypeWithGivenConstructor(filteredTypes, constructor, typeCheckerState, depth, allowIntersections)
+        }.filter { candidate ->
+            allowIntersections || filteredTypes.all { AbstractTypeChecker.isSubtypeOf(typeCheckerState, it, candidate) }
         }
 
         // 步骤九：合并候选结果，尝试简化交叉类型
@@ -153,7 +173,7 @@ object CommonSuperTypeCalculator {
         return when (candidateTypes.size) {
             0 -> c.anyType()
             1 -> candidateTypes.single()
-            else -> simplifyIntersection(candidateTypes, typeCheckerState)
+            else -> simplifyIntersection(candidateTypes, typeCheckerState, allowIntersections)
         }
     }
 
@@ -234,6 +254,7 @@ object CommonSuperTypeCalculator {
     private fun joinFunctionTypes(
         types: List<RigidTypeMarker>,
         depth: Int,
+        allowIntersections: Boolean,
     ): CangJieTypeMarker? {
         if (types.none { (it as CangJieTypeMarker).isFunctionType() }) return null
         if (types.any { !(it as CangJieTypeMarker).isFunctionType() }) return c.anyType()
@@ -247,12 +268,13 @@ object CommonSuperTypeCalculator {
         // 官方 BatchMeet 只接受真实可表示的下界，不能把任意交叉类型放入函数参数。
         val joinedParams = (0 until paramCount).map { i ->
             val paramTypes = allArgs.map { it[i] }
-            commonSubtypeOrNull(paramTypes, depth + 1) ?: return c.anyType()
+            commonSubtypeOrNull(paramTypes, depth + 1, allowIntersections) ?: return c.anyType()
         }
 
         // 返回值位：协变 → 递归 CST
         val returnTypes = allArgs.map { it.last() }
-        val joinedReturn = commonSuperTypeInternal(returnTypes, depth + 1)
+        val joinedReturn = commonSuperTypeInternal(returnTypes, depth + 1, allowIntersections)
+        if (joinedReturn.isError()) return c.anyType()
 
         val result = c.createFunctionType(joinedParams, joinedReturn)
         val state = c.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
@@ -272,6 +294,7 @@ object CommonSuperTypeCalculator {
     private fun joinTupleTypes(
         types: List<RigidTypeMarker>,
         depth: Int,
+        allowIntersections: Boolean,
     ): CangJieTypeMarker? {
         if (types.none { (it as CangJieTypeMarker).isTupleType() }) return null
         if (types.any { !(it as CangJieTypeMarker).isTupleType() }) return c.anyType()
@@ -285,9 +308,10 @@ object CommonSuperTypeCalculator {
         // 各分量协变 → 递归 CST
         val joinedElements = (0 until elementCount).map { i ->
             val elementTypes = allElements.map { it[i] }
-            commonSuperTypeInternal(elementTypes, depth + 1)
+            commonSuperTypeInternal(elementTypes, depth + 1, allowIntersections)
         }
 
+        if (joinedElements.any { it.isError() }) return c.anyType()
         val result = c.createTupleType(joinedElements)
         val state = c.newTypeCheckerState(errorTypesEqualToAnything = false, stubTypesEqualToAnything = true)
         return if (types.all { AbstractTypeChecker.isSubtypeOf(state, it, result) }) result else c.anyType()
@@ -304,6 +328,7 @@ object CommonSuperTypeCalculator {
     private fun commonSubtypeOrNull(
         types: List<CangJieTypeMarker>,
         depth: Int,
+        allowIntersections: Boolean,
     ): CangJieTypeMarker? {
         val rigidTypes = mutableListOf<RigidTypeMarker>()
         fun collect(type: CangJieTypeMarker): Boolean {
@@ -332,9 +357,10 @@ object CommonSuperTypeCalculator {
                 val parameterCount = allArguments.first().size - 1
                 if (allArguments.any { it.size - 1 != parameterCount }) return null
                 val parameters = (0 until parameterCount).map { index ->
-                    commonSuperTypeInternal(allArguments.map { it[index] }, depth + 1)
+                    commonSuperTypeInternal(allArguments.map { it[index] }, depth + 1, allowIntersections)
                 }
-                val returnType = commonSubtypeOrNull(allArguments.map { it.last() }, depth + 1) ?: return null
+                if (parameters.any { it.isError() }) return null
+                val returnType = commonSubtypeOrNull(allArguments.map { it.last() }, depth + 1, allowIntersections) ?: return null
                 c.createFunctionType(parameters, returnType)
             }
             uniqueTypes.all { (it as CangJieTypeMarker).isTupleType() } -> {
@@ -342,7 +368,7 @@ object CommonSuperTypeCalculator {
                 val elementCount = allElements.first().size
                 if (allElements.any { it.size != elementCount }) return null
                 val elements = (0 until elementCount).map { index ->
-                    commonSubtypeOrNull(allElements.map { it[index] }, depth + 1) ?: return null
+                    commonSubtypeOrNull(allElements.map { it[index] }, depth + 1, allowIntersections) ?: return null
                 }
                 c.createTupleType(elements)
             }
@@ -364,13 +390,18 @@ object CommonSuperTypeCalculator {
     private fun simplifyIntersection(
         candidates: List<SimpleTypeMarker>,
         state: TypeCheckerState,
+        allowIntersections: Boolean,
     ): CangJieTypeMarker {
         for (candidate in candidates) {
             if (candidates.all { it === candidate || AbstractTypeChecker.isSubtypeOf(state, candidate, it) }) {
                 return candidate
             }
         }
-        return c.intersectTypes(candidates)
+        return if (allowIntersections) {
+            c.intersectTypes(candidates)
+        } else {
+            c.createErrorType("Types do not have the smallest common supertype", delegatedType = null)
+        }
     }
 
     /**
@@ -451,6 +482,7 @@ object CommonSuperTypeCalculator {
         constructor: TypeConstructorMarker,
         state: TypeCheckerState,
         depth: Int,
+        allowIntersections: Boolean,
     ): SimpleTypeMarker? {
         if (constructor.parametersCount() == 0) {
             return c.createSimpleType(constructor, emptyList())
@@ -480,9 +512,10 @@ object CommonSuperTypeCalculator {
                     checkRecursion(types, candidateTypes) -> return null
 
                     // 安全递归：depth + 1 消耗深度预算
-                    else -> commonSuperTypeInternal(candidateTypes, depth + 1)
+                    else -> commonSuperTypeInternal(candidateTypes, depth + 1, allowIntersections)
                 }
 
+                if (!allowIntersections && argumentType.isError()) return null
                 add(c.createTypeArgument(argumentType))
             }
         }

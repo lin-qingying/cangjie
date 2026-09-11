@@ -2594,7 +2594,7 @@ open class CfirExpressionsResolveTransformer(
 
         /**
          * 对齐 Kotlin `FirExpressionsResolveTransformer.transformBlockInCurrentScope`：
-         * - 非尾语句始终按 `ContextIndependent` 解析；
+         * - 非尾语句独立解析，并按官方 DiscardedHelper 标记其结果被丢弃；
          * - 尾语句继承外层 `ResolutionMode`；
          * - 若外层带 expected type，则显式标记 `lastStatementInBlock`。
          *
@@ -2603,7 +2603,7 @@ open class CfirExpressionsResolveTransformer(
          */
         for (index in statements.indices) {
             val statementMode = when {
-                index != lastIndex -> ResolutionMode.ContextIndependent
+                index != lastIndex || data.isValueDiscarded -> ResolutionMode.ContextIndependent.ForDiscardedValue
                 data is ResolutionMode.WithExpectedType -> data.copy(lastStatementInBlock = true)
                 else -> data
             }
@@ -2638,6 +2638,7 @@ open class CfirExpressionsResolveTransformer(
         matchExpression: CfirMatchExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        if (data.isValueDiscarded) matchExpression.branches.forEach { it.body.unitifyDiscardedBranch() }
         components.dataFlowAnalyzer.enterMatchExpression(matchExpression)
         matchExpression.subject?.resolveIndependently()
         val subjectType = matchExpression.subject?.coneTypeOrNull
@@ -3047,9 +3048,37 @@ open class CfirExpressionsResolveTransformer(
      * 只有外层仍依赖调用上下文时才允许延迟分支 lambda；独立表达式没有后续候选替它完成。
      */
     private fun controlFlowBranchResolutionMode(data: ResolutionMode): ResolutionMode =
-        (data as? ResolutionMode.WithExpectedType)
+        if (data.isValueDiscarded) data else (data as? ResolutionMode.WithExpectedType)
             ?.takeUnless { it.fromCast }
             ?: if (data.forceFullCompletion) ResolutionMode.ContextIndependent else ResolutionMode.ContextDependent
+
+    /**
+     * 只有已确定的 target 才能作为官方 ChkIfExpr / CheckMatchExprSetTy 的表达式结果。
+     * 推断变量仍须下传给分支并参与候选约束，但它还不是已检查成功的目标类型，
+     * 不能在可见 Join 失败时用它替换错误（无上下文 lambda 的返回占位也遵守此规则）。
+     */
+    private fun ConeCangJieType.checkedControlFlowTargetOrNull(): ConeCangJieType? =
+        takeUnless { contains { it is ConeTypeVariableType || it is ConeErrorType } }
+
+    /**
+     * 对齐官方 DiscardedHelper::DesugarBrExpr：在丢弃结果的分支末尾补真正的 Unit 节点。
+     * return/throw/break/continue 保留 Nothing；正常语句仍参与完整解析和诊断。
+     * Unit 留在正式 IR 中，completion、CFG 和快照因此共用同一个结果，不能只跳过 Join 诊断。
+     */
+    private fun CfirBlock.unitifyDiscardedBranch() {
+        val last = statements.lastOrNull()
+        if (last is CfirLiteralExpression && last.kind == CfirLiteralKind.UNIT) return
+        if (last is CfirReturnExpression || last is CfirThrowExpression ||
+            last is CfirBreakExpression || last is CfirContinueExpression
+        ) return
+        val mutableStatements = statements as? MutableList<CfirStatement>
+            ?: error("CfirBlock statements must be mutable during discarded-value desugaring")
+        mutableStatements += buildLiteralExpression {
+            kind = CfirLiteralKind.UNIT
+            value = null
+            coneTypeOrNull = builtinTypes.unitType
+        }
+    }
 
     /**
      * 合成 `match` 表达式结果类型。
@@ -3070,22 +3099,24 @@ open class CfirExpressionsResolveTransformer(
         val normalizedBranchTypes = branchTypes.map { branchType ->
             IdealTypeResolver.resolveIfIdeal(branchType, expectedType)
         }
-        val first = normalizedBranchTypes.first()
-        if (normalizedBranchTypes.all { it == first }) return first
-
+        val checkedTarget = expectedType?.checkedControlFlowTargetOrNull()
         /**
          * 官方 `ChkMatchExprSetTy` 在外层存在 target type 且任一分支类型等于 target 时，
          * 直接把整个 match 视为 target，避免 Join 得到比上下文更宽的可见公共父类型。
          */
-        if (expectedType != null && normalizedBranchTypes.any { branchType ->
-                AbstractTypeChecker.equalTypes(session.typeContext, branchType, expectedType)
+        if (checkedTarget != null && normalizedBranchTypes.any { branchType ->
+                AbstractTypeChecker.equalTypes(session.typeContext, branchType, checkedTarget)
             }
         ) {
-            return expectedType
+            return checkedTarget
         }
 
         inferFreshLambdaMatchJoinType(normalizedBranchTypes)?.let { return it }
-        return commonSupertype(normalizedBranchTypes)
+        // CheckMatchExprSetTy：分支已经接受 target 时，可见 Join 无解仍采用该 target；
+        // 无 target 的综合模式必须保留 Join 失败，不能发布内部 intersection 或任意 Any。
+        return session.typeContext.commonVisibleSuperTypeOrNull(normalizedBranchTypes)
+            ?: checkedTarget
+            ?: ConeErrorType(ConeIncompatibleExpressionTypesError("MatchCase", normalizedBranchTypes))
     }
 
     /**
@@ -3129,8 +3160,12 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         val isIfWithoutEndingElse = ifExpression.isIfExpressionWithoutEndingElse()
+        if (data.isValueDiscarded && ifExpression.elseBranch != null) {
+            ifExpression.thenBranch.unitifyDiscardedBranch()
+            (ifExpression.elseBranch as? CfirBlock)?.unitifyDiscardedBranch()
+        }
         val branchResolutionMode = if (isIfWithoutEndingElse) {
-            ResolutionMode.ContextIndependent
+            ResolutionMode.ContextIndependent.ForDiscardedValue
         } else {
             controlFlowBranchResolutionMode(data)
         }
@@ -3159,7 +3194,8 @@ open class CfirExpressionsResolveTransformer(
         // 综合模式下两个分支类型先经 `ReplaceThisTy` 把 `This` 视图退化为普通类类型再 Join，
         // 因此 `(if (c) { this } else { this }).foo()` 的接收者是普通类类型而非 `This`。
         // 带目标类型的 `ChkIfExpr` 路径不做该退化，`func f(): This { if ... }` 的分支仍保持 `This`。
-        val isSynthesizedIfExpression = data.expectedTypeOrNull == null
+        val checkedTarget = data.expectedTypeOrNull?.checkedControlFlowTargetOrNull()
+        val isSynthesizedIfExpression = checkedTarget == null
         val joinedThenType = if (isSynthesizedIfExpression) thenType?.approximateThisTypeForDeclaration() else thenType
         val joinedElseType = if (isSynthesizedIfExpression) elseType?.approximateThisTypeForDeclaration() else elseType
         val mergedType = when {
@@ -3169,8 +3205,9 @@ open class CfirExpressionsResolveTransformer(
             isIfWithoutEndingElse -> builtinTypes.unitType
             joinedThenType == null -> joinedElseType ?: builtinTypes.unitType
             joinedElseType == null -> builtinTypes.unitType
+            checkedTarget != null -> checkedTarget
             joinedThenType == joinedElseType -> joinedThenType
-            else -> commonSupertype(listOf(joinedThenType, joinedElseType))
+            else -> visibleControlFlowResultType(listOf(joinedThenType, joinedElseType), "if expression")
         }
         val resultType = IdealTypeResolver.resolveIfIdeal(mergedType, data.expectedTypeOrNull)
         recordAssignmentRhsTypeMismatchIfNeeded(ifExpression, resultType)
@@ -4992,7 +5029,7 @@ open class CfirExpressionsResolveTransformer(
                 forInExpression.transformPatternGuard(transformer, ResolutionMode.ContextIndependent)
             }
             withLoopJumpScope(LoopJumpScope.Body(forInExpression)) {
-                forInExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                forInExpression.transformBody(transformer, ResolutionMode.ContextIndependent.ForDiscardedValue)
             }
         }
         components.dataFlowAnalyzer.exitWhileLoop(forInExpression)
@@ -5037,7 +5074,7 @@ open class CfirExpressionsResolveTransformer(
         if (loopExpression.isDoWhile) {
             components.dataFlowAnalyzer.enterDoWhileLoop(loopExpression)
             withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
-                loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent.ForDiscardedValue)
             }
             components.dataFlowAnalyzer.enterDoWhileLoopCondition(loopExpression)
             withLoopJumpScope(LoopJumpScope.ConditionPart(loopExpression)) {
@@ -5064,7 +5101,7 @@ open class CfirExpressionsResolveTransformer(
                 }
                 components.dataFlowAnalyzer.exitWhileLoopCondition(loopExpression)
                 withLoopJumpScope(LoopJumpScope.Body(loopExpression)) {
-                    loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent)
+                    loopExpression.transformBody(transformer, ResolutionMode.ContextIndependent.ForDiscardedValue)
                 }
                 components.dataFlowAnalyzer.exitWhileLoop(loopExpression)
             }
@@ -5135,6 +5172,11 @@ open class CfirExpressionsResolveTransformer(
         tryExpression: CfirTryExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        if (data.isValueDiscarded) {
+            tryExpression.tryBlock.unitifyDiscardedBranch()
+            tryExpression.catches.forEach { it.body.unitifyDiscardedBranch() }
+            tryExpression.handlers.forEach { it.body.unitifyDiscardedBranch() }
+        }
         tryExpression.transformAnnotations(transformer, data)
         components.dataFlowAnalyzer.enterTryExpression(tryExpression)
         val isTryWithResources = tryExpression.resources.isNotEmpty()
@@ -5161,7 +5203,7 @@ open class CfirExpressionsResolveTransformer(
         }
         if (tryExpression.finallyBlock != null) {
             components.dataFlowAnalyzer.enterFinallyBlock()
-            tryExpression.transformFinallyBlock(transformer, ResolutionMode.ContextIndependent)
+            tryExpression.transformFinallyBlock(transformer, ResolutionMode.ContextIndependent.ForDiscardedValue)
             components.dataFlowAnalyzer.exitFinallyBlock()
         }
         components.dataFlowAnalyzer.exitTryExpression(data.forceFullCompletion)
@@ -5689,7 +5731,7 @@ open class CfirExpressionsResolveTransformer(
         // 同步体：继承外层期望类型（ChkSyncExpr 在目标 tgtTy 下检查 body），结果类型 = 同步体类型。
         synchronizedExpression.transformBody(
             transformer,
-            withExpectedType(data.expectedTypeOrNull),
+            if (data.isValueDiscarded) data else withExpectedType(data.expectedTypeOrNull),
         )
 
         val bodyType = synchronizedExpression.body.coneTypeOrNull ?: builtinTypes.unitType
@@ -5872,6 +5914,15 @@ open class CfirExpressionsResolveTransformer(
     }
 
     // ── Common Supertype ──────────────────────────────────────────────────────
+
+    /** 最终表达式类型使用仓颉可见 Join，已有子诊断只传播，不转成新的 Join 错误。 */
+    private fun visibleControlFlowResultType(types: List<ConeCangJieType>, constructName: String): ConeCangJieType {
+        types.filterIsInstance<ConeErrorType>().firstOrNull()?.let {
+            return ConeErrorType(ConeUnreportedDuplicateDiagnostic(it.diagnostic))
+        }
+        return session.typeContext.commonVisibleSuperTypeOrNull(types)
+            ?: ConeErrorType(ConeIncompatibleExpressionTypesError(constructName, types))
+    }
 
     /**
      * 计算表达式分支类型的公共父类型。

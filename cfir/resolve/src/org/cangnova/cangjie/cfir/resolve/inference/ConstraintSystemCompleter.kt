@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferGenericFunctionTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.processCandidatesAndPos
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -61,6 +63,8 @@ class ConstraintSystemCompleter(
      * 当前会话的推断组件集合。
      */
     private val inferenceComponents = components.session.inferenceComponents
+    /** 已完成 lambda body 的实际返回表达式，供最终变量固定保留源码错误。 */
+    private val dataFlowAnalyzer = components.dataFlowAnalyzer
     /**
      * 类型变量固定选择器。
      */
@@ -408,6 +412,24 @@ class ConstraintSystemCompleter(
         topLevelAtoms: List<ConeResolutionAtom>,
     ) {
         val typeVariable = variableWithConstraints.typeVariable
+        // 官方 SynLamExpr 以函数体错误决定 lambda 失败，不再把返回占位的约束不足
+        // 报成参数缺少注解。只在最终无法固定变量时传播根错误，不能在临时写回阶段
+        // 固化它，否则依赖参数定型后重查的成员访问会失去继续求解的机会。
+        if (typeVariable is ConeTypeVariableForLambdaReturnType) {
+            val lambda = typeVariable.argument as? CfirAnonymousFunction
+            val returnError = lambda?.let { function ->
+                dataFlowAnalyzer.returnExpressionsOfAnonymousFunction(function)
+                    .firstNotNullOfOrNull { it.expression.coneTypeOrNull as? ConeErrorType }
+            }
+            if (returnError != null) {
+                fixVariable(
+                    typeVariable,
+                    ConeErrorType(ConeUnreportedDuplicateDiagnostic(returnError.diagnostic)),
+                    ConeFixVariableConstraintPosition(typeVariable),
+                )
+                return
+            }
+        }
         val resolvedAtom =
             findStatementOfFirstAtomWithVariable(typeVariable, topLevelAtoms)
                 ?: topLevelAtoms.firstOrNull()?.expression
