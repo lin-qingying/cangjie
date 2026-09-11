@@ -6365,3 +6365,45 @@ XML为8531 → 8535 records，均为308 skipped（含一条聚合记录）。逐
 - change isolation: 提交上述共享实现、两份新fixture、四份官方期望修正、两套生成入口及日志；所有临时追踪已移除，.idea/workspace.xml独立保留。
 - IDE verification: `gradlew-queue.bat :analysis:low-level-api-cfir:test --tests '*SourceDiagnosticTraversalCounterTestGenerated' --tests '*SourceFileStructureTestGenerated' --tests '*SourcePostSemaDiagnosticsTest' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：6项全部通过，3m36s完成；XML证据保存在49-ide-modes。覆盖惰性body模式契约、文件结构、诊断遍历及Sema/CFA阶段边界。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（15s）；`git diff --check`通过。
+
+## 2026-09-11：无主语 Match 用例的类型名诊断期望
+
+- problem type: Diagnostics / Fixture correction。
+- root cause: match_no_selector_fuzz_001.cj把类型标注里的未声明Record288和构造调用里的未声明Record288都标为UNRESOLVED_REFERENCE；前者应使用项目已有的UNDECLARED_TYPE_NAME。
+- official Cangjie evidence: build/repair-20260906/evidence/50-type-name-fixture.official.cjc.json在第16行第29列报告sema_undeclared_type_name，第41列报告sema_undeclared_identifier，无语法错误。修正后去掉inline标记的源码与该官方探针完全一致。
+- Kotlin counterpart files consulted: FirSpecificTypeResolverTransformer.kt:177-188通过ConeUnresolvedTypeQualifierError保留未解析的类型限定名；CFIR现有同类类型解析和诊断映射已经正确区分类型位置与值位置。
+- CFIR owner files changed: 实现无需修改。coneDiagnosticToCfirDiagnostic.kt:2456-2469已有ConeUnresolvedTypeQualifierError到UNDECLARED_TYPE_NAME的映射，本项只修改fixture和日志。
+- repair principle: 按官方语义修正旧期望，不把正确的类型名诊断改成普通名字诊断。
+- fixtures covered: llt/match/match_no_selector/match_no_selector_fuzz_001.cj，PSI与非PSI入口；已搜索Match/PatternMatching同类类型位置标记。构造调用的UNRESOLVED_REFERENCE保留，源码和语法未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*TestGenerated*Match*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：50-match-family为442/442通过，2m10s完成；对49修复2项、零回归、无新增测试键。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：50-type-name-full-final，25m41s正常完成。对49-visible-full-final：FIXED=2、REGRESSED=0、NEW_KEYS=0、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。剩余465条失败的消息全部相同。
+  - 两入口目标组全部通过：If 54、IfLetExpr 100、Loops 26、WhileLetExpr 64、Match 108、PatternMatching 296，共648条测试记录。普通LLT的Call 184、Generics 680、TypeInfer 76、Typealias 92也全部通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8534 | 8534 |
+| 通过 | 7760 | 7762 |
+| 失败 | 467 | 465 |
+| 跳过 | 307 | 307 |
+
+XML两轮均为8535 records、308 skipped（含一条聚合记录）。逐项证据为50-type-name-full-final与49-visible-full-final--50-type-name-full-final.json；累计对比48-operand-full-verified--50-type-name-full-final.json确认修复4项、零回归、新增4项全通过，累计3条宏消息变化沿用第49项已经核实的说明。
+
+- remaining failures: 本轮If/IfLet/While/WhileLet/Match目标已清零。全量另有465项既有失败，按测试族统计如下；这些数量表示测试记录，不代表已归并的独立根因。
+
+| 剩余测试族 | 失败数 |
+| --- | ---: |
+| Macro（全部宏套件） | 250 |
+| Record | 35 |
+| ErrMsgs | 26 |
+| InitializationCheck | 20 |
+| Lambda | 14 |
+| Assign / Linkage / ConstraintCheck | 各12 |
+| Ffi / SolveTypeArgs | 各10 |
+| UnusedImport / Exception / OptionalChain | 各8 |
+| ExtendsImplementsInterfaceDuplicated / NonExhaustiveEnum / Array | 各6 |
+| Effect / Lookup | 各4 |
+| Box / Const / DesugarErrorReport / FuzzInvalidParse / IsOrAsExpr / Native / OptionalModifiers | 各2 |
+
+- change isolation: 本项仅提交一个inline标记和日志。期间独立的4daa53fb6（DevEco拆分）未修改cfir或resolution.common，保留该提交；用户其它工作区改动未纳入本项。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（26s）；`git diff --check`通过。
