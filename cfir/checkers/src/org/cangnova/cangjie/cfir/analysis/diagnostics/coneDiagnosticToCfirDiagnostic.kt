@@ -457,10 +457,11 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         // 约束系统已经保留显式 type argument source、实际类型和替换后的声明上界，
         // 这里直接映射专用诊断。错误候选在 completion 后不保证仍以普通 qualified access
         // 形态遍历 checker，因此不能把唯一诊断责任推迟到 post-resolve checker。
-        return candidate.explicitTypeArgumentConstraintDiagnostics(
+        val explicitDiagnostics = candidate.explicitTypeArgumentConstraintDiagnostics(
             session = session,
             fallbackSource = qualifiedAccessSource ?: source,
         )
+        if (explicitDiagnostics.isNotEmpty()) return explicitDiagnostics
     }
 
     if (isBareStaticGenericQualifierInferenceError(session)) {
@@ -2713,7 +2714,8 @@ internal fun List<ConstraintSystemError>.hasExplicitTypeArgumentConstraintMismat
  * 将显式类型实参产生的 constraint mismatch 映射为调用点上界诊断。
  *
  * solver 与类型使用 checker 必须消费同一组声明上界；当候选因该约束成为 error reference 时，
- * 由 constraint position 保存的原始 type argument source 负责精确定位，避免依赖完成后的 AST 形态。
+ * 从初始声明约束确定违反上界的参数，不能把最后触发 incorporation 的显式等式当作错误 owner。
+ * 例如 X <: Y 在写入 Y 的显式绑定后才发生矛盾，诊断仍属于 X 对应的类型实参。
  * 官方 CheckGenericDeclInstantiation 在首个上界违例后终止当前实例化；底层约束继续推导出的
  * 其它违例不再成为同一次调用上的额外主诊断。
  */
@@ -2722,27 +2724,44 @@ private fun AbstractCallCandidate<*>.explicitTypeArgumentConstraintDiagnostics(
     fallbackSource: CjSourceElement?,
 ): List<CjDiagnostic> {
     val typeParameters = explicitConstraintTypeParameters(session)
-    val explicitTypeSubstitutor = system.asReadOnlyStorage().explicitTypeArgumentsSubstitutor()
+    val storage = system.asReadOnlyStorage()
+    val explicitTypeSubstitutor = storage.explicitTypeArgumentsSubstitutor()
+    val explicitArgumentsByVariable = storage.initialConstraints.mapNotNull { constraint ->
+        val position = constraint.position as? ConeExplicitTypeParameterConstraintPosition ?: return@mapNotNull null
+        if (constraint.constraintKind != ConstraintKind.EQUALITY) return@mapNotNull null
+        val variable = constraint.a as? ConeTypeVariableType
+            ?: constraint.b as? ConeTypeVariableType
+            ?: return@mapNotNull null
+        variable.typeConstructor to position.typeArgument
+    }.toMap()
 
-    for (error in errors) {
-        val mismatch = error as? ConstraintMismatch ?: continue
-        val position = mismatch.position.from as? ConeExplicitTypeParameterConstraintPosition ?: continue
-        val actualType = (mismatch.lowerType as? ConeCangJieType)
-            ?.substituteTypeVariableTypes(this, session)
-            ?.let(explicitTypeSubstitutor::substituteOrSelf) ?: continue
-        val upperBound = (mismatch.upperType as? ConeCangJieType)
-            ?.substituteTypeVariableTypes(this, session)
-            ?.let(explicitTypeSubstitutor::substituteOrSelf) ?: continue
-        if (actualType is ConeErrorType || upperBound is ConeErrorType) continue
+    for (constraint in storage.initialConstraints) {
+        if (constraint.position !is ConeDeclaredUpperBoundConstraintPosition) continue
+        if (constraint.constraintKind != ConstraintKind.UPPER) continue
+        val declaredArgument = constraint.a as? ConeCangJieType ?: continue
+        val declaredUpperBound = constraint.b as? ConeCangJieType ?: continue
+        val actualType = explicitTypeSubstitutor.substituteOrSelf(declaredArgument.substituteTypeVariableTypes(this, session))
+        val upperBound = explicitTypeSubstitutor.substituteOrSelf(declaredUpperBound.substituteTypeVariableTypes(this, session))
+        if (actualType.contains { it is ConeErrorType } || upperBound.contains { it is ConeErrorType }) continue
+        if (AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(session.typeContext, actualType, upperBound)) continue
+
+        // 普通实参由声明约束左侧的 fresh variable 定位；typealias 的构造类型可能同时依赖
+        // 多个源码实参，此时使用整个实例化范围。左侧为固定类型时，来源位于右侧参数。
+        fun ConeCangJieType.sourceArguments(): List<CfirTypeRef> = explicitArgumentsByVariable.mapNotNull { (variable, argument) ->
+            argument.takeIf { contains { it is ConeTypeVariableType && it.typeConstructor == variable } }
+        }.distinct()
+        val lowerArguments = declaredArgument.sourceArguments()
+        val sourceArguments = if (lowerArguments.isNotEmpty()) lowerArguments else declaredUpperBound.sourceArguments()
+        val sourceArgument = sourceArguments.singleOrNull()
 
         val argumentIndex = callInfo.typeArguments.indexOfFirst { argument ->
-            argument === position.typeArgument || argument == position.typeArgument
+            argument === sourceArgument || argument == sourceArgument
         }
         val genericType = typeParameters.getOrNull(argumentIndex)
             ?.symbol
             ?.constructType()
             ?: upperBound
-        val diagnosticSource = position.typeArgument.source ?: fallbackSource ?: continue
+        val diagnosticSource = sourceArgument?.source ?: fallbackSource ?: continue
         val diagnostic = CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT.on(
             diagnosticSource,
             actualType,
