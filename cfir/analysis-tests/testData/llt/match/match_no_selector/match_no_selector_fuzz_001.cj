@@ -13,7 +13,7 @@ struct Record14 {
             case (var316 > { // block id: 333
 
                 =>
-                let var340: <!UNRESOLVED_REFERENCE!>Record288<!> = <!UNRESOLVED_REFERENCE!>Record288<!>();
+                let var340: <!UNDECLARED_TYPE_NAME!>Record288<!> = <!UNRESOLVED_REFERENCE!>Record288<!>();
 
                 var340;
 
