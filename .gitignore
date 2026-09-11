@@ -37,6 +37,7 @@ bin/
 /NUL
 /external/
 /intellij-ide/
+/deveco/
 /.gradle-user-fresh/
 /.gradle-user-fresh-resolve/
 /.gradle-user/

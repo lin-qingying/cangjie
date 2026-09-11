@@ -1,3 +1,0 @@
-{
-  "rootOut":"${modulePath}"
-}
