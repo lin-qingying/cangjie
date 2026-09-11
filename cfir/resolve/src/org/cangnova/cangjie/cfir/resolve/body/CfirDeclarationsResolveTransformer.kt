@@ -338,7 +338,7 @@ protected open fun transformFunctionContent(
                     .takeUnless { function.hasImplicitOrInferredReturnType() }
                 val bodyResolutionMode = when {
                     function !is CfirAnonymousFunction && declaredReturnTypeRef?.coneTypeOrNull?.isUnit == true ->
-                        ResolutionMode.ContextIndependent
+                        ResolutionMode.ContextIndependent.ForDiscardedValue
                     declaredReturnTypeRef != null -> withExpectedType(declaredReturnTypeRef)
                     else -> resolutionModeForBody
                 }
@@ -447,7 +447,7 @@ dataFlowAnalyzer.enterFunction(constructor)
                 }
                 transformDelegatedConstructorCall(constructor, data)
                 context.forConstructorBody(constructor, session) {
-                    constructor.transformBody(transformer, data)
+                    constructor.transformBody(transformer, ResolutionMode.ContextIndependent.ForDiscardedValue)
                 }
             }
 
@@ -1281,8 +1281,8 @@ dataFlowAnalyzer.enterFunction(constructor)
 
         expressionTypes.commonThisReturnTypeOrNull()?.let { return it }
 
-        val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
-        if (commonType != null && commonType !is ConeErrorType && commonType.isAcceptableInferredReturnType(expressionTypes)) {
+        val commonType = session.typeContext.commonVisibleSuperTypeOrNull(expressionTypes)
+        if (commonType != null && commonType !is ConeErrorType) {
             return commonType
         }
 
@@ -1428,39 +1428,6 @@ dataFlowAnalyzer.enterFunction(constructor)
         return first.takeIf { candidate -> thisTypes.all { it == candidate } }
     }
 
-    /**
-     * 函数隐式返回类型不能只因为所有候选都可装箱到 `Any` 就吞掉推断失败。
-     *
-     * 官方 `CalcFuncRetTyFromBody` 允许自定义 class/struct/enum 返回值与基本类型共同推断为
-     * `Any`；但纯标准库值类型候选之间若唯一公共父类型退化到 `Any`，或公共 Join 只能表达为
-     * 交集类型时，仍要求报告“没有最小公共父类型”。交集是公共类型计算的中间结果，不能直接
-     * 作为仓颉隐式函数返回类型写回。
-     */
-    private fun ConeCangJieType.isAcceptableInferredReturnType(expressionTypes: List<ConeCangJieType>): Boolean {
-        if (this is ConeIntersectionType) return false
-        if (!isAnyType()) return true
-        return expressionTypes.any { it.isUserDefinedClassifierType() }
-    }
-
-    /**
-     * 判断类型是否为标准库 `Any`。
-     */
-    private fun ConeCangJieType.isAnyType(): Boolean {
-        return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
-    }
-
-    /**
-     * 是否为用户声明的名义类型。
-     *
-     * 标准库类型（例如 `String`、`Unit`、`Array`、`Option`）参与返回类型 join 时不自动把
-     * `Any` 作为可接受结果；自定义 class/struct/enum 与 primitive 混合时才按官方语义允许
-     * 隐式返回 `Any`。
-     */
-    private fun ConeCangJieType.isUserDefinedClassifierType(): Boolean {
-        val id = classId ?: return false
-        if (id.packageFqName == StdlibClassIds.Any.packageFqName) return false
-        return this is ConeClassLikeType || this is ConeStructType || this is ConeEnumType
-    }
 
     /**
      * 提前把函数签名（返回类型、各参数类型）解析到 resolved 状态。

@@ -6332,3 +6332,36 @@ XML 为8525 → 8531 records，均为308 skipped（含一条聚合记录）。�
 - remaining failures: 目标剩4项，即match029和match_no_selector_fuzz_001各双入口；If/IfLet/While/WhileLet以及Call/Generics/TypeInfer/Typealias保持通过。另有465项既有全量失败。
 - change isolation: 仅提交共享操作数完成、候选及快照修复、三份新LLT fixture、两套生成入口、两项快照unit和日志；既有fixture期望未改，.idea/workspace.xml独立保留。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（9s）；`git diff --check`通过。
+
+## 2026-09-11：可见公共类型与被丢弃的分支结果
+
+- problem type: Type Inference / Visible common result type / Discarded branch values。
+- root cause: 公共类型计算把约束求解使用的 intersection 直接发布为 Match/If 的结果；函数返回推断则以用户类型/标准库类型启发式决定是否接受 Any。结果使用上下文缺失还让语句、循环和构造器中被丢弃的异构分支参与 Join。lambda 返回占位被误当作已检查的目标，会覆盖真实表达式错误；无法固定返回变量时又可能错报参数缺少注解。
+- official Cangjie evidence: build/repair-20260906/evidence 的49-visible-result-fixture、49-if12/13/14/15/17、49-join_ordered_problem_0/1、49-discarded-branch-results、49-discarded-lambda-boundaries均保留cjc命令及原始诊断。跨包49-accessible-cst与49-accessible-cst-corrected先真实编译common.cjo再编译main，原例无唯一最小公共父类型；共同公开Widget父类及显式Displayable目标正例合法。修正后完整输出保存在后者的official-result.json，只有原负例一个错误。所有修改的fixture语法合法。
+- official implementation: JoinAndMeet.cpp:99-110/178-253/342-382区分内部Join与ToUserVisibleTy；TypeCheckUtil.cpp:927-950的FindSmallestTy要求唯一最小类型。函数/元组分量Join无解时，结构Join按官方规则得到整体Any。TypeCheckMatchExpr.cpp:41-52允许已检查的target作为无法形成可见Join时的结果，IfExpr.cpp:231-252的检查模式采用target。
+- discarded results: DesugarBeforeTypeCheck.cpp:555-714的DiscardedHelper给被丢弃的If/Match/Try分支末尾补Unit，末尾return/throw/break/continue保留Nothing。丢弃状态经block非尾语句、条件分支、循环体、finally、构造器、显式Unit函数和synchronized传播，不越过变量initializer或lambda返回值边界。
+- inference ownership: LambdaExpr.cpp:166-198/251+的ResetLambdaForReinfer/SynLamExpr不把推断结果当作新标注。49-discarded-trace确认同一个If先产生TYPE_INCOMPATIBLE，随后被WithExpectedType(TypeVariable(_R))覆盖。最终保留原lambda候选与分支约束，只在If/Match结果合并处区分可用target与推断变量/错误类型；后者不能覆盖可见Join失败。ConstraintSystemCompleter在最终无法固定lambda返回变量、且真实返回表达式已错误时，用原错误的UnreportedDuplicate固定该变量。原表达式继续上报，参数自身的诊断仍归参数owner。
+- Kotlin counterpart files consulted: NewCommonSuperTypeCalculator.kt:279-289的内部交集，AbstractTypeApproximator.kt:372-430及TypeApproximatorConfiguration.kt的近似边界；ResolutionMode.kt、FirExpressionsResolveTransformer.kt:845-900的block尾值传播；FirDeclarationsResolveTransformer.kt:1144-1166/1501-1546的构造器/lambda入口；FirControlFlowStatementsResolveTransformer.kt:181-202及ConstraintSystemCompleter.kt的返回上下文和变量固定阶段。复杂表达式范围按Kotlin相关表达式源范围及本项目Diagnostic Range Policy，不沿用cjc单字符锚点。
+- CFIR owner files changed: CommonSuperTypeCalculator新增可见Join入口，CfirVisibleCommonSuperType共享最终类型构造，ConeIncompatibleExpressionTypesError及coneDiagnosticToCfirDiagnostic提供独立表达式诊断。CfirExpressionsResolveTransformer、CfirDeclarationsResolveTransformer接入并删除isAcceptableInferredReturnType/isUserDefinedClassifierType启发式；ConstraintSystemCompleter保留最终返回错误。ResolutionMode.ContextIndependent增加ForDiscardedValue，BodyResolveContext的候选完成按父模式判断；分支Unit留在正式IR中统一参与completion、CFG与快照。
+- repair principle: 内部求解保留中间类型，语义结果执行可见Join；按真实结果使用位置规范化分支，并在正确完成阶段保留错误所有权，不能放宽类型合并或吞掉诊断。
+- fixtures covered / corrections: PatternMatching/MatchExpression/match029的单字符m期望扩大到完整Match；join_meet/join_ordered_problem_0.cj、join_ordered_problem_1.cj及diagnostics/coverage/accessibility/cstAccessibleCommonParent.cj按官方补齐负例，后者另补跨包正覆盖。新增visible_result_types.cj覆盖标准库异构类型、多公共接口、Any、函数/元组、显式目标和真实公共类；discarded_branch_results.cj覆盖Unit/非尾/构造器正例，initializer及lambda尾If/Match/显式return负例，名字错误保留，以及显式Any和正常推断lambda正例。
+- unchanged regression fixtures: If/if12.cj、if13.cj、if14.cj、if15.cj、if17.cj，PatternMatching/MatchExpression/branch_operand_completion.cj、branch_operand_errors.cj、branch_operand_refinement.cj，type_infer/lambda_param_09.cj，lambda/lambda_capture/capture_var_as_return.cj、capture4.cj均未修改期望。
+- verification commands and outcome:
+  - 49-final-fixation：37项34通过、2既有Capture4失败、1跳过；对48基线FIXED2、REGRESSED0、新增4全部通过、changed_failure_messages=[]。If17、LambdaParam09、CaptureVarAsReturn及新增正反例全部通过。
+  - 49-visible-family-final：完整控制流/模式/类型/调用/函数/lambda/运算/初始化/异常/容器/类/扩展/接口/JoinMeet/Box/IsOrAs与Diagnostics双入口，6501项6084通过、111既有失败、306跳过，13m19s完成；对48 FIXED2、REGRESSED0、新增4通过，全部111条旧失败消息相同。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：49-visible-full-final，20m37s正常结束。对48-operand-full-verified：FIXED=2、REGRESSED=0、NEW_KEYS=4（全通过）、REMOVED_KEYS=0、其它状态变化=0。
+  - 全量3条既有宏消息变化已单独核实：DefaultParameterPkg02/F2/test3双入口不再对合法的`if ... ?? try ...`条件误报TYPE_MISMATCH，缩小探针49-macro-coalesced-condition官方cjc成功编译；非PSI DefaultParameterPkg02/test_macro新增3处UNREACHABLE_PATTERN，49-macro-pattern-space官方恰好报告同样3处sema_unreachable_pattern，属于Sema警告。3项仍计为失败，未计入修复测试；其余464条旧失败消息相同，宏fixture未改。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8530 | 8534 |
+| 通过 | 7754 | 7760 |
+| 失败 | 469 | 467 |
+| 跳过 | 307 | 307 |
+
+XML为8531 → 8535 records，均为308 skipped（含一条聚合记录）。逐项证据为49-visible-full-final与48-operand-full-verified--49-visible-full-final.json。
+
+- remaining failures: 目标仅剩match_no_selector_fuzz_001双入口的类型名期望问题；If/IfLet/While/WhileLet、其它Match/PatternMatching和Call/Generics/TypeInfer/Typealias保持通过。另有465项既有全量失败。
+- change isolation: 提交上述共享实现、两份新fixture、四份官方期望修正、两套生成入口及日志；所有临时追踪已移除，.idea/workspace.xml独立保留。
+- IDE verification: `gradlew-queue.bat :analysis:low-level-api-cfir:test --tests '*SourceDiagnosticTraversalCounterTestGenerated' --tests '*SourceFileStructureTestGenerated' --tests '*SourcePostSemaDiagnosticsTest' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：6项全部通过，3m36s完成；XML证据保存在49-ide-modes。覆盖惰性body模式契约、文件结构、诊断遍历及Sema/CFA阶段边界。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（15s）；`git diff --check`通过。

@@ -2477,7 +2477,7 @@ class CfirPCLAInferenceSession(
             -> error("$this call should not be analyzed in ${callInfo.resolutionMode}")
 
             is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextDependent,
-            org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextIndependent,
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextIndependent,
             is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ReceiverResolution,
             -> {
             }

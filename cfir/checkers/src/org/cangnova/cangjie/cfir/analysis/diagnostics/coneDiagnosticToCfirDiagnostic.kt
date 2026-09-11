@@ -96,6 +96,9 @@ fun ConeDiagnostic.toCfirDiagnostics(
 ): List<CjDiagnostic> {
     if (this is ConeUnreportedDuplicateDiagnostic) return emptyList()
     return when (this) {
+        is ConeIncompatibleExpressionTypesError -> listOfNotNull(
+            CfirErrors.TYPE_INCOMPATIBLE.on(source ?: return emptyList(), constructName, session)
+        )
         is ConeConstraintSystemHasContradiction -> mapSystemHasContradictionError(
             session,
             source,

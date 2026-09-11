@@ -47,7 +47,14 @@ sealed class ResolutionMode(
     /**
      * 不依赖外部期望类型的完整解析模式。
      */
-    data object ContextIndependent : ResolutionMode(forceFullCompletion = true)
+    sealed class ContextIndependent : ResolutionMode(forceFullCompletion = true) {
+        companion object : ContextIndependent() {
+            override fun toString(): String = "ContextIndependent"
+        }
+
+        /** 仍完整检查表达式，但其结果被语句、循环体或 Unit 函数丢弃。 */
+        data object ForDiscardedValue : ContextIndependent()
+    }
 
     /**
      * 接收者解析模式。
@@ -175,6 +182,10 @@ val ResolutionMode.expectedType: ConeCangJieType?
 /** 当前期望类型是否仅用于 primitive operator 操作数的推断。 */
 val ResolutionMode.isOperatorOperandInference: Boolean
     get() = (this as? ResolutionMode.WithExpectedType)?.isOperatorOperandInference == true
+
+/** 对位官方 DiscardedHelper 的语法结果使用状态，不给普通调用伪造 Unit 推断目标。 */
+val ResolutionMode.isValueDiscarded: Boolean
+    get() = this === ResolutionMode.ContextIndependent.ForDiscardedValue
 
 /**
  * 根据类型引用创建解析模式。
