@@ -1,5 +1,0 @@
-<div class="container">
-    <text class="title">
-        {{ title }}
-    </text>
-</div>

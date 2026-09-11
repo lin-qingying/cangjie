@@ -1,1 +1,0 @@
-export { func } from './src/main/js/common/common';

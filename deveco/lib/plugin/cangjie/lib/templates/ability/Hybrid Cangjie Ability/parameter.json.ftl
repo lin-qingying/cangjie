@@ -1,4 +1,0 @@
-{
-  "rootOut":"${modulePath}",
-  "abilityFileNameExt": "ets"
-}
