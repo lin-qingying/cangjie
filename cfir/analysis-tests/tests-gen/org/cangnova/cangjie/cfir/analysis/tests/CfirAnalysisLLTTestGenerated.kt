@@ -19754,6 +19754,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/invalid_case.cj")
         }
 
+        @TestMetadata("parameter_bound_edges.cj")
+        @Test
+        fun testParameterBoundEdges() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/parameter_bound_edges.cj")
+        }
+
         @TestMetadata("unused_tyvar.cj")
         @Test
         fun testUnusedTyvar() {

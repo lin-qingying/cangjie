@@ -6407,3 +6407,33 @@ XML两轮均为8535 records、308 skipped（含一条聚合记录）。逐项证
 
 - change isolation: 本项仅提交一个inline标记和日志。期间独立的4daa53fb6（DevEco拆分）未修改cfir或resolution.common，保留该提交；用户其它工作区改动未纳入本项。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（26s）；`git diff --check`通过。
+
+## 2026-09-11：调用推断保留类型参数上界关系及显式约束来源
+
+- problem type: Type Inference / Type-parameter bound graph / Explicit constraint diagnostics。
+- root cause: 调用fresh变量初始化丢掉X<:Y这类参数之间的关系，混合上界Y<:I<Y>&Z也丢掉Z边，导致其它参数无法从实参得到约束。f_bounded_2虽已有正确的声明递归诊断，调用仍错误产生UNABLE_TO_INFER_GENERIC_FUNC。补回关系后，原mapper把最后触发incorporation的显式等式当作违例owner，X<:Y不满足时可能标到Y实参。
+- prior repair review: 早先“Generic upper-bound direct recursion and first invalid-bound reporting”已验证f_bounded_2的声明诊断；本次缺口位于调用约束初始化，保留已有声明checker及原fixture期望，没有重写或撤销声明修复。
+- official Cangjie evidence: build/repair-20260906/evidence/51-f-bound-2只有sema_generic_param_directly_recursive，无调用处诊断。51-parameter-bound-edges证明纯参数链、混合上界和直接环在声明报错后仍保留推断关系；隐式调用及合法显式调用无额外错误，linked<Parent,Child>只在Parent上报告一个实例化约束错误。新旧fixture语法均由cjc确认有效。
+- official implementation: PreCheck.cpp:954-982/1063-1152将声明合法性检查与上界展开分开；LocalTypeArgumentSynthesis.cpp:125-166的CopyUpperbound/InitConstraints保留全部上界关系；TypeCheckGeneric.cpp:214-280按声明约束检查实例化，在首个违例后终止，诊断属于违反上界的实际类型实参。
+- Kotlin counterpart files consulted: CreateFreshTypeVariableSubstitutorStage.kt:228-300注册fresh变量后统一替换声明bounds并加入初始约束；FirCyclicTypeBoundsChecker.kt负责独立声明检查；FirUpperBoundViolatedHelpers.kt按声明参数及实参source报告上界错误。框架分层参考Kotlin，声明是否合法及错误恢复语义仍依据官方仓颉。
+- CFIR owner files changed: CfirCreateFreshTypeVariableSubstitutorStage.toDeclaredUpperBoundTypes保留ConeTypeParameterType，包括混合名义上界中的参数关系。coneDiagnosticToCfirDiagnostic.explicitTypeArgumentConstraintDiagnostics从initialConstraints恢复原始声明关系，应用显式绑定和固定变量替换后找出首个真实违例，再按原关系的参数定位源码；不再由约束处理顺序决定下划线。
+- repair principle: 声明合法性检查不能破坏调用的约束图；上界诊断属于原始声明关系，而非派生约束的触发点。
+- fixtures covered: 原solveTypeArgs/f_bounded_1.cj、f_bounded_2.cj不改期望；新增parameter_bound_edges.cj覆盖纯参数边、混合名义/参数上界、直接环、合法和非法显式实例化。call/inferred_and_explicit_constraints.cj以及constraint_check/constraint_instantiate_test4.cj、constraint_instantiate_test5.cj保护既有显式约束行为，期望均未改。
+- verification commands and outcome:
+  - 51-solve-before：18项8通过、10失败，与50-type-name-full-final状态和消息完全一致。
+  - 51-bound-origin-targeted：完整SolveTypeArgs及上述显式约束保护用例共26项18通过、8原有失败；对50 FIXED2、REGRESSED0、新增2全部通过、原失败消息不变。
+  - `gradlew-queue.bat :cfir:analysis-tests:test`筛选完整SolveTypeArgs、Generics、TypeInfer、Typealias、Call、ConstraintCheck、Lambda、Function和Diagnostics双入口：51-parameter-edges-family为2989项2647通过、36原有失败、306跳过，6m21s完成；对50 FIXED2、REGRESSED0、新增2全通过，全部36条原失败消息相同。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：51-parameter-edges-full，23m47s正常完成。对50-type-name-full-final：FIXED=2、REGRESSED=0、NEW_KEYS=2（全通过）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]，全部463条剩余失败消息相同。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8534 | 8536 |
+| 通过 | 7762 | 7766 |
+| 失败 | 465 | 463 |
+| 跳过 | 307 | 307 |
+
+XML为8535 → 8537 records，均为308 skipped（含一条聚合记录）。逐项证据为51-parameter-edges-full与50-type-name-full-final--51-parameter-edges-full.json。
+
+- remaining failures: SolveTypeArgs剩f_bounded_3、f_bounded_4、unused_tyvar、invalid_case各双入口，共8项；其它455项既有失败未变。先前已清零的控制流、模式及普通Call/Generics/TypeInfer/Typealias组保持通过。
+- change isolation: 本项仅提交上界关系初始化、显式约束诊断来源、新fixture、两套生成入口与日志；用户.idea改动保持独立。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（11s）；`git diff --check`通过。

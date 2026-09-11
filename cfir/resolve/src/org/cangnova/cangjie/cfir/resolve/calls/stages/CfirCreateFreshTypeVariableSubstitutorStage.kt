@@ -486,6 +486,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      *
      * 非 class/interface 等非法声明上界由声明 checker 报告；这里不能通过
      * `resolvedBounds` 强制读取，否则非法 function/tuple 上界会在进入诊断前触发内部异常。
+     * 官方 CopyUpperbound / InitConstraints 仍保留类型参数之间的上界关系；即使声明
+     * 需要报告非法上界或直接递归，也不能丢弃这些边，让有实参依据的变量变成无约束变量。
      */
     private fun CfirTypeParameterSymbol.toDeclaredUpperBoundTypes(session: CfirSession): List<ConeCangJieType> {
         lazyResolveToPhase(CfirResolvePhase.TYPES)
@@ -493,7 +495,9 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             .declaredUpperBoundRefsAfterTypeResolve()
             .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
             .filterNot { it is ConeErrorType }
-        val effectiveBounds = bounds.filter { bound -> bound.isLegalDeclaredUpperBound(session) }
+        val effectiveBounds = bounds.filter { bound ->
+            bound.isLegalDeclaredUpperBound(session) || bound.fullyExpandedType(session) is ConeTypeParameterType
+        }
             .ifEmpty { bounds }
         return effectiveBounds.filter { bound ->
             when (bound.fullyExpandedType(session)) {
@@ -501,6 +505,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
                 is ConeEnumType,
                 is ConeStructType,
                 is ConePrimitiveType,
+                is ConeTypeParameterType,
                 -> true
                 else -> false
             }
