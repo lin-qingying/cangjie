@@ -154,9 +154,6 @@ open class CfirExpressionsResolveTransformer(
     private var optionPatternElementTypeVariableIndex: Int = 0
     /** 嵌套 effect handler 上下文栈。 */
     private val effectHandlerStack = ArrayDeque<EffectHandlerContext>()
-    // optional-chain 内部的 `?` 节点承担 Kotlin FIR checked safe-call subject 的角色。
-    /** 当前嵌套 optional-chain 解析深度。 */
-    private var optionalChainResolveDepth: Int = 0
     /**
      * 当前正在为 primitive binary operator 探测左接收者类型的深度。
      *
@@ -225,75 +222,60 @@ open class CfirExpressionsResolveTransformer(
         return wrappedExpression
     }
 
-    /** 解析 optional 表达式；optional-chain 内部会临时使用 Option<T> 的元素类型。 */
+    /**
+     * 检查一个 `?` 的接收者并保存解包后的类型。
+     *
+     * 该节点对应官方 Some(v) 的绑定及 FIR checked safe-call subject；selector 复用
+     * 已检查的类型，不再次解析原接收者。候选事务通过 CfirResolutionSnapshot 恢复此状态。
+     */
     override fun transformOptionalExpression(
         optionalExpression: CfirOptionalExpression,
         data: ResolutionMode,
     ): CfirExpression {
-        optionalExpression.transformChildren(transformer, data)
-        val expressionType = optionalExpression.expression.coneTypeOrNull
-        // 链内 selector 必须在 Option<T> 的 T 上解析；外层 chain 节点再统一恢复 Option<result>。
-        val resultType = if (optionalChainResolveDepth > 0) {
-            expressionType?.optionElementType ?: expressionType
-        } else {
-            expressionType
+        if (optionalExpression.hasResolvedType) return optionalExpression
+        optionalExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+        optionalExpression.transformExpression(transformer, ResolutionMode.ReceiverResolution)
+        val expressionType = checkNotNull(optionalExpression.expression.coneTypeOrNull)
+        val expandedType = expressionType.fullyExpandedType(session)
+        val resultType = when {
+            expressionType is ConeErrorType -> checkNotNull(expressionType.propagatedErrorTypeOrNull())
+            expandedType is ConeErrorType -> checkNotNull(expandedType.propagatedErrorTypeOrNull())
+            !expandedType.isOption -> ConeErrorType(ConeOptionalChainNonOptionalError(expressionType))
+            else -> checkNotNull(expandedType.optionElementType) { "Option must have one payload type" }
         }
         optionalExpression.replaceConeTypeOrNull(resultType)
         return optionalExpression
     }
 
-    /** 解析 optional-chain 表达式，并把 selector 结果重新提升为 Option<result>。 */
+    /**
+     * 按源码顺序检查每个可选接收者，再综合 selector；错误边界之后不分析实参或赋值右侧。
+     * 官方 ChkOptionalChainExpr 先综合整条链再检查外部目标，因此这里不向 selector 下传目标类型。
+     */
     override fun transformOptionalChainExpression(
         optionalChainExpression: CfirOptionalChainExpression,
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterOptionalChain(optionalChainExpression)
-
-        val chainRoot = optionalChainExpression.expression.optionalChainRootExpression()
-        // 官方 ChkOptionalChainExpr / SynQuestSugarMatchCaseBody：先判 base 是否为错误类型，若是则
-        // 整条链短路为 InvalidTy 且不报任何诊断（尤其不报 OPTIONAL_CHAIN_NON_OPTIONAL）。ConeErrorType
-        // 的 classId 非 Option，若不提前短路会被误判为非可选而报 OPTIONAL_CHAIN_NON_OPTIONAL。
-        // 必须在 transformChildren 之前判定：错误类型的 base 上继续解析 selector（`?()` / `?[]` / `?.x`）
-        // 只会制造级联的 operator/member/subscript 诊断，链内真实错误已由 base 自身节点持有。
-        val earlyRootType = chainRoot?.let { root ->
-            root.coneTypeOrNull ?: runCatching { root.transformSingle(transformer, data) }.getOrNull()?.coneTypeOrNull
-        }
-        if (earlyRootType is ConeErrorType) {
-            optionalChainExpression.replaceConeTypeOrNull(earlyRootType.propagatedErrorTypeOrNull() ?: earlyRootType)
+        optionalChainExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+        for (subject in optionalChainExpression.expression.optionalChainSubjects()) {
+            subject.transformSingle(transformer, ResolutionMode.ReceiverResolution)
+            val subjectError = subject.coneTypeOrNull as? ConeErrorType ?: continue
+            val propagatedError = checkNotNull(subjectError.propagatedErrorTypeOrNull())
+            completeUnanalyzedArguments(listOf(optionalChainExpression.expression), propagatedError)
+            optionalChainExpression.replaceConeTypeOrNull(propagatedError)
             components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
             return optionalChainExpression
         }
-
-        optionalChainResolveDepth++
-        try {
-            optionalChainExpression.transformChildren(transformer, data)
-        } finally {
-            optionalChainResolveDepth--
-        }
-
-        val rootType = chainRoot?.coneTypeOrNull
-        if (rootType == null) {
-            optionalChainExpression.replaceConeTypeOrNull(
-                ConeErrorType(ConeSimpleDiagnostic("optional chain root type is unresolved", DiagnosticKind.InferenceError))
-            )
-            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
-            return optionalChainExpression
-        }
-
-        if (rootType is ConeErrorType) {
-            optionalChainExpression.replaceConeTypeOrNull(rootType.propagatedErrorTypeOrNull() ?: rootType)
-            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
-            return optionalChainExpression
-        }
-
-        if (!rootType.isOption) {
-            optionalChainExpression.replaceConeTypeOrNull(ConeErrorType(ConeOptionalChainNonOptionalError(rootType)))
-            components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
-            return optionalChainExpression
-        }
-
-        val liftedResultType = liftOptionalChainResultType(optionalChainExpression.expression.coneTypeOrNull)
-        optionalChainExpression.replaceConeTypeOrNull(liftedResultType)
+        optionalChainExpression.transformExpression(transformer, ResolutionMode.ContextIndependent)
+        val selector = optionalChainExpression.expression
+        val selectorType = checkNotNull(selector.coneTypeOrNull)
+        optionalChainExpression.replaceConeTypeOrNull(
+            when {
+                selectorType is ConeErrorType -> checkNotNull(selectorType.propagatedErrorTypeOrNull())
+                selector is CfirAssignment || selector is CfirIncrementDecrementExpression -> builtinTypes.unitType
+                else -> liftOptionalChainResultType(selectorType)
+            },
+        )
         components.dataFlowAnalyzer.exitOptionalChain(optionalChainExpression)
         return optionalChainExpression
     }
@@ -910,7 +892,7 @@ open class CfirExpressionsResolveTransformer(
         val typeResolutionConfiguration = currentTypeResolutionConfiguration()
         for (argument in arguments) {
             argument.transformSingle(specificTypeResolverTransformer, typeResolutionConfiguration)
-            if (errorType != null) argument.transformSingle(CfirUnanalyzedCallArgumentTransformer, errorType)
+            argument.transformSingle(CfirUnanalyzedCallArgumentTransformer, errorType)
         }
     }
 
@@ -3649,7 +3631,11 @@ open class CfirExpressionsResolveTransformer(
                 argumentList = buildArgumentList {
                     arguments.add(augmentedAssignment.rightArgument)
                 }
-                explicitReceiver = augmentedAssignment.leftArgument
+                // 赋值随后整体进入可选链的成功分支，读操作须复用解包后的目标，不能重新提升为 Option。
+                explicitReceiver = when (val target = augmentedAssignment.leftArgument) {
+                    is CfirOptionalChainExpression -> target.expression
+                    else -> target
+                }
                 origin = CfirFunctionCallOrigin.Operator
             }
             augmentedOperation = augmentedAssignment.operation
@@ -3692,6 +3678,20 @@ open class CfirExpressionsResolveTransformer(
         assignment: CfirAssignment,
         data: ResolutionMode,
     ): CfirExpression {
+        val optionalTarget = assignment.lValue as? CfirOptionalChainExpression
+        if (optionalTarget != null) {
+            // 官方把整个赋值放入 Some 分支；让共享赋值入口看到真实目标，保留下标 set 和不可变值检查。
+            return transformOptionalChainExpression(buildOptionalChainExpression {
+                source = optionalTarget.source
+                expression = buildAssignment {
+                    source = assignment.source
+                    annotations.addAll(assignment.annotations)
+                    lValue = optionalTarget.expression
+                    rValue = assignment.rValue
+                    augmentedOperation = assignment.augmentedOperation
+                }
+            }, data)
+        }
         assignment.replaceTypeMismatchOutcome(null)
         val subscriptLValue = assignment.lValue as? CfirSubscriptExpression
         if (subscriptLValue != null) {
@@ -5389,6 +5389,7 @@ open class CfirExpressionsResolveTransformer(
         subscriptExpression: CfirSubscriptExpression,
         data: ResolutionMode,
     ): CfirExpression {
+        subscriptExpression.replaceResolvedGetCall(null)
         subscriptExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         subscriptExpression.transformReceiver(transformer, ResolutionMode.ReceiverResolution)
         subscriptExpression.transformIndices(transformer, ResolutionMode.ContextIndependent)
@@ -5487,6 +5488,7 @@ open class CfirExpressionsResolveTransformer(
             return ConeErrorType(diagnostic)
         }
 
+        subscriptExpression.replaceResolvedGetCall(completedCall)
         return completedCall.coneTypeOrNull ?: errorType("no subscript operator for: $receiverType")
     }
 
@@ -5501,6 +5503,7 @@ open class CfirExpressionsResolveTransformer(
         subscriptExpression: CfirSubscriptExpression,
         data: ResolutionMode,
     ) {
+        subscriptExpression.replaceResolvedSetCall(null)
         val receiverType = subscriptExpression.receiver.coneTypeOrNull?.fullyExpandedType(session)
         if (receiverType is ConeVArrayType && !subscriptExpression.receiver.isTypeQualifierReceiver()) {
             subscriptExpression.replaceConeTypeOrNull(receiverType.elementType)
@@ -5577,6 +5580,7 @@ open class CfirExpressionsResolveTransformer(
         try {
             var setResolutionFailed = false
             var completedSetType: ConeCangJieType? = null
+            var completedSetCall: CfirFunctionCall? = null
 
             context.dataFlowAnalyzerContext.withIsolatedContext {
                 val resolvedCall = callResolver.resolveCallAndSelectCandidate(setCall, data)
@@ -5593,6 +5597,7 @@ open class CfirExpressionsResolveTransformer(
                     return@withIsolatedContext
                 }
                 completedSetType = completedCall.coneTypeOrNull
+                completedSetCall = completedCall
             }
 
             if (setResolutionFailed) {
@@ -5638,6 +5643,7 @@ open class CfirExpressionsResolveTransformer(
             }
 
             subscriptExpression.replaceConeTypeOrNull(completedSetType ?: builtinTypes.unitType)
+            subscriptExpression.replaceResolvedSetCall(checkNotNull(completedSetCall))
             resolutionCommitted = true
         } finally {
             if (!resolutionCommitted) {
@@ -5961,31 +5967,13 @@ open class CfirExpressionsResolveTransformer(
     /**
      * optional chain 的结果语义始终是 `Option<result>`。
      *
-     * 本轮不做官方的完整 match/Some/None 解糖，只在 resolve 入口保证类型提升语义成立。
+     * 对位最内层 Some(selector)，即使 selector 已经是 Option 也保留新的一层。
      */
-    private fun liftOptionalChainResultType(resultType: ConeCangJieType?): ConeCangJieType {
-        val effectiveResultType = resultType ?: return ConeErrorType(
-            ConeSimpleDiagnostic("optional chain result type is unresolved", DiagnosticKind.InferenceError)
-        )
+    private fun liftOptionalChainResultType(resultType: ConeCangJieType): ConeCangJieType {
         return constructNamedType(
             classId = StdlibClassIds.Option,
-            typeArguments = listOf(effectiveResultType),
+            typeArguments = listOf(resultType),
         )
-    }
-
-    /**
-     * 从整条 optional chain 内部链条中找到 quest 包装的链首表达式。
-     *
-     * 链内普通访问/调用/索引节点不参与 optional 语义判定，真正需要校验的是最外层
-     * `CfirOptionalExpression` 对应的 base expression 类型。
-     */
-    private fun CfirExpression.optionalChainRootExpression(): CfirExpression? = when (this) {
-        is CfirOptionalExpression -> expression
-        is CfirQualifiedAccessExpression -> explicitReceiver?.optionalChainRootExpression()
-            ?: dispatchReceiver?.optionalChainRootExpression()
-        is CfirFunctionCall -> explicitReceiver?.optionalChainRootExpression()
-        is CfirSubscriptExpression -> receiver.optionalChainRootExpression()
-        else -> null
     }
 
     /**

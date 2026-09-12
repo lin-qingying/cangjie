@@ -225,6 +225,27 @@ abstract class AbstractDiagnosticCollectorVisitor(
         visitWithCallOrAssignment(functionCall)
     }
 
+    /**
+     * 下标的 get/set 经过完整调用检查；接收者、索引及赋值右侧仍只沿原语法树检查一次。
+     * 复合赋值同时保留 get 和 set，不能只检查最终回写或重新构造一个丢失候选信息的调用。
+     */
+    override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: Nothing?) {
+        withStatement(subscriptExpression) {
+            withAnnotationContainer(subscriptExpression) {
+                checkElement(subscriptExpression)
+                visitNestedElements(subscriptExpression)
+                for (call in listOfNotNull(subscriptExpression.resolvedGetCall, subscriptExpression.resolvedSetCall)) {
+                    withCallOrAssignment(call) {
+                        withAnnotationContainer(call) {
+                            checkElement(call)
+                            call.calleeReference.accept(this, data)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /** 访问限定访问表达式，并按调用/赋值上下文处理。 */
     override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: Nothing?) {
         visitWithCallOrAssignment(qualifiedAccessExpression)

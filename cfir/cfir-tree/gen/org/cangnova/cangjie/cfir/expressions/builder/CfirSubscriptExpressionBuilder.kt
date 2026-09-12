@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirSubscriptExpressionImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -25,6 +26,8 @@ class CfirSubscriptExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var receiver: CfirExpression
     val indices: MutableList<CfirExpression> = mutableListOf()
+    var resolvedGetCall: CfirFunctionCall? = null
+    var resolvedSetCall: CfirFunctionCall? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirSubscriptExpression {
@@ -34,6 +37,8 @@ class CfirSubscriptExpressionBuilder {
             coneTypeOrNull,
             receiver,
             indices,
+            resolvedGetCall,
+            resolvedSetCall,
         )
     }
 
@@ -58,5 +63,7 @@ inline fun buildSubscriptExpressionCopy(original: CfirSubscriptExpression, init:
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.receiver = original.receiver
     copyBuilder.indices.addAll(original.indices)
+    copyBuilder.resolvedGetCall = original.resolvedGetCall
+    copyBuilder.resolvedSetCall = original.resolvedSetCall
     return copyBuilder.apply(init).build()
 }

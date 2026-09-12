@@ -7,7 +7,6 @@ struct A {
 
 main() {
     var a: ?A = A()
-    a?.b = 9
+    a?.<!CANNOT_ASSIGN_TO_IMMUTABLE!>b<!> = 9
     return
 }
-

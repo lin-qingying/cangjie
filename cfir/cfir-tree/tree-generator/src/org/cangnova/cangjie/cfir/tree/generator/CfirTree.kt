@@ -351,7 +351,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val wrappedExpression: Element by element(Expression) {
         parent(expression)
 
-        +field(expression)
+        // 包装节点需要独立转换内部表达式，供已检查接收者与 selector 的分阶段解析使用。
+        +field(expression, withTransform = true)
     }
 
     /**
@@ -1516,6 +1517,10 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
         parent(expression)
         +field("receiver", expression, withTransform = true)
         +listField("indices", expression, withTransform = true)
+        // 解析成功的 operator 调用保留完整绑定，供调用检查器和语义消费者使用。
+        // 操作数已由下标/赋值节点拥有；这些引用不是重复的语法子节点。
+        +field("resolvedGetCall", functionCall, nullable = true, withReplace = true, isChild = false)
+        +field("resolvedSetCall", functionCall, nullable = true, withReplace = true, isChild = false)
     }
 
     /**

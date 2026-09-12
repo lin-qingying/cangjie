@@ -1105,6 +1105,37 @@ class CfirCallCompletionResultsWriterTransformer(
         return wrappedExpression
     }
 
+    /** 已检查接收者的 payload 类型与原 Option 接收者不同，写回只能替换其中的类型变量。 */
+    override fun transformOptionalExpression(
+        optionalExpression: CfirOptionalExpression,
+        data: ExpectedArgumentType?,
+    ): CfirExpression = completeOptionalType(optionalExpression, data)
+
+    /** 链结果已经包含规定的 Option 层数或 Unit；外部目标不能再次传进 selector。 */
+    override fun transformOptionalChainExpression(
+        optionalChainExpression: CfirOptionalChainExpression,
+        data: ExpectedArgumentType?,
+    ): CfirExpression = completeOptionalType(optionalChainExpression, data)
+
+    private fun completeOptionalType(expression: CfirWrappedExpression, data: ExpectedArgumentType?): CfirExpression {
+        val resolvedType = expression.coneTypeOrNull
+        // 参数映射失败时，这里可能收到尚未分析的可选链。保留其空类型状态，同时把失败
+        // 标记传给内嵌 lambda；单一外部目标不得传入 selector，按节点索引的既有完成信息仍保留。
+        val childData = when (data) {
+            is ExpectedArgumentType.ExpectedType -> ExpectedArgumentType.ArgumentsMap(
+                map = emptyMap(),
+                lambdasReturnTypes = emptyMap(),
+                forErrorReference = false,
+                argumentMappingFailed = data.argumentMappingFailed,
+                argumentReplacements = data.argumentReplacements,
+            )
+            else -> data
+        }
+        expression.transformChildren(this, childData)
+        expression.replaceConeTypeOrNull(resolvedType?.let(::finallySubstituteOrSelf))
+        return expression
+    }
+
     /**
      * 写回 range 表达式及其端点期望类型。
      */

@@ -36,6 +36,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
+import org.cangnova.cangjie.cfir.expressions.CfirOptionalExpression
+import org.cangnova.cangjie.cfir.expressions.optionalChainSubjects
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
@@ -1061,11 +1063,11 @@ class ErrorNodeDiagnosticCollectorComponent(
 }
 
 /**
- * 将 optional-chain 非 optional 诊断提升到其直接前缀逻辑非调用的完整源码范围。
+ * 按可选链的检查边界选择非 optional 诊断范围，并保留直接前缀逻辑非调用的完整范围。
  *
  * CFIR 将 `!value.member?()` 表示为 `operator !` 接收一个独立的
- * [CfirOptionalChainExpression]。链节点的错误类型仍由链自身拥有，但诊断范围属于
- * 语义上失败的完整前缀表达式；通过 checker context 的结构关系定位父调用，不依赖
+ * [CfirOptionalChainExpression]。诊断由失败的已检查接收者持有，第一层归属整个链，
+ * 后续层归属对应接收者前缀；通过 checker context 的结构关系定位父调用，不依赖
  * 具体文件、文本或测试 fixture。
  */
 private fun CjSourceElement.sourceForOptionalChainNonOptional(
@@ -1077,7 +1079,10 @@ private fun CjSourceElement.sourceForOptionalChainNonOptional(
         return this
     }
 
-    val optionalChain = (owner as? CfirOptionalChainExpression)?.takeIf { chain ->
+    val checkedSubject = owner as? CfirOptionalExpression
+    val optionalChain = if (checkedSubject != null) {
+        context.containingElements.asReversed().filterIsInstance<CfirOptionalChainExpression>().firstOrNull()
+    } else (owner as? CfirOptionalChainExpression)?.takeIf { chain ->
         val chainSource = chain.source ?: return@takeIf false
         chainSource.startOffset == startOffset && chainSource.endOffset == endOffset
     } ?: context.containingElements
@@ -1089,6 +1094,18 @@ private fun CjSourceElement.sourceForOptionalChainNonOptional(
         }
         ?: return this
 
+    // 第一层失败属于整个可选链；后续层失败属于对应 ? 之前已经求值的接收者前缀。
+    // 对位官方外层 OptionalChainExpr 和内部 QUEST match 的 source 归属。
+    if (optionalChain == null) return this
+    val boundarySource = if (checkedSubject != null &&
+        optionalChain.expression.optionalChainSubjects().firstOrNull() !== checkedSubject
+    ) {
+        checkedSubject.expression.source ?: this
+    } else {
+        optionalChain.source ?: this
+    }
+    if (boundarySource !== optionalChain.source) return boundarySource
+
     val prefixCall = context.callsOrAssignments
         .asReversed()
         .filterIsInstance<CfirFunctionCall>()
@@ -1097,9 +1114,9 @@ private fun CjSourceElement.sourceForOptionalChainNonOptional(
             val callee = call.calleeReference as? CfirNamedReference ?: return@firstOrNull false
             callee.name == OperatorNameConventions.NOT && call.explicitReceiver === optionalChain
         }
-        ?: return this
+        ?: return boundarySource
 
-    return prefixCall.source as? CjSourceElement ?: this
+    return prefixCall.source as? CjSourceElement ?: boundarySource
 }
 
 private val STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS = setOf(

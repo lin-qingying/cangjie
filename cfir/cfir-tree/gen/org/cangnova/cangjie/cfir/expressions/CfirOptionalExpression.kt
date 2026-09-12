@@ -32,4 +32,6 @@ abstract class CfirOptionalExpression : CfirWrappedExpression() {
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirOptionalExpression
+
+    abstract override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirOptionalExpression
 }

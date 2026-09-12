@@ -20,6 +20,8 @@ abstract class CfirSubscriptExpression : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val receiver: CfirExpression
     abstract val indices: List<CfirExpression>
+    abstract val resolvedGetCall: CfirFunctionCall?
+    abstract val resolvedSetCall: CfirFunctionCall?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitSubscriptExpression(this, data)
@@ -31,6 +33,10 @@ abstract class CfirSubscriptExpression : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replaceResolvedGetCall(newResolvedGetCall: CfirFunctionCall?)
+
+    abstract fun replaceResolvedSetCall(newResolvedSetCall: CfirFunctionCall?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirSubscriptExpression
 

@@ -9,6 +9,6 @@ struct S {
 
 main() {
     var s: ?S = S(x: 3)
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>s?[0]<!> = 9
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>s?<!>[0] = 9
     return
 }

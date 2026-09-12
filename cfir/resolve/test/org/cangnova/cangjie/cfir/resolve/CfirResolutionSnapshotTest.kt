@@ -6,6 +6,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildOptionalExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -18,6 +24,47 @@ import org.junit.jupiter.api.Test
 
 /** 快照恢复真实可变类型状态，不向错误表达式的派生类型 getter 写回。 */
 class CfirResolutionSnapshotTest {
+    /** 已检查的 optional payload 不能跨失败候选保留，原接收者的类型也必须恢复。 */
+    @Test
+    fun `restore discards a checked optional subject type`() {
+        val receiver = buildLiteralExpression {
+            kind = CfirLiteralKind.INT
+            value = 1
+            coneTypeOrNull = ConePrimitiveType.INT32
+        }
+        val subject = buildOptionalExpression { expression = receiver }
+        val snapshot = CfirResolutionSnapshot.capture(subject)
+        receiver.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+        subject.replaceConeTypeOrNull(ConePrimitiveType.INT64)
+        snapshot.restore()
+        assertNull(subject.coneTypeOrNull)
+        assertEquals(ConePrimitiveType.INT32, receiver.coneTypeOrNull)
+    }
+
+    /** 复合赋值的语义调用可回指同一个下标；快照不能递归失控或遗留失败候选的绑定。 */
+    @Test
+    fun `restore preserves operator bindings in a shared subscript graph`() {
+        val subscript = buildSubscriptExpression {
+            receiver = buildErrorExpression { diagnostic = ConeSimpleDiagnostic("receiver") }
+        }
+        val originalReference = buildNamedReference { name = Name.identifier("set") }
+        val setCall = buildFunctionCall {
+            calleeReference = originalReference
+            argumentList = buildArgumentList { arguments += subscript }
+        }
+        subscript.replaceResolvedSetCall(setCall)
+        val snapshot = CfirResolutionSnapshot.capture(subscript)
+        repeat(2) {
+            subscript.replaceResolvedSetCall(null)
+            subscript.replaceResolvedGetCall(setCall)
+            setCall.replaceCalleeReference(buildNamedReference { name = Name.identifier("failed") })
+            snapshot.restore()
+            assertNull(subscript.resolvedGetCall)
+            assertSame(setCall, subscript.resolvedSetCall)
+            assertSame(originalReference, setCall.calleeReference)
+        }
+    }
+
     /** 候选试跑检查了 catch 后，回滚必须恢复原类型引用和“尚未检查”的整体状态。 */
     @Test
     fun `restore discards catch pattern typing from a failed candidate`() {

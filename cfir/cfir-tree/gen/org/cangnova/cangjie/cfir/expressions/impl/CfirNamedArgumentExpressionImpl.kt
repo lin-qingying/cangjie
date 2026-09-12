@@ -35,12 +35,17 @@ internal class CfirNamedArgumentExpressionImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirNamedArgumentExpressionImpl {
         transformAnnotations(transformer, data)
-        expression = expression.transform(transformer, data)
+        transformExpression(transformer, data)
         return this
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirNamedArgumentExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirNamedArgumentExpressionImpl {
+        expression = expression.transform(transformer, data)
         return this
     }
 

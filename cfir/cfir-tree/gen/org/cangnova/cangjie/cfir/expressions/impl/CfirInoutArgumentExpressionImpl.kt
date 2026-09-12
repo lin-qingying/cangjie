@@ -33,12 +33,17 @@ class CfirInoutArgumentExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirInoutArgumentExpressionImpl {
         transformAnnotations(transformer, data)
-        expression = expression.transform(transformer, data)
+        transformExpression(transformer, data)
         return this
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirInoutArgumentExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirInoutArgumentExpressionImpl {
+        expression = expression.transform(transformer, data)
         return this
     }
 
