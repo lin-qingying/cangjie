@@ -61,6 +61,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.constructorDependencyTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.scopeTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirUnanalyzedCallArgumentTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirPCLAInferenceSession
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.LoopJumpScope
@@ -789,6 +790,12 @@ open class CfirExpressionsResolveTransformer(
                             withResolvedExplicitReceiver.argumentList.transform(transformer, ResolutionMode.ContextIndependent)
                         }
                         withResolvedExplicitReceiver.replaceArgumentList(arguments)
+                    } else if (withResolvedExplicitReceiver.origin != CfirFunctionCallOrigin.Operator) {
+                        val receiverError = withResolvedExplicitReceiver.explicitReceiver!!.coneTypeOrNull as ConeErrorType
+                        completeUnanalyzedArguments(
+                            withResolvedExplicitReceiver.argumentList.arguments,
+                            ConeErrorType(ConeUnreportedDuplicateDiagnostic(receiverError.diagnostic)),
+                        )
                     }
                     components.dataFlowAnalyzer.exitCallArguments()
                     withResolvedExplicitReceiver
@@ -796,7 +803,7 @@ open class CfirExpressionsResolveTransformer(
                     components.dataFlowAnalyzer.exitCallArguments()
                     withResolvedExplicitReceiver
                 } else {
-                    if (withResolvedExplicitReceiver.commitNeedNamedArgumentShapeFailure(data)) {
+                    if (withResolvedExplicitReceiver.commitCallArgumentPrecheckFailure(data)) {
                         components.dataFlowAnalyzer.exitCallArguments()
                         return@whileAnalysing completeFunctionCall(
                             withResolvedExplicitReceiver,
@@ -870,17 +877,17 @@ open class CfirExpressionsResolveTransformer(
         explicitReceiver?.coneTypeOrNull is ConeErrorType
 
     /**
-     * 在实参值解析前提交确定的“必须使用命名实参”绑定失败。
+     * 在实参值解析前提交已经确定的 callee 或命名实参绑定失败。
      *
      * probe 复用调用候选收集入口，因此普通函数、enum constructor 与 class constructor 共享同一套
      * 名字查找规则；隔离副本保证未命中时不会把候选、错误引用或约束系统写回原调用。
-     * 只有最终最佳候选集合中的每个候选都仅包含 [NeedNamedArgument] 时才提交，避免 shape 阶段
-     * 缺少实参类型证据时提前锁定其他 overload 失败。
+     * callee 错误要求已唯一解析的变量具有错误类型；命名映射错误要求全部最佳候选仅含
+     * [NeedNamedArgument]。两者都不依赖尚未取得的实参类型，不会提前锁定 overload 失败。
      */
-    private fun CfirFunctionCall.commitNeedNamedArgumentShapeFailure(
+    private fun CfirFunctionCall.commitCallArgumentPrecheckFailure(
         resolutionMode: ResolutionMode,
     ): Boolean {
-        val (resolvedProbe, shapeFailures) = callResolver.resolveNamedArgumentShapeFailure(this, resolutionMode)
+        val failure = callResolver.resolveCallArgumentPrecheckFailure(this, resolutionMode)
             ?: return false
 
         /*
@@ -888,15 +895,23 @@ open class CfirExpressionsResolveTransformer(
          * 仍需保留该子树中独立的 type-ref 诊断，但绝不能进入表达式 body resolve。
          * SpecificTypeResolver 是纯类型引用树 transformer，正好提供这条阶段边界。
          */
-        val typeResolutionConfiguration = currentTypeResolutionConfiguration()
-        shapeFailures.forEach { failure ->
-            failure.argument.transformSingle(specificTypeResolverTransformer, typeResolutionConfiguration)
-        }
+        val argumentError = (failure as? CallArgumentPrecheckFailure.ErroneousCallee)?.errorType
+        completeUnanalyzedArguments(failure.arguments, argumentError)
 
+        val resolvedProbe = failure.resolvedCall
         replaceCalleeReference(resolvedProbe.calleeReference)
         replaceDispatchReceiver(resolvedProbe.dispatchReceiver)
         replaceConeTypeOrNull(resolvedProbe.coneTypeOrNull)
         return true
+    }
+
+    /** 保留 PreCheck 已规定的类型引用检查，并显式结束无效 callee 下的实参类型状态。 */
+    private fun completeUnanalyzedArguments(arguments: List<CfirExpression>, errorType: ConeErrorType?) {
+        val typeResolutionConfiguration = currentTypeResolutionConfiguration()
+        for (argument in arguments) {
+            argument.transformSingle(specificTypeResolverTransformer, typeResolutionConfiguration)
+            if (errorType != null) argument.transformSingle(CfirUnanalyzedCallArgumentTransformer, errorType)
+        }
     }
 
     /**

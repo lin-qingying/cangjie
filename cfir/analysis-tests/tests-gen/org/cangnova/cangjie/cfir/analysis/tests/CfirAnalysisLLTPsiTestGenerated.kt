@@ -19760,6 +19760,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/ideal_type_and_interface_bounds_1.cj")
         }
 
+        @TestMetadata("invalid_callee_arguments.cj")
+        @Test
+        fun testInvalidCalleeArguments() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/invalid_callee_arguments.cj")
+        }
+
         @TestMetadata("invalid_case.cj")
         @Test
         fun testInvalidCase() {
