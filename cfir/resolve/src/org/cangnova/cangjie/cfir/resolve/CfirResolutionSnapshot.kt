@@ -38,10 +38,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternMutableState
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -81,6 +83,8 @@ internal class CfirResolutionSnapshot private constructor(
     private val matchBranchPatterns: IdentityHashMap<CfirMatchBranch, CfirPattern>,
     /** pattern 内部可变状态快照。 */
     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
+    /** catch 模式的声明类型与整体语义类型必须一起回滚，避免候选试跑污染后续分析。 */
+    private val catchPatternStates: IdentityHashMap<CfirCatchPattern, CatchPatternState>,
     /** qualified access 接收者与类型实参快照。 */
     private val qualifiedAccessStates: IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>,
     /** 函数调用实参列表快照。 */
@@ -130,6 +134,10 @@ internal class CfirResolutionSnapshot private constructor(
         for ((_, state) in patternStates) {
             state.restore()
         }
+        for ((pattern, state) in catchPatternStates) {
+            pattern.replaceTypeRefs(state.typeRefs)
+            pattern.replaceResolvedTypeRef(state.resolvedTypeRef)
+        }
         for ((block, statements) in blockStatements) {
             val mutableStatements = block.statements as? MutableList<CfirStatement>
                 ?: error("CfirBlock statements must be mutable during body resolve snapshot restore")
@@ -161,6 +169,11 @@ internal class CfirResolutionSnapshot private constructor(
         val typeArguments: List<CfirTypeRef>,
     )
 
+    private data class CatchPatternState(
+        val typeRefs: List<CfirTypeRef>,
+        val resolvedTypeRef: CfirResolvedTypeRef?,
+    )
+
     companion object {
         /**
          * 从根元素遍历并捕获后续 body resolve 可恢复状态。
@@ -179,6 +192,7 @@ internal class CfirResolutionSnapshot private constructor(
             val patternVariablePatterns = IdentityHashMap<CfirPatternVariable, CfirPattern>()
             val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
+            val catchPatternStates = IdentityHashMap<CfirCatchPattern, CatchPatternState>()
             val qualifiedAccessStates = IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>()
             val functionCallArgumentLists = IdentityHashMap<CfirFunctionCall, CfirArgumentList>()
             val controlFlowGraphReferences =
@@ -229,6 +243,9 @@ internal class CfirResolutionSnapshot private constructor(
                                 patternStates[element] = patternState
                             }
                         }
+                        if (element is CfirCatchPattern) {
+                            catchPatternStates[element] = CatchPatternState(element.typeRefs.toList(), element.resolvedTypeRef)
+                        }
                         if (element is CfirQualifiedAccessExpression) {
                             qualifiedAccessStates[element] = QualifiedAccessState(
                                 dispatchReceiver = element.dispatchReceiver,
@@ -261,6 +278,7 @@ internal class CfirResolutionSnapshot private constructor(
                 patternVariablePatterns,
                 matchBranchPatterns,
                 patternStates,
+                catchPatternStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,
                 controlFlowGraphReferences,

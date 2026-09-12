@@ -1241,7 +1241,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(rootElement)
         +field("bindingName", nameType, nullable = true)
         +field("isWildcard", booleanType)
-        +listField("typeRefs", typeRef, withTransform = true)
+        +listField("typeRefs", typeRef, withReplace = true, withTransform = true)
+        // 整体模式类型与源码异常类型列表分开；null 表示尚未进行 catch 语义分析。
+        // wildcard 也需要此状态，不能借助可选的绑定变量判断模式是否已经检查。
+        +field("resolvedTypeRef", resolvedTypeRef, nullable = true, withReplace = true, withTransform = true)
         +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
     }
 
@@ -1306,7 +1309,7 @@ val forInExpression: Element by element(Expression, name = "ForInExpression") {
      */
     val tryExpression: Element by element(Expression, name = "TryExpression") {
         parent(expression)
-        +listField("resources", fieldVariable, withTransform = true)
+        +listField("resources", fieldVariable, withReplace = true, withTransform = true)
         +field("tryBlock", block, withTransform = true)
         +listField("handlers", handleClause, withTransform = true)
         +listField("catches", catchClause, withTransform = true)

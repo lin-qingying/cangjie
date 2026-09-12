@@ -469,6 +469,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "the exception catch type must be class and extends from core.Exception or core.Error",
         )
         map.put(
+            CfirErrors.MISMATCHING_CATCH_BLOCK,
+            "The type of this catch block is ''{0}'', which mismatches the smallest common supertype ''{1}'' of previous branches.",
+            RENDER_TYPE,
+            RENDER_TYPE,
+        )
+        map.put(
             CfirErrors.USELESS_EXCEPTION_TYPE,
             "useless exception type",
         )

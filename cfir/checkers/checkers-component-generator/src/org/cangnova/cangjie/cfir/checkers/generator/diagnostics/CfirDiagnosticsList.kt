@@ -644,6 +644,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         val CATCH_TYPE_MUST_EXTEND_EXCEPTION by error<CjTypeReference>()
 
+        /** 官方 SynTryExprCatchesAndHandles 在无可见 Join 时诊断当前 catch block。 */
+        val MISMATCHING_CATCH_BLOCK by error<CjBlockExpression> {
+            parameter<ConeCangJieType>("actualType")
+            parameter<ConeCangJieType>("previousType")
+        }
+
         val USELESS_EXCEPTION_TYPE by warning<CjTypeReference>()
     }
 

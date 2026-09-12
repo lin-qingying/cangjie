@@ -2549,14 +2549,28 @@ open class CfirExpressionsResolveTransformer(
      * 官方 `SynBlock` 会把任一无效语句的错误传播到整个 block；不能只观察最后一条
      * 声明的 `Unit` 类型，否则 `unsafe { let _ = unresolved }` 会被错误地当成合法
      * `Unit`，让外层操作符再次报告级联诊断。
+     * 命名函数的声明头部参与外层块的有效性检查，正文则是独立的检查边界；lambda
+     * 作为初始化器的一部分仍需遍历，不能将所有函数节点都从错误传播中排除。
      */
     private fun CfirExpression.firstErrorTypeOrNull(): ConeErrorType? {
         (coneTypeOrNull as? ConeErrorType)?.let { return it }
 
         var result: ConeErrorType? = null
         acceptChildren(object : CfirVisitorVoid() {
+            private var nestedFunctionBody: CfirBlock? = null
+
+            override fun visitNamedFunction(namedFunction: CfirNamedFunction) {
+                val previousBody = nestedFunctionBody
+                nestedFunctionBody = namedFunction.body
+                try {
+                    namedFunction.acceptChildren(this, null)
+                } finally {
+                    nestedFunctionBody = previousBody
+                }
+            }
+
             override fun visitElement(element: CfirElement) {
-                if (result != null) return
+                if (result != null || element === nestedFunctionBody) return
                 when (element) {
                     is CfirExpression -> {
                         result = element.coneTypeOrNull as? ConeErrorType
@@ -5195,16 +5209,42 @@ open class CfirExpressionsResolveTransformer(
         tryExpression.transformAnnotations(transformer, data)
         components.dataFlowAnalyzer.enterTryExpression(tryExpression)
         val isTryWithResources = tryExpression.resources.isNotEmpty()
-        val expectedType = data.expectedTypeOrNull
+        val expectedType = data.expectedTypeOrNull?.checkedControlFlowTargetOrNull()
         val branchResolutionMode = if (isTryWithResources) {
             ResolutionMode.ContextIndependent
         } else {
             controlFlowBranchResolutionMode(data)
         }
+        var resourceInitializerError: ConeErrorType? = null
         context.forBlock(session) {
-            tryExpression.transformResources(transformer, ResolutionMode.ContextIndependent)
+            tryExpression.replaceResources(tryExpression.resources.map { resource ->
+                resource.transformSingle(transformer, ResolutionMode.ContextIndependent).also { resolved ->
+                    // 资源按源码顺序解析并检查，后面的资源初始化器必须看到前一个绑定的 InvalidTy。
+                    val initializerError = resolved.returnTypeRef.coneTypeOrNull as? ConeErrorType
+                        ?: resolved.initializer?.firstErrorTypeOrNull()
+                    if (resourceInitializerError == null) resourceInitializerError = initializerError
+                    checkTryResourceType(resolved)
+                }
+            })
             tryExpression.transformTryBlock(transformer, branchResolutionMode)
             components.dataFlowAnalyzer.exitTryMainBlock()
+        }
+        // 官方先检查所有 catch 模式，首个无效模式之后只保留类型引用阶段的诊断。
+        // 后续正文仍解析，但其绑定变量不能获得未经检查的异常类型。
+        var catchPatternError: ConeErrorType? = null
+        for (catchClause in tryExpression.catches) {
+            val pattern = catchClause.pattern
+            val previousError = catchPatternError
+            if (previousError == null) {
+                resolveCatchPatternType(pattern)
+                catchPatternError = pattern.resolvedTypeRef?.coneType as? ConeErrorType
+            } else {
+                resolveCatchPatternTypeRefs(pattern)
+                pattern.replaceResolvedTypeRef(
+                    ConeErrorType(ConeUnreportedDuplicateDiagnostic(previousError.diagnostic))
+                        .toCfirResolvedTypeRef(pattern.source),
+                )
+            }
         }
         for (catchClause in tryExpression.catches) {
             components.dataFlowAnalyzer.enterCatchClause(catchClause)
@@ -5223,10 +5263,29 @@ open class CfirExpressionsResolveTransformer(
         }
         components.dataFlowAnalyzer.exitTryExpression(data.forceFullCompletion)
 
-        var currentJoinType = normalizeTypeForJoin(tryExpression.tryBlock.coneTypeOrNull) ?: builtinTypes.unitType
-        tryExpression.catches.forEach { catchClause ->
-            val catchType = normalizeTypeForJoin(catchClause.body.coneTypeOrNull) ?: builtinTypes.unitType
-            currentJoinType = commonSupertype(listOf(currentJoinType, catchType))
+        val tryBodyError = tryExpression.tryBlock.firstErrorTypeOrNull()
+        val catchBodyErrors = tryExpression.catches.associateWith { it.body.firstErrorTypeOrNull() }
+        val inputError = resourceInitializerError ?: tryBodyError ?: catchPatternError
+            ?: catchBodyErrors.values.firstOrNull { it != null }
+            ?: tryExpression.handlers.firstNotNullOfOrNull { it.body.firstErrorTypeOrNull() }
+            ?: tryExpression.finallyBlock?.firstErrorTypeOrNull()
+        var currentJoinType = if (tryBodyError != null) ConePrimitiveType.NOTHING
+            else checkNotNull(tryExpression.tryBlock.coneTypeOrNull)
+        var catchJoinError: ConeErrorType? = null
+        if (!isTryWithResources && expectedType == null) {
+            for (catchClause in tryExpression.catches) {
+                if (catchBodyErrors[catchClause] != null) continue
+                val catchType = checkNotNull(catchClause.body.coneTypeOrNull)
+                val joined = session.typeContext.commonVisibleSuperTypeOrNull(listOf(currentJoinType, catchType))
+                if (joined == null) {
+                    val errorType = ConeErrorType(ConeMismatchingCatchBlockError(catchType, currentJoinType))
+                    catchClause.replaceConeTypeOrNull(errorType)
+                    if (catchJoinError == null) catchJoinError = errorType
+                    // 保留前面的 Join，继续独立检查后面的 catch，与官方的错误定位顺序一致。
+                } else {
+                    currentJoinType = joined
+                }
+            }
         }
 
         var handleMismatchDiagnostic: ConeMismatchingHandleBlockError? = null
@@ -5250,6 +5309,8 @@ open class CfirExpressionsResolveTransformer(
 
         tryExpression.replaceConeTypeOrNull(
             when {
+                inputError != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(inputError.diagnostic))
+                catchJoinError != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(catchJoinError.diagnostic))
                 handleMismatchDiagnostic != null -> ConeErrorType(
                     handleMismatchDiagnostic!!,
                     delegatedType = currentJoinType,
@@ -5279,7 +5340,7 @@ open class CfirExpressionsResolveTransformer(
      * 解析单个 `catch` 子句。
      *
      * catch pattern 的类型引用会先被解析并写回 binding variable，再在新的 block 作用域中解析子句体；
-     * catch 子句类型等于 body 类型，缺失时回退为 `Unit`。
+     * 有效子句使用 body 类型，模式或正文错误则作为已报告错误传播。
      */
     override fun transformCatch(
         catch: CfirCatch,
@@ -5287,12 +5348,33 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         catch.transformAnnotations(transformer, data)
         context.forBlock(session) {
+            if (catch.pattern.resolvedTypeRef == null) resolveCatchPatternType(catch.pattern)
             resolveCatchPattern(catch.pattern)
             catch.transformBody(transformer, data)
         }
 
-        catch.replaceConeTypeOrNull(catch.body.coneTypeOrNull ?: builtinTypes.unitType)
+        val errorType = catch.pattern.resolvedTypeRef?.coneType as? ConeErrorType
+            ?: catch.body.firstErrorTypeOrNull()
+        catch.replaceConeTypeOrNull(
+            if (errorType != null) ConeErrorType(ConeUnreportedDuplicateDiagnostic(errorType.diagnostic))
+            else checkNotNull(catch.body.coneTypeOrNull),
+        )
         return catch
+    }
+
+    /** 资源说明必须实现 Resource 且不能是 Nothing；失败后的绑定类型在 body 之前立即失效。 */
+    private fun checkTryResourceType(resource: CfirFieldVariable) {
+        val actualType = checkNotNull(resource.returnTypeRef.coneTypeOrNull)
+        if (actualType is ConeErrorType) return
+        val resourceType = constructNamedType(StdlibClassIds.Resource)
+        if (!actualType.fullyExpandedType(session).isNothing &&
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, actualType, resourceType)
+        ) return
+        resource.replaceReturnTypeRef(
+            resource.returnTypeRef.resolvedTypeFromPrototype(
+                ConeErrorType(ConeTypeMismatchError(resourceType, actualType)), resource.source,
+            ),
+        )
     }
 
     // ── Subscript ─────────────────────────────────────────────────────────────
@@ -5986,16 +6068,10 @@ open class CfirExpressionsResolveTransformer(
      * 多个 catch 类型会合成公共父类型；没有显式类型时使用标准库 `Exception` 作为绑定变量类型。
      */
     private fun resolveCatchPattern(catchPattern: CfirCatchPattern) {
-        resolveCatchPatternTypeRefs(catchPattern)
-        catchPattern.transformBindingVariable(transformer, ResolutionMode.ContextIndependent)
-
-        val catchTypes = catchPattern.resolvedCatchTypes()
-        val bindingType = when {
-            catchTypes.isEmpty() -> constructNamedType(StdlibClassIds.Exception)
-            catchTypes.size == 1 -> catchTypes.single()
-            else -> commonSupertype(catchTypes)
-        }
-
+        val patternType = checkNotNull(catchPattern.resolvedTypeRef).coneType
+        val bindingType = if (patternType is ConeErrorType) {
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(patternType.diagnostic))
+        } else patternType
         catchPattern.bindingVariable?.let { bindingVariable ->
             val currentTypeRef = bindingVariable.returnTypeRef
             bindingVariable.replaceReturnTypeRef(
@@ -6004,8 +6080,32 @@ open class CfirExpressionsResolveTransformer(
                     currentTypeRef.source,
                 ),
             )
+            catchPattern.transformBindingVariable(transformer, ResolutionMode.ContextIndependent)
             context.storeVariable(bindingVariable, session)
         }
+    }
+
+    /**
+     * 对位 ChkExceptTypePattern：先验证每个异常类型，再以可见 Join 形成整体模式类型。
+     * 原始类型错误仍由各自 type-ref 报告；Join 错误属于整个 pattern，绑定变量仅传播该错误。
+     */
+    private fun resolveCatchPatternType(catchPattern: CfirCatchPattern) {
+        resolveCatchPatternTypeRefs(catchPattern)
+        catchPattern.replaceTypeRefs(catchPattern.typeRefs.map { typeRef ->
+            val type = checkNotNull(typeRef.coneTypeOrNull)
+            if (type is ConeErrorType) return@map typeRef
+            if (!type.fullyExpandedType(session).isNothing && isExceptionLikeType(type)) return@map typeRef
+            typeRef.resolvedTypeFromPrototype(ConeErrorType(ConeInvalidCatchTypeError), typeRef.source)
+        })
+        val catchTypes = catchPattern.typeRefs.map { checkNotNull(it.coneTypeOrNull) }
+        val typeError = catchTypes.filterIsInstance<ConeErrorType>().firstOrNull()
+        val resultType = when {
+            typeError != null -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(typeError.diagnostic))
+            catchTypes.isEmpty() -> constructNamedType(StdlibClassIds.Exception)
+            else -> session.typeContext.commonVisibleSuperTypeOrNull(catchTypes)
+                ?: ConeErrorType(ConeIncompatibleExpressionTypesError("pattern", catchTypes))
+        }
+        catchPattern.replaceResolvedTypeRef(resultType.toCfirResolvedTypeRef(catchPattern.source))
     }
 
     /**
@@ -6018,14 +6118,6 @@ open class CfirExpressionsResolveTransformer(
             specificTypeResolverTransformer,
             currentTypeResolutionConfiguration(),
         )
-    }
-
-    /** 提取 catch pattern 中已经解析成功的异常类型列表。 */
-    private fun CfirCatchPattern.resolvedCatchTypes(): List<ConeCangJieType> {
-        if (typeRefs.isEmpty()) return emptyList()
-        return typeRefs.mapNotNull { typeRef ->
-            (typeRef as? CfirResolvedTypeRef)?.coneType
-        }
     }
 
     /** 在类型的超类型链上查找标准库 effect `Command` 类型。 */

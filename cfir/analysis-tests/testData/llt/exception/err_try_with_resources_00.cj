@@ -1,5 +1,5 @@
 
 
 main() {
-    try (x = <!TYPE_MISMATCH!>return<!>) {}
+    try (<!TYPE_MISMATCH!>x = return<!>) {}
 }

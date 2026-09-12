@@ -619,6 +619,20 @@ data class ConeMismatchingHandleBlockError(
         "the type of this handle block is '$actualType', which mismatches the smallest common supertype '$expectedType' of previous branches"
 }
 
+/** catch 的单个类型不属于 Exception/Error，或为不可捕获的 Nothing。 */
+object ConeInvalidCatchTypeError : ConeDiagnostic {
+    override val reason: String = "the exception catch type must extend core.Exception or core.Error and must not be Nothing"
+}
+
+/** 当前 catch block 与前面各分支没有唯一的可见最小公共父类型。 */
+data class ConeMismatchingCatchBlockError(
+    val actualType: ConeCangJieType,
+    val previousType: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String =
+        "The type of this catch block is '$actualType', which mismatches the smallest common supertype '$previousType' of previous branches."
+}
+
 /**
  * expect-like 声明不能合成隐式默认构造器。
  */

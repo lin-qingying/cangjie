@@ -36,6 +36,8 @@ abstract class CfirTryExpression : CfirExpression() {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
+    abstract fun replaceResources(newResources: List<CfirFieldVariable>)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpression
 
     abstract fun <D> transformResources(transformer: CfirTransformer<D>, data: D): CfirTryExpression

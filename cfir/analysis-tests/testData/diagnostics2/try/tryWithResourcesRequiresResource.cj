@@ -10,7 +10,7 @@ class GoodResource <: Resource {
 }
 
 func badResourceSpec(): Unit {
-    try (<!MISMATCHED_TYPES_BECAUSE!>x = NotResource()<!>) {
+    try (<!TYPE_MISMATCH!>x = NotResource()<!>) {
         let _ = x
     }
 }

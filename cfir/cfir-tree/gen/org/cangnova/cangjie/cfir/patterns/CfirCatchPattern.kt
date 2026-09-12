@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.patterns
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -22,6 +23,7 @@ abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement {
     abstract val bindingName: Name?
     abstract val isWildcard: Boolean
     abstract val typeRefs: List<CfirTypeRef>
+    abstract val resolvedTypeRef: CfirResolvedTypeRef?
     abstract val bindingVariable: CfirPatternBindingVariable?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -31,7 +33,13 @@ abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCatchPattern(this, data) as E
 
+    abstract fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
+
+    abstract fun replaceResolvedTypeRef(newResolvedTypeRef: CfirResolvedTypeRef?)
+
     abstract fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
+
+    abstract fun <D> transformResolvedTypeRef(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 
     abstract fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 }

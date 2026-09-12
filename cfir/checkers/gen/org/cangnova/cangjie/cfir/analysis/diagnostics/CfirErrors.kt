@@ -168,6 +168,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Exception
     val THROW_EXPR_WITH_WRONG_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_THROW_EXPR_WITH_WRONG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.THROW_KEYWORD, PsiElement::class, getRendererFactory())
     val CATCH_TYPE_MUST_EXTEND_EXCEPTION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CATCH_TYPE_MUST_EXTEND_EXCEPTION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
+    val MISMATCHING_CATCH_BLOCK: CjDiagnosticFactory2<ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory2("CFIR_MISMATCHING_CATCH_BLOCK", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjBlockExpression::class, getRendererFactory())
     val USELESS_EXCEPTION_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_USELESS_EXCEPTION_TYPE", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
 
     // Range

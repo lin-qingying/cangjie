@@ -47,6 +47,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingCatchBlockError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -192,6 +193,7 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
                 return
             }
             val diagnosticSource = when {
+                expression is CfirCatch && diagnostic is ConeMismatchingCatchBlockError -> expression.body.source ?: source
                 expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
                     expression.expression.source ?: source
                 expression is CfirHandleClause && diagnostic is ConeCommandHandleTypeError ->
@@ -795,33 +797,26 @@ object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
 }
 
 /**
- * try/catch 异常类型检查。
+ * 已完成 catch 语义分析后的异常覆盖检查。
  *
  * 对齐官方 C++ `TypeCheckPattern.cpp#ChkExceptTypePattern`：
- * - catch 参数属性类型必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - catch 类型合法性和整体模式类型由 resolve 记录到 type-ref，统一由错误节点收集器报告；
  * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
  */
 object CfirCatchTypeChecker : CfirTryExpressionChecker() {
     /**
-     * 检查 catch 类型合法性和覆盖关系。
+     * 检查已解析 catch 类型之间的覆盖关系。
      *
-     * 每个 catch pattern 的类型必须是 Exception/Error 子类型，且不能被前面已经包含的 catch 类型覆盖。
+     * 纯类型引用解析不代表 catch 已经检查；首个失败模式之后不继续检查其它模式。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
         val includedTypes = mutableListOf<ConeCangJieType>()
 
         for (catchClause in expression.catches) {
+            val resolvedPatternType = catchClause.pattern.resolvedTypeRef?.coneType ?: return
             for ((catchType, source) in catchClause.pattern.resolvedCatchTypes()) {
                 if (catchType is ConeErrorType) continue
-
-                if (!catchType.isSubtypeOfExceptionOrError(context)) {
-                    reporter.reportOn(
-                        source = source ?: catchClause.pattern.source,
-                        factory = CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
-                    )
-                    continue
-                }
 
                 if (includedTypes.any { previous -> catchType.isSubtypeOf(previous, context) }) {
                     reporter.reportOn(
@@ -832,6 +827,7 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
                     includedTypes += catchType
                 }
             }
+            if (resolvedPatternType is ConeErrorType) return
         }
     }
 }
@@ -851,39 +847,6 @@ private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, Cj
     return typeRefs.mapNotNull { typeRef ->
         val coneType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
         coneType to typeRef.source
-    }
-}
-
-/**
- * try-with-resources 资源类型检查。
- *
- * 对齐官方 `TypeCheckExpr/TryExpr.cpp`：资源说明表达式的结果类型必须实现 `std.core.Resource`，
- * 但即使类型不匹配，资源绑定名和 try body 仍继续分析。
- */
-object CfirTryResourceTypeChecker : CfirTryExpressionChecker() {
-    /**
-     * 检查 try-with-resources 资源表达式类型。
-     *
-     * 每个资源声明的返回类型必须是 `std.core.Resource` 子类型，错误类型不重复报告。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(expression: CfirTryExpression) {
-        if (expression.resources.isEmpty()) return
-
-        val resourceType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Resource.toLookupTag())
-        for (resource in expression.resources) {
-            val actualType = (resource.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (actualType is ConeErrorType) continue
-            if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, resourceType) == true) continue
-
-            reporter.reportOn(
-                source = resource.source,
-                factory = CfirErrors.MISMATCHED_TYPES_BECAUSE,
-                a = resourceType,
-                b = actualType,
-                c = "try-with-resources requires std.core.Resource",
-            )
-        }
     }
 }
 

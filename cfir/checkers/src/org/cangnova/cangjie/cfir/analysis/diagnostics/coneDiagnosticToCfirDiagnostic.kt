@@ -908,8 +908,10 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             candidate.ambiguousClassifierSignatureNoMatchDiagnostic(session),
         )
     }
-    if (suppressedErrorTypeInCandidateSignature) return listOfNotNull(noMatchingInvokeDiagnostic)
-    if (suppressedErrorTypeInArguments) return listOfNotNull(noMatchingInvokeDiagnostic)
+    // ErrorTypeInArguments/Signature 只记录子树或声明的已有错误，不证明 invoke 的签名不匹配。
+    // 独立的参数、可见性等诊断已在上面返回；仅剩这种来源时，不再合成第二个调用错误。
+    // 对位 FIR ErrorTypeInArguments 的诊断所有权及官方 ChkFlowExpr 的失败调用恢复。
+    if (suppressedErrorTypeInCandidateSignature || suppressedErrorTypeInArguments) return emptyList()
     if (invalidCallableReturnTypeInOverloadSet) {
         return listOfNotNull(candidate.invalidReturnTypeOverloadNoMatchDiagnostic(session))
     }
@@ -2371,6 +2373,15 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource,
             actualType,
             expectedType,
+            session,
+        )
+
+        ConeInvalidCatchTypeError -> CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION.on(diagnosticSource, session)
+
+        is ConeMismatchingCatchBlockError -> CfirErrors.MISMATCHING_CATCH_BLOCK.on(
+            diagnosticSource,
+            actualType,
+            previousType,
             session,
         )
 

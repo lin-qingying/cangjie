@@ -11448,6 +11448,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/exception")
         }
 
+        @TestMetadata("catch_pattern_types.cj")
+        @Test
+        fun testCatchPatternTypes() {
+            runTest("cfir/analysis-tests/testData/llt/exception/catch_pattern_types.cj")
+        }
+
         @TestMetadata("err_catch_00.cj")
         @Test
         fun testErrCatch00() {
@@ -11508,6 +11514,18 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/exception/ok_try_with_resources_00.cj")
         }
 
+        @TestMetadata("resource_types.cj")
+        @Test
+        fun testResourceTypes() {
+            runTest("cfir/analysis-tests/testData/llt/exception/resource_types.cj")
+        }
+
+        @TestMetadata("try_visible_results.cj")
+        @Test
+        fun testTryVisibleResults() {
+            runTest("cfir/analysis-tests/testData/llt/exception/try_visible_results.cj")
+        }
+
         @TestMetadata("try_with_resource_01.cj")
         @Test
         fun testTryWithResource01() {
@@ -11518,6 +11536,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testTryWithResourceN() {
             runTest("cfir/analysis-tests/testData/llt/exception/try_with_resource_n.cj")
+        }
+
+        @TestMetadata("unanalyzed_try_argument.cj")
+        @Test
+        fun testUnanalyzedTryArgument() {
+            runTest("cfir/analysis-tests/testData/llt/exception/unanalyzed_try_argument.cj")
         }
     }
 
