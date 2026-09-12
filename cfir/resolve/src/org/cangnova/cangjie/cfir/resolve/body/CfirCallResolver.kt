@@ -47,6 +47,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
 import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.CandidateProcessingMode
@@ -126,6 +127,28 @@ internal enum class CallableReferenceResolutionResult {
     /** 候选能形成有效函数类型，但该类型与上下文目标类型不兼容。 */
     TYPE_MISMATCH,
     FAILURE,
+}
+
+/** 实参值解析前已经确定的失败；两种失败均保留实参中的独立类型引用检查。 */
+internal sealed interface CallArgumentPrecheckFailure {
+    val resolvedCall: CfirFunctionCall
+    val arguments: List<CfirExpression>
+
+    /** 命名实参映射失败，继续使用既有映射结果完成错误调用。 */
+    data class NamedArguments(
+        override val resolvedCall: CfirFunctionCall,
+        val failures: List<NeedNamedArgument>,
+    ) : CallArgumentPrecheckFailure {
+        override val arguments: List<CfirExpression> get() = failures.map { it.argument }
+    }
+
+    /** callee 值的声明类型已经无效，实参值不存在可检查的调用上下文。 */
+    data class ErroneousCallee(
+        override val resolvedCall: CfirFunctionCall,
+        val errorType: ConeErrorType,
+    ) : CallArgumentPrecheckFailure {
+        override val arguments: List<CfirExpression> get() = resolvedCall.argumentList.arguments
+    }
 }
 
 /** 命名值访问在当前解析步骤中的结构用途。 */
@@ -226,20 +249,41 @@ class CfirCallResolver(
     }
 
     /**
-     * 在实参值解析前识别确定的命名实参错误。
+     * 在实参值解析前识别确定的 callee 值错误或命名实参错误。
      *
      * 形态探测仅收集候选及参数映射，不构造最终引用，也不消费 fresh 类型变量。
      * 确认所有最佳候选均因命名形态失败后，才推进错误候选的其余阶段并写回引用；
      * 参数检查阶段依据 mapping outcome 跳过实参值，保持官方 CheckArgsWithParamName 的边界。
      */
-    internal fun resolveNamedArgumentShapeFailure(
+    internal fun resolveCallArgumentPrecheckFailure(
         functionCall: CfirFunctionCall,
         resolutionMode: ResolutionMode,
-    ): Pair<CfirFunctionCall, List<NeedNamedArgument>>? {
+    ): CallArgumentPrecheckFailure? {
         val probe = buildFunctionCallCopy(functionCall) {}
         val callee = probe.calleeReference as? CfirNamedReference ?: return null
         val collected = transformer.resolutionContext.withCandidateProcessingMode(CandidateProcessingMode.ARGUMENT_SHAPE) {
             collectFunctionCallCandidates(probe, callee, resolutionMode, collectionLiteralContext = null)
+        }
+        val valueCandidate = if (collected.expectedCallKind == CallKind.NamedValueAccess) {
+            collected.expectedCandidates?.singleOrNull()
+        } else {
+            collected.result.candidates.singleOrNull()?.callInfo?.candidateForCommonInvokeReceiver
+        }
+        val valueType = (valueCandidate?.symbol?.takeIf { it.isBound }?.cfir as? CfirVariable)
+            ?.returnTypeRef?.coneTypeOrNull
+        if (valueCandidate?.isSuccessful == true && valueType is ConeErrorType) {
+            // 官方 ChkCallBaseExpr 先判定 callee 有效性；既有声明错误不能等实参分析后
+            // 再由隐式 invoke 恢复路径发现。保留符号，供 IDE 错误引用导航使用。
+            val diagnostic = ConeUnreportedDuplicateDiagnostic(valueType.diagnostic)
+            val errorType = ConeErrorType(diagnostic)
+            probe.replaceCalleeReference(buildResolvedErrorReference {
+                source = callee.source
+                name = callee.name
+                resolvedSymbol = valueCandidate.symbol
+                this.diagnostic = diagnostic
+            })
+            probe.replaceConeTypeOrNull(errorType)
+            return CallArgumentPrecheckFailure.ErroneousCallee(probe, errorType)
         }
         val candidates = collected.result.candidates
         if (candidates.isEmpty()) return null
@@ -254,7 +298,7 @@ class CfirCallResolver(
         for (candidate in candidates) {
             components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
         }
-        return writeFunctionCallResolution(probe, callee, collected) to failures
+        return CallArgumentPrecheckFailure.NamedArguments(writeFunctionCallResolution(probe, callee, collected), failures)
     }
 
     /** 普通调用与参数形态探测共享名字查找、调用种类选择和候选收集。 */

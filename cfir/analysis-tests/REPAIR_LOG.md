@@ -6470,3 +6470,31 @@ XML为8537 → 8547 records，均为308 skipped（含一条聚合记录）。完
 - remaining failures: SolveTypeArgs仅剩invalid_case双入口，属于错误callee实参提前分析；另有453项既有失败。用户追加的try表达式范围已单独完成官方取证，尚未混入本项源码。
 - change isolation: 本项提交上述共享实现、5份新LLT fixture、unused_tyvar期望修正、两套生成入口、3条约束unit与日志；用户.idea及无实际diff的其它文件保持独立。全量后仅删除一条已证实未使用的import。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（11s）；`git diff --check`通过。
+
+## 2026-09-12：错误 callee 值在实参分析之前结束调用
+
+- problem type: Call resolution / Invalid callee value / Argument analysis boundary。
+- root cause: 调用先解析实参，再通过隐式invoke路径发现callee变量的声明类型已经错误。invalid_case中的a已由错误初始化器得到InvalidTy，但bar.foo()仍被提前分析，多报GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT。单纯保留raw实参还会让后续checker误报未分析lambda的参数注解缺失。
+- official Cangjie evidence: build/repair-20260906/evidence的54-invalid-callee-arguments、53-callee-failure-boundaries、53-invalid-callee-fixture保存官方命令和诊断。错误局部变量、错误成员变量及错误显式receiver不检查实参值或lambda正文；实参中显式Missing类型仍由前置类型阶段诊断。合法函数和函数值调用中的missingArgument仍正常报告。新增fixture语法有效，诊断与官方一致。
+- official implementation: TypeCheckCall.cpp:2428-2477的ChkCallBaseExpr先检查调用base，setFuncArgsInvalidTy结束不应检查的实参。PreCheck先解析显式类型引用，不能随值实参一起省略。
+- Kotlin counterpart files consulted: FirExpressionsResolveTransformer.kt:641-711的receiver/arguments/resolve/completion顺序，以及FirCallResolver.kt的普通候选与common invoke receiver结构。仓颉要求已知错误callee先于实参检查，保留FIR的候选发现及完成分层。
+- CFIR owner files changed: CfirCallResolver将前置命名实参探测推广为resolveCallArgumentPrecheckFailure，使用结构化NamedArguments/ErroneousCallee结果。共享ARGUMENT_SHAPE发现之后，唯一且通过可见性及名字选择的值候选若已有ConeErrorType，直接生成保留符号的ResolvedErrorReference，传播原错误；普通函数优先级及尚需实参类型的重载选择保持原流程。CfirExpressionsResolveTransformer提交前置结果，并对错误callee和已有错误显式receiver共用纯类型引用检查；CfirUnanalyzedCallArgumentTransformer仅结束剩余隐式类型/表达式状态，不解析正文、不新增候选。
+- repair principle: callee的已有错误属于调用分析的前置条件；被跳过的实参显式类型检查与值分析必须具有不同的阶段边界。
+- fixtures covered: solveTypeArgs/invalid_case双入口不改期望；新增invalid_callee_arguments，覆盖错误局部变量、成员变量、显式receiver、省略参数lambda、显式坏类型lambda，以及合法callee中的真实实参错误。SolveTypeArgs全族两入口共32项全部通过。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test`筛选SolveTypeArgs/Call/TypeInfer两入口：53-callee-targeted为480项478通过/2既有OptionalChain失败，4m42s；对52 FIXED2、REGRESSED0、NEW_KEYS2全部通过、changed_failure_messages=[]。
+  - 同任务扩大SolveTypeArgs/Generics/TypeInfer/Typealias/Call/ConstraintCheck/Lambda/Function/PatternMatching/Match/If/While/Loops/ErrMsgs/Exception及Diagnostics：53-callee-family为3799项3433通过/60既有失败/306跳过，9m26s；FIXED2、REGRESSED0、NEW_KEYS2全通过，全部60条既有失败消息相同。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：53-callee-full，25m52s正常完成。对52-scoped-dependencies-full：FIXED=2、REGRESSED=0、NEW_KEYS=2（全通过）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]。全部453条剩余失败消息相同。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8546 | 8548 |
+| 通过 | 7784 | 7788 |
+| 失败 | 455 | 453 |
+| 跳过 | 307 | 307 |
+
+XML为8547 → 8549 records，均为308 skipped（含一条聚合记录）。完整逐项证据为53-callee-full及52-scoped-dependencies-full--53-callee-full.json。
+
+- remaining failures: SolveTypeArgs已清零，Call/Generics/TypeInfer/Typealias及既有控制流目标保持通过；下一项继续用户新增的try表达式，Exception目录仍有4组共8条既有失败。
+- change isolation: 本项仅提交callee前置检查、未分析实参状态完成、新fixture、两套生成入口与日志；未改既有fixture期望，用户.idea及其它工作区改动独立保留。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（27s）；`git diff --check`通过。
