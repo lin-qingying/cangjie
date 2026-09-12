@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
+import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
@@ -36,6 +37,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
@@ -71,6 +73,8 @@ internal class CfirResolutionSnapshot private constructor(
     private val anonymousFunctionMatchingTypes: IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>,
     /** 匿名函数参数形状诊断目标函数类型快照。 */
     private val anonymousFunctionShapeExpectedTypes: IdentityHashMap<CfirAnonymousFunction, ConeFunctionType?>,
+    /** 尚未分析的 lambda 是否位于参数映射失败的调用中。 */
+    private val anonymousFunctionArgumentMappingFailures: IdentityHashMap<CfirAnonymousFunction, Boolean>,
     /** 匿名函数 body 快照。 */
     private val anonymousFunctionBodies: IdentityHashMap<CfirAnonymousFunction, CfirBlock?>,
     /** 变量返回类型引用快照。 */
@@ -85,6 +89,8 @@ internal class CfirResolutionSnapshot private constructor(
     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
     /** catch 模式的声明类型与整体语义类型必须一起回滚，避免候选试跑污染后续分析。 */
     private val catchPatternStates: IdentityHashMap<CfirCatchPattern, CatchPatternState>,
+    /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
+    private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
     /** qualified access 接收者与类型实参快照。 */
     private val qualifiedAccessStates: IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>,
     /** 函数调用实参列表快照。 */
@@ -118,6 +124,9 @@ internal class CfirResolutionSnapshot private constructor(
         for ((function, expectedFunctionType) in anonymousFunctionShapeExpectedTypes) {
             function.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
         }
+        for ((function, failed) in anonymousFunctionArgumentMappingFailures) {
+            function.isInsideFailedArgumentMapping = failed
+        }
         for ((function, body) in anonymousFunctionBodies) {
             function.replaceBody(body)
         }
@@ -137,6 +146,10 @@ internal class CfirResolutionSnapshot private constructor(
         for ((pattern, state) in catchPatternStates) {
             pattern.replaceTypeRefs(state.typeRefs)
             pattern.replaceResolvedTypeRef(state.resolvedTypeRef)
+        }
+        for ((subscript, state) in subscriptCallStates) {
+            subscript.replaceResolvedGetCall(state.getCall)
+            subscript.replaceResolvedSetCall(state.setCall)
         }
         for ((block, statements) in blockStatements) {
             val mutableStatements = block.statements as? MutableList<CfirStatement>
@@ -174,6 +187,11 @@ internal class CfirResolutionSnapshot private constructor(
         val resolvedTypeRef: CfirResolvedTypeRef?,
     )
 
+    private data class SubscriptCallState(
+        val getCall: CfirFunctionCall?,
+        val setCall: CfirFunctionCall?,
+    )
+
     companion object {
         /**
          * 从根元素遍历并捕获后续 body resolve 可恢复状态。
@@ -186,6 +204,7 @@ internal class CfirResolutionSnapshot private constructor(
             val anonymousFunctionTypes = IdentityHashMap<CfirAnonymousFunction, CfirTypeRef>()
             val anonymousFunctionMatchingTypes = IdentityHashMap<CfirAnonymousFunction, ConeCangJieType?>()
             val anonymousFunctionShapeExpectedTypes = IdentityHashMap<CfirAnonymousFunction, ConeFunctionType?>()
+            val anonymousFunctionArgumentMappingFailures = IdentityHashMap<CfirAnonymousFunction, Boolean>()
             val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
             val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
             val blockStatements = IdentityHashMap<CfirBlock, List<CfirStatement>>()
@@ -193,6 +212,9 @@ internal class CfirResolutionSnapshot private constructor(
             val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
             val catchPatternStates = IdentityHashMap<CfirCatchPattern, CatchPatternState>()
+            val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
+            // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
+            val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
             val qualifiedAccessStates = IdentityHashMap<CfirQualifiedAccessExpression, QualifiedAccessState>()
             val functionCallArgumentLists = IdentityHashMap<CfirFunctionCall, CfirArgumentList>()
             val controlFlowGraphReferences =
@@ -205,6 +227,7 @@ internal class CfirResolutionSnapshot private constructor(
                      */
                     @OptIn(ResolveStateAccess::class)
                     override fun visitElement(element: CfirElement) {
+                        if (!visitedElements.add(element)) return
                         if (element is CfirElementWithResolveState) {
                             resolveStates[element] = element.resolveState
                         }
@@ -224,6 +247,7 @@ internal class CfirResolutionSnapshot private constructor(
                             anonymousFunctionTypes[element] = element.typeRef
                             anonymousFunctionMatchingTypes[element] = element.matchingParameterFunctionType
                             anonymousFunctionShapeExpectedTypes[element] = element.lambdaParameterShapeExpectedFunctionType
+                            anonymousFunctionArgumentMappingFailures[element] = element.isInsideFailedArgumentMapping
                             anonymousFunctionBodies[element] = element.body
                         }
                         if (element is CfirVariable) {
@@ -245,6 +269,11 @@ internal class CfirResolutionSnapshot private constructor(
                         }
                         if (element is CfirCatchPattern) {
                             catchPatternStates[element] = CatchPatternState(element.typeRefs.toList(), element.resolvedTypeRef)
+                        }
+                        if (element is CfirSubscriptExpression) {
+                            subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
+                            element.resolvedGetCall?.accept(this, null)
+                            element.resolvedSetCall?.accept(this, null)
                         }
                         if (element is CfirQualifiedAccessExpression) {
                             qualifiedAccessStates[element] = QualifiedAccessState(
@@ -272,6 +301,7 @@ internal class CfirResolutionSnapshot private constructor(
                 anonymousFunctionTypes,
                 anonymousFunctionMatchingTypes,
                 anonymousFunctionShapeExpectedTypes,
+                anonymousFunctionArgumentMappingFailures,
                 anonymousFunctionBodies,
                 variableTypes,
                 blockStatements,
@@ -279,6 +309,7 @@ internal class CfirResolutionSnapshot private constructor(
                 matchBranchPatterns,
                 patternStates,
                 catchPatternStates,
+                subscriptCallStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,
                 controlFlowGraphReferences,

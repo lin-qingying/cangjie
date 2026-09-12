@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -25,6 +26,8 @@ class CfirSubscriptExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var receiver: CfirExpression,
     override val indices: MutableList<CfirExpression>,
+    override var resolvedGetCall: CfirFunctionCall?,
+    override var resolvedSetCall: CfirFunctionCall?,
 ) : CfirSubscriptExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -61,5 +64,13 @@ class CfirSubscriptExpressionImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replaceResolvedGetCall(newResolvedGetCall: CfirFunctionCall?) {
+        resolvedGetCall = newResolvedGetCall
+    }
+
+    override fun replaceResolvedSetCall(newResolvedSetCall: CfirFunctionCall?) {
+        resolvedSetCall = newResolvedSetCall
     }
 }

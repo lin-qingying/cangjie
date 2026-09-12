@@ -18214,6 +18214,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/optional_chain/call_02.cj")
         }
 
+        @TestMetadata("chain_boundaries.cj")
+        @Test
+        fun testChainBoundaries() {
+            runTest("cfir/analysis-tests/testData/llt/optional_chain/chain_boundaries.cj")
+        }
+
         @TestMetadata("err_assign_00.cj")
         @Test
         fun testErrAssign00() {
@@ -18278,6 +18284,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testSubscript00() {
             runTest("cfir/analysis-tests/testData/llt/optional_chain/subscript_00.cj")
+        }
+
+        @TestMetadata("subscript_mutability.cj")
+        @Test
+        fun testSubscriptMutability() {
+            runTest("cfir/analysis-tests/testData/llt/optional_chain/subscript_mutability.cj")
         }
 
         @TestMetadata("trailing_lambda_00.cj")

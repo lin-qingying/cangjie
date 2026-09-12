@@ -6571,3 +6571,52 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 
 - full-suite scope: 用户明确更正“NonExhaustiveEnum就不需要全量了”，已停止先前启动的55-enum-modules-full；该中止输出不作为验收结果，不保存为有效全量快照。本项只依据完整目标组的逐项验证，最新有效全量仍为54-try-final-full（8556/7804通过/445失败/307跳过），不能把本项定向结果表述为已完成全量。
 - remaining failures: NonExhaustiveEnum目标组已清零；用户下一项指定OptionalChain，最近全量中的该组有8条失败，另有相关Const和Assign用例待按共同语义归类。
+
+## 2026-09-12：OptionalChain 的接收者检查、类型写回与赋值调用
+
+- problem type: Optional-chain resolution / Semantic wrapper completion / Subscript operator binding / Unanalyzed argument state。
+- root cause: resolve在进入可选链上下文前提前解析最后一个`?`的接收者前缀，导致前面的Option没有解包，连续访问和可选调用产生NOT_MEMBER_OF。原流程仅检查最后一个边界，且用原类型替代无法解包的类型。调用完成器又把optional subject和整个chain当作透明wrapper，复制内部类型，覆盖已检查的payload或丢失结果Option层数。可选下标赋值没有进入真实set路径，成功的get/set调用只保存返回类型，后续调用checker无法检查mut语义。
+- prior repair review: 保留先前Call/TypeInfer/Generics/Typealias及错误callee前置检查规则。第55项NonExhaustiveEnum已独立提交且按用户要求未做全量；本项未把该豁免理解为OptionalChain免全量。
+- official Cangjie evidence: build/repair-20260906/evidence中的56-optional-*覆盖原optional_chain目录19份源码及Const/optionalchain、Assign/err_optional_chain_00，均语法合法。member_access_03与call_01合法，member_access_05应报告不可选链，Const场景仅报告EXPECT_CONST。56-optional-boundaries-valid和56-chain-boundaries-final确认保留嵌套Option、alias接收者、外部目标不反向推断链内generic、错误接收者终止后续值实参检查、赋值/增减结果为Unit。
+- argument/mutation evidence: 56-optional-argument-boundaries-final确认tuple中的链不能丢掉Option层数，缺命名参数前缀时只报NEED_NAMED_ARGUMENT，链内成员和lambda不继续分析。56-subscript-mutability及对应fixture官方记录确认普通let与可选解包struct不能调用mut getter/setter，普通var合法。56-optional-compound和最终chain fixture确认字段、Array下标的可选链复合赋值合法。裸`value?`的探针有语法错误，未进入CFIR语义fixture。
+- official implementation: Sema/Desugar/DesugarBeforeTypeCheck.cpp:78-265按接收者路径生成嵌套Some/None分支，每个`?`绑定不可变v；值链在最内层Some中包一层，赋值及增减的None分支为Unit。TypeCheckMatchExpr.cpp:147-181对错误或非Option selector提前终止。TypeCheckExpr/OptionalChainExpr.cpp先综合再检查外部目标。TypeCheckAccess.cpp:292起统一检查不可变struct对mut函数的访问。
+- Kotlin counterpart files consulted: FirExpressionsResolveTransformer.kt:576-620先解析receiver，checked safe-call subject承载已检查类型，再解析selector；FirCallCompletionResultsWriterTransformer.kt对safe-call单独完成。LightTreeRawFirExpressionBuilder.convertArrayAccessExpression保留真实get/set调用，AbstractRawFirBuilder.generateIndexedAccessAugmentedAssignment保留lhsGetCall；CFIR保持自身下标语法节点，同时保留完整解析调用供统一检查使用。
+- CFIR owner files changed: CfirOptionalChainUtils按实际接收者路径枚举每个`?`，排除实参和独立嵌套链，并区分类型透明wrapper。CfirExpressionsResolveTransformer逐个检查并缓存payload，后续selector复用，失败后只完成未分析子树状态；移除全局depth、重复前缀解析及runCatching。链独立综合，错误直接传播，正常值保留Option层数。可选赋值整体进入链内，复合赋值的operator复用解包目标。
+- completion owners: CfirCallCompletionResultsWriterTransformer为optional subject/chain独立写回，保留自身语义类型并仅替换类型变量；未分析实参保留空类型状态，同时传递参数映射失败信息。ArgumentCheckingProcessor只向透明wrapper转发tuple元素目标。CfirUnanalyzedCallArgumentTransformer在无可传播错误类型的命名形态失败中仍标记未分析lambda，保留已解析前缀的诊断。
+- operator/transaction owners: CfirTree为wrapper生成独立transformExpression接口，为subscript保存resolvedGetCall/resolvedSetCall；生成接口、builder和实现同步。调用关联不是重复语法子节点。AbstractDiagnosticCollectorVisitor以完整调用上下文检查这些真实调用及引用，操作数仍只沿原语法树检查。CfirResolutionSnapshot捕获调用关联及其可变状态，用identity visited处理复合赋值回指，并恢复optional payload及lambda参数映射失败标记。
+- diagnostic ownership: ErrorNodeDiagnosticCollectorComponent对第一层不可选诊断使用整链source，后续层使用接收者前缀，保留已有直接前缀`!`范围规则。没有为特定fixture重建候选、吞掉真实错误或恢复错误的类型。
+- repair principle: 每个`?`是独立的类型变换和检查边界，后续解析及completion必须复用其语义结果；赋值依然经过共享get/set与不可变调用检查，所有试跑状态均可回滚。
+- fixtures covered: optional_chain原19份文件全覆盖，包括member_access_00..07、call_00..02、assign_00..03、err_assign_00/01、subscript_00、trailing_lambda_00；新增chain_boundaries和subscript_mutability。Const/optionalchain、OperatorOverload/err_unary_00、NonExhaustiveEnum及调用/泛型/函数/赋值等关联族共同保护。
+- fixture corrections: err_assign_00按官方实际mut调用错误使用项目既有IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION，覆盖完整接收者s?；err_assign_01补回官方要求的不可变赋值诊断，按共享赋值checker的selector契约覆盖b。原源码语法均未改。Assign/multipleAssign/err_optional_chain_00的外层类型错误仍是独立既有问题，未删改其期望。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:resolve:test --tests '*CfirResolutionSnapshotTest*'`与定向分析任务联合执行：5/5通过；新用例验证checked payload回滚、带回指的get/set调用图回滚。最终相关单测XML为2026-09-12T14:03:13.660Z，归档到56-optional-full/snapshot-unit-xml。
+  - 56-optional-before：70项58通过/12失败。56-optional-unchecked-lambda-targeted：76项74通过/2既有多重赋值失败，5m13s含编译；相同旧键恢复10项、零回归，新增边界及失败命名实参lambda均通过。
+  - `gradlew-queue.bat :cfir:analysis-tests:test`筛选完整OptionalChain、Call、Generics、TypeInfer、Typealias、SolveTypeArgs、Function、Lambda、Let、Assign、Subscript、Array/Varray、Operator及全部Diagnostics，并包含Const/optionalchain和NonExhaustiveEnum，使用`--no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：最终56-optional-family-final为3609项3261通过/42既有失败/306原有跳过，12m13s；零回归，42条失败消息全部相同。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：56-optional-full，29m10s正常结束。相对最近完整基线54-try-final-full：FIXED=16、REGRESSED=0、NEW_KEYS=4（全部通过）、REMOVED_KEYS=0、其它状态变化=0、changed_failure_messages=[]，剩余429条失败消息全部相同。验证期间源码diff未变化。
+  - 归因：上述16条改善中，6条NonExhaustiveEnum属于此前已提交的第55项；本项恢复OptionalChain 8条和Const/optionalchain 2条，共10条。err_assign_01补充真实期望后仍通过，未将其计入FIXED。完整结果中OptionalChain44/44、NonExhaustiveEnum26/26、Call184/184、Generics680/680、TypeInfer76/76、Typealias92/92、SolveTypeArgs32/32、Exception34/34通过。
+
+| 最近两次完整全量（Gradle） | 修复前：54 | 修复后：56 |
+| --- | ---: | ---: |
+| 测试总数 | 8556 | 8560 |
+| 通过 | 7804 | 7824 |
+| 失败 | 445 | 429 |
+| 跳过 | 307 | 307 |
+
+第55项按用户要求只有定向验收，因此这里不虚构其提交后的完整全量基线。XML为8557 → 8561 records，均为308 skipped（含一条聚合记录）。逐项证据为56-optional-full及54-try-final-full--56-optional-full.json。
+
+- remaining failures: OptionalChain与Const目标已清零，其余429条按测试族统计如下，数量是测试记录，不代表独立根因。
+
+| 剩余测试族 | 失败数 |
+| --- | ---: |
+| Macro（全部宏套件） | 250 |
+| Record | 35 |
+| ErrMsgs | 26 |
+| InitializationCheck | 20 |
+| Assign / Linkage / ConstraintCheck / Lambda | 各12 |
+| Ffi | 10 |
+| UnusedImport | 8 |
+| ExtendsImplementsInterfaceDuplicated / Array | 各6 |
+| Effect / Lookup | 各4 |
+| Box / DesugarErrorReport / FuzzInvalidParse / IsOrAsExpr / Native / OptionalModifiers | 各2 |
+
+- change isolation: 本项只提交可选链/下标语义实现、生成产物、两份新增fixture、两份期望修正、快照单测和日志；用户.idea与无实际diff的其它文件保持独立，external只读。

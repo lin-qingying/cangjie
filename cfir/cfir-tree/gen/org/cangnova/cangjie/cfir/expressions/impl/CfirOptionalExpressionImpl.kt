@@ -32,12 +32,17 @@ internal class CfirOptionalExpressionImpl(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirOptionalExpressionImpl {
         transformAnnotations(transformer, data)
-        expression = expression.transform(transformer, data)
+        transformExpression(transformer, data)
         return this
     }
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirOptionalExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirOptionalExpressionImpl {
+        expression = expression.transform(transformer, data)
         return this
     }
 

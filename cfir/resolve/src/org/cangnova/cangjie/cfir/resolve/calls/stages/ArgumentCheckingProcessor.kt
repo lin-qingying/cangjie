@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.expressions.isTypeTransparent
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCallCopy
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -709,7 +710,7 @@ internal object ArgumentCheckingProcessor {
         element: CfirExpression,
         expectedElementType: ConeCangJieType,
     ): ConeCangJieType? {
-        if (element is CfirWrappedExpression) {
+        if (element is CfirWrappedExpression && element.isTypeTransparent) {
             val innerType = typeForExpectedTupleElement(element.expression, expectedElementType)
             if (innerType != null) {
                 element.replaceConeTypeOrNull(innerType)
