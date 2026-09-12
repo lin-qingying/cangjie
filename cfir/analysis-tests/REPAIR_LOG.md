@@ -6547,3 +6547,27 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 | Box / Const / DesugarErrorReport / FuzzInvalidParse / IsOrAsExpr / Native / OptionalModifiers | 各2 |
 
 - change isolation: 本项提交上述共享实现、生成产物、4份新LLT fixture、4份原fixture的诊断期望修正、快照unit和日志；用户.idea及无实际diff的其它文件保持独立。未修改external参考源码。
+
+## 2026-09-12：NonExhaustiveEnum 旧、新库版本的测试模块隔离
+
+- problem type: Test module structure / Non-exhaustive enum library evolution。
+- prior repair review: 日志中“Non-exhaustive enum declaration flag and known-subject match narrowing”已经修复枚举末尾`...`与模式覆盖规则，并明确把BinaryCompat的源版本混编列为独立问题。当前26项中仅三份BinaryCompat用例的双入口共6项失败，其余20项通过。
+- root cause: change_lib、change_abi、change_abi_recursive仅用FILE划分旧库、新库和客户端，未声明MODULE，导致同一个package a的两个版本进入同一编译模块。重声明、歧义及派生导入/成员诊断是错误编译输入的结果，不是非穷尽枚举实现错误。
+- official Cangjie evidence: probe_enum_versions.py在build/repair-20260906/evidence/55-enum-versions保存了逐版本源码、cjc命令和诊断。三种场景的6个独立库均成功生成a.cjo，相同客户端分别导入旧、新a.cjo的6次编译也全部成功；仅有静态库目标的CHIR unused-main警告，没有语法或语义错误。三次旧、新库混合编译均产生官方重声明错误，递归场景还出现类型歧义。
+- official concept: ParseDecl.cpp:1472记录enum末尾省略号为hasEllipsis，AST/Types.cpp:248通过IsNonExhaustive暴露；PatternUsefulness.cpp:915为构造器集合增加未来枚举项。CHIR/Utils.cpp:954及CodeGen/Base/CGTypes/CGEnumType.cpp:77也区分非穷尽枚举。该语言概念确实存在；CFIR诊断测试没有执行旧客户端二进制替换新版库，不能据此声称验证ABI兼容。
+- Kotlin counterpart files consulted: tests-common-new/testFixtures/org/jetbrains/kotlin/test/services/impl/ModuleStructureExtractorImpl.kt:155-243以MODULE建立独立编译模块和显式依赖；不按文件名猜测版本。本项目ModuleStructureExtractorImpl及CfirFrontendFacade/CfirModuleInfoProvider已经提供等价的Source模块依赖契约，无需另建测试适配层。
+- owner changes: 三份fixture显式声明oldLibrary、newLibrary、oldClient(oldLibrary)、newClient(newLibrary)。保留两个版本的全部库源码，并将同一客户端分别放入各自依赖图。README说明历史binaryCompat目录名、实际前端语义覆盖和后端二进制兼容测试边界。未修改CFIR实现或诊断期望。
+- repair principle: 通过现有测试模块契约表达真实编译输入，让两个版本在各自作用域中独立检查；不隐藏同模块的合法重声明诊断，不移除旧版或新版场景。
+- fixtures covered: nonExhaustiveEnum/binaryCompat/change_lib.cj、change_abi.cj、change_abi_recursive.cj；完整nonExhaustiveEnum根目录及bad目录共同回归，覆盖普通、泛型、递归关联类型和负例的PSI/LightTree入口。
+- verification command: `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLT*TestGenerated*NonExhaustiveEnum*' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`。
+- verification outcome: 55-enum-before为26项20通过/6失败，与54-try-final-full完全一致；55-enum-modules-targeted为26/26通过，1m4s。逐项FIXED=6、REGRESSED=0、NEW_KEYS=0，无其它状态或失败消息变化，证据为54-try-final-full--55-enum-modules-targeted.json。
+
+| NonExhaustiveEnum 定向结果 | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 26 | 26 |
+| 通过 | 20 | 26 |
+| 失败 | 6 | 0 |
+| 跳过 | 0 | 0 |
+
+- full-suite scope: 用户明确更正“NonExhaustiveEnum就不需要全量了”，已停止先前启动的55-enum-modules-full；该中止输出不作为验收结果，不保存为有效全量快照。本项只依据完整目标组的逐项验证，最新有效全量仍为54-try-final-full（8556/7804通过/445失败/307跳过），不能把本项定向结果表述为已完成全量。
+- remaining failures: NonExhaustiveEnum目标组已清零；用户下一项指定OptionalChain，最近全量中的该组有8条失败，另有相关Const和Assign用例待按共同语义归类。
