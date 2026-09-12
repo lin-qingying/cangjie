@@ -20,7 +20,7 @@ class BadResource {}
 func mixedResources(): Unit {
     try (
         a = GoodResourceA(),
-        <!MISMATCHED_TYPES_BECAUSE!>b = BadResource()<!>
+        <!TYPE_MISMATCH!>b = BadResource()<!>
     ) {
         let _ = a
         let _ = b

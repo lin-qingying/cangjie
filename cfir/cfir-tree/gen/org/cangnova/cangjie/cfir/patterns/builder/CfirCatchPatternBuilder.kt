@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.impl.CfirCatchPatternImpl
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,6 +24,7 @@ class CfirCatchPatternBuilder {
     var bindingName: Name? = null
     var isWildcard: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     val typeRefs: MutableList<CfirTypeRef> = mutableListOf()
+    var resolvedTypeRef: CfirResolvedTypeRef? = null
     var bindingVariable: CfirPatternBindingVariable? = null
 
     @OptIn(CfirImplementationDetail::class)
@@ -32,6 +34,7 @@ class CfirCatchPatternBuilder {
             bindingName,
             isWildcard,
             typeRefs,
+            resolvedTypeRef,
             bindingVariable,
         )
     }
@@ -56,6 +59,7 @@ inline fun buildCatchPatternCopy(original: CfirCatchPattern, init: CfirCatchPatt
     copyBuilder.bindingName = original.bindingName
     copyBuilder.isWildcard = original.isWildcard
     copyBuilder.typeRefs.addAll(original.typeRefs)
+    copyBuilder.resolvedTypeRef = original.resolvedTypeRef
     copyBuilder.bindingVariable = original.bindingVariable
     return copyBuilder.apply(init).build()
 }

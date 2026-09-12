@@ -85,4 +85,10 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
     }
+
+    override fun replaceResources(newResources: List<CfirFieldVariable>) {
+        if (resources === newResources) return
+        resources.clear()
+        resources.addAll(newResources)
+    }
 }

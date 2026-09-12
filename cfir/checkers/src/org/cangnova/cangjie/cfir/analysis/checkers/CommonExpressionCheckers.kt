@@ -144,12 +144,11 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
         get() = setOf(CfirIllegalSuperReferenceChecker)
 
-    /** 对 `try` 表达式返回、目标类型、资源和 catch 类型规则执行的 checker 集合。 */
+    /** 对 `try` 表达式返回、目标类型和已解析 catch 覆盖规则执行的 checker 集合。 */
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
         get() = setOf(
             CfirTryHandleReturnChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryTargetTypeMismatchChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryResourceTypeChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCatchTypeChecker,
         )
 

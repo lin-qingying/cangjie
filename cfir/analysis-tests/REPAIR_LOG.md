@@ -6498,3 +6498,52 @@ XML为8547 → 8549 records，均为308 skipped（含一条聚合记录）。完
 - remaining failures: SolveTypeArgs已清零，Call/Generics/TypeInfer/Typealias及既有控制流目标保持通过；下一项继续用户新增的try表达式，Exception目录仍有4组共8条既有失败。
 - change isolation: 本项仅提交callee前置检查、未分析实参状态完成、新fixture、两套生成入口与日志；未改既有fixture期望，用户.idea及其它工作区改动独立保留。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（27s）；`git diff --check`通过。
+
+## 2026-09-12：try 资源、catch 模式和结果错误传播
+
+- problem type: Try expression / Resource checking order / Catch pattern typing / Visible result Join / Error propagation boundary。
+- prior repair review: 已复核日志中的unsafe结果传播、第34项结构类型Join、第48项候选快照、第49项discarded结果及第53项错误callee边界。本项补齐同一表达式和类型流水线；原unsafe子树遍历还缺少命名函数声明头部与正文之间的边界。
+- root cause: 资源协议检查位于晚期checker，错误绑定仍被后面的资源和正文当作有效值；Nothing又被普通子类型规则接受。catch缺少整体模式类型和已检查状态，可见Join失败不能正确传播，未分析的Try也可能被checker报告语义错误。Try只按分支尾值做commonSupertype，遗漏非尾和finally错误；invoke mapper在仅剩实参或签名已有错误时仍合成第二个调用错误。
+- official Cangjie evidence: build/repair-20260906/evidence中的54-family-*覆盖Exception原12份源码；54-fixture-catch_pattern_types、54-resource-types-final、54-try-visible-final-verified、54-fixture-unanalyzed_try_argument与新增4份源码逐一匹配。全部16份去标记源码均与保存的官方输入一致且无语法错误。54-resource-return/order/discarded-result/branch-joins验证Nothing、逐个资源失效、资源Try固定Unit及不做跨分支Join；单纯协议错误与初始化器错误不同，空正文的协议错误资源Try仍可具有Unit结果。
+- catch/result evidence: 54-catch-nothing/union和54-try-catch-semantics-corrected确认泛型catch合法、Nothing不可捕获、联合模式需要可见Join、首个错误模式之后不继续语义检查。54-try-result-semantics/result-error-propagation、54-try-error-boundaries确认目标类型、分支Join及finally错误传播。54-reg-resource-pipeline和54-try-invoke-errors确认错误实参不新增invoke诊断。
+- declaration boundary evidence: 54-try-function-declaration-boundaries与54-unsafe-function-boundaries证明命名函数正文错误不使外层结果失效，函数签名或lambda初始化器错误会使其失效；不能跳过整个函数声明，也不能把命名函数正文中的独立错误传播到外层Try。54-try-visible-final-verified包含这些正反例及错误selector场景。
+- official implementation: TypeCheckExpr/TryExpr.cpp:15-51逐资源检查，:80-125逐catch做可见Join且失败时保留前一个Join，:199-255按目标检查，:258-308处理finally及模式首错；TypeCheckPattern.cpp:585-625检查异常类型和整体模式Join；TypeCheckExpr/Block.cpp:11-40传播无效语句；TypeCheckDecl.cpp:60-86及TypeChecker.cpp:196-285区分函数签名与正文。
+- Kotlin counterpart files consulted: FirControlFlowStatementsResolveTransformer.kt:140-170的catch参数/body和数据流边界；FirCatchParameterChecker.kt的真实参数source；FirDeclarationsResolveTransformer.kt:991-1108的signature/body分层；FirExpressionsResolveTransformer.kt:852-890的block尾值；coneDiagnosticToFirDiagnostic.kt:163的ErrorTypeInArguments诊断所有权。仓颉的泛型catch合法性、可见Join和错误恢复顺序均依据官方仓颉。
+- CFIR owner files changed: CfirTree为catch加入nullable resolvedTypeRef，并支持替换声明类型列表及Try资源列表，生成代码同步；CfirResolutionSnapshot捕获并回滚模式检查状态。CfirExpressionsResolveTransformer在后续资源及正文之前检查资源，先检查catch模式再建立绑定，完成逐分支可见Join，并通过已有错误类型传播整体无效状态；共享子树遍历只排除命名函数body，保留声明头部和lambda初始化器。
+- diagnostic owners: CfirExpressionSemanticsChecker只消费已检查模式做覆盖判断，以catch.body.source定位Join错误；CommonExpressionCheckers移除晚期资源checker。ConeDiagnostic、CfirDiagnosticsList及生成诊断、默认消息、Cone mapper和DiagnosticNameMapper接入结构化CATCH_TYPE_MUST_EXTEND_EXCEPTION、MISMATCHING_CATCH_BLOCK及TYPE_MISMATCH。invoke mapper保留独立参数、数量、可见性和歧义诊断，仅在剩余原因都是已有错误时结束重复报告。
+- repair principle: 资源绑定、catch模式和Try结果在各自语义阶段完成有效性判断，已报告错误按声明边界传播，候选回滚恢复完整状态，checker统一收集诊断而不补做影响类型的晚期检查。
+- fixtures covered: Exception全目录err_catch_00、err_scope_00、err_scope_01、err_try_with_resources_00、exception_invalid_00、exception_ret_types、exception_test、exception_throw_02、invalid_try_catch_block、ok_try_with_resources_00、try_with_resource_01、try_with_resource_n；新增catch_pattern_types、resource_types、try_visible_results、unanalyzed_try_argument。Diagnostics2/Try全组及FuzzInvalidParse/invalid_try_with_resource2、This/unsafe、Call、FlowExpr、SolveTypeArgs、Effect、DiscardedBranchResults作为保护。
+- fixture corrections: exception_invalid_00中的联合模式改为整体TYPE_INCOMPATIBLE，范围为完整CjCatchParameter（包含括号）；err_try_with_resources_00的TYPE_MISMATCH覆盖整个x=return资源绑定。Diagnostics2的tryWithResourcesMultipleSpecs与tryWithResourcesRequiresResource由旧MISMATCHED_TYPES_BECAUSE改为TYPE_MISMATCH：54-diagnostics-resource-multiple/required均报告普通sema_mismatched_types，与原LLT/try_with_resource_n一致；全testData搜索确认旧工厂只出现在这两份文件。语义依据官方，范围依据项目政策和双入口raw builder/Kotlin参数source，源码语法均未改。
+- verification commands and outcome:
+  - CfirResolutionSnapshotTest 3/3通过，含同一快照重复恢复catch原typeRefs及未检查状态；原始XML保存在54-try-targeted/snapshot-unit-xml。
+  - `gradlew-queue.bat :cfir:analysis-tests:test`筛选完整Exception/Try/Effect/SolveTypeArgs/Call/FlowExpr/Unsafe、DiscardedBranchResults双入口及Diagnostics2/Try三入口，附加`--no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：54-try-final-targeted为547项531通过、10原有跳过、6既有失败，2m23s；对53 FIXED8、REGRESSED0、NEW8全通过、changed_failure_messages=[]。6条既有失败为Effect4及OptionalChain2。
+  - 首轮完整54-try-boundaries-full为8556项7800通过、449失败、307跳过，25m30s；4条状态回归仅为上述Diagnostics2旧期望，随后按官方证据修正并复验。更早主动中止的54-try-full.log未作为验收结果。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：54-try-final-full，18m27s正常结束。对53-callee-full：FIXED=8、REGRESSED=0、NEW_KEYS=8（全通过）、REMOVED_KEYS=0、其它状态变化=0。对54-try-boundaries-full恰好恢复4条Diagnostics2用例，全部其余测试状态和失败消息相同。最终验证期间源码diff未变化。
+  - 两条既有宏失败消息变化已单独核实：DefaultParameterPkg02/test.cj双入口的match(try...)少一处UNREACHABLE_PATTERN。54-try-erroneous-match-selector及TypeCheckMatchExpr.cpp:91-141确认只有selector类型有效时才检查模式；有效Try保留该警告，catch/finally已有错误使Try无效后不追加警告。新增正反例两入口通过，宏fixture未改；两项仍计为失败，不计入FIXED，其余443条既有失败消息完全相同。
+  - 最终全量中Exception34/34（32个语义用例及2个目录完整性检查）、SolveTypeArgs32/32、Call184/184、Generics680/680、TypeInfer76/76、Typealias92/92、FlowExpr40/40通过。If54、IfLetExpr100、WhileLetExpr64、Loops26、Match108及PatternMatching296也全部通过。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8548 | 8556 |
+| 通过 | 7788 | 7804 |
+| 失败 | 453 | 445 |
+| 跳过 | 307 | 307 |
+
+XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完整逐项证据为54-try-final-full、53-callee-full--54-try-final-full.json及54-try-boundaries-full--54-try-final-full.json。
+
+- remaining failures: 本轮SolveTypeArgs与Try目标已清零。其余445条失败按测试族统计如下，数量表示测试记录，不代表独立根因。
+
+| 剩余测试族 | 失败数 |
+| --- | ---: |
+| Macro（全部宏套件） | 250 |
+| Record | 35 |
+| ErrMsgs | 26 |
+| InitializationCheck | 20 |
+| Assign / Linkage / ConstraintCheck / Lambda | 各12 |
+| Ffi | 10 |
+| UnusedImport / OptionalChain | 各8 |
+| ExtendsImplementsInterfaceDuplicated / NonExhaustiveEnum / Array | 各6 |
+| Effect / Lookup | 各4 |
+| Box / Const / DesugarErrorReport / FuzzInvalidParse / IsOrAsExpr / Native / OptionalModifiers | 各2 |
+
+- change isolation: 本项提交上述共享实现、生成产物、4份新LLT fixture、4份原fixture的诊断期望修正、快照unit和日志；用户.idea及无实际diff的其它文件保持独立。未修改external参考源码。

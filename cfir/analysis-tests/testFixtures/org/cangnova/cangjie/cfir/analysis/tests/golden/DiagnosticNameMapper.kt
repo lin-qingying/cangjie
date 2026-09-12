@@ -222,6 +222,7 @@ object DiagnosticNameMapper {
 
         // ── Effects / Handle ──
         "MISMATCHING_HANDLE_BLOCK" to "sema_mismatching_handle_block",
+        "MISMATCHING_CATCH_BLOCK" to "sema_diag_report_error_message",
         "COMMAND_HANDLE_TYPE_ERROR" to "sema_command_handle_type_error",
         "RESUME_NO_WITH" to "sema_resume_no_with",
         "RESUME_THROWING_MISMATCH_TYPE" to "sema_resume_throwing_mismatch_type",
