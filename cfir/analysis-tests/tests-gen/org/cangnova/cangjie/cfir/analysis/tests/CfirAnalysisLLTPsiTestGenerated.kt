@@ -19718,6 +19718,18 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/I_any_0.cj")
         }
 
+        @TestMetadata("dependency_groups.cj")
+        @Test
+        fun testDependencyGroups() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/dependency_groups.cj")
+        }
+
+        @TestMetadata("dependent_upper_bounds.cj")
+        @Test
+        fun testDependentUpperBounds() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/dependent_upper_bounds.cj")
+        }
+
         @TestMetadata("f_bounded_1.cj")
         @Test
         fun testFBounded1() {
@@ -19754,6 +19766,18 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/invalid_case.cj")
         }
 
+        @TestMetadata("lambda_declared_input.cj")
+        @Test
+        fun testLambdaDeclaredInput() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/lambda_declared_input.cj")
+        }
+
+        @TestMetadata("lambda_parameter_order.cj")
+        @Test
+        fun testLambdaParameterOrder() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/lambda_parameter_order.cj")
+        }
+
         @TestMetadata("parameter_bound_edges.cj")
         @Test
         fun testParameterBoundEdges() {
@@ -19764,6 +19788,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testUnusedTyvar() {
             runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/unused_tyvar.cj")
+        }
+
+        @TestMetadata("visible_upper_meet.cj")
+        @Test
+        fun testVisibleUpperMeet() {
+            runTest("cfir/analysis-tests/testData/llt/solveTypeArgs/visible_upper_meet.cj")
         }
     }
 

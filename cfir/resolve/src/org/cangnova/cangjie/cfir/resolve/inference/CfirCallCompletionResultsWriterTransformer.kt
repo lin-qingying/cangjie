@@ -57,6 +57,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
+import org.cangnova.cangjie.cfir.resolve.calls.lambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.diagnostic.CallableReferenceFailureKind
 import org.cangnova.cangjie.cfir.resolve.calls.applyNoArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -1170,11 +1171,11 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     /**
-     * 补全阶段必须把已选候选的函数形参类型写回 lambda 参数。
+     * 补全阶段把已选候选的函数形参类型写回省略标注的 lambda 参数。
      *
      * Kotlin FIR 在 `FirCallCompleter.LambdaAnalyzerImpl` 中完成这一步；仓颉的
      * overload-by-lambda 会在候选回滚后再由 results writer 统一落树，因此这里
-     * 对同一份 expected function type 做最终写回，而不是让 checker 兜底放行。
+     * 对同一份 expected function type 做最终写回；显式参数保留官方 ChkFuncParam 的源码类型。
      */
     private fun rewriteAnonymousFunctionParameterTypes(
         anonymousFunction: CfirAnonymousFunction,
@@ -1188,7 +1189,18 @@ class CfirCallCompletionResultsWriterTransformer(
         anonymousFunction.replaceMatchingParameterFunctionType(expectedFunctionType)
         if (containingCallIsError) return
 
+        val parameterTypingFailure = anonymousFunction.lambdaParameterTypingFailure(session, expectedFunctionType)
         anonymousFunction.valueParameters.forEachIndexed { index, parameter ->
+            // 与首次body分析保持同一契约，补全不能用目标函数类型覆盖源码显式标注。
+            if (!parameter.hasOmittedLambdaParameterType()) return@forEachIndexed
+            if (parameterTypingFailure != null && index >= parameterTypingFailure.firstUncheckedParameterIndex) {
+                parameter.replaceReturnTypeRef(
+                    parameter.returnTypeRef.resolvedTypeFromPrototype(
+                        parameterTypingFailure.parameterErrorType, parameter.returnTypeRef.source,
+                    ),
+                )
+                return@forEachIndexed
+            }
             val parameterType = expectedFunctionType.parameterTypes.getOrNull(index)
                 ?.let(::finallySubstituteOrSelf)
                 ?.let(::approximateLambdaInputType)

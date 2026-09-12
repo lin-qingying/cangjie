@@ -804,6 +804,13 @@ class ConstraintSystemImpl(
     }
 
     // ConstraintInjector.Context, FixationOrderCalculator.Context
+    /** 向固定顺序策略提供原始约束，保留声明边的方向及来源。 */
+    override val initialConstraints: List<InitialConstraint>
+        get() {
+            checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
+            return storage.initialConstraints
+        }
+
     /**
      * 当前尚未固定的类型变量及其可变约束集合。
      */

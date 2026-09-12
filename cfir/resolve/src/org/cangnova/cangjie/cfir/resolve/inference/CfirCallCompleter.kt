@@ -6,6 +6,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
+import org.cangnova.cangjie.cfir.resolve.calls.CfirLambdaParameterTypingFailure
+import org.cangnova.cangjie.cfir.resolve.calls.lambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -1009,9 +1012,12 @@ class CfirCallCompleter(
             forOverloadByLambdaReturnType: Boolean,
         ): ReturnArgumentsAnalysisResult {
             val lambda = lambdaAtom.anonymousFunction
-            val expectedFunctionType = lambdaAtom.expectedType as? ConeFunctionType
+            val expectedFunctionType = lambdaAtom.expectedType
+                ?.let { candidate.system.buildCurrentSubstitutor().asCone().substituteOrSelf(it) }
+                ?.fullyExpandedType(session) as? ConeFunctionType
             lambda.replaceMatchingParameterFunctionType(expectedFunctionType)
-            rewriteLambdaParameterTypes(lambda.valueParameters, parameters, candidate, withPCLASession)
+            val parameterTypingFailure = expectedFunctionType?.let { lambda.lambdaParameterTypingFailure(session, it) }
+            rewriteLambdaParameterTypes(lambda.valueParameters, parameters, candidate, withPCLASession, parameterTypingFailure)
 
             val expectedReturnTypeRef = expectedReturnType?.let { returnType ->
                 lambda.returnTypeRef.resolvedTypeFromPrototype(
@@ -1113,18 +1119,30 @@ class CfirCallCompleter(
         }
 
         /**
-         * 用推断出的输入类型重写 lambda 形参类型引用。
+         * 用推断出的输入类型填写省略标注的 lambda 形参。
          *
-         * 缺失的输入类型会写入 `ConeCannotInferValueParameterType`，其余类型会先按 lambda 输入位点近似，
-         * 再根据原始形参是否显式写类型决定是创建新 resolved type ref 还是沿用原型 source/delegation。
+         * 显式参数已按源码解析并作为约束输入，不能被目标类型覆盖。省略参数的输入类型先按
+         * lambda 输入位点近似；缺失的输入类型写入 `ConeCannotInferValueParameterType`。
          */
         private fun rewriteLambdaParameterTypes(
             parameters: List<CfirValueParameter>,
             inferredTypes: List<ConeCangJieType>,
             candidate: Candidate,
             withPCLASession: Boolean,
+            parameterTypingFailure: CfirLambdaParameterTypingFailure?,
         ) {
             parameters.forEachIndexed { index, parameter ->
+                // 官方ChkFuncParam对显式标注始终保留fp.type->ty；目标类型只填充省略参数。
+                // 外层推断失败属于调用，不能把该错误写入合法的源码参数类型。
+                if (!parameter.hasOmittedLambdaParameterType()) return@forEachIndexed
+                if (parameterTypingFailure != null && index >= parameterTypingFailure.firstUncheckedParameterIndex) {
+                    parameter.replaceReturnTypeRef(
+                        parameter.returnTypeRef.resolvedTypeFromPrototype(
+                            parameterTypingFailure.parameterErrorType, parameter.returnTypeRef.source,
+                        ),
+                    )
+                    return@forEachIndexed
+                }
                 if (index >= inferredTypes.size) {
                     parameter.replaceReturnTypeRef(
                         buildErrorTypeRef {

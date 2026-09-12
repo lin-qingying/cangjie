@@ -24,6 +24,7 @@ import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 import org.cangnova.cangjie.type.model.TypeSystemInferenceExtensionContext
+import org.cangnova.cangjie.type.model.TypeVariableInferenceScope
 
 /**
  * 参与重载消歧的候选平铺签名。
@@ -1422,10 +1423,11 @@ private class ConeSimpleConstraintSystemImpl(
     override fun registerTypeVariables(typeParameters: Collection<TypeParameterMarker>): TypeSubstitutorMarker {
         val builder = system.getBuilder()
         val substitutionMap = linkedMapOf<org.cangnova.cangjie.type.model.TypeConstructorMarker, ConeCangJieType>()
+        val inferenceScope = TypeVariableInferenceScope()
 
         for (typeParameter in typeParameters) {
             require(typeParameter is ConeTypeParameterLookupTag)
-            val variable = ConeTypeParameterBasedTypeVariable(typeParameter.typeParameterSymbol)
+            val variable = ConeTypeParameterBasedTypeVariable(typeParameter.typeParameterSymbol, inferenceScope)
             builder.registerVariable(variable)
             substitutionMap[typeParameter] = variable.defaultType
         }

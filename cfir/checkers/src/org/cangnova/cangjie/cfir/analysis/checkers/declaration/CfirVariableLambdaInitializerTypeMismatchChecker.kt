@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.functionTypeForLambdaShape
-import org.cangnova.cangjie.cfir.analysis.checkers.hasOmittedLambdaParameterType
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration

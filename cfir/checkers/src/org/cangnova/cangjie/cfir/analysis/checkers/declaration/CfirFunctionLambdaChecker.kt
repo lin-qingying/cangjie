@@ -3,7 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.explicitLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.firstOmittedLambdaParameterForInferenceFailure
-import org.cangnova.cangjie.cfir.analysis.checkers.hasOmittedLambdaParameterType
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isExpressionForAnonymousFunction
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -58,9 +58,8 @@ object CfirLambdaParameterTypeChecker : CfirAnonymousFunctionChecker() {
     /**
      * 报告 lambda 头部与目标函数类型之间的最终形状错误。
      *
-     * resolve 阶段可能为了继续分析 body 而把目标参数类型写回 lambda 参数；
-     * 因此这里要通过 resolved type ref 的 delegated 原型取回源码显式类型，再按官方
-     * `ChkLamParamTys` 规则决定报告参数列表、参数本身还是整个 lambda。
+     * 显式标注始终保留源码类型；通过 delegated 原型读取可避免把中间替换视图当作标注。
+     * 按官方 `ChkLamParamTys` 规则，将首个错误归属到参数列表、参数本身或整个 lambda。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun CfirAnonymousFunction.reportLambdaParameterShapeDiagnostic(): Boolean {

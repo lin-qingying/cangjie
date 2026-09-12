@@ -170,15 +170,19 @@ class MutableVariableWithConstraints private constructor(
      * 3. 否则追加新约束到列表。
      */
     fun addConstraint(constraint: Constraint, inferenceLogger: InferenceLogger?): Pair<Constraint, Boolean> {
-        for (previousConstraint in getConstraintsWithSameTypeHashCode(constraint)) {
+        val previousConstraints = getConstraintsWithSameTypeHashCode(constraint)
+        // 必须先在全部同类型约束中查找覆盖关系。若跨调用来源在前、局部来源在后，
+        // 遇到前者就合成新等式会不断追加已有的局部等式，导致 incorporation 无法收敛。
+        for (previousConstraint in previousConstraints) {
+            if (previousConstraint.type == constraint.type &&
+                previousConstraint.isNoInfer == constraint.isNoInfer &&
+                newConstraintIsUseless(previousConstraint, constraint)
+            ) return previousConstraint to false
+        }
+        for (previousConstraint in previousConstraints) {
             if (previousConstraint.type == constraint.type
                 && previousConstraint.isNoInfer == constraint.isNoInfer
             ) {
-                // 新约束被旧约束完全覆盖，直接丢弃
-                if (newConstraintIsUseless(previousConstraint, constraint)) {
-                    return previousConstraint to false
-                }
-
                 // 判断是否满足合并为 EQUALITY 的条件（LOWER + UPPER 或已经是 EQUALITY）
                 val isMatchingForSimplification = when (previousConstraint.kind) {
                     ConstraintKind.LOWER -> constraint.kind.isUpper()
@@ -197,6 +201,7 @@ class MutableVariableWithConstraints private constructor(
                             constraint.typeHashCode,
                             derivedFrom = constraint.derivedFrom,
                             isNoInfer = constraint.isNoInfer,
+                            isLocalToInferenceScope = constraint.isLocalToInferenceScope || previousConstraint.isLocalToInferenceScope,
                         ).also {
                             // 记录推断日志：该 EQUALITY 约束由哪两条约束合并而来
                             inferenceLogger?.withOrigins(
@@ -269,6 +274,8 @@ class MutableVariableWithConstraints private constructor(
      * 其余情况按 kind 判断：EQUALITY 覆盖一切；LOWER/UPPER 覆盖同方向约束。
      */
     private fun newConstraintIsUseless(old: Constraint, new: Constraint): Boolean {
+        // 同一关系后来获得局部推导时，必须保留该来源；跨调用的旧推导不能覆盖它。
+        if (new.isLocalToInferenceScope && !old.isLocalToInferenceScope) return false
         // 用户定义约束优先于 DeclaredUpperBound 约束
         if (old.position.from is DeclaredUpperBoundConstraintPosition<*> && new.position.from !is DeclaredUpperBoundConstraintPosition<*>)
             return false
@@ -316,7 +323,9 @@ class MutableVariableWithConstraints private constructor(
      */
     private fun isUsefulConstraint(constraint: Constraint, equalityConstraints: Map<Int, List<Constraint>>): Boolean {
         if (constraint.kind == ConstraintKind.EQUALITY) return true
-        return equalityConstraints[constraint.typeHashCode]?.none { it.type == constraint.type } ?: true
+        return equalityConstraints[constraint.typeHashCode]?.none {
+            it.type == constraint.type && (!constraint.isLocalToInferenceScope || it.isLocalToInferenceScope)
+        } ?: true
     }
 
     /**
