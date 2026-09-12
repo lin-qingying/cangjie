@@ -2,7 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -13,7 +13,6 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 
 /**
  * Lambda 参数推断失败的共享判定。
@@ -37,20 +36,10 @@ internal fun CfirAnonymousFunction.hasUninferredOmittedLambdaParameterType(): Bo
     firstOmittedLambdaParameterForInferenceFailure() != null
 
 /**
- * 判断参数类型是否来自源码省略，而不是显式类型标注。
- */
-internal fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean {
-    if (isLambdaParameterTypeOmitted == true) return true
-    if (returnTypeRef is CfirImplicitTypeRef) return true
-    return returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter
-}
-
-/**
  * 取得源码显式写出的 lambda 参数类型。
  *
- * Completion 会把目标函数参数类型写回 lambda header，并把旧 type-ref 挂到 delegated
- * 链上；重载和 PCLA 场景可能多次写回。形状诊断必须追溯到最初解析自源码的显式类型，
- * 不能把最近一次写回的 expected type 当作用户标注。
+ * 类型引用可能经过多次解析和替换，并把原型保留在 delegated 链中。形状诊断追溯到
+ * 最初解析自源码的显式类型，不能把后续阶段的中间类型视图当作用户标注。
  */
 internal fun CfirValueParameter.explicitLambdaParameterType(): ConeCangJieType? {
     if (hasOmittedLambdaParameterType()) return null

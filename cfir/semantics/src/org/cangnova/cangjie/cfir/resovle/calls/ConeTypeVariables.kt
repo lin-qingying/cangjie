@@ -4,6 +4,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.type.model.TypeVariableInferenceScope
+import org.cangnova.cangjie.type.model.TypeVariableWithInferenceScope
 
 /**
  * 延迟解析原子对应的临时类型变量。
@@ -33,5 +35,8 @@ class ConeTypeParameterBasedTypeVariable(
     /**
      * 被转换为约束系统类型变量的类型参数符号。
      */
-    val typeParameterSymbol: CfirTypeParameterSymbol
-) : ConeTypeVariable(SpecialNames.safeIdentifier(typeParameterSymbol.name).identifier, typeParameterSymbol.toLookupTag())
+    val typeParameterSymbol: CfirTypeParameterSymbol,
+    /** 当前调用实例化的求解范围，不能用声明或参数名替代。 */
+    override val inferenceScope: TypeVariableInferenceScope,
+) : ConeTypeVariable(SpecialNames.safeIdentifier(typeParameterSymbol.name).identifier, typeParameterSymbol.toLookupTag()),
+    TypeVariableWithInferenceScope

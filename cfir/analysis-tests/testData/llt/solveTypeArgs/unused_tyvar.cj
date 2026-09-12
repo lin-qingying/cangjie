@@ -9,7 +9,7 @@ interface M6_<T> {}
 
 interface M7_<T> {}
 
-func test<T0_, T1_>(i: ((T0_) -> T1_)) where T0_ <: M0_<T1_>, T1_ <: M6_<<!UNRESOLVED_REFERENCE!>T3_<!>>, <!UNRESOLVED_REFERENCE!>T3_<!> <: M1_<<!UNRESOLVED_REFERENCE!>T3_<!>> {
+func test<T0_, T1_>(i: ((T0_) -> T1_)) where T0_ <: M0_<T1_>, T1_ <: M6_<<!UNDECLARED_TYPE_NAME!>T3_<!>>, <!UNDECLARED_TYPE_NAME!>T3_<!> <: M1_<<!UNDECLARED_TYPE_NAME!>T3_<!>> {
     0
 }
 
@@ -22,5 +22,5 @@ interface I3_ <: M1_<I3_> {}
 open class G1_ <: I1_ {}
 
 main() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>test({i: M0_<I1_> => G1_()})<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>test<!>({i: M0_<I1_> => G1_()})
 }

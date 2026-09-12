@@ -173,7 +173,14 @@ val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variable
                     AbstractTypeChecker.isSubtypeOf(c, resultTypeFromDirection, resultTypeFromEqualConstraint) -> resultTypeFromDirection
             else -> resultTypeFromEqualConstraint
         }
-        if (resultType != null) return resultType
+        if (resultType != null) {
+            // 官方FindSolution也要求上界Meet可表示；没有具体下界可选时，不能把两个
+            // 不相容名义上界的内部intersection发布为推断实参。具体下界满足两者时仍正常采用。
+            if (!allowIntersectionResult && resultType.typeConstructor().isIntersection()) {
+                return c.createErrorType(SOLVER_FAILURE_MARKER, null)
+            }
+            return resultType
+        }
 
         // 存在 proper 约束却仍无法确定结果类型（约束矛盾或互斥候选），且不是被特性
         // 开关允许的交集场景时，报告推断失败，由固定阶段生成 UNABLE_TO_INFER_GENERIC_FUNC。

@@ -224,9 +224,9 @@ class ConstraintSystemCompleter(
 
             if (completionMode.fixNotInferredTypeVariablesToErrorType) {
                 // Stage 8：对无法推断的类型变量报告"信息不足"错误
-                reportNotEnoughTypeInformation(
+                if (reportNotEnoughTypeInformation(
                     completionMode, topLevelAtoms, topLevelType, postponedArguments,
-                )
+                )) continue
             }
 
             // Stage 9：强制分析剩余未分析的函数类型相关延迟参数并重新执行各阶段
@@ -386,13 +386,21 @@ class ConstraintSystemCompleter(
         topLevelAtoms: List<ConeResolutionAtom>,
         topLevelType: ConeCangJieType,
         postponedArguments: List<ConePostponedResolvedAtom>,
-    ) {
+    ): Boolean {
         while (true) {
             val variableForFixation =
                 findFirstVariableForFixation(topLevelAtoms, postponedArguments, completionMode, topLevelType)
-                    ?: break
-            assert(!variableForFixation.isReady) {
-                "At this stage there should be no remaining variables with proper constraints"
+                    ?: return false
+            // 延迟分析或错误恢复可能刚刚解除依赖，交回正常完成循环处理新就绪变量。
+            if (variableForFixation.isReady) return true
+            if (variableForFixation.dependencyBlockedVariables.isNotEmpty()) {
+                // 官方不能选出依赖组时保留整组未解状态。恢复用错误类型不能成为
+                // 剩余变量的求解证据，否则会因逐个注入错误而偶然解开原本不可解的环。
+                for (variable in variableForFixation.dependencyBlockedVariables) {
+                    val constraints = notFixedTypeVariables[variable] ?: continue
+                    processVariableWhenNotEnoughInformation(constraints, topLevelAtoms)
+                }
+                continue
             }
             val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
             processVariableWhenNotEnoughInformation(variableWithConstraints, topLevelAtoms)

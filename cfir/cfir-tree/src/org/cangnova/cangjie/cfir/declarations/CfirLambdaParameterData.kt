@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 
 /**
  * Lambda 形参是否省略了源码类型标注。
@@ -13,6 +15,12 @@ private object LambdaParameterTypeOmittedKey : CfirDeclarationDataKey()
 
 var CfirValueParameter.isLambdaParameterTypeOmitted: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaParameterTypeOmittedKey)
+
+/** 统一读取源码省略信息；编译器合成参数尚无raw标记时，使用其隐式type-ref/source种类。 */
+fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
+    isLambdaParameterTypeOmitted
+        ?: (returnTypeRef is CfirImplicitTypeRef ||
+                returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
 
 /**
  * Lambda 头部诊断使用的目标函数类型。

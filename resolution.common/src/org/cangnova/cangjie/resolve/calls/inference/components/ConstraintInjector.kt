@@ -447,6 +447,10 @@ class ConstraintInjector(
          */
         private var currentDerivedFromSet: Set<TypeVariableMarker> = emptySet()
 
+        /** 当前传播消去的变量范围；无范围的传播也必须与直接输入约束区分。 */
+        private var currentDependencyScope: TypeVariableInferenceScope? = null
+        private var isIncorporatingConstraint = false
+
         /**
          * 取出并清空当前批次普通新增约束。
          */
@@ -642,7 +646,9 @@ class ConstraintInjector(
                 ConstraintContext(
                     kind = kind,
                     derivedFrom = currentDerivedFromSet,
-                    isNoInfer = isNoInfer
+                    isNoInfer = isNoInfer,
+                    dependencyScope = currentDependencyScope,
+                    isIncorporated = isIncorporatingConstraint,
                 )
             )
         }
@@ -656,7 +662,8 @@ class ConstraintInjector(
             upperType: CangJieTypeMarker,
             newDerivedFrom: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
-            isNoInfer: Boolean
+            isNoInfer: Boolean,
+            dependencyScope: TypeVariableInferenceScope?,
         ) = with(c) {
             // Avoid checking trivial incorporated constraints
             if (lowerType == upperType) return
@@ -665,6 +672,7 @@ class ConstraintInjector(
                     newDerivedFromSet = newDerivedFrom,
                     isFromDeclaredUpperBound = isFromDeclaredUpperBound,
                     isNoInfer = isNoInfer,
+                    dependencyScope = dependencyScope,
                 ) {
                     runIsSubtypeOf(lowerType, upperType, )
                 }
@@ -678,6 +686,7 @@ class ConstraintInjector(
             newDerivedFromSet: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
             isNoInfer: Boolean,
+            dependencyScope: TypeVariableInferenceScope?,
             b: () -> Unit,
         ) {
             // No immediate recursive incorporation should happen, so `currentDerivedFromSet` would be reset at "finally"
@@ -685,12 +694,16 @@ class ConstraintInjector(
 
             try {
                 currentDerivedFromSet = newDerivedFromSet
+                currentDependencyScope = dependencyScope
+                isIncorporatingConstraint = true
                 isIncorporatingConstraintFromDeclaredUpperBound = isFromDeclaredUpperBound
                 isIncorporatingConstraintFromNoInfer = isNoInfer
                 b()
             } finally {
                 // NB: `emptySet()` returns a singleton, so no excessive memory here
                 currentDerivedFromSet = emptySet()
+                currentDependencyScope = null
+                isIncorporatingConstraint = false
                 isIncorporatingConstraintFromDeclaredUpperBound = false
                 isIncorporatingConstraintFromNoInfer = false
             }
@@ -724,6 +737,9 @@ class ConstraintInjector(
                 derivedFrom = derivedFrom,
                 isNoInfer = isNoInfer || isIncorporatingConstraintFromNoInfer,
                 inputTypePositionBeforeIncorporation = inputTypePosition,
+                isLocalToInferenceScope = !constraintContext.isIncorporated ||
+                        (constraintContext.dependencyScope != null &&
+                                constraintContext.dependencyScope === (typeVariable as? TypeVariableWithInferenceScope)?.inferenceScope),
             )
 
             addPossibleNewConstraint(typeVariable, newConstraint)
@@ -802,6 +818,10 @@ data class ConstraintContext(
      * 新约束是否携带 NoInfer 语义。
      */
     val isNoInfer: Boolean,
+    /** 是否来自消去变量的传播；直接输入尚未跨越任何实例化边界。 */
+    val isIncorporated: Boolean = false,
+    /** 传播仍可归属的局部求解范围；null 表示传播跨越了该边界。 */
+    val dependencyScope: TypeVariableInferenceScope? = null,
 )
 
 /**

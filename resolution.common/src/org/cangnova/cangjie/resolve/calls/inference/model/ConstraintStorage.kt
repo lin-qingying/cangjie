@@ -266,6 +266,11 @@ class Constraint(
      * incorporation 前的 OnlyInputType 位置。
      */
     val inputTypePositionBeforeIncorporation: OnlyInputTypeConstraintPosition? = null,
+    /**
+     * 此关系是否可在所属变量的实例化范围内导出。
+     * 跨调用传播仍用于求解与检查，但不能把消去外来变量所得的关系变成局部依赖环。
+     */
+    val isLocalToInferenceScope: Boolean = true,
 ) {
     /**
      * 按约束方向、来源位置与约束类型判断结构相等。
@@ -279,6 +284,7 @@ class Constraint(
         if (typeHashCode != other.typeHashCode) return false
         if (kind != other.kind) return false
         if (position != other.position) return false
+        if (isLocalToInferenceScope != other.isLocalToInferenceScope) return false
         if (type != other.type) return false
 
         return true

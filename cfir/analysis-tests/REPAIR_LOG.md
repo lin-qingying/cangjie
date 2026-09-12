@@ -6437,3 +6437,36 @@ XML为8535 → 8537 records，均为308 skipped（含一条聚合记录）。逐
 - remaining failures: SolveTypeArgs剩f_bounded_3、f_bounded_4、unused_tyvar、invalid_case各双入口，共8项；其它455项既有失败未变。先前已清零的控制流、模式及普通Call/Generics/TypeInfer/Typealias组保持通过。
 - change isolation: 本项仅提交上界关系初始化、显式约束诊断来源、新fixture、两套生成入口与日志；用户.idea改动保持独立。
 - submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（11s）；`git diff --check`通过。
+
+## 2026-09-12：局部类型实参依赖求解与 lambda 输入契约
+
+- problem type: Type Inference / Local dependency groups / Visible upper Meet / Lambda parameter typing。
+- root cause: 固定变量只依据局部 proper 约束，缺少官方有向依赖分组，因此复杂互依上界被错误求解，依赖上界也会按错误顺序收束。FIR共享约束系统同时包含嵌套调用、函数引用和PCLA变量，不能将整个系统当成一次局部实例化；消去外来变量所得的传递关系也不能变为当前实例化的原始依赖。最终上界Meet还可能发布内部intersection。lambda参数写回覆盖源码显式标注，并在头部首错后继续填充后续参数，破坏官方的类型及检查顺序。
+- official Cangjie evidence: build/repair-20260906/evidence保留52-dependency-groups、52-dependent-upper-bounds、52-visible-upper-meet、52-lambda-declared-input、52-lambda-parameter-order-final及51-unused-tyvar的cjc源码、命令和原始诊断。自递归、独立递归、单向依赖和简单环合法，复杂coupled隐式调用失败而显式实例化成功；依赖函数上界不能用先固定输入类型反向覆盖输出下界；无具体下界时多个无唯一名义Meet的上界不能形成隐式实参。所有新增fixture均已由cjc确认语法合法。
+- official implementation: LocalTypeArgumentSynthesis.cpp:694-723以当前argPack.tyVarsToSolve构造TyVarConstraintGraph，先TopoOnce再FindSolution；:956-1058先取零入度组，否则从入度一结点寻找递归组；:780起先可见Join下界、再可见Meet上界。PreCheck.cpp的ExposeGenericUpperBounds传递名义/结构上界而非任意反向参数边。TypeCheckDecl.cpp:738-762的ChkFuncParam保留显式标注；TypeCheckExpr/LambdaExpr.cpp:337-365/377-405按源码顺序检查参数，首错退出参数检查，正文仍检查独立错误。
+- lambda error boundaries: 52-lambda-header-order/52-lambda-header-return-order与52-reg-lambda16/17证明错误在首个参数时后续省略参数保持invalid，错误在最后参数时前缀已检查，正文运算错误仍报告；参数数量或类型错误也不能屏蔽独立的正文返回错误。源码是否省略标注与当前类型是否已推断是不同事实。
+- Kotlin counterpart files consulted: VariableFixationFinder.kt、TypeVariableDependencyInformationProvider.kt与ConstraintIncorporator/ConstraintInjector的共享约束存储及readiness结构；FirCallCompleter.kt的LambdaAnalyzerImpl参数写回、PostponedArgumentsAnalyzer.kt的body约束回流；FirFunctionReturnTypeMismatchChecker.kt的返回诊断所有权。实例化有向分组及首错参数前缀来自官方仓颉，未引入Kotlin语言特有规则。
+- CFIR owner files changed: common新增TypeVariableInferenceScope/TypeVariableWithInferenceScope，由CfirCreateFreshTypeVariableSubstitutorStage及签名比较注册各次实例化身份。resolution.common新增CangjieTypeVariableDependencyGraph；VariableFixationFinder按范围选组后统一readiness调度，ConstraintSystemImpl提供原始initialConstraints。Constraint/ConstraintContext及injector/incorporator记录局部推导来源，跨范围关系仍完整参与类型求解；MutableVariableWithConstraints先查找全部覆盖约束再合并，保证后到局部证明去重且事务可回滚。ConstraintSystemCompleter整体结束被阻断的组并重入新就绪变量；ResultTypeResolver验证最终Meet可表示。
+- lambda owners: cfir-tree的hasOmittedLambdaParameterType统一源码省略事实；semantics的lambdaParameterTypingFailure共享头部首错及未检查后缀；CfirCallCompleter与completion writer只填省略参数，向未检查后缀传播原头部错误；ArgumentCheckingProcessor复用规则。CfirFunctionBodyTypeMismatchChecker按源码省略事实决定正文检查模式，保留独立返回错误。
+- repair principle: 约束共享不能抹去实例化范围及原始依赖来源；最终类型必须可表示，lambda检查顺序必须由源码契约决定。
+- fixtures covered: solveTypeArgs全部原用例，重点f_bounded_2/3/4、unused_tyvar和parameter_bound_edges；新增dependency_groups、dependent_upper_bounds、visible_upper_meet、lambda_declared_input、lambda_parameter_order。保护generics/function20_unitRetType_test3、PatternMatching/EnumPattern/usertype_03/04/05、type_infer/recursive_enum_constructor、lambda_param_03/09、lambda/lambda16/17、lambda/test_fold及discarded_branch_results。TestFold两入口也恢复通过，52-test-fold官方cjc成功；这些既有保护用例均未改期望。
+- fixture correction: unused_tyvar中三个未声明T3_的类型位置改为UNDECLARED_TYPE_NAME，调用诊断覆盖完整test标识符；依据51-unused-tyvar官方输出和项目范围政策，源码语法未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:resolve:test`筛选CfirConstraintInferenceScopeTest、CfirConstraintSystemFoundationTest、CfirConstraintStoreTest、CfirConstraintGraphTest：17/17通过。新3项验证嵌套等式收敛、跨调用传播保留与局部来源去重、失败候选事务回滚；XML保存于52-scoped-dependencies-targeted-verified/constraint-unit-xml。
+  - 52-scoped-dependencies-targeted-verified：50项48通过/2既有invalid_case失败；新增及此前回归保护全部通过。最后lambda正文边界验证52-lambda-body-targeted：36项34通过/2既有失败。
+  - `gradlew-queue.bat :cfir:analysis-tests:test`筛选SolveTypeArgs/Generics/TypeInfer/Typealias/Call/ConstraintCheck/Lambda/Function/PatternMatching/Match/If/While/Loops及Diagnostics两入口：52-scoped-dependencies-family-final为3687项3353通过/28既有失败/306跳过，9m37s完成；对51 FIXED8、REGRESSED0、NEW_KEYS10全部通过、changed_failure_messages=[]。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g'`：52-scoped-dependencies-full，24m53s正常完成。对51-parameter-edges-full：FIXED=8、REGRESSED=0、NEW_KEYS=10（全通过）、REMOVED_KEYS=0、其它状态变化=0。
+  - 两条既有ErrMsgs/type_arg_infer5失败消息变化已核实：恢复了原先漏报的g调用推断失败。52-type-arg-infer5官方恰好报告声明R上界错误与g调用推断失败；fixture仍保留旧的声明及调用范围差异，因此两项仍计为失败，不计入FIXED。其余453条既有失败消息相同。
+
+| 指标（Gradle） | 修复前 | 修复后 |
+| --- | ---: | ---: |
+| 测试总数 | 8536 | 8546 |
+| 通过 | 7766 | 7784 |
+| 失败 | 463 | 455 |
+| 跳过 | 307 | 307 |
+
+XML为8537 → 8547 records，均为308 skipped（含一条聚合记录）。完整逐项证据为52-scoped-dependencies-full及51-parameter-edges-full--52-scoped-dependencies-full.json。
+
+- remaining failures: SolveTypeArgs仅剩invalid_case双入口，属于错误callee实参提前分析；另有453项既有失败。用户追加的try表达式范围已单独完成官方取证，尚未混入本项源码。
+- change isolation: 本项提交上述共享实现、5份新LLT fixture、unused_tyvar期望修正、两套生成入口、3条约束unit与日志；用户.idea及无实际diff的其它文件保持独立。全量后仅删除一条已证实未使用的import。
+- submission checks: `gradlew-queue.bat validateDocumentation --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx512m'` BUILD SUCCESSFUL（11s）；`git diff --check`通过。

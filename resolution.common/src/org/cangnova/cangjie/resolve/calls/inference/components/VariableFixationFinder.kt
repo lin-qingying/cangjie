@@ -53,6 +53,9 @@ class VariableFixationFinder(
          */
         val fixedTypeVariables: Map<TypeConstructorMarker, CangJieTypeMarker>
 
+        /** 原始声明及调用约束；有向求解图不能使用 incorporation 生成的反向声明边代替它们。 */
+        val initialConstraints: List<InitialConstraint>
+
         /**
          * 尚需延迟处理的类型变量。
          */
@@ -119,6 +122,8 @@ class VariableFixationFinder(
          * 候选变量是否依赖外层约束系统变量。
          */
         private val hasDependencyOnOuterTypeVariable: Boolean = false,
+        /** 整组变量受有向依赖阻断，最终失败时应一起结束求解，避免错误替换改变分组结论。 */
+        val dependencyBlockedVariables: List<TypeConstructorMarker> = emptyList(),
     ) {
         /**
          * 候选变量当前是否可以直接固定。
@@ -172,9 +177,37 @@ class VariableFixationFinder(
             languageVersionSettings,
         )
 
-        val candidate = variableReadinessCalculator.chooseBestTypeVariableCandidateWithLogging(allTypeVariables, dependencyProvider)
-            ?: return null
-        return variableReadinessCalculator.prepareVariableForFixation(candidate, dependencyProvider)
+        val orderedVariables = allTypeVariables.distinct().filter { it in c.notFixedTypeVariables }
+        if (orderedVariables.isEmpty()) return null
+        // FIR 可把多次调用及 PCLA 占位合并进同一系统；官方 TopoOnce 的求解集合
+        // 只属于一次实例化。先各自选组，再沿原 readiness 顺序调度跨调用约束的固定。
+        val byScope = orderedVariables.groupBy {
+            (c.notFixedTypeVariables.getValue(it).typeVariable as? TypeVariableWithInferenceScope)?.inferenceScope
+        }
+        val allowedVariables = linkedSetOf<TypeConstructorMarker>()
+        var blockedGroup: List<TypeConstructorMarker>? = null
+        for ((scope, variables) in byScope) {
+            val group = if (scope == null) variables else CangjieTypeVariableDependencyGraph(c, variables).nextGroup()
+            if (group.isEmpty()) {
+                if (blockedGroup == null) blockedGroup = variables
+            } else {
+                allowedVariables.addAll(group)
+            }
+        }
+        val candidate = variableReadinessCalculator.chooseBestTypeVariableCandidateWithLogging(
+            orderedVariables.filter { it in allowedVariables }, dependencyProvider,
+        )
+        val variableForFixation = candidate?.let {
+            variableReadinessCalculator.prepareVariableForFixation(it, dependencyProvider)
+        }
+        if (variableForFixation?.isReady != true && blockedGroup != null) {
+            return VariableForFixation(
+                variable = blockedGroup.first(),
+                hasProperConstraint = false,
+                dependencyBlockedVariables = blockedGroup,
+            )
+        }
+        return variableForFixation
     }
 }
 

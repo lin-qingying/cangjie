@@ -5,15 +5,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.isLambdaParameterTypeOmitted
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
-import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterCountMismatch
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -99,7 +96,6 @@ import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgument
 import org.cangnova.cangjie.resolve.calls.inference.model.ArgumentConstraintPosition
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -1453,7 +1449,7 @@ internal object ArgumentCheckingProcessor {
                 ).also(csBuilder::registerVariable).defaultType
         }
         val shapeDiagnostic = expectedFunctionType
-            ?.let { lambdaParameterShapeDiagnostic(anonymousFunction, it, declaredParameterTypes) }
+            ?.let { anonymousFunction.lambdaParameterTypingFailure(session, it)?.diagnostic }
         if (shapeDiagnostic != null) {
             anonymousFunction.lambdaParameterShapeExpectedFunctionType = expectedFunctionType
         }
@@ -1534,56 +1530,6 @@ internal object ArgumentCheckingProcessor {
 
         return resolvedAtom
     }
-
-    /**
-     * 检查 lambda 头部与目标函数类型的形状规则。
-     *
-     * 官方 `ChkLamParamTys` 先处理参数个数，再处理显式参数类型。含省略参数时，
-     * 这些错误要作为 lambda 头部错误释放，不能退化成参数类型注解缺失或 body 级联错误。
-     */
-    private fun ArgumentContext.lambdaParameterShapeDiagnostic(
-        anonymousFunction: CfirAnonymousFunction,
-        expectedFunctionType: ConeFunctionType,
-        declaredParameterTypes: List<ConeCangJieType>,
-    ): ResolutionDiagnostic? {
-        val valueParameters = anonymousFunction.valueParameters
-        val hasOmittedParameterType = valueParameters.any { it.hasOmittedLambdaParameterType() }
-
-        if (valueParameters.size != expectedFunctionType.parameterTypes.size) {
-            return if (hasOmittedParameterType) {
-                LambdaParameterCountMismatch(
-                    anonymousFunction = anonymousFunction,
-                    expectedCount = expectedFunctionType.parameterTypes.size,
-                    actualCount = valueParameters.size,
-                )
-            } else {
-                null
-            }
-        }
-
-        if (!hasOmittedParameterType) return null
-        valueParameters.forEachIndexed { index, parameter ->
-            if (parameter.hasOmittedLambdaParameterType()) return@forEachIndexed
-            val actualType = declaredParameterTypes.getOrNull(index) ?: return@forEachIndexed
-            val expectedType = expectedFunctionType.parameterTypes.getOrNull(index) ?: return@forEachIndexed
-            if (actualType is ConeErrorType || expectedType is ConeErrorType) return@forEachIndexed
-            if (!isLambdaTargetParameterSubtypeOfAnnotation(session, expectedType, actualType)) {
-                return LambdaParameterTypeMismatch(
-                    anonymousFunction = anonymousFunction,
-                    parameter = parameter,
-                    expectedType = expectedType,
-                    actualType = actualType,
-                )
-            }
-        }
-
-        return null
-    }
-
-    /** 源码中是否省略了 lambda 参数类型。 */
-    private fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
-        isLambdaParameterTypeOmitted == true ||
-                returnTypeRef.source?.kind == CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter
 
     /**
      * 将 postponed child atom 的表达式读取为匿名函数表达式。

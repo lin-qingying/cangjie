@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -68,7 +69,9 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         }
         if (
             containingFunction is CfirAnonymousFunction &&
-            !containingFunction.hasUninferredOmittedLambdaParameterType() &&
+            // 官方只有全显式 lambda 才在头部失败后改为综合整个函数类型。
+            // 是否省略标注来自源码；错误恢复写入的类型不能改变正文检查的模式。
+            containingFunction.valueParameters.none { it.hasOmittedLambdaParameterType() } &&
             containingFunction.hasLambdaShapeDiagnosticForBodyTypeCheck(context)
         ) {
             return

@@ -53,6 +53,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.typeAliasConstructorInfo
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
+import org.cangnova.cangjie.type.model.TypeVariableInferenceScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
@@ -199,7 +200,8 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         knownSubstitutions: Map<TypeConstructorMarker, ConeCangJieType>,
         csBuilder: ConstraintSystemOperation,
     ): Pair<ConeSubstitutor, List<ConeTypeVariable>> {
-        val freshTypeVariables = typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol) }
+        val inferenceScope = TypeVariableInferenceScope()
+        val freshTypeVariables = typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol, inferenceScope) }
 
         val useSiteSubstitutor = knownSubstitutions
             .takeIf { it.isNotEmpty() }

@@ -110,6 +110,7 @@ class ConstraintIncorporator(
             newDerivedFrom: Set<TypeVariableMarker>,
             isFromDeclaredUpperBound: Boolean,
             isNoInfer: Boolean,
+            dependencyScope: TypeVariableInferenceScope?,
         )
 
         /**
@@ -176,6 +177,7 @@ class ConstraintIncorporator(
                             newDerivedFrom = constraint.computeNewDerivedFrom(it),
                             isFromDeclaredUpperBound = false,
                             isNoInfer = constraint.isNoInfer || it.isNoInfer,
+                            dependencyScope = localDependencyScope(typeVariable, constraint, it),
                         )
                     } ?: c.processNewInitialConstraintFromIncorporation(
                         lowerType = it.type,
@@ -183,6 +185,7 @@ class ConstraintIncorporator(
                         newDerivedFrom = constraint.computeNewDerivedFrom(it),
                         isFromDeclaredUpperBound = false,
                         isNoInfer = constraint.isNoInfer || it.isNoInfer,
+                        dependencyScope = localDependencyScope(typeVariable, constraint, it),
                     )
                 }
             }
@@ -207,6 +210,7 @@ class ConstraintIncorporator(
                             newDerivedFrom = constraint.computeNewDerivedFrom(it),
                             isFromDeclaredUpperBound = isFromDeclaredUpperBound,
                             isNoInfer = constraint.isNoInfer || it.isNoInfer,
+                            dependencyScope = localDependencyScope(typeVariable, constraint, it),
                         )
                     } ?: c.processNewInitialConstraintFromIncorporation(
                         lowerType = constraint.type,
@@ -214,6 +218,7 @@ class ConstraintIncorporator(
                         newDerivedFrom = constraint.computeNewDerivedFrom(it),
                         isFromDeclaredUpperBound = isFromDeclaredUpperBound,
                         isNoInfer = constraint.isNoInfer || it.isNoInfer,
+                        dependencyScope = localDependencyScope(typeVariable, constraint, it),
                     )
                 }
             }
@@ -230,6 +235,15 @@ class ConstraintIncorporator(
             other.derivedFrom.isEmpty() -> derivedFrom
             else -> derivedFrom + other.derivedFrom
         }
+
+    /** 消去中间变量时，只有两条来源均属于它的局部求解范围，结果才保留该范围。 */
+    private fun localDependencyScope(
+        variable: TypeVariableMarker,
+        first: Constraint,
+        second: Constraint,
+    ): TypeVariableInferenceScope? =
+        (variable as? TypeVariableWithInferenceScope)?.inferenceScope
+            ?.takeIf { first.isLocalToInferenceScope && second.isLocalToInferenceScope }
 
     /**
      * 遍历类型变量的所有约束并执行 [action]。
@@ -441,6 +455,9 @@ class ConstraintIncorporator(
             derivedFrom = derivedFrom,
             inputTypePositionBeforeIncorporation = inputTypePosition,
             isNoInfer = causeOfIncorporationConstraint.isNoInfer || otherConstraint.isNoInfer,
+            isIncorporated = true,
+            dependencyScope = localDependencyScope(causeOfIncorporationVariable, causeOfIncorporationConstraint, otherConstraint)
+                ?.takeIf { it === (targetVariable as? TypeVariableWithInferenceScope)?.inferenceScope },
         )
 
         c.addNewIncorporatedConstraint(targetVariable, newConstraintType, constraintContext)
