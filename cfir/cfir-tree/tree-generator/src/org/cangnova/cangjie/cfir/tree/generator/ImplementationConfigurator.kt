@@ -146,8 +146,8 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
 // resolvedImportDirective：委托字段给 delegate
         impl(resolvedImportDirective) {
             publicImplementation()
-            // aliasName、aliasSource、importedFqName、isAllUnder 全部委托给原始节点
-            delegateFields(listOf("aliasName", "aliasSource", "importedFqName", "isAllUnder"), "delegate")
+            // organizationName、aliasName、aliasSource、importedFqName、isAllUnder 全部委托给原始节点
+            delegateFields(listOf("organizationName", "aliasName", "aliasSource", "importedFqName", "isAllUnder"), "delegate")
             // source 也委托给原始节点
             default("source") {
                 delegate = "delegate"

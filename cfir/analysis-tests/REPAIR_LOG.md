@@ -6675,3 +6675,14 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 - repair principle: import usage must retain both the source-visible name and the resolved declaration target, while organization metadata remains separate from the package FQ name and is consumed by the shared binding resolver。
 - fixtures covered: complete `*UnusedImport*` slice (LLT, PSI, macro and macro-PSI), including `unused014`、`unused015`、`unused016`、`unused019`、macro `unused001/003`。
 - verification outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests '*UnusedImport*'` completed `166/166` with `0` failures and `0` errors. The subsequent full `:cfir:analysis-tests:test` completed `8560 tests, 411 failures, 307 skipped, 0 errors`; the current XML contains `0` failures in all 166 UnusedImport records. The full task remains non-green because of the repository's existing unrelated failure set.
+
+## 2026-09-13：组织名限定符使用独立 DOUBLE_COLON token
+
+- problem type: Lexer / package-import parser / organization-qualified package metadata。
+- root cause: `::` had no dedicated project token and parser paths treated it as an ordinary dot-like separator, so package/import PSI and both raw CFIR builders could not preserve the organization boundary or the valid root-relative form `org::{A, B}`。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/Parser.cpp:289-290` and `ParseImports.cpp:224-225` consume `TokenKind::DOUBLE_COLON` only immediately after the first path identifier; `Node.h:2808,2884` records it as organization metadata and explicitly documents `a::*` as invalid. The official lexer token table maps `DOUBLE_COLON` to `"::"` (`external/cangjie_compiler/src/Basic/Utils.cpp:82`, `LexerImpl.h:329`).
+- Kotlin counterpart files consulted: not applicable to Cangjie organization syntax; the project follows its existing JFlex/IntelliJ token architecture and uses the official Cangjie parser as the semantic authority。
+- CFIR owner files changed: `CangJieLexer.flex`、`CjTokens`、generated lexer、`CangJieParsing`、package/import PSI, dot-qualified stub traversal, PSI/LightTree raw builders, and organization-aware `CfirImportBindingResolver`。
+- repair principle: tokenize `::` independently, allow it only at the official organization boundary, and carry organization metadata separately from the ordinary package FQ name through both PSI and LightTree CFIR paths。
+- fixtures covered: `DoubleColonParsingTest` covers one-token lexing, `package org1::a.b`, `import org1::a.b.A`, `org1::a.b.{B,C}`, `org1::{D,E}`, and invalid `a.b::c` / `a::*` forms。
+- verification outcome: `gradlew-queue.bat :psi:test --tests '*DoubleColonParsingTest*'` completed successfully with all 3 tests passing. Official parser and CJO lookup references were checked before implementation; the full CFIR run above also completed with no new UnusedImport failures.

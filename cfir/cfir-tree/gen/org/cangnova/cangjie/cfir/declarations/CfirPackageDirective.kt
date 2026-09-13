@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirPackageDirective : CfirPureAbstractElement(), CfirElement {
     abstract override val source: CjSourceElement?
     abstract val packageFqName: FqName
+    abstract val organizationName: Name?
     abstract val isMacroPackage: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

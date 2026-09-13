@@ -395,6 +395,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val packageDirective: Element by element(Declaration, name = "PackageDirective") {
         parent(rootElement)
         +field("packageFqName", fqNameType)
+        +field("organizationName", nameType, nullable = true)
         +field("isMacroPackage", booleanType) {
             defaultValueInBuilder = "false"
         }
@@ -407,6 +408,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         kind = ImplementationKind.AbstractClass
         parent(rootElement)
         +field("importedFqName", fqNameType, nullable = true)
+        +field("organizationName", nameType, nullable = true)
         +field("isAllUnder", booleanType)
         +field("aliasName", nameType, nullable = true)
         +field("aliasSource", sourceElementType, nullable = true)

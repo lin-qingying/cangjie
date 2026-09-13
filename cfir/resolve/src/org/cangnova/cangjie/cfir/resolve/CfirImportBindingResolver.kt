@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /** 将 raw import 指令解析为结构化 import binding 的解析器。 */
 internal class CfirImportBindingResolver(
@@ -63,33 +64,50 @@ internal class CfirImportBindingResolver(
             else -> org.cangnova.cangjie.name.Name.identifier("")
         }
         val targets = mutableListOf<CfirResolvedImportTarget>()
+        val packageCandidates = importedFqName?.let { importedName ->
+            val packageNames = if (importDirective.isAllUnder) {
+                listOf(importedName)
+            } else {
+                listOf(importedName, importedName.parentOrRoot()).distinct()
+            }
+            packageNames.flatMap { packageName -> packageFqNameCandidates(importDirective, packageName) }.distinct()
+        }.orEmpty()
+        val memberPackageCandidates = importedFqName
+            ?.parentOrRoot()
+            ?.let { packageFqNameCandidates(importDirective, it) }
+            .orEmpty()
 
-        if (importedFqName != null && session.symbolProvider.hasPackage(importedFqName)) {
-            targets += CfirResolvedImportTarget.Package(importedFqName)
+        if (importedFqName != null) {
+            packageCandidates.firstOrNull(session.symbolProvider::hasPackage)?.let { packageFqName ->
+                targets += CfirResolvedImportTarget.Package(packageFqName)
+            }
         }
 
         if (importedFqName != null) {
             val memberName = importedFqName.shortNameAsIdentifier()
-            val packageFqName = importedFqName.parentOrRoot()
 
             if (!importDirective.isAllUnder) {
-                val classId = ClassId(packageFqName, memberName)
-                session.symbolProvider.getClassLikeSymbolByClassId(classId)?.let { symbol ->
-                    targets += CfirResolvedImportTarget.ClassLike(
-                        // import 路径可以命中其它包 public import 出来的声明；binding 必须保存
-                        // 最终声明身份，effectiveName 已单独保留使用点名称，不能把两者混为一体。
-                        classId = symbol.classId,
-                        symbol = symbol,
-                    )
-                }
+                for (packageFqName in memberPackageCandidates) {
+                    val classId = ClassId(packageFqName, memberName)
+                    session.symbolProvider.getClassLikeSymbolByClassId(classId)?.let { symbol ->
+                        if (targets.none { it is CfirResolvedImportTarget.ClassLike && it.symbol == symbol }) {
+                            targets += CfirResolvedImportTarget.ClassLike(
+                                // import 路径可以命中其它包 public import 出来的声明；binding 必须保存
+                                // 最终声明身份，effectiveName 已单独保留使用点名称，不能把两者混为一体。
+                                classId = symbol.classId,
+                                symbol = symbol,
+                            )
+                        }
+                    }
 
-                val callableSymbols = session.symbolProvider.getTopLevelCallableSymbols(packageFqName, memberName)
-                if (callableSymbols.isNotEmpty()) {
-                    targets += CfirResolvedImportTarget.Callable(
-                        packageFqName = packageFqName,
-                        name = memberName,
-                        symbols = callableSymbols,
-                    )
+                    val callableSymbols = session.symbolProvider.getTopLevelCallableSymbols(packageFqName, memberName)
+                    if (callableSymbols.isNotEmpty()) {
+                        targets += CfirResolvedImportTarget.Callable(
+                            packageFqName = packageFqName,
+                            name = memberName,
+                            symbols = callableSymbols,
+                        )
+                    }
                 }
             }
         }
@@ -100,5 +118,15 @@ internal class CfirImportBindingResolver(
             targets = targets,
             lookupOrigin = lookupOrigin,
         )
+    }
+
+    /**
+     * 组织名不是普通包层级。官方 CJO 查找将 `org::pkg` 规范化为 `pkg@org`，源码包
+     * 则仍以普通 `pkg` 作为 CFIR package identity；两种候选按库优先、源码兼容顺序查询。
+     */
+    private fun packageFqNameCandidates(importDirective: CfirImport, packageFqName: FqName): List<FqName> {
+        val organizationName = importDirective.organizationName ?: return listOf(packageFqName)
+        val canonicalName = "${packageFqName.asString()}@${organizationName.asString()}"
+        return listOf(FqName(canonicalName), packageFqName).distinct()
     }
 }

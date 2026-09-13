@@ -93,6 +93,18 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
             return null
         }
 
+    /** 共享 import 前缀中的组织名，例如 `org1::a.{X, Y}` 的 `org1`。 */
+    val organizationName: Name?
+        get() {
+            val reference = importedReference
+            return organizationNameFromExpression(reference)
+                ?: if (text.contains("::") && reference is CjSimpleNameExpression) {
+                    reference.referencedNameAsName
+                } else {
+                    null
+                }
+        }
+
     /**
      * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -104,6 +116,14 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
         fun fqNameFromExpression(expression: CjExpression?): FqName? {
             if (expression == null) {
                 return null
+            }
+
+            // `organization::package.member` is one import path. The organization is
+            // metadata for package lookup, not another FqName segment.
+            val expressionText = expression.text
+            val organizationSeparator = expressionText.indexOf("::")
+            if (organizationSeparator >= 0) {
+                return FqName(expressionText.substring(organizationSeparator + 2).replace("::", "."))
             }
 
             when (expression) {
@@ -126,6 +146,14 @@ class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
                     throw IllegalArgumentException("Can't construct fqn for: " + expression.javaClass)
                 }
             }
+        }
+
+        fun organizationNameFromExpression(expression: CjExpression?): Name? {
+            val expressionText = expression?.text.orEmpty()
+            val organizationSeparator = expressionText.indexOf("::")
+            return organizationSeparator
+                .takeIf { it > 0 }
+                ?.let { identifier(expressionText.substring(0, it).trim()) }
         }
 
         private fun nameFromExpression(expression: CjExpression?): Name? {
@@ -199,8 +227,13 @@ class CjImportItem(node: ASTNode) : CjElementImpl(node), CjImportInfo {
 
             // 检查父级 ImportDirective 是否有基础路径
             val directive = getStrictParentOfType<CjImportDirective>()
-            val basePath = directive?.importedReference?.let {
-                CjImportDirective.fqNameFromExpression(it)
+            val basePath = directive?.importedReference?.let { expression ->
+                CjImportDirective.fqNameFromExpression(expression)
+                    ?.takeUnless {
+                        directive.organizationName != null &&
+                            expression is CjSimpleNameExpression &&
+                            expression.referencedNameAsName == directive.organizationName
+                    }
             }
 
             // 组合基础路径和项路径
@@ -223,6 +256,11 @@ class CjImportItem(node: ASTNode) : CjElementImpl(node), CjImportInfo {
             _importedFqName = finalFqName
             return finalFqName
         }
+
+    /** 官方 `organization::package` 语法中的组织名。 */
+    val organizationName: Name?
+        get() = CjImportDirective.organizationNameFromExpression(importedReference)
+            ?: importDirective.organizationName
 
     /**
      * 是否为通配符导入 (a.b.*)

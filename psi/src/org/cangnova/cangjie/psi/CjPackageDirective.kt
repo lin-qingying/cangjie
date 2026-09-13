@@ -248,10 +248,26 @@ class CjPackageDirective : CjDeclarationStub<CangJiePackageDirectiveStub> {
     val qualifiedName: String
         get() {
             if (qualifiedNameCache == null) {
-                qualifiedNameCache = getQualifiedNameOf(null)
+                val expressionText = packageNameExpression?.text.orEmpty()
+                val organizationSeparator = expressionText.indexOf("::")
+                qualifiedNameCache = if (organizationSeparator >= 0) {
+                    expressionText.substring(organizationSeparator + 2).replace("::", ".")
+                } else {
+                    getQualifiedNameOf(null)
+                }
             }
 
             return qualifiedNameCache!!
+        }
+
+    /** 官方 `organization::package` 语法中的组织名；普通包声明没有组织名。 */
+    val organizationName: Name?
+        get() {
+            val expressionText = packageNameExpression?.text.orEmpty()
+            val organizationSeparator = expressionText.indexOf("::")
+            return organizationSeparator
+                .takeIf { it > 0 }
+                ?.let { identifier(expressionText.substring(0, it).trim()) }
         }
 
     /**

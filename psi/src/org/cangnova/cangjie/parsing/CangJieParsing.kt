@@ -67,8 +67,8 @@ class CangJieParsing private constructor(
         private val CLASS_NAME_RECOVERY_SET =
             TokenSet.orSet(TokenSet.create(LT, LPAR, LTCOLON, LBRACE), TOP_LEVEL_DECLARATION_FIRST)
         private val TYPE_PARAMETER_GT_RECOVERY_SET = TokenSet.create(WHERE_KEYWORD, LPAR, COLON, LBRACE, GT)
-        private val PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON)
-        private val IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, EOL_OR_SEMICOLON)
+        private val PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, DOUBLE_COLON, EOL_OR_SEMICOLON)
+        private val IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, DOUBLE_COLON, EOL_OR_SEMICOLON)
         private val TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH)
         private val TYPE_REF_RECOVERY_SET = TokenSet.orSet(
             TOP_LEVEL_DECLARATION_FIRST,
@@ -530,16 +530,17 @@ class CangJieParsing private constructor(
             return
         }
 
-        // 没有后续 DOT，就是单段包名，直接结束
-        if (!at(DOT)) return
+        // 没有后续 DOT 或组织名分隔符，就是单段包名，直接结束
+        if (!at(DOT) && !at(DOUBLE_COLON)) return
 
         // 有多段，构建左递归 DOT_QUALIFIED_EXPRESSION 树
         // 初始：wrap 第一个 REFERENCE_EXPRESSION
         var lhs = firstName.precede()
         // 此时 lhs 包裹着已 done 的 firstName
 
-        while (at(DOT)) {
-            advance() // DOT
+        var allowOrganizationSeparator = true
+        while (at(DOT) || (allowOrganizationSeparator && at(DOUBLE_COLON))) {
+            advance() // DOT or the one organization DOUBLE_COLON
 
             if (builder.newlineBeforeCurrentToken()) {
                 lhs.done(DOT_QUALIFIED_EXPRESSION)
@@ -568,6 +569,12 @@ class CangJieParsing private constructor(
             val newLhs = lhs.precede()
             lhs.done(DOT_QUALIFIED_EXPRESSION)
             lhs = newLhs
+            allowOrganizationSeparator = false
+        }
+
+        if (at(DOUBLE_COLON)) {
+            error("Organization separator is only allowed after the first identifier")
+            advance()
         }
 
         // 最外层多套了一层，drop 掉
@@ -982,7 +989,7 @@ class CangJieParsing private constructor(
         advance() // IDENTIFIER
         reference.done(REFERENCE_EXPRESSION)
 
-        // 解析点号分隔的标识符链
+        // 多项导入中的 item 不允许再声明组织名；组织分隔符只属于最外层路径。
         while (at(DOT) && lookahead(1) != MUL && lookahead(1) != LBRACE) {
             advance() // DOT
 
@@ -1116,9 +1123,13 @@ class CangJieParsing private constructor(
             advance() // IDENTIFIER
             reference.done(REFERENCE_EXPRESSION)
 
-            // 解析点号分隔的标识符链
-            while (at(DOT) && lookahead(1) == IDENTIFIER) {
-                advance() // DOT
+            // `::` 只能出现在路径首段之后，表示组织名与包名的边界。
+            var allowOrganizationSeparator = true
+            while (
+                (at(DOT) && lookahead(1) == IDENTIFIER) ||
+                (allowOrganizationSeparator && at(DOUBLE_COLON) && lookahead(1) == IDENTIFIER)
+            ) {
+                advance() // DOT or the one organization DOUBLE_COLON
 
                 reference = mark()
                 advance() // IDENTIFIER
@@ -1127,13 +1138,29 @@ class CangJieParsing private constructor(
                 val precede = qualifiedName.precede()
                 qualifiedName.done(DOT_QUALIFIED_EXPRESSION)
                 qualifiedName = precede
+                allowOrganizationSeparator = false
+            }
+
+            // `a::{c, d}` is the organization-only multi-import form. The
+            // separator is kept in IMPORT_DIRECTIVE so PSI/LightTree can recover
+            // the organization metadata, while the item paths remain relative.
+            val organizationOnlyMultiImport =
+                allowOrganizationSeparator && at(DOUBLE_COLON) && lookahead(1) == LBRACE
+
+            if (at(DOUBLE_COLON) && !organizationOnlyMultiImport) {
+                error("Organization separator is only allowed after the first identifier")
+                advance()
             }
 
             // 检查是否为同包多项导入 import a.{b, c}
-            if (at(DOT) && lookahead(1) == LBRACE) {
+            if (
+                (at(DOT) && lookahead(1) == LBRACE) ||
+                organizationOnlyMultiImport
+            ) {
                 // 保留 qualifiedName 作为基础路径，让 CjImportDirective.importedReference 可以访问
                 qualifiedName.drop()  // 虽然 drop，但表达式已经在 AST 中
-                advance() // DOT
+                if (organizationOnlyMultiImport) advance() // organization DOUBLE_COLON
+                else advance() // DOT
                 advance() // LBRACE
                 parseImportItemList()
                 expect(RBRACE, "Expecting '}'")

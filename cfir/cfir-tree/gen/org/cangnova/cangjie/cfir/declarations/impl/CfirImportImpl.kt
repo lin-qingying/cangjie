@@ -18,6 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirImportImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val importedFqName: FqName?,
+    override val organizationName: Name?,
     override val isAllUnder: Boolean,
     override val aliasName: Name?,
     override val aliasSource: CjSourceElement?,

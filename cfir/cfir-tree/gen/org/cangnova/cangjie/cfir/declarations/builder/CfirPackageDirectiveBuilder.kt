@@ -13,12 +13,14 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPackageDirectiveImpl
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
 class CfirPackageDirectiveBuilder {
     var source: CjSourceElement? = null
     lateinit var packageFqName: FqName
+    var organizationName: Name? = null
     var isMacroPackage: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
@@ -26,6 +28,7 @@ class CfirPackageDirectiveBuilder {
         return CfirPackageDirectiveImpl(
             source,
             packageFqName,
+            organizationName,
             isMacroPackage,
         )
     }
@@ -48,6 +51,7 @@ inline fun buildPackageDirectiveCopy(original: CfirPackageDirective, init: CfirP
     val copyBuilder = CfirPackageDirectiveBuilder()
     copyBuilder.source = original.source
     copyBuilder.packageFqName = original.packageFqName
+    copyBuilder.organizationName = original.organizationName
     copyBuilder.isMacroPackage = original.isMacroPackage
     return copyBuilder.apply(init).build()
 }
