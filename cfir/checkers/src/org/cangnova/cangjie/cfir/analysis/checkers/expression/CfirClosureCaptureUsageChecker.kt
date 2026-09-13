@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
@@ -63,8 +65,8 @@ object CfirClosureCaptureUsageChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkAnonymousFunctionExpression(expression: CfirAnonymousFunctionExpression) {
         if (context.callsOrAssignments.asReversed()
-                .filterIsInstance<CfirFunctionCall>()
-                .any { call -> call.explicitReceiver.containsElement(expression) || call.dispatchReceiver.containsElement(expression) }
+            .filterIsInstance<CfirFunctionCall>()
+            .any { call -> call.explicitReceiver === expression || call.dispatchReceiver === expression }
         ) {
             return
         }
@@ -249,6 +251,8 @@ private fun CfirQualifiedAccessExpression.resolvedFunctionOrNull(): CfirFunction
         is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirFunction
         is CfirResolvedErrorReference -> reference.resolvedSymbol.cfir as? CfirFunction
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol?.cfir as? CfirFunction
+        is CfirErrorNamedReference ->
+            (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol?.cfir as? CfirFunction
         else -> null
     }
 
@@ -258,6 +262,8 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrNull(): CfirVariable
         is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirVariable
         is CfirResolvedErrorReference -> reference.resolvedSymbol.cfir as? CfirVariable
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol?.cfir as? CfirVariable
+        is CfirErrorNamedReference ->
+            (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol?.cfir as? CfirVariable
         else -> null
     }
 

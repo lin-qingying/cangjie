@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -72,6 +73,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
@@ -132,8 +134,14 @@ class CfirSyntheticCallGenerator(
         components.dataFlowAnalyzer.enterFunctionCall(fakeCall)
 
         val preBodyResolveSnapshot = CfirResolutionSnapshot.capture(anonymousFunctionExpression)
-        if (parameterType == ConeAnyType) {
+        val anonymousFunction = anonymousFunctionExpression.anonymousFunction
+        if (parameterType == ConeAnyType &&
+            (anonymousFunction.valueParameters.isNotEmpty() || !anonymousFunction.hasNestedAnonymousFunction())
+        ) {
             // 官方 SynLamExpr 先收集函数体约束并重查，再在定义点决定未标注参数是否有解。
+            // 无参数 lambda 只有在自身不含嵌套 lambda 时才需要这一步重查；嵌套 lambda
+            // 的 body 已在首次 completion 中按其调用参数类型完成，恢复外层快照会把这些
+            // 捕获引用一并恢复成原始 stub。含输入参数的 lambda 仍按输入推断规则重查。
             // 第一遍只固定已有充分约束的变量；最终 FULL completion 仍由普通调用完成器负责。
             components.callCompleter.runCompletionForCall(
                 candidate = reference.candidate,
@@ -359,6 +367,28 @@ class CfirSyntheticCallGenerator(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    /**
+     * 判断无输入 lambda 是否包含嵌套匿名函数。
+     *
+     * 外层 synthetic-call 重算会恢复整个表达式快照；若 body 内还有嵌套 lambda，
+     * 它们的调用参数完成结果必须保留，不能在没有输入类型变化时再次回退到 stub。
+     */
+    private fun CfirAnonymousFunction.hasNestedAnonymousFunction(): Boolean {
+        var found = false
+        body?.accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (!found) element.acceptChildren(this, null)
+            }
+
+            override fun visitAnonymousFunctionExpression(
+                anonymousFunctionExpression: CfirAnonymousFunctionExpression,
+            ) {
+                found = true
+            }
+        }, null)
+        return found
     }
 
     /** 构造合成 accept 函数的唯一值参数。 */

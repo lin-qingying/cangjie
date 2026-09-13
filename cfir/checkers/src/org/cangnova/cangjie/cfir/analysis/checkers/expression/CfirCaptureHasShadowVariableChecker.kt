@@ -42,7 +42,11 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
         val variableName = target.variableName
         val containingFunctions = context.containingDeclarations.asReversed().filterIsInstance<CfirFunctionSymbol<*>>().map { it.cfir }
         if (containingFunctions.size < 2) return
-        for (function in containingFunctions) {
+        if (containingFunctions.first().containsDeclarationInOwnScope(target)) return
+        // 当前函数本身不是“中间作用域”：只有当前函数的父级函数体中的同名声明，
+        // 才会遮蔽从更外层捕获进来的变量。否则会把当前函数中声明在引用之后的同名变量
+        // 错判成 shadow warning；嵌套函数仍从它的直接父函数开始检查。
+        for (function in containingFunctions.drop(1)) {
             if (function.containsDeclarationInOwnScope(target)) return
             if (!function.hasShadowVariableDeclaration(variableName, target)) continue
 
