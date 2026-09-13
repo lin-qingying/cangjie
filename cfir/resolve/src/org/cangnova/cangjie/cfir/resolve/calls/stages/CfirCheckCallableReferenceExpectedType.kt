@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidateByCallableReferenceExpectedType
@@ -118,7 +119,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         return ConeFunctionType(
             parameterTypes = parameterTypes,
             returnType = returnType,
-            isCFunc = function.status.isForeign,
+            isCFunc = function.interopInfo?.isC == true,
         )
     }
 

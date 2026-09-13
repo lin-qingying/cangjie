@@ -72,6 +72,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(optionalChainExpression)
     }
 
+    final override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: Nothing?) {
+        visitIfAvailableExpression(ifAvailableExpression)
+    }
+
+    open fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression) {
+        visitElement(ifAvailableExpression)
+    }
+
     final override fun visitResolvable(resolvable: CfirResolvable, data: Nothing?) {
         visitResolvable(resolvable)
     }

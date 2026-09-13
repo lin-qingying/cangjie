@@ -126,6 +126,11 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitExpression(expression, data)
     }
 
+    /** 访问官方 `IfAvailableExpr` 特殊表达式。 */
+    open fun visitIfAvailableExpression(expression: CjIfAvailableExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
     /**
      * 提供 `visitMacroExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */

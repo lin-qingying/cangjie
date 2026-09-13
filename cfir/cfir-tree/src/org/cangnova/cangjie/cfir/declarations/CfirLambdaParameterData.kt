@@ -44,3 +44,26 @@ private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
 
 var CfirAnonymousFunction.isInsideFailedArgumentMapping: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaInsideFailedArgumentMappingKey)
+
+/** IfAvailable 分支方向，用于在 checker 阶段恢复结构化可用性上下文。 */
+enum class CfirIfAvailableBranchKind {
+    THEN,
+    ELSE,
+}
+
+/**
+ * IfAvailable lambda 的 source-independent 条件事实。
+ *
+ * 该数据随匿名函数声明携带，避免 APILevel checker 通过 source offset 或 sibling
+ * branch presence 猜测当前分支；嵌套 lambda 按 declaration traversal 顺序自然叠加。
+ */
+data class CfirIfAvailableBranchContext(
+    val kind: CfirIfAvailableBranchKind,
+    val conditionName: String,
+    val conditionValue: String,
+)
+
+private object IfAvailableBranchContextKey : CfirDeclarationDataKey()
+
+var CfirAnonymousFunction.ifAvailableBranchContext: CfirIfAvailableBranchContext? by
+    CfirDeclarationDataRegistry.data(IfAvailableBranchContextKey)

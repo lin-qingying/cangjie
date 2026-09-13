@@ -9,7 +9,7 @@ struct d {
     public init(e: Float32, f: c) {}
     public init() {
         match {
-            case _ => d((<!TYPE_MISMATCH!>a++<!>), match {
+            case _ => d((<!ARGUMENT_TYPE_MISMATCH!>a++<!>), match {
                 case _ => b
             })
         }

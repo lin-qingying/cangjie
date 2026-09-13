@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.annotations.CangjieAnnotationCatalog
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -26,8 +27,14 @@ internal fun CfirDeclaration.hasAnnotation(annotationName: Name): Boolean =
 internal fun CfirDeclaration.findAnnotations(annotationName: Name): List<CfirAnnotation> =
     annotations.filter { annotation -> annotation.matchesAnnotationName(annotationName) }
 
-/** 从注解 typeRef、calleeReference 或源码文本中提取注解短名。 */
+/** 从已解析 kind、typeRef 或结构化 calleeReference 中提取注解名称。 */
 internal fun CfirAnnotation.shortNameOrNull(): Name? {
+    annotationKind?.let { kind ->
+        CangjieAnnotationCatalog.languageBuiltIns
+            .firstOrNull { descriptor -> descriptor.kind == kind }
+            ?.sourceName
+            ?.let { return Name.identifier(it) }
+    }
     val classId = CfirExtendSemantics.run { typeRef.toClassIdOrNull() }
     if (classId != null) return classId.shortClassName
     (this as? CfirAnnotationCall)
@@ -35,16 +42,7 @@ internal fun CfirAnnotation.shortNameOrNull(): Name? {
         ?.let { it as? CfirNamedReference }
         ?.name
         ?.let { return it }
-    val sourceText = source?.text?.toString()?.trim().orEmpty()
-    if (!sourceText.startsWith("@")) return null
-    return Name.identifierIfValid(
-        sourceText.removePrefix("@!")
-            .removePrefix("@")
-            .substringBefore('[')
-            .substringBefore('(')
-            .substringAfterLast('.')
-            .trim(),
-    )
+    return null
 }
 
 /** 返回注解调用指定位置实参的源码文本或字面量文本。 */

@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirIfAvailableExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -320,6 +321,16 @@ object CfirImportsChecker : CfirFileChecker() {
                 annotation.arguments.forEach { it.accept(this) }
             }
 
+            override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression) {
+                // `syscap` 的官方脱糖目标是 `ohos.base.canIUse`；保留这个
+                // source-level reference name，避免 unused-import 把其 callable
+                // import 当成未使用。`level` 的 class target 由下方 target 图记录。
+                if (ifAvailableExpression.conditionName.asString() == "syscap") {
+                    result += Name.identifier("canIUse")
+                }
+                super.visitIfAvailableExpression(ifAvailableExpression)
+            }
+
             override fun visitNamedReference(namedReference: CfirNamedReference) {
                 // 独立歧义引用可能保留用于诊断的本地 candidate 占位符，但尚无实际 target。
                 // 官方此时清除目标，不把仅出现了该名字的导入算作已使用。
@@ -405,6 +416,19 @@ object CfirImportsChecker : CfirFileChecker() {
             override fun visitAnnotation(annotation: CfirAnnotation) {
                 recordMacroAnnotationPackage(annotation, macroPackages, session)
                 super.visitAnnotation(annotation)
+            }
+
+            override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression) {
+                when (ifAvailableExpression.conditionName.asString()) {
+                    "level" -> {
+                        val classId = ClassId(FqName("ohos.device_info"), Name.identifier("DeviceInfo"))
+                        classIds += classId
+                        classTargetNames += ReferencedClassTarget(classId, Name.identifier("DeviceInfo"))
+                    }
+
+                    "syscap" -> callablePackages += FqName("ohos.base")
+                }
+                super.visitIfAvailableExpression(ifAvailableExpression)
             }
 
             override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {

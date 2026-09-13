@@ -2994,6 +2994,7 @@ class CfirCallResolver(
                         ConeGenericFunctionReferenceWithoutTypeArgumentsError(name)
 
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
+                    candidate.hasUninferableGenericConstructor() -> ConeUnableToInferGenericFuncError()
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     else -> null
                 }
@@ -3393,6 +3394,33 @@ class CfirCallResolver(
                         !AbstractTypeChecker.isSubtypeOf(session.typeContext, lowerType, upperType)
                     }
                 }
+            }
+    }
+
+    /**
+     * 无显式类型实参的泛型构造调用必须在调用解析层结束为官方推断错误。
+     *
+     * 构造器自己的 `typeParameters` 可能为空，真正参与推断的是 owner class
+     * 的类型参数；因此这里复用 fresh-variable 阶段的候选参数集合，而不是
+     * 只检查构造器声明字段。内建 Pointer/CFunc 等 synthetic callable 有各自
+     * 的 expected-type/签名 owner，不属于该普通构造器规则。
+     */
+    private fun Candidate.hasUninferableGenericConstructor(): Boolean {
+        if (callInfo.callSite !is CfirFunctionCall || callInfo.hasExplicitTypeArguments) return false
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirConstructor ?: return false
+        if (declaration.origin is CfirDeclarationOrigin.Synthetic) return false
+
+        val typeParameters = CfirCreateFreshTypeVariableSubstitutorStage
+            .collectCandidateTypeParametersForFreshVariables(session, this, declaration)
+        if (typeParameters.isEmpty()) return false
+
+        val typeParameterSymbols = typeParameters.mapTo(linkedSetOf()) { it.symbol }
+        val storage = system.currentStorage()
+        return freshVariables
+            .filterIsInstance<ConeTypeParameterBasedTypeVariable>()
+            .any { variable ->
+                variable.typeParameterSymbol in typeParameterSymbols &&
+                    variable.typeConstructor in storage.notFixedTypeVariables
             }
     }
 

@@ -534,6 +534,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformOptionalChainExpression(optionalChainExpression, data)
     }
 
+    /** 将官方 `IfAvailable` 特殊表达式分发给表达式 resolver。 */
+    override fun transformIfAvailableExpression(
+        ifAvailableExpression: CfirIfAvailableExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformIfAvailableExpression(ifAvailableExpression, data)
+    }
+
     /** 将字面量表达式 body resolve 分发给表达式 transformer。 */
     override fun transformLiteralExpression(
         literalExpression: CfirLiteralExpression,

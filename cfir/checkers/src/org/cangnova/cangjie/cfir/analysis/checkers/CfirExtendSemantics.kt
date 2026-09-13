@@ -25,8 +25,10 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -229,16 +231,15 @@ internal object CfirExtendSemantics {
     }
 
     /**
-     * 判断 class-like 声明是否带有指定短名注解。
+     * 判断 class-like 声明是否带有指定注解。
      *
-     * 注解系统尚不完整时，同时从已建模 annotation typeRef 和原始 source 文本兜底识别。
+     * 内置注解优先使用 CFIR 已归一化的 kind；尚未解析的自定义/系统注解只允许
+     * 使用其结构化 typeRef 或 callee reference。这里不再从 source 文本重新解析。
      */
-    fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationName: Name): Boolean {
-        return declaration.annotations.any { annotation ->
-            val annotationClassId = annotation.typeRef.toClassIdOrNull()
-            annotationClassId?.shortClassName == annotationName ||
-                annotation.source.annotationShortNameOrNull() == annotationName
-        } || declaration.source.containsAnnotation(annotationName)
+    fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationKind: CangjieAnnotationKind): Boolean {
+        return declaration.annotations
+            .filterIsInstance<CfirAnnotationCall>()
+            .any { annotation -> annotation.annotationKind == annotationKind }
     }
 
     /**
@@ -248,7 +249,7 @@ internal object CfirExtendSemantics {
      *       等注解系统完善后需要补充对内置注解的完整支持。
      */
     fun isForeignInteropBoundary(declaration: CfirClassLikeDeclaration): Boolean {
-        return ffiBoundaryAnnotationNames.any { annotationName -> hasAnnotation(declaration, annotationName) }
+        return ffiBoundaryAnnotationKinds.any { annotationKind -> hasAnnotation(declaration, annotationKind) }
     }
 
     /**
@@ -323,31 +324,9 @@ internal object CfirExtendSemantics {
         return null
     }
 
-    /** 当前作为 FFI 边界识别依据的注解短名集合。 */
-    private val ffiBoundaryAnnotationNames: Set<Name> = setOf(Name.identifier("C"))
-
-    /**
-     * 从 source 文本中提取注解短名。
-     */
-    private fun org.cangnova.cangjie.source.CjSourceElement?.annotationShortNameOrNull(): Name? {
-        val rawText = this?.text?.toString()?.trim().orEmpty()
-        if (!rawText.startsWith("@")) return null
-
-        val shortName = rawText
-            .removePrefix("@")
-            .substringBefore('(')
-            .substringAfterLast('.')
-            .trim()
-        return Name.identifierIfValid(shortName)
-    }
-
-    /**
-     * 判断 source 文本是否包含指定短名注解。
-     */
-    private fun org.cangnova.cangjie.source.CjSourceElement?.containsAnnotation(annotationName: Name): Boolean {
-        val rawText = this?.text?.toString().orEmpty()
-        return rawText.contains("@${annotationName.asString()}")
-    }
+    /** 当前作为 FFI 边界识别依据的官方内置注解。 */
+    private val ffiBoundaryAnnotationKinds: Set<CangjieAnnotationKind> =
+        setOf(CangjieAnnotationKind.C)
 
     /**
      * 返回 class-like 声明的语义 class kind。

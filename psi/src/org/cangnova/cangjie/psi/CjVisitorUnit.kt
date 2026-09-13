@@ -110,6 +110,11 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitOptionalChainExpression(expression, Unit)
     }
 
+    /** 访问 `IfAvailableExpr` 对应的 PSI 节点。 */
+    open fun visitIfAvailableExpression(expression: CjIfAvailableExpression) {
+        super.visitIfAvailableExpression(expression, Unit)
+    }
+
     /**
      * 访问 `visitProperty` 对应的 PSI 节点，作为 Unit visitor 的可覆写处理入口。
      */

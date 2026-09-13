@@ -154,6 +154,15 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
         }
 
     /**
+     * 是否使用 `@!` 编译期可见注解前缀。
+     *
+     * 该信息直接来自语法树 token，供 Raw CFIR 保存 provenance；语义阶段不得
+     * 再通过完整 source 文本猜测 `@!`。
+     */
+    val isCompileTimeVisible: Boolean
+        get() = findChildByType<PsiElement>(CjTokens.ATEXCL) != null
+
+    /**
      * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     @get:IfNotParsed

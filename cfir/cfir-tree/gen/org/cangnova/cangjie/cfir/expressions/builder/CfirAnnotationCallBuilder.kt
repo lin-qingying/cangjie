@@ -8,12 +8,12 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationCallImpl
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -28,8 +28,13 @@ class CfirAnnotationCallBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var typeRef: CfirTypeRef
     val arguments: MutableList<CfirElement> = mutableListOf()
+    var annotationKind: CangjieAnnotationKind? = null
+    var annotationOrigin: CangjieAnnotationOrigin? = null
+    var isCompileTimeVisible: Boolean? = null
     lateinit var argumentList: CfirArgumentList
     lateinit var calleeReference: CfirReference
+    var argumentView: CfirAnnotationArgumentView? = null
+    var annotationResolveState: CfirAnnotationResolveState = CfirAnnotationResolveState.UNRESOLVED
     lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
 
     fun build(): CfirAnnotationCall {
@@ -39,8 +44,13 @@ class CfirAnnotationCallBuilder {
             coneTypeOrNull,
             typeRef,
             arguments,
+            annotationKind,
+            annotationOrigin,
+            isCompileTimeVisible,
             argumentList,
             calleeReference,
+            argumentView,
+            annotationResolveState,
             containingDeclarationSymbol,
         )
     }
@@ -66,8 +76,13 @@ inline fun buildAnnotationCallCopy(original: CfirAnnotationCall, init: CfirAnnot
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.typeRef = original.typeRef
     copyBuilder.arguments.addAll(original.arguments)
+    copyBuilder.annotationKind = original.annotationKind
+    copyBuilder.annotationOrigin = original.annotationOrigin
+    copyBuilder.isCompileTimeVisible = original.isCompileTimeVisible
     copyBuilder.argumentList = original.argumentList
     copyBuilder.calleeReference = original.calleeReference
+    copyBuilder.argumentView = original.argumentView
+    copyBuilder.annotationResolveState = original.annotationResolveState
     copyBuilder.containingDeclarationSymbol = original.containingDeclarationSymbol
     return copyBuilder.apply(init).build()
 }

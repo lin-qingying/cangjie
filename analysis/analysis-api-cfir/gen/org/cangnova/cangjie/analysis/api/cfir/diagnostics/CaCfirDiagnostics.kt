@@ -585,6 +585,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = CatchTypeMustExtendException::class
     }
 
+    interface MismatchingCatchBlock : CaCfirDiagnostic<CjBlockExpression> {
+        override val diagnosticClass get() = MismatchingCatchBlock::class
+        val actualType: CaType
+        val previousType: CaType
+    }
+
     interface UselessExceptionType : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = UselessExceptionType::class
     }

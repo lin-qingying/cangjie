@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.name.Name
@@ -33,6 +34,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      * @property additionalOptionalAnnotationsProvider 源码会话的可选注解 provider 注入点。
      * @property registerLibrarySessionComponents 普通库会话的额外 session component 注册回调。
      * @property registerSourceSessionComponents 源码会话的额外 session component 注册回调。
+     * @property abiPolicy 当前 session 的 backend ABI policy；由 backend 注入，不写入 CFIR
+     * 请求模型中的 backend 枚举。
      */
     class Context(
         /**
@@ -77,6 +80,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
          * 源码会话组件注册完成后的宿主扩展回调。
          */
         val registerSourceSessionComponents: CfirSession.() -> Unit = {},
+        /** 当前 session 使用的 ABI policy。 */
+        val abiPolicy: CfirAbiPolicy = org.cangnova.cangjie.cfir.session.CfirLanguageAbiPolicy,
     )
 
     /**
@@ -205,6 +210,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      * 执行上下文提供的库会话组件注册回调。
      */
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
+        register(CfirAbiPolicy::class, c.abiPolicy)
         c.registerLibrarySessionComponents(this)
     }
 
@@ -240,6 +246,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      * 执行上下文提供的源码会话组件注册回调。
      */
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
+        register(CfirAbiPolicy::class, c.abiPolicy)
         c.registerSourceSessionComponents(this)
     }
 }

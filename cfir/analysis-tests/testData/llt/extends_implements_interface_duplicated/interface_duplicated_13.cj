@@ -1,7 +1,7 @@
 
 
 
-<!INHERITANCE_CYCLE!>i<!>nterface I1<T> <: I3<T> {}
+<!INHERITANCE_CYCLE!>interface I1<T><!> <: I3<T> {}
 
 interface I2<K> <: I1<K> {}
 

@@ -24,14 +24,23 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
+import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.session.cfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -113,6 +122,23 @@ open class CfirStatusComputationSession(
     }
 
     /**
+     * 将异常收敛为可观察的 STATUS 失败终态。
+     *
+     * 失败声明不能留在 `Computing`，否则下一次 lazy resolve 会把失败误判为
+     * 同阶段重入并静默跳过；重新分析必须由新的 session 或显式 invalidation
+     * 重新建立 phase 输入。
+     */
+    fun failComputing(declaration: CfirDeclaration) {
+        statusMap[declaration] = StatusComputationStatus.Failed
+    }
+
+    /** 使声明的 STATUS 计算缓存失效，供源/annotation 输入变化时重新计算。 */
+    fun invalidate(declaration: CfirDeclaration) {
+        statusMap.remove(declaration)
+        declaration.interopInfo = null
+    }
+
+    /**
      * 标记指定声明只完成了自身 declaration status 的计算。
      *
      * 该状态用于低阶 lazy resolve：声明自身 status 可先发布，
@@ -120,8 +146,15 @@ open class CfirStatusComputationSession(
      */
     fun computeOnlyDeclarationStatus(declaration: CfirDeclaration) {
         val existedStatus = statusMap.getValue(declaration)
-        if (existedStatus < StatusComputationStatus.ComputedOnlyDeclarationStatus) {
-            statusMap[declaration] = StatusComputationStatus.ComputedOnlyDeclarationStatus
+        when (existedStatus) {
+            StatusComputationStatus.NotComputed,
+            StatusComputationStatus.ComputedOnlyDeclarationStatus,
+            -> statusMap[declaration] = StatusComputationStatus.ComputedOnlyDeclarationStatus
+
+            StatusComputationStatus.Computing,
+            StatusComputationStatus.Failed,
+            StatusComputationStatus.Computed,
+            -> Unit
         }
     }
 
@@ -135,6 +168,8 @@ open class CfirStatusComputationSession(
         NotComputed(true),
         /** 声明正在计算中，用于打断递归环。 */
         Computing(false),
+        /** 声明 STATUS 计算失败；该终态禁止静默重入。 */
+        Failed(false),
         /** 声明自身 status 已计算，但子树或成员仍可继续解析。 */
         ComputedOnlyDeclarationStatus(true),
         /** 声明及其 STATUS 子任务均已完成。 */
@@ -314,17 +349,24 @@ open class AbstractCfirStatusResolveTransformer(
         when (statusComputationSession.startComputing(target)) {
             CfirStatusComputationSession.StatusComputationStatus.Computed,
             CfirStatusComputationSession.StatusComputationStatus.Computing,
+            CfirStatusComputationSession.StatusComputationStatus.Failed,
             -> return target
 
             else -> Unit
         }
 
-        action()
-        if (target is CfirMemberDeclaration) {
-            target.publishResolvedStatusIfNeeded()
+        try {
+            action()
+            if (target is CfirMemberDeclaration) {
+                target.publishResolvedStatusIfNeeded()
+                target.publishInteropInfoIfNeeded()
+            }
+            target.replaceResolvePhase(CfirResolvePhase.STATUS)
+            statusComputationSession.endComputing(target)
+        } catch (failure: Throwable) {
+            statusComputationSession.failComputing(target)
+            throw failure
         }
-        target.replaceResolvePhase(CfirResolvePhase.STATUS)
-        statusComputationSession.endComputing(target)
         return target
     }
 
@@ -773,6 +815,111 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             modality = currentModality
         }
     )
+}
+
+/**
+ * 在 STATUS 阶段发布声明级 FFI 元数据。
+ *
+ * `isForeign` 是现有声明修饰符，保留在 status；显式 `@C`、Java/ObjC 标记、
+ * 外部名称和当前 ABI 结果集中保存到 [CfirInteropInfo]。该快照由后续类型、checker、
+ * Analysis API 和 backend adapter 消费，后续阶段不再从 source 文本重新猜测。
+ */
+private fun CfirMemberDeclaration.publishInteropInfoIfNeeded() {
+    if (interopInfo != null) return
+
+    val annotations = annotations.filterIsInstance<CfirAnnotationCall>()
+    val explicitC = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.C }
+    val javaMirror = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_MIRROR }
+    val javaImpl = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_IMPL }
+    val javaHasDefault = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_HAS_DEFAULT }
+    val objcMirror = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_MIRROR }
+    val objcImpl = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_IMPL }
+    val objcInit = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_INIT }
+    val objcOptional = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_OPTIONAL }
+    val callingConvention = annotations
+        .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.CALLING_CONV }
+        ?.firstStringArgument()
+        ?.let { value ->
+            when (value) {
+                CangjieCallingConvention.CDECL.name -> CangjieCallingConvention.CDECL
+                CangjieCallingConvention.STDCALL.name -> CangjieCallingConvention.STDCALL
+                else -> null
+            }
+        }
+
+    val abiRequest = CfirAbiRequest(
+        isForeign = status.isForeign,
+        hasExplicitC = explicitC,
+        callingConvention = callingConvention,
+    )
+    val languageAbi = session.cfirAbiPolicy.resolve(abiRequest)
+    val resolvedAbi = when {
+        javaMirror || javaImpl -> languageAbi.copy(kind = CfirAbiKind.JAVA, isCFunction = false)
+        objcMirror || objcImpl -> languageAbi.copy(kind = CfirAbiKind.OBJC, isCFunction = false)
+        else -> languageAbi
+    }
+
+    interopInfo = CfirInteropInfo(
+        abiRequest = abiRequest,
+        resolvedAbi = resolvedAbi,
+        foreignName = annotations
+            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_NAME }
+            ?.firstStringArgument(),
+        foreignGetterName = annotations
+            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_GETTER_NAME }
+            ?.firstStringArgument(),
+        foreignSetterName = annotations
+            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_SETTER_NAME }
+            ?.firstStringArgument(),
+        java = if (javaMirror || javaImpl || javaHasDefault) {
+            CfirJavaInteropInfo(
+                isMirror = javaMirror,
+                isImpl = javaImpl,
+                hasDefault = javaHasDefault,
+            )
+        } else {
+            null
+        },
+        objc = if (objcMirror || objcImpl || objcInit || objcOptional) {
+            CfirObjCInteropInfo(
+                isMirror = objcMirror,
+                isImpl = objcImpl,
+                isInit = objcInit,
+                isOptional = objcOptional,
+            )
+        } else {
+            null
+        },
+    )
+
+    // STATUS 只发布已经由现有 mapping 解析完成的 annotation 参数视图。
+    // 没有 resolved mapping 时保留 TYPE_RESOLVED/UNRESOLVED，不能把 raw
+    // 参数表伪装成语义完成结果。
+    annotations.forEach { annotation ->
+        if (annotation.annotationResolveState == CfirAnnotationResolveState.ERROR) return@forEach
+        val resolvedArguments = annotation.argumentList as? CfirResolvedArgumentList ?: return@forEach
+        annotation.replaceArgumentView(resolvedArguments.toAnnotationArgumentView())
+        annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.SEMANTIC_RESOLVED)
+    }
+}
+
+/**
+ * 读取已经由 annotation owner 发布的 builtin kind。
+ *
+ * STATUS 不得从 callee 短名或 source 文本推断 builtin 身份：短名可能来自
+ * 用户自定义 annotation，也可能与标准库 annotation 同名。raw annotation
+ * 在此阶段尚未完成身份解析时保持未知，由其声明 owner 在正确阶段重新发布
+ * interop snapshot，而不是静默降级为名称匹配。
+ */
+private fun CfirAnnotationCall.annotationKindOrRawName(): CangjieAnnotationKind? {
+    return annotationKind
+}
+
+/** 读取 annotation 的第一个未命名字符串参数。 */
+private fun CfirAnnotationCall.firstStringArgument(): String? {
+    val argument = argumentList.arguments.firstOrNull() ?: return null
+    val expression = (argument as? CfirNamedArgumentExpression)?.expression ?: argument
+    return (expression as? CfirLiteralExpression)?.value as? String
 }
 
 /**

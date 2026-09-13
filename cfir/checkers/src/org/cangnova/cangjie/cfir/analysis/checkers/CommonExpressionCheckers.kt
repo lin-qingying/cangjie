@@ -45,6 +45,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfAvailableExpressionChecker,
             CfirTypeConversionOverflowChecker,
         )
 

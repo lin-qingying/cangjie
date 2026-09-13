@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.entrypoint.session
 
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
+import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
@@ -58,7 +59,7 @@ fun createCfirApiLevelProvider(configuration: CompilerConfiguration): CfirApiLev
 
     val syscapInfo = syscapConfigPath
         ?.takeIf { it.isNotBlank() }
-        ?.let(::parseSyscapConfiguration)
+        ?.let { parseSyscapConfiguration(it, configuration.apiLevelSyscapBasePath) }
         ?: ParsedSyscapConfiguration.EMPTY
 
     return object : CfirApiLevelProvider {
@@ -77,7 +78,7 @@ fun createCfirApiLevelProvider(configuration: CompilerConfiguration): CfirApiLev
  * 顶层配置可以同时给出 `apiLevel` 和若干以当前目录为基准的 syscap JSON 文件引用；
  * 该方法会读取所有有效子文件，计算 union/intersection，并保留顶层 API level。
  */
-private fun parseSyscapConfiguration(rawPath: String): ParsedSyscapConfiguration {
+private fun parseSyscapConfiguration(rawPath: String, basePath: String?): ParsedSyscapConfiguration {
     val configFile = File(rawPath)
     if (!configFile.exists() || !configFile.isFile) {
         return ParsedSyscapConfiguration.EMPTY
@@ -87,9 +88,10 @@ private fun parseSyscapConfiguration(rawPath: String): ParsedSyscapConfiguration
     if (content.isBlank()) return ParsedSyscapConfiguration.EMPTY
 
     val apiLevel = API_LEVEL_REGEX.find(content)?.groupValues?.getOrNull(1)?.toIntOrNull()
+    val resolutionBase = basePath?.let(::File)?.takeIf { it.isDirectory } ?: File("").absoluteFile
     val referencedFiles = SYS_CAP_FILE_REGEX.findAll(content)
         .mapNotNull { it.groupValues.getOrNull(1) }
-        .map { relativePath -> configFile.parentFile.resolve(relativePath).normalize() }
+        .map { relativePath -> resolutionBase.resolve(relativePath).normalize() }
         .filter { it.exists() && it.isFile }
         .toList()
 

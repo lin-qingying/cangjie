@@ -35,4 +35,8 @@ class CjForeignDirective : CjElementImplStub<CangJieForeignDirectiveStub> {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieForeignDirectiveStub) : super(stub, CjStubElementTypes.FOREIGN)
+
+    /** `foreign { ... }` 的声明容器；外部函数不是文件的直接 PSI child。 */
+    val body: CjForeignBody?
+        get() = findChildByType(CjStubElementTypes.FOREIGN_BODY)
 }

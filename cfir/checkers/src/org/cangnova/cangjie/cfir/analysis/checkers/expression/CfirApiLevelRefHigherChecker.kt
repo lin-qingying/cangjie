@@ -10,6 +10,9 @@ import org.cangnova.cangjie.cfir.declarations.declarationAvailabilityProvider
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirIfAvailableBranchKind
+import org.cangnova.cangjie.cfir.declarations.ifAvailableBranchContext
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.apiLevelProvider
@@ -88,6 +91,7 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
         val useSitePackage = file.packageDirective.packageFqName
         val availability = context.session.declarationAvailabilityProvider
         val apiLevelProvider = context.session.apiLevelProvider
+        val scope = context.ifAvailableScope(expression)
 
         for (declaration in availability.referenceAvailabilityChain(symbol)) {
             if (availability.hideUnavailabilityOf(declaration, useSitePackage) != null) {
@@ -95,13 +99,14 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
             }
 
             val apiLevel = availability.ownApiLevelInfo(declaration) ?: continue
-            if (apiLevelProvider.projectApiLevel != CfirApiLevelProvider.DISABLED) {
+            val currentApiLevel = scope.apiLevel ?: apiLevelProvider.projectApiLevel
+            if (currentApiLevel != CfirApiLevelProvider.DISABLED) {
                 val targetLevel = apiLevel.since?.toIntOrNull()
-                if (targetLevel != null && targetLevel > apiLevelProvider.projectApiLevel) {
+                if (targetLevel != null && targetLevel > currentApiLevel) {
                     return AvailabilityFailure.ApiLevel(
                         declarationName = declaration.platformDiagnosticName(reference.name),
                         targetLevel = targetLevel,
-                        projectLevel = apiLevelProvider.projectApiLevel,
+                        projectLevel = currentApiLevel,
                     )
                 }
             }
@@ -109,10 +114,10 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
             val syscap = apiLevel.syscap
             if (!apiLevelProvider.syscapEnabled || syscap.isNullOrEmpty()) continue
             val diagnosticName = Name.identifier(syscap)
-            if (syscap !in apiLevelProvider.syscapUnion) {
+            if (syscap !in scope.syscapUnion(apiLevelProvider)) {
                 return AvailabilityFailure.SyscapError(diagnosticName)
             }
-            if (syscap !in apiLevelProvider.syscapIntersection) {
+            if (syscap !in scope.syscapIntersection(apiLevelProvider)) {
                 return AvailabilityFailure.SyscapWarning(diagnosticName)
             }
         }
@@ -144,5 +149,70 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
 
         /** Syscap 在 union 中但不在 intersection 中。 */
         data class SyscapWarning(val syscap: Name) : AvailabilityFailure
+    }
+
+    /**
+     * `@IfAvailable` 分支内的有效 API/syscap 假设。
+     *
+     * true 分支把条件提升为当前分支已知事实；false 分支从全局候选集合中排除
+     * 该事实。嵌套节点按 containing-elements 的外到内顺序叠加，保证同一规则
+     * 同时适用于 PSI 和 LightTree lowering。
+     */
+    private data class IfAvailableScope(
+        val apiLevel: Int? = null,
+        val addedSyscaps: Set<String> = emptySet(),
+        val removedSyscaps: Set<String> = emptySet(),
+        val addedIntersectionSyscaps: Set<String> = emptySet(),
+        val removedIntersectionSyscaps: Set<String> = emptySet(),
+    ) {
+        fun syscapUnion(provider: CfirApiLevelProvider): Set<String> =
+            (provider.syscapUnion + addedSyscaps) - removedSyscaps
+
+        fun syscapIntersection(provider: CfirApiLevelProvider): Set<String> =
+            (provider.syscapIntersection + addedIntersectionSyscaps) - removedIntersectionSyscaps
+    }
+
+    /** 从 checker traversal 的结构栈计算当前引用所在的 IfAvailable 分支假设。 */
+    context(context: CheckerContext)
+    private fun CheckerContext.ifAvailableScope(reference: CfirQualifiedAccessExpression): IfAvailableScope {
+        var scope = IfAvailableScope()
+        for (element in containingElements) {
+            val branch = (element as? CfirAnonymousFunction)?.ifAvailableBranchContext ?: continue
+            when (branch.conditionName) {
+                "level" -> {
+                    val level = branch.conditionValue.toIntOrNull() ?: continue
+                    if (branch.kind == CfirIfAvailableBranchKind.THEN) {
+                        // 官方嵌套 IfAvailable 的 true 分支按当前条件重新建立
+                        // APILevel 上界；false 分支则保留外层已知上界。
+                        scope = scope.copy(apiLevel = level)
+                    }
+                }
+
+                "syscap" -> {
+                    val syscap = branch.conditionValue.removeSurrounding("\"")
+                    scope = if (branch.kind == CfirIfAvailableBranchKind.THEN) {
+                        scope.copy(
+                            addedSyscaps = scope.addedSyscaps + syscap,
+                            addedIntersectionSyscaps = scope.addedIntersectionSyscaps + syscap,
+                            removedSyscaps = scope.removedSyscaps - syscap,
+                            removedIntersectionSyscaps = scope.removedIntersectionSyscaps - syscap,
+                        )
+                    } else {
+                        // false 分支只排除“并集但非交集”的能力。若能力在所有
+                        // 目标设备交集中，false 分支本身不可达，官方 checker
+                        // 仍保留该全局事实（例如 syscap A）。
+                        val parentIntersection = scope.syscapIntersection(context.session.apiLevelProvider)
+                        val mustRemoveFromUnion = syscap !in parentIntersection
+                        scope.copy(
+                            removedSyscaps = if (mustRemoveFromUnion) scope.removedSyscaps + syscap else scope.removedSyscaps,
+                            removedIntersectionSyscaps = scope.removedIntersectionSyscaps,
+                            addedSyscaps = if (mustRemoveFromUnion) scope.addedSyscaps - syscap else scope.addedSyscaps,
+                            addedIntersectionSyscaps = scope.addedIntersectionSyscaps,
+                        )
+                    }
+                }
+            }
+        }
+        return scope
     }
 }

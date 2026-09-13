@@ -104,6 +104,13 @@ internal class CfirBuiltInCallResolver(
                 resolutionMode = resolutionMode,
             )
         }
+        if (name == StandardNames.CFUNC && classifier.isBuiltin(CfirBuiltInTypeKind.CFUNC)) {
+            return collectBuiltinCFuncConstructorCandidates(
+                functionCall = functionCall,
+                name = name,
+                resolutionMode = resolutionMode,
+            )
+        }
         if (name == StandardNames.ARRAY && classifier.isStdlibArrayClassifier()) {
             return collectBuiltinArrayConstructorCandidates(
                 functionCall = functionCall,
@@ -167,6 +174,13 @@ internal class CfirBuiltInCallResolver(
                         resolutionMode = resolutionMode,
                     )
 
+                CfirBuiltInTypeKind.CFUNC ->
+                    return collectBuiltinCFuncConstructorCandidates(
+                        functionCall = functionCall,
+                        name = classifier.name,
+                        resolutionMode = resolutionMode,
+                    )
+
                 else -> Unit
             }
         }
@@ -184,6 +198,13 @@ internal class CfirBuiltInCallResolver(
 
             CfirBuiltInTypeKind.CSTRING ->
                 return collectBuiltinCStringConstructorCandidates(
+                    functionCall = functionCall,
+                    name = classifier.name,
+                    resolutionMode = resolutionMode,
+                )
+
+            CfirBuiltInTypeKind.CFUNC ->
+                return collectBuiltinCFuncConstructorCandidates(
                     functionCall = functionCall,
                     name = classifier.name,
                     resolutionMode = resolutionMode,
@@ -322,6 +343,33 @@ internal class CfirBuiltInCallResolver(
         val callInfo = createBuiltinConstructorCallInfo(functionCall, name, resolutionMode)
         val candidate = CandidateFactory(transformer.resolutionContext, callInfo)
             .createBuiltinCStringConstructorCandidate(callInfo)
+        return reduceBuiltinCandidates(callInfo, listOf(candidate))
+    }
+
+    /**
+     * 为 CFunc wrapper 构造候选。
+     *
+     * CFunc 的函数类型实参由 classifier/type resolver 已经解析；该候选只
+     * 承载官方 `CFunc<Fn>(CPointer)` 的单一值参数约束。
+     */
+    private fun collectBuiltinCFuncConstructorCandidates(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        resolutionMode: ResolutionMode,
+    ): CfirBuiltInCallResolution? {
+        val functionType = functionCall.typeArguments.singleOrNull()
+            ?.coneTypeOrNull
+            ?.fullyExpandedType(session) as? org.cangnova.cangjie.cfir.types.ConeFunctionType
+            ?: return null
+        val callInfo = createBuiltinCallInfo(
+            functionCall = functionCall,
+            name = name,
+            resolutionMode = resolutionMode,
+            // CFunc's classifier argument is not a constructor type argument.
+            typeArguments = emptyList(),
+        )
+        val candidate = CandidateFactory(transformer.resolutionContext, callInfo)
+            .createBuiltinCFuncConstructorCandidate(callInfo, functionType)
         return reduceBuiltinCandidates(callInfo, listOf(candidate))
     }
 

@@ -59,6 +59,11 @@ object CfirFrontendConfigurationKeys {
     val API_LEVEL_SYSCAP_CONFIG_PATH =
         CompilerConfigurationKey.create<String>("API_LEVEL_SYSCAP_CONFIG_PATH")
 
+    /** syscap 配置内相对文件引用的调用方工作目录。 */
+    @JvmField
+    val API_LEVEL_SYSCAP_BASE_PATH =
+        CompilerConfigurationKey.create<String>("API_LEVEL_SYSCAP_BASE_PATH")
+
     /** 是否按可执行编译目标检查程序入口。 */
     @JvmField
     val CHECK_PROGRAM_ENTRY =
@@ -127,6 +132,19 @@ var CompilerConfiguration.apiLevelSyscapConfigPath: String?
     set(value) {
         if (value == null) return
         put(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_CONFIG_PATH, value)
+    }
+
+/**
+ * syscap 配置内部相对路径的解析基准。
+ *
+ * 官方 cjc 按调用方工作目录解释 JSON 中的设备文件路径；测试 facade 将测试数据目录
+ * 显式注入这里，生产入口未设置时使用当前进程工作目录。
+ */
+var CompilerConfiguration.apiLevelSyscapBasePath: String?
+    get() = get(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_BASE_PATH)
+    set(value) {
+        if (value == null) return
+        put(CfirFrontendConfigurationKeys.API_LEVEL_SYSCAP_BASE_PATH, value)
     }
 
 /**
