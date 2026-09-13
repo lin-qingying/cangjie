@@ -153,6 +153,35 @@
         </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/deveco" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/deveco" />
+            <option value="$PROJECT_DIR$/deveco/modules" />
+            <option value="$PROJECT_DIR$/deveco/modules/core" />
+            <option value="$PROJECT_DIR$/deveco/modules/deveco-bridge" />
+            <option value="$PROJECT_DIR$/deveco/modules/domain" />
+            <option value="$PROJECT_DIR$/deveco/modules/domain/package-manager" />
+            <option value="$PROJECT_DIR$/deveco/modules/domain/project-model" />
+            <option value="$PROJECT_DIR$/deveco/modules/domain/telemetry" />
+            <option value="$PROJECT_DIR$/deveco/modules/domain/toolchain" />
+            <option value="$PROJECT_DIR$/deveco/modules/foundation" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/base" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/debugger-api" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/debugger-dap" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/debugger-proto" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/lsp" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/macro" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/project" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/run" />
+            <option value="$PROJECT_DIR$/deveco/modules/ide/ux" />
+            <option value="$PROJECT_DIR$/deveco/modules/test-support" />
+            <option value="$PROJECT_DIR$/deveco/product" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <compositeConfiguration>
           <compositeBuild compositeDefinitionSource="SCRIPT">
             <builds>
