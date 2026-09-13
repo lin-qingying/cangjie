@@ -11,6 +11,6 @@ public class A {}
 
 package d
 
-<!UNUSED_IMPORT!>import org1::a.A<!>
+import <!UNUSED_IMPORT!>org1::a.A<!>
 
 main() {}
