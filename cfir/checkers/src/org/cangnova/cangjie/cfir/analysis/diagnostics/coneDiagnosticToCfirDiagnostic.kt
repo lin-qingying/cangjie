@@ -3570,7 +3570,7 @@ private fun AbstractCallCandidate<*>.genericInferenceDeclaredTypeParameters(
     val result = linkedSetOf<CfirTypeParameterSymbol>()
     callableSymbol.cfir.typeParameters.mapTo(result) { it.symbol }
 
-    if (callableSymbol is CfirEnumConstructorSymbol) {
+    if (callableSymbol is CfirEnumConstructorSymbol || callableSymbol is CfirConstructorSymbol) {
         callableSymbol.getContainingClass()
             ?.cfir
             ?.typeParameters
