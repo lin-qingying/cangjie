@@ -6645,4 +6645,22 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 - fixture correction: 在 `optionalModifiers06.cj` 的完整 `open` token 上补充 `<!REDUNDANT_MODIFIER_FOR_TARGET!>open<!>`；源码语法和其它期望未改。
 - verification commands and outcome:
   - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$OptionalModifiers' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$OptionalModifiers' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：22/22 通过；LightTree 11/11、PSI 11/11，0 failures、0 errors、0 skipped。
-  - 完整 `:cfir:analysis-tests:test` 按用户要求未执行；不将本项定向结果表述为全量回归结果。
+- 完整 `:cfir:analysis-tests:test` 按用户要求未执行；不将本项定向结果表述为全量回归结果。
+
+## 2026-09-13：Array 下标访问、构造器泛型推断与 sortBy 弃用诊断
+
+- problem type: Array / 类型限定符下标访问；Constructor generic inference；Diagnostics / deprecated API。
+- root cause: 类型限定符 `Array<T>` 的下标读写在静态作用域中同时保留 `index-set` 与 `range-set` 等实例 overload，导致 overload ambiguity 覆盖官方应先报告的非静态成员访问；构造器候选的泛型推断只收集构造器自身类型参数，遗漏所属泛型类的 owner 参数，因而丢失 `Array.init` 的无法推断诊断；`sortBy` 的官方弃用告警已由 CFIR 正确产生，但 fixture 未声明该告警。
+- official Cangjie evidence: cjc 1.0.5 对 `Array<Bool>[3]` 的读写均报告 `sema_illegal_access_non_static_member`；对 `Array<Rune>` 目标下的 `Array(3, repeat: 3)` 报告 `sema_unable_to_infer_generic_func`；`sortBy` 报告 `sema_deprecated_warning`。实现依据为 `external/cangjie_compiler/src/Sema/TypeCheckBuiltinExpr.cpp`、`TypeCheckCall.cpp` 及 `external/cangjie_runtime/stdlib/libs/std/core/array.cj`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/tree/src/org/jetbrains/kotlin/fir/scopes/FirScopeProvider.kt`、`external/kotlin/compiler/fir/providers/src/org/jetbrains/kotlin/fir/scopes/impl/FirClassDeclaredMemberScope.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/FirCallResolver.kt`、`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/stages/FirArgumentsToParametersMapper.kt`、`external/kotlin/compiler/fir/raw-fir/light-tree2fir/src/org/jetbrains/kotlin/fir/lightTree/converter/LightTreeRawFirExpressionBuilder.kt`。Kotlin 的 scope/call/indexed-access 分层用于确定 CFIR 所有权，具体仓颉诊断仍以 cjc 和官方实现为准。
+- CFIR owner files changed: `cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirClassStaticScope.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`。
+- repair principle: 在共享静态作用域和调用诊断边界上先确定 receiver applicability，再统一保留 callable owner 的全部泛型参数；fixture 只补充官方已经产生而期望遗漏的诊断。
+- fixtures covered: `llt/array` 的 `array_access1.cj`、`array_access2.cj`、`array_access3.cj`、`array_access4.cj`、`array_builin_ctype.cj`、`array_constructor01.cj`、`array_constructor02.cj`、`array_constructor03.cj`、`array_constructor04.cj`、`array_constructor05.cj`、`array_constructor06.cj`、`array_coverage.cj`、`array_extend_02.cj`、`array_extend_03.cj`、`array_invalid_api.cj`、`array_invalid_index2.cj`、`array_invalid_trailing_closure.cj`、`array_sort.cj`、`array_with_trailing_closure.cj`、`arraylit_option.cj`、`arraylit1.cj`、`arraylit2.cj`、`arraylit3.cj`、`arraylit4.cj`、`arraylit5.cj`、`arraysizedlit1.cj`、`arraysizedlit2.cj`、`empty_array.cj`、`err_array_lit_00.cj`；以及 `llt/Extend/extend_array_static.cj`、`llt/Extend/generic/array_static.cj`、`llt/Extend/unbox_array.cj`。LightTree/PSI 双入口共 64 项，完整覆盖 Array 与 ArrayExtend。
+- fixture correction: `array_constructor02.cj` 将 `UNABLE_TO_INFER_GENERIC_FUNC` 的范围收窄到 `Array` 标识符；`array_sort.cj` 在完整 `sortBy` 标识符上补充 `DEPRECATED_WARNING`；`array_access4.cj` 的官方非静态成员期望由共享实现恢复，源码未改。
+- verification commands and outcome:
+  - Array 双入口定向切片：64/64 通过，LightTree 32/32、PSI 32/32。
+  - 静态访问保护族双入口精确过滤：Gradle `BUILD SUCCESSFUL`；泛型/类型推断/类型别名保护族 860 项中 854 通过、6 项既有 `type_arg_infer3/5/6` 失败，和基线逐 key 一致，`REGRESSED=0`。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：8,560 tests，7,856 passed、399 failed、307 skipped；相对 Array 修复前 8,560 tests，7,850 passed、405 failed、307 skipped，退出码 1 仅因仓库既有失败。
+  - XML testcase-key 比较：`FIXED=6`（三个 Array fixture 各双入口）、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=0`、`CHANGED_FAILURE_MESSAGES=0`；`UNCHANGED_FAILURES=399`、`UNCHANGED_PASSES=7850`、`UNCHANGED_SKIPS=306`。两套 XML 均为 8,561 records，差异仅为上述 6 个 Array key。
+- remaining failures: Array 目标组 0 项；其余 399 项均为基线失败，失败消息未发生变化。
+- change isolation: 三个独立改动分别提交为 `8f632cc85`（非静态下标访问）、`963fddbe3`（构造器 owner 泛型参数）和 `53fe95514`（sortBy 期望）；`.idea/workspace.xml`、effect、extends/implements、record 以及其它用户已有 resolve 修改保持未提交，`external/` 未修改。
