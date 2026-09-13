@@ -30,6 +30,7 @@ import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.entrypoint.configuration.CfirFrontendConfigurationKeys
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
+import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.test.CfirParser
@@ -159,10 +160,15 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         configuration.apiLevel = module.directives[API_LEVEL]
             .lastOrNull()
             ?.toIntOrNull()
+        val testDataAnchor = module.files
+            .firstOrNull { !it.isAdditional }
+            ?.originalFile
+            ?.parentFile
         configuration.apiLevelSyscapConfigPath = module.directives[API_LEVEL_SYSCAP]
             .lastOrNull()
             ?.let { resolveTestDataPath(module, it) }
             ?.path
+        configuration.apiLevelSyscapBasePath = testDataAnchor?.path
         if (WITH_STDLIB in module.directives && !noPreludeEnabled) {
             addStdlibClasspathRoots(configuration)
         }

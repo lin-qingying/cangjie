@@ -31,6 +31,9 @@ import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.annotations.CangjieAnnotationCatalog
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
@@ -1291,10 +1294,19 @@ class LightTreeRawCfirDeclarationBuilder(
             macroAttributeTextOverride = macroAttributeTextOverride,
             macroAttributeStartOffsetOverride = macroAttributeStartOffsetOverride,
         )
+        val descriptor = CangjieAnnotationCatalog.find(rawName.substringAfterLast('.'))
+        val compileTimeVisible = findFirstDescendantByType(annotation, CjTokens.ATEXCL) != null
         return buildAnnotationCall {
             source = sourceOverride ?: annotation.toSource()
             typeRef = typeRefOverride ?: buildAnnotationTypeRef(rawName, annotation)
             this.arguments.addAll(arguments)
+            annotationKind = if (compileTimeVisible) null else descriptor?.kind
+            annotationOrigin = if (compileTimeVisible && descriptor?.origin != CangjieAnnotationOrigin.SPECIAL_EXPRESSION) {
+                CangjieAnnotationOrigin.CUSTOM
+            } else {
+                descriptor?.origin ?: CangjieAnnotationOrigin.CUSTOM
+            }
+            isCompileTimeVisible = compileTimeVisible
             argumentList = buildArgumentList {
                 source = argumentListSourceOverride ?: valueArgumentList?.toSource()
                 this.arguments.addAll(arguments)
@@ -1483,25 +1495,6 @@ class LightTreeRawCfirDeclarationBuilder(
             ),
         )
 
-        if (shortName == "IfAvailable") {
-            return IfAvailableSurface(
-                surfaceId = common.surfaceId,
-                qualifiedName = common.qualifiedName,
-                kind = common.kind,
-                hasParenthesis = common.hasParenthesis,
-                attrTokens = common.attrTokens,
-                inputTokens = common.inputTokens,
-                sourceRange = common.sourceRange,
-                scopeContext = common.scopeContext,
-                modifiers = common.modifiers,
-                carriedAnnotations = common.carriedAnnotations,
-                capturedRawSyntax = common.capturedRawSyntax,
-                containerContext = common.containerContext,
-                replaceHandle = common.replaceHandle,
-                branchTokens = inputTokens,
-            )
-        }
-
         return when (ownerKind) {
             MacroSurfaceOwnerKind.DECLARATION -> MacroSurfaceDecl(
                 surfaceId = common.surfaceId,
@@ -1548,7 +1541,6 @@ class LightTreeRawCfirDeclarationBuilder(
         hasParenthesis: Boolean,
     ): List<MacroSurfaceToken>? {
         if (ownerKind != MacroSurfaceOwnerKind.DECLARATION) return null
-        if (shortName == "IfAvailable") return null
         if (hasParenthesis) return null
         return tokenizeSourceSlice(annotation.endOffset, ownerNode.endOffset)
     }
@@ -2337,6 +2329,15 @@ class LightTreeRawCfirDeclarationBuilder(
         val pendingAnnotations = mutableListOf<LighterASTNode>()
         tree.forEachChildren(file) { child ->
             when (child.tokenType) {
+                CjNodeTypes.FOREIGN -> {
+                    val foreignBody = tree.findChildByType(child, CjNodeTypes.FOREIGN_BODY)
+                    if (foreignBody != null) {
+                        tree.getChildrenByType(foreignBody, CjNodeTypes.FUNC).forEach { foreignFunction ->
+                            declarations.add(convertDeclaration(foreignFunction))
+                        }
+                    }
+                    return@forEachChildren
+                }
                 CjStubElementTypes.ANNOTATIONS -> {
                     tree.forEachChildren(child) { annotation ->
                         if (annotation.tokenType == CjNodeTypes.ANNOTATION || annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
@@ -2652,9 +2653,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val surfaceId = MacroSurfaceIdGenerator.next()
         val shortName = rawName.substringAfterLast('.')
         val valueArgumentList = reparsed.builder.findFirstDescendantByType(reparsed.annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
-        val inputTokens = if (shortName == "IfAvailable") valueArgumentList?.let { argumentList ->
-            tokenizeSurfacePayload(argumentList.asText(), argumentList.startOffset + reparsed.sourceOffsetDelta)
-        }.orEmpty() else tokenizeSourceSlice(reparsed.annotationSource.endOffset, declarationNode.endOffset)
+        val inputTokens = tokenizeSourceSlice(reparsed.annotationSource.endOffset, declarationNode.endOffset)
         val attrTokens = reparsed.macroAttributeText?.let { macroAttributeText ->
             tokenizeSurfacePayload(macroAttributeText, reparsed.macroAttributeStartOffset ?: 0)
         }.orEmpty()
@@ -2683,24 +2682,6 @@ class LightTreeRawCfirDeclarationBuilder(
             containerContext = macroSurfaceContainerContext(declarationNode),
             replaceHandle = replaceHandle,
         )
-        if (shortName == "IfAvailable") {
-            return IfAvailableSurface(
-                surfaceId = common.surfaceId,
-                qualifiedName = common.qualifiedName,
-                kind = common.kind,
-                hasParenthesis = common.hasParenthesis,
-                attrTokens = common.attrTokens,
-                inputTokens = common.inputTokens,
-                sourceRange = common.sourceRange,
-                scopeContext = common.scopeContext,
-                modifiers = common.modifiers,
-                carriedAnnotations = common.carriedAnnotations,
-                capturedRawSyntax = common.capturedRawSyntax,
-                containerContext = common.containerContext,
-                replaceHandle = common.replaceHandle,
-                branchTokens = inputTokens,
-            )
-        }
         return MacroSurfaceDecl(
             surfaceId = common.surfaceId,
             qualifiedName = common.qualifiedName,

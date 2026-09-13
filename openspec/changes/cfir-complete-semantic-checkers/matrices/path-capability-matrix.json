@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "entries": [
+    {"path":"source","reader":"CjParser","writer":"PSI/LightTree raw builder","capabilities":"full syntax, source ranges, @/@! provenance","roundTrip":"source writer only","status":"required"},
+    {"path":"PSI","reader":"Cj PSI","writer":"PsiRawCfirBuilder","capabilities":"special grammar, exact source ranges, annotations","roundTrip":"source-backed","status":"required"},
+    {"path":"LightTree","reader":"LighterAST","writer":"LightTreeRawCfirBuilder","capabilities":"same semantic shape and ranges as PSI","roundTrip":"source-backed","status":"required"},
+    {"path":"CJO","reader":"Cfir CJO reader","writer":"Cfir CJO writer","capabilities":"interop metadata, ABI request/result, generated graph, versioned unknown fields","roundTrip":"only with source writer contract","status":"required"},
+    {"path":"stub","reader":"stub reader","writer":"stub builder","capabilities":"lossy declaration identity and metadata projection","roundTrip":"lossy, no source assertion","status":"required"},
+    {"path":"decompiled","reader":"decompiled projection","writer":"none","capabilities":"read-only projected declarations","roundTrip":"not supported","status":"required"},
+    {"path":"Analysis API","reader":"CFIR analysis symbols","writer":"analysis model converters","capabilities":"resolved annotation identity, FFI metadata, availability, graph","roundTrip":"model contract only","status":"required"},
+    {"path":"CHIR","reader":"CFIR2CHIR adapter","writer":"typed platform metadata","capabilities":"C ABI, calling convention, CFunc, Java/ObjC mapping","roundTrip":"metadata validation","status":"required"},
+    {"path":"backend adapter","reader":"JVM/LLVM/ObjC backend adapter","writer":"link/load/run artifacts","capabilities":"actual ABI and runtime behavior","roundTrip":"link/load/run only","status":"required"}
+  ]
+}

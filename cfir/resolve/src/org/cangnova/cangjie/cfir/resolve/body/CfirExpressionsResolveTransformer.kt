@@ -280,6 +280,63 @@ open class CfirExpressionsResolveTransformer(
         return optionalChainExpression
     }
 
+    /**
+     * 解析官方 `@IfAvailable` 特殊表达式。
+     *
+     * 官方前端先把它视为条件可用性表达式，再以 `() -> Unit` 检查两个 lambda，
+     * 最终脱糖为 Unit 结果的普通条件分支。这里保留特殊节点到 checker/desugar
+     * 边界，避免把条件名、lambda 形状或 API/syscap 上下文重新从源码文本恢复。
+     */
+    override fun transformIfAvailableExpression(
+        ifAvailableExpression: CfirIfAvailableExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        if (ifAvailableExpression.hasResolvedType) return ifAvailableExpression
+
+        ifAvailableExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+        ifAvailableExpression.condition?.transformSingle(transformer, ResolutionMode.ContextIndependent)
+
+        // 两个分支都必须满足 `() -> Unit`。把完整函数类型下推到匿名函数入口，
+        // 参数数量、显式参数类型和 body 返回类型由既有 lambda owner 完成。
+        val expectedLambdaType = ConeFunctionType(
+            parameterTypes = emptyList(),
+            returnType = builtinTypes.unitType,
+        )
+        val lambdaMode = withExpectedType(expectedLambdaType)
+        ifAvailableExpression.thenBranch.markIfAvailableBranch(CfirIfAvailableBranchKind.THEN, ifAvailableExpression)
+        ifAvailableExpression.transformThenBranch(transformer, lambdaMode)
+        ifAvailableExpression.elseBranch.markIfAvailableBranch(CfirIfAvailableBranchKind.ELSE, ifAvailableExpression)
+        ifAvailableExpression.transformElseBranch(transformer, lambdaMode)
+
+        val childError = listOfNotNull(
+            ifAvailableExpression.condition?.coneTypeOrNull,
+            ifAvailableExpression.thenBranch.coneTypeOrNull,
+            ifAvailableExpression.elseBranch.coneTypeOrNull,
+        ).filterIsInstance<ConeErrorType>().firstOrNull()
+
+        // IfAvailable 的脱糖结果是带 else 的 if；两个 lambda body 的合法结果均为
+        // Unit。错误只传播已有诊断，不在特殊节点再次生成级联错误。
+        ifAvailableExpression.replaceConeTypeOrNull(
+            childError?.propagatedErrorTypeOrNull() ?: builtinTypes.unitType,
+        )
+        return ifAvailableExpression
+    }
+
+    /** 把 IfAvailable 的条件事实附着到合法匿名函数声明，供后置 checker 消费。 */
+    private fun CfirExpression.markIfAvailableBranch(
+        kind: CfirIfAvailableBranchKind,
+        expression: CfirIfAvailableExpression,
+    ) {
+        val anonymousFunction = (this as? CfirAnonymousFunctionExpression)?.anonymousFunction ?: return
+        anonymousFunction.ifAvailableBranchContext = CfirIfAvailableBranchContext(
+            kind = kind,
+            conditionName = expression.conditionName.asString(),
+            conditionValue = expression.condition?.let { condition ->
+                (condition as? CfirLiteralExpression)?.value?.toString().orEmpty()
+            }.orEmpty(),
+        )
+    }
+
     /** 解析 `this` receiver 表达式的绑定符号和结果类型。 */
     private fun transformThisReceiverExpression(
         thisReceiverExpression: CfirThisReceiverExpression,

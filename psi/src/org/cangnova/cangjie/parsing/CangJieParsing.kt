@@ -1702,7 +1702,8 @@ class CangJieParsing private constructor(
 
 
         when (builtInAnnotation) {
-            C, FAST_NATIVE, INTRINSIC, CONST_SAFE, FROZEN, ENSURE_PREPARED_TO_MOCK -> {
+            C, FAST_NATIVE, INTRINSIC, CONST_SAFE, FROZEN, ENSURE_PREPARED_TO_MOCK,
+            OBJ_C_INIT, OBJ_C_OPTIONAL, NON_PRODUCT -> {
 //                不需要参数的注解
                 parseBuiltNonArgAnnotation(builtInAnnotation)
             }
@@ -1724,8 +1725,8 @@ class CangJieParsing private constructor(
                 parseWhenAnnotation()
 
 
-            CjBuiltInAnnotation.ANNOTATION, JAVA_IMPL, OBJ_C_MIRROR, OBJ_C_IMPL, JAVA_MIRROR, FOREIGN_NAME,
-            JAVA, DEPRECATED -> {
+            CjBuiltInAnnotation.ANNOTATION, JAVA_IMPL, JAVA_HAS_DEFAULT, OBJ_C_MIRROR, OBJ_C_IMPL,
+            JAVA_MIRROR, FOREIGN_NAME, FOREIGN_GETTER_NAME, FOREIGN_SETTER_NAME, JAVA, DEPRECATED -> {
                 parseAnnotationWithOptionalArguments()
             }
 

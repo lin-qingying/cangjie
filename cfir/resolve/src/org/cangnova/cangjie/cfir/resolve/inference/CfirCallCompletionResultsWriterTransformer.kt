@@ -1306,6 +1306,23 @@ class CfirCallCompletionResultsWriterTransformer(
         access: CfirQualifiedAccessExpression,
         candidate: Candidate,
     ): List<CfirResolvedTypeRef> {
+        /*
+         * `CPointer<T>(...)` is represented by a synthetic callable only so that
+         * the ordinary argument stages can infer T.  The inferred T is not a
+         * source type argument and must not be written back into the call tree:
+         * official PointerExpr diagnostics render an omitted type argument as
+         * `CPointer(...)`.  Explicit source arguments remain in `access` and
+         * are appended below, so this branch changes only the synthetic
+         * inference artifact.
+         */
+        if (
+            candidate.symbol.cfir is CfirCallableDeclaration &&
+                candidate.symbol.cfir.origin == CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor &&
+                !candidate.callInfo.hasExplicitTypeArguments
+        ) {
+            return access.typeArguments.filterIsInstance<CfirResolvedTypeRef>()
+        }
+
         val typeArguments = computeTypeArgumentTypes(candidate).mapIndexed { index, type ->
             val sourceTypeArgument = candidate.typeArgumentMapping.sourceTypeRef(index)
             if (sourceTypeArgument?.coneType?.fullyExpandedType(session) is ConeErrorType) {

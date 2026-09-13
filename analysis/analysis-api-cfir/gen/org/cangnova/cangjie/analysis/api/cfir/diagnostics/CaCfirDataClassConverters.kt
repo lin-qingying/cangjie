@@ -3624,6 +3624,14 @@ private fun CaDiagnosticConverterBuilder.addConversions169() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions170() {
+    add(CfirErrors.MISMATCHING_CATCH_BLOCK) { cfirDiagnostic ->
+        MismatchingCatchBlockImpl(
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.b),
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER) { cfirDiagnostic ->
         NameInConstraintIsNotATypeParameterImpl(
             cfirDiagnostic.a,

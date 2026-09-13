@@ -28,6 +28,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitWrappedExpression(optionalChainExpression)
     }
 
+    override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression) {
+        visitExpression(ifAvailableExpression)
+    }
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport) {
         visitImport(resolvedImport)
     }

@@ -26,6 +26,7 @@ package org.cangnova.cangjie.parsing
 
 import com.google.common.collect.ImmutableMap
 import com.intellij.lang.PsiBuilder
+import com.intellij.lang.PsiBuilderUtil.rawTokenText
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.Pair
 import com.intellij.psi.TokenType
@@ -421,7 +422,11 @@ open class CangJieExpressionParsing(
     context(context: ParsingContext)
     fun parseExpression() {
         if (at(AT)) {
-            parseMacroExpression()
+            if (rawTokenText(builder, 1).toString() == "IfAvailable") {
+                parseIfAvailableExpression()
+            } else {
+                parseMacroExpression()
+            }
             return
         } else if (at(SYNCHRONIZED_KEYWORD)) {
             cangJieParsing.parseSynchronizedExpression()
@@ -431,6 +436,48 @@ open class CangJieExpressionParsing(
             return
         }
         parseBinaryExpression(Precedence.ASSIGNMENT)
+    }
+
+    /**
+     * 解析官方 `IfAvailableExpr`。
+     *
+     * `IfAvailable` 具有固定的三实参 grammar：一个命名条件实参和两个
+     * lambda。它不是普通 macro input，因此必须在这里生成独立 PSI 节点，
+     * 让后续 raw CFIR 同时看见条件值与两个分支。
+     */
+    context(context: ParsingContext)
+    private fun parseIfAvailableExpression() {
+        val expression = mark()
+        advance() // @
+        if (at(IDENTIFIER)) {
+            advance() // IfAvailable
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.expecting.identifier"))
+        }
+
+        if (!expect(LPAR, CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))) {
+            expression.done(IF_AVAILABLE_EXPRESSION)
+            return
+        }
+        parseValueArgument()
+        expect(COMMA, CangJieParsingBundle.message("parsing.error.expecting.symbol", ","))
+        parseIfAvailableLambdaOrExpression()
+        expect(COMMA, CangJieParsingBundle.message("parsing.error.expecting.symbol", ","))
+        parseIfAvailableLambdaOrExpression()
+        expect(RPAR, CangJieParsingBundle.message("parsing.error.expecting.symbol", ")"))
+        expression.done(IF_AVAILABLE_EXPRESSION)
+    }
+
+    /** 解析 IfAvailable 分支；非法的非 lambda 形态也要保留为表达式供 checker 定位。 */
+    context(context: ParsingContext)
+    private fun parseIfAvailableLambdaOrExpression() {
+        if (at(LBRACE)) {
+            parseFunctionLiteral()
+        } else {
+            // 保留非法分支的原始表达式节点，后续 CfirIfAvailableExpressionChecker
+            // 负责报告 IFAVAILABLE_ARG_NOT_LITERAL；这里不能把它吞掉或伪造 lambda。
+            parseBinaryExpression(Precedence.ASSIGNMENT)
+        }
     }
 
     /**
@@ -2941,6 +2988,12 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     fun parseStatement() {
+        // `@IfAvailable` 是表达式而非 declaration macro。必须在通用局部声明
+        // 探测之前分流，否则 AT_Id 会被 MacroExpressionParser 提前消费。
+        if (isIfAvailableExpressionStart()) {
+            parseBlockLevelExpression()
+            return
+        }
         if (!parseLocalDeclaration(false)) {
             if (!atSet(context.expressionFirst)) {
                 errorAndAdvance(CangJieParsingBundle.message("parsing.error.expecting.element.statement"))
@@ -2957,6 +3010,10 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     fun parseStatementByScope(scope: DeclarationParsingMode) {
+        if (isIfAvailableExpressionStart()) {
+            parseBlockLevelExpression()
+            return
+        }
         if (!parseDeclaration(scope, false)) {
             if (!atSet(EXPRESSION_FIRST)) {
                 errorAndAdvance(CangJieParsingBundle.message("parsing.error.expecting.element.statement"))
@@ -2967,6 +3024,10 @@ open class CangJieExpressionParsing(
             }
         }
     }
+
+    /** 判断当前语句是否以官方 `@IfAvailable` 特殊表达式开头。 */
+    private fun isIfAvailableExpressionStart(): Boolean =
+        at(AT) && rawTokenText(builder, 1).toString() == "IfAvailable"
 
     // ==================== 代码块解析 ====================
 

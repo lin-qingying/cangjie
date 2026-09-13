@@ -1,0 +1,77 @@
+
+
+// 本文件由生成器自动生成。参见 cfir/cfir-tree/tree-generator/Readme.md.
+// 请勿手动修改。
+
+@file:Suppress("DuplicatedCode")
+
+package org.cangnova.cangjie.cfir.expressions.impl
+
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfAvailableExpression
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.cfir.visitors.transformInplace
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
+
+class CfirIfAvailableExpressionImpl @CfirImplementationDetail constructor(
+    override val source: CjSourceElement?,
+    override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override var coneTypeOrNull: ConeCangJieType?,
+    override val conditionName: Name,
+    override val conditionArgumentSource: CjSourceElement?,
+    override val conditionNameSource: CjSourceElement?,
+    override var condition: CfirExpression?,
+    override var thenBranch: CfirExpression,
+    override var elseBranch: CfirExpression,
+) : CfirIfAvailableExpression() {
+
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        annotations.forEach { it.accept(visitor, data) }
+        condition?.accept(visitor, data)
+        thenBranch.accept(visitor, data)
+        elseBranch.accept(visitor, data)
+    }
+
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirIfAvailableExpressionImpl {
+        transformAnnotations(transformer, data)
+        transformCondition(transformer, data)
+        transformThenBranch(transformer, data)
+        transformElseBranch(transformer, data)
+        return this
+    }
+
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirIfAvailableExpressionImpl {
+        annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirIfAvailableExpressionImpl {
+        condition = condition?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformThenBranch(transformer: CfirTransformer<D>, data: D): CfirIfAvailableExpressionImpl {
+        thenBranch = thenBranch.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformElseBranch(transformer: CfirTransformer<D>, data: D): CfirIfAvailableExpressionImpl {
+        elseBranch = elseBranch.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>) {
+        annotations = newAnnotations.toMutableOrEmpty()
+    }
+
+    override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
+        coneTypeOrNull = newConeTypeOrNull
+    }
+}

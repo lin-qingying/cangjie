@@ -5,6 +5,8 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -23,8 +25,13 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val typeRef: CfirTypeRef
     abstract override val arguments: List<CfirElement>
+    abstract override val annotationKind: CangjieAnnotationKind?
+    abstract override val annotationOrigin: CangjieAnnotationOrigin?
+    abstract override val isCompileTimeVisible: Boolean?
     abstract override val argumentList: CfirArgumentList
     abstract override val calleeReference: CfirReference
+    abstract val argumentView: CfirAnnotationArgumentView?
+    abstract val annotationResolveState: CfirAnnotationResolveState
     abstract val containingDeclarationSymbol: CfirBasedSymbol<*>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -38,9 +45,19 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
+    abstract override fun replaceAnnotationKind(newAnnotationKind: CangjieAnnotationKind?)
+
+    abstract override fun replaceAnnotationOrigin(newAnnotationOrigin: CangjieAnnotationOrigin?)
+
+    abstract override fun replaceIsCompileTimeVisible(newIsCompileTimeVisible: Boolean?)
+
     abstract override fun replaceArgumentList(newArgumentList: CfirArgumentList)
 
     abstract override fun replaceCalleeReference(newCalleeReference: CfirReference)
+
+    abstract fun replaceArgumentView(newArgumentView: CfirAnnotationArgumentView?)
+
+    abstract fun replaceAnnotationResolveState(newAnnotationResolveState: CfirAnnotationResolveState)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnnotationCall
 

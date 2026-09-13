@@ -7,6 +7,8 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -26,6 +28,15 @@ import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
 object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
+        // Deprecation is a post-resolution usage diagnostic. A failed candidate
+        // is not a valid usage of the deprecated declaration; reporting it here
+        // would hide the root generic/argument diagnostic and diverge from the
+        // official legality-of-usage pass.
+        val candidateReference = expression.calleeReference as? CfirNamedReferenceWithCandidateBase
+        if (candidateReference is CfirErrorReferenceWithCandidate ||
+            (candidateReference as? CfirNamedReferenceWithCandidate)?.candidate?.isSuccessful == false
+        ) return
+
         val symbol = expression.resolvedCallableSymbol() ?: return
         val source = expression.calleeReference.source ?: expression.source ?: return
         val lvs = context.languageVersionSettings
@@ -33,15 +44,6 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         val ownerClassLike = (callDecl as? CfirConstructor)
             ?.symbol?.callableId?.classId
             ?.let { context.session.symbolProvider.getClassLikeSymbolByClassId(it) }
-        System.err.println(
-            "PROBE-CALL: name=${symbol.name} isCtor=${callDecl is CfirConstructor} " +
-                "provider=${callDecl?.deprecationsProvider?.let { it::class.simpleName }}" +
-                " ownerProvider=${ownerClassLike?.cfir?.deprecationsProvider?.let { it::class.simpleName }}" +
-                " ownerDepr=${ownerClassLike?.getOwnDeprecation(lvs)?.all}" +
-                " ownerAnno=${ownerClassLike?.cfir?.annotations?.map { a -> a.typeRef::class.simpleName + ":" + a.arguments.size }}" +
-                " ownerAnnoSrc=${ownerClassLike?.cfir?.annotations?.firstOrNull()?.source}"
-        )
-
         // 构造器的所属类符号（构造器自身无弃用信息时回退用）。
         val declaringClassLike = (symbol.takeIf { it.isBound }?.cfir as? CfirConstructor)
             ?.symbol?.callableId?.classId

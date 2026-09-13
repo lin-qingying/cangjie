@@ -141,6 +141,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(optionalChainExpression, data)
     }
 
+    override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(ifAvailableExpression, data)
+    }
+
     override fun visitBlock(block: CfirBlock, data: CheckerContext) {
         checkers.allBasicExpressionCheckers.check(block, data)
     }

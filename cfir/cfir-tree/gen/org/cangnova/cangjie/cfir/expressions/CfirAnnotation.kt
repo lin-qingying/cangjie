@@ -5,6 +5,8 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -21,6 +23,9 @@ abstract class CfirAnnotation : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val typeRef: CfirTypeRef
     abstract val arguments: List<CfirElement>
+    abstract val annotationKind: CangjieAnnotationKind?
+    abstract val annotationOrigin: CangjieAnnotationOrigin?
+    abstract val isCompileTimeVisible: Boolean?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitAnnotation(this, data)
@@ -32,6 +37,12 @@ abstract class CfirAnnotation : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replaceAnnotationKind(newAnnotationKind: CangjieAnnotationKind?)
+
+    abstract fun replaceAnnotationOrigin(newAnnotationOrigin: CangjieAnnotationOrigin?)
+
+    abstract fun replaceIsCompileTimeVisible(newIsCompileTimeVisible: Boolean?)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnnotation
 

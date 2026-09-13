@@ -85,6 +85,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirAugmentedAssignment>(it)
                     visitAlso<CfirOptionalExpression>(it)
                     visitAlso<CfirOptionalChainExpression>(it)
+                    visitAlso<CfirIfAvailableExpression>(it)
                     visitAlso<CfirBlock>(it)
                     visitAlso<CfirLazyBlock>(it)
                     visitAlso<CfirLazyExpression>(it)

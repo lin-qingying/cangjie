@@ -1,16 +1,14 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -37,7 +35,7 @@ object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
         val returnType = returnTypeRef.coneType
         if (returnType is ConeErrorType) return
 
-        if (CfirForeignFunctionCTypeSemantics.run { with(context) { isMetCType(returnType) } }) return
+        if (CfirCTypeSemantics.isMetCType(context.session, returnType)) return
 
         reporter.reportOn(
             source = returnTypeRef.source,
@@ -71,7 +69,7 @@ object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
             if (isTypeAliasToCFunc(parameterTypeRef)) continue
             val parameterType = parameterTypeRef.coneType
             if (parameterType is ConeErrorType) continue
-            if (CfirForeignFunctionCTypeSemantics.run { with(context) { isMetCType(parameterType) } }) continue
+            if (CfirCTypeSemantics.isMetCType(context.session, parameterType)) continue
 
             reporter.reportOn(
                 source = parameterTypeRef.source ?: parameter.source ?: declaration.source,
@@ -97,61 +95,6 @@ private fun isTypeAliasToCFunc(typeRef: CfirResolvedTypeRef): Boolean {
     )
     val typeAlias = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirTypeAlias ?: return false
     return CfirCFuncTypeLegalityReporter.run { with(context) { isCFuncSyntax(typeAlias.expandedTypeRef) } }
-}
-
-/**
- * foreign C interop 的 CType 判定集中在这里，避免返回类型、参数类型、CFunc 递归约束各写一份。
- */
-internal object CfirForeignFunctionCTypeSemantics {
-    /**
-     * 官方 `IsCStructType` 只接受带 `@C` 互操作边界的 struct。
-     */
-    val primitiveCTypes: Set<PrimitiveTypeKind> = setOf(
-        PrimitiveTypeKind.UNIT,
-        PrimitiveTypeKind.BOOLEAN,
-        PrimitiveTypeKind.INT8,
-        PrimitiveTypeKind.UINT8,
-        PrimitiveTypeKind.INT16,
-        PrimitiveTypeKind.UINT16,
-        PrimitiveTypeKind.INT32,
-        PrimitiveTypeKind.UINT32,
-        PrimitiveTypeKind.INT64,
-        PrimitiveTypeKind.UINT64,
-        PrimitiveTypeKind.INT_NATIVE,
-        PrimitiveTypeKind.UINT_NATIVE,
-        PrimitiveTypeKind.FLOAT32,
-        PrimitiveTypeKind.FLOAT64,
-    )
-
-    /**
-     * 判断类型是否满足 foreign C 互操作的 CType 规则。
-     */
-    context(context: CheckerContext)
-    fun isMetCType(type: ConeCangJieType): Boolean {
-        return when (val expandedType = type.fullyExpandedType(context.session)) {
-            is ConeVArrayType -> isMetCType(expandedType.elementType)
-            is ConePrimitiveType -> expandedType.kind in primitiveCTypes
-            is ConePointerType,
-            is ConeCStringType,
-            is ConeQuestType,
-                -> true
-            is ConeFunctionType -> expandedType.isCFunc &&
-                expandedType.parameterTypes.all { isMetCType(it) } &&
-                isMetCType(expandedType.returnType)
-            is ConeStructType -> isCStructType(expandedType)
-            else -> CfirExtendSemantics.isCType(expandedType.classIdOrPrimitiveClassId)
-        }
-    }
-
-    /**
-     * 判断 struct 类型是否是 C 互操作边界结构体。
-     */
-    context(context: CheckerContext)
-    private fun isCStructType(type: ConeStructType): Boolean {
-        val symbol = context.session.symbolProvider.getClassLikeSymbolByClassId(type.classId) ?: return false
-        val declaration = symbol.cfir as? CfirStruct ?: return false
-        return CfirExtendSemantics.isForeignInteropBoundary(declaration)
-    }
 }
 
 /**
@@ -211,7 +154,7 @@ internal object CfirCFuncTypeLegalityReporter {
 
             val parameterType = (parameterTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
             if (parameterType is ConeErrorType) continue
-            if (CfirForeignFunctionCTypeSemantics.run { with(context) { isMetCType(parameterType) } }) continue
+            if (CfirCTypeSemantics.isMetCType(context.session, parameterType)) continue
 
             reporter.reportOn(
                 source = parameterTypeRef.source,
@@ -225,7 +168,7 @@ internal object CfirCFuncTypeLegalityReporter {
 
         val returnType = (returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         if (returnType is ConeErrorType) return
-        if (CfirForeignFunctionCTypeSemantics.run { with(context) { isMetCType(returnType) } }) return
+        if (CfirCTypeSemantics.isMetCType(context.session, returnType)) return
 
         reporter.reportOn(
             source = returnTypeRef.source,

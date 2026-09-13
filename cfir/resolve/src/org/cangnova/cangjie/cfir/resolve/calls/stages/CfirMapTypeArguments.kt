@@ -25,6 +25,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.WrongArgumentCount
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -108,6 +110,11 @@ object CfirMapTypeArguments : ResolutionStage() {
 
     /** 读取候选显式类型实参，优先使用 callInfo，必要时回退到 call-site。 */
     internal fun Candidate.resolvedExplicitTypeArguments(): List<CfirResolvedTypeRef> {
+        // `CFunc<Fn>(CPointer)` carries `Fn` on the classifier. The synthetic
+        // callable has no type parameters, so recovering the call-site type
+        // arguments here would incorrectly report GENERIC_ARGUMENT_NO_MATCH.
+        if (isBuiltinCFuncConstructorCandidate()) return emptyList()
+
         val fromCallInfo = callInfo.typeArguments.mapNotNull { it as? CfirResolvedTypeRef }
         if (fromCallInfo.isNotEmpty()) return fromCallInfo
 
@@ -115,6 +122,13 @@ object CfirMapTypeArguments : ResolutionStage() {
             ?.typeArguments
             ?.mapNotNull { it as? CfirResolvedTypeRef }
             .orEmpty()
+    }
+
+    /** 判断候选是否为 CFunc wrapper 的 synthetic 单指针构造器。 */
+    private fun Candidate.isBuiltinCFuncConstructorCandidate(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor &&
+            declaration.valueParameters.size == 1
     }
 
     /**

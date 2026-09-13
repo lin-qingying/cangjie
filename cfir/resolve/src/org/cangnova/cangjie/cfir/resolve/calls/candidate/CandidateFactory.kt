@@ -814,6 +814,64 @@ class CandidateFactory(
     }
 
     /**
+     * 构造 `CFunc<(CType...) -> CType>(CPointer)` 内建构造表达式候选。
+     *
+     * 官方 `SynCFuncCall` 的唯一值参数只要求其结果是 CPointer；它不会把
+     * 指针的指向类型与 CFunc 的函数签名建立泛型约束。因此这里使用无约束的
+     * `CPointer<Any>` 作为 synthetic 参数形状，并由 CFunc 专用参数检查阶段
+     * 只接受已解析的 [ConePointerType]。CFunc 的源码类型实参已经被调用方
+     * 转换为返回值签名，不作为 synthetic callable 的显式类型实参重复映射。
+     */
+    internal fun createBuiltinCFuncConstructorCandidate(
+        callInfo: CallInfo,
+        functionType: ConeFunctionType,
+    ): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val cFuncType = ConeFunctionType(
+            parameterTypes = functionType.parameterTypes,
+            returnType = functionType.returnType,
+            isCFunc = true,
+            isClosureType = functionType.isClosureType,
+            hasVariableLenArg = functionType.hasVariableLenArg,
+            attributes = functionType.attributes,
+        )
+        val valueParameter = buildSyntheticValueParameter(
+            ownerSymbol = symbol,
+            parameterName = CFUNC_POINTER_PARAMETER_NAME,
+            parameterType = ConePointerType(ConeAnyType),
+            isNamed = false,
+            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor,
+        )
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = cFuncType
+            }
+            valueParameters.add(valueParameter)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    /**
      * 构造 `CString(CPointer<UInt8>)` 内建构造表达式候选。
      */
     internal fun createBuiltinCStringConstructorCandidate(callInfo: CallInfo): Candidate {
@@ -1202,3 +1260,8 @@ private val POINTER_VALUE_PARAMETER_NAME = Name.identifier("value")
  * 内建 CString 指针参数名。
  */
 private val CSTRING_POINTER_PARAMETER_NAME = Name.identifier("pointer")
+
+/**
+ * 内建 CFunc 构造器的唯一指针参数名。
+ */
+private val CFUNC_POINTER_PARAMETER_NAME = Name.identifier("pointer")

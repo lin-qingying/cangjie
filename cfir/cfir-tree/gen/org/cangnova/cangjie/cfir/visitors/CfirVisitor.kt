@@ -38,6 +38,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): R =
         visitElement(optionalChainExpression, data)
 
+    open fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): R =
+        visitElement(ifAvailableExpression, data)
+
     open fun visitResolvable(resolvable: CfirResolvable, data: D): R =
         visitElement(resolvable, data)
 

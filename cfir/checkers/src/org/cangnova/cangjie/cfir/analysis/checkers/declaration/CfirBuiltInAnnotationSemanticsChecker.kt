@@ -134,7 +134,7 @@ private fun checkAnnotationMetaRules(
 }
 
 /**
- * 检查 APILevel、IfAvailable 和 Hide 等平台注解的声明级语法规则。
+ * 检查 APILevel、Hide 等平台注解的声明级语法规则。
  *
  * 这里处理参数命名、字面量限制、多重注解限制以及 Hide override 继承关系等
  * 仅依赖声明与注解文本即可判断的约束。
@@ -174,40 +174,6 @@ private fun checkPlatformAnnotationSyntax(
                 )
             }
         }
-    }
-
-    val ifAvailableEntries = declaration.findAnnotations(IF_AVAILABLE).filterIsInstance<CfirAnnotationCall>()
-    for (entry in ifAvailableEntries) {
-        if (entry.hasArguments() && !entry.firstArgumentIsNamed()) {
-            reporter.reportOn(
-                source = entry.toSourceOrDeclarationSource(declaration),
-                factory = CfirErrors.IFAVAILABLE_ARG_NO_NAME,
-            )
-        }
-        if (!entry.argumentsAreLiteralLike()) {
-            reporter.reportOn(
-                source = entry.toSourceOrDeclarationSource(declaration),
-                factory = CfirErrors.IFAVAILABLE_ARG_NOT_LITERAL,
-            )
-        }
-
-        entry.rawNamedArgumentNames()
-            .firstOrNull { it !in allowedIfAvailableArgumentNames }
-            ?.let { argumentName ->
-                reporter.reportOn(
-                    source = entry.toSourceOrDeclarationSource(declaration),
-                    factory = CfirErrors.IFAVAILABLE_UNKNOWN_ARG_NAME,
-                    a = argumentName,
-                )
-            }
-    }
-
-    // @IfAvailable APILevel 限制检查
-    if (ifAvailableEntries.isNotEmpty() && apiLevelEntries.isEmpty()) {
-        reporter.reportOn(
-            source = ifAvailableEntries.first().toSourceOrDeclarationSource(declaration),
-            factory = CfirErrors.IFAVAILABLE_LEVEL_LIMIT,
-        )
     }
 
     val hideEntries = availability.findAnnotations(declaration, CfirPlatformAnnotationClassIds.HIDE)
@@ -963,18 +929,6 @@ private val OBJC_IMPL = Name.identifier("ObjCImpl")
 
 /** 外部符号名称映射注解名称。 */
 private val FOREIGN_NAME = Name.identifier("ForeignName")
-
-/** 条件可用性注解名称。 */
-private val IF_AVAILABLE = Name.identifier("IfAvailable")
-
-/**
- * `@IfAvailable` 允许出现的命名参数集合。
- */
-private val allowedIfAvailableArgumentNames: Set<String> = setOf(
-    "level",
-    "since",
-    "syscap",
-)
 
 /**
  * @ForeignName 注解规则检查。

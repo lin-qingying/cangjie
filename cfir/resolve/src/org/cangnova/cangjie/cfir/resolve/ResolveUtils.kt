@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -240,7 +241,7 @@ fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
     return ConeFunctionType(
         parameterTypes = parameterTypes,
         returnType = substitutedReturnType,
-        isCFunc = declaration.status.isForeign,
+        isCFunc = declaration.interopInfo?.isC == true,
     )
 }
 

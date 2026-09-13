@@ -822,6 +822,16 @@ internal object ArgumentCheckingProcessor {
             return
         }
 
+        /*
+         * 官方 `SynCFuncCall` 只检查构造参数的 kind 是否为 Pointer；
+         * CFunc 的 pointer pointee 与 wrapper signature 没有类型关系。
+         * 因此不能把它当作普通 `CPointer<Any>` 子类型检查，否则合法的
+         * `CFunc<Fn>(CPointer<T>())` 会因指向类型不相等而被拒绝。
+         */
+        if (candidate.isBuiltinCFuncConstructorCandidate() && argumentType is ConePointerType) {
+            return
+        }
+
         fun subtypeError(actualExpectedType: ConeCangJieType): ResolutionDiagnostic {
             fun tryGetConeTypeThatCompatibleWithKtType(type: ConeCangJieType): ConeCangJieType {
                 if (type is ConeTypeVariableType) {
@@ -924,6 +934,13 @@ internal object ArgumentCheckingProcessor {
     private fun Candidate.isBuiltinPointerConstructorCandidate(): Boolean {
         val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
         return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor &&
+                declaration.valueParameters.size == 1
+    }
+
+    /** 判断候选是否为官方 CFunc wrapper 的单指针构造器。 */
+    private fun Candidate.isBuiltinCFuncConstructorCandidate(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor &&
                 declaration.valueParameters.size == 1
     }
 

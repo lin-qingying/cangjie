@@ -26,6 +26,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitOptionalChainExpression(optionalChainExpression: CfirOptionalChainExpression, data: D): R =
         visitWrappedExpression(optionalChainExpression, data)
 
+    override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): R =
+        visitExpression(ifAvailableExpression, data)
+
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)
 

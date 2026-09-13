@@ -230,10 +230,16 @@ val CfirElementWithResolveState.resolvePhase: CfirResolvePhase
 fun CfirElementWithResolveState.replaceResolvePhase(newPhase: CfirResolvePhase) {
     when (val currentState = resolveState) {
         is CfirResolvedToPhaseState -> {
+            check(newPhase >= currentState.resolvePhase) {
+                "Cannot move resolve phase backwards from ${currentState.resolvePhase} to $newPhase"
+            }
             resolveState = CfirResolvedToPhaseState(newPhase)
         }
 
         is CfirInProcessOfResolvingToJumpingPhaseState -> {
+            check(newPhase >= currentState.resolvePhase) {
+                "Cannot move resolve phase backwards from ${currentState.resolvePhase} to $newPhase"
+            }
             check(newPhase <= currentState.resolvingTo) {
                 "Cannot publish phase $newPhase while $this is locked for ${currentState.resolvingTo}"
             }
@@ -241,6 +247,9 @@ fun CfirElementWithResolveState.replaceResolvePhase(newPhase: CfirResolvePhase) 
         }
 
         is CfirInProcessOfResolvingToPhaseState -> {
+            check(newPhase >= currentState.resolvePhase) {
+                "Cannot move resolve phase backwards from ${currentState.resolvePhase} to $newPhase"
+            }
             check(newPhase <= currentState.resolvingTo) {
                 "Cannot publish phase $newPhase while $this is locked for ${currentState.resolvingTo}"
             }

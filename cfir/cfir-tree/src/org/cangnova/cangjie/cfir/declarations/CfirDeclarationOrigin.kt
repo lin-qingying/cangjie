@@ -85,6 +85,14 @@ sealed class CfirDeclarationOrigin(
         data object BuiltinCStringConstructor : Synthetic()
 
         /**
+         * 仓颉内建 `CFunc<Fn>(CPointer)` 构造表达式对应官方 CFunc built-in call。
+         *
+         * CFunc 的源码类型实参属于 classifier，而不是这个 synthetic callable 的
+         * 类型实参；独立 origin 让参数检查能够识别这一边界，而不重新解析源码文本。
+         */
+        data object BuiltinCFuncConstructor : Synthetic()
+
+        /**
          * typealias 构造入口合成声明。
          *
          * 该来源用于把类型别名构造语法接入统一 callable resolution，而不把它误认为源码函数。

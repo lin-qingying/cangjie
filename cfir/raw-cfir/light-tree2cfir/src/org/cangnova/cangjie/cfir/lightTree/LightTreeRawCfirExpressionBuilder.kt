@@ -128,6 +128,7 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.SPAWN_EXPRESSION -> convertSpawn(node)
 
         // 控制流
+        CjNodeTypes.IF_AVAILABLE_EXPRESSION -> convertIfAvailable(node)
         CjNodeTypes.IF -> convertIf(node)
         CjNodeTypes.MATCH -> convertMatch(node)
         CjNodeTypes.FOR -> convertFor(node)
@@ -1288,6 +1289,43 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Control Flow =====
 
+    /** 转换官方 `IfAvailableExpr`，保留条件和两个 lambda 分支。 */
+    private fun convertIfAvailable(node: LighterASTNode): CfirIfAvailableExpression {
+        val valueArgument = tree.findChildByType(node, CjNodeTypes.VALUE_ARGUMENT)
+        val conditionNode = valueArgument?.let(::findFirstExpression)
+        val condition = conditionNode?.let(::convertExpression)
+            ?: buildErrorExpression(node.toSourceElement(), "Missing IfAvailable condition")
+        val conditionName = valueArgument
+            ?.let { tree.findChildByType(it, CjNodeTypes.VALUE_ARGUMENT_NAME)?.asText()?.trim() }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(Name::identifier)
+            ?: Name.special("<missing>")
+        val branchNodes = mutableListOf<LighterASTNode>()
+        var conditionSeen = false
+        tree.forEachChildren(node) { child ->
+            if (child === valueArgument) {
+                conditionSeen = true
+            } else if (conditionSeen && isExpressionToken(child.tokenType)) {
+                branchNodes += child
+            }
+        }
+        val thenBranch = branchNodes.getOrNull(0)?.let(::convertExpression)
+            ?: buildErrorExpression(node.toSourceElement(), "Missing IfAvailable then branch")
+        val elseBranch = branchNodes.getOrNull(1)?.let(::convertExpression)
+            ?: buildErrorExpression(node.toSourceElement(), "Missing IfAvailable else branch")
+        return buildIfAvailableExpression {
+            source = node.toSource()
+            this.conditionName = conditionName
+            conditionArgumentSource = valueArgument?.toSource()
+            conditionNameSource = valueArgument
+                ?.let { tree.findChildByType(it, CjNodeTypes.VALUE_ARGUMENT_NAME) }
+                ?.toSource()
+            this.condition = condition
+            this.thenBranch = thenBranch
+            this.elseBranch = elseBranch
+        }
+    }
+
     /** 转换 if 表达式，支持 let-pattern condition。 */
     private fun convertIf(node: LighterASTNode): CfirIfExpression {
         var conditionNode: LighterASTNode? = null
@@ -2336,6 +2374,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.SLICE_EXPRESSION,
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,
             CjNodeTypes.OPTIONAL_EXPRESSION, CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION,
+            CjNodeTypes.IF_AVAILABLE_EXPRESSION,
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
             CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION, CjNodeTypes.CALL_EXPRESSION,
             CjNodeTypes.SPAWN_EXPRESSION,

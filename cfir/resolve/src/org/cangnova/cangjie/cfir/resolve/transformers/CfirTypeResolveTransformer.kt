@@ -26,6 +26,8 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -87,6 +89,28 @@ class CfirTypeResolveTransformer(
     /** 当前文件解析过程中复用的 scope session。 */
     private val scopeSession: ScopeSession,
 ) : CfirAbstractTreeTransformer<CfirTypeResolutionConfiguration>(CfirResolvePhase.TYPES) {
+
+    /**
+     * TYPES 是 annotation type identity 的唯一 producer。
+     *
+     * annotation call 不拥有独立 lazy resolver；它借用宿主 declaration 的
+     * TYPES phase。generic tree transform 完成后只发布 TYPE_RESOLVED，参数
+     * 与语义状态由后续 owner 推进，避免两个 phase transformer 重复解析。
+     */
+    override fun transformAnnotationCall(
+        annotationCall: CfirAnnotationCall,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirAnnotationCall {
+        val transformed = super.transformAnnotationCall(annotationCall, data)
+        transformed.replaceAnnotationResolveState(
+            if (transformed.typeRef is CfirErrorTypeRef) {
+                CfirAnnotationResolveState.ERROR
+            } else {
+                CfirAnnotationResolveState.TYPE_RESOLVED
+            },
+        )
+        return transformed
+    }
     /** 单个类型引用解析器，负责把具体 `CfirTypeRef` 转为 resolved type ref。 */
     private val typeResolverTransformer = CfirSpecificTypeResolverTransformer(session)
     /** 当前 use-site 文件，供 low-level TYPES 和导入 scope 构造复用。 */

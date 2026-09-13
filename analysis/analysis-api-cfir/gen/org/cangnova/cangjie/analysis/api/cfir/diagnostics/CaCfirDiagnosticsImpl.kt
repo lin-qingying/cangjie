@@ -697,6 +697,13 @@ internal class CatchTypeMustExtendExceptionImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.CatchTypeMustExtendException
 
+internal class MismatchingCatchBlockImpl(
+    override val actualType: CaType,
+    override val previousType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjBlockExpression>(cfirDiagnostic, token), CaCfirDiagnostic.MismatchingCatchBlock
+
 internal class UselessExceptionTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.psi
 
+import org.cangnova.cangjie.annotations.CangjieAnnotationCatalog
+
 /**
  * 仓颉语言内置注解枚举
  *
@@ -109,6 +111,17 @@ enum class CjBuiltInAnnotation(
     ),
 
     /**
+     * Java 接口默认方法标记。
+     *
+     * 该注解由官方 Java FFI 专用检查器处理，不能与普通 JavaImpl 标记合并。
+     */
+    JAVA_HAS_DEFAULT(
+        annotationName = "JavaHasDefault",
+        description = "Java 接口默认方法标记",
+        category = AnnotationCategory.FFI
+    ),
+
+    /**
      * Objective-C 镜像类型注解
      *
      * 用于标记仓颉类型对应的Objective-C镜像类型。
@@ -130,6 +143,20 @@ enum class CjBuiltInAnnotation(
         category = AnnotationCategory.FFI
     ),
 
+    /** Objective-C init 方法标记。 */
+    OBJ_C_INIT(
+        annotationName = "ObjCInit",
+        description = "Objective-C init 方法标记",
+        category = AnnotationCategory.FFI
+    ),
+
+    /** Objective-C optional 成员标记。 */
+    OBJ_C_OPTIONAL(
+        annotationName = "ObjCOptional",
+        description = "Objective-C optional 成员标记",
+        category = AnnotationCategory.FFI
+    ),
+
     /**
      * 外部名称映射注解
      *
@@ -138,6 +165,20 @@ enum class CjBuiltInAnnotation(
     FOREIGN_NAME(
         annotationName = "ForeignName",
         description = "外部名称映射",
+        category = AnnotationCategory.FFI
+    ),
+
+    /** Objective-C/Java property getter 的外部名称。 */
+    FOREIGN_GETTER_NAME(
+        annotationName = "ForeignGetterName",
+        description = "外部 getter 名称映射",
+        category = AnnotationCategory.FFI
+    ),
+
+    /** Objective-C/Java property setter 的外部名称。 */
+    FOREIGN_SETTER_NAME(
+        annotationName = "ForeignSetterName",
+        description = "外部 setter 名称映射",
         category = AnnotationCategory.FFI
     ),
 
@@ -273,6 +314,17 @@ enum class CjBuiltInAnnotation(
         annotationName = "EnsurePreparedToMock",
         description = "确保准备好被模拟",
         category = AnnotationCategory.TESTING
+    ),
+
+    /**
+     * 产品构建过滤标记。
+     *
+     * 该标记需要与编译产物和 CJMP 传播规则一起处理，不能只作为 parser 名称保留。
+     */
+    NON_PRODUCT(
+        annotationName = "NonProduct",
+        description = "非产品构建标记",
+        category = AnnotationCategory.COMPILER_DIRECTIVE
     );
 
     companion object {
@@ -281,7 +333,9 @@ enum class CjBuiltInAnnotation(
          *
          * 用于快速检查某个注解名称是否为内置注解。
          */
-        val ALL_NAMES: Set<String> = entries.map { it.annotationName }.toSet()
+        val ALL_NAMES: Set<String> = CangjieAnnotationCatalog.languageBuiltIns
+            .map { it.sourceName }
+            .toSet()
 
         /**
          * 根据注解名称查找对应的内置注解枚举值
@@ -290,6 +344,7 @@ enum class CjBuiltInAnnotation(
          * @return 对应的枚举值,如果不是内置注解则返回null
          */
         fun fromName(name: String): CjBuiltInAnnotation? {
+            if (name !in ALL_NAMES) return null
             return entries.find { it.annotationName == name }
         }
 
@@ -300,7 +355,7 @@ enum class CjBuiltInAnnotation(
          * @return 如果是内置注解返回true,否则返回false
          */
         fun isBuiltIn(name: String): Boolean {
-            return name in ALL_NAMES
+            return CangjieAnnotationCatalog.findLanguageBuiltIn(name) != null
         }
 
         /**

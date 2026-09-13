@@ -3,7 +3,7 @@ class Eff {}
 main():Int64 {
     try {
 
-    } handle (<!COMMAND_HANDLE_TYPE_ERROR!>c: Eff<!>) {
+    } handle (c: <!COMMAND_HANDLE_TYPE_ERROR!>Eff<!>) {
 
     }
     return 0

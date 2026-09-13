@@ -29,6 +29,9 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.annotations.CangjieAnnotationCatalog
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.*
@@ -220,8 +223,6 @@ class PsiRawCfirBuilder(
 
     /** PSI raw builder 的常量集合。 */
     private companion object {
-        /** 内建 non-macro annotation `IfAvailable` 的短名。 */
-        private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
         /** 不应送入 macro executor 的内建普通 annotation 名称集合。 */
         private val builtinAnnotationMacroNames: Set<Name> = setOf(
             Name.identifier("C"),
@@ -421,6 +422,13 @@ class PsiRawCfirBuilder(
                     when (child) {
                         is CjPackageDirective -> Unit
                         is CjDeclaration -> add(convertDeclaration(child))
+                        is CjForeignDirective -> child.body?.declarations?.forEach { foreignDeclaration ->
+                            // `foreign { ... }` is a declaration block rather than a
+                            // declaration itself. Its functions must enter the same
+                            // source symbol table as top-level foreign functions while
+                            // retaining the parser-produced `foreign` status.
+                            add(convertDeclaration(foreignDeclaration))
+                        }
                         is CjMacroExpression -> convertTopLevelMacroDeclaration(child)?.let(::add)
                     }
                 }
@@ -1789,7 +1797,6 @@ class PsiRawCfirBuilder(
             target: AnnotationSurfaceTarget = AnnotationSurfaceTarget.DECLARATION,
         ): List<MacroSurfaceToken>? {
             if (target != AnnotationSurfaceTarget.DECLARATION) return null
-            if (shortName == IF_AVAILABLE_ANNOTATION_NAME) return null
             val owner = annotated as? PsiElement ?: return null
             return tokenizeSourceSlice(
                 fileText = owner.containingFile?.text,
@@ -1831,10 +1838,23 @@ class PsiRawCfirBuilder(
                 macroAttributeTextOverride = macroAttributeTextOverride,
                 macroAttributeStartOffsetOverride = macroAttributeStartOffsetOverride,
             )
+            val annotationName = annotation.shortName?.asString()
+            val descriptor = annotationName?.let(CangjieAnnotationCatalog::find)
+            val compileTimeVisible = annotation.isCompileTimeVisible
             return buildAnnotationCall {
                 source = sourceOverride ?: annotation.toCjPsiSourceElement()
                 typeRef = typeRefOverride ?: convertTypeRef(annotation.typeReference)
                 this.arguments.addAll(arguments)
+                annotationKind = when {
+                    compileTimeVisible -> null
+                    else -> descriptor?.kind
+                }
+                annotationOrigin = when {
+                    compileTimeVisible && descriptor?.origin != CangjieAnnotationOrigin.SPECIAL_EXPRESSION ->
+                        CangjieAnnotationOrigin.CUSTOM
+                    else -> descriptor?.origin ?: CangjieAnnotationOrigin.CUSTOM
+                }
+                isCompileTimeVisible = compileTimeVisible
                 argumentList = buildArgumentList {
                     source = argumentListSourceOverride ?: annotation.valueArgumentList?.toCjPsiSourceElement()
                     this.arguments.addAll(arguments)
@@ -2023,25 +2043,6 @@ class PsiRawCfirBuilder(
                 annotationCarrier = annotationCarrier,
             )
 
-            if (annotation.shortName?.asString() == IF_AVAILABLE_ANNOTATION_NAME) {
-                return IfAvailableSurface(
-                    surfaceId = surfaceId,
-                    qualifiedName = qualifiedName,
-                    kind = kind,
-                    hasParenthesis = valueArgumentList != null,
-                    attrTokens = attrTokens,
-                    inputTokens = inputTokens,
-                    sourceRange = sourceRange,
-                    scopeContext = scopeContext,
-                    modifiers = modifiers,
-                    carriedAnnotations = carriedAnnotations,
-                    capturedRawSyntax = rawSyntax,
-                    containerContext = containerContext,
-                    replaceHandle = replaceHandle,
-                    branchTokens = inputTokens,
-                )
-            }
-
             return when (target) {
                 AnnotationSurfaceTarget.DECLARATION -> MacroSurfaceDecl(
                     surfaceId = surfaceId,
@@ -2209,6 +2210,7 @@ class PsiRawCfirBuilder(
             is CjResumeExpression -> convertResume(psi)
             is CjTryExpression -> convertTry(psi)
             is CjLambdaExpression -> convertLambda(psi)
+            is CjIfAvailableExpression -> convertIfAvailable(psi)
             is CjParenthesizedExpression -> psi.expression?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Empty parenthesized expression")
 
@@ -2971,6 +2973,26 @@ class PsiRawCfirBuilder(
         }
 
         // ---- Control Flow ----
+
+        /** 转换官方 `IfAvailableExpr`，保留条件与两个 lambda 分支。 */
+        private fun convertIfAvailable(psi: CjIfAvailableExpression): CfirIfAvailableExpression {
+            val condition = psi.condition?.let(::convertExpression)
+                ?: buildErrorExpression(psi.toCjPsiSourceElement(), "Missing IfAvailable condition")
+            val branchExpressions = psi.branchExpressions
+            val thenBranch = branchExpressions.getOrNull(0)?.let(::convertExpression)
+                ?: buildErrorExpression(psi.toCjPsiSourceElement(), "Missing IfAvailable then branch")
+            val elseBranch = branchExpressions.getOrNull(1)?.let(::convertExpression)
+                ?: buildErrorExpression(psi.toCjPsiSourceElement(), "Missing IfAvailable else branch")
+            return buildIfAvailableExpression {
+                source = psi.toCjPsiSourceElement()
+                conditionName = psi.conditionName?.let(Name::identifier) ?: Name.special("<missing>")
+                conditionArgumentSource = psi.conditionArgument?.toCjPsiSourceElement()
+                conditionNameSource = psi.conditionArgument?.getArgumentName()?.referenceExpression?.toCjPsiSourceElement()
+                this.condition = condition
+                this.thenBranch = thenBranch
+                this.elseBranch = elseBranch
+            }
+        }
 
         /** 转换 if 表达式，支持 let-pattern condition。 */
         private fun convertIf(psi: CjIfExpression): CfirIfExpression {

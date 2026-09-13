@@ -11642,6 +11642,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/ffi/c_type_subtype.cj")
         }
 
+        @TestMetadata("cfunc_constructor.cj")
+        @Test
+        fun testCfuncConstructor() {
+            runTest("cfir/analysis-tests/testData/llt/ffi/cfunc_constructor.cj")
+        }
+
         @TestMetadata("cpointer_expected_inference.cj")
         @Test
         fun testCpointerExpectedInference() {

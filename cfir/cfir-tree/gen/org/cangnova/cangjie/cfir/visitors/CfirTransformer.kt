@@ -72,6 +72,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformOptionalChainExpression(optionalChainExpression, data)
     }
 
+    open fun transformIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): CfirStatement {
+        return transformElement(ifAvailableExpression, data)
+    }
+
+    final override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): CfirStatement {
+        return transformIfAvailableExpression(ifAvailableExpression, data)
+    }
+
     open fun transformResolvable(resolvable: CfirResolvable, data: D): CfirResolvable {
         return transformElement(resolvable, data)
     }

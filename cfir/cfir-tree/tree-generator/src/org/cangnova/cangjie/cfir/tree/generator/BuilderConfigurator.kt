@@ -95,6 +95,11 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
 
             withCopy()
         }
+        builder(annotationCall) {
+            default("annotationResolveState", "CfirAnnotationResolveState.UNRESOLVED")
+            additionalImports(annotationResolveStateType)
+            withCopy()
+        }
         // resolvedImportDirective 单独配置
         builder(resolvedImportDirective) {
             withCopy()
@@ -157,7 +162,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         codeFragment, invalidDeclaration, property, propertyAccessor, fieldVariable, patternVariable, patternBindingVariable, valueParameter, typeParameter,
 
         // -------- 语句 / 表达式节点 --------
-        annotationCall, block,
+        annotationCall, ifAvailableExpression, block,
         literalExpression, stringInterpolation, functionCall, namedAccessExpression, qualifiedAccessExpression, assignment, binaryOp,
         comparisonExpression,
         typeOperator,

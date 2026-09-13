@@ -264,6 +264,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         typeParameter,
 
         // -------- 语句 / 表达式节点 --------
+        ifAvailableExpression,
         block,
         // lazyBlock 已单独配置
         // lazyExpression 已单独配置

@@ -7,12 +7,12 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
+import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -28,8 +28,13 @@ internal class CfirAnnotationCallImpl(
     override var coneTypeOrNull: ConeCangJieType?,
     override var typeRef: CfirTypeRef,
     override val arguments: MutableList<CfirElement>,
+    override var annotationKind: CangjieAnnotationKind?,
+    override var annotationOrigin: CangjieAnnotationOrigin?,
+    override var isCompileTimeVisible: Boolean?,
     override var argumentList: CfirArgumentList,
     override var calleeReference: CfirReference,
+    override var argumentView: CfirAnnotationArgumentView?,
+    override var annotationResolveState: CfirAnnotationResolveState,
     override val containingDeclarationSymbol: CfirBasedSymbol<*>,
 ) : CfirAnnotationCall() {
 
@@ -78,11 +83,31 @@ internal class CfirAnnotationCallImpl(
         coneTypeOrNull = newConeTypeOrNull
     }
 
+    override fun replaceAnnotationKind(newAnnotationKind: CangjieAnnotationKind?) {
+        annotationKind = newAnnotationKind
+    }
+
+    override fun replaceAnnotationOrigin(newAnnotationOrigin: CangjieAnnotationOrigin?) {
+        annotationOrigin = newAnnotationOrigin
+    }
+
+    override fun replaceIsCompileTimeVisible(newIsCompileTimeVisible: Boolean?) {
+        isCompileTimeVisible = newIsCompileTimeVisible
+    }
+
     override fun replaceArgumentList(newArgumentList: CfirArgumentList) {
         argumentList = newArgumentList
     }
 
     override fun replaceCalleeReference(newCalleeReference: CfirReference) {
         calleeReference = newCalleeReference
+    }
+
+    override fun replaceArgumentView(newArgumentView: CfirAnnotationArgumentView?) {
+        argumentView = newArgumentView
+    }
+
+    override fun replaceAnnotationResolveState(newAnnotationResolveState: CfirAnnotationResolveState) {
+        annotationResolveState = newAnnotationResolveState
     }
 }

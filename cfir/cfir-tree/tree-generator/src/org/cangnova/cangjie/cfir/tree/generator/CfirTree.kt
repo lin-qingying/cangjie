@@ -87,6 +87,34 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * 直接访问 resolve state 的 opt-in 注解类型引用。
      */
     private val resolveStateAccessType = type("declarations", "ResolveStateAccess", kind = TypeKind.Class)
+    /** 公共官方 AnnotationKind 类型引用。 */
+    private val annotationKindType = type(
+        "org.cangnova.cangjie.annotations",
+        "CangjieAnnotationKind",
+        exactPackage = true,
+        kind = TypeKind.Class,
+    )
+    /** 公共注解来源类型引用。 */
+    private val annotationOriginType = type(
+        "org.cangnova.cangjie.annotations",
+        "CangjieAnnotationOrigin",
+        exactPackage = true,
+        kind = TypeKind.Class,
+    )
+    /** annotation call 状态机类型引用；状态由宿主 declaration processor 管理。 */
+    internal val annotationResolveStateType = type(
+        "expressions",
+        "CfirAnnotationResolveState",
+        exactPackage = false,
+        kind = TypeKind.Class,
+    )
+    /** annotation 参数只读视图类型引用。 */
+    private val annotationArgumentViewType = type(
+        "expressions",
+        "CfirAnnotationArgumentView",
+        exactPackage = false,
+        kind = TypeKind.Class,
+    )
     /**
      * 任意 CFIR 符号基类类型引用。
      */
@@ -376,6 +404,24 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     }
 
     /**
+     * `@IfAvailable(name: value, { => ... }, { => ... })` 的特殊表达式节点。
+     *
+     * 该语法在官方前端中先作为 IfAvailableExpr 独立检查，再解糖为 if；
+     * 因此不能把它建模为普通 annotation call 或 construction-only macro surface。
+     */
+    val ifAvailableExpression: Element by element(Expression, name = "IfAvailableExpression") {
+        parent(expression)
+        +field("conditionName", nameType)
+        +field("conditionArgumentSource", sourceElementType, nullable = true)
+        +field("conditionNameSource", sourceElementType, nullable = true)
+        +field("condition", expression, nullable = true, withTransform = true)
+        // 合法分支必须保留匿名函数节点，以便 BODY_RESOLVE 看到参数列表、lambda
+        // 作用域和 `() -> Unit` 目标类型；非法分支仍以 expression 承载原始形状。
+        +field("thenBranch", expression, withTransform = true)
+        +field("elseBranch", expression, withTransform = true)
+    }
+
+    /**
      * 可解析节点接口。
      *
      * 所有持有 calleeReference 的节点都应实现此接口，以便：
@@ -432,6 +478,16 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
         +field("typeRef", typeRef, withTransform = true)
         +listField("arguments", rootElement, withTransform = true)
+        // Annotation identity is semantic metadata, not a child node. It is
+        // populated by annotation resolution and remains nullable for raw and
+        // unresolved annotations.
+        +field("annotationKind", annotationKindType, nullable = true, withReplace = true)
+        // Raw annotations have not yet established their semantic origin or
+        // compile-time visibility. Nullable fields make that unresolved state
+        // explicit instead of forcing every raw/synthetic builder to invent a
+        // semantic default.
+        +field("annotationOrigin", annotationOriginType, nullable = true, withReplace = true)
+        +field("isCompileTimeVisible", booleanType, nullable = true, withReplace = true)
     }
 
     /**
@@ -1021,8 +1077,12 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(call)
         parent(resolvable)
 
-//        +field("argumentMapping", annotationArgumentMapping, withReplace = true, isChild = false)
-//        +field("annotationResolvePhase", annotationResolvePhaseType, withReplace = true)
+        // mapping 仍属于 CfirResolvedArgumentList；annotation call 只保存由
+        // 宿主 processor 发布的不可变 view，不复制第二套映射。
+        +field("argumentView", annotationArgumentViewType, nullable = true, withReplace = true, isChild = false)
+        +field("annotationResolveState", annotationResolveStateType, withReplace = true) {
+            defaultValueInBuilder = "CfirAnnotationResolveState.UNRESOLVED"
+        }
         +referencedSymbol("containingDeclarationSymbol", cfirSymbolType.withArgs(TreeTypeRef.Star)) {
             withBindThis = false
         }
