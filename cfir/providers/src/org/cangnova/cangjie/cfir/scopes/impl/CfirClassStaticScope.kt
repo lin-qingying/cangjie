@@ -212,7 +212,15 @@ class CfirClassStaticScope(
             }
         }
         if (!hasStatic && includeInstanceMemberDiagnostics) {
-            nonStaticCandidates.forEach(processor)
+            /*
+             * 类型限定符访问实例成员时，官方在重载决议前就结束于
+             * `illegal_access_non_static_member`。保留全部同名实例 overload 会让
+             * `Array<T>[index] = value` 同时看到 index-set 与 range-set，随后把本应
+             * 由 receiver applicability 阶段拥有的诊断误判为重载歧义。一个代表候选
+             * 已足以携带成员名并进入共享 dispatch-receiver 检查；有 static 候选时
+             * 仍保留全部 static overload，正常的静态重载决议不受影响。
+             */
+            nonStaticCandidates.firstOrNull()?.let(processor)
         }
     }
 }
