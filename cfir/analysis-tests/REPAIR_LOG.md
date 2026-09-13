@@ -6664,3 +6664,14 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
   - XML testcase-key 比较：`FIXED=6`（三个 Array fixture 各双入口）、`REGRESSED=0`、`NEW_KEYS=0`、`REMOVED_KEYS=0`、`CHANGED_FAILURE_MESSAGES=0`；`UNCHANGED_FAILURES=399`、`UNCHANGED_PASSES=7850`、`UNCHANGED_SKIPS=306`。两套 XML 均为 8,561 records，差异仅为上述 6 个 Array key。
 - remaining failures: Array 目标组 0 项；其余 399 项均为基线失败，失败消息未发生变化。
 - change isolation: 三个独立改动分别提交为 `8f632cc85`（非静态下标访问）、`963fddbe3`（构造器 owner 泛型参数）和 `53fe95514`（sortBy 期望）；`.idea/workspace.xml`、effect、extends/implements、record 以及其它用户已有 resolve 修改保持未提交，`external/` 未修改。
+
+## 2026-09-13：UnusedImport 目标身份、重导出和组织名路径
+
+- problem type: Diagnostics / UnusedImport / Import target identity。
+- root cause: unused-import 统计只按引用名称或 class id 粗略归并，无法区分别名与原名指向同一声明、public import 重导出目标、primitive classifier 的全局可见范围，以及带组织名的 `org::package` import 路径。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/CheckUnusedImportImpl.cpp` 的使用图按声明目标记录引用；`external/cangjie_compiler/include/cangjie/AST/Node.h:2800-2884` 将 `hasDoubleColon` 定义为组织名元数据；`external/cangjie_compiler/src/Modules/CjoManager.cpp:620-650` 将组织名路径按 `package@organization` 参与 CJO 查找。官方 `cjc` probes 对宏 import、别名、public re-export、primitive classifier 和 `org1::a.A` 均与修正后的判定一致。
+- Kotlin counterpart files consulted: Kotlin FIR import/reference target identity and scope layering were used only as framework guidance; Cangjie import semantics remain defined by `cjc` and `external/cangjie_compiler`。
+- CFIR owner files changed: `CfirImportsChecker`、`CfirBuiltinPrimitiveScope`、`CfirImportBindingResolver`、PSI/LightTree raw import builders，以及 Cfir import/package tree metadata。
+- repair principle: import usage must retain both the source-visible name and the resolved declaration target, while organization metadata remains separate from the package FQ name and is consumed by the shared binding resolver。
+- fixtures covered: complete `*UnusedImport*` slice (LLT, PSI, macro and macro-PSI), including `unused014`、`unused015`、`unused016`、`unused019`、macro `unused001/003`。
+- verification outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests '*UnusedImport*'` completed `166/166` with `0` failures and `0` errors. The subsequent full `:cfir:analysis-tests:test` completed `8560 tests, 411 failures, 307 skipped, 0 errors`; the current XML contains `0` failures in all 166 UnusedImport records. The full task remains non-green because of the repository's existing unrelated failure set.

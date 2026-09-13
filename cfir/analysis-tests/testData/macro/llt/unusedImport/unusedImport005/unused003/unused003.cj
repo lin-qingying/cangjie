@@ -12,8 +12,7 @@ class B{
 
 
 // FILE: unused003.cj
-import  std.deriving.Derive
+import  <!UNUSED_IMPORT!>std.deriving.Derive<!>
 
 main() {
 }
-

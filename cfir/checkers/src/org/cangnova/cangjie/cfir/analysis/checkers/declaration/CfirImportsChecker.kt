@@ -249,7 +249,7 @@ object CfirImportsChecker : CfirFileChecker() {
 
             val importedName = import.aliasName ?: importedFqName.shortName()
             if (importedName in usage.names) continue
-            if (import.aliasName == null && import.referencesAnyClassId(usage.targets.classIds, importBindingsByImport)) continue
+            if (import.aliasName == null && import.referencesAnyClassId(usage.targets, importBindingsByImport)) continue
             if (import.aliasName == null && importedFqName in usage.targets.macroPackages) continue
             if (import.referencesUsedMacroPackage(declaration, context.session, importBindingsByImport)) continue
 
@@ -277,6 +277,7 @@ object CfirImportsChecker : CfirFileChecker() {
         val files = session.cfirProvider.getCfirFilesByPackage(packageFqName)
         val names = linkedSetOf<Name>()
         val classIds = linkedSetOf<ClassId>()
+        val classTargetNames = linkedSetOf<ReferencedClassTarget>()
         val callablePackages = linkedSetOf<FqName>()
         val macroPackages = linkedSetOf<FqName>()
 
@@ -284,6 +285,7 @@ object CfirImportsChecker : CfirFileChecker() {
             val usage = file.collectImportUsage(session)
             names += usage.names
             classIds += usage.targets.classIds
+            classTargetNames += usage.targets.classTargetNames
             callablePackages += usage.targets.callablePackages
             macroPackages += usage.targets.macroPackages
         }
@@ -292,6 +294,7 @@ object CfirImportsChecker : CfirFileChecker() {
             names = names,
             targets = ReferencedImportTargets(
                 classIds = classIds,
+                classTargetNames = classTargetNames,
                 callablePackages = callablePackages,
                 macroPackages = macroPackages,
             ),
@@ -391,6 +394,7 @@ object CfirImportsChecker : CfirFileChecker() {
      */
     private fun CfirFile.collectReferencedImportTargets(session: CfirSession): ReferencedImportTargets {
         val classIds = linkedSetOf<ClassId>()
+        val classTargetNames = linkedSetOf<ReferencedClassTarget>()
         val callablePackages = linkedSetOf<FqName>()
         val macroPackages = linkedSetOf<FqName>()
         accept(object : CfirDefaultVisitorVoid() {
@@ -404,33 +408,65 @@ object CfirImportsChecker : CfirFileChecker() {
             }
 
             override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
-                resolvedTypeRef.coneType.classId?.let(classIds::add)
+                resolvedTypeRef.coneType.classId?.let { classId ->
+                    classIds += classId
+                    (resolvedTypeRef.delegatedTypeRef as? CfirUserTypeRef)
+                        ?.qualifier
+                        ?.lastOrNull()
+                        ?.name
+                        ?.let { name -> classTargetNames += ReferencedClassTarget(classId, name) }
+                }
                 super.visitResolvedTypeRef(resolvedTypeRef)
                 resolvedTypeRef.delegatedTypeRef?.accept(this)
             }
 
             override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
-                recordCallableImportTargets(resolvedNamedReference.resolvedSymbol, classIds, callablePackages, session)
+                recordCallableImportTargets(
+                    resolvedNamedReference.resolvedSymbol,
+                    classIds,
+                    classTargetNames,
+                    callablePackages,
+                    session,
+                )
                 super.visitResolvedNamedReference(resolvedNamedReference)
             }
 
             override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference) {
-                recordCallAmbiguityImportTargets(errorNamedReference.diagnostic, classIds, callablePackages, session)
+                recordCallAmbiguityImportTargets(
+                    errorNamedReference.diagnostic,
+                    classIds,
+                    classTargetNames,
+                    callablePackages,
+                    session,
+                )
                 super.visitErrorNamedReference(errorNamedReference)
             }
 
             override fun visitResolvedErrorReference(resolvedErrorReference: CfirResolvedErrorReference) {
-                recordCallAmbiguityImportTargets(resolvedErrorReference.diagnostic, classIds, callablePackages, session)
+                recordCallAmbiguityImportTargets(
+                    resolvedErrorReference.diagnostic,
+                    classIds,
+                    classTargetNames,
+                    callablePackages,
+                    session,
+                )
                 super.visitResolvedErrorReference(resolvedErrorReference)
             }
 
             override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase) {
-                recordCallableImportTargets(namedReferenceWithCandidateBase.candidateSymbol, classIds, callablePackages, session)
+                recordCallableImportTargets(
+                    namedReferenceWithCandidateBase.candidateSymbol,
+                    classIds,
+                    classTargetNames,
+                    callablePackages,
+                    session,
+                )
                 super.visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase)
             }
         })
         return ReferencedImportTargets(
             classIds = classIds,
+            classTargetNames = classTargetNames,
             callablePackages = callablePackages,
             macroPackages = macroPackages,
         )
@@ -443,13 +479,14 @@ object CfirImportsChecker : CfirFileChecker() {
     private fun recordCallAmbiguityImportTargets(
         diagnostic: ConeDiagnostic,
         classIds: MutableSet<ClassId>,
+        classTargetNames: MutableSet<ReferencedClassTarget>,
         callablePackages: MutableSet<FqName>,
         session: CfirSession,
     ) {
         val ambiguity = diagnostic as? ConeAmbiguityError ?: return
         if (!ambiguity.isCallLike) return
         for (symbol in ambiguity.candidateSymbols) {
-            recordCallableImportTargets(symbol, classIds, callablePackages, session)
+            recordCallableImportTargets(symbol, classIds, classTargetNames, callablePackages, session)
         }
     }
 
@@ -481,28 +518,47 @@ object CfirImportsChecker : CfirFileChecker() {
     private fun recordCallableImportTargets(
         symbol: CfirBasedSymbol<*>,
         classIds: MutableSet<ClassId>,
+        classTargetNames: MutableSet<ReferencedClassTarget>,
         callablePackages: MutableSet<FqName>,
         session: CfirSession,
     ) {
         val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return
         callablePackages += callableSymbol.callableId.packageName
-        callableSymbol.callableId.classId?.let(classIds::add)
-        callableSymbol.containingClassLookupTag()?.classId?.let(classIds::add)
+        callableSymbol.callableId.classId?.let { classId ->
+            classIds += classId
+            classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+        }
+        callableSymbol.containingClassLookupTag()?.classId?.let { classId ->
+            classIds += classId
+            classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+        }
         val originalSymbol = callableSymbol.unwrapFakeOverridesOrDelegated()
         callablePackages += originalSymbol.callableId.packageName
-        originalSymbol.callableId.classId?.let(classIds::add)
-        originalSymbol.containingClassLookupTag()?.classId?.let(classIds::add)
+        originalSymbol.callableId.classId?.let { classId ->
+            classIds += classId
+            classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+        }
+        originalSymbol.containingClassLookupTag()?.classId?.let { classId ->
+            classIds += classId
+            classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+        }
 
         val ownerExtend = session.extendProviderOrNull
             ?.getContainingExtend(originalSymbol)
             ?: return
         for (typeParameter in ownerExtend.typeParameters) {
             for (bound in typeParameter.bounds) {
-                bound.coneTypeOrNull?.classId?.let(classIds::add)
+                bound.coneTypeOrNull?.classId?.let { classId ->
+                    classIds += classId
+                    classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+                }
             }
         }
         for (superTypeRef in ownerExtend.superTypeRefs) {
-            superTypeRef.coneTypeOrNull?.classId?.let(classIds::add)
+            superTypeRef.coneTypeOrNull?.classId?.let { classId ->
+                classIds += classId
+                classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+            }
         }
     }
 
@@ -513,15 +569,31 @@ object CfirImportsChecker : CfirFileChecker() {
      * 导入解析阶段看到的真实目标保持一致。
      */
     private fun CfirImport.referencesAnyClassId(
-        referencedClassIds: Set<ClassId>,
+        referencedTargets: ReferencedImportTargets,
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
     ): Boolean {
-        val bindings = referencedClassIds.takeIf { it.isNotEmpty() } ?: return false
-        return importBindingsByImport[this]
+        val importedName = aliasName ?: importedFqName?.shortName() ?: return false
+        val bindingTargets = importBindingsByImport[this]
             ?.targets
             .orEmpty()
             .filterIsInstance<CfirResolvedImportTarget.ClassLike>()
-            .any { it.classId in bindings }
+        if (bindingTargets.isEmpty()) return false
+
+        if (bindingTargets.any { target ->
+                ReferencedClassTarget(target.classId, importedName) in referencedTargets.classTargetNames
+            }
+        ) return true
+
+        // A resolved type/pattern may no longer retain its source name. Preserve the
+        // official target-based fact in that case, but only when no sibling import
+        // introduces the same declaration under another name (the alias case in 014).
+        val targetClassIds = bindingTargets.mapTo(linkedSetOf()) { it.classId }
+        val hasSiblingBindingForSameTarget = importBindingsByImport
+            .filterKeys { it !== this }
+            .values
+            .flatMap { binding -> binding.targets.filterIsInstance<CfirResolvedImportTarget.ClassLike>() }
+            .any { it.classId in targetClassIds }
+        return !hasSiblingBindingForSameTarget && targetClassIds.any { it in referencedTargets.classIds }
     }
 
     /**
@@ -536,6 +608,11 @@ object CfirImportsChecker : CfirFileChecker() {
         return referencedTargets.classIds.any { it.packageFqName == packageFqName } ||
             packageFqName in referencedTargets.callablePackages ||
             packageFqName in referencedTargets.macroPackages ||
+            referencedTargets.classIds.any { classId ->
+                session.symbolProvider.getClassLikeSymbolByClassId(
+                    ClassId(packageFqName, classId.shortClassName),
+                ) != null
+            } ||
             referencedNames.any { name -> session.symbolProvider.hasTopLevelName(packageFqName, name) }
     }
 
@@ -583,8 +660,15 @@ object CfirImportsChecker : CfirFileChecker() {
      */
     private data class ReferencedImportTargets(
         val classIds: Set<ClassId>,
+        val classTargetNames: Set<ReferencedClassTarget>,
         val callablePackages: Set<FqName>,
         val macroPackages: Set<FqName>,
+    )
+
+    /** 官方 unused-import 使用图中的 `(identifier, declaration target)` 配对。 */
+    private data class ReferencedClassTarget(
+        val classId: ClassId,
+        val referencedName: Name,
     )
 
     /**

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirBuiltinPrimitiveScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
@@ -68,6 +69,7 @@ private fun CfirSession.computeFileLookupScopes(file: CfirFile): CfirFileLookupS
     val highDefaultStarScope = highPriorityDefaultBindings.starImportScopeOrNull(symbolProvider)
     val lowDefaultSimpleScope = lowPriorityDefaultBindings.simpleImportScopeOrNull()
     val lowDefaultStarScope = lowPriorityDefaultBindings.starImportScopeOrNull(symbolProvider)
+    val builtinPrimitiveScope = CfirBuiltinPrimitiveScope(this)
 
     val towerInsertionScopes = buildList {
         lowDefaultStarScope?.let(::add)
@@ -78,6 +80,7 @@ private fun CfirSession.computeFileLookupScopes(file: CfirFile): CfirFileLookupS
         add(packageScope)
         add(fileDeclaredScope)
         explicitSimpleScope?.let(::add)
+        add(builtinPrimitiveScope)
     }
     return CfirFileLookupScopes(towerInsertionScopes)
 }
