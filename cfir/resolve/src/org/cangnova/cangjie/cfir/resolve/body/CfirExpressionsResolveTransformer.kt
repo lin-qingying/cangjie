@@ -5579,6 +5579,7 @@ open class CfirExpressionsResolveTransformer(
 
         try {
             var setResolutionFailed = false
+            var setAccessDiagnostic: ConeDiagnostic? = null
             var completedSetType: ConeCangJieType? = null
             var completedSetCall: CfirFunctionCall? = null
 
@@ -5587,6 +5588,7 @@ open class CfirExpressionsResolveTransformer(
                 val resolutionDiagnostic = (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
                 if (resolutionDiagnostic != null) {
                     setResolutionFailed = true
+                    setAccessDiagnostic = resolutionDiagnostic
                     return@withIsolatedContext
                 }
 
@@ -5594,6 +5596,7 @@ open class CfirExpressionsResolveTransformer(
                 val completionDiagnostic = (completedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
                 if (completionDiagnostic != null) {
                     setResolutionFailed = true
+                    setAccessDiagnostic = completionDiagnostic
                     return@withIsolatedContext
                 }
                 completedSetType = completedCall.coneTypeOrNull
@@ -5602,6 +5605,23 @@ open class CfirExpressionsResolveTransformer(
 
             if (setResolutionFailed) {
                 restoreOriginalResolutionState()
+                val accessDiagnostic = setAccessDiagnostic
+
+                /*
+                 * 类型 qualifier 的下标赋值仍然走真实 `set` 候选；如果候选已在
+                 * dispatch-receiver 阶段识别出非静态成员访问，不能把该结构化诊断
+                 * 丢弃后重新合成 `CANNOT_ASSIGN_TO_SUBSCRIPT`。后者只表示确实没有
+                 * 可用 set 运算符，无法表达官方对 `Array<T>[i] = value` 的判定。
+                 */
+                if (accessDiagnostic is ConeIllegalAccessNonStaticMemberError) {
+                    subscriptExpression.replaceConeTypeOrNull(
+                        ConeErrorType(
+                            diagnostic = accessDiagnostic,
+                            delegatedType = builtinTypes.unitType,
+                        ),
+                    )
+                    return
+                }
 
                 val operands = buildList {
                     add(subscriptExpression.receiver)
