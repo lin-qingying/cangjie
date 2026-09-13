@@ -6686,3 +6686,12 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 - repair principle: tokenize `::` independently, allow it only at the official organization boundary, and carry organization metadata separately from the ordinary package FQ name through both PSI and LightTree CFIR paths。
 - fixtures covered: `DoubleColonParsingTest` covers one-token lexing, `package org1::a.b`, `import org1::a.b.A`, `org1::a.b.{B,C}`, `org1::{D,E}`, and invalid `a.b::c` / `a::*` forms。
 - verification outcome: `gradlew-queue.bat :psi:test --tests '*DoubleColonParsingTest*'` completed successfully with all 3 tests passing. Official parser and CJO lookup references were checked before implementation; the full CFIR run above also completed with no new UnusedImport failures.
+
+## 2026-09-13：恢复普通 import 的原有绑定候选顺序
+
+- problem type: Regression / ordinary import binding after organization-qualified import support。
+- root cause: organization-aware binding code accidentally expanded and reordered candidates for every import. Ordinary imports such as `a.Upper` and `b.{MyClass, I1}` therefore lost the exact pre-existing package/member target behavior and caused cascading extend, typealias and member-resolution failures.
+- repair principle: ordinary imports retain the original single package target and single parent-member target path; only imports carrying `organizationName` use `package@organization` plus source-package compatibility candidates。
+- owner changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportBindingResolver.kt`。
+- fixtures covered: all 12 previously regressed families, each through PSI and LightTree: `Assign012`、`CallInference04`、`Extend` import boundary、`ExtendExport` three cases、`ExtendImport` two visibility cases、`StaticPartiallyInstantiateImport01`、`GenericArrange`、`Typealias36`、`Typealias/OverloadAndAlias`。
+- verification outcome: exact testcase-key inspection after the fix reports all 24 previously regressed keys as passing. The broad exploratory command used `*testMain*` and selected 332 tests with 18 unrelated existing failures; those failures are not part of this regression slice.

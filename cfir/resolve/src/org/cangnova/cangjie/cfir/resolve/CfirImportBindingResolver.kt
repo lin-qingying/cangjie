@@ -64,17 +64,27 @@ internal class CfirImportBindingResolver(
             else -> org.cangnova.cangjie.name.Name.identifier("")
         }
         val targets = mutableListOf<CfirResolvedImportTarget>()
+        val organizationName = importDirective.organizationName
         val packageCandidates = importedFqName?.let { importedName ->
-            val packageNames = if (importDirective.isAllUnder) {
+            if (organizationName == null) {
                 listOf(importedName)
             } else {
-                listOf(importedName, importedName.parentOrRoot()).distinct()
+                val packageNames = if (importDirective.isAllUnder) {
+                    listOf(importedName)
+                } else {
+                    listOf(importedName, importedName.parentOrRoot()).distinct()
+                }
+                packageNames.flatMap { packageName ->
+                    packageFqNameCandidates(importDirective, packageName)
+                }.distinct()
             }
-            packageNames.flatMap { packageName -> packageFqNameCandidates(importDirective, packageName) }.distinct()
         }.orEmpty()
         val memberPackageCandidates = importedFqName
             ?.parentOrRoot()
-            ?.let { packageFqNameCandidates(importDirective, it) }
+            ?.let { packageName ->
+                if (organizationName == null) listOf(packageName)
+                else packageFqNameCandidates(importDirective, packageName)
+            }
             .orEmpty()
 
         if (importedFqName != null) {
