@@ -20,6 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirImportBuilder {
     var source: CjSourceElement? = null
     var importedFqName: FqName? = null
+    var organizationName: Name? = null
     var isAllUnder: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var aliasName: Name? = null
     var aliasSource: CjSourceElement? = null
@@ -29,6 +30,7 @@ class CfirImportBuilder {
         return CfirImportImpl(
             source,
             importedFqName,
+            organizationName,
             isAllUnder,
             aliasName,
             aliasSource,

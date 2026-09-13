@@ -24,6 +24,8 @@ class CfirResolvedImportImpl @CfirImplementationDetail constructor(
         get() = delegate.source
     override val importedFqName: FqName?
         get() = delegate.importedFqName
+    override val organizationName: Name?
+        get() = delegate.organizationName
     override val isAllUnder: Boolean
         get() = delegate.isAllUnder
     override val aliasName: Name?

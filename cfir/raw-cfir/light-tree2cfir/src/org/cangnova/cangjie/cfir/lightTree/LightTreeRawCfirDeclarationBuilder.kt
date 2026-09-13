@@ -2194,7 +2194,22 @@ class LightTreeRawCfirDeclarationBuilder(
                 }
             }
         }
-        return if (text.isNotEmpty()) FqName(text) else FqName.ROOT
+        return organizationQualifiedPath(text).fqName
+    }
+
+    private data class OrganizationQualifiedPath(
+        val fqName: FqName,
+        val organizationName: Name?,
+    )
+
+    /** 将官方 `organization::package` 路径拆成组织元数据和普通包名。 */
+    private fun organizationQualifiedPath(text: String): OrganizationQualifiedPath {
+        val separator = text.indexOf("::")
+        if (separator <= 0) return OrganizationQualifiedPath(FqName(text), null)
+        return OrganizationQualifiedPath(
+            fqName = FqName(text.substring(separator + 2).replace("::", ".")),
+            organizationName = Name.identifier(text.substring(0, separator).trim()),
+        )
     }
 
     /** 构造 CFIR package directive。 */
@@ -2205,7 +2220,20 @@ class LightTreeRawCfirDeclarationBuilder(
         return buildPackageDirective {
             source = packageNode?.toSource()
             packageFqName = fqName
+            organizationName = packageNode
+                ?.let { extractPackageDirectiveText(it) }
+                ?.let(::organizationQualifiedPath)
+                ?.organizationName
             isMacroPackage = packageNode?.let { containsChildByType(it, CjTokens.MACRO_KEYWORD) } == true
+        }
+    }
+
+    private fun extractPackageDirectiveText(packageNode: LighterASTNode): String = buildString {
+        tree.forEachChildren(packageNode) { child ->
+            when (child.tokenType) {
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
+                CjNodeTypes.REFERENCE_EXPRESSION -> append(child.asText())
+            }
         }
     }
 
@@ -2224,10 +2252,10 @@ class LightTreeRawCfirDeclarationBuilder(
             if (child.tokenType == CjNodeTypes.IMPORT_LIST) {
                 tree.forEachChildren(child) { directive ->
                     if (directive.tokenType == CjNodeTypes.IMPORT_DIRECTIVE) {
-                        val directiveBaseFqName = directive.extractImportDirectiveBaseFqName()
+                        val directiveBasePath = directive.extractImportDirectiveBasePath()
                         tree.forEachChildren(directive) { item ->
                             if (item.tokenType == CjNodeTypes.IMPORT_ITEM) {
-                                convertImportItem(item, directiveBaseFqName)?.let { imports.add(it) }
+                                convertImportItem(item, directiveBasePath)?.let { imports.add(it) }
                             }
                         }
                     }
@@ -2243,19 +2271,30 @@ class LightTreeRawCfirDeclarationBuilder(
      * 单项导入和 `import {a.b, c.d}` 的路径位于 IMPORT_ITEM 内部，这里只读取
      * directive 直接子节点，保持与 PSI `CjImportItem.importedFqName` 的组合语义一致。
      */
-    private fun LighterASTNode.extractImportDirectiveBaseFqName(): FqName? {
+    private fun LighterASTNode.extractImportDirectiveBasePath(): OrganizationQualifiedPath? {
         var baseText: String? = null
+        var hasBareOrganizationSeparator = false
         tree.forEachChildren(this) { child ->
             when (child.tokenType) {
                 CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
                 CjNodeTypes.REFERENCE_EXPRESSION -> baseText = child.asText()
+                CjTokens.DOUBLE_COLON -> hasBareOrganizationSeparator = true
             }
         }
-        return baseText?.takeIf { it.isNotBlank() }?.let { FqName(it) }
+        return baseText?.takeIf { it.isNotBlank() }?.let { text ->
+            if (hasBareOrganizationSeparator && !text.contains("::")) {
+                OrganizationQualifiedPath(
+                    fqName = FqName.ROOT,
+                    organizationName = Name.identifier(text),
+                )
+            } else {
+                organizationQualifiedPath(text)
+            }
+        }
     }
 
     /** 转换单个 import item。 */
-    private fun convertImportItem(item: LighterASTNode, directiveBaseFqName: FqName?): CfirImport? {
+    private fun convertImportItem(item: LighterASTNode, directiveBasePath: OrganizationQualifiedPath?): CfirImport? {
         // 提取导入的 FQN（从 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION）
         var fqNameText: String? = null
         var isAllUnder = false
@@ -2273,18 +2312,20 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        val itemFqName = fqNameText?.let { FqName(it) }
+        val itemPath = fqNameText?.let(::organizationQualifiedPath)
         val fqName = when {
-            directiveBaseFqName != null && itemFqName != null -> {
-                if (itemFqName.startsWith(directiveBaseFqName)) itemFqName else directiveBaseFqName.child(itemFqName)
+            directiveBasePath != null && itemPath != null -> {
+                if (itemPath.fqName.startsWith(directiveBasePath.fqName)) itemPath.fqName
+                else directiveBasePath.fqName.child(itemPath.fqName)
             }
-            itemFqName != null -> itemFqName
-            directiveBaseFqName != null -> directiveBaseFqName
+            itemPath != null -> itemPath.fqName
+            directiveBasePath != null -> directiveBasePath.fqName
             else -> null
         } ?: return null
         return buildImport {
             source = item.toSource()
             importedFqName = fqName
+            organizationName = itemPath?.organizationName ?: directiveBasePath?.organizationName
             this.isAllUnder = isAllUnder
             this.aliasName = aliasName
         }

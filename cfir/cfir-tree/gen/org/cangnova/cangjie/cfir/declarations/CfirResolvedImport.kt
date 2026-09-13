@@ -18,6 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirResolvedImport : CfirImport() {
     abstract override val source: CjSourceElement?
     abstract override val importedFqName: FqName?
+    abstract override val organizationName: Name?
     abstract override val isAllUnder: Boolean
     abstract override val aliasName: Name?
     abstract override val aliasSource: CjSourceElement?

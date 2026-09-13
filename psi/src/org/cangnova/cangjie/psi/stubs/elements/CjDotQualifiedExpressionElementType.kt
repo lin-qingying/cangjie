@@ -51,7 +51,7 @@ class CjDotQualifiedExpressionElementType(debugName: String) :
     companion object {
         private fun checkNodeTypesTraversal(node: ASTNode): Boolean {
             val type = node.elementType
-            if (type !== CjStubElementTypes.DOT_QUALIFIED_EXPRESSION && type !== CjStubElementTypes.REFERENCE_EXPRESSION && type !== CjTokens.IDENTIFIER && type !== CjTokens.DOT
+            if (type !== CjStubElementTypes.DOT_QUALIFIED_EXPRESSION && type !== CjStubElementTypes.REFERENCE_EXPRESSION && type !== CjTokens.IDENTIFIER && type !== CjTokens.DOT && type !== CjTokens.DOUBLE_COLON
             ) {
                 return false
             }

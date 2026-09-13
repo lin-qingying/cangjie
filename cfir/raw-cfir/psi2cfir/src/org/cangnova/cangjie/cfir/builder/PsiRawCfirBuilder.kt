@@ -4041,6 +4041,7 @@ class PsiRawCfirBuilder(
         return buildPackageDirective {
             source = psi?.toCjPsiSourceElement()
             packageFqName = fqName
+            organizationName = psi?.organizationName
             isMacroPackage = psi?.isMacroPackage == true
         }
     }
@@ -4054,6 +4055,7 @@ class PsiRawCfirBuilder(
                 buildImport {
                     source = item.toCjPsiSourceElement()
                     importedFqName = fqName
+                    organizationName = item.organizationName
                     isAllUnder = item.isAllUnder
                     aliasName = item.aliasName?.let { Name.identifier(it) }
                 }

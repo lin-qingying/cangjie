@@ -266,6 +266,7 @@ public interface CjTokens {
     int THROWING_KEYWORD_Id = 217;
 
     int INOUT_KEYWORD_Id = 218;
+    int DOUBLE_COLON_Id = 219;
 
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
@@ -400,6 +401,7 @@ public interface CjTokens {
     CjSingleValueToken COALESCING = new CjSingleValueToken("COALESCING", "??", COALESCING_Id);
 
     CjSingleValueToken COLON = new CjSingleValueToken("COLON", ":", COLON_Id);
+    CjSingleValueToken DOUBLE_COLON = new CjSingleValueToken("DOUBLE_COLON", "::", DOUBLE_COLON_Id);
     CjSingleValueToken SEMICOLON = new CjSingleValueToken("SEMICOLON", ";", SEMICOLON_Id);
     CjSingleValueToken DOUBLE_SEMICOLON = new CjSingleValueToken("DOUBLE_SEMICOLON", ";;", DOUBLE_SEMICOLON_Id);
     CjSingleValueToken RANGE = new CjSingleValueToken("RANGE", "..", RANGE_Id);
@@ -805,7 +807,6 @@ public interface CjTokens {
     TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, WHITESPACES);
     CjToken EOF = new CjToken("EOF", EOF_Id);
 }
-
 
 
 
