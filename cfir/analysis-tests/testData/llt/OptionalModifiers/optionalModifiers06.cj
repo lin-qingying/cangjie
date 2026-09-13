@@ -5,7 +5,7 @@ interface I1 {
     func f() {}
 }
 
-open interface I2 {
+<!REDUNDANT_MODIFIER_FOR_TARGET!>open<!> interface I2 {
     func f() {}
 }
 
