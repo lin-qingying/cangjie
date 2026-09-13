@@ -5,10 +5,10 @@ main(): Int64 {
     func f() {
         print("${x},")
         func f1() {
-            print("${x},")
+            print("${<!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>},")
         }
         let f2 = {
-            => print("${x}")
+            => print("${<!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>}")
         }
         let x = 99
         f1()
