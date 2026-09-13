@@ -6632,3 +6632,17 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 | Box / DesugarErrorReport / FuzzInvalidParse / IsOrAsExpr / Native / OptionalModifiers | 各2 |
 
 - change isolation: 本项只提交可选链/下标语义实现、生成产物、两份新增fixture、两份期望修正、快照单测和日志；用户.idea与无实际diff的其它文件保持独立，external只读。
+
+## 2026-09-13：OptionalModifiers 的 open interface 冗余修饰符期望
+
+- problem type: Diagnostics / Modifier target redundancy。
+- root cause: `optionalModifiers06.cj` 使用了显式 `open interface`，但 fixture 未声明项目已有的 `REDUNDANT_MODIFIER_FOR_TARGET` 警告；PSI 与 LightTree 均因此各多出同一条诊断。
+- official Cangjie evidence: cjc 1.0.5 以 `--diagnostic-format json --error-count-limit all --warn-off unused -o NUL` 编译原始 fixture，exit 0，仅报告 `parse_redundant_modifier`，位置为第8行第1列，范围覆盖完整 `open`（第1至5列）。`external/cangjie_compiler/src/Parse/ParserModifierRules.cpp:366-369` 的 `TOPLEVEL_INTERFACE_WARNING_MODIFIERS` 对 `open` 使用 `ILLEGAL` 规则并明确要求告警。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirModifierChecker.kt:111-151`；`external/kotlin/compiler/psi/psi-frontend-utils/src/org/jetbrains/kotlin/resolve/ModifierCheckerHelpers.kt:291-293`。Kotlin 同样通过共享 `redundantTargetMap` 将 `open` 与 `INTERFACE` 关联。
+- CFIR owner files changed: 无；现有 `CfirModifierChecker` 与 `ModifierCheckerTargets.redundantTargetMap` 已正确实现该共享规则。
+- repair principle: 仅修正官方语义已证明错误的测试期望，保留共享 CFIR 修饰符检查实现和 PSI/LightTree 双入口行为。
+- fixtures covered: `llt/OptionalModifiers/optionalModifiers01.cj`、`optionalModifiers02_1.cj`、`optionalModifiers02_2.cj`、`optionalModifiers03_1.cj`、`optionalModifiers03_2.cj`、`optionalModifiers04.cj`、`optionalModifiers05.cj`、`optionalModifiers06.cj`、`optionalModifiers07.cj`、`optionalModifiers08.cj`。
+- fixture correction: 在 `optionalModifiers06.cj` 的完整 `open` token 上补充 `<!REDUNDANT_MODIFIER_FOR_TARGET!>open<!>`；源码语法和其它期望未改。
+- verification commands and outcome:
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$OptionalModifiers' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$OptionalModifiers' --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'`：22/22 通过；LightTree 11/11、PSI 11/11，0 failures、0 errors、0 skipped。
+  - 完整 `:cfir:analysis-tests:test` 按用户要求未执行；不将本项定向结果表述为全量回归结果。
