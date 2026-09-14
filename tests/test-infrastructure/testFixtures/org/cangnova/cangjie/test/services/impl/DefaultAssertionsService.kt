@@ -24,7 +24,8 @@ object JUnit5Assertions : AssertionsService() {
      *
      * 对齐 Kotlin TestDataAssertions：`-Dupdate.test.data=true` 时 golden mismatch 直接覆写文件。
      */
-    private val updateTestData: Boolean = System.getProperty("update.test.data") != null
+    private val updateTestData: Boolean =
+        System.getProperty("update.test.data")?.toBooleanStrictOrNull() == true
 
     /**
      * 执行 `doesEqualToFile` 对应的测试服务流程，维持测试框架的阶段契约。
@@ -84,7 +85,7 @@ object JUnit5Assertions : AssertionsService() {
     /**
      * 执行 `assertEqualsToFile` 对应的测试服务流程，维持测试框架的阶段契约。
      *
-     * mismatch 且 `update.test.data` 系统属性存在时，直接把 actual 写回 golden 文件，
+     * mismatch 且 `update.test.data=true` 时，直接把 actual 写回 golden 文件，
      * 用于本地批量更新 analysis 测试 golden 输出。
      */
     override fun assertEqualsToFile(expectedFile: File, actual: String, sanitizer: (String) -> String, message: () -> String) {
