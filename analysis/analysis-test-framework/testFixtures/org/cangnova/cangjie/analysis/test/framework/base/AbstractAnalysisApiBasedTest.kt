@@ -24,6 +24,7 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModul
 import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkerProvider
 import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkersSourceFilePreprocessor
 import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectModelServices
 import org.cangnova.cangjie.analysis.test.services.CaAnalysisApiEnvironmentManager
@@ -322,6 +323,18 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
             testConfiguration.directives,
         )
         testServices.register(TestModuleStructure::class, testModuleStructure)
+
+        // 对齐 Kotlin AbstractAnalysisApiBasedTest.runTest：指令按 configurator 宿主模式拦截测试执行。
+        if (configurator.analyseInDependentSession &&
+            AnalysisApiTestDirectives.DISABLE_DEPENDED_MODE in testModuleStructure.allDirectives
+        ) {
+            return
+        }
+        if (configurator.analysisApiMode == AnalysisApiMode.Standalone &&
+            AnalysisApiTestDirectives.IGNORE_STANDALONE in testModuleStructure.allDirectives
+        ) {
+            return
+        }
 
         val environmentManager = CaAnalysisApiEnvironmentManagerImpl(testServices, disposable)
         testServices.register(CaAnalysisApiEnvironmentManager::class, environmentManager)
