@@ -59,6 +59,8 @@ sourceSets {
 projectTests {
     testTask(jUnitMode = JUnitMode.JUnit5) {
         workingDir = rootDir
+        // 对齐 Kotlin：IDE 模式 golden 先跑，standalone 变体输出在其后生成，避免同数据目录并发读写。
+        mustRunAfter(":analysis:analysis-api-cfir:test")
     }
 
     testGenerator("org.cangnova.cangjie.analysis.api.standalone.cfir.test.TestGeneratorKt")
