@@ -47,6 +47,12 @@ public class CfirStandaloneNormalAnalysisSourceModuleExpressionInformationTestGe
   }
 
   @Test
+  @TestMetadata("callAsExpressionArgument.cj")
+  public void testCallAsExpressionArgument() {
+    run("callAsExpressionArgument.cj");
+  }
+
+  @Test
   @TestMetadata("callAsInitializer.cj")
   public void testCallAsInitializer() {
     run("callAsInitializer.cj");
