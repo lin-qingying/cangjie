@@ -20,6 +20,13 @@ import org.junit.jupiter.api.Assertions as JUnit5PlatformAssertions
  */
 object JUnit5Assertions : AssertionsService() {
     /**
+     * 是否处于 golden 批量更新模式。
+     *
+     * 对齐 Kotlin TestDataAssertions：`-Dupdate.test.data=true` 时 golden mismatch 直接覆写文件。
+     */
+    private val updateTestData: Boolean = System.getProperty("update.test.data") != null
+
+    /**
      * 执行 `doesEqualToFile` 对应的测试服务流程，维持测试框架的阶段契约。
      */
     override fun doesEqualToFile(expectedFile: File, actual: String, sanitizer: (String) -> String): Boolean {
@@ -28,8 +35,18 @@ object JUnit5Assertions : AssertionsService() {
             actual,
             sanitizer,
             fileNotFoundMessageTeamCity = { "Expected data file did not exist `$expectedFile`" },
-            fileNotFoundMessageLocal = { "Expected data file did not exist. Generating: $expectedFile" }).first
+            fileNotFoundMessageLocal = { "Expected data file did not exist. Generating: $expectedFile" },
+        ).equalTo
     }
+
+    /**
+     * golden 文件比对结果。
+     */
+    private data class FileComparisonResult(
+        val equalTo: Boolean,
+        val expected: String,
+        val actualText: String,
+    )
 
     /**
      * 提供 `doesEqualToFile` 对应的测试服务流程，维持测试框架的阶段契约。
@@ -40,7 +57,7 @@ object JUnit5Assertions : AssertionsService() {
         sanitizer: (String) -> String,
         fileNotFoundMessageTeamCity: (File) -> String,
         fileNotFoundMessageLocal: (File) -> String,
-    ): Pair<Boolean, String> {
+    ): FileComparisonResult {
         try {
             val actualText = actual.trim { it <= ' ' }.convertLineSeparators().trimTrailingWhitespacesAndAddNewlineAtEOF()
             if (!expectedFile.exists()) {
@@ -54,7 +71,11 @@ object JUnit5Assertions : AssertionsService() {
             }
             val expected = expectedFile.readText().convertLineSeparators()
             val expectedText = expected.trim { it <= ' ' }.trimTrailingWhitespacesAndAddNewlineAtEOF()
-            return Pair(sanitizer.invoke(expectedText) == sanitizer.invoke(actualText), expected)
+            return FileComparisonResult(
+                equalTo = sanitizer.invoke(expectedText) == sanitizer.invoke(actualText),
+                expected = expected,
+                actualText = actualText,
+            )
         } catch (e: IOException) {
             throw rethrow(e)
         }
@@ -62,24 +83,31 @@ object JUnit5Assertions : AssertionsService() {
 
     /**
      * 执行 `assertEqualsToFile` 对应的测试服务流程，维持测试框架的阶段契约。
+     *
+     * mismatch 且 `update.test.data` 系统属性存在时，直接把 actual 写回 golden 文件，
+     * 用于本地批量更新 analysis 测试 golden 输出。
      */
     override fun assertEqualsToFile(expectedFile: File, actual: String, sanitizer: (String) -> String, message: () -> String) {
-        val (equalsToFile, expected) = doesEqualToFile(
+        val result = doesEqualToFile(
             expectedFile, actual, sanitizer,
             fileNotFoundMessageTeamCity = { "Expected data file did not exist `$expectedFile`" },
             fileNotFoundMessageLocal = { "Expected data file did not exist. Generating: $expectedFile" },
         )
-        if (!equalsToFile) {
+        if (!result.equalTo) {
+            if (updateTestData) {
+                expectedFile.writeText(result.actualText)
+                return
+            }
             val details = buildString {
                 appendLine()
                 appendLine("=====预期======")
-                appendLine(expected)
+                appendLine(result.expected)
                 appendLine("=====得到======")
                 appendLine(actual)
             }
             throw AssertionFailedError(
                 "${message()}: ${expectedFile.name} $details",
-                FileInfo(expectedFile.absolutePath, expected.toByteArray(StandardCharsets.UTF_8)),
+                FileInfo(expectedFile.absolutePath, result.expected.toByteArray(StandardCharsets.UTF_8)),
                 actual,
             )
         }
