@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.dsl
 
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.containingDeclarationProvider.AbstractContainingDeclarationProviderByReferenceTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.containingModuleProvider.AbstractGetModuleTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.analysisScopeProvider.AbstractCanBeAnalysedTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.compileTimeConstantProvider.AbstractCompileTimeConstantEvaluatorTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.dataFlowInfoProvider.AbstractDataFlowInfoTest
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.diagnos
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.diagnosticProvider.AbstractElementDiagnosticsTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.docProvider.AbstractCDocProviderTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionInfoProvider.AbstractExpressionInformationTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionInfoProvider.AbstractVariableAccessKindTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractDeclarationReturnTypeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractExpressionTypeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.expressionTypeProvider.AbstractExpectedExpressionTypeTest
@@ -22,11 +24,13 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.referen
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.references.AbstractReferenceShorteningPlanTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.renderer.AbstractRendererTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveCallByFileTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveCallInfoTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveCallTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveReferenceByFileTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveSymbolByFileTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveSymbolTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver.AbstractResolveSymbolsTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractCombinedDeclaredMemberScopeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractDeclaredMemberScopeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider.AbstractFileScopeTest
@@ -36,6 +40,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopePr
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.substitutors.AbstractSignatureSubstitutionTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolDeclarationRenderer.AbstractSymbolRenderingByReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolProvider.AbstractTopLevelSymbolProviderTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolInformationProvider.AbstractIsOperatorTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractIsSubclassOfTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbolRelationProvider.AbstractOverriddenDeclarationProviderTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeCreator.AbstractTypeCreatorTest
@@ -43,6 +48,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeInf
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeInfoProvider.AbstractSuperTypesTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeProvider.AbstractDefaultTypeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeProvider.AbstractHaveCommonSubtypeTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeProvider.AbstractTypeByTypeReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeProvider.AbstractTypeReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeProvider.AbstractVarargArrayTypeTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.typeRelationChecker.AbstractTypeRelationTest
@@ -57,6 +63,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.Abstra
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiAnnotationsOnDeclarationsWithMetaTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiAnnotationsOnTypesTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiSpecificAnnotationOnDeclarationTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnnotationTargetTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractAnalysisSessionInvalidationTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractCodeFragmentContextModificationAnalysisSessionInvalidationTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractGlobalModuleStateModificationAnalysisSessionInvalidationTest
@@ -154,6 +161,9 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
             test<AbstractResolveSymbolByFileTest> { model(it, "") }
             test<AbstractResolveReferenceByFileTest> { model(it, "") }
         }
+
+        test<AbstractResolveSymbolsTest> { model(it, "resolveCandidates/symbols") }
+        test<AbstractResolveCallInfoTest> { model(it, "resolveCandidates/call") }
     }
 
     component("containingDeclarationProvider") {
@@ -189,6 +199,15 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
 
     component("expressionInfoProvider") {
         test<AbstractExpressionInformationTest> { model(it, "basicInfo") }
+        test<AbstractVariableAccessKindTest> { model(it, "readWriteAccess") }
+    }
+
+    component("symbolInformationProvider") {
+        test<AbstractIsOperatorTest> { model(it, "isOperator") }
+    }
+
+    component("containingModuleProvider") {
+        test<AbstractGetModuleTest> { model(it, "containingModule") }
     }
 
     component("dataFlowInfoProvider") {
@@ -288,6 +307,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     component("typeProvider") {
         test<AbstractHaveCommonSubtypeTest> { model(it, "haveCommonSubtype") }
         test<AbstractTypeReferenceTest> { model(it, "typeReference") }
+        test<AbstractTypeByTypeReferenceTest> { model(it, "typeByTypeReference") }
         test<AbstractDefaultTypeTest> { model(it, "defaultType") }
         test<AbstractVarargArrayTypeTest> { model(it, "varargArrayType") }
     }
@@ -297,6 +317,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
         test<AbstractAnalysisApiAnnotationsOnDeclarationsTest> { model(it, "annotationsOnDeclaration") }
         test<AbstractAnalysisApiSpecificAnnotationOnDeclarationTest> { model(it, "specificAnnotations") }
         test<AbstractAnalysisApiAnnotationsOnDeclarationsWithMetaTest> { model(it, "metaAnnotations") }
+        test<AbstractAnnotationTargetTest> { model(it, "applicableTargets") }
     }
 
     group("types", filter = analysisSessionModeIs(AnalysisSessionMode.Normal)) {
