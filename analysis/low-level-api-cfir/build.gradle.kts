@@ -85,6 +85,8 @@ kotlin {
 projectTests {
     testTask(jUnitMode = JUnitMode.JUnit5) {
         workingDir = rootDir
+        // 对齐 Kotlin：IDE 模式 golden 先跑，low-level 变体输出在其后生成。
+        mustRunAfter(":analysis:analysis-api-cfir:test")
         val updateTestData = System.getProperty("update.test.data")
         if (updateTestData != null) {
             systemProperty("update.test.data", updateTestData)
