@@ -60,6 +60,7 @@ object CaCfirAnalysisApiTestConfiguratorFactory : AnalysisApiTestConfiguratorFac
                 CaAnalysisApiIdeModeTestServiceRegistrar,
             ),
             analyseInDependentSession = data.analysisSessionMode == AnalysisSessionMode.Dependent,
+            analysisApiMode = data.analysisApiMode,
         )
     }
 
@@ -101,6 +102,10 @@ open class CaCfirConfiguredAnalysisApiTestConfigurator(
      * 当前测试宿主需要安装的 Analysis API 服务注册器集合。
      */
     final override val serviceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>>,
+    /**
+     * 当前 configurator 的 Analysis API 宿主运行模式。
+     */
+    final override val analysisApiMode: AnalysisApiMode,
     /**
      * 是否在依赖模块 session 中执行分析，用于覆盖 dependent-session 测试模式。
      */

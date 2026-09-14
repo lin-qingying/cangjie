@@ -29,6 +29,14 @@ abstract class AnalysisApiTestConfigurator {
         get() = emptyList()
 
     /**
+     * 当前 configurator 的 Analysis API 宿主运行模式。
+     *
+     * 对齐 Kotlin `AnalysisApiTestConfigurator.analysisApiMode`：
+     * 指令（如 IGNORE_STANDALONE）依据宿主模式决定是否跳过当前测试。
+     */
+    abstract val analysisApiMode: AnalysisApiMode
+
+    /**
      * 是否在 dependent session 模式下运行当前测试。
      */
     abstract val analyseInDependentSession: Boolean

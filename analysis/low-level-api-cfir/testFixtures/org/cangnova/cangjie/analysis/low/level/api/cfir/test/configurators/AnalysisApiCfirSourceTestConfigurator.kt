@@ -56,6 +56,12 @@ private class AnalysisApiCfirSourceTestConfigurator(
         get() = delegate.testPrefixes
 
     /**
+     * 当前 configurator 的 Analysis API 宿主运行模式，沿用委托配置器的约定。
+     */
+    override val analysisApiMode: AnalysisApiMode
+        get() = delegate.analysisApiMode
+
+    /**
      * 当前测试是否应在 dependent analysis session 中执行。
      */
     override val analyseInDependentSession: Boolean
