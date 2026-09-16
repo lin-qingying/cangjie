@@ -20,6 +20,14 @@ interface CjSourceFile {
     /** 源文件完整路径（虚拟文件可能为 null） */
     val path: String?
 
+    /**
+     * 源文件种类。
+     *
+     * 默认按文件名后缀判定；对能自证种类的实现（例如 PSI 文件），
+     * 应覆写为读取显式标记（见 [CjSourceKindCarrier]）。
+     */
+    val sourceKind: CjSourceKind get() = CjSourceKind.fromFileName(name)
+
     /** 获取源文件内容的输入流 */
     fun getContentsAsStream(): InputStream
 }
@@ -44,6 +52,13 @@ class CjPsiSourceFile(
      */
     override val path: String?
         get() = psiFile.virtualFile?.path
+
+    /**
+     * 优先使用 PSI 文件自身声明的种类（[CjSourceKindCarrier]），
+     * 不支持自证时回退到按文件名判定。
+     */
+    override val sourceKind: CjSourceKind
+        get() = (psiFile as? CjSourceKindCarrier)?.sourceKind ?: CjSourceKind.fromFileName(psiFile.name)
 
     /**
      * 读取 PSI 关联虚拟文件的内容流。
@@ -121,7 +136,18 @@ class CjInMemoryTextSourceFile(
      * 内存源文件文本。
      */
     val text: CharSequence,
+    /**
+     * 显式声明的文件种类；为 null 时按 [name] 后缀判定。
+     *
+     * 内存文件没有稳定的虚拟文件与 FileType，测试或宏展开场景需要一个显式的种类入口。
+     */
+    private val explicitKind: CjSourceKind? = null,
 ) : CjSourceFile {
+    /**
+     * 显式种类优先，否则退回按文件名判定。
+     */
+    override val sourceKind: CjSourceKind get() = explicitKind ?: CjSourceKind.fromFileName(name)
+
     /**
      * 将内存文本转换为输入流。
      */
