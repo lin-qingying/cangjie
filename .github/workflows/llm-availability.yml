@@ -41,9 +41,9 @@ env:
   # OpenAI 兼容接口地址
   API_BASE: https://anyrouter.top/v1
   # 待检测模型（anyrouter 模型 id，只检测 gpt-5.6-sol）
-  MODEL: gpt-5.6-sol
+  MODEL: gpt-6-astra
   # 测试输入内容
-  TEST_MESSAGE: "hi"
+  TEST_MESSAGE: "154551"
   # 通知 Issue 标题（创建后需手动关闭，避免重复通知刷屏）
   ISSUE_TITLE: "✅ anyrouter LLM 服务恢复可用"
   # 去重关键字（不带 emoji，保证 GitHub 搜索可用）
