@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.macro.file
 
+import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.lang.CangJieMacroCallLanguage
 import org.cangnova.cangjie.psi.CjFile
 import com.intellij.openapi.fileTypes.FileType
@@ -27,6 +28,14 @@ class CjMacroCallFile(
     override fun toString(): String {
         return "CjMacroCallFile File: $name"
     }
+
+    /**
+     * 宏调用文件自证种类。
+     *
+     * 不在 `CjFile` 里判宏调用类型：那会让 `CjFile` 反向引用它的子类构造类型
+     * （`CjMacroCallFile` 继承自 `CjFile`）。由子类覆写是天然而无环的做法。
+     */
+    override val sourceKind: CjSourceKind get() = CjSourceKind.MACRO_CALL
 
     /**
      * 实现 `getFileType` 的宏文件 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
