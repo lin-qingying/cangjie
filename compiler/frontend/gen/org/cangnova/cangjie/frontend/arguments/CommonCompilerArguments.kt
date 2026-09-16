@@ -41,4 +41,10 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = if (value.isNullOrEmpty()) null else value
         }
 
+    var compileCjd: Boolean = false
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
 }

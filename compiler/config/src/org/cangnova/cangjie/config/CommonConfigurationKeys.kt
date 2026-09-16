@@ -86,6 +86,10 @@ object CommonConfigurationKeys {
     /** 目标平台。对齐 Kotlin 键：`TARGET_PLATFORM`。 */
     @JvmField
     val TARGET_PLATFORM = CompilerConfigurationKey.create<TargetPlatform>("TARGET_PLATFORM")
+
+    /** 是否为 `.cj.d` 声明模式。对齐官方 `GlobalOptions.compileCjd`。 */
+    @JvmField
+    val COMPILE_CJD = CompilerConfigurationKey.create<Boolean>("COMPILE_CJD")
 }
 
 /**
@@ -262,4 +266,16 @@ var CompilerConfiguration.messageCollector: MessageCollector
     get() = get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
     set(value) {
         put(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, value)
+    }
+
+/**
+ * 声明模式开关扩展属性。
+ *
+ * 为 true 时：只收集 `.cj.d`、只产出 `.cjo`，不做 CHIR / 代码生成。
+ * 对齐官方 `GlobalOptions.compileCjd`。
+ */
+var CompilerConfiguration.compileCjd: Boolean
+    get() = getBoolean(CommonConfigurationKeys.COMPILE_CJD)
+    set(value) {
+        put(CommonConfigurationKeys.COMPILE_CJD, value)
     }

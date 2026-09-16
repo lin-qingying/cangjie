@@ -41,6 +41,16 @@ val cangjieCompilerArguments = compilerArguments {
                 valueType = StringType(defaultValue = ReleaseDependent(null))
                 lifecycle(CangJieReleaseVersion.V_1_0_5)
             }
+
+            compilerArgument {
+                name = "d"
+                // 显式指定生成属性名，避免生成 `var d`（可读性差且与配置侧命名不一致）
+                compilerName = "compileCjd"
+                description = "Compile declaration file(s) (.cj.d)".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_5)
+            }
         }
     }
 }
