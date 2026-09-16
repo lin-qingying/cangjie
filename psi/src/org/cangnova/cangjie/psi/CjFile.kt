@@ -24,8 +24,11 @@
 
 package org.cangnova.cangjie.psi
 
+import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.CjSourceKindCarrier
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.CangJieLanguage
+import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.psi.stubs.elements.CjPlaceHolderStubElementType
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -61,9 +64,13 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
     CangJieFile {
     /**
      * 返回此文件的文件类型。
-     * @return 仓颉文件类型实例
+     *
+     * 直接取 view provider 的类型，不再硬编码为 [CangJieFileType.INSTANCE]：
+     * `.cj.d` 由 `CangJieDeclarationFileType` 承载，硬编码会让它自称是 `.cj` 文件，
+     * 从而使 `psiFile.getFileType()` 与 `psiFile.viewProvider.fileType` 自相矛盾。
+     * @return 该文件真实的文件类型
      */
-    override fun getFileType(): FileType = CangJieFileType.INSTANCE
+    override fun getFileType(): FileType = viewProvider.fileType
 
     /**
      * 虚拟文件路径的缓存，避免重复计算。
@@ -323,6 +330,13 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
             return packageDirectiveByTree
         }
 
+    /** 文件前导中的官方 `features` directive；它不属于 declarations。 */
+    val featuresDirective: CjFeaturesDirective?
+        get() {
+            greenStub?.findChildStubByType(CjStubElementTypes.FEATURES_DIRECTIVE)?.psi?.let { return it }
+            return node.findChildByType(CjNodeTypes.FEATURES_DIRECTIVE)?.psi as? CjFeaturesDirective
+        }
+
     /**
      * 缓存标志，指示此文件是否有导入别名。
      */
@@ -338,11 +352,16 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
     override val declarations: List<CjDeclaration>
         get() {
             val stub = greenStub
-            return stub?.getChildrenByType(FILE_DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
-                ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java).toMutableList().apply {
-                    // 移除所有包指令
-                    removeAll { it is CjPackageDirective }
+            val packageChildren = stub?.childrenStubs?.map { it.psi } ?: children.toList()
+            return buildList {
+                for (child in packageChildren) {
+                    when (child) {
+                        is CjPackageDirective -> Unit
+                        is CjForeignDirective -> child.body?.declarations?.let(::addAll)
+                        is CjDeclaration -> add(child)
+                    }
                 }
+            }
         }
     
     /**
@@ -378,7 +397,30 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
  * @param isCodeFragment 此文件是否表示代码片段（例如，在草稿文件中）
  */
 open class CjFile(viewProvider: FileViewProvider, isCompiled: Boolean = false, val isCodeFragment: Boolean = false) :
-    CjCommonFile(viewProvider, isCompiled) {
+    CjCommonFile(viewProvider, isCompiled),
+    CjSourceKindCarrier {
+
+    /**
+     * 文件种类。
+     *
+     * 由 view provider 的 FileType 推导，是"是否为声明文件"的**唯一真源**。
+     *
+     * 为什么是枚举而不是 `isDeclarationFile: Boolean`：
+     * ① 种类是枚举，天然可扩展（[CjSourceKind] 含 `MACRO_CALL`）；
+     * ② Boolean 版会把事实来源分裂成"构造参数 / FileType / 配置项"多处。
+     */
+    override val sourceKind: CjSourceKind
+        get() = if (viewProvider.fileType is CangJieDeclarationFileType) {
+            CjSourceKind.DECLARATION
+        } else {
+            CjSourceKind.SOURCE
+        }
+
+    /**
+     * 兼容既有调用点的**派生**属性（不是独立事实，不得赋值）。
+     * 派生自 [sourceKind]，因此永远与 FileType 一致。
+     */
+    val isDeclarationFile: Boolean get() = sourceKind.isDeclaration
 
     /**
      * 接受此文件的访问者。访问者模式实现的一部分。
