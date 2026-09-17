@@ -935,6 +935,12 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/annotation")
             }
 
+            @TestMetadata("deprecated_arguments.cj")
+            @Test
+            fun testDeprecatedArguments() {
+                runTest("cfir/analysis-tests/testData/macro/llt/annotation/deprecated_arguments.cj")
+            }
+
             @TestMetadata("err_abstract.cj")
             @Test
             fun testErrAbstract() {
@@ -993,6 +999,12 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
             @Test
             fun testErrTargetType() {
                 runTest("cfir/analysis-tests/testData/macro/llt/annotation/err_target_type.cj")
+            }
+
+            @TestMetadata("intrinsic_semantics.cj")
+            @Test
+            fun testIntrinsicSemantics() {
+                runTest("cfir/analysis-tests/testData/macro/llt/annotation/intrinsic_semantics.cj")
             }
 
             @TestMetadata("ok_class_00.cj")
