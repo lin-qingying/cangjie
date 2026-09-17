@@ -109,7 +109,7 @@ public enum class CangjieCallingConvention {
 /**
  * 内置注解的唯一事实来源。
  *
- * 依据官方 896235c9fd18f22d570a9818ac672838c36c3932 的 ParseAnnotations、
+ * 依据官方 v1.0.0 的 ParseAnnotations、
  * CFFICheck 与 NativeFFI。目标集合描述十类声明目标，class/struct、作用域、
  * override 等更细约束由 semanticHandler 指定的语义 owner 检查。
  */
@@ -128,13 +128,14 @@ object BuiltInAnnotationRegistry {
     private val unrestricted = AnnotationArgumentSchema(variadic = true)
 
     val languageBuiltIns: List<BuiltInAnnotationDescriptor> = listOf(
-        // `Java` is present in the official NAME_TO_ANNO_KIND table and is
-        // recognized by ParserImpl::SeeingBuiltinAnnotation.  Keep it in the
-        // source parser registry; Java/ObjC interop implementation details are
-        // resolved later, but the source-level annotation identity is still a
-        // language builtin and must not fall through to a macro/custom path.
+        // `Java` remains an official AST AnnotationKind for declarations loaded
+        // from Java/CJO interop metadata, but v1.0.0 does not list it in
+        // NAME_TO_ANNO_KIND and ParserImpl::SeeingBuiltinAnnotation therefore
+        // does not recognize source `@Java` as a language builtin.  Keep its
+        // identity in the common model while preventing source resolution from
+        // manufacturing a Java interop declaration from a source short name.
         ffi("Java", BuiltInAnnotationKind.JAVA, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
-            AnnotationSemanticHandler.JAVA_FFI),
+            AnnotationSemanticHandler.JAVA_FFI).copy(hasSourceParserEntry = false),
         ffi("JavaMirror", BuiltInAnnotationKind.JAVA_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
         ffi("JavaImpl", BuiltInAnnotationKind.JAVA_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
         ffi("JavaHasDefault", BuiltInAnnotationKind.JAVA_HAS_DEFAULT, targets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), handler = AnnotationSemanticHandler.JAVA_FFI),
@@ -154,8 +155,11 @@ object BuiltInAnnotationRegistry {
             setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION)),
         ffi("C", BuiltInAnnotationKind.C, targets = types + CangjieAnnotationTarget.GLOBAL_FUNCTION),
         directive("Attribute", BuiltInAnnotationKind.ATTRIBUTE, CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS, unrestricted, all, AnnotationSemanticHandler.ATTRIBUTES),
+        // 官方 parser 只在被标注声明为函数时执行 intrinsic 专用检查；其它
+        // 声明种类不经过通用 AnnotationTarget 机制。因此这里的空集合表示
+        // “交给 intrinsic 专用 owner”，并不表示“该注解不允许使用”。
         directive("Intrinsic", BuiltInAnnotationKind.INTRINSIC, CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted,
-            setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), AnnotationSemanticHandler.INTRINSIC),
+            emptySet(), AnnotationSemanticHandler.INTRINSIC),
         overflow("OverflowThrowing", CangjieOverflowStrategy.THROWING),
         overflow("OverflowWrapping", CangjieOverflowStrategy.WRAPPING),
         overflow("OverflowSaturating", CangjieOverflowStrategy.SATURATING),

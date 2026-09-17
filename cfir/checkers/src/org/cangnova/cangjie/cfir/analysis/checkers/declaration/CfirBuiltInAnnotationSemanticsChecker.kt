@@ -24,17 +24,22 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.stringArgument
+import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionMismatch
 import org.cangnova.cangjie.cfir.resolve.defaultType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.CfirObjCTypeSemantics
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
@@ -166,6 +171,33 @@ private fun checkAnnotationTargetConstants(declaration: CfirDeclaration) {
         ?: return
     val target = annotation.argumentByName("target") as? org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
         ?: return
+    val annotationKindType = ConeEnumType(StdlibClassIds.AnnotationKind.toLookupTag())
+    for (element in target.elements) {
+        val actualType = element.coneTypeOrNull?.fullyExpandedType(context.session) ?: continue
+        if (actualType is ConeErrorType || actualType.classIdOrPrimitiveClassId == annotationKindType.classId) continue
+
+        // 官方 `CheckAnnotationDecl` 在构造注解声明后检查
+        // Array<AnnotationKind>。标量字面量继续走共享的字面量转换路径
+        // (`CANNOT_CONVERT_LITERAL`)，非字面量值才归类为普通解析类型不匹配。
+        val source = element.source ?: annotation.source ?: declaration.source ?: continue
+        val literalMismatch = literalConversionMismatch(annotationKindType, element, context.session)
+        if (literalMismatch != null) {
+            reporter.reportOn(
+                source = source,
+                factory = CfirErrors.CANNOT_CONVERT_LITERAL,
+                a = literalMismatch.literalDescription,
+                b = literalMismatch.expectedType,
+            )
+        } else {
+            reporter.reportOn(
+                source = source,
+                factory = CfirErrors.TYPE_MISMATCH,
+                a = annotationKindType,
+                b = actualType,
+                c = false,
+            )
+        }
+    }
     checkConstAnnotationExpression(target)
 }
 

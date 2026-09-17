@@ -10,7 +10,7 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /**
- * 锁定官方 revision 896235c9fd18f22d570a9818ac672838c36c3932 的公共注解契约。
+ * 锁定官方 v1.0.0 的公共注解契约。
  *
  * 这些断言保护 parser、CFIR、CJO 和 Analysis API 共同消费的语言身份，不能用
  * 测试通过代替各语义 owner 的正负例验证。
@@ -59,14 +59,14 @@ class BuiltInAnnotationRegistryTest {
         }
     }
 
-    /** Java 是官方 parser 内置身份；ConstSafe 仍只在 std 模块内建。 */
+    /** Java 保留官方 AST 身份，但 v1.0.0 source parser 不把它列为 builtin；ConstSafe 仍只在 std 模块内建。 */
     @Test
     fun sourceLookupHonorsSpecialJavaAndStdOnlyConstSafe() {
         val java = builtIn("Java")
         assertEquals(BuiltInAnnotationKind.JAVA, java.kind)
-        assertTrue(java.hasSourceParserEntry)
-        assertSame(java, BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "std"))
-        assertSame(java, BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "application"))
+        assertFalse(java.hasSourceParserEntry)
+        assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "std"))
+        assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "application"))
 
         assertSame(builtIn("ConstSafe"), BuiltInAnnotationRegistry.resolveLanguageBuiltIn("ConstSafe", false, "std"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("ConstSafe", false, "application"))
@@ -168,6 +168,7 @@ class BuiltInAnnotationRegistryTest {
             BuiltInAnnotationRegistry.ffiExclusiveKinds)
         assertEquals(setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), builtIn("CallingConv").declarationTargets)
         assertEquals(setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), builtIn("FastNative").declarationTargets)
+        assertTrue(builtIn("Intrinsic").declarationTargets.isEmpty())
         assertEquals(setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION, CangjieAnnotationTarget.MEMBER_FUNCTION,
             CangjieAnnotationTarget.MEMBER_PROPERTY), builtIn("Frozen").declarationTargets)
 

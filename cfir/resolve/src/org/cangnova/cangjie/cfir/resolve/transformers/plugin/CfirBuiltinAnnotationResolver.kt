@@ -76,14 +76,18 @@ internal fun resolveBuiltinAnnotationArguments(
             containingDeclarationSymbol = callableSymbol
             isLocal = false
             isNamed = !parameter.acceptsPositional
-            returnTypeRef = buildResolvedTypeRef {
-                coneType = when (parameter.kind) {
-                    AnnotationParameterKind.BOOLEAN -> ConePrimitiveType.BOOLEAN
-                    AnnotationParameterKind.INTEGER -> ConePrimitiveType.INT64
-                    AnnotationParameterKind.STRING, AnnotationParameterKind.REFERENCE -> ConeClassLikeType(StdlibClassIds.String.toLookupTag())
-                    else -> ConeClassLikeType(StdlibClassIds.Any.toLookupTag())
+                returnTypeRef = buildResolvedTypeRef {
+                    coneType = when (parameter.kind) {
+                        AnnotationParameterKind.BOOLEAN -> ConePrimitiveType.BOOLEAN
+                        AnnotationParameterKind.INTEGER -> ConePrimitiveType.INT64
+                        AnnotationParameterKind.STRING, AnnotationParameterKind.REFERENCE -> ConeClassLikeType(StdlibClassIds.String.toLookupTag())
+                        AnnotationParameterKind.TARGET_ARRAY -> ConeClassLikeType(
+                            StdlibClassIds.Array.toLookupTag(),
+                            typeArguments = listOf(ConeEnumType(StdlibClassIds.AnnotationKind.toLookupTag())),
+                        )
+                        else -> ConeClassLikeType(StdlibClassIds.Any.toLookupTag())
+                    }
                 }
-            }
             defaultValue = when (val value = parameter.defaultValue) {
                 is AnnotationDefaultValue.BooleanValue -> buildLiteralExpression { kind = CfirLiteralKind.BOOLEAN; this.value = value.value; coneTypeOrNull = ConePrimitiveType.BOOLEAN }
                 is AnnotationDefaultValue.StringValue -> buildLiteralExpression { kind = CfirLiteralKind.STRING; this.value = value.value; coneTypeOrNull = ConeClassLikeType(StdlibClassIds.String.toLookupTag()) }

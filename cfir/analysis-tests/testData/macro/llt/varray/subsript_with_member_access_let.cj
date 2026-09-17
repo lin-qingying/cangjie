@@ -13,7 +13,7 @@ public struct FdSetVal {
 public func fdOne(fdset: FdSetVal): Unit {
     let size: Int64 = fdset.fdBits.size
     for (i in 0..size) {
-        <!CANNOT_ASSIGN_TO_IMMUTABLE!>fdset.fdBits[i]<!> = 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>fdset.fdBits[i] = 1<!>
         println(fdset.fdBits[i])
     }
 }
