@@ -1148,6 +1148,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
                     runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/enum_cons.cj")
                 }
 
+                @TestMetadata("enum_constructor_payload_members.cj")
+                @Test
+                fun testEnumConstructorPayloadMembers() {
+                    runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/enum_constructor_payload_members.cj")
+                }
+
                 @TestMetadata("enumcons_inside_macro.cj")
                 @Test
                 fun testEnumconsInsideMacro() {
@@ -1197,6 +1203,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/annotation/globals/bad")
+                    }
+
+                    @TestMetadata("enum_constructor_payload_type.cj")
+                    @Test
+                    fun testEnumConstructorPayloadType() {
+                        runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/bad/enum_constructor_payload_type.cj")
                     }
 
                     @TestMetadata("globalfunc_on_globalvar.cj")
@@ -1455,6 +1467,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/llt/const_evaluation")
             }
 
+            @TestMetadata("const_safe_declaration_scopes.cj")
+            @Test
+            fun testConstSafeDeclarationScopes() {
+                runTest("cfir/analysis-tests/testData/macro/llt/const_evaluation/const_safe_declaration_scopes.cj")
+            }
+
             @TestMetadata("const_safe_macro_not_std.cj")
             @Test
             fun testConstSafeMacroNotStd() {
@@ -1465,6 +1483,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
             @Test
             fun testConstSafeStd() {
                 runTest("cfir/analysis-tests/testData/macro/llt/const_evaluation/const_safe_std.cj")
+            }
+
+            @TestMetadata("const_safe_std_package.cj")
+            @Test
+            fun testConstSafeStdPackage() {
+                runTest("cfir/analysis-tests/testData/macro/llt/const_evaluation/const_safe_std_package.cj")
             }
 
             @TestMetadata("or_in_annotation.cj")

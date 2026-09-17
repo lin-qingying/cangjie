@@ -1,5 +1,5 @@
 // RUN_PIPELINE_TILL: FRONTEND
-foreign func takesCType(value: CType): Unit
+foreign func takesCType(value: <!INVALID_CFUNC_PARAMETER_TYPE!>CType<!>): Unit
 
 foreign func takesString(value: <!INVALID_CFUNC_PARAMETER_TYPE!>String<!>): Unit
 

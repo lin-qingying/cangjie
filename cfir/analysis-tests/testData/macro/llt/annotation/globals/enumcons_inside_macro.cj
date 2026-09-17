@@ -1,7 +1,7 @@
 
 
 import std.ast.*
-import std.deriving.*
+import <!UNUSED_IMPORT!>std.deriving.*<!>
 
 @Annotation
 public class APILevel {

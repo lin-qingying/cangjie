@@ -5,7 +5,7 @@ FILE: objcInitMethodBoundaryPlaceholder.cj
         public? init()
         @R|ObjCInit|() public static func buildOk(): R|kotlin.Unit| {
             RETURN {
-                FUNCTION_CALL(WidgetMirror) {
+                FUNCTION_CALL(WidgetMirror -> CfirConstructorSymbol) {
                 }
             }
         }

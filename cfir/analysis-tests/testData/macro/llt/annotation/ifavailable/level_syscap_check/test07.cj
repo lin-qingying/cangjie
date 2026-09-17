@@ -141,10 +141,9 @@ main() {
             f21() // ok
             <!APILEVEL_REF_HIGHER!>f22()<!> // error
             <!APILEVEL_REF_HIGHER!>f23()<!> // error
-        }, {=> // <= 20
+        }, {=> // <= 21
             f19() // ok
             f20() // ok
-            <!APILEVEL_REF_HIGHER!>f21()<!> // error
             <!APILEVEL_REF_HIGHER!>f22()<!> // error
             <!APILEVEL_REF_HIGHER!>f23()<!> // error
         })

@@ -187,6 +187,9 @@ object DiagnosticNameMapper {
         "CANNOT_MODIFY_VAR" to "sema_cannot_modify_var",
         "ILLEGAL_CAPTURE_THIS" to "sema_illegal_capture_this",
         "CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC" to "sema_capture_this_or_instance_field_in_func",
+        "CFUNC_CANNOT_CAPTURE_VAR" to "sema_cfunc_cannot_capture_var",
+        "CFUNC_CANNOT_CAPTURE_THIS" to "sema_cfunc_cannot_capture_this",
+        "FUNC_CAPTURE_VAR_NOT_CTYPE" to "sema_func_capture_var_not_ctype",
 
         // ── Initialization ──
         "ILLEGAL_USAGE_OF_MEMBER" to "sema_illegal_usage_of_member",
@@ -238,6 +241,8 @@ object DiagnosticNameMapper {
         // ── Interop / Foreign ──
         "INVALID_CFUNC_RETURN_TYPE" to "sema_invalid_cfunc_return_type",
         "INVALID_CFUNC_PARAMETER_TYPE" to "sema_invalid_cfunc_parameter_type",
+        "UNSAFE_FUNCTION_INVOKE_FAILED" to "sema_unsafe_function_invoke_failed",
+        "CFUNC_VAR_CANNOT_HAVE_VAR_PARAM" to "sema_cfunc_var_cannot_have_var_param",
         "INVALID_CALLING_CONVENTION_TARGET" to "sema_invalid_calling_convention_target",
         "EXTEND_JAVA_TYPE_NOT_ALLOWED" to "sema_extend_a_java_type",
         "OBJC_METHOD_MUST_HAVE_FOREIGN_NAME" to "sema_objc_method_must_have_foreign_name",

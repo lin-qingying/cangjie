@@ -93,20 +93,30 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
         )
         for (file in sourcePackage.files) {
             val target = File(root, file.relativePath)
+            require(target.toPath().toAbsolutePath().normalize().startsWith(root.toPath().toAbsolutePath().normalize())) {
+                "Macro source fragment escapes its source root: ${file.relativePath}"
+            }
             target.parentFile?.mkdirs()
-            target.writeText(file.originalContent, StandardCharsets.UTF_8)
+            target.writeText(file.content, StandardCharsets.UTF_8)
         }
         return root
     }
 
     /**
-     * 从测试模块中收集所有 `macro package` 源文件并按包名分组。
+     * 从测试模块中收集所有声明 `macro package` 的 source fragment 并按包名分组。
+     *
+     * `TestFile` 可能来自带有多个 `// FILE:` 段的聚合测试文件。聚合文件同时包含
+     * 宏包、宿主包和普通依赖时，不能把整个 TestFile 作为宏包源码交给 `cjc
+     * --compile-macro`；那会把不同 package 的声明混入同一次宏包编译。这里先按官方
+     * 虚拟文件边界拆分，再仅保留具有 `macro package` 声明的 fragment。
      */
     private fun collectSourceMacroPackages(module: TestModule): List<SourceMacroPackage> {
-        val result = linkedMapOf<FqName, MutableList<TestFile>>()
+        val result = linkedMapOf<FqName, MutableList<MacroSourceFragment>>()
         for (file in module.files) {
-            val packageName = macroPackageRegex.find(file.originalContent)?.groupValues?.get(1) ?: continue
-            result.getOrPut(FqName(packageName)) { mutableListOf() } += file
+            for (fragment in file.toMacroSourceFragments()) {
+                val packageName = macroPackageRegex.find(fragment.content)?.groupValues?.get(1) ?: continue
+                result.getOrPut(FqName(packageName)) { mutableListOf() } += fragment
+            }
         }
         return result.map { (packageFqName, files) ->
             SourceMacroPackage(packageFqName, files)
@@ -123,7 +133,7 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
         /** 宏包全限定名。 */
         val packageFqName: FqName,
         /** 属于该宏包的测试源文件。 */
-        val files: List<TestFile>,
+        val files: List<MacroSourceFragment>,
     )
 
     private companion object {
@@ -131,7 +141,63 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
          * 匹配测试源码中的 `macro package` 声明。
          */
         val macroPackageRegex = Regex("""(?m)^\s*macro\s+package\s+([A-Za-z_][A-Za-z0-9_.]*)\s*$""")
+
     }
+}
+
+/** 匹配官方多文件测试中的 `// FILE:` fragment 边界。 */
+private val macroFileDirectiveRegex = Regex("""^\s*//\s*FILE:\s*(.+?)\s*$""")
+
+/**
+ * 宏编译使用的虚拟 source fragment。
+ *
+ * 其路径是 fragment 在测试数据中的直接相对路径，内容不再包含聚合文件的其它
+ * `// FILE:` 段，因此 production orchestrator 接收到的是一个真实宏包源根。
+ */
+private data class MacroSourceFragment(
+    /** fragment 在宏 source root 下的相对路径。 */
+    val relativePath: String,
+    /** fragment 的纯源内容。 */
+    val content: String,
+)
+
+/**
+ * 将测试框架的一个 [TestFile] 拆成宏编译需要的 source fragment。
+ *
+ * 无 `// FILE:` 时保留整个文件；有 `// FILE:` 时去掉边界注释本身，并为每个虚拟文件
+ * 返回独立路径和内容。这样既兼容普通宏源，也不会让聚合测试中的其它 package 泄漏到
+ * 宏包编译请求。
+ */
+private fun TestFile.toMacroSourceFragments(): List<MacroSourceFragment> {
+    val lines = originalContent.replace("\r\n", "\n").split('\n')
+    if (lines.none { macroFileDirectiveRegex.matches(it) }) {
+        return listOf(MacroSourceFragment(relativePath = relativePath, content = originalContent))
+    }
+
+    val fragments = mutableListOf<MacroSourceFragment>()
+    var currentPath: String? = null
+    val currentLines = mutableListOf<String>()
+
+    fun finishCurrentFragment() {
+        val path = currentPath ?: return
+        fragments += MacroSourceFragment(
+            relativePath = path.replace('\\', '/'),
+            content = currentLines.joinToString("\n").trimEnd(),
+        )
+        currentLines.clear()
+    }
+
+    for (line in lines) {
+        val path = macroFileDirectiveRegex.matchEntire(line)?.groupValues?.get(1)
+        if (path != null) {
+            finishCurrentFragment()
+            currentPath = path
+            continue
+        }
+        if (currentPath != null) currentLines += line
+    }
+    finishCurrentFragment()
+    return fragments
 }
 
 /**

@@ -1,5 +1,27 @@
 # CFIR LLT Repair Log
 
+## 2026-09-17：CFunc 变长参数函数值禁止赋给隐式变量
+
+- problem type: FFI / CFunc function-value assignment。`foreign` 函数带 `...` 时，直接调用仍可保留变长签名，但将该函数值赋给未显式声明类型的变量必须报告 `CFUNC_VAR_CANNOT_HAVE_VAR_PARAM`。
+- root cause: raw builder 虽然已把 `hasVariableLenArg` 从 PSI/LightTree 传到函数声明和函数值类型，但局部变量 resolve 会把源码 `CfirImplicitTypeRef` 回写成 resolved type-ref，声明 checker 再用 type-ref 形状判断“类型是否省略”，因此永远跳过官方 `CheckVarDecl` 对应规则。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckDecl.cpp:330-345` 在无声明类型且 initializer 为 `FuncTy(isC, hasVariableLenArg)` 时报告 `sema_cfunc_var_cannot_have_var_param`；诊断定义为 `external/cangjie_compiler/include/cangjie/Basic/DiagnosticSema.def:187`。`hasVariableLenArg` 的签名传播由 `src/Sema/TypeChecker.cpp:242-249` 和 `src/Sema/Parse/ParseDecl.cpp:1593-1635` 负责。
+- Kotlin counterpart files consulted: 无直接 CFunc 语义对应；CFIR 继续使用统一 declaration checker owner，未导入 Kotlin 语言语义。
+- CFIR owner files changed: `cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt`、`BuilderConfigurator.kt`、生成的 variable tree；`cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt`、`cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirDeclarationBuilder.kt`、`LightTreeRawCfirExpressionBuilder.kt`；`cfir/checkers/.../CfirCFuncVariableInitializerChecker.kt`；库反序列化和 resolve 测试构造补齐 `isTypeImplicit = false`。
+- repair principle: 在 `CfirVariable` 的 raw declaration contract 中保存“源码是否省略类型”的不可变事实，resolve/checker 只消费该事实与已解析 CFunc 签名，不从 source text 或 resolved type-ref 反推。
+- fixtures covered: `cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncVariadicProbe.cj` 的 LLT 与 LLTPsi；既有 FFI/CFunc/VArray/CPointer/CString 族作为回归集。
+- fixture correction: none。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Ffi.testCfuncVariadicProbe' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Ffi.testCfuncVariadicProbe' --no-configuration-cache --max-workers=1 --console=plain` → BUILD SUCCESSFUL，LLT/LLTPsi 两项通过；随后 FFI、宏 FFI 与 VArray 回归命令 BUILD SUCCESSFUL。
+
+## 2026-09-15：修复 golden 更新开关误判并恢复可信全量基线
+
+- problem type: 测试基础设施 / 回归验证口径污染。公共 `JUnit5Assertions.assertEqualsToFile` 把默认注入的 `update.test.data=false` 当作已开启更新模式，导致诊断内联 golden 不匹配时被静默写回，前一轮 `8602 tests, 11 failed` 不能作为语义结果。
+- root cause: `repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/project-tests-convention.gradle.kts` 始终向 Test JVM 注入 `update.test.data`，默认值为字符串 `false`；`tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/services/impl/DefaultAssertionsService.kt` 原先只判断属性非空，并在 mismatch 时写回 `actualText`。
+- repair principle: 更新模式必须按布尔值解析，只有显式 `update.test.data=true` 才允许覆盖 golden；默认 `false` 必须继续抛出断言，不能改变测试语义或隐藏失败。
+- owner files changed: `tests/test-infrastructure/testFixtures/org/cangnova/cangjie/test/services/impl/DefaultAssertionsService.kt`；提交 `66bf2574e`。陈旧 `.git/index.lock` 已在确认没有 Git 写入者且可独占打开后移动为 `.git/index.lock.stale-20260915`，可恢复。
+- recovery: 按错误全量运行的写入时间恢复了 196 个被覆盖的 `cfir/analysis-tests/testData` 文件，保留运行前已存在的 13 个 testData 改动和新增 FFI contract 目录；后续有效全量未再改写 testData，`git diff --check` 通过。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --no-daemon --max-workers=1 --console=plain '-Dorg.gradle.jvmargs=-Xmx1g' '-Pkotlin.compiler.execution.strategy=in-process'` → `8602 tests, 398 failed, 307 skipped`；与保存的 `cfir/analysis-tests/build/repair-20260906/56-optional-full/results.json`（8560 tests / 429 failed / 307 skipped）按完整 `(classname, testcase)` key 对比：`FIXED=105`、`REGRESSED=74`、`UNCHANGED_FAILURES=324`、`UNCHANGED_PASSES=7750`、`NEW_KEYS=42`（全部通过）、`REMOVED_KEYS=0`、`NEW_FAILURE_KEYS=0`。
+- baseline note: 2026-09-14 记录的同规模状态为 `8602 tests / 396 failed / 307 skipped`；本次可信结果多 2 个失败，不能宣称已回到该状态。74 个回归和 324 个历史失败仍需按语义簇修复；FFI semantic contract 66/66 通过不等于完整 FFI、CJO/stub/decompiled、Analysis API 和完整内置注解系统已完成。
+
 ## 2026-09-13：lambda 捕获、shadow warning 与嵌套 lambda completion
 
 - problem type: Diagnostics / Lambda capture —— `LambdaCapture` 中 direct mutable capture、transitive capture、capture shadow warning 与嵌套 lambda 参数路径的行为未完全对齐官方；LLT 与 LLTPsi 各有 6 个失败。
@@ -6695,3 +6717,101 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 - owner changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportBindingResolver.kt`。
 - fixtures covered: all 12 previously regressed families, each through PSI and LightTree: `Assign012`、`CallInference04`、`Extend` import boundary、`ExtendExport` three cases、`ExtendImport` two visibility cases、`StaticPartiallyInstantiateImport01`、`GenericArrange`、`Typealias36`、`Typealias/OverloadAndAlias`。
 - verification outcome: exact testcase-key inspection after the fix reports all 24 previously regressed keys as passing. The final full `:cfir:analysis-tests:test` completed `8560 tests, 387 failures, 307 skipped, 0 errors`; compared with the valid 56 full baseline (`8560 tests, 429 failures`), XML keys show `FIXED=42`, `REGRESSED=0`, `NEW_KEYS=0`, `REMOVED_KEYS=0`, and `CHANGED_FAILURE_MESSAGES=4`. The four message changes are outside the repaired import regression slice.
+
+## 2026-09-14：FFI CType 约束、builtin 构造器命名参数与 LightTree 注解参数
+
+- problem type: FFI generic upper-bound semantics / builtin constructor argument mapping / LightTree annotation argument source lowering。
+- root cause: `CType` 的合法实参集合不是普通名义 subtype 边，通用 upper-bound checker 将 `Unit` 误判为不满足 `T <: CType`；builtin synthetic parameter 的内部名字被映射层当作源码可用名字，且命名实参递归到值节点后丢失 name source；LightTree 对 annotation reparse 使用局部树偏移，导致 `@C[1]`、`@FastNative[1]`、`@Frozen[1]` 的参数诊断既可能不产生，也可能落到注释文本。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckBuiltinExpr.cpp` 与 `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp` 的 Pointer/CFunc 参数规则；runtime `external/cangjie_runtime/stdlib/libs/std/core/array_common.cj:425-438` 的 `CPointerHandle<T> where T <: CType` 与 deprecated constructors。cjc 1.0.5 对 `CPointerHandle()` 仅报告 `sema_unable_to_infer_generic_func`，对 `CPointerHandle<UInt8>()` 报告构造器 `sema_deprecated_warning`，对 `CPointerHandle<CType>()` 同时报告 CType 约束错误和弃用告警；对 CPointer/CFunc 命名实参和 `@C[1]` 类 annotation 的行为与修正后的 route 一致。
+- Kotlin counterpart files consulted: Kotlin FIR arguments-to-parameters mapping and LightTree raw annotation lowering were used as owner-structure guidance；仓颉诊断、CType 判定和 annotation grammar 以官方 compiler/runtime 为准。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirUpperBoundViolatedHelpers.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/CfirMapArguments.kt`、`cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt`；仅按官方证据修正既有 `c_type_subtype.cj` 的 deprecated warning 期望。
+- repair principle: CType 上界由唯一 CType semantic owner 判断，builtin synthetic 参数只保留内部 mapping 而不暴露内部名字，命名诊断从调用实参的真实 wrapper 恢复，LightTree 以 source override 重新锚定局部 reparse 的参数 source。
+- fixtures covered: `llt/ffi` 全目录的 PSI/LightTree 两条入口，共 66 个测试；其中 `semantic_contract` 40 个测试独立覆盖 CPointer/CFunc/CString、CType、calling convention、annotation 参数/目标和 foreign block。
+- fixture correction: `c_type_subtype.cj` 为官方 `CPointerHandle<CType>()` 构造器补充完整 `DEPRECATED_WARNING` 标记；源码语法未改，临时 cjc probe 已删除。
+- verification command: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Ffi' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Ffi' --console=plain`。
+- verification outcome: `66/66` 通过，PSI `33/33`、LightTree `33/33`，0 failures、0 errors、0 skipped。此前 semantic-contract 复现为 40 项 5 失败；修复后 semantic-contract `40/40`，本轮其余改动未引入新的 FFI 失败。
+- remaining risks: 仅证明 CFIR FFI 源/LightTree 解析与诊断 route；CJO/stub/decompiled、Analysis API、CHIR、backend ABI 以及 link/load/run 尚未由本项验证，因此不据此宣称完整 FFI 或跨平台 ABI 正确。
+
+## 2026-09-15：FFI inout CType/零大小规则与 CJO 注解身份
+
+- problem type: FFI `inout` CFunc 判定、CString pointee 校验、C struct 泛型限制、CJO/stub annotation identity。
+- root cause: `inout` checker 用函数返回类型而不是调用值的完整函数类型判断 CFunc，且以不完整的本地 CType 集合检查实参；CString 的 concrete `CPointer<T>` mismatch 被延迟约束吞掉；CJO 反序列化按 identifier 短名猜 `AnnoKind` 并丢失不在 `Anno` 中的 C ABI/调用约定/FastNative 事实。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:241-313`、`external/cangjie_compiler/src/Sema/TypeCheckCall.cpp:2775-2795`、`external/cangjie_compiler/src/AST/Types.cpp:839-867`；`external/cangjie_compiler/src/Modules/ASTSerialization/ASTLoader.cpp:856-881` 明确规定 C struct zero-size、CType 和 CJO annotation target/retention 的恢复规则。
+- CFIR owner files changed: `cfir/providers/.../CfirCTypeSemantics.kt`、`cfir/resolve/.../ArgumentCheckingProcessor.kt`、`cfir/checkers/.../CfirInoutSemanticsChecker.kt`、`CfirInoutArgumentChecker.kt`、`CfirGeneralSemanticsChecker.kt`、`cfir/cfir-serialization/.../CfirDeclDeserializer.kt`、`cfir/cfir-tree/.../CfirSerializedInteropFacts.kt`、`analysis/analysis-api-cfir/.../CaCfirCInteropComponent.kt`、`common/.../CangjieAnnotationModel.kt`。
+- repair principle: declaration ABI、function-value CFunc signature、CType/zero-size predicate和序列化身份分别由唯一 owner 发布，所有路径消费解析后的事实，不从返回类型、短名或源文本回猜。
+- fixtures covered: FFI 双入口及新增 semantic contract（CString constructors、CFunc/inout、CType、calling convention、annotation forms），以及 CJO/stub annotation consumer path。
+- verification command and outcome: `gradlew.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Ffi' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Ffi' --console=plain --no-daemon --max-workers=1 '-Dorg.gradle.jvmargs=-Xmx512m -XX:MaxMetaspaceSize=512m' '-Pkotlin.compiler.execution.strategy=in-process'`：70/70 通过，PSI/LightTree 均无失败；期间一次 1 GiB daemon 因宿主内存不足退出，未作为语义结果计入。
+- remaining risks: 完整 CJO writer、全部 stub/decompiled projection、Analysis API annotation values、Java/ObjC/CJMP graph、backend ABI/link/load/run 尚未完成验收；不据此宣称完整 FFI 或 100% 语义对齐。
+
+## 2026-09-16：VArray CFFI inout 诊断分类与官方期望修正
+
+- problem type: VArray CFFI / inout 实参类型不匹配、C struct 字段 CType 诊断、VArray 泛型上界诊断。
+- root cause: 参数检查递归进入 `inout` 包装节点的子 atom 后丢失了包装事实，导致 `CPointer`/VArray 形状不兼容被映射为 `ARGUMENT_TYPE_MISMATCH`；诊断映射没有结构化的 inout 标记。另有两份 fixture 的期望落后于官方行为：`@C struct` 字段和 `sizeOf<VArray<A, $3>>()` 的官方诊断分别不是 VArray 元素诊断和 generic no-match。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:220-239` 的 `CheckCTypeMember` 对两项字段报告 `sema_illegal_member_of_cstruct`；`external/cangjie_compiler/src/Sema/TypeCheckType.cpp:71-125` 的 `CheckVArrayWithRefType` 与 `external/cangjie_compiler/src/AST/Types.cpp:858-867` 的 `Ty::IsMetCType` 定义 VArray/嵌套 VArray 的检查边界。cjc 1.0.5 JSON probe 对 `varray_cstruct01` 清洁源码报告两个 `sema_illegal_member_of_cstruct`，对 `varray_ctype01` 报告 `sema_generic_type_argument_not_match_constraint`。
+- Kotlin counterpart files consulted: 本项沿用 Kotlin FIR 参数检查的 postponed atom/参数约束位置分层；具体仓颉诊断仅采用官方 cjc 与 official compiler 证据。
+- CFIR owner files changed: `cfir/semantics/src/org/cangnova/cangjie/cfir/diagnostic/ResolutionDiagnostic.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/stages/ArgumentCheckingProcessor.kt`、`CfirCheckArguments.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`；fixture `varray_cstruct01.cj`、`varray_ctype01.cj`。
+- repair principle: inout 身份由 CFIR 包装节点在参数解析入口结构化传递到递归子 atom 和最终诊断映射，统一产生 `TYPE_MISMATCH`；fixture 只按独立官方编译证据修正，不改变 VArray/CType checker 语义。
+- fixtures covered: `macro/llt/varray/varray_cffi` 全部 14 个 fixture，PSI 与 LightTree 共 28 项；重点覆盖 `varray_inout02/03/04/05`、`varray_cstruct01`、`varray_ctype01` 及其它 C struct/CType/inout cases。
+- fixture correction: `varray_cstruct01.cj` 两个字段改为 `ILLEGAL_MEMBER_OF_CSTRUCT`；`varray_ctype01.cj` 改为 `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT`。源码结构未改，临时 cjc probe 已删除。
+- verification command and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Varray$VarrayCffi' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Varray$VarrayCffi'`：28/28 通过，PSI 14/14、LightTree 14/14，0 failures、0 errors、0 skipped。修复前该切片 28 项中 8 项失败，修复 inout 后剩余 4 项，官方证据修正两份 fixture 后清零。
+- remaining risks: 尚未以本项结果证明完整 FFI、CJO/stub/decompiled、Analysis API、Java/ObjC/CJMP、backend ABI 或 link/load/run 正确；全量 CFIR 回归仍需使用最新 XML 与既有基线比较。
+
+## 2026-09-16：VArray 引用类型递归判定（struct、内建 Array/String、static 字段）
+
+- problem type: VArray 元素类型检查 / struct 字段递归。
+- root cause: 共享判定把 struct 的 `static` 字段当作实例存储递归；同时 `std.core.Array` 和 `std.core.String` 在 CFIR 中以 `ConeStructType` 表示，但不能按普通用户 struct 的字段列表处理，导致官方要求的引用类型诊断丢失。递归入口已保持 struct、tuple、普通函数与 CFunc 的独立语义。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckType.cpp:75-108` 的 `CheckVArrayWithRefType` 先直接拒绝 `IsStructArray`/class-like/array/enum/generic/非 CFunc 函数，并在 struct 字段递归时跳过 `STATIC` 与非变量声明；`external/cangjie_compiler/src/AST/Types.cpp:394-407` 将标准库 `Array` 定义为 `IsStructArray`。官方 cjc 探针对应 `VArray<String>`、tuple 内 `Array/String`、嵌套 struct 和 static-only struct 的结果与修正后的期望一致。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/checkers-component-generator/src/org/jetbrains/kotlin/fir/analysis/checkers/generator/Main.kt:98-108` 的 `ResolvedTypeRefChecker` 分层；CFIR 将同类类型语义放在共享 resolved type-ref checker，并由构造器 checker 复用，不重复解析类型。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirVArrayElementTypeUtils.kt`。
+- repair principle: VArray 的引用类型判定只沿实际值布局递归，并按解析后的标准库 ClassId 识别官方内建 struct，所有类型引用和构造器入口复用同一判定函数。
+- fixtures covered: `macro/llt/varray/varray_with_reftype/varray_with_reftype01.cj` 至 `varray_with_reftype06.cj`，PSI 与 LightTree 共 16 项。
+- verification commands and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Varray$VarrayWithReftype' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Varray$VarrayWithReftype' --console=plain`：16/16 通过，PSI 8/8、LightTree 8/8，0 failures、0 errors、0 skipped。
+- remaining risks: 该定向修复尚未替代完整 CFIR 回归；CJO/stub/decompiled、Analysis API、CHIR、backend ABI 和 link/load/run 仍不在本轮范围。
+
+## 2026-09-16：Diagnostics2 Interop 注解参数与 ObjC 导入边界
+
+- problem type: Diagnostics2 Interop / 互操作库注解参数数量与 CJMapping 导入检查。
+- root cause: `ForeignName`、ObjC/Java mirror 等互操作库注解被错误送入官方语言 builtin 的通用参数数量 checker；同时 `interoplib.objc` 导入检查把基础 `ObjCMirror`/`ObjCImpl` 注解误当成 CJMapping 入口，导致 placeholder 同时出现 `ANNOTATION_ERROR_ARG_NUM` 和 `OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED`。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:39-84` 的参数数量检查只覆盖官方 C FFI 注解 `CallingConv`/`FastNative`；Objective-C 文档 `external/cangjie_docs/docs/dev-guide/source_zh_cn/multiplatform/cangjie-ios-objc.md:327-348, 460-467` 将基础 mirror/impl 注解与 `objc.lang.*` 分开，`interoplib.objc.*` 出现在 CJMapping 配置路径（同文档 1800 行以后）。因此 `interoplib.objc` 导入诊断只应由结构化 CJMapping target 触发。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/checkers-component-generator/src/org/jetbrains/kotlin/fir/analysis/checkers/generator/Main.kt:98-108` 的 resolved type-ref/declaration checker 分层；CFIR 保持参数形状 checker 与平台 interop declaration checker 分离。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirAnnotationArgNumberChecker.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGeneralSemanticsChecker.kt`。
+- repair principle: 只有官方语言 AnnotationKind 进入通用 arity 检查，平台库 annotation 由其 interop owner 处理；导入要求只由对应的 CJMapping metadata 触发，不能从相似源码注解名称反推。
+- fixtures covered: Diagnostics2 Interop 的 `objcInitMethodBoundaryPlaceholder.cj`、`foreignNameLegalityPlaceholder.cj`、`objcMirrorImplTypeBoundaryPlaceholder.cj`，PSI 与 LightTree 共 6 项。
+- verification commands and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Diagnostics2$Interop' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Diagnostics2$Interop' --console=plain`：BUILD SUCCESSFUL，6/6 通过，0 failures、0 errors、0 skipped。
+- remaining risks: ObjC/Java 完整系统宏 class identity、CJO/stub/decompiled、Analysis API、CHIR、backend ABI 以及 link/load/run 尚未由本项验收；当前 placeholder 仅验证 CFIR source/LightTree 前端诊断路径。
+
+## 2026-09-17：CFunc lambda 捕获限制
+
+- problem type: FFI CFunc lambda capture / `this`、`super`、非静态成员、局部变量和局部闭包。
+- root cause: CFIR 已有普通 closure capture checker 只覆盖可变变量的 value-use，缺少官方 CFunc-specific capture owner；同时 CFunc 身份不能从 lambda 源码名称或普通函数类型猜测，必须读取最终 expected function type，并以当前匿名函数表达式的 source range 约束 context，避免跨声明栈误判普通 ObjC 成员代码。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:187-208` 对 `this`、`super` 和非 static member 报 `sema_cfunc_cannot_capture_this`；`external/cangjie_compiler/src/Sema/TypeChecker.cpp:1805-1814` 对跨函数体局部变量/局部闭包报 `sema_cfunc_cannot_capture_var`；`external/cangjie_docs/docs/dev-guide/source_en/FFI/cangjie-c.md:63-99` 明确 CFunc lambda 不能捕获变量。cjc 1.0.5 最小探针还确认 `this.field`/`super.base()` 只报 receiver 诊断，隐式字段/属性在成员名位置报 receiver 诊断，普通成员函数直接调用不额外报 capture-this。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/frontend/src/org/jetbrains/kotlin/resolve/calls/checkers/CapturingInClosureChecker.kt:43-52,80-118` 的函数体边界捕获判定；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/dfa/cfg/ControlFlowGraphBuilder.kt:297-335` 的匿名函数 CFG/捕获节点分层。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirCFuncCaptureCheckers.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonExpressionCheckers.kt`、诊断 generator/generated/default-message/名称映射文件；fixture `cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncSignaturesNegative.cj`。
+- repair principle: CFunc capture 在 this/super/basic expression、named access、function call 三个真实 visitor seam 分层检查，局部声明按函数体 owner identity 判断，CFunc 由最终 lambda expected type 发布，普通 closure 规则保持独立并允许官方双诊断。
+- fixtures covered: FFI 普通/semantic-contract PSI 与 LightTree；新增 direct CFunc capture cases 覆盖 `let`/`var`、local closure、implicit/explicit field/property、this、super 和 member call。
+- verification commands and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Ffi*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Ffi*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Ffi*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Ffi*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Varray$VarrayCffi*' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Varray$VarrayCffi*' --console=plain`：102/102 通过，0 failures、0 errors、0 skipped；其中 CFunc direct slice 72/72，PSI/LightTree 均通过。后续 parser 专用 CallingConv 修复只影响两个参数错误 fixture，未改变 CFunc capture 断言。
+- remaining risks: CJO/stub/decompiled、Analysis API、Java/ObjC/CJMP graph、backend ABI/link/load/run 仍未由本项验证。
+
+## 2026-09-17：@C struct 闭包捕获限制
+
+- problem type: FFI closure capture of `@C struct` instances。
+- root cause: 普通 closure capture owner 只按可变局部变量分类，遗漏官方对所有被捕获 `@C struct` 实例的独立 CType 限制；该规则不能并入 CFunc capture，因为官方 CFunc 场景允许两个诊断同时出现。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeChecker.cpp:1805-1814` 在 resolved RefExpr 上调用 `IsCapturedCStructOfClosure`，并报告 `sema_func_capture_var_not_ctype`；`external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:115-168` 与 `external/cangjie_compiler/src/AST/Types.cpp:839-867` 定义 `@C struct` 的 CType 身份。cjc 1.0.5 最小探针对 `let value = CapturedCStruct(); let closure = { => value }` 报告一个 `sema_func_capture_var_not_ctype`。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/frontend/src/org/jetbrains/kotlin/resolve/calls/checkers/CapturingInClosureChecker.kt:43-52,80-118` 的捕获变量与 lexical owner 判定；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/dfa/cfg/ControlFlowGraphBuilder.kt:297-335` 的匿名函数子图分层。
+- CFIR owner files changed: `cfir/providers/src/org/cangnova/cangjie/cfir/types/CfirCTypeSemantics.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClosureCaptureUsageChecker.kt`、诊断 generator/generated/default-message/名称映射文件；fixture `cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstructFieldsNegative.cj`。
+- repair principle: CType owner 只发布已解析 `@C struct` 判定，closure checker 复用现有函数体 lexical owner 和 resolved variable，不改变普通 mutable capture 或 CFunc capture 的诊断顺序。
+- fixtures covered: semantic-contract `cstructFieldsNegative.cj` 的原有 C struct 字段规则与新增普通闭包捕获用例，PSI/LightTree 双入口。
+- verification command and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Ffi$SemanticContract.testCstructFieldsNegative' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Ffi$SemanticContract.testCstructFieldsNegative' --console=plain`：2/2 通过，0 failures、0 errors、0 skipped。
+- remaining risks: CJO/stub/decompiled、Analysis API、Java/ObjC/CJMP graph、backend ABI/link/load/run 仍未由本项验证。
+
+## 2026-09-17：CallingConv 专用 PSI 语法与 builtin facade
+
+- problem type: 内置注解身份 facade 与 `@CallingConv[...]` 参数树的语法归属。
+- root cause: PSI 仍维护独立 `CjBuiltInAnnotation` enum；CallingConv 的专用 parser 对空、字符串和多参数形态会丢失普通 value-argument tree，导致官方 arity/type 诊断被错误降级。
+- official Cangjie evidence: `external/cangjie_compiler/include/cangjie/AST/Node.h:480-510` 定义官方 AnnotationKind；`external/cangjie_compiler/src/Parse/ParseAnnotations.cpp:302-334` 区分专用 annotation grammar 与普通参数列表；`external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:39-67` 要求 CallingConv 单个引用参数并分别报告 arity、unsupported 和 invalid type。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/frontend/src/org/jetbrains/kotlin/resolve/calls/checkers/CapturingInClosureChecker.kt:43-52` 与 `external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/dfa/cfg/ControlFlowGraphBuilder.kt:297-335` 作为已有 CFIR owner 分层参考；本项的注解语义仍只采用官方仓颉 parser/sema 证据。
+- CFIR owner files changed: `psi/src/org/cangnova/cangjie/psi/CjBuiltInAnnotation.kt` 改为 common registry/kind 的兼容 facade；`psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt` 仅对单个裸 identifier 使用 `CjAnnotationCallingConv` 专用节点，其它形态保留 value arguments；`psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt` 增加调用约定节点断言。
+- repair principle: common registry 是唯一 annotation identity owner，PSI facade 只投影旧 API；专用 grammar 只在形状完全匹配时启用，错误形状保留通用参数事实供语义 checker 消费。
+- fixtures covered: PSI builtin annotation forms、CallingConv positive/negative FFI semantic-contract 及 PSI/LightTree 双入口参数诊断。
+- verification command and outcome: CallingConv/annotation 参数四个 CFIR 负例双入口 4/4 通过；`gradlew-queue.bat :psi:test --tests 'org.cangnova.cangjie.psi.ForeignAndAnnotationParsingTest' --console=plain` BUILD SUCCESSFUL。
+- remaining risks: builtin registry 中 Java/ObjC 与平台宏的跨路径 class identity、CJO/stub/decompiled、Analysis API、backend ABI/link/load/run 仍未完成全路径验收。
