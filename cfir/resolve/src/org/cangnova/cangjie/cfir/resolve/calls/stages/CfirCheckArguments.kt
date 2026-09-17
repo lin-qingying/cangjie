@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
 import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.inoutExpectedTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.calls.inoutArgumentTargetOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
@@ -136,7 +137,8 @@ object CfirCheckArguments : ResolutionStage() {
             sink,
             context,
             isReceiver,
-            false
+            false,
+            isInoutArgument = argument.inoutArgumentTargetOrNull() != null,
         )
     }
 }

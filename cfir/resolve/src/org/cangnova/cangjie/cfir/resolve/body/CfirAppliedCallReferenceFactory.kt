@@ -48,5 +48,6 @@ internal fun buildAppliedCallableReference(
         resolvedSymbol = candidate.symbol,
         substitutedReturnType = substitutedReturnType,
         substitutedParameterTypes = substitutedParameterTypes,
+        isFunctionValue = candidate.callInfo.callKind == org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind.NamedValueAccess,
     )
 }

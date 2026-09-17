@@ -10,10 +10,12 @@ import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.resolve.calls.CfirLambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.resolve.calls.lambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
@@ -204,6 +206,11 @@ class CfirCallCompleter(
             return call.transformSingle(createCompletionResultsWriter(ConeSubstitutor.Empty), null)
         }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
+        if (!transformer.context.isInsideCallArgumentResolution &&
+            candidate.shouldReportBuiltinPointerInferenceFailure(resolutionMode)
+        ) {
+            call.replaceCalleeReference(reference.toErrorReference(ConeUnableToInferGenericFuncError()))
+        }
         candidate.addSameClassifierArgumentTypeConstraints()
         if (skipEvenPartialCompletion) return call
 
@@ -351,7 +358,7 @@ class CfirCallCompleter(
     ): Boolean {
         val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
         if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
-        if (callInfo.hasExplicitTypeArguments) return false
+        if (hasSourceTypeArguments()) return false
 
         val expectedElementType = expectedType.fullyExpandedType().arrayLiteralElementType ?: return false
         val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
@@ -395,6 +402,43 @@ class CfirCallCompleter(
         )
         return true
     }
+
+    /**
+     * 判断 `CPointer<T>` 是否只有声明上界而没有任何官方允许的推断来源。
+     *
+     * 官方 `ChkPointerExpr` 不把 `T <: CType` 的声明上界当作 `T` 的推断结果；
+     * 如果目标类型没有有效类型实参，或指针转换的输入没有建立元素类型约束，
+     * 必须保留 `sema_unable_to_infer_generic_func`，不能让通用完成器把 `T` 默认
+     * 固定成 `CType` 后再由外层赋值检查伪造 `TYPE_MISMATCH`。
+     */
+    private fun Candidate.shouldReportBuiltinPointerInferenceFailure(
+        resolutionMode: ResolutionMode,
+    ): Boolean {
+        val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+
+        val expectedType = (resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType
+        if (expectedType?.builtinPointerExpectedTypeArgument(session) != null) return false
+
+        val freshVariable = freshVariables.singleOrNull() ?: return false
+        val constraints = system.currentStorage().notFixedTypeVariables[freshVariable.typeConstructor]
+            ?.constraints
+            ?: return false
+        return constraints.isNotEmpty() && constraints.all { constraint ->
+            constraint.position.from is ConeDeclaredUpperBoundConstraintPosition
+        }
+    }
+
+    /**
+     * CallInfo 在 nested probe 重建时可能只保留候选内部的类型参数映射；调用树上的
+     * source type arguments 才是“用户显式写出类型实参”的稳定事实来源。
+     */
+    private fun Candidate.hasSourceTypeArguments(): Boolean =
+        callInfo.hasExplicitTypeArguments ||
+                (callInfo.callSite as? CfirQualifiedAccessExpression)
+                    ?.typeArguments
+                    ?.any { typeArgument -> typeArgument.source != null } == true
 
     /**
      * 检测 typealias 构造器展开后的真实 class 类型实参是否已经违反声明上界。

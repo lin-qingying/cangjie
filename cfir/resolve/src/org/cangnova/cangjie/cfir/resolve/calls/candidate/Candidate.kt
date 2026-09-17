@@ -734,7 +734,7 @@ class Candidate(
     val isCallableValueCall: Boolean
         get() = callInfo.candidateForCommonInvokeReceiver != null ||
                 isSyntheticFunctionTypeInvoke() ||
-                symbol.takeIf { it.isBound }?.cfir is CfirVariable
+                symbol.takeIf { it.isBound }?.cfir.isCallableValueDeclaration()
 
     /**
      * payload enum 调用的实参是否已经是未实例化泛型函数值引用。
@@ -761,8 +761,10 @@ class Candidate(
             }
             if (callableValueInvokeFunctionShape != null) return true
 
-            val variable = symbol.takeIf { it.isBound }?.cfir as? CfirVariable ?: return false
-            val declaredType = variable.returnTypeRef
+            val declaration = symbol.takeIf { it.isBound }?.cfir
+                ?.takeIf { it.isCallableValueDeclaration() }
+                as? CfirCallableDeclaration ?: return false
+            val declaredType = declaration.returnTypeRef
                 .resolvedConeTypeOrNull()
                 ?.fullyExpandedType(callInfo.session)
                 ?: return false
@@ -801,6 +803,7 @@ class Candidate(
             is CfirConstructor -> declaration.valueParameters
             is CfirEnumConstructor -> declaration.valueParameters
             is CfirVariable -> callableValueParametersForMapping(declaration)
+            is CfirProperty -> callableValueParametersForMapping(declaration)
             else -> emptyList()
         }
     }
@@ -816,6 +819,7 @@ class Candidate(
             is CfirEnumConstructor -> enumConstructorOwnerType(declaration)
                 ?: declaration.returnTypeRef.resolvedConeTypeOrNull()
             is CfirVariable -> callableValueReturnType(declaration)
+            is CfirProperty -> callableValueReturnType(declaration)
             else -> null
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
 
@@ -932,7 +936,7 @@ class Candidate(
      * `ErrorTypeInArguments` 并阻断逐语句固定。具体类型的形参与其他变量保持既有
      * 函数值投影行为。
      */
-    private fun callableValueReturnType(declaration: CfirVariable): ConeCangJieType? {
+    private fun callableValueReturnType(declaration: CfirCallableDeclaration): ConeCangJieType? {
         val declaredReturnType = declaration.returnTypeRef.resolvedConeTypeOrNull()
         if (declaration is CfirValueParameter && declaredReturnType is ConeTypeVariableType) {
             return declaredReturnType
@@ -955,7 +959,7 @@ class Candidate(
     /**
      * 为 callable value 候选合成形参列表。
      */
-    private fun callableValueParametersForMapping(declaration: CfirVariable): List<CfirValueParameter> {
+    private fun callableValueParametersForMapping(declaration: CfirCallableDeclaration): List<CfirValueParameter> {
         cachedSyntheticCallableValueParameters?.let { return it }
 
         val functionType = callableValueInvokeFunctionShape
@@ -1005,6 +1009,10 @@ class Candidate(
             is ConeErrorType -> delegatedType as? ConeFunctionType
             else -> null
         }
+
+    /** 只有变量和属性的值访问可以作为函数值；普通函数声明走直接调用路径。 */
+    private fun CfirDeclaration?.isCallableValueDeclaration(): Boolean =
+        this is CfirVariable || this is CfirProperty
 
 
     /**

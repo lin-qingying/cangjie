@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.CfirElement
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.publishAnnotationInfo
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
@@ -283,6 +284,9 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     /** 负责声明节点 body resolve 的子 transformer。 */
     abstract val declarationsTransformer: CfirDeclarationsResolveTransformer
 
+    override fun transformAnnotationCall(annotationCall: CfirAnnotationCall, data: ResolutionMode): CfirAnnotationCall =
+        expressionsTransformer.transformAnnotationCall(annotationCall, data)
+
     /**
      * 在指定声明内容已经被选中时继续转换声明子树。
      *
@@ -295,7 +299,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         // 对齐 Kotlin K2：declaration-content 钩子只负责继续向下遍历当前声明的 children，
         // 让 designated body resolve 可以在“容器已选定”的前提下接管后续子树，而不是重新走一遍具体 transformXxx 分发。
         @Suppress("UNCHECKED_CAST")
-        return transformElement(declaration, data) as CfirDeclaration
+        val transformed = transformElement(declaration, data) as CfirDeclaration
+        if (!implicitTypeOnly) {
+            // Annotation metadata is declaration-owned. Publish it only after all
+            // annotation calls in this declaration have passed through the body
+            // annotation resolver, never from the generic call-completion writer.
+            transformed.publishAnnotationInfo()
+        }
+        return transformed
     }
 
     /** 默认元素转换：继续遍历子节点并返回原元素。 */

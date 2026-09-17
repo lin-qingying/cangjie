@@ -273,6 +273,7 @@ object CallResolutionTestFixtures {
             returnTypeRef = resolvedTypeRef(type),
             name = Name.identifier(name),
             defaultValue = if (hasDefault) defaultLiteral() else null,
+            isTypeImplicit = false,
         )
     }
 

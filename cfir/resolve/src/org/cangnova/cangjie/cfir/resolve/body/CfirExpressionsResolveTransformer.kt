@@ -37,6 +37,8 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirSynchronizedExpressionImpl
+import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.*
@@ -139,6 +141,82 @@ open class CfirExpressionsResolveTransformer(
     )
 
     /** 当前会话的内建类型集合。 */
+    /** 注解与普通表达式共享调用解析，数据流在独立上下文内完成，不能污染宿主函数 CFG。 */
+    override fun transformAnnotationCall(annotationCall: CfirAnnotationCall, data: ResolutionMode): CfirAnnotationCall {
+        if (annotationCall.annotationResolveState == CfirAnnotationResolveState.UNRESOLVED) {
+            if (annotationCall.resolveBuiltinAnnotationIdentity() == null) {
+                annotationCall.replaceTypeRef(transformer.transformTypeRef(annotationCall.typeRef, ResolutionMode.ContextIndependent))
+                val classId = annotationCall.typeRef.coneTypeOrNull?.classId
+                annotationCall.replaceAnnotationClassId(classId)
+                annotationCall.replaceAnnotationIdentity(
+                    classId?.asSingleFqName()?.let(CangjieAnnotationIdentity::Custom)
+                        ?: CangjieAnnotationIdentity.Unknown,
+                )
+                annotationCall.replaceAnnotationResolveState(if (annotationCall.typeRef is CfirErrorTypeRef) CfirAnnotationResolveState.ERROR else CfirAnnotationResolveState.TYPE_RESOLVED)
+            }
+        }
+        if (annotationCall.annotationResolveState == CfirAnnotationResolveState.SEMANTIC_RESOLVED ||
+            annotationCall.annotationResolveState == CfirAnnotationResolveState.ERROR
+        ) return annotationCall
+        return context.dataFlowAnalyzerContext.withIsolatedContext {
+            context.withAnnotationContext {
+                val builtin = annotationCall.builtInDescriptor
+                if (builtin != null) {
+                    org.cangnova.cangjie.cfir.resolve.transformers.plugin.resolveBuiltinAnnotationArguments(annotationCall, builtin, transformer)
+                } else {
+                    context.withCallArgumentResolution {
+                        annotationCall.replaceArgumentList(annotationCall.argumentList.transform(transformer, ResolutionMode.ContextDependent))
+                    }
+                    components.callResolver.resolveAnnotationCall(annotationCall)
+                    val candidate = (annotationCall.calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+                    val completed = components.callCompleter.completeCall(
+                        annotationCall,
+                        ResolutionMode.ContextIndependent,
+                    )
+                    publishResolvedAnnotationCall(completed, candidate)
+                    if (completed.annotationResolveState == CfirAnnotationResolveState.ARGUMENTS_RESOLVED) {
+                        completed.replaceAnnotationResolveState(CfirAnnotationResolveState.SEMANTIC_RESOLVED)
+                    }
+                    return@withAnnotationContext completed
+                }
+                annotationCall
+            }
+        }
+    }
+
+    /**
+     * 发布自定义 annotation 的解析结果。
+     *
+     * 参数 mapping、argument view 和 resolve state 属于 annotation resolve owner；
+     * call-completion writer 只负责把普通调用的完成结果写回 annotation 节点，
+     * 不能在通用 completion 阶段发布 annotation 语义。
+     */
+    private fun publishResolvedAnnotationCall(
+        annotation: CfirAnnotationCall,
+        candidate: Candidate?,
+    ) {
+        if (annotation.calleeReference is CfirDiagnosticHolder || candidate == null) {
+            annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.ERROR)
+            return
+        }
+        val resolved = annotation.argumentList as? CfirResolvedArgumentList
+        val parameters = (candidate.symbol.cfir as? CfirFunction)?.valueParameters.orEmpty()
+        if (resolved == null || candidate.argumentMappingOutcome?.hasMappingFailure == true || parameters.isEmpty() && resolved.mapping.isNotEmpty()) {
+            annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.ERROR)
+            return
+        }
+        annotation.replaceArgumentMapping(
+            CfirAnnotationArgumentMappingImpl(
+                annotation.source,
+                resolved.mapping.entries.associate { (argument, parameter) ->
+                    parameter.name to ((argument as? CfirNamedArgumentExpression)?.expression ?: argument)
+                },
+            ),
+        )
+        annotation.replaceArgumentView(resolved.toAnnotationArgumentView(parameters))
+        annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.ARGUMENTS_RESOLVED)
+    }
+
     private val builtinTypes get() = session.builtinTypes
     /** 表达式中显式类型引用的专用解析器。 */
     private val specificTypeResolverTransformer = CfirSpecificTypeResolverTransformer(session)

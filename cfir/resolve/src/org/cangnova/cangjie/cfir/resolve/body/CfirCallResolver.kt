@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCallCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpressionCopy
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -269,8 +270,10 @@ class CfirCallResolver(
         } else {
             collected.result.candidates.singleOrNull()?.callInfo?.candidateForCommonInvokeReceiver
         }
-        val valueType = (valueCandidate?.symbol?.takeIf { it.isBound }?.cfir as? CfirVariable)
-            ?.returnTypeRef?.coneTypeOrNull
+        val valueType = (valueCandidate?.symbol?.takeIf { it.isBound }?.cfir
+            ?.takeIf { it is CfirVariable || it is CfirProperty } as? CfirCallableDeclaration)
+            ?.returnTypeRef
+            ?.coneTypeOrNull
         if (valueCandidate?.isSuccessful == true && valueType is ConeErrorType) {
             // 官方 ChkCallBaseExpr 先判定 callee 有效性；既有声明错误不能等实参分析后
             // 再由隐式 invoke 恢复路径发现。保留符号，供 IDE 错误引用导航使用。
@@ -395,6 +398,7 @@ class CfirCallResolver(
                         val callableValueInvokeResult = collectCallableValueInvokeCandidates(
                             functionCall = functionCall,
                             name = callee.name,
+                            valueAccess = valueAccess,
                             valueAccessResult = variableAccessResult,
                         )
                         if (callableValueInvokeResult != null) {
@@ -481,6 +485,60 @@ class CfirCallResolver(
      * 普通返回类型细化先筛出唯一 survivor；primitive operand check-mode 则保留发现的整个集合，
      * 用新目标重跑共享适用性与最具体规约。两种路径均创建 fresh candidate，不复用旧约束和诊断。
      */
+    /**
+     * 自定义注解沿普通构造器 scope、候选阶段和参数映射解析。
+     * 内置注解由 Registry owner 处理，不向 source symbol provider 注入伪造的注解类。
+     */
+    fun resolveAnnotationCall(annotation: CfirAnnotationCall): CfirAnnotationCall {
+        val reference = annotation.calleeReference as? CfirNamedReference ?: return annotation
+        val annotationType = annotation.typeRef.coneTypeOrNull ?: return annotation
+        val expandedType = annotationType.fullyExpandedType(session)
+        val classId = expandedType.classId ?: return annotation
+        val annotationClass = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return annotation
+        annotationClass.lazyResolveToPhase(CfirResolvePhase.STATUS)
+        annotation.replaceAnnotationClassId(classId)
+        annotation.replaceConeTypeOrNull(annotationType)
+        val declarationScope = CfirClassUseSiteMemberScope(
+            session = session,
+            classSymbol = annotationClass,
+            symbolProvider = session.symbolProvider,
+            ownerType = expandedType,
+            dispatchReceiverType = expandedType,
+            scopeKind = CfirClassMemberScopeKind.DECLARATION_SITE,
+        )
+        val constructorScope = CfirClassSubstitutionScope(
+            session = session, useSiteMemberScope = declarationScope, dispatchReceiverType = expandedType,
+        )
+        val info = CallInfo(
+            callSite = annotation,
+            callKind = CallKind.Function,
+            name = reference.name,
+            explicitReceiver = null,
+            arguments = annotation.argumentList.arguments,
+            isUsedAsGetClassReceiver = false,
+            typeArguments = emptyList(),
+            session = session,
+            containingFile = components.file,
+            containingDeclarations = transformer.components.containingDeclarations,
+            resolutionMode = ResolutionMode.ContextIndependent,
+        )
+        val factory = CandidateFactory(transformer.resolutionContext, info)
+        val constructors = buildList<CfirConstructorSymbol> { constructorScope.processDeclaredConstructors(::add) }
+        val candidates = constructors.mapNotNull { constructor ->
+            val accessibility = prefilterConstructorVisibilityBeforeCreateCandidate(
+                session = session, callInfo = info, constructorSymbol = constructor, originScope = constructorScope,
+            ) ?: return@mapNotNull null
+            factory.createCandidate(info, constructor, constructorScope, accessibilityResult = accessibility)
+        }
+        val (selected, applicability) = reduceCandidateSet(candidates, info, CandidateApplicability.HIDDEN)
+        annotation.replaceCalleeReference(createResolvedNamedReference(
+            reference = reference, name = reference.name, callInfo = info, candidates = selected,
+            applicability = applicability, explicitReceiver = null,
+            createResolvedReferenceWithoutCandidateForLocalVariables = false, matchedClassifier = annotationClass,
+        ))
+        return annotation
+    }
+
     fun resolveCallFromPrecollectedCandidates(
         functionCall: CfirFunctionCall,
         resolutionMode: ResolutionMode,
@@ -1709,7 +1767,7 @@ class CfirCallResolver(
     private fun buildCalleeValueAccess(
         functionCall: CfirFunctionCall,
         callee: CfirNamedReference,
-    ): CfirQualifiedAccessExpression =
+    ): CfirNamedAccessExpression =
         buildNamedAccessExpression {
             source = functionCall.source
             calleeReference = buildNamedReference {
@@ -1730,6 +1788,7 @@ class CfirCallResolver(
     private fun collectCallableValueInvokeCandidates(
         functionCall: CfirFunctionCall,
         name: Name,
+        valueAccess: CfirNamedAccessExpression,
         valueAccessResult: ResolutionResult,
     ): ResolutionResult? {
         val callableValueCandidates = valueAccessResult.candidates
@@ -1747,9 +1806,16 @@ class CfirCallResolver(
         )
         val candidateFactory = CandidateFactory(transformer.resolutionContext, invokeInfo)
         val invokeCandidates = callableValueCandidates.map { valueCandidate ->
+            val valueDeclaration = valueCandidate.symbol.takeIf { it.isBound }?.cfir
+                ?.takeIf { it is CfirVariable || it is CfirProperty }
+                as? CfirCallableDeclaration
+            val valueReceiver = buildNamedAccessExpressionCopy(valueAccess) {
+                coneTypeOrNull = valueDeclaration?.returnTypeRef?.coneTypeOrNull
+            }
             candidateFactory.createCallableValueInvokeCandidate(
                 callInfo = invokeInfo.copy(candidateForCommonInvokeReceiver = valueCandidate),
                 callableValueCandidate = valueCandidate,
+                callableValueReceiver = valueReceiver,
             )
         }
         val (reducedCandidates, applicability) = reduceCandidateSet(
@@ -1772,9 +1838,11 @@ class CfirCallResolver(
      * 判断值访问候选是否可作为函数值调用。
      */
     private fun Candidate.isCallableValueCandidate(): Boolean {
-        val variable = symbol.takeIf { it.isBound }?.cfir as? CfirVariable ?: return false
-        val rawType = variable.returnTypeRef.coneTypeOrNull ?: return false
-        if (isFreshLambdaValueParameterCallableCandidate(variable, rawType)) return true
+        val declaration = symbol.takeIf { it.isBound }?.cfir
+            ?.takeIf { it is CfirVariable || it is CfirProperty }
+            as? CfirCallableDeclaration ?: return false
+        val rawType = declaration.returnTypeRef.coneTypeOrNull ?: return false
+        if (declaration is CfirVariable && isFreshLambdaValueParameterCallableCandidate(declaration, rawType)) return true
         return when (val type = rawType.fullyExpandedType(session)) {
             is ConeFunctionType -> true
             is ConeErrorType -> type.delegatedType?.fullyExpandedType(session) is ConeFunctionType
@@ -2293,7 +2361,7 @@ class CfirCallResolver(
         val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
             val parameters = candidate.declaredParametersForMapping()
             val declaration = candidate.symbol.takeIf { it.isBound }?.cfir
-            if (declaration is CfirVariable) {
+            if (declaration is CfirVariable || declaration is CfirProperty) {
                 return@filterTo argumentCount == parameters.size
             }
 
@@ -2832,7 +2900,8 @@ class CfirCallResolver(
 
                         else -> {
                             val receiverType = explicitReceiver?.coneTypeOrNull
-                            val declarationErrorType = (symbol?.takeIf { it.isBound }?.cfir as? CfirVariable)
+                            val declarationErrorType = (symbol?.takeIf { it.isBound }?.cfir
+                                ?.takeIf { it is CfirVariable || it is CfirProperty } as? CfirCallableDeclaration)
                                 ?.returnTypeRef
                                 ?.coneTypeOrNull as? ConeErrorType
                             when {
@@ -2994,7 +3063,6 @@ class CfirCallResolver(
                         ConeGenericFunctionReferenceWithoutTypeArgumentsError(name)
 
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
-                    candidate.hasUninferableGenericConstructor() -> ConeUnableToInferGenericFuncError()
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     else -> null
                 }
@@ -3394,33 +3462,6 @@ class CfirCallResolver(
                         !AbstractTypeChecker.isSubtypeOf(session.typeContext, lowerType, upperType)
                     }
                 }
-            }
-    }
-
-    /**
-     * 无显式类型实参的泛型构造调用必须在调用解析层结束为官方推断错误。
-     *
-     * 构造器自己的 `typeParameters` 可能为空，真正参与推断的是 owner class
-     * 的类型参数；因此这里复用 fresh-variable 阶段的候选参数集合，而不是
-     * 只检查构造器声明字段。内建 Pointer/CFunc 等 synthetic callable 有各自
-     * 的 expected-type/签名 owner，不属于该普通构造器规则。
-     */
-    private fun Candidate.hasUninferableGenericConstructor(): Boolean {
-        if (callInfo.callSite !is CfirFunctionCall || callInfo.hasExplicitTypeArguments) return false
-        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirConstructor ?: return false
-        if (declaration.origin is CfirDeclarationOrigin.Synthetic) return false
-
-        val typeParameters = CfirCreateFreshTypeVariableSubstitutorStage
-            .collectCandidateTypeParametersForFreshVariables(session, this, declaration)
-        if (typeParameters.isEmpty()) return false
-
-        val typeParameterSymbols = typeParameters.mapTo(linkedSetOf()) { it.symbol }
-        val storage = system.currentStorage()
-        return freshVariables
-            .filterIsInstance<ConeTypeParameterBasedTypeVariable>()
-            .any { variable ->
-                variable.typeParameterSymbol in typeParameterSymbols &&
-                    variable.typeConstructor in storage.notFixedTypeVariables
             }
     }
 
