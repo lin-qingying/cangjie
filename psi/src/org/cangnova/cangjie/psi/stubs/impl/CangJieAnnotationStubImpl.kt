@@ -27,6 +27,8 @@ package org.cangnova.cangjie.psi.stubs.impl
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.stubs.CangJieAnnotationStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -44,6 +46,9 @@ class CangJieAnnotationStubImpl(
      * 保存 `hasValueArguments` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
     private val hasValueArguments: Boolean,
+    private val classId: ClassId? = null,
+    private val builtInKind: BuiltInAnnotationKind? = null,
+    private val compileTimeVisible: Boolean = false,
 //    val valueArguments: Map<Name, ConstantValue<*>>?
 ) : CangJieStubBaseImpl<CjAnnotation>(parent, CjStubElementTypes.ANNOTATION), CangJieAnnotationStub {
 
@@ -57,6 +62,12 @@ class CangJieAnnotationStubImpl(
      */
     override fun hasValueArguments() = hasValueArguments
 
+    override fun getClassId(): ClassId? = classId
+
+    override fun getBuiltInKind(): BuiltInAnnotationKind? = builtInKind
+
+    override fun isCompileTimeVisible(): Boolean = compileTimeVisible
+
     /**
      * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -64,5 +75,8 @@ class CangJieAnnotationStubImpl(
         parent = newParent,
         shortName = shortName,
         hasValueArguments = hasValueArguments,
+        classId = classId,
+        builtInKind = builtInKind,
+        compileTimeVisible = compileTimeVisible,
     )
 }

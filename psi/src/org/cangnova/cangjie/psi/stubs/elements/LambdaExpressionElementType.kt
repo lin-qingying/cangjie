@@ -68,7 +68,9 @@ import com.intellij.psi.util.PsiTreeUtil
             CangJieLanguage,
             chameleon.chars,
         )
-        return CangJieParser.parseLambdaExpression(builder).firstChildNode
+        return CangJieParser.parseLambdaExpression(
+            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+        ).firstChildNode
     }
 
     /**

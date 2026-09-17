@@ -44,6 +44,7 @@ class CangJieMacroExpressionStubImpl(
      * 保存 `hasValueArguments` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
     private val hasValueArguments: Boolean,
+    private val hasDeclarationInput: Boolean,
 //    val valueArguments: Map<Name, ConstantValue<*>>?
 ) : CangJieStubBaseImpl<CjMacroExpression>(parent, CjStubElementTypes.MACRO_EXPRESSION), CangJieMacroExpressionStub {
 
@@ -57,6 +58,8 @@ class CangJieMacroExpressionStubImpl(
      */
     override fun hasValueArguments() = hasValueArguments
 
+    override fun hasDeclarationInput(): Boolean = hasDeclarationInput
+
     /**
      * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -64,5 +67,6 @@ class CangJieMacroExpressionStubImpl(
         parent = newParent,
         shortName = shortName,
         hasValueArguments = hasValueArguments,
+        hasDeclarationInput = hasDeclarationInput,
     )
 }

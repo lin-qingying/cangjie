@@ -29,6 +29,7 @@ import com.intellij.psi.stubs.NamedStub
 import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.stubs.StubElement
 import org.cangnova.cangjie.lexer.CjKeywordToken
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.*
@@ -129,12 +130,24 @@ interface CangJieAnnotationStub : StubElement<CjAnnotation> {
      * 提供 `hasValueArguments` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
     fun hasValueArguments(): Boolean
+
+    /** 注解类型的解析后 ClassId；源码 stub 可能为空，CJO stub 必须尽量保留。 */
+    fun getClassId(): ClassId?
+
+    /** parser/CJO loader 已确认的官方 builtin kind。 */
+    fun getBuiltInKind(): BuiltInAnnotationKind?
+
+    /** 原始注解是否使用 `@!` 编译期可见前缀。 */
+    fun isCompileTimeVisible(): Boolean
 }
 
 /**
  * 定义 `CangJieMacroExpressionStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
 interface CangJieMacroExpressionStub : StubElement<CjMacroExpression> {
+    /** 输入是否为声明；带括号的 token input 不能通过 stub 子节点推断成声明。 */
+    fun hasDeclarationInput(): Boolean
+
     /**
      * 提供 `getShortName` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
@@ -143,6 +156,12 @@ interface CangJieMacroExpressionStub : StubElement<CjMacroExpression> {
      * 提供 `hasValueArguments` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
     fun hasValueArguments(): Boolean
+}
+
+/** 文件前导 `features` directive 的 stub；保存 feature id，避免 compiled PSI 丢失 header metadata。 */
+interface CangJieFeaturesDirectiveStub : StubElement<CjFeaturesDirective> {
+    /** 按源码顺序返回 feature id 文本。 */
+    val featureIds: List<String>
 }
 
 /**

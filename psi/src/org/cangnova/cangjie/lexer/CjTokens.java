@@ -267,6 +267,7 @@ public interface CjTokens {
 
     int INOUT_KEYWORD_Id = 218;
     int DOUBLE_COLON_Id = 219;
+    int FEATURES_KEYWORD_Id = 220;
 
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
@@ -518,6 +519,7 @@ public interface CjTokens {
     CjKeywordToken RESUME_KEYWORD = CjKeywordToken.keyword("resume", RESUME_KEYWORD_Id);
     CjKeywordToken THROWING_KEYWORD = CjKeywordToken.keyword("throwing", THROWING_KEYWORD_Id);
     CjKeywordToken INOUT_KEYWORD = CjKeywordToken.keyword("inout", INOUT_KEYWORD_Id);
+    CjKeywordToken FEATURES_KEYWORD = CjKeywordToken.softKeyword("features", FEATURES_KEYWORD_Id);
     CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.softKeywordModifier("redef", REDEF_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
@@ -645,7 +647,8 @@ public interface CjTokens {
             PROTECTED_KEYWORD,
             OVERRIDE_KEYWORD,
             REDEF_KEYWORD,
-            HANDLE_KEYWORD
+            HANDLE_KEYWORD,
+            FEATURES_KEYWORD
 
     );
     TokenSet MODALITY_MODIFIERS = TokenSet.create(ABSTRACT_KEYWORD, SEALED_KEYWORD, OPEN_KEYWORD);
@@ -807,6 +810,5 @@ public interface CjTokens {
     TokenSet WHITE_SPACE_OR_COMMENT_BIT_SET = TokenSet.orSet(COMMENTS, WHITESPACES);
     CjToken EOF = new CjToken("EOF", EOF_Id);
 }
-
 
 

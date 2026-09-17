@@ -30,6 +30,11 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.parsing.CangJieParser
+import org.cangnova.cangjie.psi.psiUtil.StubUtils.deserializeClassId
+import org.cangnova.cangjie.psi.psiUtil.StubUtils.serializeClassId
 import org.cangnova.cangjie.psi.stubs.CangJieAnnotationStub
 import org.cangnova.cangjie.psi.stubs.impl.CangJieAnnotationStubImpl
 import org.jetbrains.annotations.NonNls
@@ -53,9 +58,28 @@ class CjAnnotationElementType(debugName: String) :
     ): CangJieAnnotationStub {
         val shortName = psi.shortName
         val resultName = shortName?.asString()
+            ?.trim()
+            ?.removePrefix("@!")
+            ?.removePrefix("@")
         val valueArgumentList = psi.valueArgumentList
         val hasValueArguments = valueArgumentList != null && !valueArgumentList.arguments.isEmpty()
-        return CangJieAnnotationStubImpl(parentStub, StringRef.fromString(resultName), hasValueArguments)
+        val compileTimeVisible = psi.isCompileTimeVisible
+        val builtInKind = psi.typeReference?.text?.trim()
+            ?.let {
+                BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
+                    sourceName = it,
+                    forcedCustom = compileTimeVisible,
+                    moduleName = CangJieParser.languageModuleNameForContext(psi),
+                )
+            }
+            ?.kind
+        return CangJieAnnotationStubImpl(
+            parent = parentStub,
+            shortName = StringRef.fromString(resultName),
+            hasValueArguments = hasValueArguments,
+            builtInKind = builtInKind,
+            compileTimeVisible = compileTimeVisible,
+        )
     }
 
     /**
@@ -65,6 +89,9 @@ class CjAnnotationElementType(debugName: String) :
     override fun serialize(stub: CangJieAnnotationStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getShortName())
         dataStream.writeBoolean(stub.hasValueArguments())
+        serializeClassId(dataStream, stub.getClassId())
+        dataStream.writeInt(stub.getBuiltInKind()?.ordinal ?: -1)
+        dataStream.writeBoolean(stub.isCompileTimeVisible())
         if (stub is CangJieAnnotationStubImpl) {
 //            Map<Name, ConstantValue<?>> arguments = ((CangJieAnnotationStubImpl) stub).getValueArguments();
 //            dataStream.writeInt(arguments != null ? arguments.size() : 0);
@@ -85,12 +112,23 @@ class CjAnnotationElementType(debugName: String) :
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieAnnotationStub {
         val text = dataStream.readName()
         val hasValueArguments = dataStream.readBoolean()
+        val classId = deserializeClassId(dataStream)
+        val builtInOrdinal = dataStream.readInt()
+        val builtInKind = BuiltInAnnotationKind.entries.getOrNull(builtInOrdinal)
+        val compileTimeVisible = dataStream.readBoolean()
         //        int valueArgCount = dataStream.readInt();
 //        Map<Name, ConstantValue<?>> args = new LinkedHashMap<>();
 //        for (int i = 0; i < valueArgCount; i++) {
 //            args.put(Name.identifier(Objects.requireNonNull(dataStream.readNameString())),
 //                    CangJieConstantValueKt.createConstantValue(dataStream));
 //        }
-        return CangJieAnnotationStubImpl(parentStub, text, hasValueArguments)
+        return CangJieAnnotationStubImpl(
+            parent = parentStub,
+            shortName = text,
+            hasValueArguments = hasValueArguments,
+            classId = classId,
+            builtInKind = builtInKind,
+            compileTimeVisible = compileTimeVisible,
+        )
     }
 }

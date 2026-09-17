@@ -149,6 +149,7 @@ abstract class CjTypeStatement :
      */
     override val primaryConstructor: CjPrimaryConstructor?
         get() = body?.getStubOrPsiChild(CjStubElementTypes.PRIMARY_CONSTRUCTOR)
+            ?: body?.let { PsiTreeUtil.findChildrenOfType(it, CjPrimaryConstructor::class.java).firstOrNull() }
 
     /**
      * 暴露 `primaryConstructorModifierList`，实现仓颉 PSI节点对上层接口的属性契约。

@@ -53,6 +53,7 @@ public interface CjStubElementTypes {
             new CjPlaceHolderStubElementType<>("TYPE_PARAMETER_LIST", CjTypeParameterList.class);
     @NotNull
     CjAnnotationElementType ANNOTATION = new CjAnnotationElementType("ANNOTATION");
+    CjFeaturesDirectiveElementType FEATURES_DIRECTIVE = new CjFeaturesDirectiveElementType("FEATURES_DIRECTIVE");
     CjPlaceHolderStubElementType<CjAnnotations> ANNOTATIONS =
             new CjPlaceHolderStubElementType<>("ANNOTATIONS", CjAnnotations.class);
 

@@ -30,40 +30,56 @@ import com.intellij.lang.impl.PsiBuilderImpl
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.TokenType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.CjSourceKind
 
 /**
  * 提供 `CangJieLightParser` 单例，集中承载仓颉语法解析的共享状态、工厂或工具行为。
  */
 object CangJieLightParser {
     /**
-     * 按完整仓颉文件语法构造 LightTree。
+     * 按完整仓颉文件语法构造 LightTree；宏片段可传入源模块，显式 package 会覆盖它。
+     *
+     * @param sourceKind 被解析代码所属源文件的种类；`.cj.d` 传 [CjSourceKind.DECLARATION]。
+     *   默认 [CjSourceKind.SOURCE]，既有调用点行为不变。
      */
     fun parse(
         builder: PsiBuilder,
         errorListener: LightTreeParsingErrorListener? = null,
+        languageModuleName: String = "",
+        sourceKind: CjSourceKind = CjSourceKind.SOURCE,
     ): FlyweightCapableTreeStructure<LighterASTNode> =
-        parseWith(builder, errorListener) { parseFile() }
+        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseFile() }
 
     /**
      * 按 annotation-only 语法构造 LightTree。
      *
+     * languageModuleName 来自源 package，保证无 package header 的片段保留模块限制。
      * 该入口供 custom annotation 宏展开结果重解析使用，保证参数列表生成标准
      * `ANNOTATION -> VALUE_ARGUMENT_LIST -> VALUE_ARGUMENT` 结构，禁止退化为 macro-expression token 容器。
+     *
+     * @param sourceKind 该片段**来源文件**的种类。片段不是文件，种类由它的归属文件决定
+     *   （宏展开产物属于展开它的那个文件），因此这里不按片段自身内容推断。
      */
     fun parseAnnotationOnly(
         builder: PsiBuilder,
         errorListener: LightTreeParsingErrorListener? = null,
+        languageModuleName: String = "",
+        sourceKind: CjSourceKind = CjSourceKind.SOURCE,
     ): FlyweightCapableTreeStructure<LighterASTNode> =
-        parseWith(builder, errorListener) { parseOnlyAnnotationFile() }
+        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseOnlyAnnotationFile() }
 
     /** 统一创建 parser、执行指定语法入口并完成 LightTree 错误上报。 */
     private inline fun parseWith(
         builder: PsiBuilder,
         errorListener: LightTreeParsingErrorListener?,
+        languageModuleName: String,
+        sourceKind: CjSourceKind,
         parseAction: CangJieParsing.() -> Unit,
     ): FlyweightCapableTreeStructure<LighterASTNode> {
         val cjParsing: CangJieParsing = CangJieParsing.createForTopLevelNonLazy(
             SemanticWhitespaceAwarePsiBuilderImpl(builder),
+            languageModuleName,
+            sourceKind,
         )
         cjParsing.parseAction()
         return builder.lightTree.also { lightTree ->

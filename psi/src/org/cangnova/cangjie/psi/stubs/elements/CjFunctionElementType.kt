@@ -54,7 +54,7 @@ class CjFunctionElementType(debugName: String) : CjStubElementType<CangJieNamedF
      * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun createStub(psi: CjNamedFunction, parentStub: StubElement<*>): CangJieNamedFunctionStub {
-        val isTopLevel = psi.parent is CjFile
+        val isTopLevel = psi.isTopLevel
         val fqName = psi.safeFqNameForLazyResolve()
         val hasBlockBody = psi.hasBlockBody()
         val hasBody = psi.hasBody()

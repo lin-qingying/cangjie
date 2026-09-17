@@ -26,17 +26,24 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import com.intellij.lang.LanguageParserDefinitions
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.impl.PsiFileFactoryImpl
 import com.intellij.util.LocalTimeCounter
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjModifierKeywordToken
+import org.cangnova.cangjie.lang.CangJieMacroCallLanguage
+import org.cangnova.cangjie.parsing.CangJieMacroCallParserDefinition
+import org.cangnova.cangjie.macro.file.CangJieMacroCallFileType
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.parsing.CangJieParser
 import org.cangnova.cangjie.utils.checkWithAttachment
 import org.jetbrains.annotations.NonNls
 
@@ -53,6 +60,14 @@ var CjFile.doNotAnalyze: String? by UserDataProperty(Key.create("DO_NOT_ANALYZE"
  * 存储 PSI 元素的上下文信息，用于在特定上下文中创建元素。
  */
 var CjFile.elementContext: PsiElement? by UserDataProperty(Key.create("ELEMENT_CONTEXT"))
+
+/** 临时文件开始解析前的输入模块；再次解析物理源文件时不能沿用上次解析的结果。 */
+internal var CjFile.parserLanguageModuleName: String by
+    NotNullableUserDataProperty(Key.create("CANGJIE_PARSER_LANGUAGE_MODULE_NAME"), "")
+
+/** parser 完成后发布的模块来源；null 表示尚未解析，空字符串表示已确认没有模块前缀。 */
+internal var CjFile.parsedLanguageModuleName: String? by
+    UserDataProperty(Key.create("CANGJIE_PARSED_LANGUAGE_MODULE_NAME"))
 
 /**
  * 不分析通知消息
@@ -120,6 +135,10 @@ class CjPsiFactory private constructor(
      * 保存 `eventSystemEnabled` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
      */
     private val eventSystemEnabled: Boolean,
+    /** 明确来源的片段可提供解析输入模块；普通宏的新 token 始终从空模块开始。 */
+    private val languageModuleName: String = "",
+    /** 是否继承 context 的解析模块；保留词法 context 不等于继承内置注解权限。 */
+    private val inheritLanguageModuleFromContext: Boolean = true,
 ) {
     /**
      * 构造器：创建默认的 PSI 工厂
@@ -212,8 +231,33 @@ class CjPsiFactory private constructor(
         @JvmStatic
         @JvmOverloads
         fun contextual(context: PsiElement, markGenerated: Boolean = true): CjPsiFactory {
-            return CjPsiFactory(context.project, markGenerated, context, eventSystemEnabled = false)
+            return CjPsiFactory(
+                context.project, markGenerated, context, eventSystemEnabled = false,
+                inheritLanguageModuleFromContext = true,
+            )
         }
+
+        /** 明确指定源码包语境；单段包没有官方 prefixPaths，不能据此授予内置注解身份。 */
+        @JvmStatic
+        @JvmOverloads
+        fun forPackage(project: Project, packageFqName: FqName, markGenerated: Boolean = true): CjPsiFactory {
+            return CjPsiFactory(
+                project, markGenerated, context = null, eventSystemEnabled = false,
+                languageModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
+            )
+        }
+
+        /** 官方 ReplaceEachMacro 的新 token parser 不继承模块，仍保留 PSI 的词法和名称解析 context。 */
+        @JvmStatic
+        @JvmOverloads
+        fun forMacroExpansion(
+            project: Project,
+            context: PsiElement? = null,
+            markGenerated: Boolean = true,
+        ): CjPsiFactory = CjPsiFactory(
+            project, markGenerated, context, eventSystemEnabled = false,
+            languageModuleName = "", inheritLanguageModuleFromContext = false,
+        )
     }
 
     /**
@@ -261,9 +305,10 @@ class CjPsiFactory private constructor(
      * @return 注解元素
      */
     fun createAnnotations(text: String): CjAnnotations {
-        val function = createAnnotationOnlyFile(" $text func foo() { }").declarations.single() as CjNamedFunction
-
-        return function.annotations!!
+        val file = createAnnotationOnlyFile(" $text func foo() { }")
+        // 错误参数可能让 parser 恢复出额外声明；返回语法容器并保留其中错误节点，
+        // 不把用户输入是否完整转换为“文件恰好一个声明”的程序不变量。
+        return checkNotNull(PsiTreeUtil.findChildOfType(file, CjAnnotations::class.java))
     }
 
     /**
@@ -707,29 +752,40 @@ class CjPsiFactory private constructor(
     /**
      * 执行 `doCreateFile` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
      */
-    private fun doCreateFile(@NonNls fileName: String, @NonNls text: String): CjFile {
-        return PsiFileFactory.getInstance(project).createFileFromText(
+    private fun doCreateFile(
+        @NonNls fileName: String,
+        @NonNls text: String,
+        fileType: com.intellij.openapi.fileTypes.FileType = CangJieFileType.INSTANCE,
+    ): CjFile {
+        // 先读取外部 context，再创建新文件，避免新文件解析时回入自己的 package PSI。
+        val parserModuleName = if (inheritLanguageModuleFromContext && context != null) {
+            CangJieParser.languageModuleNameForContext(context)
+        } else {
+            languageModuleName
+        }
+        val file = PsiFileFactory.getInstance(project).createFileFromText(
             fileName,
-            CangJieFileType.INSTANCE,
+            fileType,
             text,
             LocalTimeCounter.currentTime(),
             eventSystemEnabled,
-            markGenerated,
+            false,
         ) as CjFile
+        file.parserLanguageModuleName = parserModuleName
+        // 平台 markGenerated 会先展开 AST；解析输入必须在它之前发布。
+        if (markGenerated) PsiFileFactoryImpl.markGenerated(file)
+        return file
     }
 
     /**
-     * 执行 `createAnnotationOnlyFile` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
+     * 使用 annotation-only 入口创建 PSI 文件，供自定义注解和宏属性重解析；保留输入文本的偏移。
      */
-    private fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
-        val file = PsiFileFactory.getInstance(project).createFileFromText(
-            "dummy.cj.macrocall",
-            CangJieFileType.INSTANCE,
-            text,
-            LocalTimeCounter.currentTime(),
-            eventSystemEnabled,
-            markGenerated,
-        ) as CjFile
+    fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
+        // 这里是 parser mode 契约，不是文件名提示：宏调用 FileType 必须配套
+        // 注册宏调用语言的 ParserDefinition，才能创建 CjMacroCallFile，并由
+        // source kind 选择 annotation-only grammar、保留自定义注解的 [] 参数。
+        ensureMacroCallParserDefinition()
+        val file = doCreateFile("dummy.cj.macrocall", text, CangJieMacroCallFileType)
 
         val elementContext = this@CjPsiFactory.context
         if (elementContext != null) {
@@ -739,6 +795,20 @@ class CjPsiFactory private constructor(
         }
 
         return file
+    }
+
+    /** 确保 annotation-only 临时文件使用宏调用语言的真实 parser。 */
+    private fun ensureMacroCallParserDefinition() {
+        synchronized(LanguageParserDefinitions.INSTANCE) {
+            // forLanguage 会沿父语言返回 CangJieLanguage 的 parser；这里必须
+            // 检查具体实现，不能把父 parser 当成宏调用 parser。
+            if (LanguageParserDefinitions.INSTANCE.forLanguage(CangJieMacroCallLanguage) !is CangJieMacroCallParserDefinition) {
+                LanguageParserDefinitions.INSTANCE.addExplicitExtension(
+                    CangJieMacroCallLanguage,
+                    CangJieMacroCallParserDefinition(),
+                )
+            }
+        }
     }
 
     /**

@@ -83,7 +83,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CjAnnotations : CjElementImplStub<CangJiePlaceHolderStub<CjAnnotations>> {
     constructor(node: ASTNode) : super(node)
 
-    constructor(stub: CangJiePlaceHolderStub<CjAnnotations>) : super(stub, CjStubElementTypes.ANNOTATION)
+    constructor(stub: CangJiePlaceHolderStub<CjAnnotations>) : super(stub, CjStubElementTypes.ANNOTATIONS)
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

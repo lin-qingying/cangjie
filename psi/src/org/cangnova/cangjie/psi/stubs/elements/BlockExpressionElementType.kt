@@ -54,7 +54,9 @@ class CaseBlockExpressionElementType : BlockExpressionElementType("CASE_BLOCK") 
             chameleon.chars,
         )
 
-        return CangJieParser.parseBlockExpression(builder).firstChildNode
+        return CangJieParser.parseBlockExpression(
+            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+        ).firstChildNode
     }
 
     /**
@@ -118,7 +120,9 @@ open class BlockExpressionElementType(debugName: String = "BLOCK") :
             chameleon.chars,
         )
 
-        return CangJieParser.parseBlockExpression(builder).firstChildNode
+        return CangJieParser.parseBlockExpression(
+            builder, CangJieParser.languageModuleNameForContext(chameleon.psi),
+        ).firstChildNode
     }
 
     companion object {
