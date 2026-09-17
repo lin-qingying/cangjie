@@ -17,15 +17,16 @@
 package org.cangnova.cangjie.annotations
 
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
  * 官方仓颉 AST 中的注解 kind。
  *
  * 这个枚举只描述语言前端的身份，不描述某个 PSI 节点或某个后端属性。
  * 三个 Overflow 源码名称在官方 AST 中共享 [NUMERIC_OVERFLOW]，具体策略由
- * [CangjieAnnotationDescriptor.overflowStrategy] 记录。
+ * [BuiltInAnnotationDescriptor.overflowStrategy] 记录。
  */
-public enum class CangjieAnnotationKind {
+public enum class BuiltInAnnotationKind {
     JAVA,
     CALLING_CONV,
     C,
@@ -84,35 +85,6 @@ public enum class CangjieAnnotationArgumentSyntax {
     SPECIAL_EXPRESSION,
 }
 
-/** 官方 `@Annotation(target: [...])` 中使用的十类目标值。 */
-public enum class CangjieAnnotationTargetValue {
-    TYPE,
-    PARAMETER,
-    INIT,
-    MEMBER_PROPERTY,
-    MEMBER_FUNCTION,
-    MEMBER_VARIABLE,
-    ENUM_CONSTRUCTOR,
-    GLOBAL_FUNCTION,
-    GLOBAL_VARIABLE,
-    EXTEND,
-}
-
-/** 实际声明可以承载注解的目标类别。与 [CangjieAnnotationTargetValue] 有意分离。 */
-public enum class CangjieDeclarationAnnotationTarget {
-    TYPE,
-    PARAMETER,
-    INIT,
-    MEMBER_PROPERTY,
-    MEMBER_FUNCTION,
-    MEMBER_VARIABLE,
-    ENUM_CONSTRUCTOR,
-    GLOBAL_FUNCTION,
-    GLOBAL_VARIABLE,
-    EXTEND,
-    EXPRESSION,
-}
-
 /** 数值 Overflow 的具体源码策略。 */
 public enum class CangjieOverflowStrategy {
     NA,
@@ -122,126 +94,156 @@ public enum class CangjieOverflowStrategy {
     SATURATING,
 }
 
-/** C function calling convention understood by the official frontend. */
+/**
+ * C function calling convention understood by the official frontend.
+ *
+ * This is part of the source-level interop contract shared by common, CFIR and
+ * Analysis API.  It must remain a public, backend-neutral value; LLVM/JVM
+ * calling-convention identifiers belong to backend adapters.
+ */
 public enum class CangjieCallingConvention {
     CDECL,
     STDCALL,
 }
 
 /**
- * 一个内置注解的跨模块静态契约。
+ * 内置注解的唯一事实来源。
  *
- * 该类型不包含 PSI、CFIR 或 checker 引用，因此可以作为 parser、Raw CFIR、
- * resolve、checker 和 Analysis API 的共同身份输入。
+ * 依据官方 896235c9fd18f22d570a9818ac672838c36c3932 的 ParseAnnotations、
+ * CFFICheck 与 NativeFFI。目标集合描述十类声明目标，class/struct、作用域、
+ * override 等更细约束由 semanticHandler 指定的语义 owner 检查。
  */
-public data class CangjieAnnotationDescriptor(
-    /** 源码中的单个名称，不含 `@`。 */
-    val sourceName: String,
-    /** 官方 AST kind。custom/system/special 项可为 null。 */
-    val kind: CangjieAnnotationKind?,
-    /** 该名称的真实语义来源。 */
-    val origin: CangjieAnnotationOrigin,
-    /** 语法层参数形状。 */
-    val argumentSyntax: CangjieAnnotationArgumentSyntax,
-    /** 合法声明目标；空集合表示由专用语义 owner 决定。 */
-    val declarationTargets: Set<CangjieDeclarationAnnotationTarget> = emptySet(),
-    /** 是否允许多个实例。 */
-    val repeatable: Boolean = false,
-    /** 是否可由 `@!` 表示为编译期可见 custom/macro surface。 */
-    val supportsCompileTimeVisibleForm: Boolean = false,
-    /** Overflow source spelling 对应的具体策略。 */
-    val overflowStrategy: CangjieOverflowStrategy? = null,
-)
+object BuiltInAnnotationRegistry {
+    private val all = CangjieAnnotationTarget.entries.toSet()
+    private val functions = setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION, CangjieAnnotationTarget.MEMBER_FUNCTION)
+    private val types = setOf(CangjieAnnotationTarget.TYPE)
+    private val nameSchema = AnnotationArgumentSchema(
+        listOf(AnnotationParameterSchema("name", AnnotationParameterKind.STRING, acceptsPositional = true)),
+        acceptsArbitrarySingleName = true,
+    )
+    private val requiredNameSchema = nameSchema.copy(
+        parameters = nameSchema.parameters.map { it.copy(required = true) },
+    )
+    private val accessorNameSchema = requiredNameSchema.copy(acceptsArbitrarySingleName = false)
+    private val unrestricted = AnnotationArgumentSchema(variadic = true)
 
-/**
- * 官方和系统 annotation 的唯一 catalog。
- *
- * 名称表集中维护，但语义处理仍由各自 parser/resolve/checker owner 负责；
- * catalog 本身不承担语义推导。
- */
-public object CangjieAnnotationCatalog {
-    public val languageBuiltIns: List<CangjieAnnotationDescriptor> = listOf(
-        descriptor("Java", CangjieAnnotationKind.JAVA, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL),
-        descriptor("CallingConv", CangjieAnnotationKind.CALLING_CONV, CangjieAnnotationArgumentSyntax.CALLING_CONVENTION_REFERENCE),
-        descriptor("C", CangjieAnnotationKind.C, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("JavaMirror", CangjieAnnotationKind.JAVA_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL),
-        descriptor("JavaImpl", CangjieAnnotationKind.JAVA_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL),
-        descriptor("JavaHasDefault", CangjieAnnotationKind.JAVA_HAS_DEFAULT, CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION),
-        descriptor("ObjCMirror", CangjieAnnotationKind.OBJ_C_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL),
-        descriptor("ObjCImpl", CangjieAnnotationKind.OBJ_C_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL),
-        descriptor("ObjCInit", CangjieAnnotationKind.OBJ_C_INIT, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("ObjCOptional", CangjieAnnotationKind.OBJ_C_OPTIONAL, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("ForeignName", CangjieAnnotationKind.FOREIGN_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL),
-        descriptor("ForeignGetterName", CangjieAnnotationKind.FOREIGN_GETTER_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL),
-        descriptor("ForeignSetterName", CangjieAnnotationKind.FOREIGN_SETTER_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL),
-        descriptor("Attribute", CangjieAnnotationKind.ATTRIBUTE, CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS),
-        descriptor("OverflowThrowing", CangjieAnnotationKind.NUMERIC_OVERFLOW, CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY, overflowStrategy = CangjieOverflowStrategy.THROWING),
-        descriptor("OverflowWrapping", CangjieAnnotationKind.NUMERIC_OVERFLOW, CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY, overflowStrategy = CangjieOverflowStrategy.WRAPPING),
-        descriptor("OverflowSaturating", CangjieAnnotationKind.NUMERIC_OVERFLOW, CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY, overflowStrategy = CangjieOverflowStrategy.SATURATING),
-        descriptor("Intrinsic", CangjieAnnotationKind.INTRINSIC, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("When", CangjieAnnotationKind.WHEN, CangjieAnnotationArgumentSyntax.WHEN_CONDITION),
-        descriptor("FastNative", CangjieAnnotationKind.FASTNATIVE, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("Annotation", CangjieAnnotationKind.ANNOTATION, CangjieAnnotationArgumentSyntax.ANNOTATION_TARGET_ARRAY),
-        descriptor("ConstSafe", CangjieAnnotationKind.CONSTSAFE, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("Deprecated", CangjieAnnotationKind.DEPRECATED, CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION),
-        descriptor("Frozen", CangjieAnnotationKind.FROZEN, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("EnsurePreparedToMock", CangjieAnnotationKind.ENSURE_PREPARED_TO_MOCK, CangjieAnnotationArgumentSyntax.NONE),
-        descriptor("NonProduct", CangjieAnnotationKind.NON_PRODUCT, CangjieAnnotationArgumentSyntax.NONE),
+    val languageBuiltIns: List<BuiltInAnnotationDescriptor> = listOf(
+        ffi("Java", BuiltInAnnotationKind.JAVA, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
+            AnnotationSemanticHandler.JAVA_FFI).copy(hasSourceParserEntry = false),
+        ffi("JavaMirror", BuiltInAnnotationKind.JAVA_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
+        ffi("JavaImpl", BuiltInAnnotationKind.JAVA_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
+        ffi("JavaHasDefault", BuiltInAnnotationKind.JAVA_HAS_DEFAULT, targets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), handler = AnnotationSemanticHandler.JAVA_FFI),
+        ffi("ObjCMirror", BuiltInAnnotationKind.OBJ_C_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema,
+            types + CangjieAnnotationTarget.GLOBAL_FUNCTION, AnnotationSemanticHandler.OBJC_FFI),
+        ffi("ObjCImpl", BuiltInAnnotationKind.OBJ_C_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.OBJC_FFI),
+        ffi("ObjCInit", BuiltInAnnotationKind.OBJ_C_INIT, targets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), handler = AnnotationSemanticHandler.OBJC_FFI),
+        ffi("ObjCOptional", BuiltInAnnotationKind.OBJ_C_OPTIONAL, targets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), handler = AnnotationSemanticHandler.OBJC_FFI),
+        ffi("ForeignName", BuiltInAnnotationKind.FOREIGN_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, requiredNameSchema,
+            functions + setOf(CangjieAnnotationTarget.INIT, CangjieAnnotationTarget.MEMBER_PROPERTY, CangjieAnnotationTarget.MEMBER_VARIABLE, CangjieAnnotationTarget.GLOBAL_VARIABLE), AnnotationSemanticHandler.FOREIGN_NAME),
+        ffi("ForeignGetterName", BuiltInAnnotationKind.FOREIGN_GETTER_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, accessorNameSchema,
+            setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), AnnotationSemanticHandler.FOREIGN_NAME),
+        ffi("ForeignSetterName", BuiltInAnnotationKind.FOREIGN_SETTER_NAME, CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, accessorNameSchema,
+            setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), AnnotationSemanticHandler.FOREIGN_NAME),
+        ffi("CallingConv", BuiltInAnnotationKind.CALLING_CONV, CangjieAnnotationArgumentSyntax.CALLING_CONVENTION_REFERENCE,
+            AnnotationArgumentSchema(listOf(AnnotationParameterSchema("convention", AnnotationParameterKind.REFERENCE, required = true, acceptsPositional = true)), acceptsArbitrarySingleName = true),
+            setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION)),
+        ffi("C", BuiltInAnnotationKind.C, targets = types + CangjieAnnotationTarget.GLOBAL_FUNCTION),
+        directive("Attribute", BuiltInAnnotationKind.ATTRIBUTE, CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS, unrestricted, all, AnnotationSemanticHandler.ATTRIBUTES),
+        directive("Intrinsic", BuiltInAnnotationKind.INTRINSIC, CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted,
+            setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), AnnotationSemanticHandler.INTRINSIC),
+        overflow("OverflowThrowing", CangjieOverflowStrategy.THROWING),
+        overflow("OverflowWrapping", CangjieOverflowStrategy.WRAPPING),
+        overflow("OverflowSaturating", CangjieOverflowStrategy.SATURATING),
+        directive("When", BuiltInAnnotationKind.WHEN, CangjieAnnotationArgumentSyntax.WHEN_CONDITION, unrestricted, all, AnnotationSemanticHandler.CONDITIONAL_COMPILATION),
+        directive("FastNative", BuiltInAnnotationKind.FASTNATIVE, CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE,
+            setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), AnnotationSemanticHandler.C_FFI),
+        directive("ConstSafe", BuiltInAnnotationKind.CONSTSAFE, CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted, all,
+            AnnotationSemanticHandler.CONST_EVALUATION).copy(standardLibraryOnly = true),
+        BuiltInAnnotationDescriptor("Annotation", BuiltInAnnotationKind.ANNOTATION, BuiltInAnnotationCategory.META,
+            CangjieAnnotationArgumentSyntax.ANNOTATION_TARGET_ARRAY,
+            AnnotationArgumentSchema(listOf(AnnotationParameterSchema("target", AnnotationParameterKind.TARGET_ARRAY))),
+            types, AnnotationSemanticHandler.ANNOTATION_TYPE),
+        BuiltInAnnotationDescriptor("Deprecated", BuiltInAnnotationKind.DEPRECATED, BuiltInAnnotationCategory.SEMANTIC,
+            CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
+            AnnotationArgumentSchema(listOf(
+                AnnotationParameterSchema("message", AnnotationParameterKind.STRING, acceptsPositional = true, defaultValue = AnnotationDefaultValue.StringValue("")),
+                AnnotationParameterSchema("since", AnnotationParameterKind.STRING),
+                AnnotationParameterSchema("strict", AnnotationParameterKind.BOOLEAN, defaultValue = AnnotationDefaultValue.BooleanValue(false)),
+            )), all, AnnotationSemanticHandler.DEPRECATION),
+        BuiltInAnnotationDescriptor("Frozen", BuiltInAnnotationKind.FROZEN, BuiltInAnnotationCategory.SEMANTIC,
+            CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE, functions + CangjieAnnotationTarget.MEMBER_PROPERTY, AnnotationSemanticHandler.C_FFI),
+        BuiltInAnnotationDescriptor("EnsurePreparedToMock", BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK, BuiltInAnnotationCategory.TESTING,
+            CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted, emptySet(), AnnotationSemanticHandler.MOCK_PREPARATION, allowsExpression = true),
+        directive("NonProduct", BuiltInAnnotationKind.NON_PRODUCT, CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE,
+            emptySet(), AnnotationSemanticHandler.PACKAGE_PRODUCT),
     )
 
-    /** 官方 parser 不将这些名称当作普通 language builtin。 */
-    public val systemAndSpecial: List<CangjieAnnotationDescriptor> = listOf(
-        descriptor(
-            sourceName = "APILevel",
-            kind = null,
-            syntax = CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
-            origin = CangjieAnnotationOrigin.SYSTEM_MACRO,
-            supportsCompileTimeVisibleForm = true,
-        ),
-        descriptor(
-            sourceName = "Hide",
-            kind = null,
-            syntax = CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
-            origin = CangjieAnnotationOrigin.SYSTEM_MACRO,
-            supportsCompileTimeVisibleForm = true,
-        ),
-        descriptor(
-            sourceName = "IfAvailable",
-            kind = null,
-            syntax = CangjieAnnotationArgumentSyntax.SPECIAL_EXPRESSION,
-            origin = CangjieAnnotationOrigin.SPECIAL_EXPRESSION,
-        ),
+    /** 系统类身份不能加入官方 AnnotationKind；IfAvailable 保留独立表达式语法。 */
+    public val systemAndSpecial: List<SystemAnnotationDescriptor> = listOf(
+        SystemAnnotationDescriptor("APILevel", FqName("ohos.labels.APILevel"), CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
+            AnnotationArgumentSchema(listOf(
+                AnnotationParameterSchema("since", AnnotationParameterKind.STRING, required = true),
+                AnnotationParameterSchema("syscap", AnnotationParameterKind.STRING, defaultValue = AnnotationDefaultValue.StringValue("")),
+                AnnotationParameterSchema("level", AnnotationParameterKind.INTEGER, acceptsPositional = true),
+            )), all, repeatable = true, supportsCompileTimeVisibleForm = true),
+        SystemAnnotationDescriptor("Hide", FqName("ohos.labels.Hide"), CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
+            AnnotationArgumentSchema(listOf(AnnotationParameterSchema("isChecked", AnnotationParameterKind.BOOLEAN,
+                defaultValue = AnnotationDefaultValue.BooleanValue(false)))), all, repeatable = false, supportsCompileTimeVisibleForm = true),
+        SystemAnnotationDescriptor("IfAvailable", null, CangjieAnnotationArgumentSyntax.SPECIAL_EXPRESSION,
+            unrestricted, emptySet(), repeatable = true, supportsCompileTimeVisibleForm = false,
+            origin = CangjieAnnotationOrigin.SPECIAL_EXPRESSION),
     )
 
-    public val bySourceName: Map<String, CangjieAnnotationDescriptor> =
+    public val bySourceName: Map<String, AnnotationDescriptor> =
         (languageBuiltIns + systemAndSpecial).associateBy { it.sourceName }
-
-    public fun findLanguageBuiltIn(sourceName: String): CangjieAnnotationDescriptor? =
-        languageBuiltIns.firstOrNull { it.sourceName == sourceName }
-
-    public fun find(sourceName: String): CangjieAnnotationDescriptor? = bySourceName[sourceName]
-
-    private fun descriptor(
-        sourceName: String,
-        kind: CangjieAnnotationKind?,
-        syntax: CangjieAnnotationArgumentSyntax,
-        origin: CangjieAnnotationOrigin = CangjieAnnotationOrigin.LANGUAGE_BUILT_IN,
-        overflowStrategy: CangjieOverflowStrategy? = null,
-        supportsCompileTimeVisibleForm: Boolean = false,
-    ): CangjieAnnotationDescriptor = CangjieAnnotationDescriptor(
-        sourceName = sourceName,
-        kind = kind,
-        origin = origin,
-        argumentSyntax = syntax,
-        supportsCompileTimeVisibleForm = supportsCompileTimeVisibleForm,
-        overflowStrategy = overflowStrategy,
+    private val builtInsByName = languageBuiltIns.associateBy { it.sourceName }
+    public val ffiExclusiveKinds: Set<BuiltInAnnotationKind> = setOf(
+        BuiltInAnnotationKind.C, BuiltInAnnotationKind.JAVA, BuiltInAnnotationKind.JAVA_MIRROR,
+        BuiltInAnnotationKind.JAVA_IMPL, BuiltInAnnotationKind.OBJ_C_MIRROR, BuiltInAnnotationKind.OBJ_C_IMPL,
     )
+
+    public fun findLanguageBuiltIn(sourceName: String): BuiltInAnnotationDescriptor? = builtInsByName[sourceName]
+    public fun find(sourceName: String): AnnotationDescriptor? = bySourceName[sourceName]
+    public fun findSystemAnnotation(classFqName: FqName): SystemAnnotationDescriptor? =
+        systemAndSpecial.singleOrNull { it.classFqName == classFqName }
+
+    /** 只识别未限定、未强制 custom 且符合模块约束的语言注解。 */
+    public fun resolveLanguageBuiltIn(sourceName: String, forcedCustom: Boolean, moduleName: String): BuiltInAnnotationDescriptor? =
+        builtInsByName[sourceName]?.takeIf {
+            !forcedCustom && it.hasSourceParserEntry && (!it.standardLibraryOnly || moduleName == "std")
+        }
+
+    /** 对齐官方 package prefixPaths[0]；组织名是前缀，单段 package 没有模块前缀。 */
+    public fun sourceModuleName(packageFqName: FqName, organizationName: Name? = null): String {
+        if (organizationName != null) return organizationName.asString()
+        val segments = packageFqName.pathSegments()
+        return if (segments.size > 1) segments.first().asString() else ""
+    }
+
+    private fun ffi(
+        name: String, kind: BuiltInAnnotationKind,
+        syntax: CangjieAnnotationArgumentSyntax = CangjieAnnotationArgumentSyntax.NONE,
+        schema: AnnotationArgumentSchema = AnnotationArgumentSchema.NONE,
+        targets: Set<CangjieAnnotationTarget>,
+        handler: AnnotationSemanticHandler = AnnotationSemanticHandler.C_FFI,
+    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(name, kind, BuiltInAnnotationCategory.FFI, syntax, schema, targets, handler)
+
+    private fun directive(
+        name: String, kind: BuiltInAnnotationKind, syntax: CangjieAnnotationArgumentSyntax,
+        schema: AnnotationArgumentSchema, targets: Set<CangjieAnnotationTarget>, handler: AnnotationSemanticHandler,
+    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(name, kind, BuiltInAnnotationCategory.COMPILER_DIRECTIVE, syntax, schema, targets, handler)
+
+    private fun overflow(name: String, strategy: CangjieOverflowStrategy): BuiltInAnnotationDescriptor =
+        directive(name, BuiltInAnnotationKind.NUMERIC_OVERFLOW, CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY,
+            AnnotationArgumentSchema(listOf(AnnotationParameterSchema("strategy", AnnotationParameterKind.REFERENCE, acceptsPositional = true))),
+            functions + CangjieAnnotationTarget.INIT, AnnotationSemanticHandler.OVERFLOW)
+            .copy(overflowStrategy = strategy, allowsExpression = true)
 }
 
 /** 解析后的注解身份；短名仅允许作为 display name。 */
 public sealed interface CangjieAnnotationIdentity {
     public data class LanguageBuiltIn(
-        val kind: CangjieAnnotationKind,
+        val kind: BuiltInAnnotationKind,
         val sourceName: String,
     ) : CangjieAnnotationIdentity
 

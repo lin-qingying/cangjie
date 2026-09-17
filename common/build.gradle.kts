@@ -11,5 +11,12 @@ description = "Shared Cangjie frontend language model and core infrastructure."
 dependencies {
     implementation(project(":util"))
     compileOnly(intellijCore())
+    testImplementation(kotlin("test"))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
+}
+
+sourceSets {
+    "test" { projectDefault() }
 }

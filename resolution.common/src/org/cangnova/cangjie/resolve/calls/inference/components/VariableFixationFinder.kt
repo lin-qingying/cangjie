@@ -438,6 +438,8 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
     protected fun Constraint.isProperArgumentConstraint() =
         type.isProperType()
                 && position.initialConstraint.position !is DeclaredUpperBoundConstraintPosition<*>
+                // 官方 IsValidSolution 排除推断结果 CType；显式类型实参由实例化约束另行校验。
+                && (!type.isCTypeConstraint() || position.initialConstraint.position is ExplicitTypeParameterConstraintPosition<*>)
                 && !isNoInfer
 
     /**
@@ -456,6 +458,7 @@ abstract class AbstractVariableReadinessCalculator<Readiness : Comparable<Readin
                 type.isProperType() &&
                 !type.isError() &&
                 !type.typeConstructor().isAnyConstructor() &&
+                !type.isCTypeConstraint() &&
                 !isNoInfer
     }
 

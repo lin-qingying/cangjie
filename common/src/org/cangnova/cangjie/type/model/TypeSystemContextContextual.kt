@@ -270,6 +270,10 @@ fun RigidTypeMarker.typeConstructor(): TypeConstructorMarker = with(c) { typeCon
 context(c: TypeSystemContext)
 fun CangJieTypeMarker.isNothing() = with(c) { isNothing() }
 
+/** 上下文参数形式的 CType 约束身份查询，供泛型求解器使用。 */
+context(c: TypeSystemContext)
+fun CangJieTypeMarker.isCTypeConstraint(): Boolean = with(c) { isCTypeConstraint() }
+
 /**
  * 判断是否是 class 或 struct 实例化的类型
  * 仓颉区分值类型（struct）和引用类型（class），两者都满足此判断

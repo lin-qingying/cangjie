@@ -97,6 +97,26 @@ object AbstractTypeChecker {
         superType: CangJieTypeMarker,
     ): Boolean = isSubtypeOfWithoutOptionBoxing(context, subType, superType)
 
+    /** CType 特例仅用于泛型实例化，不改变一般自反子类型关系。 */
+    fun isSubtypeOfForGenericArgument(
+        context: TypeCheckerProviderContext,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean = isSubtypeOfForGenericArgument(
+        context.newTypeCheckerState(errorTypesEqualToAnything = true, stubTypesEqualToAnything = true),
+        subType,
+        superType,
+    )
+
+    fun isSubtypeOfForGenericArgument(
+        state: TypeCheckerState,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean = with(state.typeSystemContext) {
+        !(subType.isCTypeConstraint() && superType.isCTypeConstraint()) &&
+            isSubtypeOfWithoutOptionBoxing(state, subType, superType)
+    }
+
     /**
      * 在禁用 `T -> Option<T>` 自动提升的前提下检查普通子类型关系。
      *
@@ -349,6 +369,7 @@ object AbstractTypeChecker {
         checkSubtypeForFunctionType(state, subType, superType)?.let { return it }
         checkSubtypeForTupleType(state, subType, superType)?.let { return it }
         checkSubtypeForVArrayType(state, subType, superType)?.let { return it }
+        checkSubtypeForPointerType(state, subType, superType)?.let { return it }
 
         // 同构造器 + 无参数 → true
         if (ctx.areEqualTypeConstructors(subConstructor, superConstructor)) {
@@ -446,11 +467,18 @@ object AbstractTypeChecker {
         }
     }
 
-    /**
-     * 元组类型子类型规则。
-     *
-     * 对齐官方 TypeManager::IsTupleSubtype：同长度元组逐元素协变。
-     */
+    /** 指针赋值要求元素类型相等；复用当前约束状态，让嵌套构造的元素变量参与联合推断。 */
+    private fun checkSubtypeForPointerType(
+        state: TypeCheckerState,
+        subType: CangJieTypeMarker,
+        superType: CangJieTypeMarker,
+    ): Boolean? = with(state.typeSystemContext) {
+        // 指针仍可能满足 CType 或扩展接口，单侧是指针时继续通常的父类型检查。
+        if (!subType.isPointerType() || !superType.isPointerType()) return null
+        equalTypes(state, subType.extractPointeeType(), superType.extractPointeeType())
+    }
+
+    /** 对齐官方 TypeManager::IsTupleSubtype：同长度元组逐元素协变。 */
     private fun checkSubtypeForTupleType(
         state: TypeCheckerState,
         subType: RigidTypeMarker,

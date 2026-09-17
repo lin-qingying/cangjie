@@ -578,7 +578,7 @@ class ConstraintInjector(
                 isIncorporatingConstraintFromDeclaredUpperBound ||
                     position.from is DeclaredUpperBoundConstraintPosition<*>
             fun isSubtypeOf(upperType: CangJieTypeMarker) = if (checksDeclaredUpperBound) {
-                AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
+                AbstractTypeChecker.isSubtypeOfForGenericArgument(
                     typeCheckerState,
                     lowerType,
                     upperType,
