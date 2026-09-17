@@ -41,6 +41,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): R =
         visitElement(ifAvailableExpression, data)
 
+    open fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective, data: D): R =
+        visitElement(featuresDirective, data)
+
     open fun visitResolvable(resolvable: CfirResolvable, data: D): R =
         visitElement(resolvable, data)
 
@@ -196,6 +199,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitCall(call: CfirCall, data: D): R =
         visitElement(call, data)
+
+    open fun visitAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping, data: D): R =
+        visitElement(annotationArgumentMapping, data)
 
     open fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: D): R =
         visitElement(annotationCall, data)

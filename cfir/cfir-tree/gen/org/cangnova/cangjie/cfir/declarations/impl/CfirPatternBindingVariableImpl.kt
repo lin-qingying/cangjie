@@ -37,6 +37,7 @@ class CfirPatternBindingVariableImpl @CfirImplementationDetail constructor(
     override var status: CfirDeclarationStatus,
     override var initializer: CfirExpression?,
     override val isVar: Boolean,
+    override val isTypeImplicit: Boolean,
     override val symbol: CfirPatternBindingSymbol,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,

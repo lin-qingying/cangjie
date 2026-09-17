@@ -8,17 +8,20 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
-import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
-import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationCallImpl
+import org.cangnova.cangjie.cfir.expressions.impl.CfirEmptyAnnotationArgumentMapping
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
@@ -27,8 +30,14 @@ class CfirAnnotationCallBuilder {
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var typeRef: CfirTypeRef
-    val arguments: MutableList<CfirElement> = mutableListOf()
-    var annotationKind: CangjieAnnotationKind? = null
+    var argumentMapping: CfirAnnotationArgumentMapping = CfirEmptyAnnotationArgumentMapping
+    var annotationClassId: ClassId? = null
+    var annotationTarget: CangjieAnnotationTarget? = null
+    var forcedCustom: Boolean = false
+    var annotationSourceName: String? = null
+    var sourceModuleName: String = ""
+    var annotationKind: BuiltInAnnotationKind? = null
+    var annotationIdentity: CangjieAnnotationIdentity? = null
     var annotationOrigin: CangjieAnnotationOrigin? = null
     var isCompileTimeVisible: Boolean? = null
     lateinit var argumentList: CfirArgumentList
@@ -43,8 +52,14 @@ class CfirAnnotationCallBuilder {
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
             typeRef,
-            arguments,
+            argumentMapping,
+            annotationClassId,
+            annotationTarget,
+            forcedCustom,
+            annotationSourceName,
+            sourceModuleName,
             annotationKind,
+            annotationIdentity,
             annotationOrigin,
             isCompileTimeVisible,
             argumentList,
@@ -75,8 +90,14 @@ inline fun buildAnnotationCallCopy(original: CfirAnnotationCall, init: CfirAnnot
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.typeRef = original.typeRef
-    copyBuilder.arguments.addAll(original.arguments)
+    copyBuilder.argumentMapping = original.argumentMapping
+    copyBuilder.annotationClassId = original.annotationClassId
+    copyBuilder.annotationTarget = original.annotationTarget
+    copyBuilder.forcedCustom = original.forcedCustom
+    copyBuilder.annotationSourceName = original.annotationSourceName
+    copyBuilder.sourceModuleName = original.sourceModuleName
     copyBuilder.annotationKind = original.annotationKind
+    copyBuilder.annotationIdentity = original.annotationIdentity
     copyBuilder.annotationOrigin = original.annotationOrigin
     copyBuilder.isCompileTimeVisible = original.isCompileTimeVisible
     copyBuilder.argumentList = original.argumentList

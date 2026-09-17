@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -21,6 +22,17 @@ fun CfirCallableSymbol<*>.containingClassLookupTag(): ConeClassLikeLookupTag? =
  */
 fun CfirCallableDeclaration.containingClassLookupTag(): ConeClassLikeLookupTag? =
     containingClassForStaticMemberAttr ?: dispatchReceiverClassLookupTagOrNull()
+
+/**
+ * callable 所属的 extend 声明。
+ *
+ * extend 不产生 class-like lookup tag，因而不能复用 dispatch receiver 推导成员归属。
+ * raw CFIR 在构造 extend 成员时显式记录该 owner，供注解目标、可见性和后续语义阶段
+ * 使用；这比根据 callable id 或函数名称反推 extend 归属稳定得多。
+ */
+var CfirCallableDeclaration.containingExtend: CfirExtend? by CfirDeclarationDataRegistry.data(ContainingExtendKey)
+
+private object ContainingExtendKey : CfirDeclarationDataKey()
 
 /**
  * 静态成员声明显式记录的所属 class lookup tag。

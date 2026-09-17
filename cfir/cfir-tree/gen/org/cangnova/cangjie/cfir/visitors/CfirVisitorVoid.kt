@@ -80,6 +80,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(ifAvailableExpression)
     }
 
+    final override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective, data: Nothing?) {
+        visitFeaturesDirective(featuresDirective)
+    }
+
+    open fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective) {
+        visitElement(featuresDirective)
+    }
+
     final override fun visitResolvable(resolvable: CfirResolvable, data: Nothing?) {
         visitResolvable(resolvable)
     }
@@ -494,6 +502,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitCall(call: CfirCall) {
         visitElement(call)
+    }
+
+    final override fun visitAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping, data: Nothing?) {
+        visitAnnotationArgumentMapping(annotationArgumentMapping)
+    }
+
+    open fun visitAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping) {
+        visitElement(annotationArgumentMapping)
     }
 
     final override fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: Nothing?) {

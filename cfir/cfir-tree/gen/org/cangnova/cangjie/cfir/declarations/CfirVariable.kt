@@ -35,6 +35,7 @@ sealed class CfirVariable : CfirCallableDeclaration(), CfirStatement {
     abstract override val status: CfirDeclarationStatus
     abstract val initializer: CfirExpression?
     abstract val isVar: Boolean
+    abstract val isTypeImplicit: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitVariable(this, data)

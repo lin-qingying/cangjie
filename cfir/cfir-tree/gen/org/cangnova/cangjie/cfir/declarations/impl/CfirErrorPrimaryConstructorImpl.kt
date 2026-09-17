@@ -39,6 +39,7 @@ internal class CfirErrorPrimaryConstructorImpl(
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
     override val valueParameters: MutableList<CfirValueParameter>,
+    override val hasVariableLenArg: Boolean,
     override var body: CfirBlock?,
     override val symbol: CfirConstructorSymbol,
     override val isPrimary: Boolean,

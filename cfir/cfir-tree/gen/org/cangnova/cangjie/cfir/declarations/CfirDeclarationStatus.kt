@@ -29,6 +29,7 @@ interface CfirDeclarationStatus : CfirElement {
     val isMut: Boolean
     val isUnsafe: Boolean
     val isForeign: Boolean
+    val isC: Boolean
     val isCommon: Boolean
     val isSpecific: Boolean
     val isRedef: Boolean

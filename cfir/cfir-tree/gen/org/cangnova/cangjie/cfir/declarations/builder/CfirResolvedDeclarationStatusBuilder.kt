@@ -29,6 +29,7 @@ class CfirResolvedDeclarationStatusBuilder {
     var isMut: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isUnsafe: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isForeign: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isC: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isCommon: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isSpecific: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isRedef: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -52,6 +53,7 @@ class CfirResolvedDeclarationStatusBuilder {
             isMut,
             isUnsafe,
             isForeign,
+            isC,
             isCommon,
             isSpecific,
             isRedef,

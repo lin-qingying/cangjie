@@ -181,6 +181,13 @@ open class CfirDeclarationStatusImpl(
             this[Modifier.FOREIGN] = value
         }
 
+    /** 声明经 ABI policy 解析后具有 C ABI；不能由 foreign 消费方自行推导。 */
+    override var isC: Boolean
+        get() = this[Modifier.C]
+        set(value) {
+            this[Modifier.C] = value
+        }
+
     /**
      * 声明是否带有 common 修饰。
      */
@@ -318,6 +325,8 @@ open class CfirDeclarationStatusImpl(
          * abstract 由源码显式写出的来源标记 bit。
          */
         ABSTRACT_EXPLICIT(0x10000),
+        /** 解析后的 C ABI 标记。 */
+        C(0x20000),
     }
 
     /**

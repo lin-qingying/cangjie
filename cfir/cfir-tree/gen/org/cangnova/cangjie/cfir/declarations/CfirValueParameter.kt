@@ -33,6 +33,7 @@ abstract class CfirValueParameter : CfirVariable(), CfirControlFlowGraphOwner {
     abstract override val dispatchReceiverType: ConeSimpleCangJieType?
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
+    abstract override val isTypeImplicit: Boolean
     abstract override val controlFlowGraphReference: CfirControlFlowGraphReference?
     abstract override val symbol: CfirValueParameterSymbol
     abstract val containingDeclarationSymbol: CfirBasedSymbol<*>

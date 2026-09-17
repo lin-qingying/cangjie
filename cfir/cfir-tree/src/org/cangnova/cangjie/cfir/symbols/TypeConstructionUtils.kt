@@ -151,6 +151,13 @@ private fun CfirBuiltInTypeSymbol.constructBuiltInType(
         if (functionType == null) {
             ConeErrorType(
                 ConeSimpleDiagnostic("CFunc expects exactly one function type argument"),
+                // Preserve the resolved CFunc classifier on the error type. This
+                // lets the CFIR type checker distinguish an invalid CFunc
+                // application from a user-defined class with the same spelling.
+                delegatedType = ConeClassLikeType(
+                    lookupTag = toLookupTag(),
+                    typeArguments = typeArguments,
+                ),
                 attributes = attributes,
             )
         } else {

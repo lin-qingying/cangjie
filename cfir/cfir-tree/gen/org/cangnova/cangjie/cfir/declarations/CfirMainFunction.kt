@@ -34,6 +34,7 @@ abstract class CfirMainFunction : CfirFunction() {
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef
     abstract override val valueParameters: List<CfirValueParameter>
+    abstract override val hasVariableLenArg: Boolean
     abstract override val body: CfirBlock?
     abstract override val symbol: CfirMainFunctionSymbol
 

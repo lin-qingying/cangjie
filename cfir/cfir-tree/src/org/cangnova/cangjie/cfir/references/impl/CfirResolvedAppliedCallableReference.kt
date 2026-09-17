@@ -20,6 +20,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property resolvedSymbol 解析命中的 callable 符号。
  * @property substitutedReturnType 替换后的返回类型；没有可用返回类型时为 `null`。
  * @property substitutedParameterTypes 替换后的参数类型列表。
+ * @property isFunctionValue 是否表示函数名作为值的访问，而不是函数调用结果。
  */
 class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor(
     /**
@@ -42,6 +43,14 @@ class CfirResolvedAppliedCallableReference @CfirImplementationDetail constructor
      * 按 use-site 类型实参替换后的参数类型列表。
      */
     val substitutedParameterTypes: List<ConeCangJieType>,
+    /**
+     * 该引用是否来自函数值访问。
+     *
+     * applied reference 同时服务于 `f` 与 `f(...)` 两种语法；仅凭替换后的
+     * 返回类型无法区分“函数本身返回函数”和“函数值本身”。该事实由 resolve
+     * owner 在构造引用时发布，避免后续重新猜测调用形态。
+     */
+    val isFunctionValue: Boolean = false,
 ) : CfirResolvedNamedReference {
 
     /**

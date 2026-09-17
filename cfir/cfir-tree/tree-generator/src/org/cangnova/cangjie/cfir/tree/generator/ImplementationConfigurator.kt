@@ -60,6 +60,10 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         noImpl(classLikeDeclaration)
         noImpl(function)
         noImpl(variable)
+        noImpl(annotationArgumentMapping)
+        impl(annotationCall) {
+            default("arguments", "argumentList.arguments", withGetter = true)
+        }
 
         // ---------- constructor 拆分为两个具名实现 ----------
         impl(constructor) {

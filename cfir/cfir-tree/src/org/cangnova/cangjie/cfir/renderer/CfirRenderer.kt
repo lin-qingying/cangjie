@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.renderer
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
@@ -553,6 +554,7 @@ class CfirRenderer(
             if (file.annotations.isNotEmpty()) {
                 printer.newLine()
             }
+            file.featuresDirective?.accept(this)
             file.packageDirective.accept(this)
             file.imports.forEach { it.accept(this) }
             file.declarations.forEach { it.accept(this) }
@@ -567,6 +569,23 @@ class CfirRenderer(
             if (!packageDirective.packageFqName.isRoot) {
                 println("package ${packageDirective.packageFqName.asString()}")
             }
+        }
+
+        /** 渲染文件前导 `features` metadata。 */
+        override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective) {
+            annotationRenderer?.render(featuresDirective)
+            if (featuresDirective.annotations.isNotEmpty()) {
+                printer.newLine()
+            }
+            println("features {")
+            printer.pushIndent()
+            featuresDirective.featureIds.forEachIndexed { index, featureId ->
+                print(featureId)
+                if (index != featuresDirective.featureIds.lastIndex) print(",")
+                printer.newLine()
+            }
+            printer.popIndent()
+            println("}")
         }
 
         /**

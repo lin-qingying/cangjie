@@ -38,6 +38,7 @@ internal class CfirErrorFunctionImpl(
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override val valueParameters: MutableList<CfirValueParameter>,
+    override val hasVariableLenArg: Boolean,
     override var body: CfirBlock?,
     override val diagnostic: ConeDiagnostic,
     override val symbol: CfirErrorFunctionSymbol,

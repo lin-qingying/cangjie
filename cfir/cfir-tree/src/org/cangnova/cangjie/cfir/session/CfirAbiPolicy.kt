@@ -21,14 +21,15 @@ public interface CfirAbiPolicy : CfirSessionComponent {
  * 未指定具体 backend 时使用的语言层策略。
  *
  * 该策略只解析仓颉源级事实：`foreign` 或显式 `@C` 表示 C function ABI，
- * 其它声明保持未知；默认调用约定只在源级显式给出时传递，不虚构平台默认值。
+ * 其它声明保持仓颉 ABI；调用约定只在源级显式给出时进入 request，不能在
+ * Analysis API 的显式语义视图中把 backend 默认值伪装成源码 `@CallingConv`。
  */
 public object CfirLanguageAbiPolicy : CfirAbiPolicy {
     override fun resolve(request: CfirAbiRequest): CfirResolvedAbi {
-        val isCFunction = request.isForeign || request.hasExplicitC
+        val hasCAbi = request.isForeign || request.hasExplicitC
         return CfirResolvedAbi(
-            kind = if (isCFunction) CfirAbiKind.C else CfirAbiKind.UNKNOWN,
-            isCFunction = isCFunction,
+            kind = if (hasCAbi) CfirAbiKind.C else CfirAbiKind.CANGJIE,
+            isCFunction = hasCAbi && request.isFunction,
             effectiveCallingConvention = request.callingConvention,
         )
     }
