@@ -245,7 +245,7 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
     override val isLocal: Boolean
         get() {
             val parent = parent
-            return !(parent is CjFile || parent is CjAbstractClassBody)
+            return !(parent is CjFile || parent is CjAbstractClassBody || parent is CjForeignBody)
         }
     /**
      * 暴露 `isUnsafe`，实现仓颉 PSI节点对上层接口的属性契约。
@@ -285,7 +285,7 @@ abstract class CjFunctionImpl<Stub: CangJieFunctionStub<F>,F: CjFunction> :
                 return stub.isTopLevel()
             }
 
-            return parent is CjFile
+            return parent is CjFile || parent is CjForeignBody
         }
 
     @Throws(IncorrectOperationException::class)

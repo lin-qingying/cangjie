@@ -160,7 +160,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
      * 再通过完整 source 文本猜测 `@!`。
      */
     val isCompileTimeVisible: Boolean
-        get() = findChildByType<PsiElement>(CjTokens.ATEXCL) != null
+        get() = stub?.isCompileTimeVisible() == true || findChildByType<PsiElement>(CjTokens.ATEXCL) != null
 
     /**
      * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -180,7 +180,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
             if (stub != null) {
                 val shortName = stub.getShortName()
                 if (shortName != null) {
-                    return identifier(shortName)
+                    return identifier(shortName.trim().removePrefix("@!").removePrefix("@"))
                 }
                 return null
             }
@@ -191,7 +191,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
             if (typeElement is CjUserType) {
                 val shortName = typeElement.referencedName
                 if (shortName != null) {
-                    return identifier(shortName)
+                    return identifier(shortName.trim().removePrefix("@!").removePrefix("@"))
                 }
             }
             return null

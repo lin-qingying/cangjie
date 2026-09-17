@@ -30,6 +30,16 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 209:
+     * - 枚举声明宏的输入保留 ENUM_CONSTRUCTOR 和 payload 类型列表
+     * - macro stub 持久化声明输入与括号 token 输入的边界
+     *
+     * 208:
+     * - annotation stub 持久化 classId、builtin kind 和 `@!` provenance
+     *
+     * 206:
+     * - features directive stub 持久化文件级 feature id，供 compiled/decompiled PSI 恢复
+     *
      * 205:
      * - pattern variable stub 持久化 const 声明关键字状态
      *
@@ -44,7 +54,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 205
+    const val SOURCE_STUB_VERSION = 209
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。

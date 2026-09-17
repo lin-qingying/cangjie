@@ -30,7 +30,6 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.psi.PsiNamedElement
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
@@ -39,9 +38,9 @@ import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
  * 枚举构造器 PSI 元素
  *
  * 根据仓颉语言规范，枚举条目是构造器，用于创建枚举实例。
- * 不是声明，只是枚举的组成部分。
+ * 枚举构造项是独立声明，也是注解和声明宏的 carrier；payload 只决定它的参数列表。
  */
-class CjEnumConstructor : CjModifierListOwnerStub<CangJieEnumConstructorStub>,CjModifierListOwner, PsiNameIdentifierOwner, CjAnnotated {
+class CjEnumConstructor : CjDeclarationStub<CangJieEnumConstructorStub>, PsiNameIdentifierOwner {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieEnumConstructorStub) : super(stub, CjStubElementTypes.ENUM_CONSTRUCTOR)

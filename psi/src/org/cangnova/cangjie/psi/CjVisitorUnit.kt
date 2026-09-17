@@ -115,6 +115,11 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitIfAvailableExpression(expression, Unit)
     }
 
+    /** 访问注解修饰的表达式。 */
+    open fun visitAnnotatedExpression(expression: CjAnnotatedExpression) {
+        super.visitAnnotatedExpression(expression, Unit)
+    }
+
     /**
      * 访问 `visitProperty` 对应的 PSI 节点，作为 Unit visitor 的可覆写处理入口。
      */
@@ -793,6 +798,21 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitPackageDirective(directive, Unit)
     }
 
+    /** 访问官方 `features` 文件前导 directive。 */
+    open fun visitFeaturesDirective(directive: CjFeaturesDirective) {
+        super.visitFeaturesDirective(directive, Unit)
+    }
+
+    /** 访问 `features` 的 feature 集合。 */
+    open fun visitFeaturesSet(featuresSet: CjFeaturesSet) {
+        super.visitFeaturesSet(featuresSet, Unit)
+    }
+
+    /** 访问单个 feature id。 */
+    open fun visitFeatureId(featureId: CjFeatureId) {
+        super.visitFeatureId(featureId, Unit)
+    }
+
     // hidden methods
     /**
      * 将带数据参数的 `visitCjElement` 访问回调转发为 Unit visitor 的无数据访问入口。
@@ -1181,6 +1201,11 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     }
 
+    /** 将带数据参数的注解表达式访问转发到无数据入口。 */
+    override fun visitAnnotatedExpression(expression: CjAnnotatedExpression, data: Unit?): Unit {
+        visitAnnotatedExpression(expression)
+    }
+
     /**
      * 将带数据参数的 `visitMatchExpression` 访问回调转发为 Unit visitor 的无数据访问入口。
      */
@@ -1524,6 +1549,18 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
     override fun visitPackageDirective(packageDirective: CjPackageDirective, data: Unit?): Unit {
         visitPackageDirective(packageDirective)
 
+    }
+
+    override fun visitFeaturesDirective(directive: CjFeaturesDirective, data: Unit?): Unit {
+        visitFeaturesDirective(directive)
+    }
+
+    override fun visitFeaturesSet(featuresSet: CjFeaturesSet, data: Unit?): Unit {
+        visitFeaturesSet(featuresSet)
+    }
+
+    override fun visitFeatureId(featureId: CjFeatureId, data: Unit?): Unit {
+        visitFeatureId(featureId)
     }
 
     /**

@@ -31,12 +31,20 @@ import com.intellij.lang.ASTNode
 /**
  * 表示 `CjForeignDirective`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjForeignDirective : CjElementImplStub<CangJieForeignDirectiveStub> {
+class CjForeignDirective : CjElementImplStub<CangJieForeignDirectiveStub>, CjAnnotated {
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieForeignDirectiveStub) : super(stub, CjStubElementTypes.FOREIGN)
 
+    /** `foreign { ... }` 前缀注解容器；解析器将它保留在 FOREIGN 节点内。 */
+    override val annotations: CjAnnotations?
+        get() = getStubOrPsiChild(CjStubElementTypes.ANNOTATIONS)
+
+    /** 返回 foreign block 前缀上的全部注解，供 CFIR 克隆到每个成员函数。 */
+    override val annotationEntries: List<CjAnnotation>
+        get() = annotations?.entries.orEmpty()
+
     /** `foreign { ... }` 的声明容器；外部函数不是文件的直接 PSI child。 */
     val body: CjForeignBody?
-        get() = findChildByType(CjStubElementTypes.FOREIGN_BODY)
+        get() = getStubOrPsiChild(CjStubElementTypes.FOREIGN_BODY)
 }

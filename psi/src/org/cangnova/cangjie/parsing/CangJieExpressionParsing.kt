@@ -424,6 +424,8 @@ open class CangJieExpressionParsing(
         if (at(AT)) {
             if (rawTokenText(builder, 1).toString() == "IfAvailable") {
                 parseIfAvailableExpression()
+            } else if (isAnnotationLambdaStart()) {
+                parseAnnotatedLambdaExpression()
             } else {
                 parseMacroExpression()
             }
@@ -478,6 +480,26 @@ open class CangJieExpressionParsing(
             // 负责报告 IFAVAILABLE_ARG_NOT_LITERAL；这里不能把它吞掉或伪造 lambda。
             parseBinaryExpression(Precedence.ASSIGNMENT)
         }
+    }
+
+    /** 解析官方 annotation-lambda：`@Annotation { => body }`。 */
+    context(context: ParsingContext)
+    private fun parseAnnotatedLambdaExpression() {
+        val annotated = mark()
+        cangJieParsing.parseAnnotations()
+        parseFunctionLiteral()
+        annotated.done(ANNOTATED_EXPRESSION)
+    }
+
+    /** 判断当前 `@` 是否是直接修饰 lambda 的内置 annotation。 */
+    context(context: ParsingContext)
+    private fun isAnnotationLambdaStart(): Boolean {
+        if (!cangJieParsing.isBuiltInAnnotation()) return false
+        val probe = mark()
+        cangJieParsing.parseAnnotations()
+        val result = at(LBRACE)
+        probe.rollbackTo()
+        return result
     }
 
     /**
@@ -3140,6 +3162,8 @@ open class CangJieExpressionParsing(
         val decl: PsiBuilder.Marker = mark()
         val detector: CangJieParsing.ModifierDetector = CangJieParsing.ModifierDetector()
 
+        // 局部声明与文件/成员声明共享注解前缀解析；不是声明时由 decl 一并回滚。
+        cangJieParsing.parseAnnotations()
         cangJieParsing.parseModifierList(detector, TokenSet.EMPTY, rollbackMacro)
         val declType: IElementType? = parseDeclarationRest(detector, rollbackIfDefinitelyNotExpression, scope)
 
@@ -3433,7 +3457,7 @@ open class CangJieExpressionParsing(
      * @return 宏表达式类型,如果解析失败则返回null
      */
     context(context: ParsingContext)
-    fun parseMacroExpression(): IElementType? {
+    fun parseMacroExpression(declarationParsingMode: DeclarationParsingMode = DeclarationParsingMode.ALL): IElementType? {
 
 
         assert(_at(AT))
@@ -3460,9 +3484,10 @@ open class CangJieExpressionParsing(
 
             val modifiterDetector = CangJieParsing.ModifierDetector()
 
+            cangJieParsing.parseAnnotations()
             cangJieParsing.parseModifierList(modifiterDetector, TokenSet.EMPTY)
 
-            val declType = parseMacroInputExprWithoutParens(modifiterDetector)
+            val declType = parseMacroInputExprWithoutParens(modifiterDetector, declarationParsingMode)
 
             if (declType == null) {
                 error("Macro call has no input")
@@ -3511,29 +3536,29 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     private fun parseMacroInputExprWithoutParens(
-        modifiterDetector: CangJieParsing.ModifierDetector
+        modifiterDetector: CangJieParsing.ModifierDetector,
+        declarationParsingMode: DeclarationParsingMode = DeclarationParsingMode.ALL,
     ): IElementType? {
-        var declType = parseMacroInputExprWithoutParensDeclaration(modifiterDetector)
+        if (declarationParsingMode == DeclarationParsingMode.ENUM_CONSTRUCTOR && at(IDENTIFIER)) {
+            cangJieParsing.parseEnumConstructorRest()
+            return ENUM_CONSTRUCTOR
+        }
+
+        var declType = parseMacroInputExprWithoutParensDeclaration(modifiterDetector, declarationParsingMode)
 
         if (declType == null) {
             if (at(IDENTIFIER) && modifiterDetector.count <= 0) {
-                advance()
-                if (at(LPAR)) {
-                    if (lookahead(1) == IDENTIFIER && lookahead(2) === COLON || lookahead(1) == RPAR) {
-                        cangJieParsing.parsePrimaryInitFuncValueParameterList()
-
-                        if (at(LBRACE)) {
-                            cangJieParsing.parseFunctionBody()
-                        } else {
-                            error("Expecting '{' ")
-                        }
-
-                        declType = PRIMARY_CONSTRUCTOR
-                    }
+                // The identifier is the class-named primary-constructor head.
+                // Test the following `(` before consuming the identifier;
+                // the old code advanced first and then checked lookahead from
+                // the `(`, making the valid annotated form `@A S(...)` fall
+                // through with the parameter list outside the declaration node.
+                if (lookahead(1) == LPAR) {
+                    cangJieParsing.parsePrimaryInitFunc()
+                    declType = PRIMARY_CONSTRUCTOR
+                } else {
+                    advance()
                 }
-            } else if (at(IDENTIFIER) && lookahead(1) === LPAR) {
-                cangJieParsing.parsePrimaryInitFunc()
-                declType = PRIMARY_CONSTRUCTOR
             }
         }
 
@@ -3560,10 +3585,11 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     private fun parseMacroInputExprWithoutParensDeclaration(
-        modifiterDetector: CangJieParsing.ModifierDetector
+        modifiterDetector: CangJieParsing.ModifierDetector,
+        declarationParsingMode: DeclarationParsingMode,
     ): IElementType? {
         return when (getTokenId()) {
-            AT_Id -> with(context.copy(backToken = true)) { parseMacroExpression() }
+            AT_Id -> with(context.copy(backToken = true)) { parseMacroExpression(declarationParsingMode) }
             FUNC_KEYWORD_Id -> cangJieParsing.parseFunction(detector = modifiterDetector)
             EXTEND_KEYWORD_Id, ENUM_KEYWORD_Id, STRUCT_KEYWORD_Id, INTERFACE_KEYWORD_Id, CLASS_KEYWORD_Id ->
                 cangJieParsing.parseClass(modifiterDetector)
@@ -4112,7 +4138,7 @@ open class CangJieExpressionParsing(
             MODIFIER_KEYWORDS,
             BASICTYPES,
             SPECIAL_MODIFIER_KEYWORDS,
-            TokenSet.create(AT),
+            TokenSet.create(AT, ATEXCL),
         )
 
         val STATEMENT_NEW_LINE_QUICK_RECOVERY_SET = TokenSet.orSet(

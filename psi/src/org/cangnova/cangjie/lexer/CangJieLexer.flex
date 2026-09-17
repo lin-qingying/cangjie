@@ -726,6 +726,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "package"    { return CjTokens.PACKAGE_KEYWORD; }
 "import"     { return CjTokens.IMPORT_KEYWORD; }
 "foreign"    { return CjTokens.FOREIGN_KEYWORD; }
+"features"   { return CjTokens.FEATURES_KEYWORD; }
 
 // 类型声明相关关键字
 "interface"  { return CjTokens.INTERFACE_KEYWORD; }

@@ -131,6 +131,11 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitExpression(expression, data)
     }
 
+    /** 访问注解修饰的表达式，例如 annotation-lambda。 */
+    open fun visitAnnotatedExpression(expression: CjAnnotatedExpression, data: D): R? {
+        return visitExpression(expression, data)
+    }
+
     /**
      * 提供 `visitMacroExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
@@ -800,6 +805,21 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
         return visitCjElement(packageDirective, data)
     }
 
+    /** 访问官方 `features` 文件前导 directive。 */
+    open fun visitFeaturesDirective(featuresDirective: CjFeaturesDirective, data: D): R? {
+        return visitCjElement(featuresDirective, data)
+    }
+
+    /** 访问 `features { ... }` 的 feature 集合。 */
+    open fun visitFeaturesSet(featuresSet: CjFeaturesSet, data: D): R? {
+        return visitCjElement(featuresSet, data)
+    }
+
+    /** 访问单个 feature id。 */
+    open fun visitFeatureId(featureId: CjFeatureId, data: D): R? {
+        return visitCjElement(featureId, data)
+    }
+
     /**
      * 提供 `visitQualifiedExpression` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
@@ -900,7 +920,7 @@ open class CjVisitor<R, D> : PsiElementVisitor() {
      * 提供 `visitEnumConstructor` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     open fun visitEnumConstructor(enumConstructor: CjEnumConstructor, data: D): R? {
-        return visitCjElement(enumConstructor, data)
+        return visitDeclaration(enumConstructor, data)
     }
 
     /**

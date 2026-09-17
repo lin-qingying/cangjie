@@ -31,11 +31,14 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
+import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.messages.CangJieParsingBundle
 import org.cangnova.cangjie.psi.CallingConvention
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation
-import org.cangnova.cangjie.psi.CjBuiltInAnnotation.*
 import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.psi.OverflowStrategy
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.ANNOTATION
@@ -47,10 +50,29 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.CONSTRUCTOR_CA
  * 表示 `CangJieParsing`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
  */
 class CangJieParsing private constructor(
-    builder: SemanticWhitespaceAwarePsiBuilder, isTopLevel: Boolean, isLazy: Boolean
+    builder: SemanticWhitespaceAwarePsiBuilder, isTopLevel: Boolean, isLazy: Boolean,
+    initialLanguageModuleName: String,
+    initialSourceKind: CjSourceKind = CjSourceKind.SOURCE,
 ) : AbstractCangJieParsing(
     builder, isLazy
 ) {
+    /** 当前源码的语言模块；完整文件按源码 prefixPaths 更新，片段由解析入口确定来源。 */
+    internal var languageModuleName: String = initialLanguageModuleName
+        private set
+
+    /**
+     * 被解析代码所属的源文件种类。
+     *
+     * 这是"解析模式"的**唯一载体**：声明文件（`.cj.d`）中的体允许缺失，相关诊断由
+     * [reportMissingBody] 统一抑制（对齐官方 `Parser::parseDeclFile`）。
+     *
+     * 为什么不放进 [AbstractCangJieParsing.ParsingContext]：后者承载的是"用哪套文法"
+     * （局部开关，会被 `with(...)` 整体替换），而"是不是声明文件"是**文件级恒定属性**。
+     * 放进前者会被任何局部 `with` 静默清除，且属于分类维度错配。
+     *
+     * 取值只能来自被解析代码的归属文件（文件级解析来自文件本身，片段重解析来自片段的来源文件）。
+     */
+    val sourceKind: CjSourceKind = initialSourceKind
 
     companion object {
         val PARAMETER_NAME_RECOVERY_SET = TokenSet.create(COLON, EQ, COMMA, RPAR)
@@ -142,16 +164,31 @@ class CangJieParsing private constructor(
         private val MUT_PROP_SET = TokenSet.create(MUT_KEYWORD, PROP_KEYWORD)
 
 
-        private fun createForByClause(builder: SemanticWhitespaceAwarePsiBuilder, isLazy: Boolean): CangJieParsing {
-            return CangJieParsing(SemanticWhitespaceAwarePsiBuilderForByClause(builder), false, isLazy)
+        private fun createForByClause(
+            builder: SemanticWhitespaceAwarePsiBuilder,
+            isLazy: Boolean,
+            languageModuleName: String,
+            sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+        ): CangJieParsing {
+            return CangJieParsing(
+                SemanticWhitespaceAwarePsiBuilderForByClause(builder), false, isLazy, languageModuleName, sourceKind
+            )
         }
 
-        fun createForTopLevel(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
-            return CangJieParsing(builder, true, true)
+        fun createForTopLevel(
+            builder: SemanticWhitespaceAwarePsiBuilder,
+            languageModuleName: String = "",
+            sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+        ): CangJieParsing {
+            return CangJieParsing(builder, true, true, languageModuleName, sourceKind)
         }
 
-        fun createForTopLevelNonLazy(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
-            return CangJieParsing(builder, true, false)
+        fun createForTopLevelNonLazy(
+            builder: SemanticWhitespaceAwarePsiBuilder,
+            languageModuleName: String = "",
+            sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+        ): CangJieParsing {
+            return CangJieParsing(builder, true, false, languageModuleName, sourceKind)
         }
 
     }
@@ -163,7 +200,7 @@ class CangJieParsing private constructor(
         if (isTopLevel) CangJieExpressionParsing(builder, this, isLazy) else object :
             CangJieExpressionParsing(builder, this@CangJieParsing, isLazy) {
             public override fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
-                return CangJieParsing.createForByClause(builder, super.isLazy)
+                return CangJieParsing.createForByClause(builder, super.isLazy, this@CangJieParsing.languageModuleName)
             }
         }
 
@@ -350,7 +387,7 @@ class CangJieParsing private constructor(
      * 提供 `create` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
      */
     public override fun create(builder: SemanticWhitespaceAwarePsiBuilder): CangJieParsing {
-        return createForTopLevel(builder)
+        return createForTopLevel(builder, languageModuleName)
     }
 
 
@@ -507,6 +544,7 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun parsePackageName() {
+        // 对齐官方 prefixPaths：多段源码包名覆盖输入模块，单段包保留 seed，组织名仍是首段。
         // 先解析第一个标识符
         if (builder.newlineBeforeCurrentToken()) {
             errorWithRecovery(
@@ -517,6 +555,7 @@ class CangJieParsing private constructor(
         }
 
         // 第一个片段
+        val firstNameText = builder.tokenText
         val firstName = mark()
         val firstFound = expect(
             IDENTIFIER,
@@ -530,8 +569,9 @@ class CangJieParsing private constructor(
             return
         }
 
-        // 没有后续 DOT 或组织名分隔符，就是单段包名，直接结束
+        // 单段 std 没有 prefixPaths，不能成为标准库内置注解的模块依据。
         if (!at(DOT) && !at(DOUBLE_COLON)) return
+        languageModuleName = checkNotNull(firstNameText)
 
         // 有多段，构建左递归 DOT_QUALIFIED_EXPRESSION 树
         // 初始：wrap 第一个 REFERENCE_EXPRESSION
@@ -586,10 +626,64 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun parsePreamble() {
+        parseFeaturesDirectiveIfPresent()
         // 解析包声明
         parsePackageDirective()
         // 解析导入列表
         parseImportDirectives()
+    }
+
+    /**
+     * 解析官方文件前导 `features` directive。
+     *
+     * 官方 grammar 规定它位于 package header 之前，且仅允许在该 directive
+     * 上承载前导注解（当前语义 checker 再验证 `@NonProduct`）。没有看到
+     * `features` 时必须完整回滚，不能吞掉后续 package 的注解。
+     */
+    context(parseContext: ParsingContext)
+    private fun parseFeaturesDirectiveIfPresent(): Boolean {
+        val directive = mark()
+        if (isAnnotationStart()) {
+            parseAnnotations()
+        }
+        if (!at(FEATURES_KEYWORD)) {
+            directive.rollbackTo()
+            return false
+        }
+
+        advance() // features
+        val featureSet = mark()
+        expect(LBRACE, CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
+        while (!eof() && !at(RBRACE)) {
+            val featureId = mark()
+            if (!at(IDENTIFIER)) {
+                error(CangJieParsingBundle.message("parsing.error.expecting", "a feature identifier"))
+                featureId.drop()
+                while (!eof() && !at(COMMA) && !at(RBRACE)) advance()
+            } else {
+                advance()
+                while (at(DOT)) {
+                    advance()
+                    if (at(IDENTIFIER)) {
+                        advance()
+                    } else {
+                        error(CangJieParsingBundle.message("parsing.error.expecting", "a feature identifier"))
+                        break
+                    }
+                }
+                featureId.done(FEATURE_ID)
+            }
+            if (at(COMMA)) {
+                advance()
+            } else if (!at(RBRACE) && !eof()) {
+                error(CangJieParsingBundle.message("parsing.error.expecting.symbol", ","))
+                while (!eof() && !at(COMMA) && !at(RBRACE)) advance()
+            }
+        }
+        expect(RBRACE, CangJieParsingBundle.message("parsing.error.expecting.symbol", "}"))
+        featureSet.done(FEATURES_SET)
+        directive.done(FEATURES_DIRECTIVE)
+        return true
     }
 
     /**
@@ -1126,13 +1220,14 @@ class CangJieParsing private constructor(
             // `::` 只能出现在路径首段之后，表示组织名与包名的边界。
             var allowOrganizationSeparator = true
             while (
-                (at(DOT) && lookahead(1) == IDENTIFIER) ||
-                (allowOrganizationSeparator && at(DOUBLE_COLON) && lookahead(1) == IDENTIFIER)
+                (at(DOT) || (allowOrganizationSeparator && at(DOUBLE_COLON))) &&
+                (lookahead(1).let { it == IDENTIFIER || (it is CjKeywordToken && it.isSoft) })
             ) {
                 advance() // DOT or the one organization DOUBLE_COLON
 
                 reference = mark()
-                advance() // IDENTIFIER
+                // 限定名允许 internal 等软关键字；消费前统一重映射为标识符。
+                expect(IDENTIFIER, "Expecting identifier")
                 reference.done(REFERENCE_EXPRESSION)
 
                 val precede = qualifiedName.precede()
@@ -1328,7 +1423,7 @@ class CangJieParsing private constructor(
 
         // 顶层 `@Macro decl` 由 macro expression 包裹真实声明，PSI 与 LightTree
         // 必须产出同构的 MACRO_EXPRESSION，后续 raw builder 才能建立 construction surface。
-        if (parseMacro && !parseContext.disableMacroParsing && at(AT)) {
+        if (parseMacro && !parseContext.disableMacroParsing && at(AT) && !isBuiltInAnnotation()) {
             expressionParsing.parseMacroExpression()
             decl.drop()
             return
@@ -1554,6 +1649,9 @@ class CangJieParsing private constructor(
 
         val mark = mark()
 
+        if (_at(ATEXCL) && languageBuiltInAnnotationAtCurrentToken() != null) {
+            error("Reserved built-in annotation cannot use @!")
+        }
         advance() //消耗
 
 
@@ -1654,15 +1752,17 @@ class CangJieParsing private constructor(
      * @return 如果当前注解为内置注解返回true,否则返回false
      * @see org.cangnova.cangjie.psi.CjBuiltInAnnotation
      */
-    fun isBuiltInAnnotation(): Boolean {
-        if (!_atSet(AT)) return false
+    fun isBuiltInAnnotation(): Boolean =
+        _at(AT) && languageBuiltInAnnotationAtCurrentToken() != null
 
-        val lookahead = lookahead(1)
-        if (lookahead != IDENTIFIER) return false
-
-        val annotationName = rawTokenText(builder, 1).toString()
-
-        return CjBuiltInAnnotation.isBuiltIn(annotationName)
+    /** 语法分派与 @! 保留名检查共享模块约束；显式限定名称属于自定义注解。 */
+    private fun languageBuiltInAnnotationAtCurrentToken(): BuiltInAnnotationDescriptor? {
+        if (!_atSet(AT, ATEXCL) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return null
+        return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
+            sourceName = rawTokenText(builder, 1).toString(),
+            forcedCustom = false,
+            moduleName = languageModuleName,
+        )
     }
 
     /**
@@ -1686,55 +1786,28 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     private fun parseBuiltAnnotation() {
         assert(_atSet(AT))
-
-        val builtInAnnotation = CjBuiltInAnnotation.fromName(rawTokenText(builder, 1).toString())
-
-        if (builtInAnnotation == null) {
-            error(
-                CangJieParsingBundle.message(
-                    "parsing.error.unknown.built.in.annotation",
-                    rawTokenText(builder, 1).toString()
-                )
-            )
-
-            return
+        val descriptor = checkNotNull(
+            org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.findLanguageBuiltIn(rawTokenText(builder, 1).toString())
+        )
+        // Registry 选择语法形状；参数数量、字面量类型和目标约束由语义阶段统一检查。
+        when (descriptor.argumentSyntax) {
+            org.cangnova.cangjie.annotations.CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS -> parseAttributeAnnotation()
+            org.cangnova.cangjie.annotations.CangjieAnnotationArgumentSyntax.CALLING_CONVENTION_REFERENCE -> {
+                // Bare identifier form gets the dedicated PSI node. Empty, string and
+                // multi-argument forms must remain ordinary value arguments so the
+                // semantic owner can report the official arity/type diagnostic.
+                if (lookahead(2) == LBRACKET && lookahead(3) == IDENTIFIER && lookahead(4) == RBRACKET) {
+                    parseCallingConvAnnotation()
+                } else {
+                    parseAnnotationWithOptionalArguments()
+                }
+            }
+            org.cangnova.cangjie.annotations.CangjieAnnotationArgumentSyntax.WHEN_CONDITION -> parseWhenAnnotation()
+            org.cangnova.cangjie.annotations.CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY ->
+                parseOverflowAnnotation(checkNotNull(CjBuiltInAnnotation.fromName(descriptor.sourceName)))
+            else -> parseAnnotationWithOptionalArguments()
         }
-
-
-        when (builtInAnnotation) {
-            C, FAST_NATIVE, INTRINSIC, CONST_SAFE, FROZEN, ENSURE_PREPARED_TO_MOCK,
-            OBJ_C_INIT, OBJ_C_OPTIONAL, NON_PRODUCT -> {
-//                不需要参数的注解
-                parseBuiltNonArgAnnotation(builtInAnnotation)
-            }
-
-            CALLING_CONV -> {
-//                @CallingConv[CDECL] 或 @CallingConv[STDCALL]
-                parseCallingConvAnnotation()
-            }
-
-            ATTRIBUTE -> {
-                parseAttributeAnnotation()
-            }
-
-            OVERFLOW_THROWING, OVERFLOW_WRAPPING, OVERFLOW_SATURATING -> {
-                parseOverflowAnnotation(builtInAnnotation)
-            }
-
-            WHEN ->
-                parseWhenAnnotation()
-
-
-            CjBuiltInAnnotation.ANNOTATION, JAVA_IMPL, JAVA_HAS_DEFAULT, OBJ_C_MIRROR, OBJ_C_IMPL,
-            JAVA_MIRROR, FOREIGN_NAME, FOREIGN_GETTER_NAME, FOREIGN_SETTER_NAME, JAVA, DEPRECATED -> {
-                parseAnnotationWithOptionalArguments()
-            }
-
-
-        }
-
     }
-
 
     /**
      * 解析 @CallingConv 调用约定注解
@@ -2736,8 +2809,11 @@ class CangJieParsing private constructor(
             parsePropertyBody(detector)
         } else if (!isInterface) {
             if (classdetector != null && !classdetector.isAbstractDetected) {
-                error(CangJieParsingBundle.message("parsing.error.unimplemented.abstract.property"))
-                error(CangJieParsingBundle.message("parsing.error.missing", "prop body. Expecting '{''"))
+                // 只抑制"缺体"诊断；"无 {} 即 abstract"的判定（R4）不在这里，保持原样。
+                reportMissingBody {
+                    error(CangJieParsingBundle.message("parsing.error.unimplemented.abstract.property"))
+                    error(CangJieParsingBundle.message("parsing.error.missing", "prop body. Expecting '{''"))
+                }
             }
         }
 
@@ -2794,7 +2870,7 @@ class CangJieParsing private constructor(
         if (at(LBRACE)) {
             parseBlock()
         } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
+            reportMissingBody()
         }
 
         get.done(PROPERTY_ACCESSOR)
@@ -2835,7 +2911,7 @@ class CangJieParsing private constructor(
         if (at(LBRACE)) {
             parseBlock()
         } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
+            reportMissingBody()
         }
         // } else {
         //     error("immutable property cannot have setter")
@@ -2993,7 +3069,7 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun isEnumConstructorStart(): Boolean =
-        at(IDENTIFIER) || at(ELLIPSIS) || isAnnotationStart() || _atSet(MODIFIER_KEYWORDS)
+        at(IDENTIFIER) || at(ELLIPSIS) || _atSet(AT, ATEXCL) || _atSet(MODIFIER_KEYWORDS)
 
     context(parseContext: ParsingContext)
     fun parseTypeCodeFragment() {
@@ -3035,21 +3111,34 @@ class CangJieParsing private constructor(
     private fun parseEnumEntry(): Boolean {
         val entry = mark()
 
-        // 枚举构造项是 annotation 的真实语义 owner；是否消费普通 `@` 必须服从当前
-        // ParsingContext，不能把生产模式中的 declaration macro 强制降级成 annotation。
         parseAnnotations()
         parseModifierList(null, TokenSet.EMPTY)
 
-        if (!expect(IDENTIFIER, "Expecting enum constructor name")) {
-            // 即使名称缺失，也要闭合 owner，禁止已解析 annotation/modifier 脱离到 enum body。
-            entry.done(ENUM_CONSTRUCTOR)
-            return false
+        // 普通 @ 仍保留宏包装，但输入声明必须沿用枚举构造项作用域。
+        // payload 的圆括号是类型列表，不能被通用宏输入误解析为类的主构造函数。
+        if (!parseContext.disableMacroParsing && at(AT)) {
+            val declarationType = with(parseContext.copy(backToken = true)) {
+                expressionParsing.parseMacroExpression(DeclarationParsingMode.ENUM_CONSTRUCTOR)
+            }
+            if (declarationType == null) {
+                entry.drop()
+                return false
+            }
+            closeDeclarationWithCommentBinders(entry, declarationType, true)
+            return true
         }
 
-//    parseIdentifierByTitle("enum constructor", IDENTIFIER_RBRACKET_LBRACKET_SET)
+        val success = parseEnumConstructorRest()
+        closeDeclarationWithCommentBinders(entry, ENUM_CONSTRUCTOR, true)
+        return success
+    }
 
-//    处理泛型
-//    parseTypeArgumentList()
+    /** 解析枚举构造项的名称和 payload；直接条目与宏输入共用同一语法入口。 */
+    context(parseContext: ParsingContext)
+    fun parseEnumConstructorRest(): Boolean {
+        if (!expect(IDENTIFIER, "Expecting enum constructor name")) {
+            return false
+        }
 
         if (at(LPAR)) {
             advance() // LPAR
@@ -3057,7 +3146,6 @@ class CangJieParsing private constructor(
             expect(RPAR, "Expecting ')'")
         }
 
-        entry.done(ENUM_CONSTRUCTOR)
         return true
     }
 
@@ -3539,7 +3627,9 @@ class CangJieParsing private constructor(
         advance() // IDENTIFIER
 
         if (at(RBRACE)) {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected"))  // 应该为函数体
+            // 缺的是构造器的参数列表，不是"函数体"。
+            // 防御分支：唯一调用方已要求后继 token 是 '('，保留以防御直接调用。
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
             return
         }
 
@@ -3586,7 +3676,8 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     private fun parseInitFuncRest() {
         if (at(RBRACE)) {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected"))  // 应该为函数体
+            // 缺的是参数列表，不是"函数体"。
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
             return
         }
 
@@ -3699,7 +3790,8 @@ class CangJieParsing private constructor(
         advance()
 
         if (at(RBRACE)) {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected"))  // 应该为函数体
+            // 缺的是参数列表，不是"函数体"。
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
             return MAIN_FUNC
         }
 
@@ -3718,11 +3810,9 @@ class CangJieParsing private constructor(
         }
 
         // 函数体
-        if (at(LBRACE)) {
-            parseFunctionBody()
-        } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))  // 应该为'{'
-        }
+        // 与 parseFunctionBody 完全等价：后者内部已处理"缺体诊断 + 声明模式抑制"，
+        // 这里不再重复一份分支（缺体上报只有 reportMissingBody 一个入口）。
+        parseFunctionBody()
         return MAIN_FUNC
     }
 
@@ -3759,7 +3849,8 @@ class CangJieParsing private constructor(
 
 
         if (at(RBRACE)) {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected")) // 应该为函数体
+            // 连函数名都还没有，缺的是标识符，不是"函数体"。
+            error(CangJieParsingBundle.message("parsing.error.expecting.identifier"))
             return type
         }
 
@@ -3820,7 +3911,7 @@ class CangJieParsing private constructor(
             !(isInterfaceMethod || (detector?.isAbstractDetected == true)) &&
             (detector?.isForeignDetected != true)
         ) {
-            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{")) // 应该为'{'
+            reportMissingBody()
         }
 
         return type
@@ -3989,14 +4080,22 @@ class CangJieParsing private constructor(
         advance() // LBRACE
 
         while (!at(RBRACE) && !eof()) {
+            if (at(SEMICOLON)) {
+                advance()
+                continue
+            }
+            // 与文件级声明一样，函数节点必须包含注解、修饰符和完整签名。
+            // parseFunction 返回节点类型，由声明容器负责闭合 marker。
+            val declaration = mark()
             val detector = ModifierDetector()
 
             parseModifierList(detector, TokenSet.EMPTY)
 
             if (at(FUNC_KEYWORD)) {
                 detector(FOREIGN_KEYWORD)
-                parseForeignFunction(detector)
+                declaration.done(parseForeignFunction(detector))
             } else {
+                declaration.drop()
                 errorWithRecovery("Expecting function declaration", TokenSet.create(FUNC_KEYWORD))
             }
         }
@@ -4025,7 +4124,8 @@ class CangJieParsing private constructor(
         advance()
 
         if (at(RBRACE)) {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected")) // 应该为函数体
+            // 连宏名都还没有，缺的是标识符，不是"函数体"。
+            error(CangJieParsingBundle.message("parsing.error.expecting.identifier"))
             return MACRO
         }
 
@@ -4056,11 +4156,13 @@ class CangJieParsing private constructor(
         parseTypeConstraintsGuarded(typeParameterListOccurred)
 
 
-        // 函数体
+        // 声明文件允许宏只有签名，普通源码仍要求宏体。
         if (at(LBRACE)) {
             parseFunctionBody()
         } else {
-            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{")) // 应该为'{'
+            reportMissingBody {
+                error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
+            }
         }
         return MACRO
     }
@@ -4071,17 +4173,25 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     fun parseInitFunctionBody() {
         if (at(COLON)) {
+            // 构造器不允许返回类型，走到这里就是残缺输入，下面是一段恢复逻辑。
+            if (sourceKind.isDeclaration) {
+                // 声明文件（.cj.d）中"体缺失"是常态，不存在恢复目标 `{`。
+                // 若照常执行下面的 while 循环，会一路 advance 到 EOF、吞掉其后的全部内容，
+                // 且留下的 mark() 无 done/error 使标记不平衡。这里只消费返回类型，保持后续成员对齐。
+                advance() // COLON
+                parseTypeRef()
+                return
+            }
+
             val error = mark()
             while (!at(LBRACE)) advance()
             error.error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
         }
 
-
-
         if (at(LBRACE)) {
             parseInitFunctionBlock()
         } else {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected")) // 应该为函数体
+            reportMissingBody()
         }
     }
 
@@ -4093,8 +4203,37 @@ class CangJieParsing private constructor(
         if (at(LBRACE)) {
             parseBlock()
         } else {
-            error(CangJieParsingBundle.message("parsing.error.function.body.expected")) // 应该为函数体
+            reportMissingBody()
         }
+    }
+
+    /**
+     * 上报"声明体缺失"类诊断。
+     *
+     * 【唯一】的缺体抑制点：声明文件（`.cj.d`）中函数 / 构造 / 访问器 / 属性的体允许不存在，
+     * 对齐官方 `Parser::parseDeclFile`（P1 / P4 / P6）。
+     *
+     * 只用于"名字、参数列表、类型都已解析完，仅缺 body"的情形。
+     * 残缺输入（如 `class C { func }`，连函数名都没有）在各自的上报点走
+     * "缺标识符 / 缺参数列表"诊断，**不经过这里** ——
+     * 这正是"缺体"与"残缺输入"在结构上分开的关键，也是本设计能不用人工分组
+     * 就保证不会误豁免残缺输入的原因。
+     *
+     * @param report 具体诊断的上报动作。消息按 owner 不同而不同（函数 / 属性 / 访问器各有措辞），
+     *   但"是否抑制"只在 [reportMissingBody] 内部判定一次 —— 新增体 owner 时不需要再判断模式。
+     */
+    context(parseContext: ParsingContext)
+    private fun reportMissingBody(report: () -> Unit) {
+        if (sourceKind.isDeclaration) return
+        report()
+    }
+
+    /**
+     * [reportMissingBody] 的默认文案重载：函数 / 构造 / 访问器体缺失。
+     */
+    context(parseContext: ParsingContext)
+    private fun reportMissingBody() = reportMissingBody {
+        error(CangJieParsingBundle.message("parsing.error.function.body.expected"))
     }
 
     /**
@@ -4548,13 +4687,19 @@ class CangJieParsing private constructor(
         rollbackOnFailure: Boolean = false, typeRequired: Boolean = false, isPrimaryInitFunc: Boolean = false
     ): Boolean {
         val parameter = mark()
-        if (!parseContext.disableMacroParsing && at(AT)) {
+        // 参数前的 `@` / `@!` 属于参数 annotation surface。生产声明解析中普通
+        // `@Name` 仍可能是 macro expression，因此这里只在参数专用上下文
+        // 临时关闭 macro 解析，让 parseAnnotations 接管完整 annotation。
+        // 原先先无条件进入 parseMacroExpression，导致 `@A x: T` 留下未闭合
+        // VALUE_PARAMETER marker，并在参数列表闭合时触发 PSI marker 崩溃。
+        if (parseContext.allowParseAnnotationsInValueParameter && _atSet(AT, ATEXCL)) {
+            with(parseContext.copy(disableMacroParsing = true)) {
+                parseAnnotations()
+            }
+        } else if (!parseContext.disableMacroParsing && at(AT)) {
             expressionParsing.parseMacroExpression()
+            closeDeclarationWithCommentBinders(parameter, VALUE_PARAMETER, false)
             return true
-        }
-        //            可以注解
-        if (parseContext.allowParseAnnotationsInValueParameter) {
-            parseAnnotations()
         }
         val detector = ModifierDetector()
         if (isPrimaryInitFunc) {
@@ -4594,6 +4739,14 @@ class CangJieParsing private constructor(
     private fun parseFunctionParameterRest(
         typeRequired: Boolean
     ): Boolean {
+        // C foreign variadic parameter is the standalone `...` token. Keep it
+        // inside VALUE_PARAMETER so both raw builders can publish the same
+        // function-level hasVariableLenArg fact and exclude it from value-parameter
+        // name/type resolution.
+        if (at(ELLIPSIS)) {
+            advance()
+            return true
+        }
         var noErrors = true
         var isDefault = false
 
@@ -5229,7 +5382,9 @@ enum class DeclarationParsingMode(
     ALL(false, true, true), TOPLEVEL(false, true, true), MEMBER(false, true, true), MEMBER_OR_TOPLEVEL(
         false, true, true
     ),
-    LOCAL(true, false, false)
+    LOCAL(true, false, false),
+    /** 枚举条目列表中的声明宏，其标识符输入是枚举构造项。 */
+    ENUM_CONSTRUCTOR(false, false, false)
     // SCRIPT_TOPLEVEL(true, true, false) // 如需使用可以取消注释
 }
 

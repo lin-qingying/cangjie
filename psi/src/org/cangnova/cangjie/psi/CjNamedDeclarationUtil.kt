@@ -58,6 +58,10 @@ object CjNamedDeclarationUtil {
         if (parent is CjAbstractClassBody) {
             parent = parent.getParent()
         }
+        // foreign 块只提供修饰符语境，不引入名字作用域。
+        if (parent is CjForeignBody) {
+            parent = parent.parent.parent
+        }
 
         if (parent is CjFile) {
             return parent.packageFqName

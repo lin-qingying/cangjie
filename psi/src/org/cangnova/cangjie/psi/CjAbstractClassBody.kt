@@ -52,10 +52,18 @@ class CjEnumBody : CjAbstractClassBody {
 
     constructor(stub: CangJiePlaceHolderStub<CjEnumBody>) : super(stub, ENUM_BODY)
 
-    /**
-     * 保存 `constructor`，供仓颉 PSI流程读取节点结构或语义信息。
-     */
-    val constructor get() = getStubOrPsiChildrenAsList(ENUM_CONSTRUCTOR)
+    /** 枚举构造项按源码顺序暴露；声明宏包装不改变构造项的所属枚举。 */
+    val constructor: List<CjEnumConstructor>
+        get() {
+            val elements = greenStub?.childrenStubs?.map { it.psi } ?: children.asList()
+            return elements.mapNotNull { element ->
+                when (element) {
+                    is CjEnumConstructor -> element
+                    is CjMacroExpression -> element.unwrappedDeclaration as? CjEnumConstructor
+                    else -> null
+                }
+            }
+        }
     /**
      * 是否非穷枚举
      */

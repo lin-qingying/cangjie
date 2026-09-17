@@ -43,6 +43,7 @@ object CjTokenSets {
         CjStubElementTypes.INTERFACE,
         CjStubElementTypes.STRUCT,
         CjStubElementTypes.ENUM,
+        CjStubElementTypes.ENUM_CONSTRUCTOR,
         CjStubElementTypes.EXTEND,
         CjStubElementTypes.FUNCTION,
         CjStubElementTypes.MAIN_FUNC,
@@ -75,6 +76,7 @@ object CjTokenSets {
      * 类/接口/结构体/枚举成员声明类型
      */
     val CLASS_MEMBER_DECLARATION_TYPES: TokenSet = TokenSet.create(
+        CjStubElementTypes.ENUM_CONSTRUCTOR,
         CjStubElementTypes.PRIMARY_CONSTRUCTOR,
         CjStubElementTypes.FUNCTION,
         CjStubElementTypes.FIELD,

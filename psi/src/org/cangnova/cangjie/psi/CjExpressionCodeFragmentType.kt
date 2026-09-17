@@ -45,7 +45,9 @@ class CjExpressionCodeFragmentType :
         val languageForParser = getLanguageForParser(psi)
         val builder =
             PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, languageForParser, chameleon.chars)
-        return CangJieParser.parseExpressionCodeFragment(builder).firstChildNode
+        return CangJieParser.parseExpressionCodeFragment(
+            builder, CangJieParser.languageModuleNameForContext(psi),
+        ).firstChildNode
     }
 
     companion object {

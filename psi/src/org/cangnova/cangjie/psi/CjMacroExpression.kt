@@ -33,11 +33,14 @@ import com.intellij.lang.ASTNode
 /**
  * 表示 `CjMacroExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpression, CjCallElement {
+class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpression, CjCallElement, CjAnnotated {
 
     constructor(node: ASTNode) : super(node)
 
     constructor(stub: CangJieMacroExpressionStub) : super(stub, CjStubElementTypes.MACRO_EXPRESSION)
+
+    /** 声明宏属于 stub 父链，查询所属枚举时不应触发 AST 加载。 */
+    override fun getParent() = parentByStub
 
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
@@ -73,6 +76,34 @@ class CjMacroExpression : CjElementImplStub<CangJieMacroExpressionStub>, CjExpre
      * 保存 `input`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val input: CjMacroInput? get() = findChildByType(CjNodeTypes.MACRO_INPUT)
+
+    /** 宏调用之前的内置或强制自定义注解属于该包装层，不属于宏输入。 */
+    override val annotations: CjAnnotations?
+        get() = getStubOrPsiChild(CjStubElementTypes.ANNOTATIONS)
+
+    override val annotationEntries: List<CjAnnotation>
+        get() = annotations?.entries.orEmpty()
+
+    /** 声明输入与括号 token 输入属于不同语法，stub 必须保存这个边界。 */
+    val hasDeclarationInput: Boolean
+        get() = greenStub?.hasDeclarationInput()
+            ?: (input?.children?.any { it is CjDeclaration || it is CjMacroExpression } == true)
+
+    /**
+     * 声明宏链最终包裹的声明。只沿 input 链读取直接子节点，不进入声明体。
+     * MACRO_INPUT 不创建 stub，因此 stub 树中的 carrier 直接位于宏节点之下。
+     */
+    val unwrappedDeclaration: CjDeclaration?
+        get() {
+            if (!hasDeclarationInput) return null
+            val inputElements = greenStub?.childrenStubs?.map { it.psi }
+                ?: input?.children?.asList().orEmpty()
+            return when (val element = inputElements.firstOrNull { it is CjDeclaration || it is CjMacroExpression }) {
+                is CjDeclaration -> element
+                is CjMacroExpression -> element.unwrappedDeclaration
+                else -> null
+            }
+        }
     /**
      * 保存 `attr`，供仓颉 PSI流程读取节点结构或语义信息。
      */

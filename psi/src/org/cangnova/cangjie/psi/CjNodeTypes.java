@@ -119,6 +119,10 @@ public interface CjNodeTypes {
     IElementType OPTIONAL_EXPRESSION = new CjNodeType("OPTIONAL_EXPRESSION", CjOptionalExpression.class);
     IElementType OPTIONAL_CHAIN_EXPRESSION = new CjNodeType("OPTIONAL_CHAIN_EXPRESSION", CjOptionalChainExpression.class);
     IElementType IF_AVAILABLE_EXPRESSION = new CjNodeType("IF_AVAILABLE_EXPRESSION", CjIfAvailableExpression.class);
+    IElementType ANNOTATED_EXPRESSION = new CjNodeType("ANNOTATED_EXPRESSION", CjAnnotatedExpression.class);
+    IElementType FEATURES_DIRECTIVE = CjStubElementTypes.FEATURES_DIRECTIVE;
+    IElementType FEATURES_SET = new CjNodeType("FEATURES_SET", CjFeaturesSet.class);
+    IElementType FEATURE_ID = new CjNodeType("FEATURE_ID", CjFeatureId.class);
 
     IElementType SUPER_TYPE_ENTRY = CjStubElementTypes.SUPER_TYPE_ENTRY;
     IElementType MODIFIER_LIST = CjStubElementTypes.MODIFIER_LIST;

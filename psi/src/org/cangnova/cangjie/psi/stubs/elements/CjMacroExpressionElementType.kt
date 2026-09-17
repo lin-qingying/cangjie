@@ -47,6 +47,7 @@ class CjMacroExpressionElementType(debugName: String) : CjStubElementType<CangJi
     override fun serialize(stub: CangJieMacroExpressionStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.getShortName())
         dataStream.writeBoolean(stub.hasValueArguments())
+        dataStream.writeBoolean(stub.hasDeclarationInput())
     }
 
     /**
@@ -55,13 +56,14 @@ class CjMacroExpressionElementType(debugName: String) : CjStubElementType<CangJi
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJieMacroExpressionStub {
         val text = dataStream.readName()
         val hasValueArguments = dataStream.readBoolean()
+        val hasDeclarationInput = dataStream.readBoolean()
         //        int valueArgCount = dataStream.readInt();
 //        Map<Name, ConstantValue<?>> args = new LinkedHashMap<>();
 //        for (int i = 0; i < valueArgCount; i++) {
 //            args.put(Name.identifier(Objects.requireNonNull(dataStream.readNameString())),
 //                    CangJieConstantValueKt.createConstantValue(dataStream));
 //        }
-        return CangJieMacroExpressionStubImpl(parentStub, text, hasValueArguments)
+        return CangJieMacroExpressionStubImpl(parentStub, text, hasValueArguments, hasDeclarationInput)
     }
 
     /**
@@ -75,6 +77,8 @@ class CjMacroExpressionElementType(debugName: String) : CjStubElementType<CangJi
         val resultName = shortName?.asString()
         val valueArgumentList = psi.valueArgumentList
         val hasValueArguments = valueArgumentList != null && valueArgumentList.arguments.isNotEmpty()
-        return CangJieMacroExpressionStubImpl(parentStub, StringRef.fromString(resultName), hasValueArguments)
+        return CangJieMacroExpressionStubImpl(
+            parentStub, StringRef.fromString(resultName), hasValueArguments, psi.hasDeclarationInput,
+        )
     }
 }

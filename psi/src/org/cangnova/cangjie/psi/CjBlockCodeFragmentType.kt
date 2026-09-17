@@ -44,7 +44,9 @@ class CjBlockCodeFragmentType :
         val languageForParser = getLanguageForParser(psi)
         val builder =
             PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, languageForParser, chameleon.chars)
-        return CangJieParser.parseBlockCodeFragment(builder).firstChildNode
+        return CangJieParser.parseBlockCodeFragment(
+            builder, CangJieParser.languageModuleNameForContext(psi),
+        ).firstChildNode
     }
 
     companion object {
