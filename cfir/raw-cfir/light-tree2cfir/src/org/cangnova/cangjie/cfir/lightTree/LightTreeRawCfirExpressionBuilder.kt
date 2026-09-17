@@ -2298,7 +2298,7 @@ class LightTreeRawCfirExpressionBuilder(
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
 
         val text = node.asText()
-        val isForced = text.startsWith("@!")
+        val isForced = tree.findChildByType(node, CjTokens.ATEXCL) != null
         val nameStr = nameNode?.asText()
         val surfaceId = MacroSurfaceIdGenerator.next()
         val sourceElement = node.toSource()

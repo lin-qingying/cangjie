@@ -1,5 +1,14 @@
 # CFIR LLT Repair Log
 
+## 2026-09-17：Raw annotation 修复后的全量基线复核
+
+- problem type: 全量回归基线刷新；本项不修改语义实现。
+- verification command: `gradlew-queue.bat :cfir:analysis-tests:test --console=plain`。
+- verification outcome: 控制台 `8635 tests completed, 219 failed, 307 skipped`；XML 按台账含 1 条聚合记录，为 `8636 records / 8109 passed / 219 failed / 308 skipped`。保存于 `cfir/analysis-tests/build/ffi-annotation-verification/20260917-full-after-raw-annotation`。
+- testcase-key comparison: 相对 `2026-09-12` 有效全量 `56-optional-full`（8560 tests / 7824 passed / 429 failed / 307 skipped）：`FIXED=212`、`REGRESSED=2`、`NEW_KEYS=75`（`NEW_FAILURE_KEYS=0`）、`REMOVED_KEYS=0`、`UNCHANGED_FAILURES=183`、`CHANGED_FAILURES=34`。测试规模变化来自新增测试，不以总数差直接证明语义修复。
+- FFI/annotation result: FFI 族 `136/136`、Varray CFFI `28/28` 通过；Annotation 主族 `180/184` 通过，4 条为 `ok_class_07` 的 `UNUSED_IMPORT` 和 TSAN 专用 `globalfunc` 的环境性 `UNRESOLVED_IMPORT`。
+- regression attribution: 两条回归均为 `Typealias#testTypealias36`（PSI/LightTree），由普通 import 结果变化为 `import pkga`，与当前共享 CJO/.cj.d 会话改动路径相关；本任务未修改该路径。
+
 ## 2026-09-17：PSI/LightTree 保留 Attribute、Overflow、When 专用参数
 
 - problem type: Built-in annotation special grammar / Raw CFIR lowering parity。

@@ -3433,7 +3433,9 @@ class PsiRawCfirBuilder(
         private fun convertMacroExpression(psi: CjMacroExpression): CfirExpression {
             val surfaceId = MacroSurfaceIdGenerator.next()
             val text = psi.text.orEmpty()
-            val isForced = text.startsWith("@!")
+            val isForced = PsiTreeUtil.collectElements(psi) { element ->
+                element.node?.elementType == CjTokens.ATEXCL
+            }.isNotEmpty()
             val currentPackage = this@PsiRawCfirBuilder.context.packageFqName
             val source = psi.toCjPsiSourceElement()
             val carrier = buildErrorExpressionNode {
