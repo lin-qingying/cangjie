@@ -1,5 +1,27 @@
 # CFIR LLT Repair Log
 
+## 2026-09-17：Java 内置注解进入官方 source parser identity
+
+- problem type: Built-in annotation identity / Java FFI。
+- root cause: common registry 将 `Java` 错误标记为 `hasSourceParserEntry=false`。官方 v1.0.0 `Parser.h` 的 `NAME_TO_ANNO_KIND` 包含 `Java -> AnnotationKind::JAVA`，`ParseAnnotations.cpp` 的 `IsBuiltinAnnotation` 对非 std-only 注解直接按该表识别，因此 `@Java` 必须进入语言内置注解路径，不能落入 macro/custom 路径。
+- official Cangjie evidence: `external/cangjie_compiler/include/cangjie/Parse/Parser.h:52-60` 与 `external/cangjie_compiler/src/Parse/ParseAnnotations.cpp:152-157,161-171`。
+- CFIR owner files changed: `common/src/org/cangnova/cangjie/annotations/CangjieAnnotationModel.kt`、`common/test/org/cangnova/cangjie/annotations/BuiltInAnnotationRegistryTest.kt`、`psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt`。
+- repair principle: 保持 common registry 为唯一身份 owner，按官方 parser 的名称表让 `Java` 作为普通语言内置注解解析；Java interop 的后续 metadata 和语义仍由 CFIR interop owner 处理。
+- fixtures covered: common registry 的完整内置注解矩阵；PSI `ForeignAndAnnotationParsingTest.builtInArgumentFormsPreserveTheirAnnotationNodes` 新增 `@Java["java.lang.String"]`。
+- verification command(s) and outcome: `gradlew-queue.bat :common:test --tests '*BuiltInAnnotationRegistryTest'` → BUILD SUCCESSFUL，60 tasks；`gradlew-queue.bat :psi:test --tests 'org.cangnova.cangjie.psi.ForeignAndAnnotationParsingTest' -x :cfir:cfir-serialization:compileKotlin -x :cfir:entrypoint:compileKotlin` → BUILD SUCCESSFUL。后者暂时跳过共享工作树中未提交 `.cj.d` 改动所在的两个编译任务，未修改 `.cj.d` 文件。
+- remaining risks: Java/ObjC 完整 interop graph、CJO/stub/decompiled、Analysis API、CHIR/backend 与 ABI link/load/run 仍未完成全路径验收。
+
+## 2026-09-17：Raw CFIR 保留 `@!` 编译期可见 provenance
+
+- problem type: Raw CFIR annotation provenance / PSI-LightTree lowering parity。
+- root cause: 三个 Raw CFIR macro-surface 分支从完整文本 `trimStart().startsWith("@!")` 推断 `@!`，而不是读取语法 token；重解析片段的前导内容或偏移变化可能改变 compile-time-visible 身份。
+- official Cangjie evidence: 官方 AST `Annotation.isCompileTimeVisible` 记录 `@!` provenance（`external/cangjie_compiler/include/cangjie/AST/Node.h:523-527`）；仓颉 parser 以 `AT_EXCL` 区分 forced custom annotation（`external/cangjie_compiler/src/Parse/ParseAnnotations.cpp:238-260`）。
+- CFIR owner files changed: `cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt`、`cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt`。
+- repair principle: provenance 由 PSI token-backed 属性或 LightTree `ATEXCL` token 唯一发布；macro surface kind、annotation slot 和后续 semantic identity 只消费该事实，不扫描源码文本。
+- fixtures covered: Raw CFIR LightTree `CompileTimeVisibleParameterRawCfirTest`、`EnumConstructorAnnotationRawCfirTest`，以及 FFI/annotation 双入口回归。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:raw-cfir:psi2cfir:compileKotlin` → BUILD SUCCESSFUL；`gradlew-queue.bat :cfir:raw-cfir:light-tree2cfir:compileKotlin` → BUILD SUCCESSFUL；`gradlew-queue.bat :cfir:raw-cfir:light-tree2cfir:test --tests '*CompileTimeVisibleParameterRawCfirTest' --tests '*EnumConstructorAnnotationRawCfirTest' -x :cfir:cfir-serialization:compileKotlin -x :cfir:entrypoint:compileKotlin` → BUILD SUCCESSFUL；当前 FFI/宏 FFI/VArray CFFI 双入口筛选共 108 条测试全部通过。
+- remaining risks: 全量 CFIR 回归仍受 `.cj.d` 未提交改动的编译错误阻塞；尚未据此宣称全路径 annotation parity。
+
 ## 2026-09-17：CFunc 变长参数函数值禁止赋给隐式变量
 
 - problem type: FFI / CFunc function-value assignment。`foreign` 函数带 `...` 时，直接调用仍可保留变长签名，但将该函数值赋给未显式声明类型的变量必须报告 `CFUNC_VAR_CANNOT_HAVE_VAR_PARAM`。
