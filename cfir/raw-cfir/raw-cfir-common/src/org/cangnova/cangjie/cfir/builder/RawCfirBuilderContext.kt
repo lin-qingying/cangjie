@@ -26,6 +26,21 @@ class Context<T> {
     /** 当前文件包名；由 raw builder 进入文件或 package directive 时设置。 */
     lateinit var packageFqName: FqName
 
+    /** 当前解析入口的语言模块；普通宏新 token 的 parser 没有 module 上下文。 */
+    var sourceModuleName: String = ""
+        private set
+
+    /** 完整源码按 package 前缀进入，结束后恢复片段原本的解析来源。 */
+    fun <R> withSourceModuleName(moduleName: String, block: () -> R): R {
+        val previous = sourceModuleName
+        sourceModuleName = moduleName
+        return try {
+            block()
+        } finally {
+            sourceModuleName = previous
+        }
+    }
+
     /** 当前是否处于局部声明上下文。 */
     var inLocalContext: Boolean = false
 

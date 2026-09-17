@@ -273,6 +273,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/emptyFile.cj")
             }
 
+            @TestMetadata("featuresDirective.cj")
+            fun testFeaturesDirective() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/featuresDirective.cj")
+            }
+
             @TestMetadata("packageAndImport.cj")
             fun testPackageAndImport() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/packageAndImport.cj")

@@ -1,0 +1,9 @@
+FILE: featuresDirective.cj
+    @R|NonProduct|()
+    features {
+        sample.api,
+        sample.detail
+    }
+    package feature_contract
+    internal? func following(): R|Unit| {
+    }

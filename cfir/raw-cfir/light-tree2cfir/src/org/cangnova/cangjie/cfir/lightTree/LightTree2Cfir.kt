@@ -75,6 +75,9 @@ class LightTree2Cfir(
             tree = lightTree,
             source = code,
             bodyBuildingMode = bodyBuildingMode,
+            // 护栏 1 的数据来源：`.cj.d` 的无体函数不得被推断为隐式 abstract。
+            // 事实来源与解析侧相同（sourceFile.sourceKind），两条路径不产生第二个真源。
+            sourceKind = sourceFile.sourceKind,
         )
         val file = declarationBuilder.buildCfirFile(lightTree.root, sourceFile, linesMapping)
         val surfaces = declarationBuilder.consumeCollectedMacroSurfaces()
@@ -100,7 +103,9 @@ class LightTree2Cfir(
             CangJieLexer(),
             code,
         )
-        val lightTree = CangJieLightParser.parse(builder)
+        // 解析模式随文件种类：`.cj.d` 走声明模式，体可以缺失。
+        // 这里必须显式传入——LightTree 入口不会自己看文件名。
+        val lightTree = CangJieLightParser.parse(builder, sourceKind = sourceFile.sourceKind)
         return buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping)
     }
 }

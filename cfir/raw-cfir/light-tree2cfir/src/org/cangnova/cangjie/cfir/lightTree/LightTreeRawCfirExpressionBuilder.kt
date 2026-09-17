@@ -60,6 +60,7 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
@@ -147,6 +148,7 @@ class LightTreeRawCfirExpressionBuilder(
 
         // Lambda
         CjNodeTypes.LAMBDA_EXPRESSION -> convertLambda(node)
+        CjNodeTypes.ANNOTATED_EXPRESSION -> convertAnnotatedExpression(node)
 
         // 括号
         CjNodeTypes.PARENTHESIZED -> {
@@ -186,6 +188,11 @@ class LightTreeRawCfirExpressionBuilder(
     /** 将 LightTree 声明或表达式节点包装成可放入 block 的 CFIR statement。 */
     private inline fun LighterASTNode.toCfirStatement(errorReasonLazy: () -> String): CfirStatement {
         val cfir = when {
+            // `@Anno decl` 在 block 中仍是 MACRO_EXPRESSION。先交给 declaration
+            // builder 恢复 carrier 和 annotation slot；只有确实不是 declaration
+            // macro 时才进入普通 expression macro 路径。
+            tokenType == CjNodeTypes.MACRO_EXPRESSION ->
+                declarationBuilder.convertMacroDeclarationIfPresent(this) ?: convertExpression(this)
             isDeclarationToken(tokenType) -> declarationBuilder.convertDeclaration(this)
             isExpressionToken(tokenType) -> convertExpression(this)
             else -> buildErrorExpressionNode {
@@ -481,6 +488,7 @@ class LightTreeRawCfirExpressionBuilder(
                 isLocal = true
                 status = temporaryStatus
                 returnTypeRef = buildImplicitTypeRef()
+                isTypeImplicit = true
                 pattern = buildBindingPattern {
                     source = fakeSource
                     this.name = name
@@ -1326,6 +1334,33 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    /** 将 LightTree annotation-lambda 的注解归属恢复到匿名函数声明。 */
+    private fun convertAnnotatedExpression(node: LighterASTNode): CfirExpression {
+        val baseNode = findFirstExpression(node)
+            ?: return buildErrorExpression(node.toSourceElement(), "Missing annotated expression")
+        val converted = convertExpression(baseNode)
+        if (converted is CfirAnonymousFunctionExpression) {
+            val annotationNode = tree.findChildByType(node, CjStubElementTypes.ANNOTATIONS)
+            val annotationCalls = mutableListOf<CfirAnnotationCall>()
+            if (annotationNode != null) {
+                tree.forEachChildren(annotationNode) { annotation ->
+                    if (annotation.tokenType != CjStubElementTypes.ANNOTATION) return@forEachChildren
+                    declarationBuilder.buildAnnotationCallInPackage(
+                        annotation = annotation,
+                        containingSymbol = converted.anonymousFunction.symbol,
+                        packageFqName = packageFqName,
+                    )?.let(annotationCalls::add)
+                }
+            }
+            if (annotationCalls.isNotEmpty()) {
+                converted.anonymousFunction.replaceAnnotations(
+                    converted.anonymousFunction.annotations + annotationCalls,
+                )
+            }
+        }
+        return converted
+    }
+
     /** 转换 if 表达式，支持 let-pattern condition。 */
     private fun convertIf(node: LighterASTNode): CfirIfExpression {
         var conditionNode: LighterASTNode? = null
@@ -1682,6 +1717,7 @@ class LightTreeRawCfirExpressionBuilder(
                 isLocal = true
                 status = loopStatus
                 returnTypeRef = buildImplicitTypeRef()
+                isTypeImplicit = true
                 pattern = loopPattern
                 isVar = false
             }
@@ -1852,6 +1888,9 @@ class LightTreeRawCfirExpressionBuilder(
                 dispatchReceiverType = null
                 status = resourceStatus
                 returnTypeRef = resourceTypeRef
+                isTypeImplicit = parameterNode?.let {
+                    tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE) == null
+                } ?: true
                 name = resourceName
                 initializer = initializerNode?.let(::convertExpression)
                 isVar = false
@@ -2261,7 +2300,6 @@ class LightTreeRawCfirExpressionBuilder(
         val text = node.asText()
         val isForced = text.startsWith("@!")
         val nameStr = nameNode?.asText()
-        val name = nameStr?.let { Name.identifier(it) }
         val surfaceId = MacroSurfaceIdGenerator.next()
         val sourceElement = node.toSource()
         val carrier = buildErrorExpressionNode {
@@ -2270,16 +2308,17 @@ class LightTreeRawCfirExpressionBuilder(
                 "Macro expression `$text` is a construction-only surface and must be replaced before final provider registration.",
             )
         }
-        val qualifiedName = name?.let {
-            if (context.packageFqName.isRoot) {
-                org.cangnova.cangjie.name.FqName.topLevel(it)
+        val qualifiedName = nameStr?.let {
+            if (it.contains('.') || context.packageFqName.isRoot) {
+                org.cangnova.cangjie.name.FqName(it)
             } else {
-                context.packageFqName.child(it)
+                context.packageFqName.child(Name.identifier(it))
             }
         }
         declarationBuilder.collectedMacroSurfaces += MacroSurfaceExpr(
             surfaceId = surfaceId,
             qualifiedName = qualifiedName,
+            isQualifiedName = nameStr?.contains('.') == true,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
             hasParenthesis = inputNode != null || text.hasMacroInputParentheses(),
             attrTokens = MacroPayloadTokenizer.tokenize(
@@ -2297,6 +2336,7 @@ class LightTreeRawCfirExpressionBuilder(
             ),
             scopeContext = MacroSurfaceScopeContext(
                 packageFqName = context.packageFqName,
+                sourceModuleName = context.sourceModuleName,
                 enclosingClassFqName = null,
                 enclosingFunctionName = null,
             ),
@@ -2385,6 +2425,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.PERFORM, CjNodeTypes.RESUME,
             CjNodeTypes.TRY,
             CjNodeTypes.LAMBDA_EXPRESSION, CjNodeTypes.PARENTHESIZED,
+            CjNodeTypes.ANNOTATED_EXPRESSION,
             CjNodeTypes.ARRAY_ACCESS_EXPRESSION,
             CjNodeTypes.COLLECTION_LITERAL_EXPRESSION,
             CjNodeTypes.TUPLE_EXPRESSION,
