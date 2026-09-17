@@ -1761,6 +1761,60 @@ class PsiRawCfirBuilder(
                 )
             }
 
+            when (annotation.builtInAnnotation?.kind) {
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ATTRIBUTE -> {
+                    val attributeNode = PsiTreeUtil.findChildOfType(
+                        annotation,
+                        CjAnntationAttrInAttrbute::class.java,
+                    ) ?: return emptyList()
+                    // A bare attribute token may be represented by a leaf
+                    // below the specialized wrapper rather than by a direct
+                    // PSI child.  Collect both token forms from the AST and
+                    // restore the official source order by offsets.
+                    val attributeItems = buildList {
+                        addAll(
+                            PsiTreeUtil.collectElements(attributeNode) { element ->
+                                element.node?.elementType == CjTokens.IDENTIFIER
+                            }.toList(),
+                        )
+                        addAll(PsiTreeUtil.findChildrenOfType(attributeNode, CjStringTemplateExpression::class.java))
+                    }.sortedBy { it.textRange.startOffset }
+                    return attributeItems.map { item ->
+                        when (item) {
+                            is CjStringTemplateExpression -> convertExpression(item)
+                            else -> buildLiteralExpression {
+                                source = item.toCjPsiSourceElement()
+                                kind = CfirLiteralKind.STRING
+                                value = item.text
+                            }
+                        }
+                    }
+                }
+
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.NUMERIC_OVERFLOW -> {
+                    val strategy = PsiTreeUtil.findChildOfType(
+                        annotation,
+                        CjAnnotationOverflowStrategy::class.java,
+                    ) ?: return emptyList()
+                    val strategyName = strategy.getOverflowStrategyText()?.trim()?.takeIf(String::isNotEmpty)
+                        ?: return emptyList()
+                    return listOf(buildNamedAccessExpression {
+                        source = strategy.toCjPsiSourceElement()
+                        calleeReference = buildNamedReference(
+                            Name.identifier(strategyName),
+                            strategy.toCjPsiSourceElement(),
+                        )
+                    })
+                }
+
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.WHEN -> {
+                    val condition = annotation.whenConditionExpression ?: return emptyList()
+                    return listOf(convertExpression(condition))
+                }
+
+                else -> Unit
+            }
+
             val callingConvention = PsiTreeUtil.findChildOfType(annotation, CjAnnotationCallingConv::class.java)
             if (callingConvention != null) {
                 val source = callingConvention.toCjPsiSourceElement()

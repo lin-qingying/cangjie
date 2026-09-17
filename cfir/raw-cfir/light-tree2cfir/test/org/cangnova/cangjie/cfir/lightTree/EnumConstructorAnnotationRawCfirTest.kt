@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
@@ -71,6 +72,44 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
                 parseLightTree(FILE_START_SOURCE), sourceFile, FILE_START_SOURCE.toSourceLinesMapping(),
             )
         assertFileStartAnnotationOffsets(file, session.annotationMetadataRegistry, surfaces)
+    }
+
+    /** Attribute、Overflow 和 When 的专用语法都必须进入 Raw CFIR，不能只留在 PSI 节点。 */
+    fun testPsiPreservesSpecialBuiltinAnnotationArguments() {
+        val session = createTestSession()
+        val builder = PsiRawCfirBuilder(session, BodyBuildingMode.NORMAL)
+        val file = builder.buildCfirFile(createCjFile("specialBuiltinAnnotations", SPECIAL_BUILTIN_SOURCE))
+        assertSpecialBuiltinAnnotationArguments(file)
+    }
+
+    /** LightTree 与 PSI 必须为专用 builtin annotation 产生相同的参数结构。 */
+    fun testLightTreePreservesSpecialBuiltinAnnotationArguments() {
+        val session = createTestSession()
+        val sourceFile = CjInMemoryTextSourceFile("specialBuiltinAnnotations.cj", null, SPECIAL_BUILTIN_SOURCE)
+        val (file, _) = LightTree2Cfir(session, session.cangjieScopeProvider)
+            .buildCfirFileWithSurfaces(
+                parseLightTree(SPECIAL_BUILTIN_SOURCE),
+                sourceFile,
+                SPECIAL_BUILTIN_SOURCE.toSourceLinesMapping(),
+            )
+        assertSpecialBuiltinAnnotationArguments(file)
+    }
+
+    private fun assertSpecialBuiltinAnnotationArguments(file: CfirFile) {
+        val function = file.declarations.filterIsInstance<CfirNamedFunction>().single()
+        val annotations = function.annotations.filterIsInstance<CfirAnnotationCall>()
+        assertEquals(listOf("Attribute", "OverflowWrapping", "When"), annotations.map { it.annotationSourceName })
+
+        val attributes = annotations[0].arguments.map { argument ->
+            checkNotNull(argument as? CfirLiteralExpression).value
+        }
+        assertEquals(listOf("customFlag", "backendFlag"), attributes)
+
+        val overflowArgument = annotations[1].arguments.single() as CfirQualifiedAccessExpression
+        assertEquals("checked", (overflowArgument.calleeReference as CfirNamedReference).name.asString())
+
+        val whenArgument = annotations[2].arguments.single() as CfirQualifiedAccessExpression
+        assertEquals("DEBUG", (whenArgument.calleeReference as CfirNamedReference).name.asString())
     }
 
     /** 非法注解表达式不能让 attr 中的声明逃逸到 PSI Raw CFIR。 */
@@ -400,6 +439,12 @@ class EnumConstructorAnnotationRawCfirTest : AbstractLightTree2CfirConverterTest
         private const val FILE_START_SOURCE = "@A[1, value: 2] func f() {}"
         private const val RECOVERY_ANNOTATION = "@A[}\nfunc leaked() {}\n]"
         private const val RECOVERY_SOURCE = "enum E { $RECOVERY_ANNOTATION item(Int64) }"
+        private val SPECIAL_BUILTIN_SOURCE = """
+            @Attribute[customFlag, "backendFlag"]
+            @OverflowWrapping[checked]
+            @When[DEBUG]
+            func special(): Unit {}
+        """.trimIndent()
 
         private val SOURCE = """
             enum E {

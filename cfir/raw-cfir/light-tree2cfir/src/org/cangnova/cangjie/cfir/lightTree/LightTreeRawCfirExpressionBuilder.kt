@@ -2375,7 +2375,8 @@ class LightTreeRawCfirExpressionBuilder(
     }
 
     /** 在子节点中查找第一个表达式节点 */
-    private fun findFirstExpression(node: LighterASTNode): LighterASTNode? {
+    /** 供声明 builder 转换专用 annotation 条件时复用同一表达式边界。 */
+    internal fun findFirstExpression(node: LighterASTNode): LighterASTNode? {
         tree.forEachChildren(node) { child ->
             if (isExpressionToken(child.tokenType) || isDeclarationToken(child.tokenType)) return child
         }
