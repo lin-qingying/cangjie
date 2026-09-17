@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
+import org.cangnova.cangjie.cfir.diagnostic.BuiltinCFuncConstructorTooManyArguments
+import org.cangnova.cangjie.cfir.diagnostic.BuiltinPointerConstructorTooManyArguments
 import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
 import org.cangnova.cangjie.cfir.diagnostic.NamedArgumentsNotAllowed
@@ -55,6 +57,28 @@ import org.cangnova.cangjie.source.CjSourceElement
  * 这样可以避免把 call/constructor 语义错误继续退化成通用 unresolved 或 type mismatch。
  */
 object CfirMapArguments : ResolutionStage() {
+    /**
+     * 内置注解按 Registry schema 绑定实参；自定义注解仍走普通构造器候选。
+     * 这里与 callable mapping 共享所有权，checker 只读已发布的参数视图。
+     */
+    fun mapAnnotationArguments(
+        annotation: org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall,
+        schema: org.cangnova.cangjie.annotations.AnnotationArgumentSchema,
+        parameters: List<CfirValueParameter>,
+    ): org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList {
+        val mapping = linkedMapOf<CfirExpression, CfirValueParameter>()
+        for (argument in annotation.argumentList.arguments) {
+            val name = (argument as? CfirNamedArgumentExpression)?.argumentName?.asString()
+            val parameterSchema = when {
+                name != null -> schema.parameters.firstOrNull { it.name == name }
+                    ?: schema.parameters.singleOrNull().takeIf { schema.acceptsArbitrarySingleName }
+                else -> schema.positionalParameter
+            }
+            val parameter = parameterSchema?.let { item -> parameters.single { it.name.asString() == item.name } }
+            if (parameter != null) mapping[argument] = parameter
+        }
+        return org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList(annotation.argumentList, mapping)
+    }
     /**
      * 对候选执行实参到形参的映射。
      */
@@ -137,6 +161,50 @@ object CfirMapArguments : ResolutionStage() {
         val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
         val callShape = candidate.createCallShape(argumentInfos)
+
+        // CPointer/CFunc 的 builtin call 在官方前端不是普通 callable arity：
+        // pointer 的多参错误来自 DesugarPointerCall，CFunc 的零参/多参错误来自
+        // SynCFuncCall。两者都必须在参数映射 owner 处保留专用诊断和 source。
+        when {
+            candidate.isBuiltinPointerConstructorCandidate() && argumentAtoms.size > 1 -> {
+                candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+                candidate.numDefaults = 0
+                candidate.initializeArgumentMappingOutcome(
+                    createArgumentMappingOutcome(
+                        callShape = callShape,
+                        parameters = parameters,
+                        variadicParameter = null,
+                        mappedArgumentCount = 0,
+                        matchedNamedArgumentCount = 0,
+                        hasMappingFailure = true,
+                    ),
+                )
+                sink.reportDiagnostic(BuiltinPointerConstructorTooManyArguments(candidate.callInfo.callSite.source as org.cangnova.cangjie.source.AbstractCjSourceElement))
+                return
+            }
+
+            candidate.isBuiltinCFuncConstructorCandidate() && argumentAtoms.size != 1 -> {
+                candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+                candidate.numDefaults = 0
+                candidate.initializeArgumentMappingOutcome(
+                    createArgumentMappingOutcome(
+                        callShape = callShape,
+                        parameters = parameters,
+                        variadicParameter = null,
+                        mappedArgumentCount = 0,
+                        matchedNamedArgumentCount = 0,
+                        hasMappingFailure = true,
+                    ),
+                )
+                val calleeSource = (candidate.callInfo.callSite as? CfirFunctionCall)
+                    ?.calleeReference
+                    ?.source as? org.cangnova.cangjie.source.AbstractCjSourceElement
+                    ?: candidate.callInfo.callSite.source as? org.cangnova.cangjie.source.AbstractCjSourceElement
+                    ?: callShape.arityDiagnosticSource
+                sink.reportDiagnostic(BuiltinCFuncConstructorTooManyArguments(calleeSource))
+                return
+            }
+        }
         val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
         val variadicShape = candidate.cangjieVariadicCallShapeOrNull(parameters, positionalArgumentCount)
         if (variadicShape != null) {
@@ -379,6 +447,18 @@ object CfirMapArguments : ResolutionStage() {
 
                 val parameter = parameters.firstOrNull { it.name == argumentName }
                 if (parameter == null) {
+                    if (candidate.isBuiltinPointerConstructorCandidate() || candidate.isBuiltinCFuncConstructorCandidate()) {
+                        val syntheticParameter = parameters.singleOrNull()
+                        if (syntheticParameter != null) {
+                            // The synthetic parameter is deliberately unnamed in
+                            // the public builtin signature. Keep it mapped so the
+                            // builtin checker can apply its official type/order
+                            // rules and report the unknown name at that owner.
+                            usedParameters.add(syntheticParameter)
+                            argumentMapping[argument.atom] = syntheticParameter
+                            continue
+                        }
+                    }
                     diagnostics += NamedParameterNotFound(
                         argument = argument.atom.expression,
                         source = argument.nameSourceOrFail(),
@@ -387,7 +467,9 @@ object CfirMapArguments : ResolutionStage() {
                     hasArgumentMappingError = true
                     break
                 }
-                if (!parameter.isNamed) {
+                if (!parameter.isNamed && !candidate.isBuiltinPointerConstructorCandidate() &&
+                    !candidate.isBuiltinCFuncConstructorCandidate()
+                ) {
                     diagnostics += NamedArgumentsNotAllowed(
                         argument = argument.atom.expression,
                         source = argument.nameSourceOrFail(),
@@ -395,6 +477,12 @@ object CfirMapArguments : ResolutionStage() {
                     )
                     hasArgumentMappingError = true
                     break
+                }
+                if (!parameter.isNamed) {
+                    // Builtin synthetic parameters are deliberately not named in the
+                    // public signature. Keep the value mapped so ArgumentCheckingProcessor
+                    // can enforce the official builtin type/order rules and recover the
+                    // source named-argument wrapper after descending into its value.
                 }
                 if (!usedParameters.add(parameter)) {
                     diagnostics += ArgumentPassedTwice(
@@ -691,6 +779,18 @@ private fun Candidate.isBuiltinVArrayConstructorCandidate(): Boolean {
     if (function.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
     if ((callInfo.callSite as? CfirFunctionCall)?.varraySizeLiteral != null) return true
     return function.returnTypeRef.coneType is ConeVArrayType
+}
+
+/** 判断候选是否为 CPointer 内建构造器。 */
+private fun Candidate.isBuiltinPointerConstructorCandidate(): Boolean {
+    val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
+    return function.origin == CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor
+}
+
+/** 判断候选是否为 CFunc wrapper 内建构造器。 */
+private fun Candidate.isBuiltinCFuncConstructorCandidate(): Boolean {
+    val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
+    return function.origin == CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor
 }
 
 /**

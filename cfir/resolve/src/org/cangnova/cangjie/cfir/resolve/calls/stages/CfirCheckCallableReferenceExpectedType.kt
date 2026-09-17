@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
@@ -20,6 +21,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CallableReferenceResolutionResult
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -109,6 +111,8 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         function: CfirFunction,
         calculatedReturnType: ConeCangJieType,
     ): ConeCangJieType {
+        /* STATUS owns the declaration ABI snapshot used by callable-reference typing. */
+        function.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val parameterTypes = function.valueParameters.map { parameter ->
             val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
                 ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type"))
@@ -119,7 +123,7 @@ object CfirCheckCallableReferenceExpectedType : ResolutionStage() {
         return ConeFunctionType(
             parameterTypes = parameterTypes,
             returnType = returnType,
-            isCFunc = function.interopInfo?.isC == true,
+            isCFunc = function.interopInfo?.resolvedAbi?.isCFunction == true,
         )
     }
 

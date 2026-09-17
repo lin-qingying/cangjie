@@ -3,6 +3,9 @@ package org.cangnova.cangjie.cfir.resolve.inference
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionContext
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
@@ -236,6 +239,21 @@ private class CalculatorForNestedCall(
             return
         }
 
+        // 这些仓颉结构类型没有名义 typeArguments，必须按真实元素位置收集方向。
+        when (type) {
+            is ConePointerType -> {
+                collectRequiredDirectionsForVariables(type.pointeeType, PositionVariance.INV, fixationDirectionsCollector)
+                return
+            }
+            is ConeVArrayType -> {
+                collectRequiredDirectionsForVariables(type.elementType, PositionVariance.INV, fixationDirectionsCollector)
+                return
+            }
+            is ConeTupleType -> {
+                type.elementTypes.forEach { collectRequiredDirectionsForVariables(it, outerVariance, fixationDirectionsCollector) }
+                return
+            }
+        }
         val typeArgumentsCount = type.argumentsCount()
         val typeConstructor = type.typeConstructor()
         if (typeArgumentsCount > 0 && !type.isError() && typeArgumentsCount == typeConstructor.parametersCount()) {

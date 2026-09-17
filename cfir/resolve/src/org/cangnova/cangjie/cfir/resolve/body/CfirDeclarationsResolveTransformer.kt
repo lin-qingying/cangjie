@@ -91,6 +91,17 @@ open class CfirDeclarationsResolveTransformer(
         return transformer.transformDeclarationContent(declaration, data)
     }
 
+    /**
+     * 专用声明 content 路径统一解析注解并发布语义快照。
+     * generic child 路径由 dispatcher 发布；这里只处理自行遍历签名/初始化器的声明，
+     * 并按实际完整解析模式执行，覆盖隐式类型推断过程中已完整解析的局部声明。
+     */
+    protected fun resolveDeclarationAnnotations(declaration: CfirDeclaration, data: ResolutionMode) {
+        if (transformer.implicitTypeOnly) return
+        declaration.transformAnnotations(transformer, data)
+        declaration.publishAnnotationInfo()
+    }
+
     // ── File ───────────────────────────────────────────────────────────────
 
     /**
@@ -329,7 +340,7 @@ protected open fun transformFunctionContent(
                 function
                     .transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
                     .transformValueParameters(transformer, ResolutionMode.ContextIndependent)
-                    .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+                resolveDeclarationAnnotations(function, ResolutionMode.ContextIndependent)
             }
 
             val body = function.body
@@ -439,8 +450,8 @@ dataFlowAnalyzer.enterFunction(constructor)
         try {
             context.forConstructor(constructor) {
                 constructor.transformTypeParameters(transformer, data)
-                    .transformAnnotations(transformer, data)
                     .transformReturnTypeRef(transformer, data)
+                resolveDeclarationAnnotations(constructor, data)
 
                 context.forConstructorParameters(constructor, owningClass, components) {
                     constructor.transformValueParameters(transformer, data)
@@ -508,6 +519,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             if (enumConstructor.typeParameters.isNotEmpty()) {
                 context.addNonLocalScope(CfirTypeParameterScopeImpl(enumConstructor.typeParameters))
             }
+            resolveDeclarationAnnotations(enumConstructor, data)
 
             enumConstructor.valueParameters.forEach { parameter ->
                 parameter.replaceReturnTypeRef(
@@ -553,6 +565,9 @@ dataFlowAnalyzer.enterFunction(constructor)
         data: ResolutionMode,
     ): CfirProperty {
         if (property.bodyResolveState >= CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED) {
+            context.withProperty(property) {
+                resolveDeclarationAnnotations(property, data)
+            }
             bumpPhase(property)
             return property
         }
@@ -571,7 +586,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             )
 
             if (shouldResolveEverything) {
-                property.transformAnnotations(transformer, data)
+                resolveDeclarationAnnotations(property, data)
                 property.transformTypeParameters(transformer, ResolutionMode.ContextIndependent)
             }
 
@@ -653,6 +668,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         // 这样 exit 节点才是常量与初始化流事实的唯一写入点。
         dataFlowAnalyzer.enterVariableDeclaration(variable)
         context.withContainer(variable) {
+            resolveDeclarationAnnotations(variable, data)
             context.withVariableInitializer(variable) {
                 variable.initializer?.let { initializer ->
                     val expectedInitializerType = (explicitTypeRef as? CfirResolvedTypeRef)?.coneType
@@ -773,6 +789,10 @@ dataFlowAnalyzer.enterFunction(constructor)
             resolveExplicitTypeRefIfNeeded(fieldVariable.returnTypeRef, fieldVariable.typeParameters),
         )
 
+        context.withContainer(fieldVariable) {
+            resolveDeclarationAnnotations(fieldVariable, data)
+        }
+
         val explicitTypeRef = fieldVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
             ResolutionMode.WithExpectedType(explicitTypeRef)
@@ -828,6 +848,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         dataFlowAnalyzer.enterVariableDeclaration(fieldVariable)
         try {
             context.withContainer(fieldVariable) {
+                resolveDeclarationAnnotations(fieldVariable, data)
                 context.withVariableInitializer(fieldVariable) {
                     fieldVariable.initializer?.let { initializer ->
                         resolveFieldVariableInitializer(fieldVariable, explicitTypeRef, initializerMode, initializer)
@@ -888,6 +909,7 @@ dataFlowAnalyzer.enterFunction(constructor)
         declaration: CfirDeclaration,
         data: ResolutionMode,
     ): CfirDeclaration {
+        resolveDeclarationAnnotations(declaration, data)
         bumpPhase(declaration)
         return declaration
     }
@@ -914,6 +936,9 @@ dataFlowAnalyzer.enterFunction(constructor)
         patternBindingVariable.replaceReturnTypeRef(
             resolveExplicitTypeRefIfNeeded(patternBindingVariable.returnTypeRef, patternBindingVariable.typeParameters),
         )
+        context.withContainer(patternBindingVariable) {
+            resolveDeclarationAnnotations(patternBindingVariable, data)
+        }
         bumpPhase(patternBindingVariable)
         return patternBindingVariable
     }
@@ -938,6 +963,9 @@ dataFlowAnalyzer.enterFunction(constructor)
         patternVariable.replaceReturnTypeRef(
             resolveExplicitTypeRefIfNeeded(patternVariable.returnTypeRef, patternVariable.typeParameters),
         )
+        context.withContainer(patternVariable) {
+            resolveDeclarationAnnotations(patternVariable, data)
+        }
 
         val explicitTypeRef = patternVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {

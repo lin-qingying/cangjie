@@ -80,6 +80,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
@@ -224,6 +225,8 @@ class CfirCallCompletionResultsWriterTransformer(
         declaration: CfirFunction,
         candidate: Candidate,
     ): ConeCangJieType {
+        /* 函数值 ABI 标签由声明 STATUS owner 发布，completion writer 只能读取该快照。 */
+        declaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
         val parameterTypes = declaration.valueParameters.map { parameter ->
             val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
                 ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type"))
@@ -234,7 +237,11 @@ class CfirCallCompletionResultsWriterTransformer(
         val returnType = finallySubstituteOrSelf(
             candidate.substitutedReturnType(calculatedReturnType),
         ).approximateThisTypeForDeclaration()
-        return ConeFunctionType(parameterTypes, returnType)
+        return ConeFunctionType(
+            parameterTypes = parameterTypes,
+            returnType = returnType,
+            isCFunc = declaration.interopInfo?.resolvedAbi?.isCFunction == true,
+        )
     }
 
     /**
@@ -343,6 +350,32 @@ class CfirCallCompletionResultsWriterTransformer(
     /**
      * 写回函数调用的候选解析结果、实参列表、结果类型和非致命诊断。
      */
+    /** 注解的参数列表只完成一次；解析后映射与语法实参分别保存。 */
+    override fun transformAnnotationCall(annotationCall: CfirAnnotationCall, data: ExpectedArgumentType?): CfirAnnotationCall {
+        val reference = annotationCall.calleeReference as? CfirNamedReferenceWithCandidate ?: return annotationCall
+        val candidate = reference.candidate
+        val original = annotationCall.argumentList
+        val allArguments = reference.computeAllArguments(original)
+        val mappingFailed = candidate.argumentMappingOutcome?.hasMappingFailure == true
+        val (regularMapping, allArgsMapping) = if (mappingFailed) {
+            ResultingArgumentsMapping(linkedMapOf(), allArguments.associateWithTo(LinkedHashMap()) { null })
+        } else candidate.handleVarargsAndReturnResultingArgumentsMapping(allArguments, annotationCall.source)
+        val expected = candidate.createArgumentsMapping(forErrorReference = reference.isError, contextualExpectedType = null)
+        annotationCall.replaceArgumentList(rewriteArgumentList(
+            candidate = candidate,
+            originalArgumentList = original,
+            expectedArgumentsTypeMapping = expected,
+            regularMapping = regularMapping,
+            allArgsMapping = allArgsMapping,
+            forErrorReference = reference.isError,
+        ))
+        annotationCall.replaceCalleeReference(reference.toResolvedReference())
+        // The completion writer only materializes the resolved argument list. The
+        // declaration-owned annotation resolver publishes mapping/view/state after
+        // this transform returns, so ordinary call completion remains annotation-agnostic.
+        return annotationCall
+    }
+
     override fun transformFunctionCall(functionCall: CfirFunctionCall, data: ExpectedArgumentType?): CfirExpression {
         data?.argumentReplacements?.get(functionCall)?.let { replacement ->
             return replacement.transformSingle(this, data)
@@ -367,6 +400,12 @@ class CfirCallCompletionResultsWriterTransformer(
             .payloadEnumConstructorInferenceDiagnostic(completedResultType)
         if (enumConstructorInferenceDiagnostic != null) {
             result.replaceCalleeReference(calleeReference.toErrorReference(enumConstructorInferenceDiagnostic))
+        }
+        val genericInferenceDiagnostic = completedResultType
+            .takeIf { candidate.isBuiltinPointerConstructorWithoutSourceTypeArguments() }
+            ?.findGenericInferenceDiagnostic()
+        if (genericInferenceDiagnostic != null && !calleeReference.isError) {
+            result.replaceCalleeReference(calleeReference.toErrorReference(genericInferenceDiagnostic))
         }
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
         val argumentMappingFailed = candidate.argumentMappingOutcome?.hasMappingFailure == true
@@ -408,6 +447,8 @@ class CfirCallCompletionResultsWriterTransformer(
                 invalidChildType.diagnostic.asPropagatedCallErrorType(completedResultType)
             enumConstructorInferenceDiagnostic != null ->
                 enumConstructorInferenceDiagnostic.asPropagatedCallErrorType(completedResultType)
+            genericInferenceDiagnostic != null ->
+                genericInferenceDiagnostic.asPropagatedCallErrorType(completedResultType)
             else -> completedResultType
         }
         recordExpectedTypeRootMismatch(
@@ -544,7 +585,29 @@ class CfirCallCompletionResultsWriterTransformer(
     /** 判断完成类型是否仍保留未完成的推断变量。 */
     private fun ConeCangJieType.containsAnyTypeVariable(): Boolean = when (this) {
         is ConeTypeVariableType -> true
-        else -> typeArguments.any { it.type.containsAnyTypeVariable() }
+        is ConeLookupTagBasedType -> typeArguments.any { it.type.containsAnyTypeVariable() }
+        is ConeFunctionType -> parameterTypes.any { it.containsAnyTypeVariable() } ||
+                returnType.containsAnyTypeVariable()
+        is ConeTupleType -> elementTypes.any { it.containsAnyTypeVariable() }
+        is ConeVArrayType -> elementType.containsAnyTypeVariable()
+        is ConePointerType -> pointeeType.containsAnyTypeVariable()
+        is ConeTypeAliasType -> typeArguments.any { it.type.containsAnyTypeVariable() } ||
+                expandedType?.containsAnyTypeVariable() == true
+        is ConeIntersectionType -> intersectedTypes.any { it.containsAnyTypeVariable() } ||
+                upperBoundForApproximation?.containsAnyTypeVariable() == true
+        is ConeUnionType -> unionTypes.any { it.containsAnyTypeVariable() }
+        else -> false
+    }
+
+    /** 只为隐式 CPointer 构造传播 pointee 未推断诊断，显式类型实参不能走该路径。 */
+    private fun Candidate.isBuiltinPointerConstructorWithoutSourceTypeArguments(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (declaration.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+        return (callInfo.callSite as? CfirQualifiedAccessExpression)
+            ?.typeArguments
+            ?.none { typeArgument -> typeArgument.source != null }
+            ?: true
     }
 
     /** 从完成类型树中查找 owner 泛型无法推断诊断。 */
@@ -558,6 +621,9 @@ class CfirCallCompletionResultsWriterTransformer(
                     is ConeUnreportedDuplicateDiagnostic -> current.original
                     else -> current
                 }
+                if (type.isUninferredParameter) {
+                    return ConeUnableToInferGenericFuncError()
+                }
                 if (originalDiagnostic is ConeCannotInferGenericFunctionTypeParameterType ||
                     originalDiagnostic is ConeCannotInferTypeParameterType
                 ) {
@@ -565,8 +631,31 @@ class CfirCallCompletionResultsWriterTransformer(
                 }
                 type.delegatedType?.let(::visit)?.let { return it }
             }
-            for (argument in type.typeArguments) {
-                visit(argument.type)?.let { return it }
+            when (type) {
+                is ConeLookupTagBasedType -> type.typeArguments.forEach { argument ->
+                    visit(argument.type)?.let { return it }
+                }
+
+                is ConeFunctionType -> {
+                    type.parameterTypes.forEach { parameterType -> visit(parameterType)?.let { return it } }
+                    visit(type.returnType)?.let { return it }
+                }
+
+                is ConeTupleType -> type.elementTypes.forEach { elementType -> visit(elementType)?.let { return it } }
+                is ConeVArrayType -> visit(type.elementType)?.let { return it }
+                is ConePointerType -> visit(type.pointeeType)?.let { return it }
+                is ConeTypeAliasType -> {
+                    type.typeArguments.forEach { argument -> visit(argument.type)?.let { return it } }
+                    type.expandedType?.let { visit(it)?.let { return it } }
+                }
+
+                is ConeIntersectionType -> {
+                    type.intersectedTypes.forEach { intersectedType -> visit(intersectedType)?.let { return it } }
+                    type.upperBoundForApproximation?.let { visit(it)?.let { return it } }
+                }
+
+                is ConeUnionType -> type.unionTypes.forEach { unionType -> visit(unionType)?.let { return it } }
+                else -> Unit
             }
             return null
         }

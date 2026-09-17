@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -179,6 +180,8 @@ internal class CfirBuiltInCallResolver(
                         functionCall = functionCall,
                         name = classifier.name,
                         resolutionMode = resolutionMode,
+                        functionTypeOverride = typeAliasSymbol.cfir.expandedTypeRef.coneTypeOrNull
+                            ?.fullyExpandedType(session) as? ConeFunctionType,
                     )
 
                 else -> Unit
@@ -356,10 +359,11 @@ internal class CfirBuiltInCallResolver(
         functionCall: CfirFunctionCall,
         name: Name,
         resolutionMode: ResolutionMode,
+        functionTypeOverride: ConeFunctionType? = null,
     ): CfirBuiltInCallResolution? {
-        val functionType = functionCall.typeArguments.singleOrNull()
+        val functionType = functionTypeOverride ?: functionCall.typeArguments.singleOrNull()
             ?.coneTypeOrNull
-            ?.fullyExpandedType(session) as? org.cangnova.cangjie.cfir.types.ConeFunctionType
+            ?.fullyExpandedType(session) as? ConeFunctionType
             ?: return null
         val callInfo = createBuiltinCallInfo(
             functionCall = functionCall,

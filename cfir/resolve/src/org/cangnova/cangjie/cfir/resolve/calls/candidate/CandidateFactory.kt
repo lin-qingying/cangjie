@@ -108,6 +108,8 @@ internal data class BuiltinConstructorTypeParameter(
      * 可选的原始类型参数符号，用于把已声明类型代入合成参数。
      */
     val originalSymbol: CfirTypeParameterSymbol? = null,
+    /** 合成签名自身要求的上界，与 typealias 的原始约束共同应用。 */
+    val additionalBounds: List<ConeCangJieType> = emptyList(),
 )
 
 /**
@@ -324,6 +326,7 @@ class CandidateFactory(
     fun createCallableValueInvokeCandidate(
         callInfo: CallInfo,
         callableValueCandidate: Candidate,
+        callableValueReceiver: CfirExpression? = null,
     ): Candidate {
         val variable = (callableValueCandidate.symbol as? CfirVariableSymbol<*>)?.cfir
         val freshValueParameterInvokeShape = buildFreshValueParameterInvokeShape(
@@ -333,7 +336,11 @@ class CandidateFactory(
         )
         val candidate = Candidate(
             symbol = callableValueCandidate.symbol,
-            dispatchReceiver = callableValueCandidate.dispatchReceiver,
+            // 隐式 invoke 的最终调用没有源码显式 receiver；仍需把函数值本身
+            // 保留为 dispatch receiver，供 completion、checker 和诊断消费其完整
+            // ConeFunctionType（尤其是 CFunc ABI 标记）。
+            dispatchReceiver = callableValueCandidate.dispatchReceiver
+                ?: callableValueReceiver?.let(ConeResolutionAtom::createRawAtom),
             givenExtensionReceiver = callableValueCandidate.givenExtensionReceiver,
             explicitReceiverKind = callableValueCandidate.explicitReceiverKind,
             constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
@@ -765,7 +772,12 @@ class CandidateFactory(
         val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
         val typeParameters = buildSyntheticTypeParameters(
             ownerSymbol = symbol,
-            parameters = target.typeParameters,
+            parameters = target.typeParameters.map { parameter ->
+                if (target.pointeeType == null ||
+                    (target.pointeeType as? ConeTypeParameterType)?.lookupTag == parameter.originalSymbol?.toLookupTag()
+                ) parameter.copy(additionalBounds = listOf(ConeClassLikeType(StdlibClassIds.CType.toLookupTag(), isInterface = true)))
+                else parameter
+            },
             source = callInfo.callSite.source,
             origin = CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor,
         )
@@ -1046,17 +1058,31 @@ class CandidateFactory(
         parameters: List<BuiltinConstructorTypeParameter>,
         source: CjSourceElement?,
         origin: CfirDeclarationOrigin.Synthetic,
-    ): List<CfirTypeParameter> = parameters.map { parameter ->
-        buildTypeParameter {
-            this.source = source
-            moduleData = context.session.moduleData
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE
-            this.origin = origin
-            attributes = CfirDeclarationAttributes.EMPTY
-            containingDeclarationSymbol = ownerSymbol
-            symbol = CfirTypeParameterSymbol()
-            name = parameter.name
-            addDefaultBoundIfNecessary()
+    ): List<CfirTypeParameter> {
+        val symbols = parameters.map { CfirTypeParameterSymbol() }
+        val substitution: Map<TypeConstructorMarker, ConeCangJieType> = parameters.zip(symbols).mapNotNull { (parameter, symbol) ->
+            parameter.originalSymbol?.toLookupTag()?.let { it to ConeTypeParameterTypeImpl(symbol.toLookupTag()) }
+        }.toMap()
+        val substitutor = CfirTypeSubstitutorByMap(substitution)
+        return parameters.mapIndexed { index, parameter ->
+            buildTypeParameter {
+                this.source = source
+                moduleData = context.session.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                this.origin = origin
+                attributes = CfirDeclarationAttributes.EMPTY
+                containingDeclarationSymbol = ownerSymbol
+                symbol = symbols[index]
+                name = parameter.name
+                // 先建立全部 fresh symbols，再同时替换跨参数上界，避免别名丢失 where 约束。
+                parameter.originalSymbol?.cfir?.bounds?.forEach { bound ->
+                    bounds += buildResolvedTypeRef { this.source = bound.source; coneType = substitutor.substituteOrSelf(bound.coneType) }
+                }
+                parameter.additionalBounds.forEach { bound ->
+                    bounds += buildResolvedTypeRef { this.source = source; coneType = bound }
+                }
+                addDefaultBoundIfNecessary()
+            }
         }
     }
 

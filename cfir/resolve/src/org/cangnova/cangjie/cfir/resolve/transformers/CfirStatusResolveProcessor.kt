@@ -24,7 +24,7 @@
 
 package org.cangnova.cangjie.cfir.resolve.transformers
 
-import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
@@ -359,7 +359,7 @@ open class AbstractCfirStatusResolveTransformer(
             action()
             if (target is CfirMemberDeclaration) {
                 target.publishResolvedStatusIfNeeded()
-                target.publishInteropInfoIfNeeded()
+                target.publishInteropInfo(session)
             }
             target.replaceResolvePhase(CfirResolvePhase.STATUS)
             statusComputationSession.endComputing(target)
@@ -805,6 +805,7 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             isMut = currentStatus.isMut
             isUnsafe = currentStatus.isUnsafe
             isForeign = currentStatus.isForeign
+            isC = currentStatus.isC
             isCommon = currentStatus.isCommon
             isSpecific = currentStatus.isSpecific
             isRedef = currentStatus.isRedef
@@ -824,103 +825,6 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
  * 外部名称和当前 ABI 结果集中保存到 [CfirInteropInfo]。该快照由后续类型、checker、
  * Analysis API 和 backend adapter 消费，后续阶段不再从 source 文本重新猜测。
  */
-private fun CfirMemberDeclaration.publishInteropInfoIfNeeded() {
-    if (interopInfo != null) return
-
-    val annotations = annotations.filterIsInstance<CfirAnnotationCall>()
-    val explicitC = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.C }
-    val javaMirror = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_MIRROR }
-    val javaImpl = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_IMPL }
-    val javaHasDefault = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.JAVA_HAS_DEFAULT }
-    val objcMirror = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_MIRROR }
-    val objcImpl = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_IMPL }
-    val objcInit = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_INIT }
-    val objcOptional = annotations.any { it.annotationKindOrRawName() == CangjieAnnotationKind.OBJ_C_OPTIONAL }
-    val callingConvention = annotations
-        .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.CALLING_CONV }
-        ?.firstStringArgument()
-        ?.let { value ->
-            when (value) {
-                CangjieCallingConvention.CDECL.name -> CangjieCallingConvention.CDECL
-                CangjieCallingConvention.STDCALL.name -> CangjieCallingConvention.STDCALL
-                else -> null
-            }
-        }
-
-    val abiRequest = CfirAbiRequest(
-        isForeign = status.isForeign,
-        hasExplicitC = explicitC,
-        callingConvention = callingConvention,
-    )
-    val languageAbi = session.cfirAbiPolicy.resolve(abiRequest)
-    val resolvedAbi = when {
-        javaMirror || javaImpl -> languageAbi.copy(kind = CfirAbiKind.JAVA, isCFunction = false)
-        objcMirror || objcImpl -> languageAbi.copy(kind = CfirAbiKind.OBJC, isCFunction = false)
-        else -> languageAbi
-    }
-
-    interopInfo = CfirInteropInfo(
-        abiRequest = abiRequest,
-        resolvedAbi = resolvedAbi,
-        foreignName = annotations
-            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_NAME }
-            ?.firstStringArgument(),
-        foreignGetterName = annotations
-            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_GETTER_NAME }
-            ?.firstStringArgument(),
-        foreignSetterName = annotations
-            .firstOrNull { it.annotationKindOrRawName() == CangjieAnnotationKind.FOREIGN_SETTER_NAME }
-            ?.firstStringArgument(),
-        java = if (javaMirror || javaImpl || javaHasDefault) {
-            CfirJavaInteropInfo(
-                isMirror = javaMirror,
-                isImpl = javaImpl,
-                hasDefault = javaHasDefault,
-            )
-        } else {
-            null
-        },
-        objc = if (objcMirror || objcImpl || objcInit || objcOptional) {
-            CfirObjCInteropInfo(
-                isMirror = objcMirror,
-                isImpl = objcImpl,
-                isInit = objcInit,
-                isOptional = objcOptional,
-            )
-        } else {
-            null
-        },
-    )
-
-    // STATUS 只发布已经由现有 mapping 解析完成的 annotation 参数视图。
-    // 没有 resolved mapping 时保留 TYPE_RESOLVED/UNRESOLVED，不能把 raw
-    // 参数表伪装成语义完成结果。
-    annotations.forEach { annotation ->
-        if (annotation.annotationResolveState == CfirAnnotationResolveState.ERROR) return@forEach
-        val resolvedArguments = annotation.argumentList as? CfirResolvedArgumentList ?: return@forEach
-        annotation.replaceArgumentView(resolvedArguments.toAnnotationArgumentView())
-        annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.SEMANTIC_RESOLVED)
-    }
-}
-
-/**
- * 读取已经由 annotation owner 发布的 builtin kind。
- *
- * STATUS 不得从 callee 短名或 source 文本推断 builtin 身份：短名可能来自
- * 用户自定义 annotation，也可能与标准库 annotation 同名。raw annotation
- * 在此阶段尚未完成身份解析时保持未知，由其声明 owner 在正确阶段重新发布
- * interop snapshot，而不是静默降级为名称匹配。
- */
-private fun CfirAnnotationCall.annotationKindOrRawName(): CangjieAnnotationKind? {
-    return annotationKind
-}
-
-/** 读取 annotation 的第一个未命名字符串参数。 */
-private fun CfirAnnotationCall.firstStringArgument(): String? {
-    val argument = argumentList.arguments.firstOrNull() ?: return null
-    val expression = (argument as? CfirNamedArgumentExpression)?.expression ?: argument
-    return (expression as? CfirLiteralExpression)?.value as? String
-}
 
 /**
  * 仓颉 STATUS 主干对位 Kotlin `FirStatusResolver` 的最小同构实现。
@@ -1191,6 +1095,8 @@ class CfirStatusResolver(
     ): CfirResolvedDeclarationStatus {
         if (status is CfirResolvedDeclarationStatus) return status
 
+        declaration.publishInteropInfo(session)
+
         val visibility = if (status.isVisibilityExplicit) {
             status.visibility
         } else {
@@ -1231,6 +1137,7 @@ class CfirStatusResolver(
             isMut = status.isMut
             isUnsafe = status.isUnsafe
             isForeign = status.isForeign
+            isC = declaration.interopInfo?.isC == true
             isCommon = status.isCommon
             isSpecific = status.isSpecific
             isRedef = status.isRedef

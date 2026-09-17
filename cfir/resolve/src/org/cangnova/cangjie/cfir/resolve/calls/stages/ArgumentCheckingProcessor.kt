@@ -8,10 +8,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.BuiltinCFuncConstructorArgumentType
+import org.cangnova.cangjie.cfir.diagnostic.BuiltinCStringConstructorArgumentType
+import org.cangnova.cangjie.cfir.diagnostic.BuiltinPointerConstructorArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.UnsuccessfulCallableReferenceArgument
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -20,6 +24,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
@@ -72,6 +77,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
@@ -143,6 +149,13 @@ internal object ArgumentCheckingProcessor {
          * 当该实参来自 lambda 返回表达式时，对应的匿名函数。
          */
         val anonymousFunctionIfReturnExpression: CfirAnonymousFunction? = null,
+        /**
+         * 当前 atom 是否属于调用参数中的结构化 `inout` 实参。
+         *
+         * 该标记在递归进入包装节点的子 atom 后仍需保留，否则最终约束位置只看到
+         * 内层变量访问，诊断映射就会丢失 `inout` 语义。
+         */
+        val isInoutArgument: Boolean = false,
     ) : SessionHolder {
         /**
          * 当前上下文所属会话。
@@ -182,6 +195,7 @@ internal object ArgumentCheckingProcessor {
         isReceiver: Boolean,
         isDispatch: Boolean,
         anonymousFunctionIfReturnExpression: CfirAnonymousFunction? = null,
+        isInoutArgument: Boolean = false,
     ) {
         ArgumentContext(
             candidate = candidate,
@@ -192,6 +206,7 @@ internal object ArgumentCheckingProcessor {
             isReceiver = isReceiver,
             isDispatch = isDispatch,
             anonymousFunctionIfReturnExpression = anonymousFunctionIfReturnExpression,
+            isInoutArgument = isInoutArgument,
         ).resolveArgumentExpression(atom)
     }
 
@@ -472,6 +487,21 @@ internal object ArgumentCheckingProcessor {
         val resolutionSnapshot = CfirResolutionSnapshot.capture(functionCall)
         val resolvedProbe = try {
             context.bodyResolveContext.dataFlowAnalyzerContext.withIsolatedContext {
+                fun completeBuiltinPointerProbeIfApplicable(
+                    selected: Pair<Candidate, CfirFunctionCall>,
+                    resolutionMode: ResolutionMode,
+                ): Pair<Candidate, CfirFunctionCall> {
+                    val (candidate, call) = selected
+                    val declaration = candidate.symbol.takeIf { it.isBound }?.cfir as? CfirFunction
+                    if (declaration?.origin != CfirDeclarationOrigin.Synthetic.BuiltinPointerConstructor) {
+                        return selected
+                    }
+                    val expectedType = (resolutionMode as? ResolutionMode.WithExpectedType)?.expectedType
+                        ?: return selected
+                    if (expectedType.hasUncertainExpectedTypeCompatibilityShape()) return selected
+                    return candidate to context.bodyResolveComponents.callCompleter.completeCall(call, resolutionMode)
+                }
+
                 fun resolveProbe(resolutionMode: ResolutionMode): Pair<Candidate, CfirFunctionCall>? {
                     val isolatedCall = buildFunctionCallCopy(functionCall) {
                         calleeReference = buildNamedReference {
@@ -492,7 +522,7 @@ internal object ArgumentCheckingProcessor {
                             functionCall = isolatedCall,
                             resolutionMode = resolutionMode,
                             discoveries = precollectedDiscoveries,
-                        )?.let { return it }
+                        )?.let { return completeBuiltinPointerProbeIfApplicable(it, resolutionMode) }
                     }
                     val resolvedCall = context.bodyResolveComponents.callResolver.resolveCallAndSelectCandidate(
                         isolatedCall,
@@ -500,7 +530,10 @@ internal object ArgumentCheckingProcessor {
                     )
                     val resolvedReference = resolvedCall.calleeReference as? CfirNamedReferenceWithCandidate
                         ?: return null
-                    return resolvedReference.candidate to resolvedCall
+                    return completeBuiltinPointerProbeIfApplicable(
+                        resolvedReference.candidate to resolvedCall,
+                        resolutionMode,
+                    )
                 }
 
                 val contextIndependentProbe = if (currentSymbol == null) {
@@ -589,17 +622,7 @@ internal object ArgumentCheckingProcessor {
     private fun Candidate.ownsNotFixedTypeVariableIn(type: ConeCangJieType): Boolean {
         val notFixedTypeVariables = system.asReadOnlyStorage().notFixedTypeVariables
 
-        fun containsOwnedVariable(current: ConeCangJieType): Boolean = when (current) {
-            is ConeTypeVariableType -> current.typeConstructor in notFixedTypeVariables
-            is ConeLookupTagBasedType -> current.typeArguments.any { containsOwnedVariable(it.type) }
-            is ConeFunctionType -> current.parameterTypes.any(::containsOwnedVariable) ||
-                    containsOwnedVariable(current.returnType)
-            is ConeTupleType -> current.elementTypes.any(::containsOwnedVariable)
-            is ConeVArrayType -> containsOwnedVariable(current.elementType)
-            else -> false
-        }
-
-        return containsOwnedVariable(type)
+        return type.contains { it is ConeTypeVariableType && it.typeConstructor in notFixedTypeVariables }
     }
 
     /** 取得候选作为实参表达式时的类型；函数值引用使用完整函数类型而不是返回值类型。 */
@@ -807,6 +830,65 @@ internal object ArgumentCheckingProcessor {
             return
         }
 
+        // These constructors are lowered from official builtin expressions, not
+        // ordinary one-parameter functions. Preserve the C++ check order and
+        // diagnostic owner before generic subtype checking can erase it.
+        if (candidate.isBuiltinPointerConstructorCandidate()) {
+            if (argumentType is ConePointerType || argumentType is ConeFunctionType && argumentType.isCFunc) {
+                builtinUnknownNamedArgument(expression)?.let(::reportDiagnostic)
+                return
+            }
+            val callSource = candidate.callInfo.callSite.source as? org.cangnova.cangjie.source.AbstractCjSourceElement
+                ?: expression.source as? org.cangnova.cangjie.source.AbstractCjSourceElement
+                ?: return
+            reportDiagnostic(BuiltinPointerConstructorArgumentType(callSource))
+            return
+        }
+        if (candidate.isBuiltinCFuncConstructorCandidate()) {
+            val namedArgument = namedArgumentForBuiltin(expression)
+            if (argumentType is ConePointerType) {
+                namedArgument?.let { reportDiagnostic(NamedParameterNotFound(it, it.nameSource ?: return@let, it.argumentName)) }
+                return
+            }
+            reportDiagnostic(BuiltinCFuncConstructorArgumentType(namedArgument ?: expression))
+            namedArgument?.let { reportDiagnostic(NamedParameterNotFound(it, it.nameSource ?: return@let, it.argumentName)) }
+            return
+        }
+        if (candidate.isBuiltinCStringConstructorCandidate()) {
+            val expectedPointer = expectedType.fullyExpandedType(session) as? ConePointerType
+            if (expectedPointer == null) return
+            val isExpectedUInt8 = expectedPointer.pointeeType.fullyExpandedType(session) == ConePrimitiveType.UINT8
+            if (isExpectedUInt8 && argumentType is ConePointerType) {
+                val actualPointee = argumentType.pointeeType.fullyExpandedType(session)
+                val expectedPointee = expectedPointer.pointeeType.fullyExpandedType(session)
+                // Concrete pointee types are decided at this owner.  Adding
+                // an equality constraint for `CPointer<Int64>` would defer a
+                // known mismatch and lose the builtin CString diagnostic;
+                // only an unresolved inference variable may be constrained.
+                if (actualPointee == expectedPointee) return
+                if (actualPointee is ConeTypeVariableType &&
+                    csBuilder.addEqualityConstraintIfCompatible(actualPointee, expectedPointee, position)
+                ) return
+            }
+            reportDiagnostic(
+                BuiltinCStringConstructorArgumentType(
+                    expectedType = expectedType,
+                    actualType = argumentType,
+                    argument = expression,
+                    literalDescription = (expression as? CfirLiteralExpression)?.let { literal ->
+                        when (literal.kind) {
+                            CfirLiteralKind.INT, CfirLiteralKind.BYTE -> "integer"
+                            CfirLiteralKind.FLOAT -> "floating-point"
+                            CfirLiteralKind.BOOLEAN -> "boolean"
+                            CfirLiteralKind.RUNE -> "character"
+                            else -> null
+                        }
+                    },
+                ),
+            )
+            return
+        }
+
         /*
          * `CPointer<T>(CPointer<U>)` 是仓颉的内建指针转换，而不是普通 invariant
          * 泛型调用。官方 `PointerExpr` 允许任意 pointee 类型之间的转换；该规则
@@ -863,6 +945,7 @@ internal object ArgumentCheckingProcessor {
                 false,
                 anonymousFunctionIfReturnExpression,
                 csBuilder.hasContradiction,
+                isInoutArgument = isInoutArgument || expression.inoutArgumentTargetOrNull() != null,
             )
         }
 
@@ -943,6 +1026,39 @@ internal object ArgumentCheckingProcessor {
         return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinCFuncConstructor &&
                 declaration.valueParameters.size == 1
     }
+
+    /** 判断候选是否为 CString 内建构造器。 */
+    private fun Candidate.isBuiltinCStringConstructorCandidate(): Boolean {
+        val declaration = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        return declaration.origin == CfirDeclarationOrigin.Synthetic.BuiltinCStringConstructor &&
+            declaration.valueParameters.size == 1
+    }
+
+    /**
+     * Builtin synthetic parameters are never valid source-level named parameters.
+     *
+     * `ConeResolutionAtomWithSingleChild` intentionally descends into the value of
+     * `name: value` before type checking. Resolve must therefore recover the owning
+     * named-argument node from the current call mapping; reading only the child value
+     * loses both the name token and the required diagnostic range.
+     */
+    private fun ArgumentContext.builtinUnknownNamedArgument(
+        expression: CfirExpression,
+    ): ResolutionDiagnostic? {
+        val namedArgument = namedArgumentForBuiltin(expression)
+            ?: return null
+        val source = namedArgument.nameSource ?: return null
+        return NamedParameterNotFound(namedArgument, source, namedArgument.argumentName)
+    }
+
+    /** 找到 builtin 实参值对应的源码命名实参包装节点。 */
+    private fun ArgumentContext.namedArgumentForBuiltin(
+        expression: CfirExpression,
+    ): CfirNamedArgumentExpression? = (expression as? CfirNamedArgumentExpression)
+        ?: candidate.callInfo.arguments
+            .asSequence()
+            .filterIsInstance<CfirNamedArgumentExpression>()
+            .firstOrNull { it.expression === expression }
 
     /** 还原错误恢复传播时包装的原始 Cone 诊断。 */
     private tailrec fun ConeDiagnostic.unwrapUnreportedDuplicate(): ConeDiagnostic =
@@ -1131,15 +1247,8 @@ internal object ArgumentCheckingProcessor {
      * 这些变量不属于当前候选系统，不能作为同构类型实参下沉的目标，否则约束注入器会把
      * 外来 constructor 当作本系统变量处理。
      */
-    private fun ArgumentContext.typeContainsCurrentInferenceVariable(type: ConeCangJieType): Boolean = when (type) {
-        is ConeTypeVariableType -> type.typeConstructor in csBuilder.currentStorage().notFixedTypeVariables
-        is ConeLookupTagBasedType -> type.typeArguments.any { typeContainsCurrentInferenceVariable(it.type) }
-        is ConeFunctionType -> type.parameterTypes.any { typeContainsCurrentInferenceVariable(it) } ||
-                typeContainsCurrentInferenceVariable(type.returnType)
-        is ConeTupleType -> type.elementTypes.any { typeContainsCurrentInferenceVariable(it) }
-        is ConeVArrayType -> typeContainsCurrentInferenceVariable(type.elementType)
-        else -> false
-    }
+    private fun ArgumentContext.typeContainsCurrentInferenceVariable(type: ConeCangJieType): Boolean =
+        type.contains { it is ConeTypeVariableType && it.typeConstructor in csBuilder.currentStorage().notFixedTypeVariables }
 
     /** 判断类型根节点是否是当前候选约束系统尚未固定的 fresh type variable。 */
     private fun ArgumentContext.isCurrentInferenceVariableType(type: ConeCangJieType): Boolean =

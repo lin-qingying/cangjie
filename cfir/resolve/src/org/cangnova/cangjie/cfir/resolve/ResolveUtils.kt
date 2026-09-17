@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.interopInfo
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -153,7 +154,10 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
         }
 
         is CfirResolvedAppliedCallableReference -> {
-            if (calleeReference.resolvedSymbol.cfir is CfirEnumConstructor) {
+            if (calleeReference.isFunctionValue) {
+                calleeReference.substitutedReturnType
+                    ?: ConeErrorType(ConeSimpleDiagnostic("Applied function value has no function type"))
+            } else if (calleeReference.resolvedSymbol.cfir is CfirEnumConstructor) {
                 calleeReference.substitutedReturnType
                     ?: typeFromSymbol(calleeReference.resolvedSymbol)
             } else {
@@ -229,6 +233,13 @@ fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
     candidate: Candidate,
     declaration: CfirFunction = candidate.symbol.cfir as CfirFunction,
 ): ConeCangJieType {
+    /*
+     * 函数值的 CFunc 标记属于声明级 ABI 事实，producer 是 STATUS，而不是
+     * 当前候选的函数值类型投影。名字查找可以在声明尚未显式推进 STATUS 时
+     * 直接进入 body resolve，因此这里必须先走声明自己的 lazy phase owner。
+     * 不能在缺少 interop snapshot 时按 `foreign` 或函数名兜底推断。
+     */
+    declaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
     val parameterTypes = declaration.valueParameters.map { parameter ->
         val resolvedType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
             ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type", DiagnosticKind.Other))
@@ -241,7 +252,8 @@ fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
     return ConeFunctionType(
         parameterTypes = parameterTypes,
         returnType = substitutedReturnType,
-        isCFunc = declaration.interopInfo?.isC == true,
+        isCFunc = declaration.interopInfo?.resolvedAbi?.isCFunction == true,
+        hasVariableLenArg = declaration.hasVariableLenArg,
     )
 }
 

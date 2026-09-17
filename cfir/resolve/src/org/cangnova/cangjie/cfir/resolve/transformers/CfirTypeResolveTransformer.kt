@@ -25,8 +25,10 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.resolveBuiltinAnnotationIdentity
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
@@ -101,7 +103,30 @@ class CfirTypeResolveTransformer(
         annotationCall: CfirAnnotationCall,
         data: CfirTypeResolutionConfiguration,
     ): CfirAnnotationCall {
-        val transformed = super.transformAnnotationCall(annotationCall, data)
+        if (annotationCall.annotationResolveState != CfirAnnotationResolveState.UNRESOLVED) return annotationCall
+        val builtin = annotationCall.resolveBuiltinAnnotationIdentity()
+        if (builtin != null) {
+            annotationCall.replaceAnnotationKind(builtin.kind)
+            annotationCall.replaceAnnotationOrigin(org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.LANGUAGE_BUILT_IN)
+            annotationCall.replaceAnnotationIdentity(
+                CangjieAnnotationIdentity.LanguageBuiltIn(builtin.kind, builtin.sourceName),
+            )
+            annotationCall.replaceAnnotationResolveState(CfirAnnotationResolveState.TYPE_RESOLVED)
+            return annotationCall
+        }
+        annotationCall.replaceAnnotationKind(null)
+        val transformed = annotationCall.transformTypeRef(this, data)
+        val classId = transformed.typeRef.coneTypeOrNull?.classId
+        transformed.replaceAnnotationClassId(classId)
+        val system = classId?.asSingleFqName()?.let(org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry::findSystemAnnotation)
+        transformed.replaceAnnotationOrigin(system?.origin ?: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.CUSTOM)
+        transformed.replaceAnnotationIdentity(
+            when {
+                system != null -> CangjieAnnotationIdentity.SystemMacro(system.classFqName, system.sourceName)
+                classId != null -> CangjieAnnotationIdentity.Custom(classId.asSingleFqName())
+                else -> CangjieAnnotationIdentity.Unknown
+            },
+        )
         transformed.replaceAnnotationResolveState(
             if (transformed.typeRef is CfirErrorTypeRef) {
                 CfirAnnotationResolveState.ERROR
