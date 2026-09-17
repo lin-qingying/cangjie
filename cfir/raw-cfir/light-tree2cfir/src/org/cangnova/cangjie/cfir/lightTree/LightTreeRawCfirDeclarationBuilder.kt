@@ -1321,7 +1321,7 @@ class LightTreeRawCfirDeclarationBuilder(
             val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
             val macroAttribute = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
             val rawSyntax = annotation.asText()
-            val isCompileTimeVisible = rawSyntax.trimStart().startsWith("@!")
+            val isCompileTimeVisible = tree.findChildByType(annotation, CjTokens.ATEXCL) != null
             val snapshot = CfirAnnotationSlotSnapshot(
                 owner = carrier,
                 annotationIndex = annotationIndex,
@@ -1579,7 +1579,7 @@ class LightTreeRawCfirDeclarationBuilder(
             treeStructure = annotationSource.treeStructure,
             kind = annotationSource.kind,
         )
-        val isForced = annotation.asText().trimStart().startsWith("@!")
+        val isForced = tree.findChildByType(annotation, CjTokens.ATEXCL) != null
         val common = MacroSurfaceCommon(
             surfaceId = surfaceId,
             qualifiedName = qualifiedName,
@@ -2500,7 +2500,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val macroAttributeSource = macroExpressionAttributeSource(node, headScan, attrNode)
         val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, macroAttributeText)
         val annotationSource = macroExpressionAnnotationSource(node, annotationName, macroAttributeSource)
-        val isCompileTimeVisible = rawAnnotationSyntax.trimStart().startsWith("@!")
+        val isCompileTimeVisible = tree.findChildByType(node, CjTokens.ATEXCL) != null
         val hasParenthesizedInput = macroExpressionHasParenthesizedInput(rawWrapperText, headScan)
         val containingSymbol = when (carrier) {
             is CfirValueParameter -> carrier.containingDeclarationSymbol

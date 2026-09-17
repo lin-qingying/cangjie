@@ -1613,7 +1613,10 @@ class PsiRawCfirBuilder(
                 val annotationCall = buildRawAnnotationCall(annotation, carrier)
                 val annotationIndex = carrier.annotations.size
                 carrier.replaceAnnotations(carrier.annotations + annotationCall)
-                val isCompileTimeVisible = annotation.text.trimStart().startsWith("@!")
+                // `@!` is syntax provenance.  Read the token-backed PSI
+                // property so whitespace/comments or a reparsed fragment
+                // cannot change the annotation identity.
+                val isCompileTimeVisible = annotation.isCompileTimeVisible
                 val snapshot = CfirAnnotationSlotSnapshot(
                     owner = carrier,
                     annotationIndex = annotationIndex,
@@ -1842,7 +1845,7 @@ class PsiRawCfirBuilder(
         ): MacroSurface {
             val surfaceId = MacroSurfaceIdGenerator.next()
             val rawSyntax = annotation.text
-            val kind = if (rawSyntax.trimStart().startsWith("@!")) {
+            val kind = if (annotation.isCompileTimeVisible) {
                 MacroSurface.Kind.FORCED
             } else {
                 MacroSurface.Kind.PLAIN
