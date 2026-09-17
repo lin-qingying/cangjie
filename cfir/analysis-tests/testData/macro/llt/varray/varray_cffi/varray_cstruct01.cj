@@ -5,8 +5,8 @@ struct A {}
 
 @C
 struct S {
-    var a = VArray<VArray<VArray<VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1>, $1>, $1>, $1>(repeat: [[[A()]]]) // error
-    var b = VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1>(repeat: A()) // error
+    var <!ILLEGAL_MEMBER_OF_CSTRUCT!>a<!> = VArray<VArray<VArray<VArray<A, $1>, $1>, $1>, $1>(repeat: [[[A()]]]) // error
+    var <!ILLEGAL_MEMBER_OF_CSTRUCT!>b<!> = VArray<A, $1>(repeat: A()) // error
 }
 
 main() {}

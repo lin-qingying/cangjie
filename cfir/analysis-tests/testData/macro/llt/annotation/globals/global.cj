@@ -1,7 +1,7 @@
 
 
 @Annotation[target: [GlobalFunction]]
-class APILevel {
+class <!ANNOTATION_NON_PUBLIC!>APILevel<!> {
     let a: UInt8
     const init(v: UInt8) {
         a = v
@@ -12,7 +12,7 @@ class APILevel {
 func foo() {}
 
 @Annotation[target: [GlobalVariable]]
-class APMLevel {
+class <!ANNOTATION_NON_PUBLIC!>APMLevel<!> {
     let a: UInt8
     const init(v: UInt8) {
         a = v

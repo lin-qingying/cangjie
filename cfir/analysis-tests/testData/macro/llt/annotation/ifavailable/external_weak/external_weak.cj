@@ -1,5 +1,6 @@
 // API_LEVEL: 18
 
+// MODULE: labels
 // FILE: ../level_syscap_check/apilevel.cj
 
 
@@ -77,6 +78,7 @@ public class APILevel {
     }
 }
 
+// MODULE: device
 // FILE: device_info.cj
 package ohos.device_info
 
@@ -90,6 +92,7 @@ public class DeviceInfo {
 
 
 
+// MODULE: dep(labels)
 // FILE: dep.cj
 package dep
 
@@ -113,6 +116,7 @@ public class A {
 
 
 
+// MODULE: dep1(labels)
 // FILE: dep1.cj
 package dep
 
@@ -123,6 +127,7 @@ public func func2() {println(18)}
 
 
 
+// MODULE: main(dep, device)
 // FILE: external_weak.cj
 import dep.*
 import ohos.device_info.DeviceInfo

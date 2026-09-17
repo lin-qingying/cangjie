@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.cfir.analysis.tests
+package org.cangnova.cangjie.cfir.analysis.tests
 
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
@@ -70,6 +70,29 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
                 bindSession(session)
             }
             session.register(CfirModuleData::class, moduleData)
+
+            // 对齐 entrypoint 的 registerCommonComponents / registerCliCompilerAndCommonComponents：
+            // resolve 管线与 checker 都可能按需查询这些标准 session 组件。
+            session.register(
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
+            )
+            session.register(
+                org.cangnova.cangjie.cfir.CfirExceptionHandler::class,
+                org.cangnova.cangjie.cfir.CfirCliExceptionHandler,
+            )
+            session.register(
+                org.cangnova.cangjie.cfir.extensions.CfirExtensionService::class,
+                org.cangnova.cangjie.cfir.extensions.CfirExtensionService(),
+            )
+            session.register(
+                org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder::class,
+                org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder.of(
+                    org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider,
+                ),
+            )
 
             val scopeProvider = CfirCangJieScopeProvider()
             session.register(CfirCangJieScopeProvider::class, scopeProvider)

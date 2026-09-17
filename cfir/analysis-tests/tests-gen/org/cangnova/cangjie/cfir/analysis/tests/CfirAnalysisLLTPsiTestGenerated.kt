@@ -11678,6 +11678,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/ffi/infer_type_with_option.cj")
         }
 
+        @TestMetadata("objc_call_property.cj")
+        @Test
+        fun testObjcCallProperty() {
+            runTest("cfir/analysis-tests/testData/llt/ffi/objc_call_property.cj")
+        }
+
         @TestMetadata("bugfix1")
         @TestDataPath("${'$'}PROJECT_ROOT")
         @Nested
@@ -11707,6 +11713,154 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             @Test
             fun testB() {
                 runTest("cfir/analysis-tests/testData/llt/ffi/import_cpointer_generic/b.cj")
+            }
+        }
+
+        @TestMetadata("semantic_contract")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class SemanticContract : AbstractCfirPsiLlTDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi/semantic_contract")
+            }
+
+            @TestMetadata("annotationAbiPositive.cj")
+            @Test
+            fun testAnnotationAbiPositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/annotationAbiPositive.cj")
+            }
+
+            @TestMetadata("annotationArgumentsNegative.cj")
+            @Test
+            fun testAnnotationArgumentsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/annotationArgumentsNegative.cj")
+            }
+
+            @TestMetadata("annotationTargetsNegative.cj")
+            @Test
+            fun testAnnotationTargetsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/annotationTargetsNegative.cj")
+            }
+
+            @TestMetadata("callingConventionArgumentsNegative.cj")
+            @Test
+            fun testCallingConventionArgumentsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/callingConventionArgumentsNegative.cj")
+            }
+
+            @TestMetadata("callingConventionTargetsNegative.cj")
+            @Test
+            fun testCallingConventionTargetsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/callingConventionTargetsNegative.cj")
+            }
+
+            @TestMetadata("cfuncConstructorArgumentsNegative.cj")
+            @Test
+            fun testCfuncConstructorArgumentsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncConstructorArgumentsNegative.cj")
+            }
+
+            @TestMetadata("cfuncNonFunctionTypeNegative.cj")
+            @Test
+            fun testCfuncNonFunctionTypeNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncNonFunctionTypeNegative.cj")
+            }
+
+            @TestMetadata("cfuncPointerConversionsPositive.cj")
+            @Test
+            fun testCfuncPointerConversionsPositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncPointerConversionsPositive.cj")
+            }
+
+            @TestMetadata("cfuncSignaturesNegative.cj")
+            @Test
+            fun testCfuncSignaturesNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncSignaturesNegative.cj")
+            }
+
+            @TestMetadata("cfuncVariadicProbe.cj")
+            @Test
+            fun testCfuncVariadicProbe() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cfuncVariadicProbe.cj")
+            }
+
+            @TestMetadata("constructorNamingAndErrorOrderNegative.cj")
+            @Test
+            fun testConstructorNamingAndErrorOrderNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/constructorNamingAndErrorOrderNegative.cj")
+            }
+
+            @TestMetadata("cstringConstructorsNegative.cj")
+            @Test
+            fun testCstringConstructorsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstringConstructorsNegative.cj")
+            }
+
+            @TestMetadata("cstructFieldsNegative.cj")
+            @Test
+            fun testCstructFieldsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstructFieldsNegative.cj")
+            }
+
+            @TestMetadata("cstructFieldsPositive.cj")
+            @Test
+            fun testCstructFieldsPositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstructFieldsPositive.cj")
+            }
+
+            @TestMetadata("ctypeConstraintInstantiationNegative.cj")
+            @Test
+            fun testCtypeConstraintInstantiationNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeConstraintInstantiationNegative.cj")
+            }
+
+            @TestMetadata("ctypeInferenceNegative.cj")
+            @Test
+            fun testCtypeInferenceNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeInferenceNegative.cj")
+            }
+
+            @TestMetadata("ctypeInferencePositive.cj")
+            @Test
+            fun testCtypeInferencePositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeInferencePositive.cj")
+            }
+
+            @TestMetadata("ctypeParametersNegative.cj")
+            @Test
+            fun testCtypeParametersNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeParametersNegative.cj")
+            }
+
+            @TestMetadata("ctypeParametersPositive.cj")
+            @Test
+            fun testCtypeParametersPositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeParametersPositive.cj")
+            }
+
+            @TestMetadata("ctypeSelfSubtypePositive.cj")
+            @Test
+            fun testCtypeSelfSubtypePositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeSelfSubtypePositive.cj")
+            }
+
+            @TestMetadata("foreignBlockCallsPositive.cj")
+            @Test
+            fun testForeignBlockCallsPositive() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/foreignBlockCallsPositive.cj")
+            }
+
+            @TestMetadata("pointerConstructorArgumentsNegative.cj")
+            @Test
+            fun testPointerConstructorArgumentsNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/pointerConstructorArgumentsNegative.cj")
+            }
+
+            @TestMetadata("unsafeFunctionInvokeNegative.cj")
+            @Test
+            fun testUnsafeFunctionInvokeNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/unsafeFunctionInvokeNegative.cj")
             }
         }
     }

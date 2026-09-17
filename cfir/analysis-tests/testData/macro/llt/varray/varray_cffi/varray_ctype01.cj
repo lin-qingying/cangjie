@@ -4,5 +4,5 @@
 struct A {}
 
 main() {
-    sizeOf<<!GENERIC_ARGUMENT_NO_MATCH!>VArray<A, $3><!>>()
+    sizeOf<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>VArray<A, $3><!>>()
 }

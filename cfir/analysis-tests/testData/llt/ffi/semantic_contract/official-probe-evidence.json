@@ -1,0 +1,734 @@
+{
+  "officialCompilerRevision": "896235c9fd18f22d570a9818ac672838c36c3932",
+  "repositoryLanguageVersion": "1.1.1",
+  "executableProbeVersion": "1.0.5",
+  "executableProbeIsSemanticBaseline": false,
+  "repositoryTestsRunByThisWriter": false,
+  "probeArguments": [
+    "--output-type=staticlib",
+    "--diagnostic-format=json",
+    "--error-count-limit",
+    "all",
+    "-Woff",
+    "all"
+  ],
+  "diagnosticNameAdaptations": {
+    "sema_invalid_cfunc_arg_type": "INVALID_CFUNC_PARAMETER_TYPE",
+    "sema_mismatched_types": "TYPE_MISMATCH"
+  },
+  "cases": [
+    {
+      "fixture": "ctypeParametersPositive.cj",
+      "exitCode": 0,
+      "errors": 0,
+      "expectedMarkerCount": 0,
+      "diagnosticNamesMatch": true,
+      "diagnostics": []
+    },
+    {
+      "fixture": "ctypeParametersNegative.cj",
+      "exitCode": 1,
+      "errors": 11,
+      "expectedMarkerCount": 11,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 2,
+            "column": 27
+          },
+          "end": {
+            "line": 2,
+            "column": 40
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_return_type",
+          "severity": "error",
+          "message": "return type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 2,
+            "column": 43
+          },
+          "end": {
+            "line": 2,
+            "column": 49
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 3,
+            "column": 25
+          },
+          "end": {
+            "line": 3,
+            "column": 36
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 4,
+            "column": 28
+          },
+          "end": {
+            "line": 4,
+            "column": 42
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 5,
+            "column": 27
+          },
+          "end": {
+            "line": 5,
+            "column": 40
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 6,
+            "column": 30
+          },
+          "end": {
+            "line": 6,
+            "column": 42
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_return_type",
+          "severity": "error",
+          "message": "return type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 6,
+            "column": 45
+          },
+          "end": {
+            "line": 6,
+            "column": 50
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 7,
+            "column": 29
+          },
+          "end": {
+            "line": 7,
+            "column": 51
+          }
+        },
+        {
+          "officialKind": "sema_cfunc_cannot_have_unit_args",
+          "severity": "error",
+          "message": "CFunc cannot have arguments of type Unit",
+          "begin": {
+            "line": 8,
+            "column": 25
+          },
+          "end": {
+            "line": 8,
+            "column": 36
+          }
+        },
+        {
+          "officialKind": "sema_cfunc_cannot_have_named_args",
+          "severity": "error",
+          "message": "CFunc cannot have named arguments",
+          "begin": {
+            "line": 9,
+            "column": 26
+          },
+          "end": {
+            "line": 9,
+            "column": 27
+          }
+        },
+        {
+          "officialKind": "sema_varray_in_cfunc",
+          "severity": "error",
+          "message": "return type of CFunc cannot be 'VArray' type",
+          "begin": {
+            "line": 10,
+            "column": 29
+          },
+          "end": {
+            "line": 10,
+            "column": 46
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "foreignBlockCallsPositive.cj",
+      "exitCode": 0,
+      "errors": 0,
+      "expectedMarkerCount": 0,
+      "diagnosticNamesMatch": true,
+      "diagnostics": []
+    },
+    {
+      "fixture": "cfuncPointerConversionsPositive.cj",
+      "exitCode": 0,
+      "errors": 0,
+      "expectedMarkerCount": 0,
+      "diagnosticNamesMatch": true,
+      "diagnostics": []
+    },
+    {
+      "fixture": "cfuncSignaturesNegative.cj",
+      "exitCode": 1,
+      "errors": 4,
+      "expectedMarkerCount": 4,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_cfunc_cannot_have_unit_args",
+          "severity": "error",
+          "message": "CFunc cannot have arguments of type Unit",
+          "begin": {
+            "line": 2,
+            "column": 29
+          },
+          "end": {
+            "line": 2,
+            "column": 33
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 3,
+            "column": 31
+          },
+          "end": {
+            "line": 3,
+            "column": 37
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_return_type",
+          "severity": "error",
+          "message": "return type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 4,
+            "column": 33
+          },
+          "end": {
+            "line": 4,
+            "column": 39
+          }
+        },
+        {
+          "officialKind": "sema_varray_in_cfunc",
+          "severity": "error",
+          "message": "return type of CFunc cannot be 'VArray' type",
+          "begin": {
+            "line": 5,
+            "column": 33
+          },
+          "end": {
+            "line": 5,
+            "column": 50
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "cstructFieldsPositive.cj",
+      "exitCode": 0,
+      "errors": 0,
+      "expectedMarkerCount": 0,
+      "diagnosticNamesMatch": true,
+      "diagnostics": []
+    },
+    {
+      "fixture": "cstructFieldsNegative.cj",
+      "exitCode": 1,
+      "errors": 6,
+      "expectedMarkerCount": 6,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_cstruct_cannot_have_unit_fields",
+          "severity": "error",
+          "message": "member variables cannot be type Unit in struct with @C",
+          "begin": {
+            "line": 8,
+            "column": 9
+          },
+          "end": {
+            "line": 8,
+            "column": 24
+          }
+        },
+        {
+          "officialKind": "sema_illegal_member_of_cstruct",
+          "severity": "error",
+          "message": "member variable 'stringField' of struct 'NativeRecord' with @C must be instantiated with CType",
+          "begin": {
+            "line": 9,
+            "column": 9
+          },
+          "end": {
+            "line": 9,
+            "column": 28
+          }
+        },
+        {
+          "officialKind": "sema_illegal_member_of_cstruct",
+          "severity": "error",
+          "message": "member variable 'runeField' of struct 'NativeRecord' with @C must be instantiated with CType",
+          "begin": {
+            "line": 10,
+            "column": 9
+          },
+          "end": {
+            "line": 10,
+            "column": 24
+          }
+        },
+        {
+          "officialKind": "sema_illegal_member_of_cstruct",
+          "severity": "error",
+          "message": "member variable 'optionField' of struct 'NativeRecord' with @C must be instantiated with CType",
+          "begin": {
+            "line": 11,
+            "column": 9
+          },
+          "end": {
+            "line": 11,
+            "column": 28
+          }
+        },
+        {
+          "officialKind": "sema_illegal_member_of_cstruct",
+          "severity": "error",
+          "message": "member variable 'plainField' of struct 'NativeRecord' with @C must be instantiated with CType",
+          "begin": {
+            "line": 12,
+            "column": 9
+          },
+          "end": {
+            "line": 12,
+            "column": 32
+          }
+        },
+        {
+          "officialKind": "sema_illegal_member_of_cstruct",
+          "severity": "error",
+          "message": "member variable 'callbackField' of struct 'NativeRecord' with @C must be instantiated with CType",
+          "begin": {
+            "line": 13,
+            "column": 9
+          },
+          "end": {
+            "line": 13,
+            "column": 39
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "annotationAbiPositive.cj",
+      "exitCode": 0,
+      "errors": 0,
+      "expectedMarkerCount": 0,
+      "diagnosticNamesMatch": true,
+      "diagnostics": []
+    },
+    {
+      "fixture": "callingConventionTargetsNegative.cj",
+      "exitCode": 1,
+      "errors": 5,
+      "expectedMarkerCount": 5,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_only_cfunc_can_use_annotation",
+          "severity": "error",
+          "message": "only CFunc can use '@CallingConv'",
+          "begin": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_illegal_scope_use_of_annotation",
+          "severity": "error",
+          "message": "'@CallingConv' can only be used in top-level scope",
+          "begin": {
+            "line": 6,
+            "column": 5
+          },
+          "end": {
+            "line": 6,
+            "column": 6
+          }
+        },
+        {
+          "officialKind": "sema_illegal_scope_use_of_annotation",
+          "severity": "error",
+          "message": "'@C' can only be used in top-level scope",
+          "begin": {
+            "line": 9,
+            "column": 5
+          },
+          "end": {
+            "line": 9,
+            "column": 6
+          }
+        },
+        {
+          "officialKind": "sema_illegal_scope_use_of_annotation",
+          "severity": "error",
+          "message": "'@CallingConv' can only be used in top-level scope",
+          "begin": {
+            "line": 14,
+            "column": 5
+          },
+          "end": {
+            "line": 14,
+            "column": 6
+          }
+        },
+        {
+          "officialKind": "sema_illegal_scope_use_of_annotation",
+          "severity": "error",
+          "message": "'@C' can only be used in top-level scope",
+          "begin": {
+            "line": 17,
+            "column": 5
+          },
+          "end": {
+            "line": 17,
+            "column": 6
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "annotationArgumentsNegative.cj",
+      "exitCode": 1,
+      "errors": 5,
+      "expectedMarkerCount": 5,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_annotation_error_arg_num",
+          "severity": "error",
+          "message": "'@C' should have no arg",
+          "begin": {
+            "line": 2,
+            "column": 4
+          },
+          "end": {
+            "line": 2,
+            "column": 5
+          }
+        },
+        {
+          "officialKind": "sema_annotation_error_arg_num",
+          "severity": "error",
+          "message": "'@FastNative' should have no arg",
+          "begin": {
+            "line": 5,
+            "column": 13
+          },
+          "end": {
+            "line": 5,
+            "column": 14
+          }
+        },
+        {
+          "officialKind": "sema_annotation_error_arg_num",
+          "severity": "error",
+          "message": "'@Frozen' should have no arg",
+          "begin": {
+            "line": 8,
+            "column": 9
+          },
+          "end": {
+            "line": 8,
+            "column": 10
+          }
+        },
+        {
+          "officialKind": "sema_annotation_error_arg_num",
+          "severity": "error",
+          "message": "'@CallingConv' should have one arg",
+          "begin": {
+            "line": 11,
+            "column": 1
+          },
+          "end": {
+            "line": 11,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_annotation_error_arg_num",
+          "severity": "error",
+          "message": "'@CallingConv' should have one arg",
+          "begin": {
+            "line": 14,
+            "column": 1
+          },
+          "end": {
+            "line": 14,
+            "column": 2
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "callingConventionArgumentsNegative.cj",
+      "exitCode": 1,
+      "errors": 2,
+      "expectedMarkerCount": 2,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_annotation_calling_conv_not_support",
+          "severity": "error",
+          "message": "'@CallingConv' have not support 'FASTCALL' yet",
+          "begin": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_annotation_invalid_args_type",
+          "severity": "error",
+          "message": "'@CallingConv' arg should be right type",
+          "begin": {
+            "line": 5,
+            "column": 1
+          },
+          "end": {
+            "line": 5,
+            "column": 2
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "annotationTargetsNegative.cj",
+      "exitCode": 1,
+      "errors": 6,
+      "expectedMarkerCount": 6,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_illegal_use_of_annotation",
+          "severity": "error",
+          "message": "class cannot be modified with '@C'",
+          "begin": {
+            "line": 2,
+            "column": 1
+          },
+          "end": {
+            "line": 2,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_cffi_cannot_have_type_param",
+          "severity": "error",
+          "message": "CFunc cannot have type parameters",
+          "begin": {
+            "line": 6,
+            "column": 21
+          },
+          "end": {
+            "line": 6,
+            "column": 22
+          }
+        },
+        {
+          "officialKind": "sema_illegal_use_of_annotation",
+          "severity": "error",
+          "message": "non-foreign function cannot be modified with '@FastNative'",
+          "begin": {
+            "line": 8,
+            "column": 1
+          },
+          "end": {
+            "line": 8,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_illegal_use_of_annotation",
+          "severity": "error",
+          "message": "struct cannot be modified with '@Frozen'",
+          "begin": {
+            "line": 11,
+            "column": 1
+          },
+          "end": {
+            "line": 11,
+            "column": 2
+          }
+        },
+        {
+          "officialKind": "sema_illegal_use_of_annotation",
+          "severity": "error",
+          "message": "local function cannot be modified with '@Frozen'",
+          "begin": {
+            "line": 15,
+            "column": 5
+          },
+          "end": {
+            "line": 15,
+            "column": 6
+          }
+        },
+        {
+          "officialKind": "sema_invalid_cfunc_arg_type",
+          "severity": "error",
+          "message": "arguments type of CFunc must be instantiated with CType",
+          "begin": {
+            "line": 6,
+            "column": 25
+          },
+          "end": {
+            "line": 6,
+            "column": 33
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "cstringConstructorsNegative.cj",
+      "exitCode": 1,
+      "errors": 4,
+      "expectedMarkerCount": 4,
+      "diagnosticNamesMatch": true,
+      "diagnostics": [
+        {
+          "officialKind": "sema_wrong_number_of_arguments",
+          "severity": "error",
+          "message": "missing argument for parameter list '(CPointer<UInt8>)' in call",
+          "begin": {
+            "line": 3,
+            "column": 31
+          },
+          "end": {
+            "line": 3,
+            "column": 33
+          }
+        },
+        {
+          "officialKind": "sema_mismatched_types",
+          "severity": "error",
+          "message": "mismatched types",
+          "begin": {
+            "line": 4,
+            "column": 32
+          },
+          "end": {
+            "line": 4,
+            "column": 49
+          }
+        },
+        {
+          "officialKind": "sema_cannot_convert_literal",
+          "severity": "error",
+          "message": "cannot convert an integer literal to type 'CPointer<UInt8>'",
+          "begin": {
+            "line": 5,
+            "column": 30
+          },
+          "end": {
+            "line": 5,
+            "column": 31
+          }
+        },
+        {
+          "officialKind": "sema_wrong_number_of_arguments",
+          "severity": "error",
+          "message": "extra argument given for parameter list '(CPointer<UInt8>)' in call",
+          "begin": {
+            "line": 6,
+            "column": 29
+          },
+          "end": {
+            "line": 6,
+            "column": 67
+          }
+        }
+      ]
+    }
+  ],
+  "sourcePreservation": [
+    {
+      "path": "cfir/analysis-tests/testData/llt/ffi/cpointer_generic_reverse.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/llt/ffi/cpointer_generic_reverse2.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/llt/ffi/c_type_subtype.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics/interop/foreignFunctionReturnTypeRich.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionReturnType.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionMixedSignatureLegality.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionTypeAliasExpansion.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionParameterTypePlaceholder.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionCFuncLegalityPlaceholder.cj",
+      "sourcePreserved": true
+    },
+    {
+      "path": "cfir/analysis-tests/testData/macro/diagnostics2/interop/callingConventionBoundaryPlaceholder.cj",
+      "sourcePreserved": true
+    }
+  ]
+}

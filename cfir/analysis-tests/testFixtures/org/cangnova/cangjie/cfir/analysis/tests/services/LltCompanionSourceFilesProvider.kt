@@ -178,7 +178,9 @@ class LltCompanionSourceFilesProvider(
      * 包括 `<主文件名>.pkg.cj` 与 `pkg.cj`。
      */
     private fun collectPackageCompanionFiles(testDataFile: File): List<CompanionSourceFile> {
-        if (!testDataFile.invariantSeparatorsPath.contains("cfir/analysis-tests/testData/llt/")) return emptyList()
+        val testDataPath = testDataFile.invariantSeparatorsPath
+        if (!testDataPath.contains("cfir/analysis-tests/testData/llt/") &&
+            !testDataPath.contains("cfir/analysis-tests/testData/macro/")) return emptyList()
         if (testDataFile.isPackageCompanionFile()) return emptyList()
 
         val directory = testDataFile.parentFile ?: return emptyList()
@@ -241,13 +243,22 @@ class LltCompanionSourceFilesProvider(
          * 包路径精确匹配，不能把测试目录下所有包源无条件并入当前编译单元。
          */
         if (importedPackages.isNotEmpty()) {
-            packageCompanionCandidates(directory)
-                .filter { candidate -> candidate.packageName in importedPackages }
+            val candidates = packageCompanionCandidates(directory)
+            candidates
+                .filter { candidate ->
+                    val dedicatedDependency =
+                        candidate.file.name == "${testDataFile.nameWithoutExtension}_dep.cj"
+                    candidate.packageName in importedPackages &&
+                        (dedicatedDependency ||
+                            (!candidate.file.name.endsWith("_dep.cj") &&
+                                candidate.file.declaresOneOf(referencedNames)))
+                }
                 .forEach { candidate -> addCompanionFile(candidate.file) }
         }
 
         return companionFiles.values.sortedBy { it.relativePath }
     }
+
 
     /**
      * 收集当前测试目录树中有真实 package 声明的 `pkg.cj` / `*.pkg.cj` 文件。
@@ -452,8 +463,21 @@ class LltCompanionSourceFilesProvider(
      * 判断当前文件是否为 LLT 包 companion 文件。
      */
     private fun File.isPackageCompanionFile(): Boolean {
-        return name == "pkg.cj" || name.endsWith(".pkg.cj")
+        return name == "pkg.cj" || name.endsWith(".pkg.cj") || name.endsWith("_dep.cj")
     }
+
+    /**
+     * 按 import 和声明引用筛选递归发现的 companion。
+     *
+     * 与主文件同名的 `_dep.cj` 是官方 LLT 的完整依赖包，即使主文件只验证 wildcard
+     * import 也必须装配；其它 `_dep.cj` 不能串入当前测试。普通 `pkg.cj` 则仍要求
+     * 主文件正文引用其中的声明。该筛选只决定测试编译单元，不改变 CFIR import
+     * checker 的诊断规则。
+     */
+    private fun File.declaresOneOf(referencedNames: Set<String>): Boolean =
+        TOP_LEVEL_DECLARATION.findAll(readText(Charsets.UTF_8)).any {
+            it.groupValues[1] in referencedNames
+        }
 
     /** 将普通物理 companion 映射为当前测试模块内的扁平路径。 */
     private fun File.toFlatCompanionSourceFile(): CompanionSourceFile =

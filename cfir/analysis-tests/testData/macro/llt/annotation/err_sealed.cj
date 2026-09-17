@@ -1,6 +1,6 @@
 
 
 <!ANNOTATION_NOT_APPLICABLE_JFFI!>@Annotation<!>
-public sealed class A { const init() {} }
+<!REDUNDANT_MODIFIER!>public<!> sealed class A { const init() {} }
 
 main() {}
