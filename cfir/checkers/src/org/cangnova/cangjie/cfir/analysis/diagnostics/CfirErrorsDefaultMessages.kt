@@ -1070,6 +1070,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         // Deprecated
         // ================================================================
+        map.put(CfirErrors.DEPRECATED_ARGUMENTS_MUST_BE_LITERAL_CONST, "argument of @Deprecated is not string literal or boolean value. Variables not allowed")
+        map.put(CfirErrors.DEPRECATED_ARGUMENT_DUPLICATION, "argument ''{0}'' of @Deprecated can not be duplicated", RENDER_STRING)
+        map.put(CfirErrors.DEPRECATED_WRONG_ARGUMENT, "argument ''{0}'' of @Deprecated should be {1}", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.DEPRECATED_EMPTY_STRING_ARGUMENT, "argument ''{0}'' of @Deprecated must not be empty string", RENDER_STRING)
+        map.put(CfirErrors.DEPRECATED_UNKNOWN_ARGUMENT, "unknown argument ''{0}'' in @Deprecated", RENDER_STRING)
+        map.put(CfirErrors.DEPRECATED_INVALID_TARGET, "{0} can not be target of @Deprecated", RENDER_STRING)
         map.put(CfirErrors.DEPRECATED_ERROR, "{0} ''{1}'' is deprecated{2}{3}", RENDER_STRING, RENDER_NAME, RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.DEPRECATED_WARNING, "{0} ''{1}'' is deprecated{2}{3}", RENDER_STRING, RENDER_NAME, RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.DEPRECATION_WEAKENING, "strictness of @Deprecated can not be weaken on inheritors")

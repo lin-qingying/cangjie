@@ -13,6 +13,19 @@
 - verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Annotation.testIntrinsicSemantics' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Annotation.testIntrinsicSemantics' --console=plain` → BUILD SUCCESSFUL，LLT/LLTPsi 2/2 通过。
 - remaining risks: intrinsic 名称重复诊断、允许的 intrinsic 包集合、函数调用的 intrinsic call kind，以及全部内置注解/FFI 仍需独立实现和验证；本项未触及 `.cj.d`、Analysis、CHIR/backend。
 
+## 2026-09-17：Deprecated 参数与声明目标检查
+
+- problem type: Built-in annotation / `@Deprecated` parser semantics。
+- root cause: CFIR 既有弃用实现只负责 deprecation provider、调用诊断和 override 传播，未实现官方 parser 对 `message/since/strict` 的字面量、重复、类型、空字符串、未知参数约束，也未覆盖 extend、main、static constructor、非 named/无默认值参数的非法目标。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/ParseAnnotations.cpp:326-329` 调用 `CheckDeprecatedAnnotation`；`:332-386` 按字面量、参数名、重复和期望类型检查；`external/cangjie_compiler/src/Parse/Parser.cpp:313-332` 实现非法声明目标及参数目标检查。诊断定义见 `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticParser.def:286-291`。
+- Kotlin counterpart files consulted: Kotlin FIR 的 deprecation provider/diagnostic placement 只用于保持 CFIR declaration checker 与已有 provider 分层；参数语法和目标规则以官方仓颉 parser 为准。
+- CFIR owner files changed: `cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/diagnostics/CfirDiagnosticsList.kt`、生成的 `CfirErrors.kt`/`CfirNonSuppressibleErrorNames.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt`、新增 `CfirDeprecatedAnnotationChecker.kt`、`CommonDeclarationCheckers.kt`。
+- repair principle: 在基础声明 checker 的唯一 annotation owner 中消费解析后的 argument view，按官方顺序产生结构化诊断；目标限制直接基于 Cfir 声明类型与已发布默认值事实判断，不从文本回猜。
+- fixtures covered: `cfir/analysis-tests/testData/macro/llt/annotation/deprecated_arguments.cj` 的 LLT 与 LLTPsi。
+- fixture correction: 仅增加与上述结构化诊断对应的 inline markers，保留全部仓颉源码。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Annotation.testDeprecatedArguments' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Annotation.testDeprecatedArguments' --console=plain` → BUILD SUCCESSFUL，LLT/LLTPsi 2/2 通过。
+- remaining risks: foreign block 上的 `@Deprecated` 克隆 provenance、枚举构造器/属性 accessor 的全部 target 组合以及跨模块序列化后的参数事实仍需独立验收；本项未触及 `.cj.d`、Analysis、CHIR/backend。
+
 ## 2026-09-17：Raw annotation 修复后的全量基线复核
 
 - problem type: 全量回归基线刷新；本项不修改语义实现。

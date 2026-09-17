@@ -450,6 +450,12 @@ object CfirErrors : CjDiagnosticsContainer() {
     val USELESS_COMMAND_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_USELESS_COMMAND_TYPE", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Deprecated
+    val DEPRECATED_ARGUMENTS_MUST_BE_LITERAL_CONST: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_DEPRECATED_ARGUMENTS_MUST_BE_LITERAL_CONST", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DEPRECATED_ARGUMENT_DUPLICATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_DEPRECATED_ARGUMENT_DUPLICATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DEPRECATED_WRONG_ARGUMENT: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_DEPRECATED_WRONG_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DEPRECATED_EMPTY_STRING_ARGUMENT: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_DEPRECATED_EMPTY_STRING_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DEPRECATED_UNKNOWN_ARGUMENT: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_DEPRECATED_UNKNOWN_ARGUMENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val DEPRECATED_INVALID_TARGET: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_DEPRECATED_INVALID_TARGET", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val DEPRECATED_ERROR: CjDiagnosticFactory4<String, Name, String, String> = CjDiagnosticFactory4("CFIR_DEPRECATED_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val DEPRECATED_WARNING: CjDiagnosticFactory4<String, Name, String, String> = CjDiagnosticFactory4("CFIR_DEPRECATED_WARNING", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val DEPRECATION_WEAKENING: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_DEPRECATION_WEAKENING", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
