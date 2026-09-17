@@ -20,6 +20,8 @@ public enum class CfirAnnotationArgumentStatus {
 
     /** 参数表达式或绑定过程产生错误。 */
     ERROR,
+    /** 必需参数没有显式实参或默认值。 */
+    MISSING,
 }
 
 /**
@@ -92,7 +94,7 @@ public fun CfirResolvedArgumentList.toAnnotationArgumentView(
                 else -> CfirAnnotationArgumentStatus.RESOLVED
             },
             isDefaultOrigin = false,
-            constantExpression = (argument as? CfirLiteralExpression),
+            constantExpression = ((argument as? CfirNamedArgumentExpression)?.expression ?: argument) as? CfirLiteralExpression,
             source = argument.source,
         )
     }.toMutableList()

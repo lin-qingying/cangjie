@@ -80,6 +80,23 @@ class CfirProgramEntrySettingsComponent(
     val checkProgramEntry: Boolean,
 ) : CfirSessionComponent
 
+
+/**
+ * 声明编译模式（`.cj.d`）配置。
+ *
+ * 只承载**编译目标级**的声明模式语义 —— 例如"声明模式不检查程序入口缺失"
+ * （对齐官方 `TypeChecker::CheckWhetherHasProgramEntry` 的 `opts.compileCjd` 提前返回）。
+ *
+ * ⚠️ 逐声明的"实现完备性"豁免**不用**这个开关：那类判定必须问"这个声明所在文件是什么"
+ * （见 checkers 的 `isFromDeclarationFile`），否则 IDE 的 `.cj` 源码 + `.cj.d` SDK 混合场景无法表达。
+ */
+class CfirDeclarationModeSettingsComponent(
+    /**
+     * 当前编译是否为声明模式（`.cj.d`）。
+     */
+    val compileCjd: Boolean,
+) : CfirSessionComponent
+
 /**
  * 当前 session 的语言配置组件。
  */
@@ -102,6 +119,13 @@ private val CfirSession.packageCompilationSettingsComponent: CfirPackageCompilat
  * 当前 session 的程序入口检查配置组件；未注册时表示不检查入口。
  */
 private val CfirSession.programEntrySettingsComponent: CfirProgramEntrySettingsComponent?
+        by CfirSession.nullableSessionComponentAccessor()
+
+
+/**
+ * 当前 session 的声明编译模式配置组件；未注册时表示非声明模式。
+ */
+private val CfirSession.declarationModeSettingsComponent: CfirDeclarationModeSettingsComponent?
         by CfirSession.nullableSessionComponentAccessor()
 
 /**
@@ -127,3 +151,10 @@ val CfirSession.noSubPackage: Boolean
  */
 val CfirSession.checkProgramEntry: Boolean
     get() = programEntrySettingsComponent?.checkProgramEntry == true
+
+
+/**
+ * 当前 session 是否为声明编译模式（`.cj.d`）；未注册组件时为 `false`。
+ */
+val CfirSession.compileCjd: Boolean
+    get() = declarationModeSettingsComponent?.compileCjd == true

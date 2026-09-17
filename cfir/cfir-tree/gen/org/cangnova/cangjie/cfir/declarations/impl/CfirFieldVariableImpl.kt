@@ -37,6 +37,7 @@ class CfirFieldVariableImpl @CfirImplementationDetail constructor(
     override var status: CfirDeclarationStatus,
     override var initializer: CfirExpression?,
     override val isVar: Boolean,
+    override val isTypeImplicit: Boolean,
     override val symbol: CfirFieldVariableSymbol,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,

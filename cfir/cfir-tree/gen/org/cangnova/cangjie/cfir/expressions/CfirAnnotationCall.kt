@@ -5,8 +5,10 @@
 
 package org.cangnova.cangjie.cfir.expressions
 
-import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -14,6 +16,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
@@ -24,8 +27,15 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract override val typeRef: CfirTypeRef
-    abstract override val arguments: List<CfirElement>
-    abstract override val annotationKind: CangjieAnnotationKind?
+    abstract override val arguments: List<CfirExpression>
+    abstract override val argumentMapping: CfirAnnotationArgumentMapping
+    abstract override val annotationClassId: ClassId?
+    abstract override val annotationTarget: CangjieAnnotationTarget?
+    abstract override val forcedCustom: Boolean
+    abstract override val annotationSourceName: String?
+    abstract override val sourceModuleName: String
+    abstract override val annotationKind: BuiltInAnnotationKind?
+    abstract override val annotationIdentity: CangjieAnnotationIdentity?
     abstract override val annotationOrigin: CangjieAnnotationOrigin?
     abstract override val isCompileTimeVisible: Boolean?
     abstract override val argumentList: CfirArgumentList
@@ -45,7 +55,23 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    abstract override fun replaceAnnotationKind(newAnnotationKind: CangjieAnnotationKind?)
+    abstract override fun replaceTypeRef(newTypeRef: CfirTypeRef)
+
+    abstract override fun replaceArgumentMapping(newArgumentMapping: CfirAnnotationArgumentMapping)
+
+    abstract override fun replaceAnnotationClassId(newAnnotationClassId: ClassId?)
+
+    abstract override fun replaceAnnotationTarget(newAnnotationTarget: CangjieAnnotationTarget?)
+
+    abstract override fun replaceForcedCustom(newForcedCustom: Boolean)
+
+    abstract override fun replaceAnnotationSourceName(newAnnotationSourceName: String?)
+
+    abstract override fun replaceSourceModuleName(newSourceModuleName: String)
+
+    abstract override fun replaceAnnotationKind(newAnnotationKind: BuiltInAnnotationKind?)
+
+    abstract override fun replaceAnnotationIdentity(newAnnotationIdentity: CangjieAnnotationIdentity?)
 
     abstract override fun replaceAnnotationOrigin(newAnnotationOrigin: CangjieAnnotationOrigin?)
 
@@ -62,8 +88,6 @@ abstract class CfirAnnotationCall : CfirAnnotation(), CfirCall, CfirResolvable {
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirAnnotationCall
 
     abstract override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirAnnotationCall
-
-    abstract override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirAnnotationCall
 
     abstract override fun <D> transformCalleeReference(transformer: CfirTransformer<D>, data: D): CfirAnnotationCall
 }

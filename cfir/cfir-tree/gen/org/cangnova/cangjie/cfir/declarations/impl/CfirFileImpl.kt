@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.declarations.impl
 
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
@@ -33,6 +34,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override val symbol: CfirFileSymbol,
     override val name: String,
     override val sourceFile: CjSourceFile?,
+    override var featuresDirective: CfirFeaturesDirective?,
     override var packageDirective: CfirPackageDirective,
     override val imports: MutableList<CfirImport>,
     override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
@@ -50,6 +52,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
         controlFlowGraphReference?.accept(visitor, data)
+        featuresDirective?.accept(visitor, data)
         packageDirective.accept(visitor, data)
         imports.forEach { it.accept(visitor, data) }
         declarations.forEach { it.accept(visitor, data) }
@@ -58,6 +61,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
         transformAnnotations(transformer, data)
         controlFlowGraphReference = controlFlowGraphReference?.transform(transformer, data)
+        transformFeaturesDirective(transformer, data)
         transformPackageDirective(transformer, data)
         transformImports(transformer, data)
         transformDeclarations(transformer, data)
@@ -66,6 +70,11 @@ class CfirFileImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformFeaturesDirective(transformer: CfirTransformer<D>, data: D): CfirFileImpl {
+        featuresDirective = featuresDirective?.transform(transformer, data)
         return this
     }
 
@@ -90,5 +99,9 @@ class CfirFileImpl @CfirImplementationDetail constructor(
 
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?) {
         controlFlowGraphReference = newControlFlowGraphReference
+    }
+
+    override fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?) {
+        featuresDirective = newFeaturesDirective
     }
 }

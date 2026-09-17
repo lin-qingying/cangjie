@@ -34,6 +34,7 @@ data class MemberLookupBlockedByDeclaredSupertype(
  * @property isMismatchDueToNullability 不匹配是否仅由可空性差异导致。
  * @property anonymousFunctionIfReturnExpression 当实参检查复用于 lambda 返回检查时，保存所属匿名函数。
  * @property systemHadContradiction 类型约束系统是否已经存在矛盾。
+ * @property isInoutArgument 实参是否由结构化 `inout` 包装节点承载。
  */
 class ArgumentTypeMismatch(
     /**
@@ -61,6 +62,13 @@ class ArgumentTypeMismatch(
      * 类型约束系统是否已经存在矛盾。
      */
     val systemHadContradiction: Boolean = false,
+    /**
+     * 当前类型不匹配是否发生在 `inout` 实参上。
+     *
+     * 该事实由解析阶段从 CFIR 包装节点传入；诊断映射层不能通过源码文本或
+     * source range 猜测，因为同一表达式可能同时出现在普通调用和 CFunc 调用中。
+     */
+    val isInoutArgument: Boolean = false,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
@@ -207,6 +215,47 @@ class WrongNumberOfArguments(
     val expectedCount: Int,
     val actualCount: Int,
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/**
+ * `CPointer` 内建构造器的参数数量错误。
+ *
+ * 官方在 `DesugarPointerCall` 中直接以 pointer call 为 source 报告该错误，
+ * 不能退化为普通 callable 的 `WRONG_NUMBER_OF_ARGUMENTS`。
+ */
+class BuiltinPointerConstructorTooManyArguments(
+    /** 官方 pointer call 的诊断范围。 */
+    val source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/** `CPointer` 唯一值参数不是 pointer/CFunc。 */
+class BuiltinPointerConstructorArgumentType(
+    /** 官方 `PointerExpr` 的完整调用 source。 */
+    val source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/** `CFunc` 构造器的实参数量错误。 */
+class BuiltinCFuncConstructorTooManyArguments(
+    /** 官方 `CFunc` callee source，不包含调用参数表。 */
+    val source: AbstractCjSourceElement,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR)
+
+/** `CFunc` 构造器实参不是 CPointer。 */
+class BuiltinCFuncConstructorArgumentType(
+    /** 官方错误所对应的实参表达式。 */
+    val argument: CfirExpression,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/** `CString` 对其唯一 `CPointer<UInt8>` 实参执行的普通类型检查结果。 */
+class BuiltinCStringConstructorArgumentType(
+    /** CString 构造器要求的 CPointer<UInt8> 类型。 */
+    val expectedType: ConeCangJieType,
+    /** 实参实际类型。 */
+    val actualType: ConeCangJieType,
+    /** 触发类型检查的实参。 */
+    val argument: CfirExpression,
+    /** 数字/字符字面量的官方描述；非字面量为 null。 */
+    val literalDescription: String? = null,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
  * 命名实参找不到对应形参。

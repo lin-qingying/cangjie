@@ -33,6 +33,7 @@ class CfirErrorFunctionBuilder {
     lateinit var status: CfirDeclarationStatus
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var hasVariableLenArg: Boolean = false
     var body: CfirBlock? = null
     lateinit var diagnostic: ConeDiagnostic
     lateinit var symbol: CfirErrorFunctionSymbol
@@ -50,6 +51,7 @@ class CfirErrorFunctionBuilder {
             status,
             typeParameters,
             valueParameters,
+            hasVariableLenArg,
             body,
             diagnostic,
             symbol,

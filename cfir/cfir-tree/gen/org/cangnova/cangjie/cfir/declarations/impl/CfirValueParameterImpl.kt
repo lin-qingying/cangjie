@@ -36,6 +36,7 @@ class CfirValueParameterImpl @CfirImplementationDetail constructor(
     override val isLocal: Boolean,
     override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
+    override val isTypeImplicit: Boolean,
     override val symbol: CfirValueParameterSymbol,
     override val containingDeclarationSymbol: CfirBasedSymbol<*>,
     override val isNamed: Boolean,

@@ -28,6 +28,7 @@ internal class CfirResolvedDeclarationStatusImpl(
     override val isMut: Boolean,
     override val isUnsafe: Boolean,
     override val isForeign: Boolean,
+    override val isC: Boolean,
     override val isCommon: Boolean,
     override val isSpecific: Boolean,
     override val isRedef: Boolean,

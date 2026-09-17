@@ -96,6 +96,11 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             withCopy()
         }
         builder(annotationCall) {
+            default("argumentMapping", "CfirEmptyAnnotationArgumentMapping")
+            additionalImports(emptyAnnotationArgumentMappingType)
+            defaultFalse("forcedCustom")
+            // 合成及反序列化节点没有源码 parser 模块；Raw 源码入口必须显式填入解析来源。
+            default("sourceModuleName", "\"\"")
             default("annotationResolveState", "CfirAnnotationResolveState.UNRESOLVED")
             additionalImports(annotationResolveStateType)
             withCopy()
@@ -138,6 +143,21 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             field = "deprecationsProvider",
         ) {
             default("deprecationsProvider", "UnresolvedDeprecationProvider")
+        }
+
+        // foreign C 的 `...` 是函数级签名事实；普通函数、lambda 和合成函数
+        // 默认没有变长参数，只有 source foreign builder 会显式发布 true。
+        configureFieldInAllLeafBuilders(
+            field = "hasVariableLenArg",
+        ) {
+            defaultFalse("hasVariableLenArg")
+        }
+
+        // 源码变量是否省略类型是 raw builder 发布的语义事实；其它构造路径默认显式。
+        configureFieldInAllLeafBuilders(
+            field = "isTypeImplicit",
+        ) {
+            defaultFalse("isTypeImplicit")
         }
 
         // TypeRef 体系默认不启用 custom renderer。

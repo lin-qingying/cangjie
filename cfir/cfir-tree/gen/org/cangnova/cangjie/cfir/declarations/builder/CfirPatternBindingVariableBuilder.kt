@@ -36,6 +36,7 @@ class CfirPatternBindingVariableBuilder {
     lateinit var status: CfirDeclarationStatus
     var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isTypeImplicit: Boolean = false
     lateinit var symbol: CfirPatternBindingSymbol
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
@@ -56,6 +57,7 @@ class CfirPatternBindingVariableBuilder {
             status,
             initializer,
             isVar,
+            isTypeImplicit,
             symbol,
             typeParameters,
             returnTypeRef,
@@ -91,6 +93,7 @@ inline fun buildPatternBindingVariableCopy(original: CfirPatternBindingVariable,
     copyBuilder.status = original.status
     copyBuilder.initializer = original.initializer
     copyBuilder.isVar = original.isVar
+    copyBuilder.isTypeImplicit = original.isTypeImplicit
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.name = original.name

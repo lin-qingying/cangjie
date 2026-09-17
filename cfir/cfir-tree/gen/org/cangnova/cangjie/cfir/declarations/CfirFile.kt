@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
@@ -29,6 +30,7 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract override val symbol: CfirFileSymbol
     abstract val name: String
     abstract val sourceFile: CjSourceFile?
+    abstract val featuresDirective: CfirFeaturesDirective?
     abstract val packageDirective: CfirPackageDirective
     abstract val imports: List<CfirImport>
     abstract val sourceFileLinesMapping: CjSourceFileLinesMapping?
@@ -45,7 +47,11 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
 
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
+    abstract fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile
+
+    abstract fun <D> transformFeaturesDirective(transformer: CfirTransformer<D>, data: D): CfirFile
 
     abstract fun <D> transformPackageDirective(transformer: CfirTransformer<D>, data: D): CfirFile
 

@@ -210,7 +210,6 @@ class CfirRendererAnnotationRenderingTest {
         buildAnnotationCall {
             source = TestBinarySourceElement("@$name")
             typeRef = basicType(name)
-            this.arguments += arguments
             argumentList = buildArgumentList {
                 this.arguments += arguments.filterIsInstance<CfirExpression>()
             }

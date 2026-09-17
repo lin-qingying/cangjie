@@ -9,6 +9,7 @@ package org.cangnova.cangjie.cfir.declarations.builder
 
 import kotlin.contracts.*
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
@@ -31,6 +32,7 @@ class CfirFileBuilder {
     lateinit var symbol: CfirFileSymbol
     lateinit var name: String
     var sourceFile: CjSourceFile? = null
+    var featuresDirective: CfirFeaturesDirective? = null
     lateinit var packageDirective: CfirPackageDirective
     val imports: MutableList<CfirImport> = mutableListOf()
     var sourceFileLinesMapping: CjSourceFileLinesMapping? = null
@@ -48,6 +50,7 @@ class CfirFileBuilder {
             symbol,
             name,
             sourceFile,
+            featuresDirective,
             packageDirective,
             imports,
             sourceFileLinesMapping,
@@ -79,6 +82,7 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     copyBuilder.attributes = original.attributes.copy()
     copyBuilder.name = original.name
     copyBuilder.sourceFile = original.sourceFile
+    copyBuilder.featuresDirective = original.featuresDirective
     copyBuilder.packageDirective = original.packageDirective
     copyBuilder.imports.addAll(original.imports)
     copyBuilder.sourceFileLinesMapping = original.sourceFileLinesMapping

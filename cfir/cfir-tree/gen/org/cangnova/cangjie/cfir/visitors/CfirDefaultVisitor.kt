@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.cfir.visitors
 
+import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -28,6 +29,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
 
     override fun visitIfAvailableExpression(ifAvailableExpression: CfirIfAvailableExpression, data: D): R =
         visitExpression(ifAvailableExpression, data)
+
+    override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective, data: D): R =
+        visitAnnotationContainer(featuresDirective, data)
 
     override fun visitResolvedImport(resolvedImport: CfirResolvedImport, data: D): R =
         visitImport(resolvedImport, data)

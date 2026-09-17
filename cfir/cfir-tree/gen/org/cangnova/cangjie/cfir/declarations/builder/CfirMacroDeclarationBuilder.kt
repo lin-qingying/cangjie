@@ -37,6 +37,7 @@ class CfirMacroDeclarationBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var hasVariableLenArg: Boolean = false
     var body: CfirBlock? = null
     lateinit var symbol: CfirMacroDeclarationSymbol
     lateinit var name: Name
@@ -57,6 +58,7 @@ class CfirMacroDeclarationBuilder {
             typeParameters,
             returnTypeRef,
             valueParameters,
+            hasVariableLenArg,
             body,
             symbol,
             name,
@@ -92,6 +94,7 @@ inline fun buildMacroDeclarationCopy(original: CfirMacroDeclaration, init: CfirM
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
+    copyBuilder.hasVariableLenArg = original.hasVariableLenArg
     copyBuilder.body = original.body
     copyBuilder.name = original.name
     return copyBuilder.apply(init).build()

@@ -37,6 +37,7 @@ class CfirNamedFunctionBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var hasVariableLenArg: Boolean = false
     var body: CfirBlock? = null
     lateinit var symbol: CfirNamedFunctionSymbol
     lateinit var name: Name
@@ -58,6 +59,7 @@ class CfirNamedFunctionBuilder {
             typeParameters,
             returnTypeRef,
             valueParameters,
+            hasVariableLenArg,
             body,
             symbol,
             name,
@@ -94,6 +96,7 @@ inline fun buildNamedFunctionCopy(original: CfirNamedFunction, init: CfirNamedFu
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
+    copyBuilder.hasVariableLenArg = original.hasVariableLenArg
     copyBuilder.body = original.body
     copyBuilder.name = original.name
     copyBuilder.isMut = original.isMut

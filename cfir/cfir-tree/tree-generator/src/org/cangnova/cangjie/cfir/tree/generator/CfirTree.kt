@@ -90,7 +90,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     /** 公共官方 AnnotationKind 类型引用。 */
     private val annotationKindType = type(
         "org.cangnova.cangjie.annotations",
-        "CangjieAnnotationKind",
+        "BuiltInAnnotationKind",
         exactPackage = true,
         kind = TypeKind.Class,
     )
@@ -98,6 +98,13 @@ object CfirTree : AbstractCfirTreeBuilder() {
     private val annotationOriginType = type(
         "org.cangnova.cangjie.annotations",
         "CangjieAnnotationOrigin",
+        exactPackage = true,
+        kind = TypeKind.Class,
+    )
+    /** annotation resolve 后保存的唯一身份；禁止消费者再次从 callee 短名猜测。 */
+    private val annotationIdentityType = type(
+        "org.cangnova.cangjie.annotations",
+        "CangjieAnnotationIdentity",
         exactPackage = true,
         kind = TypeKind.Class,
     )
@@ -114,6 +121,12 @@ object CfirTree : AbstractCfirTreeBuilder() {
         "CfirAnnotationArgumentView",
         exactPackage = false,
         kind = TypeKind.Class,
+    )
+    private val annotationTargetType = type(
+        "org.cangnova.cangjie.annotations", "CangjieAnnotationTarget", exactPackage = true, kind = TypeKind.Class,
+    )
+    internal val emptyAnnotationArgumentMappingType = type(
+        "expressions.impl", "CfirEmptyAnnotationArgumentMapping", kind = TypeKind.Class,
     )
     /**
      * 任意 CFIR 符号基类类型引用。
@@ -422,6 +435,17 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     }
 
     /**
+     * 文件前导 `features` directive。
+     *
+     * 它是文件级 metadata，不是声明；注解仍作为独立 annotation children
+     * 保留，feature id 只保留源码规范化文本，后续 package checker 负责一致性语义。
+     */
+    val featuresDirective: Element by element(Other, name = "FeaturesDirective") {
+        parent(annotationContainer)
+        +listField("featureIds", stringType, withReplace = true, isChild = false)
+    }
+
+    /**
      * 可解析节点接口。
      *
      * 所有持有 calleeReference 的节点都应实现此接口，以便：
@@ -476,12 +500,21 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val annotation: Element by element(Expression, name = "Annotation") {
         parent(expression)
 
-        +field("typeRef", typeRef, withTransform = true)
-        +listField("arguments", rootElement, withTransform = true)
+        +field("typeRef", typeRef, withTransform = true, withReplace = true)
+        +listField("arguments", expression, isChild = false)
+        +field("argumentMapping", annotationArgumentMapping, withReplace = true, isChild = false)
+        +field("annotationClassId", type("org.cangnova.cangjie.name", "ClassId", exactPackage = true, kind = TypeKind.Class), nullable = true, withReplace = true)
+        +field("annotationTarget", annotationTargetType, nullable = true, withReplace = true)
+        +field("forcedCustom", booleanType, withReplace = true) { defaultValueInBuilder = "false" }
+        // 保留 raw source spelling；它只用于显示、诊断和区分共享 NUMERIC_OVERFLOW kind。
+        +field("annotationSourceName", stringType, nullable = true, withReplace = true)
+        // 保存实际解析入口的语言模块来源；宏新生成 token 的默认模块为空，不能由宿主文件补授 builtin 身份。
+        +field("sourceModuleName", stringType, withReplace = true) { defaultValueInBuilder = "\"\"" }
         // Annotation identity is semantic metadata, not a child node. It is
         // populated by annotation resolution and remains nullable for raw and
         // unresolved annotations.
         +field("annotationKind", annotationKindType, nullable = true, withReplace = true)
+        +field("annotationIdentity", annotationIdentityType, nullable = true, withReplace = true)
         // Raw annotations have not yet established their semantic origin or
         // compile-time visibility. Nullable fields make that unresolved state
         // explicit instead of forcing every raw/synthetic builder to invent a
@@ -586,6 +619,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +declaredSymbol(fileSymbolType)
         +field("name", stringType)
         +field("sourceFile", sourceFileType, nullable = true)
+        +field("featuresDirective", featuresDirective, nullable = true, withReplace = true, withTransform = true)
         +field("packageDirective", packageDirective, withTransform = true)
         +listField("imports", importDirective, withTransform = true)
         +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true)
@@ -735,6 +769,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +FieldSets.typeParameters
         +field("returnTypeRef", typeRef, withReplace = true, withTransform = true)
         +listField("valueParameters", valueParameter, withReplace = true, withTransform = true)
+        /** foreign C function 的 `...` 不是一个值参数，必须作为函数级签名事实保存。 */
+        +field("hasVariableLenArg", booleanType) { defaultValueInBuilder = "false" }
         +field("body", block, nullable = true, withReplace = true, withTransform = true)
     }
 
@@ -832,6 +868,9 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +field("initializer", expression, nullable = true, withReplace = true, withTransform = true)
         +field("isVar", booleanType)
+        // 保留源码是否省略变量类型；resolve 后 returnTypeRef 会变成 resolved，
+        // 该事实不能再由 resolved type-ref 的形状或 source 文本反推。
+        +field("isTypeImplicit", booleanType) { defaultValueInBuilder = "false" }
     }
 
     /**
@@ -921,6 +960,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             "mut",
             "unsafe",
             "foreign",
+            "c",
             "common",
             "specific",
             "redef",
@@ -1072,6 +1112,10 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     /**
      * 注解调用表达式节点。
      */
+    val annotationArgumentMapping: Element by element(Expression) {
+        +field("mapping", type("kotlin.collections", "Map", exactPackage = true, kind = TypeKind.Interface).withArgs(nameType, expression), isChild = false)
+    }
+
     val annotationCall: Element by element(Expression) {
         parent(annotation)
         parent(call)

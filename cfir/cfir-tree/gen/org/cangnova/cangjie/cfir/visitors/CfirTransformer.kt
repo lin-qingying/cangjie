@@ -80,6 +80,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformIfAvailableExpression(ifAvailableExpression, data)
     }
 
+    open fun transformFeaturesDirective(featuresDirective: CfirFeaturesDirective, data: D): CfirFeaturesDirective {
+        return transformElement(featuresDirective, data)
+    }
+
+    final override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective, data: D): CfirFeaturesDirective {
+        return transformFeaturesDirective(featuresDirective, data)
+    }
+
     open fun transformResolvable(resolvable: CfirResolvable, data: D): CfirResolvable {
         return transformElement(resolvable, data)
     }
@@ -494,6 +502,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitCall(call: CfirCall, data: D): CfirStatement {
         return transformCall(call, data)
+    }
+
+    open fun transformAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping, data: D): CfirAnnotationArgumentMapping {
+        return transformElement(annotationArgumentMapping, data)
+    }
+
+    final override fun visitAnnotationArgumentMapping(annotationArgumentMapping: CfirAnnotationArgumentMapping, data: D): CfirAnnotationArgumentMapping {
+        return transformAnnotationArgumentMapping(annotationArgumentMapping, data)
     }
 
     open fun transformAnnotationCall(annotationCall: CfirAnnotationCall, data: D): CfirStatement {

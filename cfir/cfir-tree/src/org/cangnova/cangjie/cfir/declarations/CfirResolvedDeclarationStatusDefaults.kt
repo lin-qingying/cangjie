@@ -47,6 +47,7 @@ val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
         isMut = false
         isUnsafe = false
         isForeign = false
+        isC = false
         isCommon = false
         isSpecific = false
         isRedef = false
@@ -79,6 +80,7 @@ fun CfirDeclarationStatus.resolvedForStatuslessDeclaration(): CfirResolvedDeclar
         isMut = this@resolvedForStatuslessDeclaration.isMut
         isUnsafe = this@resolvedForStatuslessDeclaration.isUnsafe
         isForeign = this@resolvedForStatuslessDeclaration.isForeign
+        isC = this@resolvedForStatuslessDeclaration.isC
         isCommon = this@resolvedForStatuslessDeclaration.isCommon
         isSpecific = this@resolvedForStatuslessDeclaration.isSpecific
         isRedef = this@resolvedForStatuslessDeclaration.isRedef

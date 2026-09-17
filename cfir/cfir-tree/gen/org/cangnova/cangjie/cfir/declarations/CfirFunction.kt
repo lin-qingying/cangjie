@@ -37,6 +37,7 @@ sealed class CfirFunction : CfirCallableDeclaration(), CfirTargetElement, CfirCo
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef
     abstract val valueParameters: List<CfirValueParameter>
+    abstract val hasVariableLenArg: Boolean
     abstract val body: CfirBlock?
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

@@ -32,6 +32,7 @@ abstract class CfirFieldVariable : CfirVariable() {
     abstract override val status: CfirDeclarationStatus
     abstract override val initializer: CfirExpression?
     abstract override val isVar: Boolean
+    abstract override val isTypeImplicit: Boolean
     abstract override val symbol: CfirFieldVariableSymbol
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef

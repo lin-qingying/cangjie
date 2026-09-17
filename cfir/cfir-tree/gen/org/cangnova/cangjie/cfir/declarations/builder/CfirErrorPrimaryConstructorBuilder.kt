@@ -36,6 +36,7 @@ class CfirErrorPrimaryConstructorBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var hasVariableLenArg: Boolean = false
     var body: CfirBlock? = null
     lateinit var symbol: CfirConstructorSymbol
     var isPrimary: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -56,6 +57,7 @@ class CfirErrorPrimaryConstructorBuilder {
             typeParameters,
             returnTypeRef,
             valueParameters,
+            hasVariableLenArg,
             body,
             symbol,
             isPrimary,

@@ -37,6 +37,7 @@ class CfirAnonymousFunctionBuilder {
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     val valueParameters: MutableList<CfirValueParameter> = mutableListOf()
+    var hasVariableLenArg: Boolean = false
     var body: CfirBlock? = null
     lateinit var symbol: CfirAnonymousFunctionSymbol
     var hasExplicitParameterList: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -60,6 +61,7 @@ class CfirAnonymousFunctionBuilder {
             typeParameters,
             returnTypeRef,
             valueParameters,
+            hasVariableLenArg,
             body,
             symbol,
             hasExplicitParameterList,
@@ -98,6 +100,7 @@ inline fun buildAnonymousFunctionCopy(original: CfirAnonymousFunction, init: Cfi
     copyBuilder.typeParameters.addAll(original.typeParameters)
     copyBuilder.returnTypeRef = original.returnTypeRef
     copyBuilder.valueParameters.addAll(original.valueParameters)
+    copyBuilder.hasVariableLenArg = original.hasVariableLenArg
     copyBuilder.body = original.body
     copyBuilder.hasExplicitParameterList = original.hasExplicitParameterList
     copyBuilder.isLambda = original.isLambda
