@@ -246,6 +246,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/emptyFile.cj")
             }
 
+            @TestMetadata("featuresDirective.cj")
+            fun testFeaturesDirective() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/featuresDirective.cj")
+            }
+
             @TestMetadata("packageAndImport.cj")
             fun testPackageAndImport() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/packageAndImport.cj")

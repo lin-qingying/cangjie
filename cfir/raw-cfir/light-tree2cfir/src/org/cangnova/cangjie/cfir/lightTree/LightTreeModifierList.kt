@@ -52,6 +52,8 @@ class LightTreeModifierList(
     private val modifierListNode: LighterASTNode?,
     /** 声明或参数上采集到的 annotation 节点列表。 */
     val annotations: List<LighterASTNode>,
+    /** foreign 块对直接声明施加的语法修饰符。 */
+    private val inForeignBlock: Boolean = false,
 ) {
     /** 修饰符 Token 类型集合（用于快速查找） */
     private val modifierTokens: Set<com.intellij.psi.tree.IElementType> by lazy {
@@ -116,7 +118,7 @@ class LightTreeModifierList(
     /** 是否包含 unsafe modifier。 */
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
     /** 是否包含 foreign modifier。 */
-    val isForeign: Boolean get() = hasModifier(CjTokens.FOREIGN_KEYWORD)
+    val isForeign: Boolean get() = inForeignBlock || hasModifier(CjTokens.FOREIGN_KEYWORD)
 
     /** 按源码顺序暴露声明/参数修饰符文本，供 construction-only surface 携带。 */
     val modifierTexts: List<String> by lazy {
@@ -183,7 +185,10 @@ class LightTreeModifierList(
                     collectAnnotationsFrom(tree, modifierList, this)
                 }
             }
-            return LightTreeModifierList(tree, modifierList, annotations)
+            return LightTreeModifierList(
+                tree, modifierList, annotations,
+                inForeignBlock = tree.getParent(declarationNode)?.tokenType == CjNodeTypes.FOREIGN_BODY,
+            )
         }
 
         /** 从 [node] 的直接子树中收集 annotation 与 macro expression annotation 包装。 */
