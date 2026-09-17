@@ -710,6 +710,9 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 判断是否是 Any（所有类型的公共父类型） */
     fun CangJieTypeMarker.isAny() = typeConstructor().isAnyConstructor()
 
+    /** CType 约束接口的身份；泛型实例化不能用该接口本身满足 CType 上界。 */
+    fun CangJieTypeMarker.isCTypeConstraint(): Boolean
+
     /** 判断是否是 class/interface 等引用语义类型，不包含 struct/enum 值语义类型。 */
     fun CangJieTypeMarker.isClassLikeType(): Boolean = false
 
@@ -738,6 +741,10 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
 
     /** 判断该类型是否是元组类型（默认 false，由具体上下文覆盖） */
     fun CangJieTypeMarker.isTupleType(): Boolean = false
+
+    /** 指针以独立 pointee 字段承载不变元素类型，不属于普通名义类型实参。 */
+    fun CangJieTypeMarker.isPointerType(): Boolean
+    fun CangJieTypeMarker.extractPointeeType(): CangJieTypeMarker
 
     /** 提取元组类型的元素类型列表 */
     fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =

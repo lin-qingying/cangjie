@@ -62,8 +62,13 @@ class CjPsiSourceFile(
 
     /**
      * 读取 PSI 关联虚拟文件的内容流。
+     *
+     * PSI 文件可能没有关联 VirtualFile（`psiFileFactory.createFileFromText` 产出的
+     * 内存文件、部分 code fragment 场景），此时回退到 PSI 文本，避免 NPE。
      */
-    override fun getContentsAsStream(): InputStream = psiFile.virtualFile.inputStream
+    override fun getContentsAsStream(): InputStream =
+        psiFile.virtualFile?.inputStream
+            ?: ByteArrayInputStream(psiFile.text.toByteArray(Charsets.UTF_8))
 }
 
 /**

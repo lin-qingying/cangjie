@@ -40,6 +40,7 @@ interface CompilerMessageSourceLocation : Serializable {
 /**
  * 只包含单点位置的编译器消息位置。
  */
+@ConsistentCopyVisibility
 data class CompilerMessageLocation private constructor(
     /**
      * 源文件路径。
@@ -90,6 +91,7 @@ data class CompilerMessageLocation private constructor(
 /**
  * 包含起止范围的编译器消息位置。
  */
+@ConsistentCopyVisibility
 data class CompilerMessageLocationWithRange private constructor(
     /**
      * 源文件路径。
