@@ -163,14 +163,18 @@ internal class CjdStructureExtractor(private val source: String) {
             val bracket = leaves.firstOrNull { it.kind == CjTokens.LBRACKET }
             CjdAnnotation(annotationName, marker?.kind == CjTokens.ATEXCL, text(annotation), annotation.range,
                 bracket?.let { source.substring(it.start, annotation.end) },
-                argumentList?.children(VALUE_ARGUMENT).orEmpty().map { arg ->
+                (argumentList?.children(VALUE_ARGUMENT)?.map { arg ->
                     val argumentName = arg.child(VALUE_ARGUMENT_NAME)
-                    val significant = arg.children.filterNot { it.kind == TokenType.WHITE_SPACE || it.kind == VALUE_ARGUMENT_NAME || it.kind == CjTokens.COLON || it.kind == CjTokens.EQ }
+                    val significant = arg.children.filterNot { it.kind == TokenType.WHITE_SPACE || CjTokens.COMMENTS.contains(it.kind) || it.kind == VALUE_ARGUMENT_NAME || it.kind == CjTokens.COLON || it.kind == CjTokens.EQ }
                     val expressionText = if (significant.isEmpty()) "" else source.substring(significant.first().start, significant.last().end)
                     val expression = significant.singleOrNull()?.let(::annotationExpression)
                         ?: CjdAnnotationExpression("UNKNOWN", expressionText, arg.range, significant.map(::annotationExpression))
                     CjdAnnotationArgument(argumentName?.let { name(it).ifEmpty { identifier(it) } }, expressionText, text(arg), arg.range, expression)
-                })
+                } ?: annotation.children.filter { it.kind == ANNOTATION_OVERFLOW_STRATEGY || it.kind == ANNTATION_ATTR_ATTRIBUTE || it.kind == ANNOTATION_WHEN_CONDITION || it.kind == ANNOTATION_CALLING_CONV }
+                    .flatMap { special ->
+                        if (special.kind == ANNTATION_ATTR_ATTRIBUTE) special.children.filter { it.kind == CjTokens.IDENTIFIER || it.kind == STRING_TEMPLATE }
+                        else listOf(special)
+                    }.map { expression -> CjdAnnotationArgument(null, text(expression), text(expression), expression.range, annotationExpression(expression)) }))
         }
     }
 
