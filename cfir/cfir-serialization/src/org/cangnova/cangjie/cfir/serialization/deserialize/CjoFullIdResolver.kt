@@ -114,6 +114,18 @@ internal class CjoFullIdResolver(
         return resolved.declaration.name
     }
 
+    /**
+     * 返回 FullId 所指声明的 class-like 宿主。
+     *
+     * `ReferenceInfo.target` 对 enum constructor 保存的是 constructor 自身 FullId，
+     * 而不是 `AnnotationKind` 的 ClassId；反序列化注解 target 数组时必须沿 CJO
+     * 的真实 parent index 解析宿主，不能按枚举常量短名猜测。
+     */
+    fun resolveContainingClassId(fullId: FullId): ClassId? {
+        val resolved = resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        return resolved.packageIndex.resolveContainingClassId(resolved.declaration.zeroBasedIndex)
+    }
+
     /** 生成 [FullId] 解析结果的调试文本，用于错误类型与诊断原因。 */
     fun describe(fullId: FullId): String {
         return when (val resolved = resolve(fullId)) {
@@ -177,6 +189,18 @@ internal class CjoPackageIndex(
     fun resolveClassId(zeroBasedDeclIndex: Int): ClassId? {
         val relativeClassName = buildRelativeClassName(zeroBasedDeclIndex) ?: return null
         return ClassId(packageFqName, relativeClassName)
+    }
+
+    /** 按声明 parent index 找到最近的 class-like 宿主。 */
+    fun resolveContainingClassId(zeroBasedDeclIndex: Int): ClassId? {
+        var current = parentDeclByIndex[zeroBasedDeclIndex] ?: return null
+        val visited = mutableSetOf<Int>()
+        while (visited.add(current)) {
+            val declaration = resolveDeclByZeroBasedIndex(current) ?: return null
+            if (declaration.decl.isClassLikeDeclaration()) return resolveClassId(current)
+            current = parentDeclByIndex[current] ?: return null
+        }
+        return null
     }
 
     /** 通过 0-based `allDecls` 下标读取声明并包装为索引视图。 */
