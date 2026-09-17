@@ -32,6 +32,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val basicDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirBasicDeclarationChecker>
         get() = setOf(
             CfirBuiltInAnnotationDeclarationChecker,
+            CfirAnnotationTargetChecker,
+            CfirCAnnotationChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
@@ -49,6 +51,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val callableDeclarationCheckers: Set<CfirCallableDeclarationChecker>
         get() = setOf(
             CfirConstVariableInitializerChecker,
+            CfirCFuncVariableInitializerChecker,
             CfirVariableLambdaInitializerTypeMismatchChecker,
             CfirVArrayExtraChecker,
             CfirDeprecatedDeclarationChecker,
@@ -61,6 +64,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val functionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionChecker>
         get() = setOf(
             CfirFunctionInitializationChecker,
+            CfirObjCTopLevelFunctionChecker,
             CfirForeignFunctionParameterTypeChecker,
             CfirForeignFunctionReturnTypeChecker,
             CfirFunctionReturnTypeInferenceChecker,
@@ -92,6 +96,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val fileCheckers: Set<CfirFileChecker>
         get() = setOf(
             CfirImportsChecker,
+            CfirFeaturesDirectiveChecker,
             CfirPlatformAnnotationMacroOrderChecker,
             CfirGeneralSemanticsChecker,
             CfirGenericInstantiationChecker,
@@ -149,7 +154,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     /** 对类型别名循环、展开类型和类型参数使用执行的 checker 集合。 */
     override val typeAliasCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeAliasChecker>
         get() = setOf(
-            CfirTypeAliasCFuncLegalityChecker,
             CfirTypeAliasCycleChecker,
             CfirTypeAliasExpandedTypeChecker,
             CfirTypeAliasUnusedTypeParameterChecker,
@@ -178,6 +182,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirObjCCJMappingChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCommonCtorImmutableAssignChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirAnnotationArgNumberClassChecker,
+            CfirCStructFieldChecker,
         )
 
     /** 对属性声明语义执行的 checker 集合。 */

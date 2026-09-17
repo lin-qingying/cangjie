@@ -442,13 +442,37 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(
             CfirErrors.INVALID_CFUNC_RETURN_TYPE,
-            "foreign function return type must satisfy CType, but ''{0}'' was found.",
+            "C function return type must satisfy CType, but ''{0}'' was found.",
             RENDER_TYPE,
         )
+        map.put(CfirErrors.ILLEGAL_USE_OF_ANNOTATION, "{0} cannot be modified with ''{1}''", RENDER_STRING, RENDER_STRING)
+        map.put(CfirErrors.ANNOTATION_CALLING_CONV_NOT_SUPPORT, "''@CallingConv'' does not support ''{0}''", RENDER_STRING)
+        map.put(CfirErrors.ANNOTATION_INVALID_ARGS_TYPE, "''{0}'' argument has an invalid type", RENDER_STRING)
+        map.put(CfirErrors.CSTRUCT_CANNOT_HAVE_UNIT_FIELDS, "member variables cannot be type Unit in struct with @C")
+        map.put(CfirErrors.ILLEGAL_MEMBER_OF_CSTRUCT, "member variable ''{0}'' of struct ''{1}'' with @C must satisfy CType", RENDER_NAME, RENDER_NAME)
+        map.put(CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS, "CFunc cannot have named arguments")
+        map.put(CfirErrors.CFUNC_CANNOT_HAVE_UNIT_ARGS, "CFunc cannot have arguments of type Unit")
+        map.put(CfirErrors.CFUNC_CANNOT_CAPTURE_VAR, "cannot capture variable ''{0}'' in CFunc lambda expression", RENDER_NAME)
+        map.put(CfirErrors.CFUNC_CANNOT_CAPTURE_THIS, "''{0}'' is not allowed to be captured in CFunc lambda expression", RENDER_STRING)
+        map.put(CfirErrors.FUNC_CAPTURE_VAR_NOT_CTYPE, "captured variable mustn't be struct with @C")
+        map.put(CfirErrors.CFFI_CANNOT_HAVE_TYPE_PARAM, "{0} cannot have type parameters", RENDER_STRING)
+        map.put(CfirErrors.CFUNC_TYPE, "CFunc type must be a function type")
+        map.put(CfirErrors.CFUNC_TOO_MANY_ARGUMENTS, "CFunc constructor requires exactly one argument")
+        map.put(CfirErrors.CFUNC_CTOR_MUST_BE_CPOINTER, "CFunc constructor argument must be a CPointer")
+        map.put(CfirErrors.POINTER_SINGLE_ELEMENT_TYPE_ERROR, "CPointer constructor argument must be a CPointer or CFunc")
+        map.put(CfirErrors.POINTER_TOO_MUCH_ARGUMENT, "CPointer constructor accepts at most one argument")
         map.put(
             CfirErrors.INVALID_CFUNC_PARAMETER_TYPE,
             "arguments type of CFunc must be instantiated with CType, but ''{0}'' was found.",
             RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.UNSAFE_FUNCTION_INVOKE_FAILED,
+            "unsafe function or native function should be invoked in unsafe context.",
+        )
+        map.put(
+            CfirErrors.CFUNC_VAR_CANNOT_HAVE_VAR_PARAM,
+            "CFunc with variable-length parameters cannot be assigned to variables",
         )
         map.put(
             CfirErrors.ONLY_CFUNC_CAN_USE_ANNOTATION,

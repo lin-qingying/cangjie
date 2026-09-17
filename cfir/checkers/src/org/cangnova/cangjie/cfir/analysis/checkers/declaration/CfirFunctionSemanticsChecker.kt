@@ -273,6 +273,8 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
  * - `TypeChecker::CheckFinalizer` 中 `sema_forbid_generic_finalizer` / `sema_cannot_currying`
  */
 object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查 finalizer 声明的所有声明级限制。
      */
@@ -364,6 +366,8 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
  * - getter / setter 不能拥有多个参数列表：`sema_cannot_currying`
  */
 object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查单个属性访问器声明的参数列表限制。
      */

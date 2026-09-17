@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
+import org.cangnova.cangjie.cfir.declarations.CfirPlatformAnnotationClassIds
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -88,7 +89,7 @@ object CfirImportsChecker : CfirFileChecker() {
 
         declaration.imports.forEach { import ->
             if (import.source?.kind?.shouldSkipErrorTypeReporting == true) return@forEach
-            reportImportResolutionDiagnostic(import, importBindingsByImport)
+            reportImportResolutionDiagnostic(declaration, import, importBindingsByImport)
 
             if (import in conflictingNameImports) {
                 val effectiveName = import.importedFqName?.shortName()
@@ -193,10 +194,31 @@ object CfirImportsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportImportResolutionDiagnostic(
+        declaration: CfirFile,
         import: CfirImport,
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
     ) {
         val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: return
+
+        // 宏 import 在 construction 阶段由独立的 macro binding 消费，普通 IMPORTS
+        // binding 可能没有 class/callable target。只要 construction registry 已记录该
+        // 包的真实宏调用，它就是一个已解析的 import，不能再次报告 UNRESOLVED_IMPORT。
+        if (context.session.macroExpansionRegistry
+                ?.usedMacroNames(declaration, importedFqName)
+                .orEmpty()
+                .isNotEmpty()
+        ) return
+        if (import.isAllUnder && context.session.macroExpansionRegistry
+                ?.usedMacroPackages(declaration)
+                .orEmpty()
+                .contains(importedFqName)
+        ) return
+
+        // APILevel/Hide 是平台 system macro。它们的 `@!` 形式必须由 macro surface
+        // 保留 provenance，不能因为当前 session 没有把 ohos.labels 的声明装入普通
+        // symbol provider，就把合法的平台 annotation import 误报为 unresolved。
+        if (declaration.hasPlatformAnnotationUsage(import)) return
+
         val pathSegments = importedFqName.pathSegments()
         if (pathSegments.isEmpty()) return
 
@@ -316,7 +338,9 @@ object CfirImportsChecker : CfirFileChecker() {
             }
 
             override fun visitAnnotation(annotation: CfirAnnotation) {
-                annotation.shortNameOrNull()?.let(result::add)
+                // Annotation usage is accounted for by the resolved type/ClassId
+                // graph in collectReferencedImportTargets. Adding only the short
+                // name here can make a different same-named import look used.
                 annotation.typeRef.accept(this)
                 annotation.arguments.forEach { it.accept(this) }
             }
@@ -415,6 +439,10 @@ object CfirImportsChecker : CfirFileChecker() {
 
             override fun visitAnnotation(annotation: CfirAnnotation) {
                 recordMacroAnnotationPackage(annotation, macroPackages, session)
+                annotation.platformAnnotationClassIdOrNull()?.let { classId ->
+                    classIds += classId
+                    classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
+                }
                 super.visitAnnotation(annotation)
             }
 
@@ -531,6 +559,83 @@ object CfirImportsChecker : CfirFileChecker() {
             ?.qualifiedName
             ?: return
         qualifiedName.parent().takeUnless { it.isRoot }?.let(macroPackages::add)
+    }
+
+    /**
+     * 识别平台 annotation 的稳定 class identity。
+     *
+     * `@!APILevel` / `@!Hide` 在没有声明 sidecar 的 source-only session 中可能没有
+     * resolved typeRef，但它们仍然不是普通文本。这里仅接受官方固定 ClassId 对应的
+     * 两个 provenance 名称；其它 custom annotation 不得通过短名进入 import 使用图。
+     */
+    private fun CfirAnnotation.platformAnnotationClassIdOrNull(): ClassId? {
+        val resolvedClassId = annotationClassIdOrNull()
+        if (resolvedClassId == CfirPlatformAnnotationClassIds.API_LEVEL ||
+            resolvedClassId == CfirPlatformAnnotationClassIds.HIDE
+        ) return resolvedClassId
+
+        val call = this as? CfirAnnotationCall ?: return null
+        if (!call.forcedCustom) return null
+        return when (call.annotationSourceName?.removePrefix("@")) {
+            CfirPlatformAnnotationClassIds.API_LEVEL.shortClassName.asString() ->
+                CfirPlatformAnnotationClassIds.API_LEVEL
+
+            CfirPlatformAnnotationClassIds.HIDE.shortClassName.asString() ->
+                CfirPlatformAnnotationClassIds.HIDE
+
+            else -> null
+        }
+    }
+
+    /** 从已解析 annotation type 或 callee 读取 class identity，不读取短名作为一般事实。 */
+    private fun CfirAnnotation.annotationClassIdOrNull(): ClassId? =
+        (typeRef as? CfirResolvedTypeRef)?.coneType?.classId
+            ?: (this as? CfirAnnotationCall)
+                ?.calleeReference
+                ?.let { it as? CfirResolvedNamedReference }
+                ?.resolvedSymbol
+                ?.let { it as? org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol<*> }
+                ?.classId
+
+    /**
+     * 判断一个 import 是否被 source-only 平台 annotation 使用。
+     *
+     * 只有 `ohos.labels.APILevel`/`Hide` 的完整目标可以命中；普通同名 custom annotation
+     * 不会被该路径当成平台语义。
+     */
+    private fun CfirFile.hasPlatformAnnotationUsage(import: CfirImport): Boolean {
+        val importedFqName = import.importedFqName ?: return false
+        val targetNames = when {
+            import.isAllUnder && importedFqName == CfirPlatformAnnotationClassIds.API_LEVEL.packageFqName ->
+                setOf(
+                    CfirPlatformAnnotationClassIds.API_LEVEL.shortClassName,
+                    CfirPlatformAnnotationClassIds.HIDE.shortClassName,
+                )
+
+            !import.isAllUnder && importedFqName == CfirPlatformAnnotationClassIds.API_LEVEL ->
+                setOf(CfirPlatformAnnotationClassIds.API_LEVEL.shortClassName)
+
+            !import.isAllUnder && importedFqName == CfirPlatformAnnotationClassIds.HIDE ->
+                setOf(CfirPlatformAnnotationClassIds.HIDE.shortClassName)
+
+            else -> return false
+        }
+
+        var found = false
+        accept(object : CfirDefaultVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (!found) element.acceptChildren(this)
+            }
+
+            override fun visitAnnotation(annotation: CfirAnnotation) {
+                if (annotation.platformAnnotationClassIdOrNull()?.shortClassName in targetNames) {
+                    found = true
+                    return
+                }
+                super.visitAnnotation(annotation)
+            }
+        })
+        return found
     }
 
     /**

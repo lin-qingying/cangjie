@@ -56,6 +56,7 @@ import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.WeakHashMap
@@ -736,7 +737,7 @@ private class CfirInitializationFlowAnalyzer(
                 // 写入字段或可写主构造属性时，访问器只是存储槽的解析视图；它不能被当作
                 // 普通实例成员函数访问。构造器内的直接写入应先推进 definite-assignment，
                 // 嵌套函数中的首次写入则保留 CAPTURE_BEFORE_INITIALIZATION 分类。
-                if (access.isTrackedStorageWrite(symbol)) {
+                if (access.isTrackedStorageWrite(symbol, afterReceiver)) {
                     if (afterReceiver.shouldReportCaptureBeforeInitialization(symbol)) {
                         reportCaptureBeforeInitialization(
                             diagnosticName = access.calleeReference.referenceNameOrNull()
@@ -1247,9 +1248,14 @@ private class CfirInitializationFlowAnalyzer(
      */
     private fun CfirQualifiedAccessExpression.isTrackedStorageWrite(
         symbol: CfirBasedSymbol<*>,
+        state: InitializationState,
     ): Boolean = when (symbol) {
         is CfirPropertyAccessorSymbol -> symbol.isSetter
-        is CfirPropertySymbol -> symbol.cfir.setter != null
+        is CfirPropertySymbol -> symbol.cfir.setter != null ||
+                (
+                    symbol.cfir.isPrimaryConstructorParameterProperty() &&
+                            state.expectedReceiver != null
+                    )
         is CfirVariableSymbol<*> -> true
         else -> false
     }
@@ -2556,6 +2562,8 @@ private val CfirConstructor.isStaticConstructor: Boolean
  * 函数体初始化读取检查器。
  */
 object CfirFunctionInitializationChecker : CfirFunctionChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查函数或构造器体内的初始化语义。
      */
@@ -2569,6 +2577,9 @@ object CfirFunctionInitializationChecker : CfirFunctionChecker() {
  * 文件级 static/global 初始化顺序检查器。
  */
 object CfirFileStaticGlobalInitializationChecker : CfirFileChecker() {
+
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查同一文件中的顶层变量和 static 成员字段初始化顺序。
      */
@@ -2582,6 +2593,8 @@ object CfirFileStaticGlobalInitializationChecker : CfirFileChecker() {
  * class-like 成员初始化器声明顺序检查器。
  */
 object CfirClassLikeInitializationChecker : CfirClassLikeChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查 class-like 声明的成员初始化器。
      */
@@ -2595,6 +2608,8 @@ object CfirClassLikeInitializationChecker : CfirClassLikeChecker() {
  * 构造器完成实例字段初始化检查器。
  */
 object CfirConstructorInitializationChecker : CfirConstructorChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查构造器结束时实例字段是否全部初始化。
      */
@@ -2988,10 +3003,10 @@ private fun CfirFieldVariable.toTrackedStaticFieldInfo(): TrackedVariableInfo =
  * 存储声明参与初始化检查，保持与官方 PreCheck “后声明报重定义”的语义一致。
  */
 private fun CfirClassLikeDeclaration.primaryConstructorPropertyInfos(): List<TrackedVariableInfo> {
-    val effectiveProperties = primaryConstructorParametersWithProperties()
-        .mapNotNull { (_, property) ->
-            property.takeIf { isEarliestStorageDeclaration(property) }
-        }
+        val effectiveProperties = primaryConstructorParametersWithProperties()
+            .mapNotNull { (_, property) ->
+                property.takeIf { isEarliestStorageDeclaration(property) }
+            }
         .toList()
 
     return effectiveProperties.map { property ->
@@ -3122,6 +3137,16 @@ private fun CfirDeclaration.storageDeclarationNameOrNull(): Name? = when (this) 
     is CfirProperty -> name
     else -> null
 }
+
+/**
+ * 判断属性是否由主构造器的成员参数生成。
+ *
+ * 这类属性虽然对外仍是 `let`，但其 backing storage 的首次写入发生在构造器初始化流中；
+ * 不能把它与普通只读属性混为一谈。唯一身份来自 raw builder 写入的 fake source kind，
+ * 不使用属性名称或源码文本猜测。
+ */
+internal fun CfirProperty.isPrimaryConstructorParameterProperty(): Boolean =
+    source?.kind == CjFakeSourceElementKind.PropertyFromParameter
 
 /**
  * 取得 pattern variable 诊断使用的主要绑定名称。

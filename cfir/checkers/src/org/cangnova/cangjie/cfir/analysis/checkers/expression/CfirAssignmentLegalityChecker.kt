@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentKind
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.isPrimaryConstructorParameterProperty
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.calls.isResolvedTypeQualifier
 import org.cangnova.cangjie.cfir.correspondingProperty
@@ -315,7 +316,10 @@ internal object CfirMutationTargetClassifier {
 
             is CfirPropertySymbol -> {
                 val property = resolvedSymbol.takeIf { it.isBound }?.cfir as? CfirProperty
-                if (property != null && !property.isEffectivelyWritable()) {
+                if (property != null &&
+                    !property.isEffectivelyWritable() &&
+                    !property.isPrimaryConstructorInitializationAssignment(assignment)
+                ) {
                     MutationTarget.ImmutableValue
                 } else {
                     MutationTarget.Assignable
@@ -367,6 +371,22 @@ internal object CfirMutationTargetClassifier {
      * 一个 `mut prop` 降级为 immutable。
      */
     private fun CfirProperty.isEffectivelyWritable(): Boolean = status.isMut
+
+    /**
+     * 主构造成员参数的 `let` 属性允许在实例构造器中完成一次 backing storage 初始化。
+     * 后续赋值仍由初始化流分类为重复赋值，并继续报告不可变目标。
+     */
+    context(context: CheckerContext)
+    private fun CfirProperty.isPrimaryConstructorInitializationAssignment(
+        assignment: CfirAssignment?,
+    ): Boolean {
+        if (!isPrimaryConstructorParameterProperty()) return false
+        if (assignment == null) return false
+        val constructor = context.findClosestDeclaration<CfirConstructor>() ?: return false
+        if (constructor.status.isStatic) return false
+        return CfirInitializationAssignmentClassifier.classifyAssignment(assignment, context) ==
+                CfirInitializationAssignmentKind.INITIALIZATION
+    }
 
     /**
      * 取得当前访问引用的名称，缺失时返回错误名占位。

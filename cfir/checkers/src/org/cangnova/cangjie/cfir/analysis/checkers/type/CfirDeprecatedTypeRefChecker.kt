@@ -22,7 +22,6 @@ object CfirDeprecatedTypeRefChecker : CfirResolvedTypeRefChecker() {
         val source = typeRef.source ?: return
         val symbol = typeRef.coneType.toClassLikeSymbol(context.session) ?: return
         val deprecation = symbol.getOwnDeprecation(context.languageVersionSettings)?.all ?: return
-        System.err.println("PROBE-TYPEREF: classId=${symbol.classId} annotations=${symbol.cfir.annotations.map { (it.typeRef as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef)?.coneType }} provider=${symbol.cfir.deprecationsProvider::class.simpleName} deprecation=$deprecation")
 
         val isError = deprecation.deprecationLevel == DeprecationLevelValue.ERROR
         val factory = if (isError) CfirErrors.DEPRECATED_ERROR else CfirErrors.DEPRECATED_WARNING

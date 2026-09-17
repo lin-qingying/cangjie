@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.entrypoint.configuration
 
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
+import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 
@@ -68,6 +69,16 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val CHECK_PROGRAM_ENTRY =
         CompilerConfigurationKey.create<Boolean>("CHECK_PROGRAM_ENTRY")
+
+    /** 是否启用官方 CJMapping 派生。 */
+    @JvmField
+    val ENABLE_INTEROP_CJMAPPING =
+        CompilerConfigurationKey.create<Boolean>("ENABLE_INTEROP_CJMAPPING")
+
+    /** CJMapping 的目标互操作语言。 */
+    @JvmField
+    val TARGET_INTEROP_LANGUAGE =
+        CompilerConfigurationKey.create<CfirInteropTarget>("TARGET_INTEROP_LANGUAGE")
 }
 
 /**
@@ -157,4 +168,21 @@ var CompilerConfiguration.checkProgramEntry: Boolean
     get() = getBoolean(CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
     set(value) {
         put(CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY, value)
+    }
+
+/** 是否启用官方 `--enable-interop-cjmapping` 语义。 */
+var CompilerConfiguration.enableInteropCJMapping: Boolean
+    get() = getBoolean(CfirFrontendConfigurationKeys.ENABLE_INTEROP_CJMAPPING)
+    set(value) {
+        put(CfirFrontendConfigurationKeys.ENABLE_INTEROP_CJMAPPING, value)
+    }
+
+/** 当前 CJMapping 目标互操作语言。 */
+var CompilerConfiguration.targetInteropLanguage: CfirInteropTarget
+    get() = get(
+        CfirFrontendConfigurationKeys.TARGET_INTEROP_LANGUAGE,
+        CfirInteropTarget.NONE,
+    )
+    set(value) {
+        put(CfirFrontendConfigurationKeys.TARGET_INTEROP_LANGUAGE, value)
     }

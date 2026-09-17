@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -65,28 +66,17 @@ data class MacroBuiltinRegistries(
          * 任何 [DEFAULT] 内 macros / annotations / nonMacros 名单变更都必须递增；
          * 上游 cache 据此整体失效。
          */
-        const val VERSION: Int = 3
+        const val VERSION: Int = 5
 
         /** 生产路径默认 builtin macro / annotation / non-macro 注册表。 */
         val DEFAULT: MacroBuiltinRegistries = MacroBuiltinRegistries(
             macros = BuiltinMacroRegistry.all.toSet(),
             // 仓颉内建/互操作 annotation 是普通 annotation site，不参与 macro executor 解析。
-            annotations = setOf(
-                Name.identifier("Annotation"),
-                Name.identifier("C"),
-                Name.identifier("CallingConv"),
-                Name.identifier("CJMapping"),
-                Name.identifier("Deprecated"),
-                Name.identifier("ForeignName"),
-                Name.identifier("Frozen"),
-                Name.identifier("Java"),
-                Name.identifier("JavaImpl"),
-                Name.identifier("JavaMirror"),
-                Name.identifier("ObjCCJMapping"),
-                Name.identifier("ObjCImpl"),
-                Name.identifier("ObjCInit"),
-                Name.identifier("ObjCMirror"),
-            ),
+            annotations = BuiltInAnnotationRegistry.languageBuiltIns
+                .asSequence()
+                .filter { it.hasSourceParserEntry && !it.allowsExpression }
+                .map { Name.identifier(it.sourceName) }
+                .toSet(),
             // baseline 第 8 节："builtin non-macro surface"
             nonMacros = setOf(
                 Name.identifier("IfAvailable"),
@@ -169,19 +159,39 @@ class MacroResolutionContext internal constructor(
         callPackage: FqName,
         qualifier: FqName?,
         name: Name,
+        sourceModuleName: String,
         kind: MacroSurface.Kind = MacroSurface.Kind.PLAIN,
         hasParenthesis: Boolean = true,
         allowsDeclarationInputParenthesisOmission: Boolean = false,
     ): MacroResolution {
         // 1. 同包 def/call 禁止。该规则覆盖 builtin 名称，防止同包宏定义劫持 annotation site。
-        val samePackageDef = symbolIndex.samePackageMacroDef(callPackage, name)
+        val samePackageDef = if (qualifier == null || qualifier == callPackage) {
+            symbolIndex.samePackageMacroDef(callPackage, name)
+        } else {
+            null
+        }
         if (samePackageDef != null) {
             return MacroResolution.SamePackage(samePackageDef)
         }
 
+        // 显式限定只查询写出的完整名称；失败后不能转而命中同名未限定 import 或 builtin。
+        if (qualifier != null) {
+            val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
+                ?: return MacroResolution.Unresolved(name)
+            return verifyCallShapeOrMismatch(
+                resolved, kind, hasParenthesis, allowsDeclarationInputParenthesisOmission,
+            ) ?: MacroResolution.Resolved(resolved)
+        }
+
         // 2. builtin annotation：annotation site 不能被同名外部 macro 定义劫持。
-        if (name in builtinRegistries.annotations) {
-            return MacroResolution.CustomAnnotation(name)
+        if (name in builtinRegistries.annotations && qualifier == null &&
+            BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
+                sourceName = name.asString(),
+                forcedCustom = kind == MacroSurface.Kind.FORCED,
+                moduleName = sourceModuleName,
+            ) != null
+        ) {
+            return MacroResolution.BuiltinAnnotation(name)
         }
 
         // 3. builtin non-macro
@@ -199,19 +209,6 @@ class MacroResolutionContext internal constructor(
                     hasParenthesis,
                     allowsDeclarationInputParenthesisOmission,
                 ) ?: MacroResolution.Builtin(builtin)
-            }
-        }
-
-        // 5. qualifier 形式
-        if (qualifier != null) {
-            val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
-            if (resolved != null) {
-                return verifyCallShapeOrMismatch(
-                    resolved,
-                    kind,
-                    hasParenthesis,
-                    allowsDeclarationInputParenthesisOmission,
-                ) ?: MacroResolution.Resolved(resolved)
             }
         }
 
@@ -306,6 +303,9 @@ sealed class MacroResolution {
      * @property name builtin non-macro 名称。
      */
     data class BuiltinNonMacro(val name: Name) : MacroResolution()
+
+    /** 官方普通内置注解；它保留 raw annotation slot，但不进入宏 executor/splice。 */
+    data class BuiltinAnnotation(val name: Name) : MacroResolution()
 
     /**
      * 同包 macro def/call 非法形态。

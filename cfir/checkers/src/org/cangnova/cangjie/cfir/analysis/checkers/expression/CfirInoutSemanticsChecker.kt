@@ -2,8 +2,9 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -11,22 +12,20 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.declarations.interopInfo
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConePointerType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeVArrayType
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCStringType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
@@ -48,9 +47,7 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         }
         if (inoutArguments.isEmpty()) return
 
-        val targetFunction = expression.resolvedFunctionSymbol()?.takeIf { it.isBound }?.cfir as? CfirNamedFunction
-        val targetType = (targetFunction?.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-        val isCFuncCall = targetFunction?.status?.isForeign == true || (targetType as? ConeFunctionType)?.isCFunc == true
+        val isCFuncCall = expression.isCFuncCall(context.session)
 
         for (argument in inoutArguments) {
             val argumentExpression = argument.expression
@@ -62,8 +59,12 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
                 continue
             }
 
-            checkInoutTarget(argumentExpression, argument.source)
-            checkInoutTypeConstraints(argumentExpression)
+            // 官方 SynFuncArg 先确认可变左值；无效目标的中间类型不能再触发 CType 级联诊断。
+            if (argumentExpression.coneTypeOrNull !is ConeErrorType &&
+                checkInoutTarget(argumentExpression, argument.source)
+            ) {
+                checkInoutTypeConstraints(argumentExpression)
+            }
         }
     }
 
@@ -76,11 +77,14 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
     private fun checkInoutTarget(
         argument: CfirExpression,
         argumentSource: AbstractCjSourceElement?,
-    ) {
-        val access = argument as? CfirQualifiedAccessExpression
+        isBase: Boolean = false,
+    ): Boolean {
+        // this/super 只允许作为成员访问的基址，不能直接作为 inout 实参。
+        if (isBase && (argument is CfirThisReceiverExpression || argument is CfirSuperReceiverExpression)) return true
+        val access = argument as? CfirNamedAccessExpression
         if (access == null) {
-            reporter.reportOn(argument.source ?: argumentSource, CfirErrors.INOUT_MUST_BE_VAR_VARIABLE)
-            return
+            reporter.reportOn(argumentSource ?: argument.source, CfirErrors.INOUT_MUST_BE_VAR_VARIABLE)
+            return false
         }
 
         val variable = access.resolvedVariable()
@@ -89,24 +93,33 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
                 source = argumentSource ?: access.source,
                 factory = CfirErrors.INOUT_MUST_BE_VAR_VARIABLE,
             )
-            return
+            return false
         }
 
-        checkReceiverChain(access)
-        checkVariableAccess(access, variable, access.source ?: argumentSource)
-    }
+        val variableIsValid = checkVariableAccess(access, variable, access.source ?: argumentSource)
+        if (variable.status.isStatic) return variableIsValid
 
-    /**
-     * 递归检查接收者链上的变量访问。
-     *
-     * `inout a.b.c` 需要保证链上的每一层变量访问都不会穿过不可变变量。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkReceiverChain(access: CfirQualifiedAccessExpression) {
-        val receiver = access.explicitReceiver as? CfirQualifiedAccessExpression ?: return
-        checkReceiverChain(receiver)
-        val variable = receiver.resolvedVariable() ?: return
-        checkVariableAccess(receiver, variable, receiver.source)
+        val nominalOwner = if (variable is CfirValueParameter || variable.isLocal) {
+            null
+        } else {
+            variable.symbol.getContainingClass()?.cfir
+        }
+        val receiver = access.explicitReceiver
+        if (receiver == null) {
+            if (!variableIsValid) return false
+            // 裸字段访问可以没有 dispatchReceiver；声明 owner 才能区分局部变量与实例字段。
+            if (nominalOwner != null && nominalOwner !is CfirStruct) {
+                reporter.reportOn(access.source ?: argumentSource, CfirErrors.INOUT_MODIFY_HEAP_VARIABLE)
+                return false
+            }
+            return true
+        }
+        if (receiver.coneTypeOrNull?.fullyExpandedType(context.session) is ConeClassLikeType) {
+            reporter.reportOn(receiver.source ?: argumentSource, CfirErrors.INOUT_MODIFY_HEAP_VARIABLE)
+            return false
+        }
+        val receiverIsValid = checkInoutTarget(receiver, receiver.source, isBase = true)
+        return receiverIsValid && variableIsValid
     }
 
     /**
@@ -117,13 +130,15 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         access: CfirQualifiedAccessExpression,
         variable: CfirVariable,
         source: AbstractCjSourceElement?,
-    ) {
+    ): Boolean {
         if (!variable.isVar) {
             reporter.reportOn(
                 source = source ?: access.source,
                 factory = CfirErrors.INOUT_MUST_BE_VAR_VARIABLE,
             )
+            return false
         }
+        return true
     }
 
     /**
@@ -133,12 +148,11 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkInoutTypeConstraints(argument: CfirExpression) {
-        val argType = argument.coneTypeOrNull ?: return
+        val argType = argument.coneTypeOrNull?.fullyExpandedType(context.session) ?: return
         if (argType is ConeErrorType) return
 
         val source = argument.source
-        val classId = argType.classIdOrNull()
-        if (classId != null && classId.shortClassName.asString() == "CString") {
+        if (argType is ConeCStringType) {
             reporter.reportOn(
                 source = source,
                 factory = CfirErrors.INOUT_MODIFY_CSTRING_OR_ZEROSIZED,
@@ -147,21 +161,23 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
             return
         }
 
-        if (!argType.isCTypeCompatible()) {
+        if (!CfirCTypeSemantics.isMetCType(context.session, argType)) {
             reporter.reportOn(
                 source = source,
                 factory = CfirErrors.INOUT_MODIFY_NON_CTYPE,
             )
+            return
         }
 
-        val receiver = (argument as? CfirQualifiedAccessExpression)?.explicitReceiver ?: return
-        val receiverType = receiver.coneTypeOrNull
-        if (receiverType is ConeClassLikeType) {
+        if (CfirCTypeSemantics.isZeroSized(context.session, argType)) {
             reporter.reportOn(
-                source = receiver.source ?: source,
-                factory = CfirErrors.INOUT_MODIFY_HEAP_VARIABLE,
+                source = source,
+                factory = CfirErrors.INOUT_MODIFY_CSTRING_OR_ZEROSIZED,
+                a = argType,
             )
+            return
         }
+
     }
 
     /** 去掉命名实参包装，取得真实的 inout/value 表达式。 */
@@ -182,36 +198,4 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
         return (resolvedSymbol as? CfirVariableSymbol<*>)?.takeIf { it.isBound }?.cfir
     }
 
-    /**
-     * 从函数调用引用中解析被调函数符号。
-     */
-    private fun CfirFunctionCall.resolvedFunctionSymbol(): CfirFunctionSymbol<*>? {
-        return when (val reference = calleeReference) {
-            is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirFunctionSymbol<*>
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirFunctionSymbol<*>
-            else -> null
-        }
-    }
-
-    /**
-     * 判断类型是否可作为 inout 的 C 兼容类型。
-     */
-    private fun ConeCangJieType.isCTypeCompatible(): Boolean {
-        return this is ConePrimitiveType ||
-            this is ConeStructType ||
-            this is ConeVArrayType ||
-            this is ConePointerType
-    }
-
-    /**
-     * 提取 class-like、struct 或 enum 类型的 ClassId。
-     */
-    private fun ConeCangJieType.classIdOrNull(): ClassId? {
-        return when (this) {
-            is ConeClassLikeType -> classId
-            is ConeStructType -> classId
-            is ConeEnumType -> classId
-            else -> null
-        }
-    }
 }

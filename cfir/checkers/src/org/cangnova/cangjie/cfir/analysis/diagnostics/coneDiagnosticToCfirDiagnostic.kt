@@ -296,6 +296,7 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                     expectedType = upperConeType.substituteTypeVariableTypes(candidate, session),
                     actualType = lowerConeType.substituteTypeVariableTypes(candidate, session),
                     isMismatchDueToNullability = false,
+                    isInoutArgument = (it as? CfirExpression)?.isInoutArgumentExpression() == true,
                     anonymousFunction = (position as? ConeLambdaArgumentConstraintPosition)?.argument,
                     candidate = candidate,
                     session = session,
@@ -723,6 +724,47 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
+            is BuiltinPointerConstructorTooManyArguments -> CfirErrors.POINTER_TOO_MUCH_ARGUMENT.on(
+                rootCause.source,
+                session,
+            )
+
+            is BuiltinPointerConstructorArgumentType -> CfirErrors.POINTER_SINGLE_ELEMENT_TYPE_ERROR.on(
+                rootCause.source,
+                session,
+            )
+
+            is BuiltinCFuncConstructorTooManyArguments -> CfirErrors.CFUNC_TOO_MANY_ARGUMENTS.on(
+                rootCause.source,
+                session,
+            )
+
+            is BuiltinCFuncConstructorArgumentType -> CfirErrors.CFUNC_CTOR_MUST_BE_CPOINTER.on(
+                rootCause.argument.source ?: source ?: return@mapNotNull null,
+                session,
+            )
+
+            is BuiltinCStringConstructorArgumentType -> {
+                val diagnosticSource = rootCause.argument.source ?: source ?: return@mapNotNull null
+                val literalDescription = rootCause.literalDescription
+                if (literalDescription != null) {
+                    CfirErrors.CANNOT_CONVERT_LITERAL.on(
+                        diagnosticSource,
+                        literalDescription,
+                        rootCause.expectedType,
+                        session,
+                    )
+                } else {
+                    CfirErrors.TYPE_MISMATCH.on(
+                        diagnosticSource,
+                        rootCause.expectedType,
+                        rootCause.actualType,
+                        false,
+                        session,
+                    )
+                }
+            }
+
             is ArgumentTypeMismatch -> {
                 candidate.multiLambdaBuilderInferenceDiagnosticFor(rootCause.argument, source, qualifiedAccessSource, session)
                     ?.let { return@mapNotNull it }
@@ -759,6 +801,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     expectedType = expectedType,
                     actualType = actualType,
                     isMismatchDueToNullability = rootCause.isMismatchDueToNullability,
+                    isInoutArgument = rootCause.isInoutArgument,
                     anonymousFunction = rootCause.anonymousFunctionIfReturnExpression,
                     candidate = candidate,
                     session = session,
@@ -1227,6 +1270,7 @@ private fun argumentTypeMismatch(
     expectedType: ConeCangJieType,
     actualType: ConeCangJieType,
     isMismatchDueToNullability: Boolean,
+    isInoutArgument: Boolean = false,
     anonymousFunction: CfirFunction?,
     candidate: AbstractCallCandidate<*>,
     session: CfirSession,
@@ -1237,6 +1281,15 @@ private fun argumentTypeMismatch(
         actualType.rangeElementTypeOrNull() != null
     ) {
         return null
+    }
+    if (isInoutArgument) {
+        return CfirErrors.TYPE_MISMATCH.on(
+            source,
+            expectedType,
+            actualType,
+            isMismatchDueToNullability,
+            session,
+        )
     }
     // Lambda 返回约束比较的是完整函数值，不能把其中的 literal 当作独立的目标类型转换。
     if (anonymousFunction != null) {
@@ -1313,6 +1366,13 @@ private fun argumentTypeMismatch(
         isMismatchDueToNullability,
         session,
     )
+}
+
+/** 只通过 CFIR 包装节点识别 inout，避免诊断映射层依赖源码文本或 source range。 */
+private fun CfirExpression.isInoutArgumentExpression(): Boolean = when (this) {
+    is CfirInoutArgumentExpression -> true
+    is CfirNamedArgumentExpression -> expression.isInoutArgumentExpression()
+    else -> false
 }
 
 /** 裸函数名在目标类型检查中仍是函数引用值，而不是普通调用实参节点。 */
@@ -3490,6 +3550,8 @@ private fun List<ResolutionDiagnostic>.coalesceArgumentTypeMismatches(): List<Re
 private val ResolutionDiagnostic.isArgumentMappingDiagnostic: Boolean
     get() = when (this) {
         is ArgumentPassedTwice,
+        is BuiltinPointerConstructorTooManyArguments,
+        is BuiltinCFuncConstructorTooManyArguments,
         is MixingNamedAndPositionalArguments,
         is NamedArgumentsNotAllowed,
         is NamedParameterNotFound,

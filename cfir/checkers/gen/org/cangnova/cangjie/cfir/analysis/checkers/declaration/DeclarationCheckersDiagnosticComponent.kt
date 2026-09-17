@@ -5,6 +5,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.CheckersComponentInternal
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.isFromDeclarationFile
 import org.cangnova.cangjie.cfir.analysis.checkersComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.declarations.*
@@ -121,6 +122,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allFunctionCheckers.check(finalizer, data)
     }
 
+    override fun visitErrorFunction(errorFunction: CfirErrorFunction, data: CheckerContext) {
+        checkers.allFunctionCheckers.check(errorFunction, data)
+    }
+
     override fun visitClass(klass: CfirClass, data: CheckerContext) {
         checkers.allClassLikeCheckers.check(klass, data)
     }
@@ -142,6 +147,9 @@ class DeclarationCheckersDiagnosticComponent(
         context: CheckerContext
     ) {
         for (checker in this) {
+            // 声明文件（.cj.d）里不存在"实现"，依赖实现完备性的 checker 整体跳过。
+            // 判定取自元素所属文件（与解析层同源的 CjSourceKind），不读会话级开关。
+            if (checker.requiresImplementation && isFromDeclarationFile(context)) continue
             try {
                 context(context, reporter) {
                     checker.check(element)

@@ -8,10 +8,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 
 /**
@@ -24,18 +21,13 @@ object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
     /** 检查 CFunc 调用中 VArray 实参是否按 `inout` 形式传入。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
-        val ref = expression.calleeReference as? CfirResolvedNamedReference ?: return
-        val funcSymbol = ref.resolvedSymbol as? CfirFunctionSymbol<*> ?: return
-        val calleeFunc = funcSymbol.cfir
-        val calleeType = (calleeFunc.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-        val isCFuncCall = calleeFunc.status.isForeign
-            || (calleeType as? ConeFunctionType)?.isCFunc == true
+        val isCFuncCall = expression.isCFuncCall(context.session)
 
         for (argument in expression.argumentList.arguments) {
             val unwrapped = unwrapArgument(argument)
             val argIsInout = unwrapped is CfirInoutArgumentExpression
             val argExpr = if (argIsInout) (unwrapped as CfirInoutArgumentExpression).expression else unwrapped
-            val argType = argExpr.coneTypeOrNull ?: continue
+            val argType = argExpr.coneTypeOrNull?.fullyExpandedType(context.session) ?: continue
 
             if (isCFuncCall) {
                 if (argType is ConeVArrayType && !argIsInout) {

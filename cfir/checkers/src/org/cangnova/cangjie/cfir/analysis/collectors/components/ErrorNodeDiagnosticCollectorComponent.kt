@@ -87,35 +87,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
-
-/** 官方 NAME_TO_ANNO_KIND 中不受 std-only 约束的内置 annotation 名称。 */
-private val BUILTIN_ANNOTATION_NAMES_EXCEPT_CONST_SAFE: Set<Name> = setOf(
-    Name.identifier("JavaMirror"),
-    Name.identifier("JavaImpl"),
-    Name.identifier("JavaHasDefault"),
-    Name.identifier("ObjCMirror"),
-    Name.identifier("ObjCImpl"),
-    Name.identifier("ObjCCJMapping"),
-    Name.identifier("ForeignGetterName"),
-    Name.identifier("ForeignSetterName"),
-    Name.identifier("ObjCInit"),
-    Name.identifier("ObjCOptional"),
-    Name.identifier("ForeignName"),
-    Name.identifier("CallingConv"),
-    Name.identifier("C"),
-    Name.identifier("Attribute"),
-    Name.identifier("Intrinsic"),
-    Name.identifier("OverflowThrowing"),
-    Name.identifier("OverflowWrapping"),
-    Name.identifier("OverflowSaturating"),
-    Name.identifier("When"),
-    Name.identifier("FastNative"),
-    Name.identifier("Annotation"),
-    Name.identifier("Deprecated"),
-    Name.identifier("Frozen"),
-    Name.identifier("EnsurePreparedToMock"),
-    Name.identifier("NonProduct"),
-)
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 
 /**
  * 错误节点诊断收集组件（对应 Kotlin FIR 的 FirErrorNodeDiagnosticCollectorComponent）。
@@ -242,6 +214,8 @@ class ErrorNodeDiagnosticCollectorComponent(
     private fun CfirErrorTypeRef.isMacroAnnotationTypeRef(context: CheckerContext): Boolean {
         val annotation = context.annotationCallContainingTypeRef(this)
             ?: return false
+        // 普通注解的身份由 TYPES 发布；构造期宏注册表不能重新按短名吞掉类型错误。
+        if (annotation.annotationIdentity is CangjieAnnotationIdentity.LanguageBuiltIn) return true
         // 自定义 annotation 的 callee 仍经过普通类型解析器。已解析到泛型 annotation
         // 但省略类型实参时，通用类型诊断不属于 annotation 参数/目标检查；官方 parser
         // 已经把该位置识别为 annotation callee，不能再把它作为普通裸泛型类型使用。
@@ -255,11 +229,6 @@ class ErrorNodeDiagnosticCollectorComponent(
         val classification = context.session.macroDemandClassificationOrNull
             ?.takeIf { it.isFinalFrozen }
             ?: return false
-        val annotationName = snapshot.qualifiedName?.shortName() ?: return false
-        // 这些名称来自官方 Parser.h 的 NAME_TO_ANNO_KIND。它们是普通内置 annotation，
-        // 但不都参与 MacroBuiltinRegistries 的 construction routing（例如 Overflow*）；
-        // 因此这里不能用 construction registry 反推 annotation 的解析归属。
-        if (annotationName in BUILTIN_ANNOTATION_NAMES_EXCEPT_CONST_SAFE) return true
         val decision = classification.finalDecisions.firstOrNull { decision ->
             val carrier = decision.annotationCarrier ?: return@firstOrNull false
             carrier.owner === snapshot.owner && carrier.annotationIndex == snapshot.annotationIndex
@@ -271,9 +240,8 @@ class ErrorNodeDiagnosticCollectorComponent(
             is MacroResolution.Resolved,
             -> true
 
-            is MacroResolution.CustomAnnotation ->
-                decision.surface.qualifiedName?.shortName() in classification.builtinAnnotationRegistry
-
+            is MacroResolution.BuiltinAnnotation,
+            is MacroResolution.CustomAnnotation,
             is MacroResolution.KindMismatch,
             is MacroResolution.SamePackage,
             is MacroResolution.Unresolved,

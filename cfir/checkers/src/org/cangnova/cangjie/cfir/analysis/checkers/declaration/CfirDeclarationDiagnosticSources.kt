@@ -231,6 +231,13 @@ internal fun CfirExtend.extendKeywordDiagnosticSource(): AbstractCjSourceElement
  * PSI 可用时直接使用函数名或 operator name；light-tree source 则通过 token 扫描定位
  * `func` 关键字后的函数名，失败时回退到声明 source。
  */
+/** 泛型签名约束覆盖完整类型形参列表，PSI 与 LightTree 共用源码树位置。 */
+internal fun CfirFunction.typeParameterListDiagnosticSource(): AbstractCjSourceElement? {
+    val declarationSource = source ?: return null
+    val node = declarationSource.collectSourceNodes().firstOrNull { it.tokenType == CjNodeTypes.TYPE_PARAMETER_LIST } ?: return null
+    return CjOffsetsOnlySourceElement(declarationSource.treeStructure.getStartOffset(node), declarationSource.treeStructure.getEndOffset(node))
+}
+
 internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val functionPsi = when (psi) {

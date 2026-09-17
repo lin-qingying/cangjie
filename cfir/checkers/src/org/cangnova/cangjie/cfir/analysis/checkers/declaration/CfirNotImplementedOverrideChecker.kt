@@ -48,6 +48,7 @@ import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.declarations.resolvedInteropInfoOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -55,7 +56,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.name.Name
 
 /**
  * 未实现抽象成员检查器。
@@ -66,10 +66,7 @@ import org.cangnova.cangjie.name.Name
  * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用仅基于本体继承关系的 scope。
  */
 object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
-    /**
-     * ObjC CJMapping 注解名。
-     */
-    private val OBJC_CJ_MAPPING = Name.identifier("ObjCCJMapping")
+    override val requiresImplementation: Boolean get() = true
 
     /**
      * 检查 class/struct 是否仍有未实现的 inherited abstract member。
@@ -78,7 +75,9 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
         if (declaration.status.isAbstract || declaration.status.isSealed) return
-        if (declaration.hasAnnotation(OBJC_CJ_MAPPING) && declaration.superTypeRefs.isNotEmpty()) return
+        if (declaration.resolvedInteropInfoOrNull()?.cjmp?.isObjCMapping == true &&
+            declaration.superTypeRefs.isNotEmpty()
+        ) return
 
         val classLikeSymbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: return
         val receiverType = classLikeSymbol.constructType(

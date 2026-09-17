@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
+import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirCFuncTypeChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirObjCTypeArgumentChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTypeProjectionModifierChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirHideResolvedTypeRefChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirDeprecatedTypeRefChecker
@@ -21,6 +23,8 @@ object CommonTypeCheckers : TypeCheckers() {
     override val resolvedTypeRefCheckers
         get() = setOf(
             CfirUpperBoundViolatedTypeChecker,
+            CfirCFuncTypeChecker,
+            CfirObjCTypeArgumentChecker,
             CfirVArrayElementTypeChecker,
             CfirHideResolvedTypeRefChecker,
             CfirDeprecatedTypeRefChecker,

@@ -39,6 +39,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,
             CfirClosureCaptureUsageChecker,
+            CfirCFuncCaptureThisChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFinalizerThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOpenConstructorThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirStaticContextThisUsageChecker,
@@ -111,6 +112,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirConstructorDelegationCallChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
             CfirImmutableValueCannotAccessMutableFunctionChecker,
+            CfirUnsafeFunctionInvokeChecker,
+            CfirCFuncCaptureCallChecker,
             CfirMockApiChecker,
             CfirDeprecatedCallChecker,
             // trailing closure 是否可用只由参数映射阶段按最终 mapped formal 判定。
@@ -125,12 +128,15 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>
         get() = setOf(
             CfirFunctionReferenceLegalityChecker,
+            CfirObjCCallPropertyChecker,
             CfirInvalidEnumMemberTypeArgumentsChecker,
             CfirGenericBareClassifierAccessChecker,
             CfirInvalidFieldExposeAccessChecker,
             CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
             CfirCaptureHasShadowVariableChecker,
             CfirInstanceFieldCaptureChecker,
+            CfirCFuncCaptureNamedAccessChecker,
+            CfirCFuncVariadicReferenceChecker,
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
@@ -143,7 +149,10 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 
     /** 对 `super` 接收者表达式合法性执行的 checker 集合。 */
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
-        get() = setOf(CfirIllegalSuperReferenceChecker)
+        get() = setOf(
+            CfirIllegalSuperReferenceChecker,
+            CfirCFuncCaptureSuperChecker,
+        )
 
     /** 对 `try` 表达式返回、目标类型和已解析 catch 覆盖规则执行的 checker 集合。 */
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>

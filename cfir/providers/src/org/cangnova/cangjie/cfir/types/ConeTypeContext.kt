@@ -54,6 +54,12 @@ interface ConeTypeContext :
     TypeCheckerProviderContext,
     TypeSystemCommonBackendContext {
 
+    override fun CangJieTypeMarker.isCTypeConstraint(): Boolean = when (this) {
+        is ConeTypeAliasType -> expandedType?.let { with(this@ConeTypeContext) { it.isCTypeConstraint() } } == true
+        is ConeClassLikeType -> classId == StdlibClassIds.CType
+        else -> false
+    }
+
     /**
      * 生产实现通常会覆盖这个 `session`。
      *
@@ -173,6 +179,13 @@ interface ConeTypeContext :
      */
     override fun CangJieTypeMarker.isTupleType(): Boolean {
         return this is ConeTupleType
+    }
+
+    override fun CangJieTypeMarker.isPointerType(): Boolean = this is ConePointerType
+
+    override fun CangJieTypeMarker.extractPointeeType(): CangJieTypeMarker {
+        require(this is ConePointerType)
+        return pointeeType
     }
 
     /**

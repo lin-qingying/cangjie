@@ -102,12 +102,19 @@ open class CfirDeclarationAvailabilityProvider(
 
     /** 返回声明自身第一个 APILevel 注解的引用相关参数。 */
     open fun ownApiLevelInfo(declaration: CfirDeclaration): CfirApiLevelAnnotationInfo? {
-        val annotation = findAnnotations(declaration, CfirPlatformAnnotationClassIds.API_LEVEL).firstOrNull()
-            ?: return null
+        val annotations = findAnnotations(declaration, CfirPlatformAnnotationClassIds.API_LEVEL)
+        val annotation = annotations.firstOrNull() ?: return null
+        val since = annotations
+            .mapNotNull { it.apiLevelSinceArgumentText()?.toIntOrNull() }
+            .minOrNull()
+            ?.toString()
         return CfirApiLevelAnnotationInfo(
             annotation = annotation,
-            since = annotation.argumentLiteralText("since", positionalIndex = 0),
-            syscap = annotation.argumentLiteralText("syscap"),
+            since = since,
+            syscap = annotations
+                .asSequence()
+                .mapNotNull { it.argumentLiteralText("syscap") }
+                .firstOrNull(),
         )
     }
 
@@ -289,6 +296,25 @@ private fun CfirAnnotationCall.argumentLiteralText(
 ): String? = (argumentExpression(name, positionalIndex) as? CfirLiteralExpression)
     ?.value
     ?.toString()
+
+/**
+ * 读取 APILevel 的有效版本参数。
+ *
+ * 官方 APILevel 有两个仍需兼容的 ABI 形态：新定义使用命名的
+ * `since: String`，旧定义使用位置参数（通常形参名为 `level_val`）。
+ * 位置参数只有在源码实参确实未命名时才可作为旧版 level，不能把任意
+ * 命名实参错误解释成 since。
+ */
+public fun CfirAnnotationCall.apiLevelSinceArgumentText(): String? =
+    argumentLiteralText("since")
+        ?: argumentLiteralText("level")
+        ?: explicitArguments()
+            .firstOrNull()
+            ?.takeUnless { it is CfirNamedArgumentExpression }
+            ?.unwrapNamedArgument()
+            ?.let { argument ->
+                (argument as? CfirLiteralExpression)?.value?.toString()
+            }
 
 /** 读取布尔注解参数；非结构化布尔字面量返回 null。 */
 private fun CfirAnnotationCall.booleanArgument(name: String): Boolean? =

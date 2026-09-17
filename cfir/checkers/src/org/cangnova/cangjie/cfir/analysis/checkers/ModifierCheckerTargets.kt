@@ -272,8 +272,16 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
     is CfirExtend -> listOf(ModifierTarget.head(DeclarationKind.EXTEND))
     is CfirProperty -> listOf(ModifierTarget.member(DeclarationKind.PROPERTY, container = closestContainingTypeKind()))
     is CfirPatternVariable, is CfirPatternBindingVariable -> {
+        val containingType = closestContainingTypeKind()
         if ((declaration as CfirVariable).isLocal) {
             listOf(ModifierTarget.local(DeclarationKind.VARIABLE))
+        } else if (containingType != null) {
+            // A pattern-backed `let`/`var` in a type body is still a member
+            // declaration.  This shape is produced for some annotated
+            // `static let` members by the PSI declaration wrapper; treating
+            // it as a top-level variable makes the `static` modifier reject
+            // its own valid struct/class member target.
+            listOf(ModifierTarget.member(DeclarationKind.VARIABLE, container = containingType))
         } else {
             listOf(ModifierTarget.head(DeclarationKind.VARIABLE))
         }

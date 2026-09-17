@@ -616,6 +616,32 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 不把 parser / lexer 层面的 foreign 语法错误混到这里。
      */
     val INTEROP by object : DiagnosticGroup("Interop") {
+        val ILLEGAL_USE_OF_ANNOTATION by error<PsiElement> {
+            parameter<String>("declarationKind")
+            parameter<String>("annotationName")
+        }
+        val ANNOTATION_CALLING_CONV_NOT_SUPPORT by error<PsiElement> { parameter<String>("callingConvention") }
+        val ANNOTATION_INVALID_ARGS_TYPE by error<PsiElement> { parameter<String>("annotationName") }
+        val CSTRUCT_CANNOT_HAVE_UNIT_FIELDS by error<PsiElement>()
+        val ILLEGAL_MEMBER_OF_CSTRUCT by error<PsiElement> {
+            parameter<Name>("fieldName")
+            parameter<Name>("structName")
+        }
+        val CFUNC_CANNOT_HAVE_NAMED_ARGS by error<PsiElement>()
+        val CFUNC_CANNOT_HAVE_UNIT_ARGS by error<PsiElement>()
+        val CFUNC_CANNOT_CAPTURE_VAR by error<PsiElement> {
+            parameter<Name>("variableName")
+        }
+        val CFUNC_CANNOT_CAPTURE_THIS by error<PsiElement> {
+            parameter<String>("receiverName")
+        }
+        val FUNC_CAPTURE_VAR_NOT_CTYPE by error<PsiElement>()
+        val CFFI_CANNOT_HAVE_TYPE_PARAM by error<PsiElement> { parameter<String>("declarationKind") }
+        val CFUNC_TYPE by error<CjTypeReference>()
+        val CFUNC_TOO_MANY_ARGUMENTS by error<PsiElement>()
+        val CFUNC_CTOR_MUST_BE_CPOINTER by error<PsiElement>()
+        val POINTER_SINGLE_ELEMENT_TYPE_ERROR by error<PsiElement>()
+        val POINTER_TOO_MUCH_ARGUMENT by error<PsiElement>()
         val INVALID_CFUNC_RETURN_TYPE by error<CjTypeReference> {
             parameter<ConeCangJieType>("actualType")
         }
@@ -623,6 +649,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val INVALID_CFUNC_PARAMETER_TYPE by error<CjTypeReference> {
             parameter<ConeCangJieType>("actualType")
         }
+
+        /** cjnative 的 foreign/CFunc 调用只能出现在 unsafe 上下文。 */
+        val UNSAFE_FUNCTION_INVOKE_FAILED by error<PsiElement>()
+        /** 带 C 变长参数的函数值不能作为变量 initializer。 */
+        val CFUNC_VAR_CANNOT_HAVE_VAR_PARAM by error<PsiElement>()
 
         val ONLY_CFUNC_CAN_USE_ANNOTATION by error<PsiElement> {
             parameter<String>("annotationName")

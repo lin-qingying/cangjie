@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.resolvedInteropInfoOrNull
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -37,16 +38,12 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
  */
 object CfirCJMappingChecker : CfirClassLikeChecker() {
     /**
-     * CJMapping 注解名。
-     */
-    private val CJ_MAPPING = Name.identifier("CJMapping")
-
-    /**
-     * 检查带 `@CJMapping` 的声明及其成员类型限制。
+     * 检查由 Java 目标配置派生的 CJMapping 声明及其成员类型限制。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (!declaration.hasAnnotation(CJ_MAPPING)) return
+        val mapping = declaration.resolvedInteropInfoOrNull()?.cjmp ?: return
+        if (!mapping.isJavaMapping) return
 
         if (declaration is CfirStruct) {
             if (declaration.typeParameters.isNotEmpty()) {
@@ -115,20 +112,20 @@ object CfirCJMappingChecker : CfirClassLikeChecker() {
  */
 object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
     /**
-     * ObjC CJMapping 注解名。
-     */
-    private val OBJC_CJ_MAPPING = Name.identifier("ObjCCJMapping")
-
-    /**
-     * 检查带 `@ObjCCJMapping` 的声明是否包含非法继承或泛型参数。
+     * 检查由 Objective-C 目标配置派生的 CJMapping 声明是否包含非法继承或泛型参数。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (!declaration.hasAnnotation(OBJC_CJ_MAPPING)) return
+        val mapping = declaration.resolvedInteropInfoOrNull()?.cjmp ?: return
+        if (!mapping.isObjCMapping) return
 
-        if (declaration.superTypeRefs.isNotEmpty()) {
+        val interfaceSupertype = declaration.superTypeRefs.firstOrNull { typeRef ->
+            val type = (typeRef as? CfirResolvedTypeRef)?.coneType
+            type is ConeClassLikeType && type.isInterface
+        }
+        if (interfaceSupertype != null) {
             reporter.reportOn(
-                source = declaration.nameDiagnosticSource(),
+                source = interfaceSupertype.source ?: declaration.nameDiagnosticSource(),
                 factory = CfirErrors.OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED,
             )
         }

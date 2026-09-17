@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
@@ -90,17 +91,29 @@ class MacroConstructionArchitectureTest {
 
         assertSame(
             explicit,
-            (context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("Log")) as MacroResolution.Resolved).entry,
+            (context.resolveMacroCall(
+                FqName("test.pkg"), null, Name.identifier("Log"),
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+            ) as MacroResolution.Resolved).entry,
         )
         assertSame(
             wildcard,
-            (context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("Wild")) as MacroResolution.Resolved).entry,
+            (context.resolveMacroCall(
+                FqName("test.pkg"), null, Name.identifier("Wild"),
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+            ) as MacroResolution.Resolved).entry,
         )
         assertSame(
             default,
-            (context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("Defaulted")) as MacroResolution.Resolved).entry,
+            (context.resolveMacroCall(
+                FqName("test.pkg"), null, Name.identifier("Defaulted"),
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+            ) as MacroResolution.Resolved).entry,
         )
-        val builtin = context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("sourceFile"))
+        val builtin = context.resolveMacroCall(
+            FqName("test.pkg"), null, Name.identifier("sourceFile"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+        )
         assertTrue(builtin is MacroResolution.Builtin)
         assertEquals(MacroDefinitionEntry.Source.BUILTIN_MACRO, (builtin as MacroResolution.Builtin).entry.source)
     }
@@ -123,7 +136,10 @@ class MacroConstructionArchitectureTest {
         )
         val context = bindMacroImports(pre, index, defaultMacroImports = listOf(FqName("lib.macros")))
 
-        val resolution = context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("Conflict"))
+        val resolution = context.resolveMacroCall(
+            FqName("test.pkg"), null, Name.identifier("Conflict"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+        )
 
         assertTrue(resolution is MacroResolution.SamePackage)
         assertEquals(MacroDefinitionEntry.Source.SOURCE_PACKAGE, (resolution as MacroResolution.SamePackage).sourceEntry.source)
@@ -138,9 +154,119 @@ class MacroConstructionArchitectureTest {
         val pre = buildPreMacroRawFiles(fixture.session, listOf(fixture.file(packageName = "test.pkg")))
         val context = bindMacroImports(pre, buildMacroSymbolIndex(pre))
 
-        val resolution = context.resolveMacroCall(FqName("test.pkg"), null, Name.identifier("IfAvailable"))
+        val resolution = context.resolveMacroCall(
+            FqName("test.pkg"), null, Name.identifier("IfAvailable"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test.pkg")),
+        )
 
         assertTrue(resolution is MacroResolution.BuiltinNonMacro)
+    }
+
+    /** ConstSafe 的裸名称只在 std 包身份下走内置注解路由。 */
+    @Test
+    fun `bare ConstSafe follows package identity instead of promoted surface name`() {
+        for (packageName in listOf("std.annotation_contract", "std", "example", "stdish.annotation_contract")) {
+            val fixture = Fixture()
+            val surface = declarationRoutingSurface(1L, "ConstSafe", packageName)
+            val pre = buildPreMacroRawFiles(
+                fixture.session,
+                listOf(fixture.file(packageName)),
+                listOf(listOf(surface)),
+            )
+            assertEquals(FqName("$packageName.ConstSafe"), surface.qualifiedName)
+            assertFalse(surface.isQualifiedName)
+
+            val decision = MacroDemandClassification.create(pre).freezeFinal().single()
+            if (packageName == "std.annotation_contract") {
+                assertTrue(decision.resolution is MacroResolution.BuiltinAnnotation)
+            } else {
+                assertTrue(decision.resolution is MacroResolution.Unresolved)
+            }
+            assertFalse(decision.executorRequired)
+        }
+    }
+
+    /** 同包补全后的 FQN 相同，源码显式限定仍必须排除内置注解识别。 */
+    @Test
+    fun `explicit current-package ConstSafe does not become the bare builtin`() {
+        val fixture = Fixture()
+        val packageName = "std.annotation_contract"
+        val bare = declarationRoutingSurface(1L, "ConstSafe", packageName)
+        val qualified = declarationRoutingSurface(2L, "$packageName.ConstSafe", packageName)
+        assertEquals(bare.qualifiedName, qualified.qualifiedName)
+        assertFalse(bare.isQualifiedName)
+        assertTrue(qualified.isQualifiedName)
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(fixture.file(packageName)),
+            listOf(listOf(bare, qualified)),
+        )
+
+        val decisions = MacroDemandClassification.create(pre).freezeFinal()
+        assertTrue(decisions[0].resolution is MacroResolution.BuiltinAnnotation)
+        assertTrue(decisions[1].resolution is MacroResolution.Unresolved)
+        assertFalse(decisions[1].executorRequired)
+    }
+
+    /** 不存在的限定目标不能在 explicit、wildcard 或 default 导入中继续寻找同名宏。 */
+    @Test
+    fun `missing qualified macro never falls through to an unqualified import`() {
+        for (importKind in listOf("explicit", "wildcard", "default")) {
+            val fixture = Fixture()
+            val target = macroEntry("library.macros.Trace", MacroDefinitionEntry.Source.LIBRARY)
+            val imports = when (importKind) {
+                "explicit" -> listOf(fixture.import("library.macros.Trace"))
+                "wildcard" -> listOf(fixture.import("library.macros", isAllUnder = true))
+                else -> emptyList()
+            }
+            val defaultImports = if (importKind == "default") listOf(FqName("library.macros")) else emptyList()
+            val surfaces = listOf(
+                expressionRoutingSurface(1L, "Trace", "app"),
+                expressionRoutingSurface(2L, "missing.macros.Trace", "app"),
+            )
+            val pre = buildPreMacroRawFiles(
+                fixture.session,
+                listOf(fixture.file("app", imports = imports)),
+                listOf(surfaces),
+            )
+            val decisions = MacroDemandClassification.create(pre, defaultMacroImports = defaultImports)
+                .freezeFinal(libraryDefinitions = listOf(target))
+
+            assertSame(target, (decisions[0].resolution as MacroResolution.Resolved).entry)
+            assertTrue(decisions[0].executorRequired)
+            assertTrue(decisions[1].resolution is MacroResolution.Unresolved, importKind)
+            assertFalse(decisions[1].executorRequired)
+        }
+    }
+
+    /** IfAvailable 的 builtin non-macro 身份仅来自裸名称，预判与最终解析必须一致。 */
+    @Test
+    fun `qualified IfAvailable uses exact macro lookup rather than builtin non-macro routing`() {
+        val fixture = Fixture()
+        val target = macroEntry("library.macros.IfAvailable", MacroDefinitionEntry.Source.LIBRARY)
+        val surfaces = listOf(
+            expressionRoutingSurface(1L, "IfAvailable", "app"),
+            expressionRoutingSurface(2L, "library.macros.IfAvailable", "app"),
+            expressionRoutingSurface(3L, "app.IfAvailable", "app"),
+        )
+        val pre = buildPreMacroRawFiles(
+            fixture.session,
+            listOf(fixture.file("app")),
+            listOf(surfaces),
+        )
+        val classification = MacroDemandClassification.create(pre)
+        assertEquals(
+            listOf(Name.identifier("IfAvailable"), null, null),
+            classification.preArtifactSnapshot.decisions.map { it.builtinNonMacroResult },
+        )
+
+        val decisions = classification.freezeFinal(libraryDefinitions = listOf(target))
+        assertTrue(decisions[0].resolution is MacroResolution.BuiltinNonMacro)
+        assertFalse(decisions[0].executorRequired)
+        assertSame(target, (decisions[1].resolution as MacroResolution.Resolved).entry)
+        assertTrue(decisions[1].executorRequired)
+        assertTrue(decisions[2].resolution is MacroResolution.Unresolved)
+        assertFalse(decisions[2].executorRequired)
     }
 
     /**
@@ -353,6 +479,49 @@ class MacroConstructionArchitectureTest {
             )
         }
 
+        /** 模拟 Raw builder 的包名补全，显式限定位只读取传入的源码名称。 */
+        fun expressionRoutingSurface(id: Long, sourceName: String, packageName: String): MacroSurfaceExpr {
+            val spelledName = FqName(sourceName)
+            val explicitlyQualified = '.' in sourceName
+            return surface(id, sourceName, packageName).copy(
+                qualifiedName = if (explicitlyQualified) spelledName else FqName(packageName).child(spelledName.shortName()),
+                isQualifiedName = explicitlyQualified,
+                capturedRawSyntax = "@$sourceName(arg)",
+            )
+        }
+
+        /** 裸内置注解与显式限定的声明宏使用不同源码身份，即使补全后的 FQN 相同。 */
+        fun declarationRoutingSurface(id: Long, sourceName: String, packageName: String): MacroSurfaceDecl {
+            val spelledName = FqName(sourceName)
+            val explicitlyQualified = '.' in sourceName
+            return MacroSurfaceDecl(
+                surfaceId = id,
+                qualifiedName = if (explicitlyQualified) spelledName else FqName(packageName).child(spelledName.shortName()),
+                isQualifiedName = explicitlyQualified,
+                kind = MacroSurface.Kind.PLAIN,
+                hasParenthesis = false,
+                attrTokens = emptyList(),
+                inputTokens = emptyList(),
+                sourceRange = null,
+                scopeContext = MacroSurfaceScopeContext(
+                    packageFqName = FqName(packageName),
+                    sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName(packageName)),
+                    enclosingClassFqName = null,
+                    enclosingFunctionName = null,
+                ),
+                modifiers = emptyList(),
+                carriedAnnotations = emptyList(),
+                capturedRawSyntax = "@$sourceName const value: Int64 = 1",
+                containerContext = MacroSurfaceContainerContext(
+                    outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
+                    isInsidePrimaryConstructor = false,
+                    isInsideEnumBody = false,
+                    isInsideBlock = false,
+                ),
+                replaceHandle = CfirReplaceHandle(id),
+            )
+        }
+
         /**
          * 构造带标准上下文的宏 surface。
          */
@@ -360,6 +529,7 @@ class MacroConstructionArchitectureTest {
             return MacroSurfaceExpr(
                 surfaceId = id,
                 qualifiedName = FqName(name),
+                isQualifiedName = '.' in name,
                 kind = MacroSurface.Kind.PLAIN,
                 hasParenthesis = true,
                 attrTokens = emptyList(),
@@ -371,6 +541,7 @@ class MacroConstructionArchitectureTest {
                 ),
                 scopeContext = MacroSurfaceScopeContext(
                     packageFqName = FqName(packageName),
+                    sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName(packageName)),
                     enclosingClassFqName = null,
                     enclosingFunctionName = null,
                 ),

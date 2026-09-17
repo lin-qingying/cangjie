@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -38,6 +39,8 @@ import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
+import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -82,6 +85,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         checkMainFunctionAccessibility(declaration)
         checkExportSamePrivateDecl(declaration)
         checkJavaInteropImports(declaration)
+        checkObjCInteropImports(declaration)
         checkJavaImplRedefinition(declaration)
         checkCJMappingConfigValid(declaration)
     }
@@ -176,13 +180,10 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkJavaInteropImports(file: CfirFile) {
-        val javaInteropEntryAnnotations = setOf(
-            Name.identifier("JavaMirror"),
-            Name.identifier("JavaImpl"),
-            Name.identifier("CJMapping"),
-        )
         val javaInteropDeclarations = file.declarations.filter { decl ->
-            decl is CfirClassLikeDeclaration && javaInteropEntryAnnotations.any(decl::hasAnnotation)
+            decl is CfirClassLikeDeclaration && decl.resolvedInteropInfoOrNull()?.let { info ->
+                info.java != null || info.cjmp?.target == CfirInteropTarget.JAVA
+            } == true
         }
         if (javaInteropDeclarations.isEmpty()) return
 
@@ -200,21 +201,51 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     }
 
     /**
+     * 检查 Objective-C 互操作声明是否导入 `interoplib.objc`。
+     *
+     * ObjC CJMapping 由编译配置派生，不存在可供 checker 扫描的源码注解；
+     * 因此这里直接消费 declaration-owned interop snapshot。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkObjCInteropImports(file: CfirFile) {
+        val objcInteropDeclarations = file.declarations.filter { decl ->
+            decl is CfirClassLikeDeclaration && decl.resolvedInteropInfoOrNull()?.let { info ->
+                // `interoplib.objc` is the CJMapping library.  ObjCMirror/ObjCImpl
+                // annotations belong to the objc.lang annotation contract and do
+                // not, by themselves, establish a CJMapping declaration.
+                info.cjmp?.target == CfirInteropTarget.OBJC
+            } == true
+        }
+        if (objcInteropDeclarations.isEmpty()) return
+
+        val interopFq = org.cangnova.cangjie.name.FqName("interoplib.objc")
+        val imported = file.imports.any { imp ->
+            val fq = imp.importedFqName ?: return@any false
+            fq == interopFq || fq.parent() == interopFq
+        }
+        if (!imported) objcInteropDeclarations.forEach { declaration ->
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
+            )
+        }
+    }
+
+    /**
      * @JavaImpl 不允许重复定义同一 Java 类。
      *
      * 对齐 C++ sema_java_impl_redefinition
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkJavaImplRedefinition(file: CfirFile) {
-        val javaImplName = Name.identifier("JavaImpl")
         val byName = mutableMapOf<Name, Int>()
         for (decl in file.declarations) {
-            if (!decl.hasAnnotation(javaImplName)) continue
+            if (!decl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL)) continue
             val declName = decl.declarationName() ?: continue
             byName.merge(declName, 1) { a, b -> a + b }
         }
         for (decl in file.declarations) {
-            if (!decl.hasAnnotation(javaImplName)) continue
+            if (!decl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL)) continue
             val declName = decl.declarationName() ?: continue
             if ((byName[declName] ?: 0) > 1) {
                 reporter.reportOn(
@@ -233,6 +264,8 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCJMappingConfigValid(file: CfirFile) {
+        val settings = context.session.interopSettings
+        if (!settings.enableInteropCJMapping || settings.targetInteropLanguage == CfirInteropTarget.NONE) return
         val provider = context.session.cjMappingConfigProvider
         val path = provider.configPath ?: return
         if (provider.isValid) return
@@ -480,6 +513,10 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkSealedOnlyOnAbstract(classDecl: CfirClass) {
         if (!classDecl.status.isSealed) return
+        // The official parser rejects `@Annotation` on sealed declarations before
+        // semantic class checks run.  Do not cascade the later sealed/non-abstract
+        // error from an already invalid annotation placement.
+        if (classDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.ANNOTATION)) return
         if (classDecl.status.isAbstract) return
         reporter.reportOn(
             source = classDecl.source,
@@ -494,10 +531,21 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCStructCannotImplInterfaces(structDecl: CfirStruct) {
-        if (!structDecl.hasAnnotation(C_ANNOTATION)) return
+        if (!structDecl.status.isC) return
+        // The official CFFI checker rejects a generic @C struct before it
+        // checks its inherited interfaces.  Keep this at the class-like
+        // declaration owner so the rule applies identically to PSI and
+        // LightTree declarations and is not reimplemented by a type checker.
+        if (structDecl.typeParameters.isNotEmpty()) {
+            reporter.reportOn(
+                source = structDecl.classLikeDeclarationHeaderDiagnosticSource(),
+                factory = CfirErrors.CFFI_CANNOT_HAVE_TYPE_PARAM,
+                a = "struct with @C",
+            )
+        }
         if (structDecl.superTypeRefs.isNotEmpty()) {
             reporter.reportOn(
-                source = structDecl.source,
+                source = structDecl.classLikeNameDiagnosticSource(),
                 factory = CfirErrors.CSTRUCT_CANNOT_IMPL_INTERFACES,
             )
         }
@@ -789,6 +837,8 @@ private object CfirStaticGenericDependencySemantics {
  * - PROPERTY_MUST_IMPLEMENT_BOTH: 接口属性的 getter/setter 都必须实现
  */
 object CfirPropertySemanticsChecker : CfirPropertyChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 对单个属性声明执行属性语义检查。
      */

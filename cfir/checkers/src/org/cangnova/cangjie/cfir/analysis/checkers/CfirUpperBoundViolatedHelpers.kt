@@ -15,17 +15,21 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.abbreviatedType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
 import org.cangnova.cangjie.cfir.types.hasInvalidDeclaredUpperBounds
+import org.cangnova.cangjie.cfir.types.hasSupertypeWithGivenClassId
 import org.cangnova.cangjie.cfir.types.isLegalDeclaredUpperBound
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -278,10 +282,9 @@ private fun checkUpperBoundViolated(
             null
         }
         val violatesCurrentUpperBound = currentUpperBound != null &&
-            !AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(
-                context.session.typeContext,
-                argumentType,
+            !argumentType.satisfiesCTypeUpperBoundOrIsSubtypeOf(
                 currentUpperBound,
+                context.session,
             )
 
         val hasInvalidNestedArgument = if (sourceTypeRef == null && argumentSource == null) {
@@ -315,6 +318,77 @@ private fun checkUpperBoundViolated(
         hasInvalidArgument = hasInvalidArgument || violatesCurrentUpperBound || hasInvalidNestedArgument
     }
     return hasInvalidArgument
+}
+
+/**
+ * 检查泛型实参是否满足声明上界。
+ *
+ * `CType` 是仓颉 FFI 的语义约束，而不是普通 class/interface 继承边。官方
+ * `Ty::IsMetCType` 会把 `Unit` 等 CType 原子接受为 `T <: CType`，但 `CType`
+ * 接口本身不能作为该约束的实参。这里先调用唯一的 CType 语义 owner，再把其他
+ * 上界交给通用类型检查器，避免把所有泛型约束都特殊化。
+ */
+private fun ConeCangJieType.satisfiesCTypeUpperBoundOrIsSubtypeOf(
+    upperBound: ConeCangJieType,
+    session: org.cangnova.cangjie.cfir.session.CfirSession,
+): Boolean {
+    val expandedUpperBound = upperBound.fullyExpandedType(session)
+    if (expandedUpperBound.containsCTypeUpperBound(session)) {
+        val satisfiesCType = when (this) {
+            is ConeTypeParameterType -> hasSupertypeWithGivenClassId(
+                org.cangnova.cangjie.cfir.types.StdlibClassIds.CType,
+                session.typeContext,
+            )
+            is org.cangnova.cangjie.cfir.types.ConeTypeVariableType -> {
+                val originalTypeParameter = typeConstructor.originalTypeParameter
+                    as? org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
+                originalTypeParameter?.typeParameterSymbol?.cfir?.bounds
+                    ?.mapNotNull { bound -> bound.coneTypeOrNull?.fullyExpandedType(session) }
+                    ?.any { bound ->
+                        bound.classIdOrPrimitiveClassId == org.cangnova.cangjie.cfir.types.StdlibClassIds.CType ||
+                            bound.hasSupertypeWithGivenClassId(
+                                org.cangnova.cangjie.cfir.types.StdlibClassIds.CType,
+                                session.typeContext,
+                            )
+                    } == true
+            }
+            else -> CfirCTypeSemantics.isMetCType(session, this)
+        }
+        if (!satisfiesCType) return false
+        val nonCTypeUpperBounds = expandedUpperBound.nonCTypeUpperBounds(session)
+        return nonCTypeUpperBounds.all { nonCTypeUpperBound ->
+            AbstractTypeChecker.isSubtypeOfForGenericArgument(
+                session.typeContext,
+                this,
+                nonCTypeUpperBound,
+            )
+        }
+    }
+    return AbstractTypeChecker.isSubtypeOfForGenericArgument(
+        session.typeContext,
+        this,
+        upperBound,
+    )
+}
+
+/** 判断一个已展开上界中是否包含官方 CType 约束分量。 */
+private fun ConeCangJieType.containsCTypeUpperBound(
+    session: org.cangnova.cangjie.cfir.session.CfirSession,
+): Boolean = when (this) {
+    is ConeIntersectionType -> intersectedTypes.any { it.fullyExpandedType(session).containsCTypeUpperBound(session) }
+    else -> classIdOrPrimitiveClassId == org.cangnova.cangjie.cfir.types.StdlibClassIds.CType
+}
+
+/** 删除 intersection 中由 CType 语义 owner 单独验证的上界分量。 */
+private fun ConeCangJieType.nonCTypeUpperBounds(
+    session: org.cangnova.cangjie.cfir.session.CfirSession,
+): List<ConeCangJieType> = when (this) {
+    is ConeIntersectionType -> intersectedTypes.flatMap { it.fullyExpandedType(session).nonCTypeUpperBounds(session) }
+    else -> if (classIdOrPrimitiveClassId == org.cangnova.cangjie.cfir.types.StdlibClassIds.CType) {
+        emptyList()
+    } else {
+        listOf(this)
+    }
 }
 
 /**

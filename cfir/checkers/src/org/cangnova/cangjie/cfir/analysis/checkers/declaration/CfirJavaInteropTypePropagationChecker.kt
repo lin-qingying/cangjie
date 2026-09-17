@@ -14,7 +14,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 
 /**
  * Java 互操作类型传播约束检查器
@@ -31,22 +31,12 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
     /**
      * Java 互操作基础注解名。
      */
-    private val JAVA = Name.identifier("Java")
-
-    /**
-     * Java mirror 互操作注解名。
-     */
-    private val JAVA_MIRROR = Name.identifier("JavaMirror")
-
-    /**
-     * Java implementation 互操作注解名。
-     */
-    private val JAVA_IMPL = Name.identifier("JavaImpl")
-
-    /**
-     * 所有可使声明进入 Java 互操作语义的注解名集合。
-     */
-    private val JAVA_ANN_NAMES = setOf(JAVA, JAVA_MIRROR, JAVA_IMPL)
+    /** 所有可使声明进入 Java 互操作语义的官方 kind。 */
+    private val JAVA_ANN_KINDS = setOf(
+        BuiltInAnnotationKind.JAVA,
+        BuiltInAnnotationKind.JAVA_MIRROR,
+        BuiltInAnnotationKind.JAVA_IMPL,
+    )
 
     /**
      * 检查字段或属性类型是否把 Java 互操作类型传播到非 Java 互操作上下文。
@@ -140,5 +130,5 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
      * 判断 class-like 声明是否带任一 Java 互操作注解。
      */
     private fun CfirClassLikeDeclaration.hasAnyJavaInteropAnnotation(): Boolean =
-        JAVA_ANN_NAMES.any(::hasAnnotation)
+        JAVA_ANN_KINDS.any(::hasBuiltinAnnotation)
 }

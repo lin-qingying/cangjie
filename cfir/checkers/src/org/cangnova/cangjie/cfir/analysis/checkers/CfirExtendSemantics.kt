@@ -25,7 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.annotations.CangjieAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -236,7 +236,7 @@ internal object CfirExtendSemantics {
      * 内置注解优先使用 CFIR 已归一化的 kind；尚未解析的自定义/系统注解只允许
      * 使用其结构化 typeRef 或 callee reference。这里不再从 source 文本重新解析。
      */
-    fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationKind: CangjieAnnotationKind): Boolean {
+    fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationKind: BuiltInAnnotationKind): Boolean {
         return declaration.annotations
             .filterIsInstance<CfirAnnotationCall>()
             .any { annotation -> annotation.annotationKind == annotationKind }
@@ -325,8 +325,8 @@ internal object CfirExtendSemantics {
     }
 
     /** 当前作为 FFI 边界识别依据的官方内置注解。 */
-    private val ffiBoundaryAnnotationKinds: Set<CangjieAnnotationKind> =
-        setOf(CangjieAnnotationKind.C)
+    private val ffiBoundaryAnnotationKinds: Set<BuiltInAnnotationKind> =
+        setOf(BuiltInAnnotationKind.C)
 
     /**
      * 返回 class-like 声明的语义 class kind。

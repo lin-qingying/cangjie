@@ -1,170 +1,191 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
-import org.cangnova.cangjie.annotations.CangjieAnnotationCatalog
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.isIntegerType
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.text
 
+/** checker 只能读取 annotation resolver 已确认的 ClassId。 */
+internal fun CfirDeclaration.hasAnnotation(annotationClassId: ClassId): Boolean =
+    findAnnotations(annotationClassId).isNotEmpty()
+
+internal fun CfirDeclaration.findAnnotations(annotationClassId: ClassId): List<CfirAnnotation> =
+    annotations.filter { it.annotationClassId == annotationClassId }
+
 /**
- * 统一从 CFIR 注解节点本身识别注解名。
+ * 按 resolver 已发布的官方 kind 查找内置注解。
  *
- * Diagnostics2 这类 FRONTEND 测试里，声明 source 不保证总能回到 PSI，
- * 因此 interop / builtin 注解语义不能依赖 `source?.psi` 才能工作。
+ * 这是语义 checker 的主入口，不会把同名 custom annotation 或限定名 annotation
+ * 误认为语言内置注解。
  */
-internal fun CfirDeclaration.hasAnnotation(annotationName: Name): Boolean =
-    findAnnotations(annotationName).isNotEmpty()
+internal fun CfirDeclaration.hasBuiltinAnnotation(kind: BuiltInAnnotationKind): Boolean =
+    annotations.any { it.annotationKind == kind }
 
-/** 查找声明上短名匹配指定注解名的全部注解。 */
-internal fun CfirDeclaration.findAnnotations(annotationName: Name): List<CfirAnnotation> =
-    annotations.filter { annotation -> annotation.matchesAnnotationName(annotationName) }
+internal fun CfirDeclaration.findBuiltinAnnotations(kind: BuiltInAnnotationKind): List<CfirAnnotation> =
+    annotations.filter { it.annotationKind == kind }
 
-/** 从已解析 kind、typeRef 或结构化 calleeReference 中提取注解名称。 */
-internal fun CfirAnnotation.shortNameOrNull(): Name? {
-    annotationKind?.let { kind ->
-        CangjieAnnotationCatalog.languageBuiltIns
-            .firstOrNull { descriptor -> descriptor.kind == kind }
-            ?.sourceName
-            ?.let { return Name.identifier(it) }
-    }
-    val classId = CfirExtendSemantics.run { typeRef.toClassIdOrNull() }
-    if (classId != null) return classId.shortClassName
-    (this as? CfirAnnotationCall)
-        ?.calleeReference
-        ?.let { it as? CfirNamedReference }
-        ?.name
-        ?.let { return it }
-    return null
-}
+internal fun CfirDeclaration.hasAnyBuiltinAnnotation(vararg kinds: BuiltInAnnotationKind): Boolean =
+    kinds.any(::hasBuiltinAnnotation)
 
-/** 返回注解调用指定位置实参的源码文本或字面量文本。 */
-internal fun CfirAnnotationCall.argumentTextAt(index: Int): String? {
-    val argument = explicitArguments().getOrNull(index)?.unwrapNamedArgument() ?: return null
-    (argument as? CfirLiteralExpression)?.value?.let { return it.toString() }
-    return argument.source?.text?.toString()
-        ?.trim()
-        ?.trim('"')
-        ?.takeIf(String::isNotEmpty)
-}
+/** 同 kind 的 Overflow 拼写必须从 resolver 保留的 descriptor 获取。 */
+internal fun CfirAnnotation.shortNameOrNull(): Name? =
+    (this as? CfirAnnotationCall)?.builtInDescriptor?.sourceName?.let(Name::identifier)
+        ?: annotationClassId?.shortClassName
 
-/** 返回注解调用的实参数量。 */
+internal fun CfirAnnotationCall.argumentTextAt(index: Int): String? =
+    (argumentView?.entries?.filterNot { it.isDefaultOrigin }?.getOrNull(index)?.constantExpression as? CfirLiteralExpression)?.value?.toString()
+
 internal fun CfirAnnotationCall.argumentCount(): Int =
-    explicitArguments().size
+    argumentView?.entries?.count { !it.isDefaultOrigin && it.argument != null } ?: 0
 
-/** 判断注解调用是否携带任何实参。 */
-internal fun CfirAnnotationCall.hasArguments(): Boolean =
-    argumentCount() > 0
+internal fun CfirAnnotationCall.hasArguments(): Boolean = argumentCount() != 0
 
-/** 判断注解调用是否存在指定名称的命名实参。 */
 internal fun CfirAnnotationCall.hasNamedArgument(name: String): Boolean =
-    explicitArguments().any { argument ->
-        (argument as? CfirNamedArgumentExpression)?.argumentName?.asString() == name
-    } || argumentByName(name) != null
+    argumentView?.entries?.any {
+        !it.isDefaultOrigin && it.argument != null &&
+            (it.explicitName?.asString() == name || it.resolvedParameter?.name?.asString() == name)
+    } == true
 
-/** 判断第一个注解实参是否使用命名参数形式。 */
-internal fun CfirAnnotationCall.firstArgumentIsNamed(): Boolean {
-    return explicitArguments().firstOrNull() is CfirNamedArgumentExpression
-}
+internal fun CfirAnnotationCall.firstArgumentIsNamed(): Boolean =
+    argumentView?.entries?.firstOrNull { !it.isDefaultOrigin }?.explicitName != null
 
-/** 从结构化命名实参中提取全部名称。 */
 internal fun CfirAnnotationCall.rawNamedArgumentNames(): List<String> =
-    explicitArguments()
-        .filterIsInstance<CfirNamedArgumentExpression>()
-        .map { it.argumentName.asString() }
+    argumentView?.entries.orEmpty().filterNot { it.isDefaultOrigin }.mapNotNull { it.explicitName?.asString() }
 
-/** 根据已解析实参映射查找指定名称对应的实参表达式。 */
-internal fun CfirAnnotationCall.argumentByName(name: String): CfirExpression? {
-    explicitArguments()
-        .filterIsInstance<CfirNamedArgumentExpression>()
-        .firstOrNull { it.argumentName.asString() == name }
-        ?.let { return it.expression }
-    val resolved = argumentList as? CfirResolvedArgumentList ?: return null
-    return resolved.mapping.entries
-        .firstOrNull { (_, parameter) -> parameter.name.asString() == name }
-        ?.key
-        ?.unwrapNamedArgument()
-}
+internal fun CfirAnnotationCall.argumentByName(name: String): CfirExpression? = argumentValue(name)
 
-/** 返回指定命名实参的字面量文本或源码文本。 */
-internal fun CfirAnnotationCall.namedArgumentText(name: String): String? {
-    argumentByName(name)?.let { argument ->
-        (argument as? CfirLiteralExpression)?.value?.let { return it.toString() }
-        return argument.source?.text?.toString()
-            ?.trim()
-            ?.trim('"')
-            ?.takeIf(String::isNotEmpty)
-    }
-    return null
-}
+internal fun CfirAnnotationCall.namedArgumentText(name: String): String? =
+    (argumentValue(name) as? CfirLiteralExpression)?.value?.toString()
 
-/** 判断注解调用的所有实参是否都是字面量或字面量数组形态。 */
 internal fun CfirAnnotationCall.argumentsAreLiteralLike(): Boolean =
-    explicitArguments().all { it.isAnnotationLiteralLike() }
+    explicitArgumentExpressions().all { it.isAnnotationLiteralLike() }
 
-/** 判断第一个实参或指定命名实参是否为布尔字面量。 */
-internal fun CfirAnnotationCall.firstArgumentIsBooleanLiteralNamed(name: String): Boolean {
-    val argument = argumentByName(name) ?: explicitArguments().firstOrNull() ?: return false
-    val raw = argument.unwrapNamedArgument().source?.text?.toString()?.trim() ?: argumentTextAt(0)
-    return raw == "true" || raw == "false"
+/** 返回当前 annotation 已发布的显式参数；view 尚未发布时使用同一 call 的原始 CFIR 参数列表。 */
+internal fun CfirAnnotationCall.explicitArgumentExpressions(): List<CfirExpression> =
+    argumentView
+        ?.entries
+        ?.asSequence()
+        ?.filter { !it.isDefaultOrigin && it.argument != null }
+        ?.map { it.argument!! }
+        ?.toList()
+        ?.takeIf { it.isNotEmpty() }
+        ?: argumentList.arguments
+
+/**
+ * 判断 APILevel 是否提供了语法上的首个 level/since 参数。
+ *
+ * `APILEVEL_MISSING_ARG` 针对缺失参数，而不是针对参数值不是 literal；后者由
+ * `ONLY_LITERAL_SUPPORT` 在实际参数表达式上报告。保留这个结构事实可以避免在
+ * 参数绑定失败时把一个已写出的旧版位置参数重复诊断为“缺失”。
+ */
+internal fun CfirAnnotationCall.hasApiLevelSinceArgument(): Boolean {
+    val explicitView = argumentView?.entries
+        ?.filter { !it.isDefaultOrigin && it.argument != null }
+        ?.takeIf { it.isNotEmpty() }
+    if (explicitView != null) {
+        if (explicitView.any { it.explicitName?.asString() == "since" || it.explicitName?.asString() == "level" }) return true
+        return explicitView.firstOrNull()?.explicitName == null
+    }
+
+    val explicitArguments = argumentList.arguments
+    if (explicitArguments.any {
+            val name = (it as? CfirNamedArgumentExpression)?.argumentName?.asString()
+            name == "since" || name == "level"
+        }) return true
+    return explicitArguments.firstOrNull() !is CfirNamedArgumentExpression && explicitArguments.isNotEmpty()
 }
 
-/** 判断表达式是否可作为注解实参中的字面量形态。 */
+internal fun CfirAnnotationCall.firstArgumentIsBooleanLiteralNamed(name: String): Boolean =
+    (argumentValue(name) as? CfirLiteralExpression)?.value is Boolean
+
+/**
+ * 判断 annotation 参数是否属于平台注解允许的 literal 形态。
+ *
+ * APILevel 的旧版首个 `level` 参数在官方测试数据中允许已经解析为整数常量的
+ * const 引用；syscap 等字符串参数仍然必须是源码字面量。这个例外只对整数 const
+ * 变量开放，不能把任意 const 引用或普通表达式当成 annotation literal。
+ */
 internal fun CfirExpression.isAnnotationLiteralLike(): Boolean = when (this) {
     is CfirNamedArgumentExpression -> expression.isAnnotationLiteralLike()
     is CfirLiteralExpression -> true
     is CfirArrayLiteral -> elements.all { it.isAnnotationLiteralLike() }
+    is CfirQualifiedAccessExpression -> {
+        val reference = calleeReference as? CfirResolvedNamedReference ?: return false
+        val variable = reference.resolvedSymbol.cfir as? CfirVariable ?: return false
+        val type = variable.returnTypeRef as? CfirResolvedTypeRef ?: return false
+        variable.status.isConst && type.coneType.isIntegerType
+    }
     else -> false
 }
 
-/** 将字面量表达式转换为字符串；非字面量返回空。 */
-internal fun CfirExpression.literalStringOrNull(): String? =
-    (unwrapNamedArgument() as? CfirLiteralExpression)?.value?.toString()
-
-/** 读取指定布尔命名实参的值。 */
-internal fun CfirAnnotationCall.booleanArgument(name: String): Boolean? {
-    for ((argument, parameter) in (argumentList as? CfirResolvedArgumentList)?.mapping.orEmpty()) {
-        if (parameter.name.asString() != name) continue
-        val unwrappedArgument = argument.unwrapNamedArgument()
-        val literal = unwrappedArgument as? CfirLiteralExpression
-        if (literal?.value is Boolean) return literal.value as Boolean
-        return unwrappedArgument.source?.text?.toString()?.trim()?.toBooleanStrictOrNull()
+/** 取得 annotation literal 诊断应覆盖的真实参数 token，而不是其前导空白。 */
+internal fun CfirExpression.annotationLiteralDiagnosticSource(): AbstractCjSourceElement? = when (this) {
+    is CfirNamedArgumentExpression -> expression.annotationLiteralDiagnosticSource()
+    is CfirNamedAccessExpression -> {
+        val baseSource = calleeReference.source ?: source
+        val reference = calleeReference as? org.cangnova.cangjie.cfir.references.CfirNamedReference
+        val nameLength = reference?.name?.asString()?.length ?: 0
+        if (baseSource != null && nameLength > 0 && baseSource.endOffset - baseSource.startOffset >= nameLength) {
+            CjOffsetsOnlySourceElement(baseSource.endOffset - nameLength, baseSource.endOffset)
+        } else {
+            baseSource.trimmedAnnotationArgumentSource()
+        }
     }
-
-    return argumentByName(name)
-        ?.source
-        ?.text
-        ?.toString()
-        ?.trim()
-        ?.toBooleanStrictOrNull()
-}
-
-/** 去掉命名实参包装，取得注解实参的真实表达式。 */
-private tailrec fun CfirExpression.unwrapNamedArgument(): CfirExpression = when (this) {
-    is CfirNamedArgumentExpression -> expression.unwrapNamedArgument()
-    else -> this
+    is CfirQualifiedAccessExpression -> (calleeReference.source ?: source).trimmedAnnotationArgumentSource()
+    else -> source.trimmedAnnotationArgumentSource()
 }
 
 /**
- * 返回源码中显式写出的 annotation 实参。
+ * 在宿主 annotation source 中重新定位参数 token。
  *
- * [CfirResolvedArgumentList.arguments] 只暴露成功映射到形参的实参；平台注解语法
- * checker 需要判断源码是否显式写了参数，因此必须优先读取解析前的原始实参列表。
+ * annotation 表达式可能来自局部重解析，其节点 offset 会包含重解析片段的前导空白；
+ * 宿主 annotation source 仍拥有完整文件坐标，因此只用它恢复范围，不参与语义判定。
  */
-private fun CfirAnnotationCall.explicitArguments(): List<CfirExpression> =
-    (argumentList as? CfirResolvedArgumentList)
-        ?.originalArgumentList
-        ?.arguments
-        ?: argumentList.arguments
-
-/** 判断注解是否匹配指定短名。 */
-private fun CfirAnnotation.matchesAnnotationName(annotationName: Name): Boolean {
-    return shortNameOrNull() == annotationName
+internal fun CfirExpression.annotationLiteralDiagnosticSource(
+    annotationSource: CjSourceElement?,
+): AbstractCjSourceElement? {
+    val argumentExpression = (this as? CfirNamedArgumentExpression)?.expression ?: this
+    val namedAccess = argumentExpression as? CfirNamedAccessExpression
+    val name = (namedAccess?.calleeReference as? org.cangnova.cangjie.cfir.references.CfirNamedReference)
+        ?.name
+        ?.asString()
+    val container = annotationSource ?: return annotationLiteralDiagnosticSource()
+    val containerText = container.text?.toString()
+    if (!name.isNullOrEmpty() && containerText != null) {
+        val localStart = (argumentExpression.source?.startOffset ?: container.startOffset) - container.startOffset
+        val tokenStart = containerText.indexOf(name, localStart.coerceAtLeast(0)).takeIf { it >= 0 }
+            ?: containerText.lastIndexOf(name)
+        if (tokenStart >= 0) {
+            return CjOffsetsOnlySourceElement(
+                container.startOffset + tokenStart,
+                container.startOffset + tokenStart + name.length,
+            )
+        }
+    }
+    return annotationLiteralDiagnosticSource()
 }
+
+/** 收窄 CFIR source 中可能携带的参数前后空白，保持诊断覆盖实际 token。 */
+private fun AbstractCjSourceElement?.trimmedAnnotationArgumentSource(): AbstractCjSourceElement? {
+    this ?: return null
+    val sourceText = (this as? CjSourceElement)?.text?.toString() ?: return this
+    val first = sourceText.indexOfFirst { !it.isWhitespace() }
+    val last = sourceText.indexOfLast { !it.isWhitespace() }
+    if (first < 0 || last < first) return this
+    return CjOffsetsOnlySourceElement(startOffset + first, startOffset + last + 1)
+}
+
+internal fun CfirExpression.literalStringOrNull(): String? =
+    ((this as? CfirNamedArgumentExpression)?.expression ?: this).let { it as? CfirLiteralExpression }?.value as? String
+
+internal fun CfirAnnotationCall.booleanArgument(name: String): Boolean? =
+    (argumentValue(name) as? CfirLiteralExpression)?.value as? Boolean
