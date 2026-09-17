@@ -46,6 +46,9 @@ sealed class MacroSurface {
     /** macro 调用限定名；解析失败或语法缺失时为 null。 */
     abstract val qualifiedName: FqName?
 
+    /** 源码是否显式写出包限定；裸名称补齐当前包后不能丢失这一语法区别。 */
+    abstract val isQualifiedName: Boolean
+
     /** macro 调用形式。 */
     abstract val kind: Kind
 
@@ -138,12 +141,15 @@ data class MacroSurfaceToken(
  * Macro surface 的"作用域 / 容器 / 包"上下文。
  *
  * @property packageFqName surface 所在文件包名。
+ * @property sourceModuleName 实际解析入口的语言模块，普通宏新生成 token 保持空字符串。
  * @property enclosingClassFqName 最近外层类、接口、结构或枚举的 FQN。
  * @property enclosingFunctionName 最近外层函数名。
  */
 data class MacroSurfaceScopeContext(
     /** surface 所在文件包名。 */
     val packageFqName: FqName,
+    /** 解析来源不能从宿主包名反推；它决定仅标准库可用的内置注解身份。 */
+    val sourceModuleName: String,
     /** 最近外层类、接口、结构或枚举的 FQN。 */
     val enclosingClassFqName: FqName?,
     /** 最近外层函数名。 */
@@ -244,6 +250,7 @@ data class MacroSurfaceDecl(
     override val surfaceId: Long,
     /** declaration macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
     /** declaration macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
     /** declaration macro 调用点是否显式携带参数括号。 */
@@ -274,6 +281,7 @@ data class MacroSurfaceExpr(
     override val surfaceId: Long,
     /** expression macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
     /** expression macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
     /** expression macro 调用点是否显式携带参数括号。 */
@@ -304,6 +312,7 @@ data class MacroSurfaceParam(
     override val surfaceId: Long,
     /** parameter macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
     /** parameter macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
     /** parameter macro 调用点是否显式携带参数括号。 */
@@ -334,6 +343,7 @@ data class MacroSurfaceNode(
     override val surfaceId: Long,
     /** 通用 macro 调用限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
     /** 通用 macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
     /** 通用 macro 调用点是否显式携带参数括号。 */
@@ -373,6 +383,7 @@ data class IfAvailableSurface(
     override val surfaceId: Long,
     /** builtin non-macro 的限定名；语法或解析缺失时为 `null`。 */
     override val qualifiedName: FqName?,
+    override val isQualifiedName: Boolean,
     /** builtin non-macro 的调用形式。 */
     override val kind: MacroSurface.Kind,
     /** builtin non-macro 调用点是否显式携带参数括号。 */

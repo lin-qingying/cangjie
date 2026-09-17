@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 
@@ -32,9 +33,12 @@ object CfirVArrayExtraChecker : CfirCallableDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkVArrayReturnInCFunc(declaration: CfirCallableDeclaration) {
         if (declaration !is CfirFunction) return
-        if (!declaration.status.isForeign) return
+        if (!declaration.status.isC) return
 
-        val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)
+            ?.coneType
+            ?.fullyExpandedType(context.session)
+            ?: return
         if (returnType is ConeVArrayType) {
             reporter.reportOn(
                 source = declaration.returnTypeRef.source ?: declaration.source,

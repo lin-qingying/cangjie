@@ -18,6 +18,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -45,19 +48,35 @@ object CfirClosureCaptureUsageChecker : CfirBasicExpressionChecker() {
     /** 检查具名局部函数作为值使用；普通 `g()` 调用由 function-call 节点表示，直接放行。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkFunctionReference(expression: CfirQualifiedAccessExpression) {
+        checkCapturedCStruct(expression)
         if (expression is CfirFunctionCall) return
         val function = expression.resolvedFunctionOrNull() ?: return
-        if (System.getenv("CFIR_CAPTURE_TRACE") == "1") {
-            println(
-                "CFIR_CAPTURE_TRACE ref=${function.symbol.callableId.callableName} local=${function.isLocal} " +
-                        "source=${expression.source}"
-            )
-        }
         reportIllegalClosureValueUse(
             expression = expression,
             function = function,
             description = "function",
             subjectName = function.symbol.callableId.callableName.asString(),
+        )
+    }
+
+    /**
+     * 普通闭包不能捕获 `@C struct` 实例。
+     *
+     * 该规则读取 resolved variable 的完整类型和函数体边界；它不依赖变量可变性，
+     * 也不与 CFunc capture checker 合并，因为官方在 CFunc 场景允许两条诊断同时出现。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCapturedCStruct(expression: CfirQualifiedAccessExpression) {
+        val variable = expression.resolvedVariableOrNull() ?: return
+        val currentFunction = context.containingDeclarations.asReversed()
+            .mapNotNull { symbol -> symbol.cfir as? CfirFunction }
+            .firstOrNull() ?: return
+        if (!variable.isLocalCapturedBy(currentFunction)) return
+        val type = (variable.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        if (!CfirCTypeSemantics.isCStruct(context.session, type.fullyExpandedType(context.session))) return
+        reporter.reportOn(
+            source = expression.source ?: expression.calleeReference.source,
+            factory = CfirErrors.FUNC_CAPTURE_VAR_NOT_CTYPE,
         )
     }
 
@@ -87,12 +106,6 @@ object CfirClosureCaptureUsageChecker : CfirBasicExpressionChecker() {
         subjectName: String,
     ) {
         val captureInfo = ClosureCaptureAnalyzer().captureInfo(function)
-        if (System.getenv("CFIR_CAPTURE_TRACE") == "1") {
-            println(
-                "CFIR_CAPTURE_TRACE info=${function.symbol.callableId.callableName} kind=${captureInfo.kind} " +
-                        "vars=${captureInfo.mutableVariables.map { it.symbol.callableId.callableName }}"
-            )
-        }
         when (captureInfo.kind) {
             ClosureCaptureKind.NONE -> return
             ClosureCaptureKind.DIRECT_MUTABLE -> reporter.reportOn(
@@ -221,8 +234,12 @@ private class ClosureCaptureAnalyzer {
 }
 
 /** 当前函数是否直接捕获该可变局部变量。 */
+private fun CfirVariable.isLocalCapturedBy(function: CfirFunction): Boolean =
+    isLocal && this !is CfirValueParameter && !function.containsDeclarationInOwnScope(this)
+
+/** 直接可变捕获仍复用同一局部声明边界，只额外要求变量可变。 */
 private fun CfirVariable.isMutableLocalCapturedBy(function: CfirFunction): Boolean =
-    isLocal && isVar && this !is CfirValueParameter && !function.containsDeclarationInOwnScope(this)
+    isLocalCapturedBy(function) && isVar
 
 /** 判断声明是否属于函数自己的参数或函数体作用域，不进入嵌套函数。 */
 private fun CfirFunction.containsDeclarationInOwnScope(target: CfirVariable): Boolean {

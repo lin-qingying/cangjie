@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeContext
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
@@ -39,6 +40,18 @@ internal fun findUnsupportedVArrayElementType(
     if (!visited.add(expandedType)) return null
 
     return when (expandedType) {
+        is ConeStructType -> when (expandedType.classId) {
+            // 官方把标准库 Array 作为 IsStructArray 直接拒绝；String 虽以 struct
+            // 形式进入 Cone，但其官方内建布局同样不是可逐字段下沉的普通用户 struct。
+            StdlibClassIds.Array,
+            StdlibClassIds.String,
+            -> expandedType
+
+            else -> expandedType.structFieldTypes(context.session.typeContext).firstNotNullOfOrNull {
+                findUnsupportedVArrayElementType(it, visited)
+            }
+        }
+
         is ConeClassLikeType,
         is ConeEnumType,
         is ConeTypeParameterType,
@@ -47,10 +60,6 @@ internal fun findUnsupportedVArrayElementType(
         is ConeFunctionType -> expandedType.takeUnless { it.isCFunc }
 
         is ConeTupleType -> expandedType.elementTypes.firstNotNullOfOrNull {
-            findUnsupportedVArrayElementType(it, visited)
-        }
-
-        is ConeStructType -> expandedType.structFieldTypes(context.session.typeContext).firstNotNullOfOrNull {
             findUnsupportedVArrayElementType(it, visited)
         }
 
@@ -87,6 +96,9 @@ private fun ConeStructType.structFieldTypes(typeContext: ConeTypeContext): List<
 
     return struct.declarations.mapNotNull { declaration ->
         val field = declaration as? CfirFieldVariable ?: return@mapNotNull null
+        // 官方 CheckVArrayWithRefType 只检查 struct 的实例字段；static 字段不属于
+        // 每个 struct 值的存储布局，不能把它们的引用类型传递到 VArray 元素判定中。
+        if (field.status.isStatic) return@mapNotNull null
         val fieldType = (field.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
         substitutor?.substituteOrSelf(fieldType) ?: fieldType
     }

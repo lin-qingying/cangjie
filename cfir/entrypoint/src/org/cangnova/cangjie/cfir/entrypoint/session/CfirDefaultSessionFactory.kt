@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
+import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.name.Name
@@ -82,6 +83,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         val registerSourceSessionComponents: CfirSession.() -> Unit = {},
         /** 当前 session 使用的 ABI policy。 */
         val abiPolicy: CfirAbiPolicy = org.cangnova.cangjie.cfir.session.CfirLanguageAbiPolicy,
+        /** 当前 session 使用的互操作/CJMapping 配置。 */
+        val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
     )
 
     /**
@@ -211,6 +214,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      */
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
+        register(CfirInteropSettingsComponent::class, c.interopSettings)
         c.registerLibrarySessionComponents(this)
     }
 
@@ -247,6 +251,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
      */
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
+        register(CfirInteropSettingsComponent::class, c.interopSettings)
         c.registerSourceSessionComponents(this)
     }
 }

@@ -252,6 +252,10 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
                 CfirProgramEntrySettingsComponent::class,
                 CfirProgramEntrySettingsComponent(configuration.checkProgramEntry)
             )
+            register(
+                CfirDeclarationModeSettingsComponent::class,
+                CfirDeclarationModeSettingsComponent(configuration.compileCjd)
+            )
             registerResolveComponents(
                 configuration.diagnosticFactoriesStorage ?: error("diagnosticFactoriesStorage is not registered in the configuration"),
                 configuration.lookupTracker,

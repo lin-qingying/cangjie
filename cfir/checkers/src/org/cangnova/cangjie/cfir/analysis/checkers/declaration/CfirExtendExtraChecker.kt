@@ -71,12 +71,12 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     /**
      * Java 互操作基础注解名称。
      */
-    private val JAVA = Name.identifier("Java")
+    private val JAVA = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA
 
     /**
      * Java 实现类型注解名称。
      */
-    private val JAVA_IMPL = Name.identifier("JavaImpl")
+    private val JAVA_IMPL = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_IMPL
 
     /**
      * 对单个 extend 声明执行额外语义检查。

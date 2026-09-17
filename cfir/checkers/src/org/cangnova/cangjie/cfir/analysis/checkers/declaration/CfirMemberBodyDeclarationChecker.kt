@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.isFromDeclarationFile
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -54,6 +55,13 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
             member.status.isStatic && !member.status.isForeign ||
                     !owner.status.isAbstract && !owner.status.isForeign
         if (!invalidAbstract) return
+
+        // 官方 `DeclAttributeChecker::CheckAttributesForPropAndFuncDeclInClass`（:284-289）开头
+        // 以 `opts.compileCjd` 整体提前返回：声明文件（.cj.d）不报 sema_missing_func_body。
+        // 属性在 .cj.d 中按 R4 仍带 abstract（护栏 1 只作用于函数），若不豁免，
+        // `class C { prop p: Int64 }` 会被误报——因此对属性分支按文件种类跳过。
+        // 函数分支**不加**同款守卫：它是护栏 1 失效的回归探测器（A-4 更正四）。
+        if (declaration is CfirProperty && isFromDeclarationFile(context)) return
 
         reporter.reportOn(
             source = declaration.source?.firstCharacterDiagnosticSource(),

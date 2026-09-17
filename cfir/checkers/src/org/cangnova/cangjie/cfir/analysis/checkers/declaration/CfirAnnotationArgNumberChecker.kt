@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 
 /**
  * 内置注解参数数量检查器。
@@ -19,46 +20,46 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
  * 参数数量不匹配时报 `ANNOTATION_ERROR_ARG_NUM`。
  */
 object CfirAnnotationArgNumberChecker {
-    /** 不允许携带实参的内置注解短名到诊断描述的映射。 */
-    private val NO_ARG_ANNOTATIONS = mapOf(
-        "C" to "no",
-        "FastNative" to "no",
-        "Frozen" to "no",
-    )
-    /** 必须携带一个实参的内置注解短名到诊断描述的映射。 */
-    private val ONE_ARG_ANNOTATIONS = mapOf(
-        "CallingConv" to "one",
-    )
-
-    /** 检查声明上的内置注解参数数量是否符合规则。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     fun check(declaration: CfirDeclaration) {
-        for (annotation in declaration.annotations) {
-            val shortName = annotation.shortNameOrNull()?.asString() ?: continue
-            val actualCount = (annotation as? CfirAnnotationCall)?.argumentList?.arguments?.size ?: 0
-
-            NO_ARG_ANNOTATIONS[shortName]?.let { _ ->
-                if (actualCount > 0) {
-                    reporter.reportOn(
-                        source = annotation.source,
-                        factory = CfirErrors.ANNOTATION_ERROR_ARG_NUM,
-                        a = "@$shortName",
-                        b = "no",
-                    )
-                }
-            }
-            ONE_ARG_ANNOTATIONS[shortName]?.let { _ ->
-                if (actualCount != 1) {
-                    reporter.reportOn(
-                        source = annotation.source,
-                        factory = CfirErrors.ANNOTATION_ERROR_ARG_NUM,
-                        a = "@$shortName",
-                        b = "one",
-                    )
-                }
-            }
+        for (annotation in declaration.annotations.filterIsInstance<CfirAnnotationCall>()) {
+            val descriptor = annotation.builtInDescriptor ?: continue
+            // ObjC/Java mirror and ForeignName are interop-library annotations,
+            // not official language AnnotationKind entries. Their source grammar
+            // and constructor ownership are handled by the interop annotation
+            // contract; they must not be forced through the language builtin
+            // argument-arity checker.
+            if (descriptor.kind in NON_LANGUAGE_INTEROP_KINDS) continue
+            if (descriptor.kind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV) continue
+            val schema = descriptor.argumentSchema
+            if (schema.variadic) continue
+            val count = annotation.argumentCount()
+            val required = schema.parameters.count { it.required }
+            val maximum = schema.parameters.size
+            if (count in required..maximum) continue
+            val firstArgument = annotation.argumentView?.entries?.firstOrNull { it.argument != null }
+            reporter.reportOn(
+                if (maximum == 0) firstArgument?.source else annotation.source,
+                CfirErrors.ANNOTATION_ERROR_ARG_NUM,
+                "@"+descriptor.sourceName,
+                if (maximum == 0) "no" else "one",
+            )
         }
     }
+
+    /** 官方 AnnotationKind 之外的互操作库注解，不能由通用 builtin arity 规则检查。 */
+    private val NON_LANGUAGE_INTEROP_KINDS = setOf(
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_MIRROR,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_IMPL,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_HAS_DEFAULT,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_MIRROR,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_IMPL,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_INIT,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_OPTIONAL,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_NAME,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
+        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
+    )
 }
 
 /** 面向 CfirClassLikeDeclaration 的分发。 */

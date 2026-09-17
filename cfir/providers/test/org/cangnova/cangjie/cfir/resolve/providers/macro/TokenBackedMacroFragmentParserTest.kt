@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -167,6 +168,7 @@ class TokenBackedMacroFragmentParserTest {
             surface = MacroSurfaceExpr(
                 surfaceId = name.hashCode().toLong(),
                 qualifiedName = FqName(name),
+                isQualifiedName = '.' in name,
                 kind = MacroSurface.Kind.PLAIN,
                 hasParenthesis = true,
                 attrTokens = emptyList(),
@@ -178,6 +180,7 @@ class TokenBackedMacroFragmentParserTest {
                 ),
                 scopeContext = MacroSurfaceScopeContext(
                     packageFqName = FqName("test"),
+                    sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test")),
                     enclosingClassFqName = null,
                     enclosingFunctionName = null,
                 ),

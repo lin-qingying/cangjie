@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.hasAnnotation
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.hasBuiltinAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -48,13 +49,6 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
     /**
      * 标记冻结声明或冻结泛型包装函数的注解名。
      */
-    private val frozenAnnotationName = Name.identifier("Frozen")
-
-    /**
-     * 标记声明已准备好被 mock 的注解名。
-     */
-    private val preparedToMockAnnotationName = Name.identifier("EnsurePreparedToMock")
-
     /**
      * 检查 mock intrinsic 调用是否满足目标类型、测试模式、冻结声明和准备注解约束。
      */
@@ -82,13 +76,15 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         val targetDeclaration = context.session.cfirProvider.getCfirClassifierByFqName(targetClassId)
             ?: context.session.symbolProvider.getClassLikeSymbolByClassId(targetClassId)?.cfir as? CfirClassLikeDeclaration
 
-        if (targetDeclaration != null && targetDeclaration.hasAnnotation(frozenAnnotationName)) {
+        if (targetDeclaration != null && targetDeclaration.hasBuiltinAnnotation(BuiltInAnnotationKind.FROZEN)) {
             reporter.reportOn(source, CfirErrors.MOCK_FROZEN_UNSUPPORTED)
             return
         }
 
         val containingFunction = context.findClosestDeclaration<CfirFunction>()
-        if (containingFunction != null && containingFunction.typeParameters.isNotEmpty() && !containingFunction.hasAnnotation(frozenAnnotationName)) {
+        if (containingFunction != null && containingFunction.typeParameters.isNotEmpty() &&
+            !containingFunction.hasBuiltinAnnotation(BuiltInAnnotationKind.FROZEN)
+        ) {
             reporter.reportOn(source, CfirErrors.MOCK_FROZEN_REQUIRED, containingFunction.callableName())
             return
         }
@@ -98,7 +94,7 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
             return
         }
 
-        if (!targetDeclaration.hasAnnotation(preparedToMockAnnotationName)) {
+        if (!targetDeclaration.hasBuiltinAnnotation(BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK)) {
             reporter.reportOn(
                 source = source,
                 factory = CfirErrors.MOCK_DOESNT_SUPPORT_MOCKING,

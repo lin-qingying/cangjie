@@ -154,6 +154,10 @@ fun main(args: Array<String>) {
                 alias<CfirFunction>("FunctionChecker", false).let {
                     visitAlso<CfirMacroDeclaration>(it)
                     visitAlso<CfirFinalizer>(it)
+                    // Error functions still carry the complete function
+                    // declaration shape and must run the function-level
+                    // checkers before any diagnostic traversal fallback.
+                    visitAlso<CfirErrorFunction>(it)
                 }
                 alias<CfirEnumConstructor>("EnumConstructorChecker")
                 alias<CfirNamedFunction>("SimpleFunctionChecker")

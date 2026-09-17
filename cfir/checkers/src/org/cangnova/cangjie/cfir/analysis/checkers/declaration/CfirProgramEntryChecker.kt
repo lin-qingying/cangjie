@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.checkProgramEntry
+import org.cangnova.cangjie.cfir.session.compileCjd
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 
 /**
@@ -48,6 +49,8 @@ fun reportMissingProgramEntryIfNeeded(
     reporter: DiagnosticReporter,
 ) {
     if (!session.checkProgramEntry) return
+    // 声明模式（.cj.d）不检查入口缺失 —— 对齐官方 TypeChecker.cpp:2215-2230 的 opts.compileCjd 提前返回。
+    if (session.compileCjd) return
     if (files.any(CfirFile::hasProgramEntry)) return
 
     val firstFile = files.firstOrNull() ?: return

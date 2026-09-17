@@ -92,6 +92,12 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
         val availability = context.session.declarationAvailabilityProvider
         val apiLevelProvider = context.session.apiLevelProvider
         val scope = context.ifAvailableScope(expression)
+        val declarationApiLevel = context.containingDeclarations
+            .asSequence()
+            .mapNotNull { containingSymbol ->
+                availability.ownApiLevelInfo(containingSymbol.cfir)?.since?.toIntOrNull()
+            }
+            .minOrNull()
 
         for (declaration in availability.referenceAvailabilityChain(symbol)) {
             if (availability.hideUnavailabilityOf(declaration, useSitePackage) != null) {
@@ -99,7 +105,7 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
             }
 
             val apiLevel = availability.ownApiLevelInfo(declaration) ?: continue
-            val currentApiLevel = scope.apiLevel ?: apiLevelProvider.projectApiLevel
+            val currentApiLevel = scope.apiLevel ?: declarationApiLevel ?: apiLevelProvider.projectApiLevel
             if (currentApiLevel != CfirApiLevelProvider.DISABLED) {
                 val targetLevel = apiLevel.since?.toIntOrNull()
                 if (targetLevel != null && targetLevel > currentApiLevel) {
@@ -181,10 +187,22 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
             when (branch.conditionName) {
                 "level" -> {
                     val level = branch.conditionValue.toIntOrNull() ?: continue
-                    if (branch.kind == CfirIfAvailableBranchKind.THEN) {
-                        // 官方嵌套 IfAvailable 的 true 分支按当前条件重新建立
-                        // APILevel 上界；false 分支则保留外层已知上界。
-                        scope = scope.copy(apiLevel = level)
+                    scope = when (branch.kind) {
+                        CfirIfAvailableBranchKind.THEN -> {
+                            // 官方嵌套 IfAvailable 的 true 分支按当前条件重新建立
+                            // APILevel 上界；false 分支在没有外层上界时取当前
+                            // 项目/声明 scope 与当前条件的较小值。
+                            scope.copy(apiLevel = level)
+                        }
+
+                        CfirIfAvailableBranchKind.ELSE -> {
+                            // 官方 CheckIfAvailableExpr 的 else walker 继续使用
+                            // 进入当前 IfAvailable 前的 scopeAPILevel；false 分支
+                            // 不把条件值错误地降成新的 API 上界。否则外层 false
+                            // 分支中的嵌套 IfAvailable 会把全局 level 23 错降为
+                            // 外层条件 20，进而误报 f21/f22/f23。
+                            scope
+                        }
                     }
                 }
 
@@ -198,11 +216,12 @@ object CfirApiLevelRefHigherChecker : CfirQualifiedAccessChecker() {
                             removedIntersectionSyscaps = scope.removedIntersectionSyscaps - syscap,
                         )
                     } else {
-                        // false 分支只排除“并集但非交集”的能力。若能力在所有
-                        // 目标设备交集中，false 分支本身不可达，官方 checker
-                        // 仍保留该全局事实（例如 syscap A）。
-                        val parentIntersection = scope.syscapIntersection(context.session.apiLevelProvider)
-                        val mustRemoveFromUnion = syscap !in parentIntersection
+                        // false 分支只排除当前条件在全局并集中不存在的能力；全局
+                        // 已知的 capability 仍可能在其他设备上存在，并按 intersection
+                        // 规则继续产生 warning。
+                        val provider = context.session.apiLevelProvider
+                        val mustRemoveFromUnion =
+                            syscap !in provider.syscapUnion && syscap !in scope.addedSyscaps
                         scope.copy(
                             removedSyscaps = if (mustRemoveFromUnion) scope.removedSyscaps + syscap else scope.removedSyscaps,
                             removedIntersectionSyscaps = scope.removedIntersectionSyscaps,

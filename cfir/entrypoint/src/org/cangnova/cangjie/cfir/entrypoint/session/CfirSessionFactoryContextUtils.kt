@@ -3,9 +3,12 @@ package org.cangnova.cangjie.cfir.entrypoint.session
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
+import org.cangnova.cangjie.cfir.entrypoint.configuration.enableInteropCJMapping
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
+import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
+import org.cangnova.cangjie.cfir.entrypoint.configuration.targetInteropLanguage
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import java.io.File
@@ -35,6 +38,10 @@ fun createDefaultCfirSessionFactoryContext(
     val apiLevelProvider = createCfirApiLevelProvider(configuration)
     return CfirDefaultSessionFactory.Context(
         cjoManager = cjoManager,
+        interopSettings = CfirInteropSettingsComponent(
+            enableInteropCJMapping = configuration.enableInteropCJMapping,
+            targetInteropLanguage = configuration.targetInteropLanguage,
+        ),
         registerSourceSessionComponents = {
             if (apiLevelProvider != null) {
                 register(CfirApiLevelProvider::class, apiLevelProvider)

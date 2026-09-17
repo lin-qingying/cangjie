@@ -3,12 +3,11 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -28,22 +27,13 @@ import org.cangnova.cangjie.resolve.deprecation.DeprecationLevelValue
 object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirFunctionCall) {
-        // Deprecation is a post-resolution usage diagnostic. A failed candidate
-        // is not a valid usage of the deprecated declaration; reporting it here
-        // would hide the root generic/argument diagnostic and diverge from the
-        // official legality-of-usage pass.
-        val candidateReference = expression.calleeReference as? CfirNamedReferenceWithCandidateBase
-        if (candidateReference is CfirErrorReferenceWithCandidate ||
-            (candidateReference as? CfirNamedReferenceWithCandidate)?.candidate?.isSuccessful == false
-        ) return
+        // 弃用检查消费 resolve 发布的成功引用；错误引用的根因由诊断收集器报告。
+        // checker 只依赖公共错误协议，不能跨模块读取 resolve 的候选实现。
+        if (expression.calleeReference is CfirDiagnosticHolder) return
 
         val symbol = expression.resolvedCallableSymbol() ?: return
         val source = expression.calleeReference.source ?: expression.source ?: return
         val lvs = context.languageVersionSettings
-        val callDecl = symbol.takeIf { it.isBound }?.cfir
-        val ownerClassLike = (callDecl as? CfirConstructor)
-            ?.symbol?.callableId?.classId
-            ?.let { context.session.symbolProvider.getClassLikeSymbolByClassId(it) }
         // 构造器的所属类符号（构造器自身无弃用信息时回退用）。
         val declaringClassLike = (symbol.takeIf { it.isBound }?.cfir as? CfirConstructor)
             ?.symbol?.callableId?.classId

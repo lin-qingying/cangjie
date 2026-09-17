@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.name.FqName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -179,6 +180,7 @@ class MacroCallForestTest {
         return MacroSurfaceExpr(
             surfaceId = id,
             qualifiedName = FqName(name),
+            isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
@@ -190,6 +192,7 @@ class MacroCallForestTest {
             ) else null,
             scopeContext = MacroSurfaceScopeContext(
                 packageFqName = FqName("test"),
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test")),
                 enclosingClassFqName = null,
                 enclosingFunctionName = null,
             ),
@@ -219,6 +222,7 @@ class MacroCallForestTest {
         return MacroSurfaceDecl(
             surfaceId = id,
             qualifiedName = FqName(name),
+            isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = false,
             attrTokens = emptyList(),
@@ -230,6 +234,7 @@ class MacroCallForestTest {
             ),
             scopeContext = MacroSurfaceScopeContext(
                 packageFqName = FqName("test"),
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("test")),
                 enclosingClassFqName = null,
                 enclosingFunctionName = null,
             ),

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -36,14 +37,12 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
     /**
      * Java 互操作注解名。
      */
-    private val JAVA = Name.identifier("Java")
-
     /**
      * 检查带 `@Java` 的 class-like 声明的泛型互操作约束。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (!declaration.hasAnnotation(JAVA)) return
+        if (!declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA)) return
 
         checkStaticMembersNotDependOnGenericParams(declaration)
         checkGenericUpperBoundsAreJava(declaration)
@@ -110,7 +109,7 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
                     val boundSymbol = context.session.symbolProvider
                         .getClassLikeSymbolByClassId(boundClassId) ?: continue
                     val boundDecl = boundSymbol.cfir
-                    if (!boundDecl.hasAnnotation(JAVA)) {
+                    if (!boundDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA)) {
                         reporter.reportOn(
                             source = bound.source ?: typeParam.source,
                             factory = CfirErrors.GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA,

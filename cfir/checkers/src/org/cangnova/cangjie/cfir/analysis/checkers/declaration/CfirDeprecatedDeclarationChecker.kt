@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -13,7 +14,6 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.name.Name
 
 /**
  * @Deprecated 声明级语义检查器
@@ -29,8 +29,6 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
     /**
      * Deprecated 注解名。
      */
-    private val DEPRECATED = Name.identifier("Deprecated")
-
     /**
      * 检查 override/redef 声明与父声明之间的 Deprecated 严格级别兼容性。
      */
@@ -135,7 +133,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
      * 判断声明是否带 `@Deprecated` 注解。
      */
     private fun hasDeprecatedAnnotation(declaration: CfirDeclaration): Boolean {
-        return declaration.hasAnnotation(DEPRECATED)
+        return declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED)
     }
 
     /**
@@ -143,7 +141,8 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
      * `@Deprecated(strict: true)` 为 ERROR 级别,否则为 WARNING。
      */
     private fun isDeprecatedErrorLevel(declaration: CfirDeclaration): Boolean {
-        val ann = declaration.findAnnotations(DEPRECATED).firstOrNull() as? CfirAnnotationCall ?: return false
+        val ann = declaration.findBuiltinAnnotations(BuiltInAnnotationKind.DEPRECATED)
+            .firstOrNull() as? CfirAnnotationCall ?: return false
         return ann.booleanArgument("strict") == true
     }
 }

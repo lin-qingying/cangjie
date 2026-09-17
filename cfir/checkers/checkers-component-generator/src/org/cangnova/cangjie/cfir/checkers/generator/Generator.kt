@@ -60,6 +60,11 @@ private const val ABSTRACT_DIAGNOSTIC_REPORTER_FQN =
  */
 private const val CHECKER_CONTEXT_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext"
 /**
+ * 声明文件（`.cj.d`）种类判定 helper 的全限定名（实现见 checkers/src 的 DeclarationFileKind.kt）。
+ * 供分派处过滤 `requiresImplementation` checker 使用。
+ */
+private const val IS_FROM_DECLARATION_FILE_FQN = "org.cangnova.cangjie.cfir.analysis.checkers.isFromDeclarationFile"
+/**
  * CFIR 根包全限定名。
  */
 private const val FIR_FQN = "org.cangnova.cangjie.cfir"
@@ -269,6 +274,9 @@ class Generator(
                 DIAGNOSTIC_REPORTER_FQN,
                 ABSTRACT_DIAGNOSTIC_REPORTER_FQN,
                 CHECKER_CONTEXT_FQN,
+                *buildList {
+                    if (emitRequiresImplementationFilter) add(IS_FROM_DECLARATION_FILE_FQN)
+                }.toTypedArray(),
                 "$FIR_FQN.$checkersPackageName.*",
                 CHECKERS_COMPONENT_FQN,
                 FIR_ELEMENT_FQN,
@@ -398,6 +406,11 @@ class Generator(
         withIndent {
             println("for (checker in this) {")
             withIndent {
+                if (emitRequiresImplementationFilter) {
+                    println("// 声明文件（.cj.d）里不存在\"实现\"，依赖实现完备性的 checker 整体跳过。")
+                    println("// 判定取自元素所属文件（与解析层同源的 CjSourceKind），不读会话级开关。")
+                    println("if (checker.requiresImplementation && isFromDeclarationFile(context)) continue")
+                }
                 println("try {")
                 withIndent {
                     println("context(context, reporter) {")
@@ -487,6 +500,15 @@ class Generator(
      * 生成的 checker 组件短名。
      */
     private val checkersComponentName = abstractCheckerName.removePrefix("Cfir") + "s"
+
+    /**
+     * 是否发射"实现完备性豁免"过滤（4.4.5）。
+     *
+     * 只有 declaration 组件发射：`requiresImplementation` 标记目前只定义在
+     * `CfirDeclarationChecker` 基类上；expression / type 级别尚无此类检查，
+     * 若将来引入，需把标记加到对应基类并放宽此条件。
+     */
+    private val emitRequiresImplementationFilter: Boolean = abstractCheckerName == "CfirDeclarationChecker"
 
     /**
      * 生成代码中 checker 所在包的子包名。

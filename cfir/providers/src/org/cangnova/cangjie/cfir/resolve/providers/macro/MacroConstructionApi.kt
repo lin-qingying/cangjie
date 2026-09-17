@@ -299,6 +299,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _usedMacroNamesByFileIdentity: MutableMap<String, MutableSet<Name>> = linkedMapOf()
     /** `fileIdentity -> macro package -> construction 阶段已消费的 macro 简单名集合`。 */
     private val _usedMacroNamesByPackageByFileIdentity: MutableMap<String, MutableMap<FqName, MutableSet<Name>>> = linkedMapOf()
+    /** `fileIdentity -> construction 阶段已消费的 macro package 集合`。 */
+    private val _usedMacroPackagesByFileIdentity: MutableMap<String, MutableSet<FqName>> = linkedMapOf()
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
     /** 展开产物 source 到原始 surface id 的映射。 */
@@ -431,6 +433,22 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
             _usedMacroNamesByPackageByFileIdentity
                 .getOrPut(fileIdentity) { linkedMapOf() }
                 .getOrPut(entry.packageFqName) { linkedSetOf() } += entry.name
+            _usedMacroPackagesByFileIdentity.getOrPut(fileIdentity) { linkedSetOf() } += entry.packageFqName
+        }
+    }
+
+    /**
+     * 登记 construction routing 已确认的 macro package 使用。
+     *
+     * `MacroResolution.CustomAnnotation` 或 degraded 路径可能没有可用的
+     * [MacroDefinitionEntry]，但 classification 已经依据源码 macro package/import
+     * 候选确认了该 package 是当前 surface 的 construction demand。该事实不能丢失，
+     * 否则 final CFIR 中保留的 annotation surface 会让 imports checker 误报 unresolved。
+     */
+    fun registerUsedMacroPackage(file: CfirFile, packageFqName: FqName) {
+        require(!packageFqName.isRoot) { "A used macro package must not be the root package." }
+        for (fileIdentity in file.macroExpansionFileIdentities()) {
+            _usedMacroPackagesByFileIdentity.getOrPut(fileIdentity) { linkedSetOf() } += packageFqName
         }
     }
 
@@ -455,6 +473,11 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
             }
             .toSet()
     }
+
+    /** 查询当前文件 construction 阶段确认使用过的 macro package。 */
+    fun usedMacroPackages(file: CfirFile): Set<FqName> = file.macroExpansionFileIdentities()
+        .flatMap { identity -> _usedMacroPackagesByFileIdentity[identity].orEmpty() }
+        .toSet()
 
     /** 注册 degraded placeholder 与原始 surface 的对应关系。 */
     fun registerPlaceholder(placeholderId: Long, originSurfaceId: Long) {
@@ -555,6 +578,8 @@ fun MacroExpansionRegistry.registerConstructionSurfaceUsage(
     pre: PreMacroRawBuildResult,
     classification: MacroDemandClassification,
 ) {
+    val snapshotsBySurfaceId = classification.preArtifactSnapshot.decisions
+        .associateBy { it.surface.surfaceId }
     val usedDecisionsBySurfaceId = classification.finalDecisions
         .asSequence()
         .filter { it.localConstruction }
@@ -566,6 +591,22 @@ fun MacroExpansionRegistry.registerConstructionSurfaceUsage(
         for (surface in preFile.surfaces) {
             val decision = usedDecisionsBySurfaceId[surface.surfaceId] ?: continue
             registerUsedMacroSurface(preFile.cfirFile, surface)
+            decision.externalPackageDemand?.let { packageFqName ->
+                registerUsedMacroPackage(preFile.cfirFile, packageFqName)
+            }
+            if (decision.resolution is MacroResolution.CustomAnnotation && surface.replaceHandle.annotationCarrier != null) {
+                // A custom/degraded annotation has no resolved MacroDefinitionEntry, but
+                // its import candidates are still the construction routing facts that
+                // made this annotation surface reachable. Preserve those package-level
+                // uses so the final imports checker does not report a false unresolved
+                // import after the original surface has been retained.
+                snapshotsBySurfaceId[surface.surfaceId]
+                    ?.importCandidates
+                    ?.filterNot { it.isRoot }
+                    ?.forEach { packageFqName ->
+                        registerUsedMacroPackage(preFile.cfirFile, packageFqName)
+                    }
+            }
             val resolvedEntry = (decision.resolution as? MacroResolution.Resolved)?.entry
             if (resolvedEntry != null) {
                 registerUsedMacroDefinition(preFile.cfirFile, resolvedEntry)

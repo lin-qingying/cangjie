@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -261,14 +263,10 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         commonMember: CfirDeclaration,
         @Suppress("UNUSED_PARAMETER") memberName: Name,
     ) {
-        val specificAnnoNames = specificMember.annotationNames()
-        val commonAnnoNames = commonMember.annotationNames()
+        val specificAnnotationKeys = specificMember.annotationKeys()
+        val commonAnnotationKeys = commonMember.annotationKeys()
 
-        // common/specific 修饰符过滤
-        val filteredSpecific = specificAnnoNames - IGNORE_MATCH_ANNOTATIONS
-        val filteredCommon = commonAnnoNames - IGNORE_MATCH_ANNOTATIONS
-
-        if (filteredSpecific != filteredCommon) {
+        if (specificAnnotationKeys != commonAnnotationKeys) {
             reporter.reportOn(
                 source = specificMember.source,
                 factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_ANNOTATION,
@@ -289,7 +287,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         memberName: Name,
     ) {
         // 如果 specific 声明自身标注了 @Deprecated，但 common 对应声明未标注
-        if (specificMember.hasAnnotation(DEPRECATED_NAME) && !commonMember.hasAnnotation(DEPRECATED_NAME)) {
+        if (specificMember.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED) &&
+            !commonMember.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED)
+        ) {
             reporter.reportOn(
                 source = specificMember.source,
                 factory = CfirErrors.SPECIFIC_HAS_DEPRECATED_ANNOTATION,
@@ -476,7 +476,7 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     private fun checkCommonExtraConstraints(commonDecl: CfirClass) {
         // common 泛型声明的 @Frozen 限制
         if (commonDecl.typeParameters.isNotEmpty()) {
-            if (commonDecl.hasAnnotation(FROZEN_NAME)) {
+            if (commonDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.FROZEN)) {
                 reporter.reportOn(
                     source = commonDecl.source,
                     factory = CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED,
@@ -567,12 +567,14 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCommonSpecificAnnotations(decl: CfirClass) {
         for (ann in decl.annotations) {
-            val name = ann.shortNameOrNull() ?: continue
-            if (name in DISALLOWED_ON_COMMON_SPECIFIC) {
+            val kind = ann.annotationKind ?: continue
+            if (kind in DISALLOWED_ON_COMMON_SPECIFIC) {
+                val call = ann as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall ?: continue
+                val descriptor = call.builtInDescriptor ?: continue
                 reporter.reportOn(
                     source = decl.source,
                     factory = CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED,
-                    a = name,
+                    a = Name.identifier(descriptor.sourceName),
                 )
             }
         }
@@ -684,6 +686,8 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
  * 注册为 fileCheckers
  */
 object CfirCommonPackageMainChecker : CfirFileChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查 common 包中是否声明了 main 函数。
      */
@@ -718,50 +722,47 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
             if (!member.status.isStatic) continue
 
             // static/private/local/constructor 声明不能被 mock
-            if (member.hasAnnotation(Name.identifier("Mock"))) {
-                if (member.status.visibility == org.cangnova.cangjie.descriptors.Visibilities.Private) {
-                    reporter.reportOn(
-                        source = member.source,
-                        factory = CfirErrors.MOCK_WRONG_STATIC_DECL,
-                    )
-                }
-            }
+            // `Mock` is a user/system macro identity, not an official built-in
+            // annotation kind. Without a resolved macro declaration identity
+            // this checker must not infer it from a short name.
         }
     }
 }
 
 /**
- * 取得声明上的注解短名集合。
+ * 取得声明上的解析注解身份集合。
+ *
+ * common/specific 匹配必须比较 builtin kind 或 resolved ClassId；短名相同的两个
+ * custom annotation 不能被视为同一注解。
  */
-private fun CfirDeclaration.annotationNames(): Set<Name> =
-    annotations.mapNotNull { it.shortNameOrNull() }.toSet()
+private fun CfirDeclaration.annotationKeys(): Set<AnnotationMatchKey> =
+    annotations.mapNotNull { annotation ->
+        when {
+            annotation.annotationKind != null -> AnnotationMatchKey.BuiltIn(annotation.annotationKind!!)
+            annotation.annotationClassId != null -> AnnotationMatchKey.Resolved(annotation.annotationClassId!!)
+            else -> null
+        }
+    }.toSet()
+
+private sealed interface AnnotationMatchKey {
+    data class BuiltIn(val kind: BuiltInAnnotationKind) : AnnotationMatchKey
+    data class Resolved(val classId: org.cangnova.cangjie.name.ClassId) : AnnotationMatchKey
+}
 
 /**
  * Deprecated 注解名。
  */
+/** Deprecated 诊断参数的稳定显示名；语义判断使用 [BuiltInAnnotationKind.DEPRECATED]。 */
 private val DEPRECATED_NAME = Name.identifier("Deprecated")
-
-/**
- * Frozen 注解名。
- */
-private val FROZEN_NAME = Name.identifier("Frozen")
-
-/**
- * 匹配注解比较时需要忽略的注解名（例如 common/specific 本身的标注）。
- */
-private val IGNORE_MATCH_ANNOTATIONS: Set<Name> = setOf(
-    Name.identifier("Common"),
-    Name.identifier("Specific"),
-)
 
 /**
  * 不允许出现在 common/specific 声明上的注解。
  * 对齐 C++ MPTypeCheckerImpl::CheckNotAllowedAnnotations。
  */
-private val DISALLOWED_ON_COMMON_SPECIFIC: Set<Name> = setOf(
+private val DISALLOWED_ON_COMMON_SPECIFIC: Set<BuiltInAnnotationKind> = setOf(
     // C/Java 互操作注解不能与 common/specific 共存
-    Name.identifier("C"),
-    Name.identifier("Java"),
-    Name.identifier("JavaMirror"),
-    Name.identifier("JavaImpl"),
+    BuiltInAnnotationKind.C,
+    BuiltInAnnotationKind.JAVA,
+    BuiltInAnnotationKind.JAVA_MIRROR,
+    BuiltInAnnotationKind.JAVA_IMPL,
 )

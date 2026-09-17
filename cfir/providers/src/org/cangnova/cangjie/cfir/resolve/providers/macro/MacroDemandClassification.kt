@@ -273,10 +273,14 @@ private fun MacroSurface.toPreArtifactSnapshot(
     val annotationCarrier = replaceHandle.annotationCarrier
     val metadata = annotationCarrier?.let { annotationMetadataRegistry?.snapshot(it) }
     val name = qualifiedName?.shortName()
-    val samePackage = name?.let { context.symbolIndex.samePackageMacroDef(scopeContext.packageFqName, it) }
-    val builtinNonMacro = name?.takeIf { samePackage == null && it in context.builtinNonMacroRegistry }
+    val samePackage = name
+        ?.takeIf { !isQualifiedName || qualifiedName?.parent() == scopeContext.packageFqName }
+        ?.let { context.symbolIndex.samePackageMacroDef(scopeContext.packageFqName, it) }
+    val builtinNonMacro = name?.takeIf {
+        !isQualifiedName && samePackage == null && it in context.builtinNonMacroRegistry
+    }
     val builtinMacro = name
-        ?.takeIf { samePackage == null && it in context.builtinMacroRegistry }
+        ?.takeIf { !isQualifiedName && samePackage == null && it in context.builtinMacroRegistry }
         ?.let { context.symbolIndex.lookupByFqName(FqName.topLevel(it)) }
         ?.takeIf { it.source == MacroDefinitionEntry.Source.BUILTIN_MACRO }
     val importCandidates = collectImportCandidatePackages(preFile)
@@ -309,17 +313,20 @@ private fun PreArtifactSurfaceSnapshot.toFinalDecision(
     failurePolicy: MacroFailurePolicy,
 ): FinalMacroSurfaceDecision {
     val name = qualifiedName?.shortName()
+    // FQN 可以由裸名称补齐；只有 raw syntax 明确记录的限定形式才参与限定查询。
+    val qualifier = qualifiedName?.parent()?.takeIf { surface.isQualifiedName }
     val resolution = when {
         name == null -> MacroResolution.Unresolved(Name.special("<missing>"))
         samePackageResult != null -> MacroResolution.SamePackage(samePackageResult)
         annotationCarrier != null && kind == MacroSurface.Kind.FORCED -> MacroResolution.CustomAnnotation(name)
         else -> context.resolveMacroCall(
             callPackage = surface.scopeContext.packageFqName,
-            qualifier = qualifiedName?.parent()?.takeUnless { it == surface.scopeContext.packageFqName },
+            qualifier = qualifier,
             name = name,
+            sourceModuleName = surface.scopeContext.sourceModuleName,
             kind = surface.kind,
             hasParenthesis = surface.hasParenthesis,
-            allowsDeclarationInputParenthesisOmission = surface is MacroSurfaceDecl,
+            allowsDeclarationInputParenthesisOmission = surface is MacroSurfaceDecl || surface is MacroSurfaceParam,
         ).let { resolved ->
             if (annotationCarrier != null && resolved is MacroResolution.Unresolved) {
                 MacroResolution.CustomAnnotation(name)
@@ -352,7 +359,8 @@ private fun PreArtifactSurfaceSnapshot.toFinalDecision(
         annotationCarrier = annotationCarrier,
         resolution = resolution,
         parserMode = parserMode,
-        localConstruction = resolution !is MacroResolution.SamePackage,
+        localConstruction = resolution !is MacroResolution.SamePackage &&
+            resolution !is MacroResolution.BuiltinAnnotation,
         executorRequired = resolution is MacroResolution.Resolved,
         externalPackageDemand = externalPackageDemand,
         failurePolicy = failurePolicy,
@@ -377,6 +385,9 @@ private fun MacroSurface.slotType(): MacroReplacementSlotType = when (this) {
 /** 从显式限定名和 import 列表中收集可能需要 artifact preparation 的 macro package。 */
 private fun MacroSurface.collectImportCandidatePackages(preFile: PreMacroCfirFile): List<FqName> {
     val name = qualifiedName?.shortName() ?: return emptyList()
+    if (isQualifiedName) {
+        return listOfNotNull(qualifiedName?.parent()?.takeUnless { it.isRoot || it == scopeContext.packageFqName })
+    }
     val result = linkedSetOf<FqName>()
     qualifiedName
         ?.parent()
@@ -407,6 +418,7 @@ private fun MacroSurface.externalDemandPackage(
     if (samePackage != null || builtinNonMacro != null || builtinMacro != null) return null
     val qualifiedPackage = qualifiedName
         ?.parent()
+        ?.takeIf { isQualifiedName }
         ?.takeUnless {
             it.isRoot ||
                 it == scopeContext.packageFqName ||

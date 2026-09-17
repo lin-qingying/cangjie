@@ -51,12 +51,15 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
  * 规则处理，因此这里跳过已由 const 函数体接管的局部声明，避免重复诊断。
  */
 object CfirConstVariableInitializerChecker : CfirCallableDeclarationChecker() {
+    override val requiresImplementation: Boolean get() = true
+
     /**
      * 检查 const 变量初始化器是否为 strong const 表达式。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration) {
         val variable = declaration as? CfirVariable ?: return
+        if (context.isConstSafeDeclaration(variable)) return
         if (!variable.status.isConst) return
         if (context.findClosestDeclaration<CfirFunction> { it.status.isConst } != null) return
 
@@ -77,6 +80,7 @@ object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
+        if (context.isConstSafeDeclaration(declaration)) return
         if (!declaration.status.isConst) return
         context.constEvaluator(thisIsConst = true, inConstInit = declaration is CfirConstructor)
             .checkFunctionBody(declaration, requireConstDeclaration = false)
@@ -99,6 +103,7 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
+        if (context.isConstSafeDeclaration(declaration)) return
         if (declaration !is CfirClass && declaration !is CfirStruct) return
 
         val constConstructors = declaration.declarations
@@ -170,6 +175,7 @@ object CfirConstExtendDeclarationChecker : CfirExtendChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
+        if (context.isConstSafeDeclaration(declaration)) return
         val target = CfirExtendSemantics.targetDeclaration(context, declaration) ?: return
         if (target !is CfirClass && target !is CfirStruct) return
         if (target.declarations.any { it is CfirConstructor && it.status.isConst }) return
@@ -192,6 +198,12 @@ private fun reportConstMemberFunctionsWithoutConstInit(declarations: List<CfirDe
     }
 }
 
+/** 官方 ConstEvaluationChecker 对 ConstSafe 声明跳过其常量检查子树；其他类型/注解检查照常执行。 */
+private fun CheckerContext.isConstSafeDeclaration(declaration: CfirDeclaration): Boolean =
+    declaration.annotationInfo?.isConstSafe == true || containingDeclarations.any {
+        it.cfir !== declaration && it.cfir.annotationInfo?.isConstSafe == true
+    }
+
 /**
  * 创建 const 表达式递归检查器。
  */
@@ -208,6 +220,27 @@ private fun CheckerContext.constEvaluator(
         thisIsConst = thisIsConst,
         inConstInit = inConstInit,
     )
+
+/**
+ * 检查 `@Annotation(target: [...])` 的 target 表达式是否满足官方 strong-const 规则。
+ *
+ * 该入口复用同一个 const evaluator owner；注解 checker 不得复制一套只针对 target
+ * 的常量判定逻辑，否则普通 const 初始化器与 annotation 参数会产生不同诊断优先级。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+internal fun checkConstAnnotationExpression(expression: CfirExpression): Boolean =
+    context.constEvaluator(owner = context.findClosestDeclaration<CfirClassLikeDeclaration>()).let { evaluator ->
+        // `target` is semantically Array<AnnotationKind>, but the array container is
+        // compiler metadata rather than an ordinary runtime Array constant. Check its
+        // elements directly so the diagnostic remains on the offending target expression.
+        if (expression is CfirArrayLiteral) {
+            expression.elements.fold(true) { result, element ->
+                evaluator.checkExpression(element, isWeak = false) && result
+            }
+        } else {
+            evaluator.checkExpression(expression, isWeak = false)
+        }
+    }
 
 /**
  * const 表达式递归检查器。
