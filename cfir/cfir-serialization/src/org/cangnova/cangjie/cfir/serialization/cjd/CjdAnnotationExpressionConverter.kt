@@ -14,7 +14,17 @@ internal class CjdAnnotationExpressionConverter(
     private val sourceId: String,
     private val diagnostics: MutableList<CjdAnnotationConversionDiagnostic>,
 ) {
-    fun convert(syntax: CjdAnnotationExpression): CfirExpression {
+    fun convert(syntax: CjdAnnotationExpression, parserOwnedReference: Boolean = false): CfirExpression {
+        if (parserOwnedReference) {
+            val token = if (syntax.syntaxKind == "IDENTIFIER") syntax else syntax.children.singleOrNull()
+            if (token?.syntaxKind == "IDENTIFIER") {
+                val referenceName = Name.identifierIfValid(token.rawText.removeSurrounding("`"))
+                if (referenceName != null) return buildNamedAccessExpression {
+                    source = cjdAnnotationSource(syntax.rawText, syntax.range)
+                    calleeReference = buildNamedReference { name = referenceName }
+                }
+            }
+        }
         fun literal(kind: CfirLiteralKind, value: Any?): CfirExpression = buildLiteralExpression {
             source = cjdAnnotationSource(syntax.rawText, syntax.range)
             this.kind = kind
@@ -32,7 +42,7 @@ internal class CjdAnnotationExpressionConverter(
             "FLOAT_CONSTANT" -> raw.replace("_", "").removeSuffix("f16").removeSuffix("f32").removeSuffix("f64")
                 .toDoubleOrNull()?.let { literal(CfirLiteralKind.FLOAT, it) } ?: error(syntax)
             "UNIT_CONSTANT" -> literal(CfirLiteralKind.UNIT, Unit)
-            "PARENTHESIZED" -> syntax.children.filterNot { it.rawText == "(" || it.rawText == ")" }.singleOrNull()?.let(::convert) ?: error(syntax)
+            "PARENTHESIZED" -> syntax.children.filterNot { it.rawText == "(" || it.rawText == ")" }.singleOrNull()?.let { convert(it) } ?: error(syntax)
             else -> error(syntax)
         }
     }
