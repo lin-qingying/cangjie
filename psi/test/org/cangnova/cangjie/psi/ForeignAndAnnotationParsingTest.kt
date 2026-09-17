@@ -85,6 +85,7 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
     fun builtInArgumentFormsPreserveTheirAnnotationNodes() {
         val annotationForms = listOf(
             "C" to "@C",
+            "Java" to "@Java[\"java.lang.String\"]",
             "JavaMirror" to "@JavaMirror[\"java.lang.Object\"]",
             "JavaImpl" to "@JavaImpl",
             "JavaHasDefault" to "@JavaHasDefault",

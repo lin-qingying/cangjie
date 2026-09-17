@@ -128,8 +128,13 @@ object BuiltInAnnotationRegistry {
     private val unrestricted = AnnotationArgumentSchema(variadic = true)
 
     val languageBuiltIns: List<BuiltInAnnotationDescriptor> = listOf(
+        // `Java` is present in the official NAME_TO_ANNO_KIND table and is
+        // recognized by ParserImpl::SeeingBuiltinAnnotation.  Keep it in the
+        // source parser registry; Java/ObjC interop implementation details are
+        // resolved later, but the source-level annotation identity is still a
+        // language builtin and must not fall through to a macro/custom path.
         ffi("Java", BuiltInAnnotationKind.JAVA, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
-            AnnotationSemanticHandler.JAVA_FFI).copy(hasSourceParserEntry = false),
+            AnnotationSemanticHandler.JAVA_FFI),
         ffi("JavaMirror", BuiltInAnnotationKind.JAVA_MIRROR, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
         ffi("JavaImpl", BuiltInAnnotationKind.JAVA_IMPL, CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types, AnnotationSemanticHandler.JAVA_FFI),
         ffi("JavaHasDefault", BuiltInAnnotationKind.JAVA_HAS_DEFAULT, targets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), handler = AnnotationSemanticHandler.JAVA_FFI),

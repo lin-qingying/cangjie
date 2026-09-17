@@ -59,13 +59,14 @@ class BuiltInAnnotationRegistryTest {
         }
     }
 
-    /** Java 保留官方身份，但当前官方 parser 不创建普通 @Java；ConstSafe 只在 std 内建。 */
+    /** Java 是官方 parser 内置身份；ConstSafe 仍只在 std 模块内建。 */
     @Test
     fun sourceLookupHonorsSpecialJavaAndStdOnlyConstSafe() {
         val java = builtIn("Java")
         assertEquals(BuiltInAnnotationKind.JAVA, java.kind)
-        assertFalse(java.hasSourceParserEntry)
-        assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "std"))
+        assertTrue(java.hasSourceParserEntry)
+        assertSame(java, BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "std"))
+        assertSame(java, BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "application"))
 
         assertSame(builtIn("ConstSafe"), BuiltInAnnotationRegistry.resolveLanguageBuiltIn("ConstSafe", false, "std"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("ConstSafe", false, "application"))
