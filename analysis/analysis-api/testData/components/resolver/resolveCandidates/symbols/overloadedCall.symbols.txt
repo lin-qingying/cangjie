@@ -1,0 +1,5 @@
+symbolsSize: 1
+symbolClass: CaCfirConstructorSymbol
+callableId: sample.resolver.candidates.Point.<init>
+receiverType: null
+returnType: ERROR

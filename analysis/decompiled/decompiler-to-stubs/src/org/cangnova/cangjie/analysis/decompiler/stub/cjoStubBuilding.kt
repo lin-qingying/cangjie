@@ -4,6 +4,8 @@ import PackageFormat.PackageKind
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoImportEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
@@ -163,8 +165,30 @@ private fun createNameReferenceStub(parent: StubElement<*>, name: Name) {
  * `.cjo` binary stub 也必须保留这一层级，否则 `CjDecompiledFile.calcStubTree()`
  * 会在 binary stub 与 decompiled text AST stub 之间发生结构不一致。
  */
-internal fun createEmptyDeclarationHeaderStubs(parent: StubElement<*>, modifierMask: Long = 0) {
-    CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
+internal fun createEmptyDeclarationHeaderStubs(
+    parent: StubElement<*>,
+    modifierMask: Long = 0,
+    annotations: List<org.cangnova.cangjie.cfir.expressions.CfirAnnotation> = emptyList(),
+) {
+    val annotationsStub = CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
+    annotations.filterIsInstance<CfirAnnotationCall>().forEach { annotation ->
+        val name = annotation.annotationSourceName
+            ?.removePrefix("@!")
+            ?.removePrefix("@")
+            ?.substringAfterLast('.')
+            ?.takeIf(String::isNotBlank)
+            ?: annotation.annotationClassId?.shortClassName?.asString()
+            ?: annotation.builtInDescriptor?.sourceName
+            ?: return@forEach
+        CangJieAnnotationStubImpl(
+            parent = annotationsStub,
+            shortName = StringRef.fromString(name),
+            hasValueArguments = annotation.argumentList.arguments.isNotEmpty(),
+            classId = annotation.annotationClassId,
+            builtInKind = annotation.annotationKind ?: annotation.builtInDescriptor?.kind,
+            compileTimeVisible = annotation.isCompileTimeVisible == true,
+        )
+    }
     CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
 }
 

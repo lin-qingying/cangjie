@@ -1,0 +1,5 @@
+CjClass: Wide
+annotations: [
+  @sample.annotations.targets.Anywhere
+    target: null
+]

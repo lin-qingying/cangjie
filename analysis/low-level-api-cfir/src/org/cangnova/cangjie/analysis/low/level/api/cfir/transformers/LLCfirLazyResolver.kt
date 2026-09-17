@@ -40,11 +40,50 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
 
         resolver.resolveDesignation()
 
+        // STATUS 及之后阶段：为声明计算 deprecation provider。
+        // 注解 identity 在 TYPES 阶段已经解析，这里依据注解列表构建 provider；
+        // 幂等：只替换仍处于 UnresolvedDeprecationProvider 占位的声明。
+        if (resolverPhase >= CfirResolvePhase.STATUS && target !is LLCfirPartialBodyResolveTarget) {
+            target.forEachTarget { declaration -> resolveDeprecationsFor(declaration) }
+        }
+
         if (target !is LLCfirPartialBodyResolveTarget) {
             target.forEachTarget { declaration -> checkIsResolved(declaration) }
         }
 
         checkCanceled()
+    }
+
+    /**
+     * 依据声明注解计算 deprecation provider，并替换仍为未解析占位的 provider。
+     *
+     * 对齐 Kotlin `FirDeprecationResolver`：声明状态（STATUS）解析完成后即具备弃用信息，
+     * 由 `DeprecatedAnnotationDeprecationInfoProvider` 在读取时惰性解析注解实参。
+     */
+    private fun resolveDeprecationsFor(target: CfirElementWithResolveState) {
+        when (target) {
+            is CfirCallableDeclaration -> replaceDeprecationsIfUnresolved(
+                target, target.deprecationsProvider, target::replaceDeprecationsProvider,
+            )
+
+            is CfirClassLikeDeclaration -> replaceDeprecationsIfUnresolved(
+                target, target.deprecationsProvider, target::replaceDeprecationsProvider,
+            )
+
+            else -> {}
+        }
+    }
+
+    /**
+     * 若 [provider] 仍为未解析占位，则依据 [declaration] 的注解构建并替换 deprecation provider。
+     */
+    private fun replaceDeprecationsIfUnresolved(
+        declaration: CfirDeclaration,
+        provider: DeprecationsProvider,
+        replacer: (DeprecationsProvider) -> Unit,
+    ) {
+        if (provider !is UnresolvedDeprecationProvider) return
+        replacer(buildDeprecationsProvider(declaration.annotations))
     }
 
     /**

@@ -2,9 +2,11 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractSessionInvalidationTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.AbstractResolveToCfirSymbolTest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractDeprecationsResolveTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractSourceLazyDeclarationResolveScopeBasedTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceCfirContextCollectionTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceDiagnosticTraversalCounterTest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.AbstractInBlockModificationTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.AbstractSourceFileStructureTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractSourceWholeFileResolvePhaseTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.AbstractCodeFragmentContextModificationLLCfirSessionInvalidationTest
@@ -56,6 +58,18 @@ fun main(args: Array<String>) {
 
             testClass<AbstractSourceGetOrBuildCfirTest> {
                 model("getOrBuildCfir", pattern = """^(.+)\.cj$""")
+            }
+
+            testClass<AbstractInBlockModificationTest> {
+                model("inBlockModification", pattern = """^(.+)\.cj$""")
+            }
+
+            testClass<AbstractGetOrBuildCfirBinaryTest> {
+                model("getOrBuildCfirBinary", pattern = """^(.+)\.cj$""")
+            }
+
+            testClass<AbstractDeprecationsResolveTest> {
+                model("deprecationsResolve", pattern = """^(.+)\.cj$""")
             }
 
             testClass<AbstractSourceFileBasedCangJieDeclarationProviderTest> {

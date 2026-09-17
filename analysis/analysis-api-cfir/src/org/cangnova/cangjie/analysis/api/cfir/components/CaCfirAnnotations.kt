@@ -1,274 +1,159 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
-import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
-import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationValue
-import org.cangnova.cangjie.analysis.api.annotations.CaNamedAnnotationValue
+import java.math.BigInteger
+import org.cangnova.cangjie.analysis.api.annotations.*
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
-import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.evaluate.asPublicNamedAnnotationValue
-import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseAnnotationImpl
-import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseAnnotationValues
-import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseNamedAnnotationValue
+import org.cangnova.cangjie.analysis.api.impl.base.annotations.*
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-import org.cangnova.cangjie.builtins.StandardNames
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
-import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.annotationInfo
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.text
-import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjElement
-import org.cangnova.cangjie.psi.CjValueArgument
+import org.cangnova.cangjie.source.psi
 
-
-/**
- * 从源码 PSI 注解构造公开 Analysis API 注解视图。
- */
-internal fun CjAnnotation.asPublicAnnotation(
-    session: CaCfirSession,
-    token: CaLifetimeToken,
-): CaAnnotation {
-    val constructorSymbol = resolveAnnotationConstructorSymbol(session)
-    return CaBaseAnnotationImpl(
-        classId = resolveAnnotationClassId(session),
-        shortName = shortName,
-        psi = this,
-        lazyArguments = lazy(LazyThreadSafetyMode.NONE) {
-            buildPublicNamedArguments(
-                session = session,
-                token = token,
-                constructorSymbol = constructorSymbol,
-            )
-        },
-        constructorSymbol = constructorSymbol,
-        token = token,
-    )
-}
-
-/**
- * 从 CFIR 注解调用直接构造 Analysis API 注解视图。
- *
- * 宏展开后的 annotation 可能没有 PSI，本入口必须只依赖 CFIR 的 typeRef、
- * calleeReference 与 argumentList，避免 public annotations 重新落回 PSI。
- */
+/** Analysis 只投影 CFIR 已发布的身份、绑定和常量，不解析源码文本或补造参数名。 */
 internal fun CfirAnnotationCall.asPublicAnnotation(
     builder: CaSymbolByCfirBuilder,
     token: CaLifetimeToken,
-): CaAnnotation {
-    val constructorSymbol = resolveAnnotationConstructorSymbol(builder)
-    val classId = typeRef.annotationClassIdOrNull()
-    return CaBaseAnnotationImpl(
-        classId = classId,
-        shortName = classId?.shortClassName ?: (calleeReference as? CfirNamedReference)?.name ?: source.annotationShortNameOrNull(),
-        psi = source?.psi as? CjAnnotation,
-        lazyArguments = lazy(LazyThreadSafetyMode.NONE) {
-            argumentList.asPublicNamedAnnotationValues(token)
-        },
-        constructorSymbol = constructorSymbol,
-        token = token,
-    )
-}
+): CaAnnotation = CaBaseAnnotationImpl(
+    classId = annotationClassId,
+    shortName = builtInDescriptor?.sourceName?.let(Name::identifier) ?: annotationClassId?.shortClassName,
+    psi = source?.psi as? CjAnnotation,
+    lazyArguments = lazy(LazyThreadSafetyMode.NONE) {
+        argumentMapping.mapping.map { (name, value) ->
+            CaBaseNamedAnnotationValue(name, value.asPublicAnnotationValue(token))
+        }
+    },
+    constructorSymbol = resolveAnnotationConstructorSymbol(builder),
+    token = token,
+    builtInKind = annotationKind,
+    isCompileTimeVisible = isCompileTimeVisible,
+    isForcedCustom = forcedCustom.takeIf { isCompileTimeVisible != null },
+    target = annotationTarget,
+    runtimeVisible = runtimeVisible(builder),
+    resolutionStatus = when (annotationResolveState) {
+        CfirAnnotationResolveState.UNRESOLVED -> CaAnnotationResolutionStatus.UNKNOWN
+        CfirAnnotationResolveState.TYPE_RESOLVED -> CaAnnotationResolutionStatus.TYPE_RESOLVED
+        CfirAnnotationResolveState.ARGUMENTS_RESOLVED -> CaAnnotationResolutionStatus.ARGUMENTS_RESOLVED
+        CfirAnnotationResolveState.SEMANTIC_RESOLVED -> CaAnnotationResolutionStatus.RESOLVED
+        CfirAnnotationResolveState.ERROR -> CaAnnotationResolutionStatus.ERROR
+    },
+)
 
 /**
- * 从注解调用点恢复其目标 class-like 标识。
+ * 从注解类型声明的 ClassInfo 语义快照读取 runtime retention。
+ *
+ * 该字段属于注解类型而不是使用点；CJO 的官方 loader 同样只在
+ * `AnnoKind_Annotation` 对应的 ClassInfo 上恢复它。找不到类型或元信息时保持未知，
+ * 不把缺失的二进制字段当成 `false`。
  */
-private fun CjAnnotation.resolveAnnotationClassId(session: CaCfirSession): ClassId? {
-    val constructorReference = calleeExpression?.constructorReferenceExpression ?: return null
-    val targetSymbol = with(session) { constructorReference.resolveToSymbol() }
-    return (targetSymbol as? CaClassLikeSymbol)?.classId
+private fun CfirAnnotationCall.runtimeVisible(builder: CaSymbolByCfirBuilder): Boolean? {
+    val classId = annotationClassId ?: return null
+    val symbol = builder.analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId)
+        ?: return null
+    symbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+    return symbol.cfir.annotationInfo?.runtimeVisible
 }
 
-/**
- * 恢复注解调用解析到的构造器符号。
- */
-private fun CjAnnotation.resolveAnnotationConstructorSymbol(session: CaCfirSession): CaConstructorSymbol? {
-    val constructorReference = calleeExpression?.constructorReferenceExpression ?: return null
-    return with(session) { constructorReference.resolveToSymbol() as? CaConstructorSymbol }
-}
-
-/**
- * 构建注解“命名参数 + 值对象”列表。
- */
-private fun CjAnnotation.buildPublicNamedArguments(
-    session: CaCfirSession,
-    token: CaLifetimeToken,
-    constructorSymbol: CaConstructorSymbol?,
-): List<CaNamedAnnotationValue> {
-    return valueArguments.mapIndexed { index, argument ->
-        (argument as CjValueArgument).asPublicNamedAnnotationValue(
-            session = session,
-            token = token,
-            fallbackName = constructorSymbol?.valueParameters?.getOrNull(index)?.name,
-            position = index,
-        )
-    }
-}
-
-/**
- * 从 CFIR 注解调用引用中恢复构造器公开符号。
- */
 private fun CfirAnnotationCall.resolveAnnotationConstructorSymbol(builder: CaSymbolByCfirBuilder): CaConstructorSymbol? {
-    val symbol = when (val reference = calleeReference) {
-        is CfirResolvedNamedReference -> reference.resolvedSymbol
-        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
-        else -> null
-    } as? CfirConstructorSymbol ?: return null
+    val symbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirConstructorSymbol ?: return null
     return builder.functionBuilder.buildConstructorSymbol(symbol)
 }
 
-/**
- * 从已解析注解类型引用中提取注解类 classId。
- */
-internal fun CfirTypeRef.annotationClassIdOrNull(): ClassId? =
-    (this as? CfirResolvedTypeRef)?.coneType?.classIdOrPrimitiveClassId
+internal fun CfirTypeRef.annotationClassIdOrNull(): ClassId? = coneTypeOrNull?.classIdOrPrimitiveClassId
 
-/**
- * 将 CFIR 注解参数列表转换为公开命名注解参数列表。
- */
-private fun CfirArgumentList.asPublicNamedAnnotationValues(token: CaLifetimeToken): List<CaNamedAnnotationValue> {
-    val resolvedMapping = (this as? CfirResolvedArgumentList)?.mapping
-    if (resolvedMapping != null && resolvedMapping.isNotEmpty()) {
-        return resolvedMapping.entries.mapIndexed { index, (argument, parameter) ->
-            argument.asPublicNamedAnnotationValue(
-                name = parameter.name,
-                position = index,
-                token = token,
-            )
+private fun CfirExpression.asPublicAnnotationValue(token: CaLifetimeToken): CaAnnotationValue {
+    val psi = source?.psi as? CjElement
+    return when (this) {
+        is CfirConstantValueExpression -> constantValue.asPublicValue(psi, token)
+        is CfirArrayLiteral -> CaBaseAnnotationValues.arrayValue(
+            values = elements.map { it.asPublicAnnotationValue(token) },
+            sourcePsi = psi,
+            token = token,
+        )
+        is CfirTupleLiteral -> CaBaseAnnotationValues.tupleValue(
+            values = elements.map { it.asPublicAnnotationValue(token) },
+            sourcePsi = psi,
+            token = token,
+        )
+        is CfirQualifiedAccessExpression -> {
+            val constructor = (calleeReference as? CfirResolvedNamedReference)
+                ?.resolvedSymbol as? CfirEnumConstructorSymbol
+            if (constructor != null) {
+                CaBaseAnnotationValues.enumValue(constructor.callableId, emptyList(), psi, token)
+            } else {
+                CaBaseAnnotationValues.constant(
+                    CaBaseAnnotationValues.errorValue("Annotation reference is not a resolved enum value", psi),
+                    psi,
+                    token,
+                )
+            }
+        }
+        // 内置 ABI 字符串在 BODY_RESOLVE 已经验证，可在 BODY 常量规范化前查询。
+        is CfirLiteralExpression -> {
+            val constant = when {
+                kind == CfirLiteralKind.STRING && value is String -> CaBaseAnnotationValues.stringValue(value as String, psi)
+                kind == CfirLiteralKind.BOOLEAN && value is Boolean -> CaBaseAnnotationValues.boolValue(value as Boolean, psi)
+                kind == CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
+                else -> CaBaseAnnotationValues.errorValue("Annotation constant evaluation has not completed", psi)
+            }
+            CaBaseAnnotationValues.constant(constant, psi, token)
+        }
+        else -> CaBaseAnnotationValues.constant(
+            CaBaseAnnotationValues.errorValue("Annotation argument is not a resolved constant", psi), psi, token,
+        )
+    }
+}
+
+/** 对象字段来自 const 解释器的实际存储，不能把 ctor 调用实参冒充字段值。 */
+private fun CfirConstantValue.asPublicValue(psi: CjElement?, token: CaLifetimeToken): CaAnnotationValue = when (this) {
+    is CfirConstantValue.Primitive -> CaBaseAnnotationValues.constant(asPublicConstant(psi), psi, token)
+    is CfirConstantValue.Tuple -> CaBaseAnnotationValues.tupleValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.ArrayValue -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.VArray -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.EnumValue -> CaBaseAnnotationValues.enumValue(constructor.callableId, arguments.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.ObjectValue -> {
+        val fields = fields.map { (symbol, value) -> CaBaseNamedAnnotationValue(symbol.name, value.asPublicValue(psi, token)) }
+        if (type is ConeStructType) CaBaseAnnotationValues.structInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
+        else CaBaseAnnotationValues.classInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
+    }
+}
+
+private fun CfirConstantValue.Primitive.asPublicConstant(psi: CjElement?): CaConstantValue = when (kind) {
+    CfirLiteralKind.BOOLEAN -> CaBaseAnnotationValues.boolValue(value as Boolean, psi)
+    CfirLiteralKind.RUNE -> CaBaseAnnotationValues.runeValue(value as Int, psi)
+    CfirLiteralKind.STRING -> CaBaseAnnotationValues.stringValue(value as String, psi)
+    CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
+    CfirLiteralKind.INT, CfirLiteralKind.BYTE -> {
+        val integer = value as BigInteger
+        when ((type as? ConePrimitiveType)?.kind) {
+            PrimitiveTypeKind.INT8 -> CaBaseAnnotationValues.int8Value(integer.byteValueExact(), psi)
+            PrimitiveTypeKind.INT16 -> CaBaseAnnotationValues.int16Value(integer.shortValueExact(), psi)
+            PrimitiveTypeKind.INT32 -> CaBaseAnnotationValues.int32Value(integer.intValueExact(), psi)
+            PrimitiveTypeKind.INT64, PrimitiveTypeKind.IDEAL_INT -> CaBaseAnnotationValues.int64Value(integer.longValueExact(), psi)
+            PrimitiveTypeKind.INT_NATIVE -> CaBaseAnnotationValues.intNativeValue(integer.longValueExact(), psi)
+            PrimitiveTypeKind.UINT8 -> CaBaseAnnotationValues.uint8Value(integer.toString().toUByte(), psi)
+            PrimitiveTypeKind.UINT16 -> CaBaseAnnotationValues.uint16Value(integer.toString().toUShort(), psi)
+            PrimitiveTypeKind.UINT32 -> CaBaseAnnotationValues.uint32Value(integer.toString().toUInt(), psi)
+            PrimitiveTypeKind.UINT64 -> CaBaseAnnotationValues.uint64Value(integer.toString().toULong(), psi)
+            PrimitiveTypeKind.UINT_NATIVE -> CaBaseAnnotationValues.uintNativeValue(integer.toString().toULong(), psi)
+            else -> CaBaseAnnotationValues.errorValue("Unresolved integral constant type", psi)
         }
     }
-
-    return arguments.mapIndexed { index, argument ->
-        argument.asPublicNamedAnnotationValue(
-            name = if (index == 0) StandardNames.DEFAULT_VALUE_PARAMETER else Name.special("<annotation-arg-$index>"),
-            position = index,
-            token = token,
-        )
-    }
-}
-
-/**
- * 将单个 CFIR 注解实参转换为公开命名注解值。
- */
-private fun CfirExpression.asPublicNamedAnnotationValue(
-    name: Name,
-    position: Int,
-    token: CaLifetimeToken,
-): CaNamedAnnotationValue {
-    return CaBaseNamedAnnotationValue(
-        name = name,
-        expression = asPublicAnnotationValue(
-            token = token,
-            errorMessage = "Unsupported CFIR annotation argument at position $position",
-        ),
-    )
-}
-
-/**
- * 将 CFIR 注解实参表达式转换为公开注解值对象。
- */
-private fun CfirExpression.asPublicAnnotationValue(
-    token: CaLifetimeToken,
-    errorMessage: String = "Unsupported CFIR annotation argument `${source?.text}`",
-): CaAnnotationValue {
-    val sourcePsi = source?.psi as? CjElement
-    return when (this) {
-        is CfirLiteralExpression -> literalAsPublicAnnotationValue(sourcePsi, token)
-        is CfirTupleLiteral -> CaBaseAnnotationValues.tupleValue(
-            values = elements.map { element -> element.asPublicAnnotationValue(token) },
-            sourcePsi = sourcePsi,
-            token = token,
-        )
-        is CfirArrayLiteral -> CaBaseAnnotationValues.tupleValue(
-            values = elements.map { element -> element.asPublicAnnotationValue(token) },
-            sourcePsi = sourcePsi,
-            token = token,
-        )
-        else -> CaBaseAnnotationValues.constant(
-            value = CaBaseAnnotationValues.errorValue(errorMessage, sourcePsi),
-            sourcePsi = sourcePsi,
-            token = token,
-        )
-    }
-}
-
-/**
- * 将 CFIR 字面量表达式转换为公开常量注解值。
- */
-private fun CfirLiteralExpression.literalAsPublicAnnotationValue(
-    sourcePsi: CjElement?,
-    token: CaLifetimeToken,
-): CaAnnotationValue {
-    val constantValue = when (kind) {
-        CfirLiteralKind.BOOLEAN -> CaBaseAnnotationValues.boolValue(value == true, sourcePsi)
-        CfirLiteralKind.RUNE -> CaBaseAnnotationValues.runeValue((value as? Number)?.toInt() ?: source?.text?.toString().orEmpty().parseRuneLiteral(), sourcePsi)
-        CfirLiteralKind.STRING -> CaBaseAnnotationValues.stringValue(value?.toString().orEmpty(), sourcePsi)
-        CfirLiteralKind.INT -> CaBaseAnnotationValues.int64Value((value as? Number)?.toLong() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toLongOrNull() ?: 0L, sourcePsi)
-        CfirLiteralKind.BYTE -> CaBaseAnnotationValues.int64Value((value as? Number)?.toLong() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toLongOrNull() ?: 0L, sourcePsi)
-        CfirLiteralKind.FLOAT -> CaBaseAnnotationValues.float64Value((value as? Number)?.toDouble() ?: source?.text?.toString().orEmpty().removeNumericSuffix().toDoubleOrNull() ?: 0.0, sourcePsi)
-        CfirLiteralKind.UNIT -> CaBaseAnnotationValues.errorValue("Unit is not a valid annotation constant", sourcePsi)
-    }
-    return CaBaseAnnotationValues.constant(
-        value = constantValue,
-        sourcePsi = sourcePsi,
-        token = token,
-    )
-}
-
-/**
- * 在缺少 PSI 时从 source 文本兜出注解短名。
- */
-private fun org.cangnova.cangjie.source.CjSourceElement?.annotationShortNameOrNull(): Name? {
-    val rawText = this?.text?.toString()?.trim().orEmpty()
-    if (!rawText.startsWith("@")) return null
-    val shortName = rawText
-        .removePrefix("@!")
-        .removePrefix("@")
-        .substringBefore('[')
-        .substringBefore('(')
-        .substringAfterLast('.')
-        .trim()
-    return Name.identifierIfValid(shortName)
-}
-
-/**
- * 去除仓颉数字字面量的类型后缀，便于按基础数值解析。
- */
-private fun String.removeNumericSuffix(): String =
-    trim().removeSuffix("i8").removeSuffix("i16").removeSuffix("i32").removeSuffix("i64")
-        .removeSuffix("inative")
-        .removeSuffix("u8").removeSuffix("u16").removeSuffix("u32").removeSuffix("u64")
-        .removeSuffix("unative")
-        .removeSuffix("f16").removeSuffix("f32").removeSuffix("f64")
-
-/**
- * 解析 rune 字面量文本为公开注解常量使用的码点。
- */
-private fun String.parseRuneLiteral(): Int {
-    val body = trim().removePrefix("'").removeSuffix("'")
-    return when {
-        body.startsWith("\\u") && body.length >= 6 -> body.removePrefix("\\u").take(4).toIntOrNull(16) ?: 0
-        body.startsWith("\\U") && body.length >= 10 -> body.removePrefix("\\U").take(8).toIntOrNull(16) ?: 0
-        body.startsWith("\\") && body.length == 2 -> body[1].code
-        body.isNotEmpty() -> body.first().code
-        else -> 0
+    CfirLiteralKind.FLOAT -> when ((type as? ConePrimitiveType)?.kind) {
+        PrimitiveTypeKind.FLOAT16 -> CaBaseAnnotationValues.float16Value((value as Double).toFloat(), psi)
+        PrimitiveTypeKind.FLOAT32 -> CaBaseAnnotationValues.float32Value((value as Double).toFloat(), psi)
+        PrimitiveTypeKind.FLOAT64, PrimitiveTypeKind.IDEAL_FLOAT -> CaBaseAnnotationValues.float64Value(value as Double, psi)
+        else -> CaBaseAnnotationValues.errorValue("Unresolved floating constant type", psi)
     }
 }

@@ -72,7 +72,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
      * 查找 [function] 对应的函数符号候选。
      */
     private fun findFunctionCandidates(function: CjNamedFunction): List<CfirFunctionSymbol<*>> =
-        findCallableCandidates(function, function.parent is CjFile).filterIsInstance<CfirFunctionSymbol<*>>()
+        findCallableCandidates(function, function.isTopLevel).filterIsInstance<CfirFunctionSymbol<*>>()
 
     /**
      * 查找 [property] 对应的属性符号候选。

@@ -68,7 +68,7 @@ internal fun createExtendStub(
         superNames = superTypeTexts.map(StringRef::fromString).toTypedArray(),
         receiverTypeName = receiverTypeName,
     )
-    createEmptyDeclarationHeaderStubs(stub)
+    createEmptyDeclarationHeaderStubs(stub, annotations = declaration.annotations)
     // 用完整 extendedTypeRef 建 type stub：primitive 走 BASIC_TYPE，避免被当成 user type 再经
     // renderIdentifier 包成 `Unit` / `Int64`
     TypeCjoStubBuilder().createDeclaredTypeReferenceStub(stub, declaration.extendedTypeRef)
@@ -101,7 +101,7 @@ internal fun createClassStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
@@ -127,7 +127,7 @@ internal fun createInterfaceStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.INTERFACE_BODY, declaration.declarations, context.child(declaration.name))
@@ -153,7 +153,7 @@ internal fun createStructStub(
         name = StringRef.fromString(declaration.name.asString()),
         superNames = superTypeRefs.toSuperNameRefs(),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
@@ -180,7 +180,7 @@ internal fun createEnumStub(
         superNames = superTypeRefs.toSuperNameRefs(),
         isNonExhaustive = declaration.isNonExhaustive,
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
     createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.ENUM_BODY, declaration.declarations, context.child(declaration.name))
@@ -203,7 +203,7 @@ internal fun createTypeAliasStub(
         qualifiedName = StringRef.fromString(qualifiedName.asString()),
         classId = context.owningClassFqName?.let { null } ?: ClassId(context.packageFqName, declaration.name),
     )
-    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status))
+    createEmptyDeclarationHeaderStubs(stub, createDeclarationModifierMask(declaration.status), declaration.annotations)
     createTypeParameterListStub(stub, declaration.typeParameters)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(stub, declaration.expandedTypeRef)
 }

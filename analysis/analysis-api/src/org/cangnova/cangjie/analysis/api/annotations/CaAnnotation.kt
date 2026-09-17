@@ -18,6 +18,21 @@ import org.cangnova.cangjie.psi.CjElement
  * 对齐 Kotlin Analysis API 的 `KaAnnotation`。
  */
 interface CaAnnotation : CaLifetimeOwner {
+    /** 官方内置身份；系统类注解由 classId 表示。 */
+    val builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind?
+    val isCompileTimeVisible: Boolean?
+    val isForcedCustom: Boolean?
+    val target: org.cangnova.cangjie.annotations.CangjieAnnotationTarget?
+    /**
+     * Imported Java annotation 的 runtime retention 信息。
+     *
+     * CJO 只为 `@Annotation` 声明保存该字段；无法从当前路径恢复时返回 `null`，
+     * 不把“未知”错误解释成 SOURCE 或 RUNTIME。
+     */
+    val runtimeVisible: Boolean?
+    val resolutionStatus: CaAnnotationResolutionStatus
+    /** const 构造器实际求值后的字段对象，与传入参数列表保持分离。 */
+    val evaluatedInstance: CaAnnotationValue?
     /** 注解类型的 ClassId,无法解析时为 `null`。 */
     val classId: ClassId?
 
@@ -44,6 +59,8 @@ interface CaAnnotation : CaLifetimeOwner {
  * - 特殊值通过 [ErrorValue] 表达常量求值失败,与正常路径区分。
  */
 sealed interface CaConstantValue {
+    /** 仓颉 Unit 的唯一常量值。 */
+    interface UnitValue : CaConstantValue { override val value: Unit }
     /**
      * 常量的具体值。
      *
@@ -238,6 +255,11 @@ sealed interface CaAnnotationValue : CaLifetimeOwner {
         /**
          * tuple 中按位置保存的元素值。
          */
+        val values: List<CaAnnotationValue>
+    }
+
+    /** 保留数组与 tuple 的值形态区别，包含 builtin target 数组和 VArray。 */
+    interface ArrayValue : CaAnnotationValue {
         val values: List<CaAnnotationValue>
     }
 

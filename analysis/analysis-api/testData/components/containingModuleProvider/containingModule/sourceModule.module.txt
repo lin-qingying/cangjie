@@ -1,0 +1,4 @@
+moduleClass: CaSourceModuleImpl
+moduleDescription: Sources of main
+stableModuleName: main
+isResolvable: true

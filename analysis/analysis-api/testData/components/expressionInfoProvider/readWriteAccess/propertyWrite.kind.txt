@@ -1,0 +1,2 @@
+callInfoClass: null
+kind: NO_VARIABLE_ACCESS

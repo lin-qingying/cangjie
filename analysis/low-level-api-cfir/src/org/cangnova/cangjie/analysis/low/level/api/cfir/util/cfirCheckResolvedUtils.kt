@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
@@ -84,6 +85,12 @@ internal inline fun checkExpressionTypeIsResolved(
  */
 internal fun <T> checkAnnotationTypeIsResolved(annotationContainer: T) where T : CfirAnnotationContainer, T : CfirElementWithResolveState {
     annotationContainer.annotations.forEach { annotation ->
+        // TYPES 阶段对 builtin 注解只解析 identity（annotationKind/annotationIdentity），
+        // 其 typeRef 会合法地保持为未替换的 user type ref；因此只要 identity 已经
+        // 进入 TYPE_RESOLVED 及以后，就不再要求 typeRef 必须是 resolved type ref。
+        if (annotation is CfirAnnotationCall && annotation.annotationResolveState != CfirAnnotationResolveState.UNRESOLVED) {
+            return@forEach
+        }
         checkTypeRefIsResolved(annotation.typeRef, "annotation type", owner = annotationContainer) {
             withCfirEntry("cfirAnnotation", annotation)
         }

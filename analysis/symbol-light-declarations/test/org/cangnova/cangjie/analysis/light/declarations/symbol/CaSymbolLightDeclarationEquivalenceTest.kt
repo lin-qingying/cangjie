@@ -144,6 +144,8 @@ class CaSymbolLightDeclarationEquivalenceTest : AbstractAnalysisApiExecutionTest
 
             is CaAnnotationValue.TupleValue ->
                 value.values.joinToString(prefix = "(", postfix = ")") { renderAnnotationValue(it) }
+            is CaAnnotationValue.ArrayValue ->
+                value.values.joinToString(prefix = "[", postfix = "]") { renderAnnotationValue(it) }
 
             is CaAnnotationValue.ClassInstanceValue -> buildString {
                 append(value.classId?.asString() ?: "<class>")

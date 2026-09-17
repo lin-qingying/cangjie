@@ -1,0 +1,5 @@
+CjClass: Holder
+annotations: [
+  @sample.annotations.targets.Plain
+    target: null
+]

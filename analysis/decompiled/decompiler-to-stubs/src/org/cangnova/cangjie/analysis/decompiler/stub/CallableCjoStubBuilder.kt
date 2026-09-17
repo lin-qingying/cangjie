@@ -61,6 +61,7 @@ internal fun createMainFunctionStub(
     createEmptyDeclarationHeaderStubs(
         functionStub,
         createDeclarationModifierMask(declaration.status),
+        declaration.annotations,
     )
     context.typeStubBuilder.createCallableParameterListStub(
         parent = functionStub,
@@ -91,7 +92,7 @@ internal fun createErrorFunctionStub(
         hasTypeParameterListBeforeFunctionName = false,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(functionStub)
+    createEmptyDeclarationHeaderStubs(functionStub, annotations = declaration.annotations)
 }
 
 /**
@@ -109,7 +110,7 @@ internal fun createErrorNamedValueStub(
         fqName = callableFqName(parent, context, declaration.name),
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(propertyStub)
+    createEmptyDeclarationHeaderStubs(propertyStub, annotations = declaration.annotations)
 }
 
 /**
@@ -128,7 +129,7 @@ internal fun createFinalizerStub(
         containingClassName = StringRef.fromString(context.owningClassSimpleName ?: "finalizer"),
         hasBody = true,
     )
-    createEmptyDeclarationHeaderStubs(finalizerStub)
+    createEmptyDeclarationHeaderStubs(finalizerStub, annotations = declaration.annotations)
     context.typeStubBuilder.createCallableParameterListStub(
         parent = finalizerStub,
         valueParameters = emptyList(),
@@ -154,7 +155,7 @@ internal fun createFunctionStub(
             containingClassName = StringRef.fromString(context.owningClassSimpleName),
             hasBody = true,
         )
-        createEmptyDeclarationHeaderStubs(finalizerStub)
+        createEmptyDeclarationHeaderStubs(finalizerStub, annotations = declaration.annotations)
         context.typeStubBuilder.createCallableParameterListStub(
             parent = finalizerStub,
             valueParameters = emptyList(),
@@ -171,7 +172,7 @@ internal fun createFunctionStub(
             hasBody = true,
             isPrimary = false,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub)
+        createEmptyDeclarationHeaderStubs(constructorStub, annotations = declaration.annotations)
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -195,6 +196,7 @@ internal fun createFunctionStub(
     createEmptyDeclarationHeaderStubs(
         functionStub,
         createDeclarationModifierMask(declaration.status, isOperator = declaration.status.isOperator),
+        declaration.annotations,
     )
     createTypeParameterListStub(functionStub, declaration.typeParameters)
     context.typeStubBuilder.createCallableParameterListStub(functionStub, declaration.valueParameters, createEmptyList = true)
@@ -227,6 +229,7 @@ internal fun createMacroStub(
     createEmptyDeclarationHeaderStubs(
         macroStub,
         createDeclarationModifierMask(declaration.status),
+        declaration.annotations,
     )
     createTypeParameterListStub(macroStub, declaration.typeParameters)
     context.typeStubBuilder.createCallableParameterListStub(macroStub, declaration.valueParameters, createEmptyList = true)
@@ -252,6 +255,7 @@ internal fun createPropertyStub(
     createEmptyDeclarationHeaderStubs(
         propertyStub,
         createDeclarationModifierMask(declaration.status),
+        declaration.annotations,
     )
     context.typeStubBuilder.createDeclaredTypeReferenceStub(propertyStub, declaration.returnTypeRef)
     createPropertyBodyStub(propertyStub, declaration, context)
@@ -279,7 +283,7 @@ internal fun createFieldStub(
             hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
             origin = context.packageFacadeOrigin,
         )
-        createEmptyDeclarationHeaderStubs(variableStub)
+        createEmptyDeclarationHeaderStubs(variableStub, annotations = declaration.annotations)
         val bindingPatternStub = CangJieBindingPatternStubImpl(
             parent = variableStub,
             nameRef = StringRef.fromString(declaration.name.asString()),
@@ -300,7 +304,7 @@ internal fun createFieldStub(
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(fieldStub)
+    createEmptyDeclarationHeaderStubs(fieldStub, annotations = declaration.annotations)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(fieldStub, declaration.returnTypeRef)
 }
 
@@ -324,7 +328,7 @@ internal fun createPatternVariableStub(
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(variableStub)
+    createEmptyDeclarationHeaderStubs(variableStub, annotations = declaration.annotations)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
     createPatternStub(declaration.pattern, variableStub)
 }
@@ -350,7 +354,7 @@ internal fun createConstructorStub(
             hasBody = true,
             isPrimary = true,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub)
+        createEmptyDeclarationHeaderStubs(constructorStub, annotations = declaration.annotations)
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -365,7 +369,7 @@ internal fun createConstructorStub(
             hasBody = true,
             isPrimary = false,
         )
-        createEmptyDeclarationHeaderStubs(constructorStub)
+        createEmptyDeclarationHeaderStubs(constructorStub, annotations = declaration.annotations)
         context.typeStubBuilder.createCallableParameterListStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
@@ -393,7 +397,7 @@ internal fun createEnumConstructorStub(
     )
     // 对齐其它声明 stub 入口：parser 解析 enum 构造项时稳定生成空 ANNOTATIONS 与空 MODIFIER_LIST，
     // 缺失会导致 stub 数与 AST 节点数不对账，在 calcStubTree reconcile 时抛 AssertionError。
-    createEmptyDeclarationHeaderStubs(enumConstructorStub)
+    createEmptyDeclarationHeaderStubs(enumConstructorStub, annotations = declaration.annotations)
     if (declaration.valueParameters.isNotEmpty()) {
         val typeListStub = CangJiePlaceHolderStubImpl<CjEnumConstructorTypeEntry>(
             enumConstructorStub,

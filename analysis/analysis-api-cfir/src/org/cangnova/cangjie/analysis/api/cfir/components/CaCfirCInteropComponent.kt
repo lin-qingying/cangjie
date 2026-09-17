@@ -1,241 +1,179 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
+import org.cangnova.cangjie.analysis.api.annotations.*
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.backingPsiIfApplicable
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
-import org.cangnova.cangjie.analysis.api.interop.CaInteropBackend
-import org.cangnova.cangjie.analysis.api.interop.CaInteropCallingConvention
-import org.cangnova.cangjie.analysis.api.interop.CaInteropInfo
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseAnnotationImpl
+import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseAnnotationValues
+import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseNamedAnnotationValue
+import org.cangnova.cangjie.analysis.api.interop.*
+import org.cangnova.cangjie.analysis.api.lifetime.*
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.CallingConvention
-import org.cangnova.cangjie.psi.CjAnnotated
-import org.cangnova.cangjie.psi.CjAnnotation
-import org.cangnova.cangjie.psi.CjAnnotations
-import org.cangnova.cangjie.psi.CjBuiltInAnnotation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
+import org.cangnova.cangjie.annotations.AnnotationSemanticHandler
+import org.cangnova.cangjie.annotations.BuiltInAnnotationCategory
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.publishInteropInfo
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
-import org.cangnova.cangjie.psi.CjModifierList
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.psi.CjStringTemplateExpression
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
-import org.cangnova.cangjie.psi.psiUtil.isPlain
-import com.intellij.psi.PsiComment
-import com.intellij.psi.PsiWhiteSpace
-import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.name.Name
 
-/**
- * C / FFI 互操作信息组件。
- *
- * 对齐 Kotlin 的组件落位方式，不再额外引入 `Protocol` 层。
- * 互操作语义直接由组件文件内的私有 helper 承载，并统一复用 session 缓存。
- */
+/** PSI 查询只用于定位声明，所有互操作语义均来自同一个 CFIR 快照。 */
 internal class CaCfirCInteropComponent(
-    /**
-     * 延迟取得当前 CFIR Analysis session，互操作信息查询复用其中的缓存和 token。
-     */
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaCInteropComponent {
-    /**
-     * 返回源码元素归属声明的 C/FFI 互操作信息。
-     */
     override fun CjElement.getInteropInfo(): CaInteropInfo? = withValidityAssertion {
         analysisSession.getInteropInfo(this@getInteropInfo)
     }
-
-    /**
-     * 返回符号底层源码声明的 C/FFI 互操作信息。
-     */
     override fun CaSymbol.getInteropInfo(): CaInteropInfo? = withValidityAssertion {
         analysisSession.getInteropInfo(this@getInteropInfo)
     }
 }
 
-/**
- * CFIR 后端的互操作公开快照实现。
- *
- * 互操作信息来源于源码声明上的修饰符与内建 FFI 注解，
- * 因此这里统一落在 session 缓存里，而不是让不同组件重复扫描 PSI。
- */
 internal class CaCfirInteropInfoImpl(
-    /**
-     * 声明显式标记的互操作后端集合。
-     */
+    override val abi: CaInteropAbi,
+    override val isCFunction: Boolean,
     override val backends: List<CaInteropBackend>,
-    /**
-     * 声明是否带有 foreign 修饰符。
-     */
     override val isForeignDeclaration: Boolean,
-    /**
-     * 声明是否带有 fast native 互操作标记。
-     */
     override val isFastNative: Boolean,
-    /**
-     * 通过 ForeignName 等注解指定的外部符号名。
-     */
+    override val isFrozen: Boolean,
     override val externalName: String?,
-    /**
-     * 互操作调用约定。
-     */
+    override val externalGetterName: String?,
+    override val externalSetterName: String?,
     override val callingConvention: CaInteropCallingConvention?,
-    /**
-     * 参与互操作判定的 FFI 注解短名集合。
-     */
+    override val hasJavaDefault: Boolean,
+    override val isObjCInit: Boolean,
+    override val isObjCOptional: Boolean,
     override val ffiAnnotationNames: List<String>,
-    /**
-     * 约束互操作快照生命周期的会话 token。
-     */
+    override val ffiAnnotations: List<CaAnnotation>,
     override val token: CaLifetimeToken,
 ) : CaInteropInfo
 
-/**
- * 从 PSI 元素查询其所属声明的互操作信息。
- */
 internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
-    return resolveInteropOwner(element)?.let(::buildInteropInfo)
+    val owner = element as? CjDeclaration ?: element.getStrictParentOfType<CjDeclaration>() ?: return null
+    return buildInteropInfo(owner.resolveToCfirSymbol(resolutionFacade, CfirResolvePhase.BODY_RESOLVE))
 }
 
-/**
- * 从公开符号查询底层源码声明的互操作信息。
- */
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
-    val sourcePsi = when (symbol) {
-        is CaCfirSymbol<*> -> symbol.cfirSymbol.backingPsiIfApplicable
-        else -> null
-    } ?: return null
-    val owner = resolveInteropOwner(sourcePsi as? CjElement ?: return null)
-        ?: return null
-    return buildInteropInfo(owner)
+    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol ?: return null
+    cfirSymbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+    return buildInteropInfo(cfirSymbol)
 }
 
-/**
- * 统一确定某个源码元素归属的互操作声明边界。
- *
- * 互操作信息只对带修饰符/注解的声明边界稳定成立，因此这里总是回收到最近的
- * [CjModifierListOwner]，并要求它同时具备注解容器语义。
- */
-private fun resolveInteropOwner(element: CjElement): CjModifierListOwner? {
-    return when (element) {
-        is CjModifierListOwner -> element
-        else -> element.getStrictParentOfType<CjModifierListOwner>()
+private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaInteropInfo? {
+    val declaration = symbol.cfir
+    // Source declarations publish the snapshot during STATUS.  A binary
+    // declaration is already at BODY_RESOLVE and therefore does not pass that
+    // source phase; its deserializer attaches serialized facts, which this
+    // same canonical producer materializes on demand.
+    if (declaration.interopInfo == null) declaration.publishInteropInfo(cfirSession)
+    val info = declaration.interopInfo ?: return null
+    if (info.resolvedAbi.kind == CfirAbiKind.CANGJIE && !info.isFastNative && !info.isFrozen &&
+        info.foreignName == null && info.foreignGetterName == null && info.foreignSetterName == null &&
+        info.java == null && info.objc == null
+    ) return null
+    val backends = buildList {
+        if (info.resolvedAbi.kind == CfirAbiKind.C) add(CaInteropBackend.C)
+        if (info.resolvedAbi.kind == CfirAbiKind.JAVA) add(CaInteropBackend.JAVA)
+        if (info.java?.isMirror == true) add(CaInteropBackend.JAVA_MIRROR)
+        if (info.java?.isImpl == true) add(CaInteropBackend.JAVA_IMPL)
+        if (info.objc?.isMirror == true) add(CaInteropBackend.OBJC_MIRROR)
+        if (info.objc?.isImpl == true) add(CaInteropBackend.OBJC_IMPL)
     }
-}
-
-/**
- * 从源码声明构建稳定的互操作快照。
- */
-private fun CaCfirSession.buildInteropInfo(owner: CjModifierListOwner): CaInteropInfo? {
-    val allAnnotations = owner.collectInteropAnnotations()
-    val ffiAnnotations = allAnnotations
-        .filter(CjAnnotation::isFFIAnnotation)
-
-    val backends = ffiAnnotations.mapNotNull { annotation ->
-        when (annotation.builtInAnnotation) {
-            CjBuiltInAnnotation.C -> CaInteropBackend.C
-            CjBuiltInAnnotation.JAVA -> CaInteropBackend.JAVA
-            CjBuiltInAnnotation.JAVA_MIRROR -> CaInteropBackend.JAVA_MIRROR
-            CjBuiltInAnnotation.JAVA_IMPL -> CaInteropBackend.JAVA_IMPL
-            CjBuiltInAnnotation.OBJ_C_MIRROR -> CaInteropBackend.OBJC_MIRROR
-            CjBuiltInAnnotation.OBJ_C_IMPL -> CaInteropBackend.OBJC_IMPL
-            else -> null
+    val annotationCalls = declaration.annotations.filterIsInstance<CfirAnnotationCall>().filter {
+        val descriptor = it.builtInDescriptor
+        descriptor?.category == BuiltInAnnotationCategory.FFI || descriptor?.semanticHandler == AnnotationSemanticHandler.C_FFI
+    }
+    val annotations = buildList {
+        addAll(annotationCalls.map { it.asPublicAnnotation(cfirSymbolBuilder, token) })
+        val serializedFacts = declaration.serializedInteropFacts
+        if (info.abiRequest.hasExplicitC && annotationCalls.none { it.annotationKind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.C }) {
+            addSyntheticFfiAnnotation(
+                kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.C,
+                name = "C",
+                token = token,
+            )
         }
-    }.distinct()
-
-    val isForeignDeclaration = owner.hasModifier(CjTokens.FOREIGN_KEYWORD)
-    val isFastNative = allAnnotations.any { annotation ->
-        annotation.builtInAnnotation == CjBuiltInAnnotation.FAST_NATIVE
+        if (serializedFacts?.callingConvention != null &&
+            annotationCalls.none { it.annotationKind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV }
+        ) {
+            val convention = checkNotNull(serializedFacts.callingConvention)
+            addSyntheticFfiAnnotation(
+                kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV,
+                name = "CallingConv",
+                token = token,
+                arguments = listOf(
+                    CaBaseNamedAnnotationValue(
+                        Name.identifier("convention"),
+                        CaBaseAnnotationValues.constant(
+                            CaBaseAnnotationValues.stringValue(convention.name, null),
+                            null,
+                            token,
+                        ),
+                    ),
+                ),
+            )
+        }
+        if (serializedFacts?.isFastNative == true &&
+            annotationCalls.none { it.annotationKind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FASTNATIVE }
+        ) {
+            addSyntheticFfiAnnotation(
+                kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FASTNATIVE,
+                name = "FastNative",
+                token = token,
+            )
+        }
     }
-    val externalName = ffiAnnotations
-        .firstOrNull { annotation -> annotation.builtInAnnotation == CjBuiltInAnnotation.FOREIGN_NAME }
-        ?.extractForeignName()
-    val callingConvention = ffiAnnotations
-        .firstNotNullOfOrNull { annotation -> annotation.callingConvention?.asPublicCallingConvention() }
-    val ffiAnnotationNames = ffiAnnotations.mapNotNull { annotation ->
-        annotation.shortName?.asString()
-    }.distinct()
-
-    if (!isForeignDeclaration && !isFastNative && backends.isEmpty() && externalName == null && callingConvention == null) {
-        return null
-    }
-
     return CaCfirInteropInfoImpl(
+        abi = CaInteropAbi.valueOf(info.resolvedAbi.kind.name),
+        isCFunction = info.resolvedAbi.isCFunction,
         backends = backends,
-        isForeignDeclaration = isForeignDeclaration,
-        isFastNative = isFastNative,
-        externalName = externalName,
-        callingConvention = callingConvention,
-        ffiAnnotationNames = ffiAnnotationNames,
+        isForeignDeclaration = info.abiRequest.isForeign,
+        isFastNative = info.isFastNative,
+        isFrozen = info.isFrozen,
+        externalName = info.externalSymbolName,
+        externalGetterName = info.foreignGetterName,
+        externalSetterName = info.foreignSetterName,
+        callingConvention = info.abiRequest.callingConvention?.let { CaInteropCallingConvention.valueOf(it.name) },
+        hasJavaDefault = info.java?.hasDefault == true,
+        isObjCInit = info.objc?.isInit == true,
+        isObjCOptional = info.objc?.isOptional == true,
+        ffiAnnotationNames = info.ffiAnnotationNames,
+        ffiAnnotations = annotations,
         token = token,
     )
 }
 
 /**
- * 互操作注解必须绑定到声明边界本身，而不是依赖某一类 PSI 对注解容器的转发细节。
- *
- * 当前仓库里不同声明的注解既可能通过 `annotationEntries` 暴露，
- * 也可能以 `CjAnnotations` / `modifierList` 形式直接挂在声明前缀上。
- * 这里统一把这几条稳定入口合并，避免 `@C struct` 和 `@ForeignName foreign func`
- * 因为 PSI 落位差异而被分裂处理。
+ * CJO 按官方格式把 C/STD_CALL/FastNative 放在 declaration attributes/FuncInfo，
+ * 不会生成 `Anno`。这里建立同一 Analysis API 视图所需的无源码 synthetic annotation，
+ * 只接受已由 serialized interop facts 发布的事实。
  */
-private fun CjModifierListOwner.collectInteropAnnotations(): List<CjAnnotation> {
-    val forwardedAnnotations = (this as? CjAnnotated)?.annotationEntries.orEmpty()
-    val directContainerAnnotations = children
-        .filterIsInstance<CjAnnotations>()
-        .flatMap(CjAnnotations::entries)
-    val directAnnotations = children.filterIsInstance<CjAnnotation>()
-    val modifierListAnnotations = modifierList?.let { modifierList ->
-        PsiTreeUtil.findChildrenOfType(modifierList, CjAnnotation::class.java).toList()
-    }.orEmpty()
-    val detachedSiblingAnnotations = generateSequence(prevSibling) { sibling -> sibling.prevSibling }
-        .takeWhile { sibling ->
-            sibling is PsiWhiteSpace || sibling is PsiComment || sibling is CjAnnotations || sibling is CjModifierList
-        }
-        .filterIsInstance<CjAnnotations>()
-        .flatMap(CjAnnotations::entries)
-        .toList()
-        .asReversed()
-
-    return buildList {
-        // 对齐 raw CFIR builder 的 detached annotation 恢复：部分注解会落在声明前缀 sibling 上。
-        addAll(detachedSiblingAnnotations)
-        addAll(forwardedAnnotations)
-        addAll(directContainerAnnotations)
-        addAll(directAnnotations)
-        addAll(modifierListAnnotations)
-    }.distinctBy { annotation ->
-        annotation.textRange to annotation.text
-    }
-}
-
-/**
- * 从 ForeignName 风格注解中提取外部符号名。
- */
-private fun CjAnnotation.extractForeignName(): String? {
-    val rawExpression = valueArguments
-        .firstOrNull { argument -> argument.getArgumentName()?.asName?.asString() == "name" }
-        ?.getArgumentExpression()
-        ?: valueArguments.firstOrNull()?.getArgumentExpression()
-        ?: return null
-
-    return when (rawExpression) {
-        is CjStringTemplateExpression -> {
-            if (!rawExpression.isPlain()) return null
-            rawExpression.stringContent
-        }
-
-        else -> rawExpression.text.trim().trim('"', '\'').ifBlank { null }
-    }
-}
-
-/**
- * 将 PSI 层调用约定转换为 Analysis API 调用约定枚举。
- */
-private fun CallingConvention.asPublicCallingConvention(): CaInteropCallingConvention = when (this) {
-    CallingConvention.CDECL -> CaInteropCallingConvention.CDECL
-    CallingConvention.STDCALL -> CaInteropCallingConvention.STDCALL
+private fun MutableList<CaAnnotation>.addSyntheticFfiAnnotation(
+    kind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind,
+    name: String,
+    token: CaLifetimeToken,
+    arguments: List<CaNamedAnnotationValue> = emptyList(),
+) {
+    add(
+        CaBaseAnnotationImpl(
+            classId = null,
+            shortName = Name.identifier(name),
+            psi = null,
+            lazyArguments = lazyOf(arguments),
+            constructorSymbol = null,
+            token = token,
+            builtInKind = kind,
+            isCompileTimeVisible = false,
+            isForcedCustom = false,
+            resolutionStatus = CaAnnotationResolutionStatus.RESOLVED,
+        ),
+    )
 }

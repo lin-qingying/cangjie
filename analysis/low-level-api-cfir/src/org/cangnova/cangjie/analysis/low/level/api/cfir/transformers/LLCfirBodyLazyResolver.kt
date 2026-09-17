@@ -114,6 +114,9 @@ private class CfirPartialBodyDeclarationResolveTransformer(
         shouldResolveEverything: Boolean,
     ): CfirFunction {
         if (function.partialBodyAnalysisState != null) {
+            if (shouldResolveEverything) {
+                resolveDeclarationAnnotations(function, ResolutionMode.ContextIndependent)
+            }
             function.transformBody(this, resolutionModeForBody)
             return function
         }
@@ -126,6 +129,7 @@ private class CfirPartialBodyDeclarationResolveTransformer(
      */
     override fun transformConstructorContent(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         if (constructor.partialBodyAnalysisState != null) {
+            resolveDeclarationAnnotations(constructor, data)
             constructor.transformBody(this, data)
             return constructor
         }
@@ -189,12 +193,16 @@ private class CfirPartialBodyExpressionResolveTransformer(
             }
         }
 
-        require(data is ResolutionMode.ContextIndependent)
-
+        // 部分 body 分析契约：只支持 ContextIndependent 模式。带期望类型（withExpectedType）
+        // 等 ContextDependent 模式的函数体（如 resolveToCfirSymbol 完整解析带声明返回类型的
+        // 多语句函数）直接走完整解析，避免硬性 require 误伤。
         val state = declaration.partialBodyAnalysisState
 
         performTopmostBlockAnalysis {
-            if (target is LLCfirPartialBodyResolveTarget && (state == null || state.performedAnalysesCount < MAX_ANALYSES_COUNT)) {
+            if (data is ResolutionMode.ContextIndependent &&
+                target is LLCfirPartialBodyResolveTarget &&
+                (state == null || state.performedAnalysesCount < MAX_ANALYSES_COUNT)
+            ) {
                 transformPartially(target.request, block, data, state)
             } else {
                 transformFully(declaration, block, data, state)
