@@ -1819,6 +1819,25 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 对齐 C++ sema_deprecated_error, sema_deprecation_weakening 等。
      */
     val DEPRECATED by object : DiagnosticGroup("Deprecated") {
+        // @Deprecated 参数必须由 parser 级规则逐项验证。
+        val DEPRECATED_ARGUMENTS_MUST_BE_LITERAL_CONST by error<PsiElement>()
+        val DEPRECATED_ARGUMENT_DUPLICATION by error<PsiElement> {
+            parameter<String>("argumentName")
+        }
+        val DEPRECATED_WRONG_ARGUMENT by error<PsiElement> {
+            parameter<String>("argumentName")
+            parameter<String>("expectedType")
+        }
+        val DEPRECATED_EMPTY_STRING_ARGUMENT by error<PsiElement> {
+            parameter<String>("argumentName")
+        }
+        val DEPRECATED_UNKNOWN_ARGUMENT by error<PsiElement> {
+            parameter<String>("argumentName")
+        }
+        val DEPRECATED_INVALID_TARGET by error<PsiElement> {
+            parameter<String>("invalidTarget")
+        }
+
         // 调用了被 @Deprecated 标记的声明（错误级别）
         val DEPRECATED_ERROR by error<PsiElement> {
             parameter<String>("kind")

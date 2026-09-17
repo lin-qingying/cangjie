@@ -34,6 +34,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirBuiltInAnnotationDeclarationChecker,
             CfirAnnotationTargetChecker,
             CfirCAnnotationChecker,
+            CfirDeprecatedAnnotationChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
