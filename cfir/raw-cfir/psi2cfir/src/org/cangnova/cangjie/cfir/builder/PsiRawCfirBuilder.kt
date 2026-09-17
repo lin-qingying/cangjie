@@ -3981,11 +3981,25 @@ class PsiRawCfirBuilder(
             if (owner.hasModifier(CjTokens.FOREIGN_KEYWORD)) return false
 
             return when (declaration) {
-                is CjNamedFunction -> !declaration.sourceKind.isDeclaration && !declaration.hasBody()
+                is CjNamedFunction ->
+                    !declaration.hasBuiltinAnnotation(org.cangnova.cangjie.annotations.BuiltInAnnotationKind.INTRINSIC) &&
+                            !declaration.sourceKind.isDeclaration &&
+                            !declaration.hasBody()
                 is CjProperty -> declaration.body == null && declaration.getter == null && declaration.setter == null
                 else -> false
             }
         }
+
+        /**
+         * 查询声明自身的语言内置注解身份。
+         *
+         * intrinsic 的无体规则必须在 raw builder 阶段排除；这里消费 PSI 已解析的
+         * [CjBuiltInAnnotation.kind]，不扫描源码文本，也不把普通 custom annotation 当成
+         * 语言内置注解。
+         */
+        private fun CjDeclaration.hasBuiltinAnnotation(
+            kind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind,
+        ): Boolean = annotationEntries.any { it.builtInAnnotation?.kind == kind }
 
         /**
          * 判断 interface 成员是否应标记为 default 实现。

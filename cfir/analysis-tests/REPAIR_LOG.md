@@ -1,5 +1,18 @@
 # CFIR LLT Repair Log
 
+## 2026-09-17：Intrinsic 无体成员不应隐式 abstract
+
+- problem type: Built-in annotation / `@Intrinsic` declaration semantics。
+- root cause: PSI 与 LightTree raw builder 将 class/interface 中所有无体函数统一推断为隐式 `abstract`；官方 parser 的 `CheckFuncBody` 对 `INTRINSIC` 明确跳过该成员规则，因此 CFIR 额外产生 `MISSING_FUNC_BODY` 与 `ABSTRACT_MEMBER_NOT_IMPLEMENTED`。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/ParseDecl.cpp:1539-1549`：`@Intrinsic` 只检查顶层和函数体，随后 `isMember` 以 `!decl.TestAttr(Attribute::INTRINSIC)` 排除 intrinsic；`src/Parse/ParseDecl.cpp:1958-1966` 维护 intrinsic 名称重复检查。
+- Kotlin counterpart files consulted: Kotlin FIR 没有仓颉 intrinsic 语义对应物；CFIR 保留 declaration checker owner 与 raw declaration status seam，未引入 Kotlin 语言规则。
+- CFIR owner files changed: `cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt`、`cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirIntrinsicDeclarationChecker.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CommonDeclarationCheckers.kt`、Intrinsic diagnostics generator/default/generated files。
+- repair principle: raw builder 先依据已解析的 builtin kind 排除 intrinsic 的隐式 abstract/default 推断，declaration checker 单独消费 intrinsic 的顶层和 body 约束；两条输入路径共享同一语义边界。
+- fixtures covered: `cfir/analysis-tests/testData/macro/llt/annotation/intrinsic_semantics.cj` 的 LLT 与 LLTPsi。
+- fixture correction: 增加 `INTRINSIC_FUNCTION_CANNOT_HAVE_BODY` 的函数体范围和 `INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL` 的成员声明范围，未修改源码语法。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated$Llt$Annotation.testIntrinsicSemantics' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated$Llt$Annotation.testIntrinsicSemantics' --console=plain` → BUILD SUCCESSFUL，LLT/LLTPsi 2/2 通过。
+- remaining risks: intrinsic 名称重复诊断、允许的 intrinsic 包集合、函数调用的 intrinsic call kind，以及全部内置注解/FFI 仍需独立实现和验证；本项未触及 `.cj.d`、Analysis、CHIR/backend。
+
 ## 2026-09-17：Raw annotation 修复后的全量基线复核
 
 - problem type: 全量回归基线刷新；本项不修改语义实现。

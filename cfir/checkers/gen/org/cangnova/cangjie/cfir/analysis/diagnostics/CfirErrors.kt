@@ -159,6 +159,10 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Annotation
     val ANNOTATION_NO_CONST_INIT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ANNOTATION_NO_CONST_INIT", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
 
+    // Intrinsic
+    val INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INTRINSIC_FUNCTION_CANNOT_HAVE_BODY: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INTRINSIC_FUNCTION_CANNOT_HAVE_BODY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
     // Interop
     val ILLEGAL_USE_OF_ANNOTATION: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ILLEGAL_USE_OF_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_CALLING_CONV_NOT_SUPPORT: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ANNOTATION_CALLING_CONV_NOT_SUPPORT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

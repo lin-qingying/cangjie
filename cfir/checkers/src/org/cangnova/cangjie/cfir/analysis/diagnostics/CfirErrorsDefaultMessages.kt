@@ -874,6 +874,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.NOT_MEMBER_OF, "''{0}'' is not a member of {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.MEMBER_NOT_IMPORTED, "''{0}'' is not imported", RENDER_NAME)
         map.put(CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE, "cannot assign to immutable value")
+        map.put(CfirErrors.INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL, "intrinsic function must be toplevel scope")
+        map.put(CfirErrors.INTRINSIC_FUNCTION_CANNOT_HAVE_BODY, "intrinsic function cannot have body")
         map.put(CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED, "''{0}'' can not be assigned", RENDER_NAME)
         map.put(CfirErrors.DIFFERENT_OR_PATTERN, "patterns connected by '|' should be of the same kind: {0}", RENDER_STRING)
         map.put(CfirErrors.VAR_IN_OR_PATTERN, "cannot introduce variables in patterns connected by '|'")

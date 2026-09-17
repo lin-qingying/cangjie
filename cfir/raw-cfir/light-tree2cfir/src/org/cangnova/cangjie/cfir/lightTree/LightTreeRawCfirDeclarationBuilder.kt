@@ -3384,9 +3384,23 @@ class LightTreeRawCfirDeclarationBuilder(
         modifiers: LightTreeModifierList,
     ): Boolean =
         isInClassOrInterfaceMemberContext() &&
+                !modifiers.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) &&
                 !modifiers.isForeign &&
                 !sourceKind.isDeclaration &&
                 !hasSyntaxBody(node)
+
+    /**
+     * 查询 LightTree modifier 中的语言内置注解身份。
+     *
+     * intrinsic 的无体函数不能进入隐式 abstract/default 推断；身份来自 annotation
+     * 节点名称和 common registry，而不是从整段源码文本猜测。
+     */
+    private fun LightTreeModifierList.hasBuiltinAnnotation(
+        kind: BuiltInAnnotationKind,
+    ): Boolean = annotations.any { annotation ->
+        val rawName = annotationNameInfo(annotation)?.rawName ?: return@any false
+        BuiltInAnnotationRegistry.findLanguageBuiltIn(rawName.substringAfterLast('.'))?.kind == kind
+    }
 
     /**
      * 判断 class/interface 成员属性是否应由无体语法隐式标记为 abstract。
