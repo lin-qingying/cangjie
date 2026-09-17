@@ -1449,6 +1449,49 @@ class LightTreeRawCfirDeclarationBuilder(
             )
         }
 
+        when (BuiltInAnnotationRegistry.findLanguageBuiltIn(annotationName.substringAfterLast('.'))?.kind) {
+            BuiltInAnnotationKind.ATTRIBUTE -> {
+                val attributeNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNTATION_ATTR_ATTRIBUTE)
+                    ?: return emptyList()
+                val arguments = mutableListOf<CfirExpression>()
+                tree.forEachChildren(attributeNode) { child ->
+                    when (child.tokenType) {
+                        CjTokens.IDENTIFIER -> arguments += buildLiteralExpression {
+                            source = child.toSource()
+                            kind = CfirLiteralKind.STRING
+                            value = child.asText()
+                        }
+                        CjNodeTypes.STRING_TEMPLATE -> arguments += expressionBuilder.convertExpression(child)
+                    }
+                }
+                return arguments
+            }
+
+            BuiltInAnnotationKind.NUMERIC_OVERFLOW -> {
+                val strategyNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_OVERFLOW_STRATEGY)
+                    ?: return emptyList()
+                val strategyName = strategyNode.asText().trim().takeIf(String::isNotEmpty)
+                    ?: return emptyList()
+                return listOf(buildNamedAccessExpression {
+                    source = strategyNode.toSource()
+                    calleeReference = buildNamedReference(
+                        Name.identifier(strategyName),
+                        strategyNode.toSource(),
+                    )
+                })
+            }
+
+            BuiltInAnnotationKind.WHEN -> {
+                val conditionNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_WHEN_CONDITION)
+                    ?: return emptyList()
+                val expressionNode = expressionBuilder.findFirstExpression(conditionNode)
+                    ?: return emptyList()
+                return listOf(expressionBuilder.convertExpression(expressionNode))
+            }
+
+            else -> Unit
+        }
+
         val callingConvention = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_CALLING_CONV)
         if (callingConvention != null) {
             val source = callingConvention.toSource()
