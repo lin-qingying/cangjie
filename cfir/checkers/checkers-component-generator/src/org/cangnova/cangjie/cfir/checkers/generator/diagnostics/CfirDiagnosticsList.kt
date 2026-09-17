@@ -609,6 +609,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val ANNOTATION_NO_CONST_INIT by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
     }
 
+    /** `@Intrinsic` 函数声明的 parser 级约束在 CFIR 中的声明 owner。 */
+    val INTRINSIC by object : DiagnosticGroup("Intrinsic") {
+        val INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL by error<PsiElement>()
+        val INTRINSIC_FUNCTION_CANNOT_HAVE_BODY by error<PsiElement>()
+    }
+
     /**
      * interop / foreign function 相关的语义诊断。
      *

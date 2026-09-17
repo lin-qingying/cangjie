@@ -67,6 +67,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirObjCTopLevelFunctionChecker,
             CfirForeignFunctionParameterTypeChecker,
             CfirForeignFunctionReturnTypeChecker,
+            CfirIntrinsicDeclarationChecker,
             CfirFunctionReturnTypeInferenceChecker,
             CfirFinalizerDeclarationChecker,
             CfirConstFunctionBodyChecker,
