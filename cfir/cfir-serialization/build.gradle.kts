@@ -13,7 +13,10 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":util"))
     implementation(libs.flatbuffers.java)
+    api(project(":psi"))
+    compileOnly(intellijCore())
 
+    testImplementation(testFixtures(project(":tests:test-infrastructure")))
     testImplementation(kotlin("test"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

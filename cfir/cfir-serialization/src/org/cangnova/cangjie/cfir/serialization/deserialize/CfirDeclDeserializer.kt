@@ -25,6 +25,14 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.annotations.CangjieCallingConvention
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
@@ -33,17 +41,30 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationArgumentStatus
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationArgumentView
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationArgumentViewEntry
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
@@ -62,7 +83,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
  * 将 .cjo 中的 FlatBuffers Decl 表转换为 CFIR 声明树。
  * 所有反序列化声明的 origin 为 Library，resolveState 初始化为 BODY_RESOLVE。
  */
-@OptIn(CfirImplementationDetail::class, ResolveStateAccess::class)
+@OptIn(CfirImplementationDetail::class)
 class CfirDeclDeserializer(
     /** 当前 `.cjo` 包的反序列化上下文、缓存与跨包解析入口。 */
     private val context: CfirDeserializationContext,
@@ -124,6 +145,26 @@ class CfirDeclDeserializer(
                     null
                 } ?: return null
                 val result = convertDecl(decl) ?: return null
+                // CJO keeps part of the interop contract in declaration
+                // attributes/FuncInfo instead of `Anno`.  Attach those facts
+                // before publishing the canonical declaration snapshot so
+                // binary consumers follow the same producer as source CFIR.
+                result.serializedInteropFacts = serializedInteropFacts(decl)
+                result.annotationInfo = serializedAnnotationInfo(decl)
+                appendSerializedAnnotationMarker(result)
+                if (result is CfirMemberDeclaration) {
+                    val target = result.annotationTargetFor()
+                    result.annotations.forEach { annotation ->
+                        annotation.replaceAnnotationTarget(target)
+                    }
+                    if (result.annotations.isNotEmpty() || result.annotationInfo != null) {
+                        // Binary declarations do not pass the source STATUS processor. Reuse
+                        // the declaration-owned annotation producer so TestRegistration,
+                        // Deprecated and Annotation metadata have the same snapshot shape.
+                        result.publishAnnotationInfo()
+                    }
+                    result.publishInteropInfo(context.moduleData.session)
+                }
                 context.declCache.putIfAbsent(declIndex, result)
                 context.declCache[declIndex] ?: result
             } finally {
@@ -188,6 +229,41 @@ class CfirDeclDeserializer(
         val OPERATOR = Attribute.OPERATOR.ordinal
         /** `foreign` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val FOREIGN = Attribute.FOREIGN.ordinal
+        /** C ABI attribute materialized from source `@C` or foreign defaulting. */
+        val C = Attribute.C.ordinal
+        /** STDCALL calling convention attribute. */
+        val STD_CALL = Attribute.STD_CALL.ordinal
+        /** Intrinsic declaration attribute. */
+        val INTRINSIC = Attribute.INTRINSIC.ordinal
+        /** Annotation declaration marker. */
+        val IS_ANNOTATION = Attribute.IS_ANNOTATION.ordinal
+        /** common/specific declaration provenance. */
+        val COMMON = Attribute.COMMON.ordinal
+        val FROM_COMMON_PART = Attribute.FROM_COMMON_PART.ordinal
+        val COMMON_NON_EXHAUSTIVE = Attribute.COMMON_NON_EXHAUSTIVE.ordinal
+        val SPECIFIC = Attribute.SPECIFIC.ordinal
+        val COMMON_WITH_DEFAULT = Attribute.COMMON_WITH_DEFAULT.ordinal
+        /** Java mirror and generated declaration attributes. */
+        val JAVA_APP = Attribute.JAVA_APP.ordinal
+        val JAVA_EXT = Attribute.JAVA_EXT.ordinal
+        val JAVA_MIRROR = Attribute.JAVA_MIRROR.ordinal
+        val JAVA_MIRROR_SUBTYPE = Attribute.JAVA_MIRROR_SUBTYPE.ordinal
+        val JAVA_HAS_DEFAULT = Attribute.JAVA_HAS_DEFAULT.ordinal
+        val JAVA_MIRROR_SYNTHETIC_WRAPPER = Attribute.JAVA_MIRROR_SYNTHETIC_WRAPPER.ordinal
+        /** Objective-C mirror and generated declaration attributes. */
+        val OBJ_C_MIRROR = Attribute.OBJ_C_MIRROR.ordinal
+        val OBJ_C_MIRROR_SUBTYPE = Attribute.OBJ_C_MIRROR_SUBTYPE.ordinal
+        val OBJ_C_INIT = Attribute.OBJ_C_INIT.ordinal
+        val OBJ_C_OPTIONAL = Attribute.OBJ_C_OPTIONAL.ordinal
+        val OBJ_C_MIRROR_SYNTHETIC_WRAPPER = Attribute.OBJ_C_MIRROR_SYNTHETIC_WRAPPER.ordinal
+        /** CJMapping and interface-forward attributes. */
+        val JAVA_CJ_MAPPING = Attribute.JAVA_CJ_MAPPING.ordinal
+        val OBJ_C_CJ_MAPPING = Attribute.OBJ_C_CJ_MAPPING.ordinal
+        val CJ_MIRROR_JAVA_INTERFACE_FWD = Attribute.CJ_MIRROR_JAVA_INTERFACE_FWD.ordinal
+        val DESUGARED_MIRROR_FIELD = Attribute.DESUGARED_MIRROR_FIELD.ordinal
+        val HAS_INITED_FIELD = Attribute.HAS_INITED_FIELD.ordinal
+        val CJ_MIRROR_JAVA_INTERFACE_DEFAULT = Attribute.CJ_MIRROR_JAVA_INTERFACE_DEFAULT.ordinal
+        val CJ_MIRROR_OBJC_INTERFACE_FWD = Attribute.CJ_MIRROR_OBJC_INTERFACE_FWD.ordinal
         /** `unsafe` 修饰符在 AST AttributePack 中的 bit 下标。 */
         val UNSAFE = Attribute.UNSAFE.ordinal
         /** `mut` 修饰符在 AST AttributePack 中的 bit 下标。 */
@@ -269,15 +345,24 @@ class CfirDeclDeserializer(
         containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirAnnotationCall? {
         val rawIdentifier = serialized.identifier.orEmpty()
-        val targetClassId = serialized.target?.let(context.fullIdResolver::resolveClassId)
+        // For a custom annotation the official CJO writer stores the annotation
+        // constructor FullId in Anno.target.  That FullId points to a child
+        // FuncDecl, so resolving it as a class-like declaration loses the
+        // annotation class entirely.  Resolve a direct class target first and
+        // then walk the declaration parent chain for the constructor owner.
+        val targetClassId = serialized.target?.let { target ->
+            context.fullIdResolver.resolveClassId(target)
+                ?: context.fullIdResolver.resolveContainingClassId(target)
+        }
+        val sourceSpelling = rawIdentifier
+            .removePrefix("@!")
+            .removePrefix("@")
+            .takeIf(String::isNotBlank)
         val shortName = targetClassId?.shortClassName
-            ?: Name.identifierIfValid(
-                rawIdentifier
-                    .removePrefix("@!")
-                    .removePrefix("@")
-                    .substringAfterLast('.'),
-            )
+            ?: sourceSpelling?.substringAfterLast('.')?.let { Name.identifierIfValid(it) }
             ?: Name.ERROR_NAME
+        val builtin = serializedBuiltinDescriptor(serialized)
+        val system = targetClassId?.asSingleFqName()?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
 
         val annotationTypeRef: CfirTypeRef = if (targetClassId != null) {
             buildResolvedTypeRef {
@@ -296,7 +381,7 @@ class CfirDeclDeserializer(
         val arguments = buildList {
             for (argumentIndex in 0 until serialized.argsLength) {
                 val serializedArgument = serialized.args(argumentIndex) ?: continue
-                val expression = deserializeAnnotationLiteral(serializedArgument.expr) ?: continue
+                val expression = deserializeAnnotationExpression(serializedArgument.expr) ?: continue
                 val argumentName = serializedArgument.name?.takeIf(String::isNotBlank)
                 add(
                     if (argumentName == null) {
@@ -311,9 +396,24 @@ class CfirDeclDeserializer(
             }
         }
 
-        return buildAnnotationCall {
+        val annotation = buildAnnotationCall {
             typeRef = annotationTypeRef
-            this.arguments.addAll(arguments)
+            annotationSourceName = sourceSpelling
+            annotationClassId = targetClassId
+            annotationKind = builtin?.kind
+            forcedCustom = serialized.kind == AnnoKind.Custom
+            isCompileTimeVisible = serialized.kind == AnnoKind.Custom
+            annotationOrigin = when {
+                builtin != null -> builtin.origin
+                system != null -> system.origin
+                else -> CangjieAnnotationOrigin.CUSTOM
+            }
+            annotationIdentity = when {
+                builtin != null -> CangjieAnnotationIdentity.LanguageBuiltIn(builtin.kind, builtin.sourceName)
+                system != null -> CangjieAnnotationIdentity.SystemMacro(system.classFqName, system.sourceName)
+                targetClassId != null -> CangjieAnnotationIdentity.Custom(targetClassId.asSingleFqName())
+                else -> CangjieAnnotationIdentity.Unknown
+            }
             argumentList = buildArgumentList {
                 this.arguments.addAll(arguments)
             }
@@ -321,6 +421,140 @@ class CfirDeclDeserializer(
                 name = shortName
             }
             this.containingDeclarationSymbol = containingDeclarationSymbol
+            annotationResolveState = CfirAnnotationResolveState.SEMANTIC_RESOLVED
+        }
+
+        val constructor = targetClassId
+            ?.let(context.moduleData.session.symbolProvider::getClassLikeSymbolByClassId)
+            ?.cfir
+            ?.declarations
+            ?.filterIsInstance<CfirConstructor>()
+            ?.firstOrNull()
+        if (builtin != null) {
+            // Built-in Anno entries have no constructor declaration in CJO.  Their
+            // parameter names still come from the canonical common schema; preserve
+            // that mapping instead of dropping all serialized arguments.
+            val mapping = arguments.mapIndexedNotNull { index, argument ->
+                val named = argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+                val parameterName = named?.argumentName?.asString()
+                    ?: builtin.argumentSchema.positionalParameter?.name
+                    ?: builtin.argumentSchema.parameters.getOrNull(index)?.name
+                parameterName?.let {
+                    Name.identifier(it) to (named?.expression ?: argument)
+                }
+            }.toMap(LinkedHashMap())
+            annotation.replaceArgumentMapping(CfirAnnotationArgumentMappingImpl(annotation.source, mapping))
+            annotation.replaceArgumentView(
+                CfirAnnotationArgumentView(
+                    arguments.mapIndexed { index, argument ->
+                        val named = argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+                        CfirAnnotationArgumentViewEntry(
+                            sourceOrder = index,
+                            explicitName = named?.argumentName,
+                            argument = argument,
+                            resolvedParameter = null,
+                            status = CfirAnnotationArgumentStatus.RESOLVED,
+                            isDefaultOrigin = false,
+                            constantExpression = named?.expression ?: argument,
+                            source = argument.source,
+                        )
+                    },
+                ),
+            )
+        } else {
+            val resolvedArguments = buildResolvedArgumentList(
+                annotation.argumentList,
+                LinkedHashMap<CfirExpression, CfirValueParameter>().also { mapping ->
+                    var positionalIndex = 0
+                    for (argument in arguments) {
+                        val namedArgument = argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+                        val parameter = if (namedArgument != null) {
+                            constructor?.valueParameters?.firstOrNull { it.name == namedArgument.argumentName }
+                        } else {
+                            constructor?.valueParameters?.getOrNull(positionalIndex++)
+                        }
+                        if (parameter != null) mapping[argument] = parameter
+                    }
+                },
+            )
+            annotation.replaceArgumentMapping(
+                CfirAnnotationArgumentMappingImpl(
+                    annotation.source,
+                    resolvedArguments.mapping.entries.associate { (argument, parameter) ->
+                        parameter.name to ((argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression)?.expression ?: argument)
+                    },
+                ),
+            )
+            annotation.replaceArgumentView(resolvedArguments.toAnnotationArgumentView(constructor?.valueParameters.orEmpty()))
+            if (constructor != null) {
+                annotation.replaceCalleeReference(buildResolvedNamedReference {
+                    name = constructor.symbol.callableId.callableName
+                    resolvedSymbol = constructor.symbol
+                })
+            }
+        }
+        return annotation
+    }
+
+    /** Resolve the serialized `AnnoKind`; source spelling is never used as its semantic key. */
+    private fun serializedBuiltinDescriptor(serialized: Anno): BuiltInAnnotationDescriptor? {
+        val sourceName = when (serialized.kind) {
+            AnnoKind.Deprecated -> "Deprecated"
+            AnnoKind.TestRegistration -> "Attribute"
+            AnnoKind.Frozen -> "Frozen"
+            AnnoKind.JavaMirror -> "JavaMirror"
+            AnnoKind.JavaImpl -> "JavaImpl"
+            AnnoKind.ObjCMirror -> "ObjCMirror"
+            AnnoKind.ObjCImpl -> "ObjCImpl"
+            AnnoKind.ForeignName -> "ForeignName"
+            AnnoKind.JavaHasDefault -> "JavaHasDefault"
+            AnnoKind.Annotation -> "Annotation"
+            else -> null
+        } ?: return null
+        return BuiltInAnnotationRegistry.findLanguageBuiltIn(sourceName)
+    }
+
+    /** 恢复 CJO 注解参数允许的 LitConstExpr。 */
+    private fun deserializeAnnotationExpression(rawExprIndex: UInt): CfirExpression? {
+        val exprIndex = decodeExprRef(rawExprIndex) ?: return null
+        val expr = context.pkg.allExprs(exprIndex) ?: return null
+        return when (expr.kind) {
+            ExprKind.LitConstExpr -> deserializeAnnotationLiteral(rawExprIndex)
+            ExprKind.ArrayLit -> buildArrayLiteral {
+                for (operandIndex in 0 until expr.operandsLength) {
+                    deserializeAnnotationExpression(expr.operands(operandIndex))?.let(elements::add)
+                }
+            }
+            ExprKind.RefExpr -> deserializeAnnotationReference(expr)
+            else -> null
+        }
+    }
+
+    /** 恢复注解数组中的 enum constructor reference，并保留其真实目标 symbol。 */
+    private fun deserializeAnnotationReference(expr: Expr): CfirExpression? {
+        if (expr.infoType != ExprInfo.ReferenceInfo) return null
+        val info = expr.info(ReferenceInfo()) as? ReferenceInfo ?: return null
+        val name = info.reference?.takeIf(String::isNotBlank)?.let(Name::identifier) ?: return null
+        val constructor = info.target
+            ?.let(context.fullIdResolver::resolveContainingClassId)
+            ?.let(context.moduleData.session.symbolProvider::getClassLikeSymbolByClassId)
+            ?.let { owner ->
+                var match: CfirEnumConstructorSymbol? = null
+                CfirClassDeclaredMemberScope(owner).processCallablesByName(name) { symbol ->
+                    if (match == null) match = symbol as? CfirEnumConstructorSymbol
+                }
+                match
+            }
+        return buildNamedAccessExpression {
+            coneTypeOrNull = constructor?.cfir?.returnTypeRef?.coneTypeOrNull
+            calleeReference = if (constructor != null) {
+                buildResolvedNamedReference {
+                    this.name = name
+                    resolvedSymbol = constructor
+                }
+            } else {
+                buildNamedReference { this.name = name }
+            }
         }
     }
 
@@ -393,10 +627,138 @@ class CfirDeclDeserializer(
         status.isOverride = testAttr(decl, AttrBit.OVERRIDE)
         status.isOperator = testAttr(decl, AttrBit.OPERATOR)
         status.isForeign = testAttr(decl, AttrBit.FOREIGN)
+        // Official SetForeignABIAttr materializes the backend default C ABI
+        // for `foreign`; an explicit @C declaration also carries this bit.
+        status.isC = testAttr(decl, AttrBit.C) || status.isForeign
+        status.isCommon = testAttr(decl, AttrBit.COMMON) || testAttr(decl, AttrBit.FROM_COMMON_PART)
+        status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
+        status.isCommon = testAttr(decl, AttrBit.COMMON) || testAttr(decl, AttrBit.FROM_COMMON_PART)
+        status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
         status.isUnsafe = testAttr(decl, AttrBit.UNSAFE)
         status.isMut = testAttr(decl, AttrBit.MUT)
         status.isRedef = testAttr(decl, AttrBit.REDEF)
         return status
+    }
+
+    /** Reconstruct non-Anno interop facts written by the official CJO writer. */
+    private fun serializedInteropFacts(decl: Decl): CfirSerializedInteropFacts {
+        val isForeign = testAttr(decl, AttrBit.FOREIGN)
+        val funcInfo = decl.info(FuncInfo()) as? FuncInfo
+        return CfirSerializedInteropFacts(
+            hasExplicitC = testAttr(decl, AttrBit.C) && !isForeign,
+            callingConvention = if (testAttr(decl, AttrBit.STD_CALL)) {
+                CangjieCallingConvention.STDCALL
+            } else {
+                null
+            },
+            overflowStrategy = funcInfo?.overflowPolicy?.let { policy ->
+                when (policy) {
+                    OverflowPolicy.Checked -> CangjieOverflowStrategy.CHECKED
+                    OverflowPolicy.Wrapping -> CangjieOverflowStrategy.WRAPPING
+                    OverflowPolicy.Throwing -> CangjieOverflowStrategy.THROWING
+                    OverflowPolicy.Saturating -> CangjieOverflowStrategy.SATURATING
+                    else -> null
+                }
+            },
+            isIntrinsic = testAttr(decl, AttrBit.INTRINSIC),
+            isFastNative = funcInfo?.isFastNative == true,
+            isJavaMirror = testAttr(decl, AttrBit.JAVA_MIRROR),
+            isJavaMirrorSubtype = testAttr(decl, AttrBit.JAVA_MIRROR_SUBTYPE),
+            hasJavaDefault = testAttr(decl, AttrBit.JAVA_HAS_DEFAULT),
+            isJavaMirrorSyntheticWrapper = testAttr(decl, AttrBit.JAVA_MIRROR_SYNTHETIC_WRAPPER),
+            isJavaApplication = testAttr(decl, AttrBit.JAVA_APP),
+            isJavaExtension = testAttr(decl, AttrBit.JAVA_EXT),
+            isJavaCjMapping = testAttr(decl, AttrBit.JAVA_CJ_MAPPING),
+            isJavaInterfaceForward = testAttr(decl, AttrBit.CJ_MIRROR_JAVA_INTERFACE_FWD),
+            isJavaInterfaceDefault = testAttr(decl, AttrBit.CJ_MIRROR_JAVA_INTERFACE_DEFAULT),
+            isObjCMirror = testAttr(decl, AttrBit.OBJ_C_MIRROR),
+            isObjCMirrorSubtype = testAttr(decl, AttrBit.OBJ_C_MIRROR_SUBTYPE),
+            isObjCInit = testAttr(decl, AttrBit.OBJ_C_INIT),
+            isObjCOptional = testAttr(decl, AttrBit.OBJ_C_OPTIONAL),
+            isObjCMirrorSyntheticWrapper = testAttr(decl, AttrBit.OBJ_C_MIRROR_SYNTHETIC_WRAPPER),
+            isObjCCjMapping = testAttr(decl, AttrBit.OBJ_C_CJ_MAPPING),
+            isObjCInterfaceForward = testAttr(decl, AttrBit.CJ_MIRROR_OBJC_INTERFACE_FWD),
+            attributeNames = buildList {
+                for (index in 0 until decl.annotationsLength) {
+                    if (decl.annotations(index)?.kind == AnnoKind.TestRegistration) {
+                        add("TEST_REGISTER")
+                    }
+                }
+            },
+            cjmpTarget = when {
+                testAttr(decl, AttrBit.JAVA_CJ_MAPPING) -> CfirInteropTarget.JAVA
+                testAttr(decl, AttrBit.OBJ_C_CJ_MAPPING) -> CfirInteropTarget.OBJC
+                else -> null
+            },
+        )
+    }
+
+    /** Restore ClassInfo's compact annotation declaration metadata. */
+    private fun serializedAnnotationInfo(decl: Decl): CfirDeclarationAnnotationInfo? {
+        val info = decl.info(ClassInfo()) as? ClassInfo ?: return null
+        if (!testAttr(decl, AttrBit.IS_ANNOTATION) && !info.isAnno) return null
+        val firstMask = info.annoTargets.toInt()
+        val mask = if (firstMask == 0xff) {
+            CangjieAnnotationTarget.entries.fold(0) { result, target -> result or (1 shl target.bitPosition) }
+        } else {
+            firstMask or (info.annoTargets2.toInt() shl 7)
+        }
+        val targets = CangjieAnnotationTarget.entries
+            .filterTo(linkedSetOf()) { mask and (1 shl it.bitPosition) != 0 }
+        return CfirDeclarationAnnotationInfo(
+            isAnnotation = true,
+            annotationTargets = targets,
+            isIntrinsic = testAttr(decl, AttrBit.INTRINSIC),
+            runtimeVisible = info.runtimeVisible,
+        )
+    }
+
+    /**
+     * 恢复官方 ASTLoader 从 ClassInfo 合成的 `@Annotation` 节点。
+     *
+     * 当 annotation class 没有显式 target 参数时，ASTWriter 不写普通 Anno，
+     * 而是在 ClassInfo 中保存 target 位集和 runtime-visible 位。CJO loader
+     * 会在声明注解列表中补回一个 Annotation 节点；CFIR 也必须保留该节点，
+     * 否则源码与二进制声明会在 annotation identity 和目标检查入口上分叉。
+     */
+    private fun appendSerializedAnnotationMarker(declaration: CfirDeclaration) {
+        if (declaration.annotationInfo?.isAnnotation != true) return
+        if (declaration.annotations
+                .filterIsInstance<CfirAnnotationCall>()
+                .any { it.annotationKind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ANNOTATION }
+        ) return
+
+        val annotationBaseClassId = ClassId.topLevel(StandardNames.FqNames.annotation)
+        val annotationTypeRef = buildResolvedTypeRef {
+            customRenderer = false
+            coneType = ConeClassLikeType(
+                lookupTag = annotationBaseClassId.toLookupTag(),
+                typeArguments = emptyList(),
+            )
+        }
+        val marker = buildAnnotationCall {
+            source = null
+            typeRef = annotationTypeRef
+            coneTypeOrNull = annotationTypeRef.coneType
+            argumentList = buildArgumentList {}
+            calleeReference = buildNamedReference {
+                name = Name.identifier(StandardNames.FqNames.annotation.shortName().asString())
+            }
+            annotationClassId = annotationBaseClassId
+            annotationTarget = declaration.annotationTargetFor()
+            forcedCustom = false
+            annotationSourceName = StandardNames.FqNames.annotation.shortName().asString()
+            annotationKind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ANNOTATION
+            annotationIdentity = CangjieAnnotationIdentity.LanguageBuiltIn(
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ANNOTATION,
+                StandardNames.FqNames.annotation.shortName().asString(),
+            )
+            annotationOrigin = CangjieAnnotationOrigin.LANGUAGE_BUILT_IN
+            isCompileTimeVisible = false
+            containingDeclarationSymbol = declaration.symbol
+            annotationResolveState = CfirAnnotationResolveState.SEMANTIC_RESOLVED
+        }
+        declaration.replaceAnnotations(declaration.annotations + marker)
     }
 
     /**
@@ -881,6 +1243,7 @@ class CfirDeclDeserializer(
             returnTypeRef = returnTypeRef,
             name = name,
             valueParameters = valueParams,
+            hasVariableLenArg = false,
             body = null, // 库声明不加载函数体
             isMut = testAttr(decl, AttrBit.MUT),
         )
@@ -1093,6 +1456,7 @@ class CfirDeclDeserializer(
             name = name,
             initializer = null,
             isVar = isVar,
+            isTypeImplicit = false,
         )
         symbol.bind(cfirVar)
         cfirVar.markResolved()
@@ -1137,6 +1501,7 @@ class CfirDeclDeserializer(
             deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             initializer = null,
             isVar = info?.isVar ?: false,
+            isTypeImplicit = false,
             symbol = symbol,
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
@@ -1308,6 +1673,7 @@ class CfirDeclDeserializer(
             deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
             initializer = null,
             isVar = outerIsVar,
+            isTypeImplicit = false,
             symbol = symbol,
             typeParameters = mutableListOf(),
             returnTypeRef = returnTypeRef,
@@ -1335,6 +1701,7 @@ class CfirDeclDeserializer(
             copied.isMut = status.isMut
             copied.isUnsafe = status.isUnsafe
             copied.isForeign = status.isForeign
+            copied.isC = status.isC
             copied.isCommon = status.isCommon
             copied.isSpecific = status.isSpecific
             copied.isRedef = status.isRedef
@@ -1634,6 +2001,7 @@ class CfirDeclDeserializer(
             returnTypeRef = returnTypeRef,
             name = name,
             defaultValue = defaultValue,
+            isTypeImplicit = false,
 
         )
         symbol.bind(cfirParam)
