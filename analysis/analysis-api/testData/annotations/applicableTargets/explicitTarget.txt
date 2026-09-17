@@ -1,0 +1,5 @@
+CjClass: Provider
+annotations: [
+  @sample.annotations.targets.FunctionScoped
+    target: null
+]

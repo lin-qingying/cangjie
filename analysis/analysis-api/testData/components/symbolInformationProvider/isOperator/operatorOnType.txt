@@ -1,0 +1,5 @@
+CjNamedFunction: -
+symbolClass: CaCfirNamedFunctionSymbol
+isOperator: true
+isStatic: false
+isMutating: false

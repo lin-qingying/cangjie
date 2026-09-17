@@ -1,0 +1,7 @@
+callInfoClass: CaBaseSuccessCallInfo
+callsSize: 1
+symbolClass: CaCfirNamedFunctionSymbol
+name: provide
+callableId: sample.resolver.candidates.provide
+receiverType: null
+returnType: Int64

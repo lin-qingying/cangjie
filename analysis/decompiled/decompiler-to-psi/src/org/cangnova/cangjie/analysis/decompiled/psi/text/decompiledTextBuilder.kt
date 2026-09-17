@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjEnum
 import org.cangnova.cangjie.psi.CjEnumConstructor
@@ -118,18 +119,22 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         private inline val explicitThis get() = this
 
         override fun visitClass(cclass: org.cangnova.cangjie.psi.CjClass) {
+            renderAnnotations(cclass)
             renderTypeStatement(cclass)
         }
 
         override fun visitStruct(cstruct: org.cangnova.cangjie.psi.CjStruct) {
+            renderAnnotations(cstruct)
             renderTypeStatement(cstruct)
         }
 
         override fun visitInterface(cinterface: org.cangnova.cangjie.psi.CjInterface) {
+            renderAnnotations(cinterface)
             renderTypeStatement(cinterface)
         }
 
         override fun visitExtend(extend: CjExtend) {
+            renderAnnotations(extend)
             // extend 的目标是类型位置，不能对 Unit/Int64 等类型关键字做 renderIdentifier（会包 ``）
             renderTypeStatement(
                 typeStatement = extend,
@@ -139,7 +144,17 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitEnum(cenum: CjEnum) {
+            renderAnnotations(cenum)
             renderTypeStatement(cenum)
+        }
+
+        /** 将 CJO/CFIR annotation stub 投影回反编译源码前缀。 */
+        private fun renderAnnotations(declaration: CjAnnotated) {
+            declaration.annotationEntries.forEach { annotation ->
+                append("@")
+                append(annotation.shortName?.asString().orEmpty())
+                appendLine()
+            }
         }
 
         private fun renderTypeStatement(
@@ -194,6 +209,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitEnumConstructor(enumConstructor: CjEnumConstructor) {
+            renderAnnotations(enumConstructor)
             withSuffix(" ") { enumConstructor.modifierList?.accept(this) }
             append(enumConstructor.name?.let(::renderIdentifier).orEmpty())
             if (enumConstructor.hasParameters()) {
@@ -206,6 +222,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitTypeAlias(typeAlias: CjTypeAlias) {
+            renderAnnotations(typeAlias)
             withSuffix(" ") { typeAlias.modifierList?.accept(this) }
             append("type ")
             append(typeAlias.name?.let(::renderIdentifier).orEmpty())
@@ -215,6 +232,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitNamedFunction(function: CjNamedFunction) {
+            renderAnnotations(function)
             withSuffix(" ") { function.modifierList?.accept(this) }
             if (function.name == "init") {
                 append("init")
@@ -242,6 +260,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitMacroDeclaration(function: CjMacroDeclaration) {
+            renderAnnotations(function)
             withSuffix(" ") { function.modifierList?.accept(this) }
             append("macro ")
             append(function.name?.let(::renderIdentifier).orEmpty())
@@ -253,6 +272,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitMainFunction(mainFunction: CjMainFunction) {
+            renderAnnotations(mainFunction)
             withSuffix(" ") { mainFunction.modifierList?.accept(this) }
             append("main")
             mainFunction.valueParameterList?.accept(this) ?: append("()")
@@ -262,6 +282,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitSecondaryConstructor(constructor: CjSecondaryConstructor) {
+            renderAnnotations(constructor)
             withSuffix(" ") { constructor.modifierList?.accept(this) }
             append("init")
             constructor.valueParameterList?.accept(this) ?: append("()")
@@ -269,6 +290,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitPrimaryConstructor(constructor: CjPrimaryConstructor) {
+            renderAnnotations(constructor)
             withSuffix(" ") { constructor.modifierList?.accept(this) }
             append(constructor.name?.let(::renderIdentifier).orEmpty())
             constructor.valueParameterList?.accept(this) ?: append("()")
@@ -276,6 +298,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitFinalizer(constructor: CjFinalizer) {
+            renderAnnotations(constructor)
             withSuffix(" ") { constructor.modifierList?.accept(this) }
             append("~init")
             constructor.valueParameterList?.accept(this) ?: append("()")
@@ -283,6 +306,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitProperty(property: CjProperty) {
+            renderAnnotations(property)
             property.modifierList
                 ?.let { modifierList -> renderedModifiers(modifierList, excludedModifiers = setOf(CjTokens.MUT_KEYWORD)) }
                 ?.takeIf(String::isNotBlank)
@@ -323,6 +347,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitFieldVariable(field: CjFieldVariable) {
+            renderAnnotations(field)
             withSuffix(" ") { field.modifierList?.accept(this) }
             append(
                 when {
@@ -340,6 +365,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitPatternVariable(variable: CjPatternVariable) {
+            renderAnnotations(variable)
             withSuffix(" ") { variable.modifierList?.accept(this) }
             append(if (variable.isVar) "var " else "let ")
             append((variable.pattern as? CjBindingPattern)?.name?.let(::renderIdentifier) ?: "_")
@@ -351,6 +377,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitPropertyAccessor(accessor: CjPropertyAccessor) {
+            renderAnnotations(accessor)
             withSuffix(" ") { accessor.modifierList?.accept(this) }
             append(if (accessor.isGetter) "get" else "set")
             printPropertyAccessorParameterList(accessor)

@@ -86,8 +86,8 @@ internal class LLImplicitBodyResolveComputationSession : ImplicitBodyResolveComp
     private val postponedSymbols = setMultimapOf<CfirCallableSymbol<*>, CfirBasedSymbol<*>>()
 
     /**
-     * Postpone the resolution request to [symbol] until [annotation arguments][CfirResolvePhase.ANNOTATION_ARGUMENTS] phase
-     * of the declaration which is used this foreign annotation.
+     * Postpone the resolution request to [symbol] until the declaration's BODY_RESOLVE phase,
+     * where annotation arguments are resolved together with other body expressions.
      *
      * @see postponedSymbols
      */

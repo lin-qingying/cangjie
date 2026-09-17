@@ -9,6 +9,19 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
  * 供 IDE 在签名渲染、诊断、跨语言导航中统一消费。
  */
 interface CaInteropInfo : CaLifetimeOwner {
+    /** annotation/ABI resolver 发布的有效调用 ABI。 */
+    val abi: CaInteropAbi
+    val isC: Boolean get() = abi == CaInteropAbi.C
+    /** C ABI 声明是否是 C function；C struct 仅具有 C ABI，不是 CFunc。 */
+    val isCFunction: Boolean
+    val isFrozen: Boolean
+    val externalGetterName: String?
+    val externalSetterName: String?
+    val hasJavaDefault: Boolean
+    val isObjCInit: Boolean
+    val isObjCOptional: Boolean
+    /** 保留每次 FFI annotation 的身份和解析后参数，包含重复项。 */
+    val ffiAnnotations: List<org.cangnova.cangjie.analysis.api.annotations.CaAnnotation>
     /** 声明面向的互操作后端列表(可能同时含多个)。 */
     val backends: List<CaInteropBackend>
 

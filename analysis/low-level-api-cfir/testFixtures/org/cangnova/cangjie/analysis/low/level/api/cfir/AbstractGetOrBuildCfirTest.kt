@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirBinaryTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
@@ -151,3 +152,17 @@ private fun renderActualCfir(
  * source 配置下的 getOrBuildCfir 测试基类。
  */
 abstract class AbstractSourceGetOrBuildCfirTest : AbstractGetOrBuildCfirTest()
+
+/**
+ * LibraryBinary 配置下的 getOrBuildCfir 测试基类。
+ *
+ * main 测试模块按 `MODULE_KIND: LibraryBinary` 声明装配成 `CaLibraryModule`，
+ * 使 `<expr>` / `<caret>` 标记的声明经由 binary 库 session 路径完成
+ * getOrBuildCfir 构建与渲染（对齐 source 变体的标记与 golden 约定）。
+ */
+abstract class AbstractGetOrBuildCfirBinaryTest : AbstractGetOrBuildCfirTest() {
+    /**
+     * 使用 binary library 的 low-level CFIR 测试配置。
+     */
+    override val configurator = analysisApiCfirBinaryTestConfigurator()
+}

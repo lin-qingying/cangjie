@@ -1,0 +1,5 @@
+CjNamedFunction: compute
+symbolClass: CaCfirNamedFunctionSymbol
+isOperator: false
+isStatic: false
+isMutating: false

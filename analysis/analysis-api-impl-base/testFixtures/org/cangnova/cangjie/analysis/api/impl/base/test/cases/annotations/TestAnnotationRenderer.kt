@@ -135,6 +135,8 @@ object TestAnnotationRenderer {
 
             is CaAnnotationValue.TupleValue ->
                 value.values.joinToString(prefix = "(", postfix = ")") { element -> renderValue(element) }
+            is CaAnnotationValue.ArrayValue ->
+                value.values.joinToString(prefix = "[", postfix = "]") { element -> renderValue(element) }
 
             is CaAnnotationValue.ClassInstanceValue -> buildString {
                 append(value.classId?.asFqNameString() ?: "<unresolved-class-instance>")

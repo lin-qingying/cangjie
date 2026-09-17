@@ -42,4 +42,10 @@ public class CaBaseNamedAnnotationValue(
      */
     override val expression: CaAnnotationValue
         get() = withValidityAssertion { backingExpression }
+
+    override fun equals(other: Any?): Boolean =
+        this === other || other is CaBaseNamedAnnotationValue &&
+            backingName == other.backingName && backingExpression == other.backingExpression
+
+    override fun hashCode(): Int = 31 * backingName.hashCode() + backingExpression.hashCode()
 }

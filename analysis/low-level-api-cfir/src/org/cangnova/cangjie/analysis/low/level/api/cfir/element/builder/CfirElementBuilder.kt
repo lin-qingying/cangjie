@@ -138,9 +138,9 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
      *
      * This optimization makes sense only for [nonLocalContainer]s which might have such expensive resolution.
      * For instance, there is no need to avoid [CfirResolvePhase.BODY_RESOLVE] for dangling modifiers as they don't
-     * have bodies, so effectively it is the same as [CfirResolvePhase.ANNOTATION_ARGUMENTS].
+     * have bodies, so they can be resolved directly to [CfirResolvePhase.BODY_RESOLVE].
      *
-     * Declaration containers ([CjFile], [CjTypeStatement]) are resolved till [CfirResolvePhase.ANNOTATION_ARGUMENTS]
+     * Declaration containers ([CjFile], [CjTypeStatement]) are resolved till [CfirResolvePhase.BODY_RESOLVE]
      * by default in [FileStructure.getStructureElementFor],
      * so there is no need to use optimized search via [getCfirForElementInsideAnnotations]/[getCfirForElementInsideTypes]
      * as this is redundant work and effectively duplicate the logic of [CjToCfirMapping].

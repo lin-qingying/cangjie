@@ -5,6 +5,11 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -12,11 +17,18 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.declarations.annotationTargetFor
 import org.cangnova.cangjie.cfir.symbols.constructClassType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -97,20 +109,51 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
     private fun deserializeAnnotation(annotation: CjAnnotation, owner: CfirBasedSymbol<*>): CfirAnnotation {
         val source = CjRealPsiSourceElement(annotation)
         val classId = getAnnotationClassId(annotation)
+        val sourceSpelling = annotation.typeReference?.text?.trim()?.takeIf(String::isNotEmpty)
+        val shortName = classId.shortClassName
+        val moduleName = owner.cfir.moduleData.name.asString().removeSurrounding("<", ">")
+        val builtin = sourceSpelling?.let {
+            BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
+                sourceName = it,
+                forcedCustom = annotation.isCompileTimeVisible,
+                moduleName = moduleName,
+            )
+        }
+        val system = BuiltInAnnotationRegistry.findSystemAnnotation(classId.asSingleFqName())
         val typeRef = buildResolvedTypeRef {
             this.source = source
             coneType = classId.toLookupTag().constructClassType()
         }
         val arguments = annotation.valueArguments.mapNotNull { argument ->
-            argument.getArgumentExpression()?.let(::deserializeExpression)
+            val expression = argument.getArgumentExpression()?.let(::deserializeExpression) ?: return@mapNotNull null
+            val argumentName = argument.getArgumentName()?.asName
+            if (argumentName == null) {
+                expression
+            } else {
+                buildNamedArgumentExpression {
+                    this.expression = expression
+                    this.argumentName = argumentName
+                }
+            }
         }
         val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId)
 
-        return buildAnnotationCall {
+        val result = buildAnnotationCall {
             this.source = source
             this.typeRef = typeRef
             coneTypeOrNull = typeRef.coneType
-            this.arguments += arguments
+            annotationClassId = classId
+            annotationSourceName = sourceSpelling
+            annotationTarget = owner.cfir.annotationTargetFor()
+            forcedCustom = annotation.isCompileTimeVisible
+            annotationKind = builtin?.kind
+            isCompileTimeVisible = annotation.isCompileTimeVisible
+            annotationOrigin = builtin?.origin ?: system?.origin ?: CangjieAnnotationOrigin.CUSTOM
+            annotationIdentity = builtin?.let {
+                CangjieAnnotationIdentity.LanguageBuiltIn(it.kind, it.sourceName)
+            } ?: system?.let {
+                CangjieAnnotationIdentity.SystemMacro(it.classFqName, it.sourceName)
+            } ?: CangjieAnnotationIdentity.Custom(classId.asSingleFqName())
             argumentList = buildArgumentList {
                 this.source = source
                 this.arguments += arguments
@@ -132,7 +175,47 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
                 }
             }
             containingDeclarationSymbol = owner
+            annotationResolveState = CfirAnnotationResolveState.SEMANTIC_RESOLVED
         }
+
+        val constructor = classSymbol?.cfir?.declarations
+            ?.filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
+            ?.firstOrNull()
+        val resolvedArguments = buildResolvedArgumentList(
+            result.argumentList,
+            linkedMapOf<org.cangnova.cangjie.cfir.expressions.CfirExpression,
+                org.cangnova.cangjie.cfir.declarations.CfirValueParameter>().also { mapping ->
+                var positionalIndex = 0
+                for (argument in arguments) {
+                    val namedArgument = argument as? CfirNamedArgumentExpression
+                    val parameter = if (namedArgument != null) {
+                        constructor?.valueParameters?.firstOrNull { it.name == namedArgument.argumentName }
+                    } else {
+                        constructor?.valueParameters?.getOrNull(positionalIndex++)
+                    }
+                    if (parameter != null) mapping[argument] = parameter
+                }
+            },
+        )
+        result.replaceArgumentMapping(
+            CfirAnnotationArgumentMappingImpl(
+                source,
+                resolvedArguments.mapping.entries.associate { (argument, parameter) ->
+                    parameter.name to ((argument as? CfirNamedArgumentExpression)?.expression ?: argument)
+                },
+            ),
+        )
+        result.replaceArgumentView(resolvedArguments.toAnnotationArgumentView(constructor?.valueParameters.orEmpty()))
+        if (constructor != null) {
+            result.replaceCalleeReference(
+                buildResolvedNamedReference {
+                    this.source = source
+                    name = shortName
+                    resolvedSymbol = constructor.symbol
+                },
+            )
+        }
+        return result
     }
 
     /**

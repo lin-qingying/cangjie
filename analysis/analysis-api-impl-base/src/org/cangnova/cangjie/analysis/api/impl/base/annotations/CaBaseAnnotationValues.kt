@@ -18,6 +18,10 @@ import org.cangnova.cangjie.psi.CjElement
  * - 常量值只保存类型化后的真实值，由对象自身负责规范渲染
  */
 public object CaBaseAnnotationValues {
+    public fun unitValue(sourcePsi: CjElement?): CaConstantValue.UnitValue = UnitValueImpl(sourcePsi)
+    /** 数组值使用独立公开形态，不再以 tuple 冒充。 */
+    public fun arrayValue(values: List<CaAnnotationValue>, sourcePsi: CjElement?, token: CaLifetimeToken): CaAnnotationValue.ArrayValue =
+        ArrayValueImpl(values, sourcePsi, token)
     /**
      * 创建包装常量值的注解值对象。
      */
@@ -242,6 +246,22 @@ private class EnumValueImpl(
 /**
  * tuple 注解值实现。
  */
+private class UnitValueImpl(override val sourcePsi: CjElement?) : CaConstantValue.UnitValue {
+    override val value: Unit get() = Unit
+    override fun render(): String = "()"
+}
+
+private class ArrayValueImpl(
+    private val backingValues: List<CaAnnotationValue>,
+    private val backingSourcePsi: CjElement?,
+    override val token: CaLifetimeToken,
+) : CaAnnotationValue.ArrayValue {
+    override val values: List<CaAnnotationValue>
+        get() = withValidityAssertion { backingValues }
+    override val sourcePsi: CjElement?
+        get() = withValidityAssertion { backingSourcePsi }
+}
+
 private class TupleValueImpl(
     /**
      * tuple 内部的注解值列表。

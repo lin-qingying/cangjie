@@ -557,6 +557,65 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = AnnotationNoConstInit::class
     }
 
+    interface IllegalUseOfAnnotation : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalUseOfAnnotation::class
+        val declarationKind: String
+        val annotationName: String
+    }
+
+    interface AnnotationCallingConvNotSupport : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = AnnotationCallingConvNotSupport::class
+        val callingConvention: String
+    }
+
+    interface AnnotationInvalidArgsType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = AnnotationInvalidArgsType::class
+        val annotationName: String
+    }
+
+    interface CstructCannotHaveUnitFields : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CstructCannotHaveUnitFields::class
+    }
+
+    interface IllegalMemberOfCstruct : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalMemberOfCstruct::class
+        val fieldName: Name
+        val structName: Name
+    }
+
+    interface CfuncCannotHaveNamedArgs : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncCannotHaveNamedArgs::class
+    }
+
+    interface CfuncCannotHaveUnitArgs : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncCannotHaveUnitArgs::class
+    }
+
+    interface CffiCannotHaveTypeParam : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CffiCannotHaveTypeParam::class
+        val declarationKind: String
+    }
+
+    interface CfuncType : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = CfuncType::class
+    }
+
+    interface CfuncTooManyArguments : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncTooManyArguments::class
+    }
+
+    interface CfuncCtorMustBeCpointer : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncCtorMustBeCpointer::class
+    }
+
+    interface PointerSingleElementTypeError : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = PointerSingleElementTypeError::class
+    }
+
+    interface PointerTooMuchArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = PointerTooMuchArgument::class
+    }
+
     interface InvalidCfuncReturnType : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = InvalidCfuncReturnType::class
         val actualType: CaType

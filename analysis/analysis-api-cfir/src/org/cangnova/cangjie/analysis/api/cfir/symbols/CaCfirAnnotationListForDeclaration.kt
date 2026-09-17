@@ -40,10 +40,11 @@ internal class CaCfirAnnotationListForDeclaration private constructor(
     /**
      * 当前生命周期内按需构建的公开注解对象列表。
      */
-    private val backingAnnotations: List<CaAnnotation>
-        get() = withValidityAssertion {
+    private val backingAnnotations: List<CaAnnotation> by lazy(LazyThreadSafetyMode.NONE) {
+        withValidityAssertion {
             resolvedAnnotationCalls.map { annotation -> annotation.asPublicAnnotation(builder, builder.token) }
         }
+    }
 
     /**
      * 注解列表绑定的生命周期 token。
@@ -68,7 +69,7 @@ internal class CaCfirAnnotationListForDeclaration private constructor(
      * 判断声明上是否存在指定 classId 的注解。
      */
     override fun contains(classId: org.cangnova.cangjie.name.ClassId): Boolean = withValidityAssertion {
-        resolvedAnnotationCalls.any { annotation -> annotation.typeRef.annotationClassIdOrNull() == classId }
+        resolvedAnnotationCalls.any { annotation -> annotation.annotationClassId == classId }
     }
 
     /**
@@ -76,7 +77,7 @@ internal class CaCfirAnnotationListForDeclaration private constructor(
      */
     override fun get(classId: org.cangnova.cangjie.name.ClassId): List<CaAnnotation> = withValidityAssertion {
         resolvedAnnotationCalls
-            .filter { annotation -> annotation.typeRef.annotationClassIdOrNull() == classId }
+            .filter { annotation -> annotation.annotationClassId == classId }
             .map { annotation -> annotation.asPublicAnnotation(builder, builder.token) }
     }
 
@@ -84,7 +85,7 @@ internal class CaCfirAnnotationListForDeclaration private constructor(
      * 返回声明上所有可解析注解的 classId。
      */
     override val classIds: Collection<org.cangnova.cangjie.name.ClassId>
-        get() = withValidityAssertion { resolvedAnnotationCalls.mapNotNull { annotation -> annotation.typeRef.annotationClassIdOrNull() } }
+        get() = withValidityAssertion { resolvedAnnotationCalls.mapNotNull { annotation -> annotation.annotationClassId } }
 
     companion object {
         /**

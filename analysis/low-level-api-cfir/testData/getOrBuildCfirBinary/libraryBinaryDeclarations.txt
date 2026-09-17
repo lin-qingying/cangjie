@@ -1,0 +1,157 @@
+Analysis attempt #0
+CJ element: CjValueArgument
+CJ element text:
+value
+CFIR element: CfirNamedAccessExpressionImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+
+CFIR FILE:
+FILE: libraryBinaryDeclarations.cj
+    package lowlevel.getorbuild.binary
+    internal? class Box<T> {
+        internal? let value: R|T|
+        internal? let count: R|Int64|
+        init(value: R|kotlin.Unit|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(Box -> CfirConstructorSymbol) {
+                NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+            }
+        }
+    }
+    internal? func unwrap(box: R|Box<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #1
+CJ element: CjDotQualifiedExpression
+CJ element text:
+box.value
+CFIR element: CfirNamedAccessExpressionImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+    receiver:
+        NAMED_ACCESS(box -> CfirValueParameterSymbol(box))
+}
+
+CFIR FILE:
+FILE: libraryBinaryDeclarations.cj
+    package lowlevel.getorbuild.binary
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        internal? let count: R|Int64|
+        init(value: R|kotlin.Unit|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(Box -> CfirConstructorSymbol) {
+                NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+            }
+        }
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+                receiver:
+                    NAMED_ACCESS(box -> CfirValueParameterSymbol(box))
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #2
+CJ element: CjCallExpression
+CJ element text:
+wrap(41)
+CFIR element: CfirFunctionCallImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+FUNCTION_CALL(wrap -> CfirNamedFunctionSymbol(wrap)) {
+    INT(41)
+}
+
+CFIR FILE:
+FILE: libraryBinaryDeclarations.cj
+    package lowlevel.getorbuild.binary
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        internal? let count: R|Int64|
+        init(value: R|kotlin.Unit|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(Box -> CfirConstructorSymbol) {
+                NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+            }
+        }
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+                receiver:
+                    NAMED_ACCESS(box -> CfirValueParameterSymbol(box))
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #3
+CJ element: CjTypeReference
+CJ element text:
+Int64
+CFIR element: CfirResolvedTypeRefImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+R|kotlin.Unit|
+
+CFIR FILE:
+FILE: libraryBinaryDeclarations.cj
+    package lowlevel.getorbuild.binary
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        internal? let count: R|kotlin.Unit|
+        init(value: R|kotlin.Unit|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(Box -> CfirConstructorSymbol) {
+                NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+            }
+        }
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+                receiver:
+                    NAMED_ACCESS(box -> CfirValueParameterSymbol(box))
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>

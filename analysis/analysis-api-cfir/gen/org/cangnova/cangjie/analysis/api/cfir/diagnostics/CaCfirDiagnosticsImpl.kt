@@ -663,6 +663,78 @@ internal class AnnotationNoConstInitImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationNoConstInit
 
+internal class IllegalUseOfAnnotationImpl(
+    override val declarationKind: String,
+    override val annotationName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalUseOfAnnotation
+
+internal class AnnotationCallingConvNotSupportImpl(
+    override val callingConvention: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationCallingConvNotSupport
+
+internal class AnnotationInvalidArgsTypeImpl(
+    override val annotationName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationInvalidArgsType
+
+internal class CstructCannotHaveUnitFieldsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CstructCannotHaveUnitFields
+
+internal class IllegalMemberOfCstructImpl(
+    override val fieldName: Name,
+    override val structName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalMemberOfCstruct
+
+internal class CfuncCannotHaveNamedArgsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCannotHaveNamedArgs
+
+internal class CfuncCannotHaveUnitArgsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCannotHaveUnitArgs
+
+internal class CffiCannotHaveTypeParamImpl(
+    override val declarationKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CffiCannotHaveTypeParam
+
+internal class CfuncTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncType
+
+internal class CfuncTooManyArgumentsImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncTooManyArguments
+
+internal class CfuncCtorMustBeCpointerImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCtorMustBeCpointer
+
+internal class PointerSingleElementTypeErrorImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.PointerSingleElementTypeError
+
+internal class PointerTooMuchArgumentImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.PointerTooMuchArgument
+
 internal class InvalidCfuncReturnTypeImpl(
     override val actualType: CaType,
     cfirDiagnostic: CjPsiDiagnostic,

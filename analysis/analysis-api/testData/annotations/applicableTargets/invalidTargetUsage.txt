@@ -1,0 +1,5 @@
+CjClass: Misplaced
+annotations: [
+  @sample.annotations.targets.GlobalOnly
+    target: null
+]

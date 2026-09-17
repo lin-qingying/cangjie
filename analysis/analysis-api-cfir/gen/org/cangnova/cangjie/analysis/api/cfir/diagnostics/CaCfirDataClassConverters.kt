@@ -66,6 +66,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions45()
     addConversions46()
     addConversions47()
+    addConversions48()
     addConversions49()
     addConversions50()
     addConversions51()
@@ -133,6 +134,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions118()
     addConversions119()
     addConversions120()
+    addConversions121()
     addConversions122()
     addConversions123()
     addConversions124()
@@ -187,6 +189,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions176()
     addConversions177()
     addConversions178()
+    addConversions179()
     addConversions180()
     addConversions181()
     addConversions182()
@@ -391,6 +394,12 @@ private fun CaDiagnosticConverterBuilder.addConversions6() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions7() {
+    add(CfirErrors.POINTER_SINGLE_ELEMENT_TYPE_ERROR) { cfirDiagnostic ->
+        PointerSingleElementTypeErrorImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.STATIC_FUNCTION_OVERLOAD_CONFLICTS) { cfirDiagnostic ->
         StaticFunctionOverloadConflictsImpl(
             cfirDiagnostic.a,
@@ -604,6 +613,12 @@ private fun CaDiagnosticConverterBuilder.addConversions19() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions20() {
+    add(CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS) { cfirDiagnostic ->
+        CfuncCannotHaveNamedArgsImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.DIFFERENT_OR_PATTERN) { cfirDiagnostic ->
         DifferentOrPatternImpl(
             cfirDiagnostic.a,
@@ -850,6 +865,12 @@ private fun CaDiagnosticConverterBuilder.addConversions30() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions31() {
+    add(CfirErrors.POINTER_TOO_MUCH_ARGUMENT) { cfirDiagnostic ->
+        PointerTooMuchArgumentImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.NEW_INFERENCE_ERROR) { cfirDiagnostic ->
         NewInferenceErrorImpl(
             cfirDiagnostic.a,
@@ -1064,6 +1085,12 @@ private fun CaDiagnosticConverterBuilder.addConversions41() {
             token,
         )
     }
+    add(CfirErrors.CFUNC_CTOR_MUST_BE_CPOINTER) { cfirDiagnostic ->
+        CfuncCtorMustBeCpointerImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.INVISIBLE_MEMBER) { cfirDiagnostic ->
         InvisibleMemberImpl(
             cfirDiagnostic.a,
@@ -1177,6 +1204,15 @@ private fun CaDiagnosticConverterBuilder.addConversions46() {
 private fun CaDiagnosticConverterBuilder.addConversions47() {
     add(CfirErrors.IMPLICIT_RESUME_OUTSIDE_HANDLER) { cfirDiagnostic ->
         ImplicitResumeOutsideHandlerImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions48() {
+    add(CfirErrors.CSTRUCT_CANNOT_HAVE_UNIT_FIELDS) { cfirDiagnostic ->
+        CstructCannotHaveUnitFieldsImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -1515,6 +1551,12 @@ private fun CaDiagnosticConverterBuilder.addConversions65() {
             token,
         )
     }
+    add(CfirErrors.CFUNC_TYPE) { cfirDiagnostic ->
+        CfuncTypeImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.RANGE_STEP_CANNOT_BE_ZERO) { cfirDiagnostic ->
         RangeStepCannotBeZeroImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -1718,6 +1760,12 @@ private fun CaDiagnosticConverterBuilder.addConversions73() {
 private fun CaDiagnosticConverterBuilder.addConversions74() {
     add(CfirErrors.INVALID_ACCESS_CONTROL) { cfirDiagnostic ->
         InvalidAccessControlImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.CFUNC_TOO_MANY_ARGUMENTS) { cfirDiagnostic ->
+        CfuncTooManyArgumentsImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2346,6 +2394,14 @@ private fun CaDiagnosticConverterBuilder.addConversions105() {
             token,
         )
     }
+    add(CfirErrors.ILLEGAL_MEMBER_OF_CSTRUCT) { cfirDiagnostic ->
+        IllegalMemberOfCstructImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.INVALID_RETURN) { cfirDiagnostic ->
         InvalidReturnImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -2620,6 +2676,13 @@ private fun CaDiagnosticConverterBuilder.addConversions119() {
             token,
         )
     }
+    add(CfirErrors.ANNOTATION_INVALID_ARGS_TYPE) { cfirDiagnostic ->
+        AnnotationInvalidArgsTypeImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT) { cfirDiagnostic ->
         GenericTypeShouldBeUsedWithTypeArgumentImpl(
             cfirDiagnostic.a,
@@ -2653,6 +2716,17 @@ private fun CaDiagnosticConverterBuilder.addConversions120() {
     }
     add(CfirErrors.INVALID_USE_OF_JAVA_ANNOTATION) { cfirDiagnostic ->
         InvalidUseOfJavaAnnotationImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions121() {
+    add(CfirErrors.ILLEGAL_USE_OF_ANNOTATION) { cfirDiagnostic ->
+        IllegalUseOfAnnotationImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -3308,6 +3382,13 @@ private fun CaDiagnosticConverterBuilder.addConversions154() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions155() {
+    add(CfirErrors.ANNOTATION_CALLING_CONV_NOT_SUPPORT) { cfirDiagnostic ->
+        AnnotationCallingConvNotSupportImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED) { cfirDiagnostic ->
         UnqualifiedLeftValueAssignedImpl(
             cfirDiagnostic.a,
@@ -3831,6 +3912,15 @@ private fun CaDiagnosticConverterBuilder.addConversions178() {
     }
 }
 
+private fun CaDiagnosticConverterBuilder.addConversions179() {
+    add(CfirErrors.CFUNC_CANNOT_HAVE_UNIT_ARGS) { cfirDiagnostic ->
+        CfuncCannotHaveUnitArgsImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
 private fun CaDiagnosticConverterBuilder.addConversions180() {
     add(CfirErrors.UNEXPECTED_RETURN_TYPE_FOR_ENTRY) { cfirDiagnostic ->
         UnexpectedReturnTypeForEntryImpl(
@@ -4189,6 +4279,13 @@ private fun CaDiagnosticConverterBuilder.addConversions196() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions198() {
+    add(CfirErrors.CFFI_CANNOT_HAVE_TYPE_PARAM) { cfirDiagnostic ->
+        CffiCannotHaveTypeParamImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.TYPE_CANNOT_EXTEND_IMPORTED_INTERFACE) { cfirDiagnostic ->
         TypeCannotExtendImportedInterfaceImpl(
             cfirDiagnostic.a,
