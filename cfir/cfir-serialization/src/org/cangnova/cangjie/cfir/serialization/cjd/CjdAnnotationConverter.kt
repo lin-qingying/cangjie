@@ -83,8 +83,11 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
             val source = cjdAnnotationSource(syntax.rawText, syntax.range)
             val cone = classId?.let { ConeClassLikeType(ConeClassLikeLookupTagImpl(it), emptyList()) }
             val expressionConverter = CjdAnnotationExpressionConverter(sourceId, diagnostics)
+            val parserOwnedArguments = builtin?.argumentSyntax in setOf(CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS,
+                CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY, CangjieAnnotationArgumentSyntax.CALLING_CONVENTION_REFERENCE,
+                CangjieAnnotationArgumentSyntax.WHEN_CONDITION)
             val arguments = syntax.arguments.map { argument ->
-                val expression = expressionConverter.convert(argument.expression)
+                val expression = expressionConverter.convert(argument.expression, parserOwnedArguments)
                 argument.name?.let { explicitName ->
                     buildNamedArgumentExpression {
                         this.source = cjdAnnotationSource(argument.rawText, argument.range)

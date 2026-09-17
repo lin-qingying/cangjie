@@ -26,6 +26,7 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
             Files.writeString(path, text)
             val light = parser.parse(path)
             assertEquals(psi.declarations, light.declarations)
+            assertEquals(psi.annotationContext, light.annotationContext)
             kotlin.test.assertEquals(psi.diagnostics, light.diagnostics, text.take(150) + psi.diagnostics.joinToString { text.substring((it.range.startOffset - 80).coerceAtLeast(0), (it.range.endOffset + 80).coerceAtMost(text.length)) })
             return light
         } finally { Files.deleteIfExists(path) }
@@ -143,6 +144,35 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
         """.trimIndent())
         assertEquals(emptyList<CjdDiagnostic>(), index.diagnostics)
         assertEquals("APILevel", index.declarations.single().annotations.single().name)
+    }
+
+    @Test fun testAnnotationContextAndExpressionSnapshot() {
+        val index = parseBoth("""
+            package acme::sample.library
+            import ohos.labels.{APILevel as Level, Hide}
+            import extras.*
+            @!Level[since: "22", permission: "a" & "b"]
+            func f(): Unit
+            class APILevel {}
+        """.trimIndent())
+        assertTrue(index.isUsable, index.diagnostics.toString())
+        assertEquals("sample.library", index.annotationContext.packageFqName)
+        assertEquals("acme", index.annotationContext.organizationName)
+        assertEquals(listOf(CjdAnnotationImport("ohos.labels.APILevel", alias = "Level"),
+            CjdAnnotationImport("ohos.labels.Hide"), CjdAnnotationImport("extras", isAllUnder = true)), index.annotationContext.imports)
+        assertEquals(setOf("f", "APILevel"), index.annotationContext.declaredNames)
+        val arguments = index.declarations.first().annotations.single().arguments
+        assertEquals("STRING_TEMPLATE", arguments[0].expression.syntaxKind)
+        assertEquals("BINARY_EXPRESSION", arguments[1].expression.syntaxKind)
+        assertTrue(arguments[1].expression.children.isNotEmpty())
+    }
+
+    @Test fun testParserOwnedArgumentsAreNotDropped() {
+        val index = parseBoth("@OverflowWrapping[checked]\n@Attribute[Hot, \"Cold\"]\nfunc f(): Unit")
+        assertTrue(index.isUsable, index.diagnostics.toString())
+        val annotations = index.declarations.single().annotations
+        assertEquals("ANNOTATION_OVERFLOW_STRATEGY", annotations[0].arguments.single().expression.syntaxKind)
+        assertEquals(listOf("Hot", "\"Cold\""), annotations[1].arguments.map { it.expressionText })
     }
 
     @Test fun testConfiguredSdk() {
