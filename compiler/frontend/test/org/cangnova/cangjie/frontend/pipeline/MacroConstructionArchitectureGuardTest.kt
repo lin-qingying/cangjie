@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
@@ -758,6 +759,7 @@ class MacroConstructionArchitectureGuardTest {
         return MacroSurfaceExpr(
             surfaceId = surfaceId,
             qualifiedName = FqName.topLevel(Name.identifier(name)),
+            isQualifiedName = '.' in name,
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
@@ -765,6 +767,7 @@ class MacroConstructionArchitectureGuardTest {
             sourceRange = MacroSurfaceSourceRange(null, startOffset, endOffset),
             scopeContext = MacroSurfaceScopeContext(
                 packageFqName = packageFqName,
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
                 enclosingClassFqName = null,
                 enclosingFunctionName = Name.identifier("useMacro"),
             ),

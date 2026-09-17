@@ -5,6 +5,7 @@ import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Ref
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
@@ -28,11 +29,13 @@ import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
-import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPsiFactory
+import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 
 /**
@@ -76,8 +79,13 @@ private fun reparsePsiMacroFragment(
     val owner = input.node
     val surface = owner.surface
     val packageFqName = surface.scopeContext.packageFqName
-    val sourcePsi = (surface.sourceRange?.source as? CjPsiSourceElement)?.psi
-    val psiFactory = sourcePsi?.let { CjPsiFactory.contextual(it) } ?: CjPsiFactory(project)
+    val sourcePsi = when (val source = surface.sourceRange?.source) {
+        is CjPsiSourceElement -> source.psi
+        is CjLightSourceElement -> source.unwrapToCjPsiSourceElement()?.psi
+        else -> null
+    }
+    // 新 token 不继承宿主的 builtin-module；名称解析仍沿原始 PSI context 进行。
+    val psiFactory = CjPsiFactory.forMacroExpansion(project, sourcePsi)
     val builder = PsiRawCfirBuilder(session)
 
     return when {
@@ -85,12 +93,22 @@ private fun reparsePsiMacroFragment(
             val original = surface.replaceHandle.annotationCarrier?.owner as? CfirValueParameter
             val containingSymbol = original?.containingDeclarationSymbol ?: surface.replaceHandle.annotationCarrier?.owner?.symbol
                 ?: return null
-            val annotation = psiFactory.createAnnotations(text).entries.singleOrNull() ?: return null
+            val annotationText = text.withAbsoluteSourceStart(surface.sourceRange?.startOffset ?: 0)
+            val annotationFile = psiFactory.createAnnotationOnlyFile(
+                "$annotationText func __macro_annotation__() {}",
+            )
+            val annotation = PsiTreeUtil.findChildOfType(annotationFile, CjAnnotations::class.java)
+                ?.entries
+                ?.singleOrNull()
+                ?: return null
+            val annotationSourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
+                surface.annotationReparseSource(snapshot)
+            }
             builder.buildAnnotationCallInPackage(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
                 packageFqName = packageFqName,
-                sourceOverride = input.annotationSnapshot?.originalAnnotation?.source,
+                sourceOverride = annotationSourceOverride,
                 argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source,
             )
         }
@@ -108,10 +126,8 @@ private fun reparsePsiMacroFragment(
             builder.buildExpressionInPackage(expression, packageFqName)
         }
         else -> {
-            val declaration = runCatching {
-                psiFactory.createDeclaration<CjDeclaration>(text)
-            }.getOrNull() ?: return null
-            builder.buildDeclarationInPackage(declaration, packageFqName)
+            val fragment = psiFactory.createFile(text)
+            builder.buildDeclarationFragmentInPackage(fragment, packageFqName)
         }
     }
 }
@@ -133,8 +149,14 @@ private fun reparseLightTreeMacroFragment(
             val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner ?: return null
             val containingSymbol = (ownerDeclaration as? CfirValueParameter)?.containingDeclarationSymbol
                 ?: ownerDeclaration.symbol
-            val parsed = parseLightTreeAnnotationFragment(session, text)
-            val sourceOverride = input.annotationSnapshot?.originalAnnotation?.source
+            val parsed = parseLightTreeAnnotationFragment(
+                session = session,
+                text = text,
+                sourceStartOffset = surface.sourceRange?.startOffset ?: 0,
+            )
+            val sourceOverride: CjSourceElement? = input.annotationSnapshot?.let { snapshot ->
+                surface.annotationReparseSource(snapshot)
+            }
             val argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source
             val annotation = parsed.tree.findFirst(CjNodeTypes.ANNOTATION) ?: return null
             parsed.builder.buildAnnotationCallInPackage(
@@ -166,9 +188,36 @@ private fun reparseLightTreeMacroFragment(
         }
         else -> {
             val parsed = parseLightTreeFragment(session, text)
-            val declaration = parsed.tree.findFirstDeclaration() ?: return null
-            parsed.builder.buildDeclarationInPackage(declaration, packageFqName)
+            parsed.builder.buildDeclarationFragmentInPackage(parsed.tree.root, packageFqName)
         }
+    }
+}
+
+/**
+ * 为 annotation fragment 创建宿主源码范围。
+ *
+ * 重解析树的 source 仍必须保持为同一类 `CjSourceElement`；只有 LightTree
+ * source 可以安全地复用节点并改写范围，不能把无文件的抽象 offset 对象传入
+ * annotation builder，否则会丢失原始树能力。
+ */
+private fun org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface.annotationReparseSource(
+    snapshot: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot,
+): CjSourceElement? {
+    val range = sourceRange ?: return snapshot.originalAnnotation.source
+    val source = range.source ?: return snapshot.originalAnnotation.source
+    val endOffset = range.startOffset + snapshot.rawSyntax.length
+    return when (source) {
+        is org.cangnova.cangjie.source.CjLightSourceElement ->
+            org.cangnova.cangjie.source.CjLightSourceElement(
+                lighterASTNode = source.lighterASTNode,
+                startOffset = range.startOffset,
+                endOffset = endOffset,
+                treeStructure = source.treeStructure,
+                kind = source.kind,
+            )
+
+        is CjPsiSourceElement -> snapshot.originalAnnotation.source
+        else -> snapshot.originalAnnotation.source
     }
 }
 
@@ -193,19 +242,36 @@ private fun parseLightTreeFragment(
     session: CfirSession,
     text: String,
 ): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text) { builder ->
-    CangJieLightParser.parse(builder)
+    // 对齐 ReplaceEachMacro 的新 token parser，不调用 SetModuleName。
+    CangJieLightParser.parse(builder, languageModuleName = "")
 }
 
 /** 使用 annotation-only 语法解析 custom annotation 宏展开结果。 */
 private fun parseLightTreeAnnotationFragment(
     session: CfirSession,
     text: String,
+    sourceStartOffset: Int,
 ): ParsedLightTreeFragment {
     // annotation 在仓颉语法中必须附着于声明。这里与 PSI createAnnotations 使用同一建模：
     // 用语法载体声明形成标准 ANNOTATION 子树，最终只提取 annotation payload。
-    val fragmentText = "$text func __macro_annotation__() {}"
+    val fragmentText = text.withAbsoluteSourceStart(sourceStartOffset) + " func __macro_annotation__() {}"
     return createParsedLightTreeFragment(session, fragmentText) { builder ->
-        CangJieLightParser.parseAnnotationOnly(builder)
+        CangJieLightParser.parseAnnotationOnly(builder, languageModuleName = "")
+    }
+}
+
+/**
+ * 为临时重解析文本保留其在宿主文件中的绝对起点。
+ *
+ * PSI 与 LightTree 都从同一个带前导空格的文本开始构造 source；这样宏参数中
+ * 重新出现的 annotation 不会把临时树的局部 offset 泄漏到宿主文件。
+ */
+private fun String.withAbsoluteSourceStart(sourceStartOffset: Int): String {
+    require(sourceStartOffset >= 0) { "Annotation source start offset must be non-negative." }
+    if (sourceStartOffset == 0) return this
+    return buildString(sourceStartOffset + length) {
+        repeat(sourceStartOffset) { append(' ') }
+        append(this@withAbsoluteSourceStart)
     }
 }
 
@@ -240,13 +306,6 @@ private fun CjPsiFactory.createSingleParameter(text: String): CjParameter? {
     return runCatching {
         createParameterList("($text)").parameters.singleOrNull()
     }.getOrNull()
-}
-
-/**
- * 在 light tree 中查找第一个声明节点。
- */
-private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstDeclaration(): LighterASTNode? {
-    return findFirst(*fragmentDeclarationTypes)
 }
 
 /**
@@ -300,28 +359,6 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstExpressionAft
     }
     return null
 }
-
-/**
- * 宏片段可接受的顶层声明节点类型。
- */
-private val fragmentDeclarationTypes: Array<IElementType> = arrayOf(
-    CjNodeTypes.CLASS,
-    CjNodeTypes.INTERFACE,
-    CjNodeTypes.STRUCT,
-    CjNodeTypes.ENUM,
-    CjNodeTypes.EXTEND,
-    CjNodeTypes.FUNC,
-    CjNodeTypes.MAIN_FUNC,
-    CjNodeTypes.MACRO,
-    CjNodeTypes.FINALIZER,
-    CjNodeTypes.PRIMARY_CONSTRUCTOR,
-    CjNodeTypes.SECONDARY_CONSTRUCTOR,
-    CjNodeTypes.VARIABLE,
-    CjNodeTypes.FIELD,
-    CjNodeTypes.PROPERTY,
-    CjNodeTypes.TYPEALIAS,
-    CjNodeTypes.FOREIGN,
-)
 
 /**
  * 使用宏 payload tokenizer 对表面 token 文本重新分词。

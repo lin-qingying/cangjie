@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import PackageFormat.PackageKind
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
@@ -1031,16 +1032,23 @@ class MacroPackageCompilationOrchestrationTest {
 
     /**
      * 构造测试用表达式宏 surface。
+     * qualifiedName 参数就是 capturedRawSyntax 中的源码拼写。
      */
     private fun macroSurface(qualifiedName: String): MacroSurfaceExpr = MacroSurfaceExpr(
         surfaceId = 1,
         qualifiedName = FqName(qualifiedName),
+        isQualifiedName = '.' in qualifiedName,
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
         inputTokens = listOf(MacroSurfaceToken("arg", 0, 3)),
         sourceRange = null,
-        scopeContext = MacroSurfaceScopeContext(FqName("app"), null, null),
+        scopeContext = MacroSurfaceScopeContext(
+            packageFqName = FqName("app"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("app")),
+            enclosingClassFqName = null,
+            enclosingFunctionName = null,
+        ),
         modifiers = emptyList(),
         carriedAnnotations = emptyList(),
         capturedRawSyntax = "@$qualifiedName(arg)",

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.addCangJieSourceRoot
+import org.cangnova.cangjie.config.compileCjd
 import org.cangnova.cangjie.cfir.entrypoint.configuration.createForCfirFrontend
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -63,6 +64,51 @@ class CjSourceCollectionTest {
         val collected = collectCjSources(configuration, environment)
 
         assertEquals(0, collected.allSources.size)
+    }
+
+    /**
+     * 验证源收集两级互斥（声明文件支持 P3 / R1）：`compileCjd = false` 只收 `.cj`，`.cj.d` 被拒。
+     */
+    @Test
+    fun defaultModeCollectsOnlyCjSources() {
+        assertModeExclusiveSources(compileCjd = false, expectedName = "sample.cj", rejectedName = "declared.cj.d")
+    }
+
+    /**
+     * 验证源收集两级互斥（声明文件支持 P3 / R1）：`compileCjd = true` 只收 `.cj.d`，`.cj` 被拒——
+     * 互斥是双向的，声明模式不"顺便"收下实现文件。
+     */
+    @Test
+    fun declarationModeCollectsOnlyCjdSources() {
+        assertModeExclusiveSources(compileCjd = true, expectedName = "declared.cj.d", rejectedName = "sample.cj")
+    }
+
+    /**
+     * 在同一 source root 下放入 `.cj` 与 `.cj.d` 各一个文件，断言只有目标模式的文件被收集。
+     */
+    private fun assertModeExclusiveSources(compileCjd: Boolean, expectedName: String, rejectedName: String) {
+        val sourceDir = tempDir.resolve("src-${compileCjd}-${expectedName}").toFile().apply { mkdirs() }
+        File(sourceDir, "sample.cj").writeText("func main() {}")
+        File(sourceDir, "declared.cj.d").writeText("func declared(): Int64")
+
+        val collector = RecordingMessageCollector()
+        val configuration = CompilerConfiguration.createForCfirFrontend(messageCollector = collector)
+        configuration.compileCjd = compileCjd
+        configuration.addCangJieSourceRoot(sourceDir.absolutePath)
+
+        val environment = createEnvironment()
+        val collected = collectCjSources(configuration, environment)
+
+        val names = collected.allSources.map { it.path?.substringAfterLast('/') ?: it.path.orEmpty() }
+        assertTrue(
+            names.any { it == expectedName },
+            "`compileCjd = $compileCjd` 时必须收集 $expectedName，实际收集：$names",
+        )
+        assertTrue(
+            names.none { it == rejectedName },
+            "`compileCjd = $compileCjd` 时必须拒绝 $rejectedName（R1 两级互斥），实际收集：$names",
+        )
+        assertEquals(1, collected.allSources.size, "互斥模式下每个模式只允许一种文件被收集：$names")
     }
 
     /**

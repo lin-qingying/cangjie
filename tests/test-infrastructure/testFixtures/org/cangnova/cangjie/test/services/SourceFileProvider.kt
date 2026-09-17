@@ -97,7 +97,7 @@ fun TestFile.toLightTreeShortName() = name.substringAfterLast('/').substringAfte
  * 保存 `TestFile.isCjFile`，供测试服务在测试执行期间读取或传递。
  */
 val TestFile.isCjFile: Boolean
-    get() = name.endsWith(".cj") || name.endsWith(".cjs")
+    get() = name.endsWith(".cj") || name.endsWith(".cjs") || name.endsWith(".cj.d")
 /**
  * 执行 `getCjFilesForSourceFiles` 对应的测试服务流程，维持测试框架的阶段契约。
  */

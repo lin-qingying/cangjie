@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -14,6 +15,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
+import org.cangnova.cangjie.cfir.declarations.builder.buildFileCopy
+import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
 import org.cangnova.cangjie.cfir.declarations.builder.buildPatternVariable
@@ -22,9 +25,12 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
@@ -33,6 +39,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
@@ -72,6 +79,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -396,6 +404,102 @@ class FrontendMacroConstructionExecutionTest {
         assertEquals(MacroFragmentParser.Mode.EXPRESSION, parser.modes.single())
         assertSame(fixture.surface, splicer.slots.single().origin)
         assertTrue((result as MacroConstructionResult.Success).registry.diagnostics.isEmpty())
+    }
+
+    /**
+     * 固定源码、FQN、范围和展开文本，验证真实 construction 的缓存仍区分解析来源。
+     * 输入 surface 与输出注解分别改变模块来源，避免用其它维度的偶然变化掩盖遗漏。
+     */
+    @Test
+    fun constructionCacheSeparatesParserContextForIdenticalSourceAndSurface() {
+        val packageFqName = FqName("sample")
+        val macroFqName = FqName("macros.Generated")
+        val sourceText = "package sample\nimport macros.Generated\n@Generated func original() {}\n"
+        val expandedText = "@ConstSafe func expanded() {}"
+        val sourceRange = MacroSurfaceSourceRange(null, sourceText.indexOf("@Generated"), sourceText.length)
+
+        fun constructCacheKey(
+            parserModule: String,
+            qualified: Boolean,
+            annotationModule: String = "",
+        ): MacroExpansionCacheKey {
+            val session = object : CfirSession(CfirSession.Kind.Source) {}
+            val moduleData = TestModuleData(session)
+            session.register(CfirModuleData::class, moduleData)
+            val original = namedFunction(moduleData, packageFqName, "original")
+            val replacement = namedFunction(moduleData, packageFqName, "expanded")
+            val outputAnnotation = buildAnnotationCall {
+                typeRef = buildImplicitTypeRef()
+                annotationSourceName = "ConstSafe"
+                sourceModuleName = annotationModule
+                argumentList = buildArgumentList()
+                calleeReference = buildNamedReference { name = Name.identifier("ConstSafe") }
+                containingDeclarationSymbol = replacement.symbol
+            }
+            replacement.replaceAnnotations(listOf(outputAnnotation))
+            val file = buildFileCopy(fileWithDeclarations(moduleData, packageFqName, original)) {
+                symbol = CfirFileSymbol()
+                sourceFile = CjInMemoryTextSourceFile("sample.cj", "testdata/sample.cj", sourceText)
+                sourceFileLinesMapping = sourceText.toSourceLinesMapping()
+                imports += buildImport {
+                    importedFqName = macroFqName
+                    isAllUnder = false
+                }
+            }
+            val originalSurface = declarationSurface(
+                surfaceId = 3090L,
+                qualifiedName = macroFqName,
+                packageFqName = packageFqName,
+                carrier = original,
+            )
+            val surface = originalSurface.copy(
+                sourceRange = sourceRange,
+                capturedRawSyntax = "@Generated func original() {}",
+                isQualifiedName = qualified,
+                scopeContext = originalSurface.scopeContext.copy(sourceModuleName = parserModule),
+            )
+            val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+            val executor = RecordingExecutor(
+                MacroExpansionResult.Success(listOf(tokenInfo(expandedText)), expandedText),
+            )
+            val configuration = CompilerConfiguration().apply {
+                macroExecutorFactory = MacroExecutorFactory { executor }
+                macroFragmentParserFactory = MacroFragmentParserFactory { StaticPayloadParser(replacement) }
+            }
+
+            val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+                pre = pre,
+                context = contextWithArtifact(pre, "Generated"),
+                mode = MacroConstructionService.Mode.STRICT,
+            )
+
+            assertTrue(result is MacroConstructionResult.Success)
+            assertTrue(result.registry.diagnostics.isEmpty())
+            assertEquals("Generated", executor.calls.single().idName)
+            assertSame(replacement, file.declarations.single())
+            assertSame(outputAnnotation, replacement.annotations.single())
+            return result.registry.cacheKeys.values.single()
+        }
+
+        val original = constructCacheKey(parserModule = "", qualified = false)
+        val differentModule = constructCacheKey(parserModule = "std", qualified = false)
+        val differentQualification = constructCacheKey(parserModule = "", qualified = true)
+        val differentAnnotationModule = constructCacheKey(parserModule = "", qualified = false, annotationModule = "std")
+
+        assertEquals(original, constructCacheKey(parserModule = "", qualified = false))
+        for (changed in listOf(differentModule, differentQualification, differentAnnotationModule)) {
+            assertEquals(original.sourceContentHash, changed.sourceContentHash)
+            assertEquals(original.fileIdentity, changed.fileIdentity)
+            assertEquals(original.importsHash, changed.importsHash)
+            assertEquals(original.modulePackageIdentity, changed.modulePackageIdentity)
+            assertNotEquals(original.stableHash(), changed.stableHash())
+        }
+        assertNotEquals(original.macroSurfaceRangesHash, differentModule.macroSurfaceRangesHash)
+        assertNotEquals(original.macroSurfaceRangesHash, differentQualification.macroSurfaceRangesHash)
+        assertEquals(original.runtimeFingerprint, differentModule.runtimeFingerprint)
+        assertEquals(original.runtimeFingerprint, differentQualification.runtimeFingerprint)
+        assertEquals(original.macroSurfaceRangesHash, differentAnnotationModule.macroSurfaceRangesHash)
+        assertNotEquals(original.runtimeFingerprint, differentAnnotationModule.runtimeFingerprint)
     }
 
     /**
@@ -1434,6 +1538,7 @@ class FrontendMacroConstructionExecutionTest {
      * 构造表达式宏 surface。
      *
      * 该 surface 默认位于函数体块内，并携带表达式替换句柄，是宏执行测试中最常见的输入形态。
+     * qualifiedName 参数直接作为 capturedRawSyntax 中的源码拼写，并非包名补全后的内部名称。
      */
     private fun expressionSurface(
         surfaceId: Long,
@@ -1443,12 +1548,18 @@ class FrontendMacroConstructionExecutionTest {
     ): MacroSurfaceExpr = MacroSurfaceExpr(
         surfaceId = surfaceId,
         qualifiedName = qualifiedName,
+        isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
         inputTokens = listOf(MacroSurfaceToken("arg", 0, 3)),
         sourceRange = sourceRange,
-        scopeContext = MacroSurfaceScopeContext(packageFqName, null, null),
+        scopeContext = MacroSurfaceScopeContext(
+            packageFqName = packageFqName,
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
+            enclosingClassFqName = null,
+            enclosingFunctionName = null,
+        ),
         modifiers = emptyList(),
         carriedAnnotations = emptyList(),
         capturedRawSyntax = "@${qualifiedName.asString()}(arg)",
@@ -1465,6 +1576,7 @@ class FrontendMacroConstructionExecutionTest {
      * 构造声明宏 surface。
      *
      * 声明 surface 的替换句柄指向给定函数声明，用于验证声明级 stable splice 目标。
+     * qualifiedName 参数直接作为 capturedRawSyntax 中的源码拼写，并非包名补全后的内部名称。
      */
     private fun declarationSurface(
         surfaceId: Long,
@@ -1474,12 +1586,18 @@ class FrontendMacroConstructionExecutionTest {
     ): MacroSurfaceDecl = MacroSurfaceDecl(
         surfaceId = surfaceId,
         qualifiedName = qualifiedName,
+        isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
         inputTokens = listOf(MacroSurfaceToken("decl", 0, 4)),
         sourceRange = null,
-        scopeContext = MacroSurfaceScopeContext(packageFqName, null, null),
+        scopeContext = MacroSurfaceScopeContext(
+            packageFqName = packageFqName,
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
+            enclosingClassFqName = null,
+            enclosingFunctionName = null,
+        ),
         modifiers = emptyList(),
         carriedAnnotations = emptyList(),
         capturedRawSyntax = "@${qualifiedName.asString()}",
@@ -1496,6 +1614,7 @@ class FrontendMacroConstructionExecutionTest {
      * 构造参数宏 surface。
      *
      * 参数 surface 的替换句柄指向给定值参数，用于验证参数级宏展开结果不会误写到其他声明位置。
+     * qualifiedName 参数直接作为 capturedRawSyntax 中的源码拼写，并非包名补全后的内部名称。
      */
     private fun parameterSurface(
         surfaceId: Long,
@@ -1505,12 +1624,18 @@ class FrontendMacroConstructionExecutionTest {
     ): MacroSurfaceParam = MacroSurfaceParam(
         surfaceId = surfaceId,
         qualifiedName = qualifiedName,
+        isQualifiedName = '.' in qualifiedName.asString(),
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
         inputTokens = listOf(MacroSurfaceToken("param", 0, 5)),
         sourceRange = null,
-        scopeContext = MacroSurfaceScopeContext(packageFqName, null, null),
+        scopeContext = MacroSurfaceScopeContext(
+            packageFqName = packageFqName,
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
+            enclosingClassFqName = null,
+            enclosingFunctionName = null,
+        ),
         modifiers = emptyList(),
         carriedAnnotations = emptyList(),
         capturedRawSyntax = "@${qualifiedName.asString()}",
@@ -1538,12 +1663,18 @@ class FrontendMacroConstructionExecutionTest {
     private fun ifAvailableSurface(): IfAvailableSurface = IfAvailableSurface(
         surfaceId = 3002L,
         qualifiedName = FqName.topLevel(Name.identifier("IfAvailable")),
+        isQualifiedName = false,
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
         inputTokens = listOf(MacroSurfaceToken("condition", 0, 9)),
         sourceRange = null,
-        scopeContext = MacroSurfaceScopeContext(FqName("sample"), null, null),
+        scopeContext = MacroSurfaceScopeContext(
+            packageFqName = FqName("sample"),
+            sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(FqName("sample")),
+            enclosingClassFqName = null,
+            enclosingFunctionName = null,
+        ),
         modifiers = emptyList(),
         carriedAnnotations = emptyList(),
         capturedRawSyntax = "@IfAvailable(condition)",

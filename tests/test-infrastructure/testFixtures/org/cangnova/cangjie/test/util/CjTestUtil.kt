@@ -4,6 +4,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.impl.PsiFileFactoryImpl
 import com.intellij.testFramework.LightVirtualFile
+import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
+import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.TestMetadata
@@ -72,7 +75,14 @@ object CjTestUtil {
     @JvmStatic
     fun createFile(name: String, text: String, project: Project): CjFile {
         val shortName = name.substringAfterLast('/').substringAfterLast('\\')
-        val virtualFile = LightVirtualFile(shortName, CangJieLanguage, text.convertLineSeparators())
+        // 文件种类由文件名决定（单一真源）：`.cj.d` 必须拿到声明 FileType，
+        // 否则 CjFile.sourceKind 推导为 SOURCE，声明模式的解析与检查在 PSI 测试路径全部失效。
+        val fileType = if (CjSourceKind.fromFileName(shortName).isDeclaration) {
+            CangJieDeclarationFileType
+        } else {
+            CangJieFileType.INSTANCE
+        }
+        val virtualFile = LightVirtualFile(shortName, fileType, text.convertLineSeparators())
         virtualFile.charset = StandardCharsets.UTF_8
 
         val factory = PsiFileFactory.getInstance(project) as PsiFileFactoryImpl

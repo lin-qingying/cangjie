@@ -43,12 +43,15 @@ import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.builder.buildAugmentedAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildIfAvailableExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildRangeExpression
 import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpression
@@ -367,6 +370,69 @@ class Cfir2ChirCoverageTest {
         assertTrue(primitive.attributes.any { it is ChirStringAttribute && it.key == "cfir.primitive.kind" && it.value == "INT32" })
         assertEquals("int32", codeFragment.returnType.renderName)
         assertTrue(ChirStringAttribute("cfir.kind", "codeFragment") in codeFragment.attributes)
+    }
+
+    /**
+     * 验证 named argument、if-available 与 augmented assignment 会以独立操作名 lowering，并保留语义属性。
+     */
+    @Test
+    fun `lowers named argument if-available and augmented assignment expressions`() {
+        val function = functionWithBody(
+            name = "newExpressionForms",
+            returnType = ConePrimitiveType.INT32,
+            bodyType = ConePrimitiveType.INT32,
+            statements = listOf(
+                buildNamedArgumentExpression {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    expression = intLiteral(7)
+                    argumentName = Name.identifier("value")
+                },
+                buildIfAvailableExpression {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    conditionName = Name.identifier("foo")
+                    condition = boolLiteral(true)
+                    thenBranch = intLiteral(1)
+                    elseBranch = intLiteral(2)
+                },
+                buildAugmentedAssignment {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    operation = Name.identifier("+=")
+                    leftArgument = intLiteral(3)
+                    rightArgument = intLiteral(4)
+                },
+            ),
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val operations = chirFunction.otherOperations()
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_NAMED_ARGUMENT.canonicalName in operations)
+        assertTrue(Cfir2ChirOperation.CFIR_IF_AVAILABLE.canonicalName in operations)
+        assertTrue(Cfir2ChirOperation.CFIR_AUGMENTED_ASSIGNMENT.canonicalName in operations)
+
+        val namedArgument = otherExpressions.single { it.operation == Cfir2ChirOperation.CFIR_NAMED_ARGUMENT.canonicalName }
+        assertTrue(
+            namedArgument.attributes.any {
+                it is ChirStringAttribute && it.key == "cfir.argumentName" && it.value == "value"
+            },
+        )
+        val ifAvailable = otherExpressions.single { it.operation == Cfir2ChirOperation.CFIR_IF_AVAILABLE.canonicalName }
+        assertEquals(3, ifAvailable.operands.size)
+        assertTrue(
+            ifAvailable.attributes.any {
+                it is ChirStringAttribute && it.key == "cfir.conditionName" && it.value == "foo"
+            },
+        )
+        val augmented = otherExpressions.single { it.operation == Cfir2ChirOperation.CFIR_AUGMENTED_ASSIGNMENT.canonicalName }
+        assertEquals(2, augmented.operands.size)
+        assertTrue(
+            augmented.attributes.any {
+                it is ChirStringAttribute && it.key == "cfir.binary.kind" && it.value == "+="
+            },
+        )
     }
 
     /**

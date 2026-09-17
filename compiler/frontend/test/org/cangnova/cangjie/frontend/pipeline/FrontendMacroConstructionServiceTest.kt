@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.frontend.pipeline
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -124,6 +125,7 @@ class FrontendMacroConstructionServiceTest {
         val surface = MacroSurfaceDecl(
             surfaceId = 2001L,
             qualifiedName = FqName.topLevel(Name.identifier("MissingAnnotationMacro")),
+            isQualifiedName = false,
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
@@ -131,6 +133,7 @@ class FrontendMacroConstructionServiceTest {
             sourceRange = null,
             scopeContext = MacroSurfaceScopeContext(
                 packageFqName = packageFqName,
+                sourceModuleName = BuiltInAnnotationRegistry.sourceModuleName(packageFqName),
                 enclosingClassFqName = null,
                 enclosingFunctionName = null,
             ),

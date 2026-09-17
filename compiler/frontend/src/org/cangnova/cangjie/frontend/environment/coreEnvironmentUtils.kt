@@ -4,13 +4,16 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.config.CangJieSourceRoot
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cangjieSourceRoots
+import org.cangnova.cangjie.config.compileCjd
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.extensions.CompilerConfigurationExtension
 import org.cangnova.cangjie.extensions.PreprocessedFileCreator
 import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import java.io.File
 
@@ -60,10 +63,31 @@ fun List<CangJieSourceRoot>.forAllFiles(
             listOf(StandardFileSystems.local()).findFileByPath(file.normalize().path, StandardFileSystems.FILE_PROTOCOL)
         },
         filter = { virtualFile, isExplicit ->
-            if (virtualFile.extension != CangJieFileType.EXTENSION) {
+            // 种类判定：先 FileType（精确），再回退到完整文件名（R2：extension 对 a.cj.d 是 "d"，不可用）。
+            val sourceKind = when {
+                virtualFile.fileType is CangJieDeclarationFileType -> CjSourceKind.DECLARATION
+                virtualFile.fileType is CangJieFileType -> CjSourceKind.SOURCE
+                else -> CjSourceKind.fromFileName(virtualFile.nameSequence.toString())
+            }
+
+            // 仓颉家族成员不需要借助插件扩展做文件类型注册 —— 只有非家族文件才触发
+            // 惰性插件配置（既有行为：原条件是 `extension != "cj"`，家族扩展后同步放宽）。
+            val isCangJieFamilyFile = virtualFile.extension == CangJieFileType.EXTENSION ||
+                    virtualFile.fileType is CangJieFileType ||
+                    virtualFile.fileType is CangJieDeclarationFileType
+            if (!isCangJieFamilyFile) {
                 ensurePluginsConfigured()
             }
-            val isCangJie = virtualFile.extension == CangJieFileType.EXTENSION || virtualFile.fileType == CangJieFileType.INSTANCE
+
+            // 与 GroupedCjSources 相同的互斥分流（R1）：SOURCE 与 DECLARATION 按模式二选一，
+            // MACRO_CALL 恒拒。`isExplicit && !isCangJie` 的 ERROR 上报是既有行为，保留。
+            val isCangJie = when (sourceKind) {
+                CjSourceKind.SOURCE ->
+                    virtualFile.extension == CangJieFileType.EXTENSION ||
+                            virtualFile.fileType == CangJieFileType.INSTANCE
+                CjSourceKind.DECLARATION -> configuration.compileCjd
+                CjSourceKind.MACRO_CALL -> false
+            }
             if (isExplicit && !isCangJie) {
                 configuration.messageCollector.report(
                     CompilerMessageSeverity.ERROR,
