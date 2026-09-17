@@ -616,6 +616,9 @@ class FrontendMacroConstructionService(
             }
 
             is MacroResolution.BuiltinNonMacro -> tokensForBuiltinNonMacro(surface, refreshedTokens)
+            is MacroResolution.BuiltinAnnotation -> error(
+                "Builtin annotation ${resolution.name.asString()} must not enter macro expansion.",
+            )
             is MacroResolution.CustomAnnotation -> {
                 val snapshot = decision.annotationCarrier
                     ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) }
@@ -1305,6 +1308,7 @@ class FrontendMacroConstructionService(
                 ?.let { annotationMetadataRegistry?.snapshot(it) }
             "${surface.qualifiedName?.asString().orEmpty()}|" +
                     "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}|" +
+                    "qualified=${surface.isQualifiedName}|module=${surface.scopeContext.sourceModuleName}|" +
                     "slot=${snapshot?.stableCacheText().orEmpty()}"
         }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
@@ -1396,7 +1400,9 @@ class FrontendMacroConstructionService(
                     val args = annotation.argumentList.arguments.joinToString(separator = ",") { argument ->
                         argument.source?.text?.toString().orEmpty()
                     }
-                    "${annotation.typeRef.source?.text?.toString().orEmpty()}[$args]"
+                    "${annotation.typeRef.source?.text?.toString().orEmpty()}[$args]|" +
+                        "module=${annotation.sourceModuleName}|forced=${annotation.forcedCustom}|" +
+                        "compileTimeVisible=${annotation.isCompileTimeVisible}"
                 }
 
                 else -> annotation.source?.text?.toString().orEmpty()
@@ -1412,6 +1418,7 @@ class FrontendMacroConstructionService(
             "raw=$rawSyntax",
             "forced=$forcedCustom",
             "compileTimeVisible=$isCompileTimeVisible",
+            "module=${originalAnnotation.sourceModuleName}",
             "fqn=${qualifiedName?.asString().orEmpty()}",
             "args=${argumentText.orEmpty()}",
             "tokens=${tokens.joinToString(separator = "") { it.text }}",

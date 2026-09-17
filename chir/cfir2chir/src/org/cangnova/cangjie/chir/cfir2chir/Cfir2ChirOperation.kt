@@ -54,4 +54,7 @@ internal enum class Cfir2ChirOperation(
     CFIR_THIS_RECEIVER("cfir.this_receiver"),
     CFIR_INACCESSIBLE_RECEIVER("cfir.inaccessible_receiver"),
     CFIR_SMART_CAST("cfir.smart_cast"),
+    CFIR_IF_AVAILABLE("cfir.if_available"),
+    CFIR_NAMED_ARGUMENT("cfir.named_argument"),
+    CFIR_AUGMENTED_ASSIGNMENT("cfir.augmented_assignment"),
 }

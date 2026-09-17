@@ -1805,7 +1805,7 @@ class JvmFunctionCodegen(
     /**
      * 选择 float 比较使用的 `FCMPL` 或 `FCMPG` 指令。
      *
-     * JVM 浮点比较必须按操作符选择 *CMPL/*CMPG，保证 NaN 下有序比较为 false。
+     * JVM 浮点比较必须按操作符选择 `*CMPL` 或 `*CMPG`，保证 NaN 下有序比较为 false。
      */
     private fun floatingComparisonOpcode(zeroCompareOpcode: Int): Int {
         return when (zeroCompareOpcode) {

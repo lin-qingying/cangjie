@@ -1,4 +1,6 @@
-package org.cangnova.cangjie.chir.cfir2chir
+package org.cangnova.cangjie.jvm.codegen.pipeline
+
+import org.cangnova.cangjie.chir.cfir2chir.DefaultCfir2ChirConverter
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities

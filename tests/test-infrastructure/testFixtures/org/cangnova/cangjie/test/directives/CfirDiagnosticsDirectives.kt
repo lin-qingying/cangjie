@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.test.directives
 
 import org.cangnova.cangjie.test.CfirParser
+import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.test.directives.model.DirectiveApplicability
 import org.cangnova.cangjie.test.directives.model.SimpleDirectivesContainer
 
@@ -118,6 +119,23 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
      */
     val DUMP_INFERENCE_LOGS by directive(
         description = "Enables CFIR inference logger collection and dumps it to a side file.",
+    )
+
+    /** 启用官方 `--enable-interop-cjmapping` 声明派生。 */
+    val ENABLE_INTEROP_CJMAPPING by directive(
+        description = "Enables compiler-derived CJMapping metadata for the selected interop target.",
+    )
+
+    /** 选择官方 CJMapping 的目标互操作语言。 */
+    val TARGET_INTEROP_LANGUAGE by enumDirective<CfirInteropTarget>(
+        description = "Selects the CJMapping interop target language.",
+        additionalParser = { value ->
+            when (value) {
+                "Java" -> CfirInteropTarget.JAVA
+                "ObjC" -> CfirInteropTarget.OBJC
+                else -> null
+            }
+        },
     )
 
 

@@ -69,6 +69,9 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirAugmentedAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirIfAvailableExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
 import org.cangnova.cangjie.cfir.expressions.CfirOptionalExpression
 import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
@@ -447,6 +450,9 @@ internal class Cfir2ChirFunctionBodyConverter(
             is CfirOptionalExpression -> lowerWrappedExpression(expression, Cfir2ChirOperation.CFIR_OPTIONAL)
             is CfirOptionalChainExpression -> lowerWrappedExpression(expression, Cfir2ChirOperation.CFIR_OPTIONAL_CHAIN)
             is CfirInoutArgumentExpression -> lowerWrappedExpression(expression, Cfir2ChirOperation.CFIR_INOUT_ARGUMENT)
+            is CfirNamedArgumentExpression -> lowerNamedArgumentExpression(expression)
+            is CfirIfAvailableExpression -> lowerIfAvailableExpression(expression)
+            is CfirAugmentedAssignment -> lowerAugmentedAssignmentExpression(expression)
             is CfirWrappedExpression -> lowerWrappedExpression(expression, Cfir2ChirOperation.CFIR_QUALIFIED_ACCESS)
             is CfirPerformExpression -> lowerUnaryCfirExpression(expression, expression.expression, Cfir2ChirOperation.CFIR_PERFORM)
             is CfirResumeExpression -> lowerResumeExpression(expression)
@@ -481,6 +487,7 @@ internal class Cfir2ChirFunctionBodyConverter(
                 CfirLiteralKind.INT,
                 CfirLiteralKind.FLOAT,
                 CfirLiteralKind.RUNE,
+                CfirLiteralKind.BYTE,
                 -> expression.value?.toString()
                     ?: throw Cfir2ChirConversionException("literal ${expression.kind} has null value", expression)
                 CfirLiteralKind.UNIT -> error("unit literal is handled before value materialization")
@@ -1278,6 +1285,62 @@ internal class Cfir2ChirFunctionBodyConverter(
             source = expression,
             operands = listOfNotNull(lowerExpression(expression.expression)),
             resultType = expression.resultTypeOrNull(),
+        )
+
+    /**
+     * Lower 具名实参表达式，保留参数名以便后端诊断和调用侧还原。
+     */
+    private fun lowerNamedArgumentExpression(expression: CfirNamedArgumentExpression): ChirValue? =
+        emitOtherValue(
+            operation = Cfir2ChirOperation.CFIR_NAMED_ARGUMENT,
+            source = expression,
+            operands = listOfNotNull(lowerExpression(expression.expression)),
+            resultType = expression.resultTypeOrNull(),
+            attributes = attributes("cfir.argumentName" to expression.argumentName.asString()),
+        )
+
+    /**
+     * Lower `if (available(x))` 条件可用表达式为保留三分支结构的 CFIR 操作。
+     */
+    private fun lowerIfAvailableExpression(expression: CfirIfAvailableExpression): ChirValue? {
+        val operands = buildList {
+            expression.condition?.let { condition ->
+                add(
+                    lowerExpression(condition)
+                        ?: throw Cfir2ChirConversionException("if-available condition does not produce a CHIR value", condition),
+                )
+            }
+            add(
+                lowerExpression(expression.thenBranch)
+                    ?: throw Cfir2ChirConversionException("if-available then branch does not produce a CHIR value", expression.thenBranch),
+            )
+            add(
+                lowerExpression(expression.elseBranch)
+                    ?: throw Cfir2ChirConversionException("if-available else branch does not produce a CHIR value", expression.elseBranch),
+            )
+        }
+        return emitOtherValue(
+            operation = Cfir2ChirOperation.CFIR_IF_AVAILABLE,
+            source = expression,
+            operands = operands,
+            resultType = expression.resultTypeOrNull(),
+            attributes = attributes("cfir.conditionName" to expression.conditionName.asString()),
+        )
+    }
+
+    /**
+     * Lower 复合赋值表达式为保留操作名与左右操作数的 CFIR 操作。
+     */
+    private fun lowerAugmentedAssignmentExpression(expression: CfirAugmentedAssignment): ChirValue? =
+        emitOtherValue(
+            operation = Cfir2ChirOperation.CFIR_AUGMENTED_ASSIGNMENT,
+            source = expression,
+            operands = listOfNotNull(
+                lowerExpression(expression.leftArgument),
+                lowerExpression(expression.rightArgument),
+            ),
+            resultType = expression.resultTypeOrNull(),
+            attributes = attributes("cfir.binary.kind" to expression.operation.asString()),
         )
 
     /**

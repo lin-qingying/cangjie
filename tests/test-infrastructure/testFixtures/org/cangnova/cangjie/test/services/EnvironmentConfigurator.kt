@@ -147,6 +147,14 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
         register(CfirDiagnosticsDirectives.CHECK_PROGRAM_ENTRY, CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
         register(CfirDiagnosticsDirectives.NO_SUB_PKG, CfirFrontendConfigurationKeys.NO_SUB_PACKAGE)
+        register(
+            CfirDiagnosticsDirectives.ENABLE_INTEROP_CJMAPPING,
+            CfirFrontendConfigurationKeys.ENABLE_INTEROP_CJMAPPING,
+        )
+        register(
+            CfirDiagnosticsDirectives.TARGET_INTEROP_LANGUAGE,
+            CfirFrontendConfigurationKeys.TARGET_INTEROP_LANGUAGE,
+        )
     }
 
     /**

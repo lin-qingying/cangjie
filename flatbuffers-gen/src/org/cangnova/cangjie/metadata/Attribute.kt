@@ -541,6 +541,35 @@ enum class Attribute {
      */
     CONTAINS_MOCK_CREATION_CALL,
 
+    /** common/specific 双侧声明的来源属性，位序必须与官方 AST Attribute 保持一致。 */
+    COMMON,
+    FROM_COMMON_PART,
+    COMMON_NON_EXHAUSTIVE,
+    SPECIFIC,
+    COMMON_WITH_DEFAULT,
+
+    /** Java FFI 及其生成 wrapper 的声明属性。 */
+    JAVA_MIRROR,
+    JAVA_MIRROR_SUBTYPE,
+    JAVA_HAS_DEFAULT,
+    JAVA_MIRROR_SYNTHETIC_WRAPPER,
+
+    /** Objective-C FFI 及其生成 wrapper 的声明属性。 */
+    OBJ_C_MIRROR,
+    OBJ_C_MIRROR_SUBTYPE,
+    OBJ_C_INIT,
+    OBJ_C_OPTIONAL,
+
+    /** Java/Objective-C CJMapping 与接口转发属性。 */
+    JAVA_CJ_MAPPING,
+    OBJ_C_CJ_MAPPING,
+    CJ_MIRROR_JAVA_INTERFACE_FWD,
+    DESUGARED_MIRROR_FIELD,
+    HAS_INITED_FIELD,
+    OBJ_C_MIRROR_SYNTHETIC_WRAPPER,
+    CJ_MIRROR_JAVA_INTERFACE_DEFAULT,
+    CJ_MIRROR_OBJC_INTERFACE_FWD,
+
     /**
      * 属性枚举结束标记。
      */
