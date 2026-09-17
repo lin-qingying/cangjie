@@ -23,7 +23,7 @@ import kotlin.test.assertTrue
 /**
  * FFI 声明容器及注解语法结构契约。
  *
- * 语法依据官方 896235c9fd18f22d570a9818ac672838c36c3932 的 ParseAnnotations.cpp；
+ * 语法依据官方 v1.0.0 的 ParseAnnotations.cpp；
  * 这里断言 token、参数和归属，合法声明目标由 FFI 双路语义矩阵另行验证。
  */
 class ForeignAndAnnotationParsingTest : CjParsingTestCase(
@@ -85,7 +85,6 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
     fun builtInArgumentFormsPreserveTheirAnnotationNodes() {
         val annotationForms = listOf(
             "C" to "@C",
-            "Java" to "@Java[\"java.lang.String\"]",
             "JavaMirror" to "@JavaMirror[\"java.lang.Object\"]",
             "JavaImpl" to "@JavaImpl",
             "JavaHasDefault" to "@JavaHasDefault",

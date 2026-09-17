@@ -6857,3 +6857,53 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
 - fixtures covered: PSI builtin annotation forms、CallingConv positive/negative FFI semantic-contract 及 PSI/LightTree 双入口参数诊断。
 - verification command and outcome: CallingConv/annotation 参数四个 CFIR 负例双入口 4/4 通过；`gradlew-queue.bat :psi:test --tests 'org.cangnova.cangjie.psi.ForeignAndAnnotationParsingTest' --console=plain` BUILD SUCCESSFUL。
 - remaining risks: builtin registry 中 Java/ObjC 与平台宏的跨路径 class identity、CJO/stub/decompiled、Analysis API、backend ABI/link/load/run 仍未完成全路径验收。
+
+## 2026-09-17：v1.0.0 Java source identity 与旧 fixture 复核
+
+- problem type: Built-in annotation identity / Java source parser boundary。
+- root cause: 之前按旧版 compiler 证据把 `Java` 设为 source parser builtin；v1.0.0 的 `NAME_TO_ANNO_KIND` 实际不含 `Java`，只在 AST 中保留 `AnnotationKind::JAVA` 供互操作元数据使用。错误的 source identity 会把普通 `@Java` 制造成 Java interop 声明。
+- official Cangjie evidence: v1.0.0 `external/cangjie_compiler/include/cangjie/Parse/Parser.h:52-60` 的名称表不含 `Java`；`external/cangjie_compiler/include/cangjie/AST/Node.h:480-500` 仍定义 AST kind。cjc 1.0.5 clean probe 对 `@C class` 报 `sema_illegal_use_of_annotation`，对 source `@Java` 报 `sema_undeclared_identifier`，对 `extend NativeBox <: Printable` 报 `sema_c_type_cannot_extend_interface`。
+- Kotlin counterpart files consulted: 无语言语义对应；仅沿用 common registry 与 PSI facade 的分层。
+- CFIR owner files changed: `common/src/org/cangnova/cangjie/annotations/CangjieAnnotationModel.kt`、`common/test/org/cangnova/cangjie/annotations/BuiltInAnnotationRegistryTest.kt`、`psi/test/org/cangnova/cangjie/psi/ForeignAndAnnotationParsingTest.kt`。
+- repair principle: 保留官方 AST kind 的兼容身份，但把 source parser entry 独立建模为 false；source lowering 只能依据 parser entry 发布语言 builtin identity。
+- fixtures covered: `cfir/analysis-tests/testData/macro/diagnostics/coverage/extensions/extendCTypeNotAllowed.cj`、PSI `ForeignAndAnnotationParsingTest` builtin forms。
+- fixture correction: 按 cjc 结果为 `@C class` 补充 `ILLEGAL_USE_OF_ANNOTATION`，把 `@Java` 改为 `UNRESOLVED_REFERENCE`，移除未被官方确认的 `EXTEND_A_JAVA_TYPE`。
+- verification command(s) and outcome: `gradlew-queue.bat :common:test --tests '*BuiltInAnnotationRegistryTest' :cfir:analysis-tests:test --tests '...CfirAnalysisMacroTestGenerated$Llt$Annotation.testErrTargetType' --tests '...CfirAnalysisMacroPsiTestGenerated$Llt$Annotation.testErrTargetType' --console=plain` → BUILD SUCCESSFUL；`gradlew-queue.bat :psi:test --tests 'org.cangnova.cangjie.psi.ForeignAndAnnotationParsingTest' ...` → 9/9；最终 Annotation/Extensions 汇总中的 Extensions 2/2 通过。相对 `56-optional-full` 的完整 testcase-key 复核为 `FIXED=216`、`REGRESSED=10`、`NEW=77`（`NEW_FAILURES=0`）、`REMOVED=0`、`UNCHANGED_FAILURES=181`、`CHANGED_FAILURES=32`；相对上一份 2026-09-17 全量快照新增的 8 条 Enum 回归与基线中的 2 条 Typealias 回归均来自其他会话 dirty 路径，本项没有新增失败。
+- supersedes: 本日志早先“Java 进入 official source parser identity”的结论仅记录了旧 revision 路径，已被本项 v1.0.0 复核取代。
+- remaining risks: JavaMirror/JavaImpl 等平台 annotation 的 source custom/class identity 仍需独立重构；不据此宣称完整 Java interop。
+
+## 2026-09-17：`@Annotation.target` 的 Array<AnnotationKind> 类型契约与失败状态
+
+- problem type: Built-in annotation argument typing / annotation target metadata publication。
+- root cause: builtin annotation resolver 将 `target` synthetic parameter 降成 `Any`，`publishAnnotationInfo` 又会把无法求值的 target 元素部分映射后继续发布，导致 `@Annotation[target: [1]]` 漏诊断并可能把失败 metadata 当成合法集合。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckAnnotation.cpp:97-129` 将 target 检查为 `Array<AnnotationKind>`；cjc 1.0.5 probe 对整数/布尔元素分别报告 `sema_cannot_convert_literal`，对返回 `Int64` 的调用报告 `sema_mismatched_types`。
+- Kotlin counterpart files consulted: Kotlin FIR argument mapping/type mismatch owner 仅作为结构分层参考；具体类型规则采用官方仓颉实现。
+- CFIR owner files changed: `cfir/cfir-cones/src/org/cangnova/cangjie/cfir/types/StdlibClassIds.kt`、`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/plugin/CfirBuiltinAnnotationResolver.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirTypeSemanticsDiagnostics.kt`、`cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirBuiltInAnnotationSemanticsChecker.kt`、`cfir/providers/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAnnotationInfoProvider.kt`、`cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirDeclarationAnnotationInfo.kt`。
+- repair principle: 由唯一 type/annotation owner发布 `Array<AnnotationKind>` 期望和显式 INVALID 状态；共享 literal mismatch owner负责 `CANNOT_CONVERT_LITERAL`，不复制参数绑定表或在消费方静默回退。
+- fixtures covered: 新增 `cfir/analysis-tests/testData/macro/llt/annotation/err_target_type.cj`，由 generator 生成 PSI/LightTree 两条测试。
+- verification command(s) and outcome: `gradlew-queue.bat :common:test --tests '*BuiltInAnnotationRegistryTest' :cfir:analysis-tests:test --tests '...CfirAnalysisMacroTestGenerated$Llt$Annotation.testErrTargetType' --tests '...CfirAnalysisMacroPsiTestGenerated$Llt$Annotation.testErrTargetType' --console=plain` → BUILD SUCCESSFUL，新增 target 类型测试 2/2；完整 Annotation 双入口 166 条中仅 4 条原有 `ok_class_07`/TSAN `globalfunc` 失败，`err_const_arg_01` 回归已恢复。
+- remaining risks: 复杂非字面量错误类型的官方诊断优先级仍需扩充矩阵；CJO/stub/decompiled、Analysis API、CHIR/backend 不在本项范围。
+
+## 2026-09-17：FFI/注解 fixture 期望与全量 testcase-key 复核
+
+- problem type: FFI diagnostic range/fixture baseline correction。
+- root cause: `subsript_with_member_access_let` 的 `CANNOT_ASSIGN_TO_IMMUTABLE` 期望只覆盖左值，官方 `Diags.cpp` 以 `AssignExpr` 为诊断节点，CFIR 当前范围覆盖完整赋值；`extendCTypeNotAllowed` 同时保留了旧版 Java/C annotation 期望。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/Diags.cpp:357-364` 从赋值表达式发布 immutable 诊断；v1.0.0 `external/cangjie_compiler/src/Sema/FFI/CFFICheck.cpp:39-84` 规定 `@C` 目标和 C 类型 extend 限制；cjc clean probe 与修正后的 source identity 一致。
+- Kotlin counterpart files consulted: Kotlin FIR full PSI element diagnostic range policy；具体 Cangjie FFI 规则仍由 official compiler/cjc 决定。
+- CFIR owner files changed: 无新的 checker owner；修正 `cfir/analysis-tests/testData/macro/llt/varray/subsript_with_member_access_let.cj` 与 `.../diagnostics/coverage/extensions/extendCTypeNotAllowed.cj` 的已被官方证伪期望。
+- repair principle: 只修正官方行为已证明过时的 golden，不弱化 checker，也不删除 fixture；诊断范围遵守项目 full-token policy。
+- fixtures covered: Extensions 2 条、Varray 下标 2 条，均 PSI/LightTree；FFI、Varray-CFFI 作为回归族继续覆盖。
+- verification command(s) and outcome: `gradlew-queue.bat :common:test ... :cfir:analysis-tests:test --tests '...Annotation*' --tests '...Diagnostics$Coverage$Extensions' --tests '...Varray' --console=plain` → `218 tests completed, 4 failed`，失败仅为既有 `ok_class_07` 与 TSAN `globalfunc` 各双入口；Extensions 2/2、Varray 2/2 通过。全量 `:cfir:analysis-tests:test --console=plain` → `8637 tests completed, 223 failed, 307 skipped`；台账快照 `cfir/analysis-tests/build/ffi-annotation-verification/20260917-full-after-target-annotation`：相对 `20260917-full-after-raw-annotation` 为 `FIXED=4`、`REGRESSED=8`、`NEW=2`、`REMOVED=0`、`UNCHANGED_FAILURES=215`、`CHANGED_FAILURES=0`。新增 2 个 target key 均通过；8 条回归全部是无注解/FFI关联的 Enum fixture，属于其他会话执行期间的 dirty 基线漂移。
+- remaining risks: 全量仍有 223 条失败；除本项闭合的 4 条外，APILevel merge、宏、Enum 及其他既有族未在本项修复；不报告“全部正确”或“完整 FFI”。
+
+## 2026-09-17：`@Intrinsic` 通用 target 误报移除
+
+- problem type: Built-in annotation target ownership。
+- root cause: registry 将 `Intrinsic` 硬编码为 `GLOBAL_FUNCTION`，通用 target checker 因而会拒绝 class；官方 parser 的 intrinsic-specific checks 只在 function declaration/body 阶段处理。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/ParseDecl.cpp:1539-1549` 只对 intrinsic function 检查 top-level/body；cjc 1.0.5 probe 中 `@Intrinsic class A {}` 无目标诊断，而函数 body 和 member function 分别报告 `parse_intrinsic_function_cannot_have_body` 与 `parse_intrinsic_function_must_be_toplevel`。
+- Kotlin counterpart files consulted: 无直接 Cangjie 语义对应；CFIR 保留 declaration checker owner 分层。
+- CFIR owner files changed: `common/src/org/cangnova/cangjie/annotations/CangjieAnnotationModel.kt`、`common/test/org/cangnova/cangjie/annotations/BuiltInAnnotationRegistryTest.kt`。
+- repair principle: empty target set表示“由 intrinsic 专用 owner 处理”，不表示注解无效；避免通用 target checker制造官方不存在的诊断。
+- fixtures covered: common builtin registry matrix；FFI/annotation 总回归未出现新增 Intrinsic 失败。
+- verification command(s) and outcome: `gradlew-queue.bat :common:test --tests '*BuiltInAnnotationRegistryTest' ...` → BUILD SUCCESSFUL；官方 probe 结果如上。
+- remaining risks: CFIR 尚未把官方两个 parse intrinsic diagnostics 作为独立 checker/诊断 owner 完整建模；本项只关闭通用 target 误报，不宣称 `@Intrinsic` 全语义完成。

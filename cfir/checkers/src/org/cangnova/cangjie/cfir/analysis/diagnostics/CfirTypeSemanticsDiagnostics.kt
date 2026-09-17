@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.isBoolean
 import org.cangnova.cangjie.cfir.types.isFloatType
@@ -111,7 +112,13 @@ internal fun literalConversionMismatch(
     }
     if (target !is ConeTypeParameterType &&
         !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune
-    ) return null
+    ) {
+        // `@Annotation(target: [...])` 的目标类型是
+        // `std.core.AnnotationKind` 枚举，而不是标量 primitive。官方前端仍将
+        // 数组中的标量字面量归类为 `sema_cannot_convert_literal`；该分类应留在
+        // 共享 literal/type mismatch owner 中，不能让 annotation checker 再复制一套规则。
+        if (target !is ConeEnumType) return null
+    }
     val description = when (literal.kind) {
         CfirLiteralKind.INT, CfirLiteralKind.BYTE -> "integer".takeIf { !target.isIntegerType }
         CfirLiteralKind.FLOAT -> "floating-point".takeIf { !target.isFloatType }

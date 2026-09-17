@@ -5,7 +5,7 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.*
-import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import java.math.BigInteger
 import java.util.IdentityHashMap
 
@@ -19,9 +19,21 @@ fun CfirDeclaration.publishAnnotationInfo() {
     val targetArgument = annotation?.argumentValue("target") as? CfirArrayLiteral
     // A missing target argument means all targets; an explicitly empty array means no target.
     val targetEvaluator = AnnotationKindConstantEvaluator()
-    val targetSet = when {
-        annotation == null || targetArgument == null -> CangjieAnnotationTarget.entries.toSet()
-        else -> targetArgument.elements.mapNotNull(targetEvaluator::evaluate).toSet()
+    val evaluatedTargets = targetArgument?.elements?.map(targetEvaluator::evaluate)
+    val targetStatus = when {
+        annotation == null -> CfirAnnotationTargetResolutionStatus.NOT_ANNOTATION
+        annotation.argumentView?.entries?.any { !it.isDefaultOrigin && it.argument != null } != true ->
+            CfirAnnotationTargetResolutionStatus.ALL_TARGETS
+        targetArgument == null -> CfirAnnotationTargetResolutionStatus.INVALID
+        evaluatedTargets!!.all { it != null } -> CfirAnnotationTargetResolutionStatus.RESOLVED
+        else -> CfirAnnotationTargetResolutionStatus.INVALID
+    }
+    val targetSet = when (targetStatus) {
+        CfirAnnotationTargetResolutionStatus.NOT_ANNOTATION,
+        CfirAnnotationTargetResolutionStatus.ALL_TARGETS,
+        -> CangjieAnnotationTarget.entries.toSet()
+        CfirAnnotationTargetResolutionStatus.RESOLVED -> evaluatedTargets!!.filterNotNull().toSet()
+        CfirAnnotationTargetResolutionStatus.INVALID -> emptySet()
     }
     val overflow = calls.lastOrNull { it.annotationKind == BuiltInAnnotationKind.NUMERIC_OVERFLOW }?.let { call ->
         // Overflow is parser-owned syntax.  Its optional square-bracket
@@ -52,6 +64,11 @@ fun CfirDeclaration.publishAnnotationInfo() {
     annotationInfo = CfirDeclarationAnnotationInfo(
         isAnnotation = annotation != null || serialized?.isAnnotation == true,
         annotationTargets = if (annotation == null && serialized != null) serialized.annotationTargets else targetSet,
+        annotationTargetResolutionStatus = if (annotation == null && serialized != null) {
+            serialized.annotationTargetResolutionStatus
+        } else {
+            targetStatus
+        },
         isIntrinsic = has(BuiltInAnnotationKind.INTRINSIC) || serializedInteropFacts?.isIntrinsic == true,
         isConstSafe = has(BuiltInAnnotationKind.CONSTSAFE),
         isMockSupported = has(BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK),
@@ -192,7 +209,7 @@ private class AnnotationKindConstantEvaluator {
     }
 
     private fun CfirEnumConstructorSymbol.annotationTargetValue(): Value {
-        if (callableId.classId != ClassId.fromString("std/core/AnnotationKind")) return Value.Unknown
+        if (callableId.classId != StdlibClassIds.AnnotationKind) return Value.Unknown
         return CangjieAnnotationTarget.entries
             .firstOrNull { it.sourceName == name.asString() }
             ?.let(Value::Target)

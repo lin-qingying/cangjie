@@ -1,11 +1,11 @@
 // RUN_PIPELINE_TILL: FRONTEND
-@C
+<!ILLEGAL_USE_OF_ANNOTATION!>@C<!>
 class NativeBox {}
 
-@Java
+@<!UNRESOLVED_REFERENCE!>Java<!>
 class JavaBox {}
 
 interface Printable {}
 
 extend <!EXTEND_C_TYPE_NOT_ALLOWED!>NativeBox<!> <: Printable {}
-extend <!EXTEND_A_JAVA_TYPE!>JavaBox<!> <: Printable {}
+extend JavaBox <: Printable {}

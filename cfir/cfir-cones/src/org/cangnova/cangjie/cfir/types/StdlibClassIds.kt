@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.types
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 
 /**
  * 标准库（std.core）类型 ClassId 常量。
@@ -49,6 +50,8 @@ object StdlibClassIds {
     @JvmField val Error = ClassId(core, StandardNames.ERROR)
     /** `std.core.Resource`。 */
     @JvmField val Resource = ClassId(core, StandardNames.RESOURCE)
+    /** `std.core.AnnotationKind`，`@Annotation(target: [...])` 的元素类型。 */
+    @JvmField val AnnotationKind = ClassId(core, Name.identifier("AnnotationKind"))
 
     // ---- std.core 核心接口 ----
 
@@ -113,7 +116,7 @@ object StdlibClassIds {
      */
     @JvmField
     val allClassIds: Set<ClassId> = setOf(
-        Object, Any, String, Array, Option, Range, CType, Exception, Error, Resource,
+        Object, Any, String, Array, Option, Range, CType, Exception, Error, Resource, AnnotationKind,
         Comparable, Equatable, Countable, Iterable, Collection, ToString, Future, ThreadContext,
         Command, Resumption,
     )

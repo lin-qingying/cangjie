@@ -989,6 +989,12 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
                 runTest("cfir/analysis-tests/testData/macro/llt/annotation/err_sealed.cj")
             }
 
+            @TestMetadata("err_target_type.cj")
+            @Test
+            fun testErrTargetType() {
+                runTest("cfir/analysis-tests/testData/macro/llt/annotation/err_target_type.cj")
+            }
+
             @TestMetadata("ok_class_00.cj")
             @Test
             fun testOkClass00() {
