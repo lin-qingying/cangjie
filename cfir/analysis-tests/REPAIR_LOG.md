@@ -1,5 +1,16 @@
 # CFIR LLT Repair Log
 
+## 2026-09-17：PSI/LightTree 保留 Attribute、Overflow、When 专用参数
+
+- problem type: Built-in annotation special grammar / Raw CFIR lowering parity。
+- root cause: 专用 PSI/LightTree 节点 `ANNTATION_ATTR_ATTRIBUTE`、`ANNOTATION_OVERFLOW_STRATEGY`、`ANNOTATION_WHEN_CONDITION` 没有进入 `convertAnnotationArguments`，导致 `@Attribute[...]` 的属性名、显式 overflow strategy 和 `@When[...]` 条件在 Raw CFIR 中被丢弃；普通 value-argument 与 CallingConv 路径不受影响。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/ParseAnnotations.cpp:19-39` 将 Attribute token 保存到 `anno.attrs`，`:41-61` 保存 `overflowStrategy`，`:63-91` 保存 `condExpr`；`ParseAnnotation` 在 `:313-334` 为三种 AnnotationKind 选择专用 parser。
+- CFIR owner files changed: `cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt`、`cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt`、`LightTreeRawCfirExpressionBuilder.kt`；`EnumConstructorAnnotationRawCfirTest.kt` 增加两入口结构断言。
+- repair principle: 两条 lowering 路径都把专用 grammar 转成同一套 Raw CFIR argument surface，并保留每个 token 的 source；后续 builtin resolver/provider 继续消费统一参数列表，不从完整 annotation 文本回猜语义。
+- fixtures covered: 新增 PSI/LightTree `@Attribute[customFlag, "backendFlag"]`、`@OverflowWrapping[checked]`、`@When[DEBUG]` Raw CFIR contract；原有枚举 annotation、参数 provenance 和 FFI 双入口回归。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:raw-cfir:psi2cfir:compileKotlin :cfir:raw-cfir:light-tree2cfir:compileKotlin` → BUILD SUCCESSFUL；`gradlew-queue.bat :cfir:raw-cfir:light-tree2cfir:test --tests '*EnumConstructorAnnotationRawCfirTest' -x :cfir:cfir-serialization:compileKotlin -x :cfir:entrypoint:compileKotlin` → 8/8 通过，PSI/LightTree 专用参数断言均通过。
+- remaining risks: `.cj.d` 未提交改动仍阻塞正常 CFIR 全链编译；When 的条件求值/条件编译产物和全部平台 metadata 路径仍需独立验收。
+
 ## 2026-09-17：Java 内置注解进入官方 source parser identity
 
 - problem type: Built-in annotation identity / Java FFI。
