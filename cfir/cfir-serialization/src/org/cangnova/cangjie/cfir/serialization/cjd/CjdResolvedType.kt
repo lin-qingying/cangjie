@@ -23,7 +23,7 @@ data class CjdBinaryTypeTarget(val name: String, val packageName: String, val ex
 
 /**
  * Type/Ty 有向比较。Qualified 只比较末段名（官方 MergeAnnoFromCjd.cpp），不臆造源码限定路径。
- * Rune 按现有 TypeKey 策略统一为 UInt8；目标 Unknown 始终拒绝，包括源 Opaque。
+ * 原始类型保留身份（Rune 不等于 UInt8）；目标 Unknown 始终拒绝，包括源 Opaque。
  */
 fun TypeKey.matchesResolved(target: CjdResolvedType): Boolean {
     if (target is CjdResolvedType.Unknown) return false
@@ -49,5 +49,6 @@ fun TypeKey.matchesResolved(target: CjdResolvedType): Boolean {
     }
 }
 
+/** 逐位比较两侧类型键列表；长度或任一分量不匹配即失败。 */
 internal fun List<TypeKey>.matchResolvedTypes(target: List<CjdResolvedType>): Boolean =
     size == target.size && indices.all { this[it].matchesResolved(target[it]) }

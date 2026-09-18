@@ -149,28 +149,33 @@ class CfirDeclDeserializer(
                 // attributes/FuncInfo instead of `Anno`.  Attach those facts
                 // before publishing the canonical declaration snapshot so
                 // binary consumers follow the same producer as source CFIR.
-                result.serializedInteropFacts = serializedInteropFacts(decl)
-                result.annotationInfo = serializedAnnotationInfo(decl)
-                appendSerializedAnnotationMarker(result)
-                if (result is CfirMemberDeclaration) {
-                    val target = result.annotationTargetFor()
-                    result.annotations.forEach { annotation ->
-                        annotation.replaceAnnotationTarget(target)
-                    }
-                    if (result.annotations.isNotEmpty() || result.annotationInfo != null) {
-                        // Binary declarations do not pass the source STATUS processor. Reuse
-                        // the declaration-owned annotation producer so TestRegistration,
-                        // Deprecated and Annotation metadata have the same snapshot shape.
-                        result.publishAnnotationInfo()
-                    }
-                    result.publishInteropInfo(context.moduleData.session)
-                }
+                publishDeclarationMetadata(declIndex, decl, result)
                 context.declCache.putIfAbsent(declIndex, result)
                 context.declCache[declIndex] ?: result
             } finally {
                 declsUnderDeserialization.remove(declIndex)
                 context.releaseDeclMaterializationLock(declIndex, lock)
             }
+        }
+    }
+
+    /** 普通声明与直接构造的 pattern binding 共用唯一的 pre-publication 接缝。 */
+    private fun publishDeclarationMetadata(index: Int, decl: Decl, result: CfirDeclaration) {
+        result.serializedInteropFacts = serializedInteropFacts(decl)
+        result.annotationInfo = serializedAnnotationInfo(decl)
+        val additional = context.sidecar?.annotations(index, result).orEmpty()
+        if (additional.isNotEmpty()) result.replaceAnnotations(result.annotations + additional)
+        appendSerializedAnnotationMarker(result)
+        when (result) {
+            is CfirCallableDeclaration -> result.replaceDeprecationsProvider(deprecationsProviderFor(result.annotations))
+            is CfirClassLikeDeclaration -> result.replaceDeprecationsProvider(deprecationsProviderFor(result.annotations))
+            else -> Unit
+        }
+        if (result is CfirMemberDeclaration) {
+            val target = result.annotationTargetFor()
+            result.annotations.forEach { it.replaceAnnotationTarget(target) }
+            if (result.annotations.isNotEmpty() || result.annotationInfo != null) result.publishAnnotationInfo()
+            result.publishInteropInfo(context.moduleData.session)
         }
     }
 
@@ -1646,7 +1651,8 @@ class CfirDeclDeserializer(
         outerIsLocal: Boolean,
         outerIsVar: Boolean,
     ): CfirPatternBindingVariable {
-        val bindingDecl = rawDeclRef?.let(::decodeDeclRef)?.let(context.pkg::allDecls)
+        val bindingIndex = rawDeclRef?.let(::decodeDeclRef)
+        val bindingDecl = bindingIndex?.let(context.pkg::allDecls)
         val bindingName = bindingDecl?.identifier?.let(Name::identifier) ?: fallbackName
         val status = bindingDecl?.let(::buildStatus)?.let(::cloneStatus) ?: cloneStatus(outerStatus)
         val returnTypeRef = bindingDecl
@@ -1678,7 +1684,10 @@ class CfirDeclDeserializer(
             typeParameters = mutableListOf(),
             returnTypeRef = returnTypeRef,
             name = bindingName,
-        ).also(symbol::bind)
+        ).also {
+            symbol.bind(it)
+            if (bindingIndex != null && bindingDecl != null) publishDeclarationMetadata(bindingIndex, bindingDecl, it)
+        }
     }
 
     /**

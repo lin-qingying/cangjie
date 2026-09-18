@@ -18,6 +18,7 @@ data class CjdAnnotation(
     val arguments: List<CjdAnnotationArgument>,
 )
 
+/** 单个注解实参的语法快照：可选命名、表达式文本与解析出的表达式树。 */
 data class CjdAnnotationArgument(
     val name: String?,
     val expressionText: String,
@@ -59,7 +60,10 @@ data class CjdDeclarationEntry(
     val range: CjdSourceRange,
 )
 
+/** sidecar 解析诊断分类；SYNTAX / MACRO_NOT_EXPANDED 等阻断类会令快照不可用。 */
 enum class CjdDiagnosticKind { SYNTAX, UNSUPPORTED_DECLARATION, UNSUPPORTED_TYPE, MACRO_NOT_EXPANDED }
+
+/** 单条 sidecar 解析诊断，定位信息使用 UTF-16 偏移区间。 */
 data class CjdDiagnostic(val kind: CjdDiagnosticKind, val range: CjdSourceRange, val message: String)
 
 /**
@@ -79,6 +83,7 @@ interface CjdSidecarIndex {
     fun findMatches(target: DeclarationMatchKey): List<CjdDeclarationEntry>
 }
 
+/** [CjdSidecarIndex] 的默认实现；按 kind+identifier 分桶加速有向匹配查询。 */
 internal class CjdSidecarIndexImpl(
     override val sourceId: String,
     override val cjdPath: Path?,

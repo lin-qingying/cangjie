@@ -31,6 +31,7 @@ interface CjdSidecarParser {
     }
 }
 
+/** [CjdSidecarParser] 的默认实现；分别支持磁盘路径与 PSI 两种入口的纯语法解析。 */
 private class SyntaxCjdSidecarParser : CjdSidecarParser {
     override fun parse(path: Path): CjdSidecarIndex {
         val text = Files.readString(path)

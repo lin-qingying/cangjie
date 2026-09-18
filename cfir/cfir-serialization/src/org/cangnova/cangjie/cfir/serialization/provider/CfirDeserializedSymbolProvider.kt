@@ -8,7 +8,13 @@ import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationCo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.FqName
 
-/** 基于 CJO 包管理器的反序列化 symbol provider 具体实现。 */
+/**
+ * 基于 CJO 包管理器的反序列化 symbol provider 具体实现。
+ *
+ * 库内容在本代内按需读取并保持稳定。CJO、sidecar 或搜索根变化后，调用方必须重建
+ * CjoSearchPath、CjoManager、provider 及其所属 session/module；不能只清 contextCache，
+ * 否则名称、符号、包 scope、extend 与缺失结果仍可能引用旧声明。
+ */
 class CfirDeserializedSymbolProvider(
     /** 当前 CFIR session。 */
     session: CfirSession,
@@ -33,15 +39,16 @@ class CfirDeserializedSymbolProvider(
 
     /** 加载指定包名的包头、FlatBuffers package 和共享反序列化上下文。 */
     override fun loadPackageDeserializers(packageFqName: String): PackageDeserializers? {
-        val header = cjoManager.loadPackageHeader(packageFqName)
-        val pkg = cjoManager.loadPackage(packageFqName)
-        if (header == null || pkg == null) return null
+        val loaded = cjoManager.loadPackageSnapshot(packageFqName) ?: return null
+        val header = loaded.header
+        val pkg = loaded.pkg
 
         val context = CfirDeserializationContext(
             pkg = pkg,
             header = header,
             moduleData = libraryModuleData,
             cjoManager = cjoManager,
+            sourcePath = loaded.sourcePath,
         )
         return PackageDeserializers(header, context)
     }

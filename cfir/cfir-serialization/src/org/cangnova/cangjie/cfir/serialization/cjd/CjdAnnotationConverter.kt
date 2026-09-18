@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.serialization.cjd
 
 import org.cangnova.cangjie.annotations.*
+import org.cangnova.cangjie.cfir.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
@@ -20,6 +22,9 @@ import org.cangnova.cangjie.name.Name
 interface CjdAnnotationResolutionContext {
     fun findClassIds(fqName: FqName, organizationName: String?): List<ClassId>
 
+    /** 已物化且无歧义的注解构造器形参；禁止为补全映射而递归物化当前声明。 */
+    fun constructorParameters(classId: ClassId): List<CfirValueParameter>? = null
+
     /**
      * SDK 允许隐式使用的系统注解全名。默认关闭；调用方须由选中库的平台身份显式启用。
      * 仅注册表中的 SYSTEM_MACRO 可生效，且显式导入/同包声明的遮蔽优先。
@@ -27,6 +32,14 @@ interface CjdAnnotationResolutionContext {
     val implicitSystemAnnotations: Set<FqName> get() = emptySet()
 }
 
+/**
+ * 注解转换诊断的粗分类。
+ *
+ * - [UNKNOWN_ANNOTATION]：注解名无法唯一解析到 builtin / system / 自定义声明；
+ * - [AMBIGUOUS_ANNOTATION]：存在多个同名候选，无法消歧；
+ * - [UNSUPPORTED_EXPRESSION]：实参表达式语法超出 sidecar 支持范围；
+ * - [DUPLICATE_ARGUMENT]：同一参数名出现多次（含按位置映射后的重名）。
+ */
 enum class CjdAnnotationDiagnosticKind { UNKNOWN_ANNOTATION, AMBIGUOUS_ANNOTATION, UNSUPPORTED_EXPRESSION, DUPLICATE_ARGUMENT }
 
 /** rawText/range/sourceId 同时用于结构化诊断与错误节点，不能只留下可读消息。 */
@@ -38,6 +51,15 @@ data class CjdAnnotationConversionDiagnostic(
     override val reason: String,
 ) : ConeDiagnostic
 
+/**
+ * 一次注解转换的完整产物。
+ *
+ * 成功调用与失败诊断同时返回：诊断非空时 [annotations] 中对应节点携带错误
+ * typeRef / error expression，调用方不得假设两者互斥。
+ *
+ * @property annotations 转换出的注解调用节点，与输入顺序一一对应。
+ * @property diagnostics 转换过程中收集的全部结构化诊断。
+ */
 data class CjdAnnotationConversionResult(
     val annotations: List<CfirAnnotationCall>,
     val diagnostics: List<CjdAnnotationConversionDiagnostic>,
@@ -58,6 +80,12 @@ interface CjdAnnotationConverter {
     }
 }
 
+/**
+ * [CjdAnnotationConverter] 的语法层默认实现。
+ *
+ * 身份解析顺序：语言 builtin → 显式导入 → 同包声明 → 全限定查询 →
+ * 星号导入 → 隐式系统注解白名单；每层命中即停止，未解析层不得回退。
+ */
 private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
     override fun convert(
         annotations: List<CjdAnnotation>,
@@ -80,7 +108,7 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 sourceId, syntax.range, syntax.rawText,
                 "Cannot uniquely resolve sidecar annotation '${syntax.name}': $candidates",
             ).also(diagnostics::add) else null
-            val source = cjdAnnotationSource(syntax.rawText, syntax.range)
+            val source = cjdAnnotationSource(syntax.rawText, syntax.range, sourceId)
             val cone = classId?.let { ConeClassLikeType(ConeClassLikeLookupTagImpl(it), emptyList()) }
             val expressionConverter = CjdAnnotationExpressionConverter(sourceId, diagnostics)
             val parserOwnedArguments = builtin?.argumentSyntax in setOf(CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS,
@@ -90,29 +118,37 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 val expression = expressionConverter.convert(argument.expression, parserOwnedArguments)
                 argument.name?.let { explicitName ->
                     buildNamedArgumentExpression {
-                        this.source = cjdAnnotationSource(argument.rawText, argument.range)
+                        this.source = cjdAnnotationSource(argument.rawText, argument.range, sourceId)
                         this.expression = expression
                         argumentName = Name.identifier(explicitName)
                     }
                 } ?: expression
             }
+            val parameters = classId?.let(resolutionContext::constructorParameters)
+            val parameterMapping = linkedMapOf<CfirExpression, CfirValueParameter>()
+            var positionalIndex = 0
             val map = linkedMapOf<Name, CfirExpression>()
             val seen = mutableSetOf<Name>()
             val view = arguments.mapIndexed { index, argument ->
                 val named = argument as? CfirNamedArgumentExpression
                 val expression = named?.expression ?: argument
-                val parameterName = named?.argumentName ?: descriptor?.argumentSchema?.positionalParameter?.name?.let(Name::identifier)
+                val parameter = if (named != null) parameters?.singleOrNull { it.name == named.argumentName }
+                    else parameters?.getOrNull(positionalIndex++)
+                val schemaName = if (parserOwnedArguments) null else named?.argumentName
+                    ?: descriptor?.argumentSchema?.positionalParameter?.name?.let(Name::identifier)
+                val parameterName = parameter?.name ?: schemaName
                 val duplicate = parameterName != null && !seen.add(parameterName)
-                if (parameterName != null && !duplicate) map[parameterName] = expression
+                if (parameter != null) parameterMapping[argument] = parameter
+                if (parameterName != null && !duplicate && !parserOwnedArguments && (descriptor != null || parameter != null)) map[parameterName] = expression
                 if (duplicate) diagnostics += CjdAnnotationConversionDiagnostic(
                     CjdAnnotationDiagnosticKind.DUPLICATE_ARGUMENT, sourceId, syntax.arguments[index].range,
                     syntax.arguments[index].rawText, "Duplicate annotation argument '$parameterName'",
                 )
-                CfirAnnotationArgumentViewEntry(index, named?.argumentName, argument, null,
+                CfirAnnotationArgumentViewEntry(index, named?.argumentName, argument, parameter.takeUnless { duplicate },
                     when {
                         duplicate -> CfirAnnotationArgumentStatus.DUPLICATE
                         expression is CfirErrorExpression -> CfirAnnotationArgumentStatus.ERROR
-                        descriptor != null && parameterName != null -> CfirAnnotationArgumentStatus.RESOLVED
+                        parameter != null || (descriptor != null && parameterName != null) -> CfirAnnotationArgumentStatus.RESOLVED
                         else -> CfirAnnotationArgumentStatus.UNMAPPED
                     }, false, expression as? CfirLiteralExpression, argument.source)
             }
@@ -121,7 +157,7 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 typeRef = when {
                     cone != null -> buildResolvedTypeRef { coneType = cone; customRenderer = false; this.source = source }
                     identityDiagnostic != null -> buildErrorTypeRef { diagnostic = identityDiagnostic; this.source = source }
-                    else -> buildImplicitTypeRef { customRenderer = false; this.source = source }
+                    else -> buildImplicitTypeRef { customRenderer = false }
                 }
                 coneTypeOrNull = cone
                 annotationSourceName = syntax.name
@@ -137,7 +173,8 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                     classId != null -> CangjieAnnotationIdentity.Custom(classId.asSingleFqName())
                     else -> CangjieAnnotationIdentity.Unknown
                 }
-                argumentList = buildArgumentList { this.arguments.addAll(arguments) }
+                val originalArguments = buildArgumentList { this.arguments.addAll(arguments) }
+                argumentList = if (parameters != null) buildResolvedArgumentList(originalArguments, parameterMapping) else originalArguments
                 argumentMapping = CfirAnnotationArgumentMappingImpl(source, map)
                 argumentView = CfirAnnotationArgumentView(view)
                 calleeReference = buildNamedReference { name = Name.identifierIfValid(syntax.name.substringAfterLast('.')) ?: Name.ERROR_NAME }

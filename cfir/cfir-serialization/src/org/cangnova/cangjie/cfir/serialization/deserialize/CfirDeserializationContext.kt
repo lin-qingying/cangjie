@@ -22,7 +22,16 @@ class CfirDeserializationContext(
     val moduleData: CfirModuleData,
     /** `.cjo` 包管理器，用于跨包声明索引和包头装载。 */
     val cjoManager: CjoManager,
+    /** 实际读取 CJO 的路径；内存/旧调用方默认不加载 sidecar。 */
+    val sourcePath: java.nio.file.Path? = null,
+    /** 平台显式授权的隐式系统注解，普通库默认关闭。 */
+    val implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> =
+        org.cangnova.cangjie.cfir.serialization.cjd.cjdImplicitSystemAnnotations(sourcePath),
 ) {
+    /** 在首次声明物化前完成快照与匹配计划；整代 context/provider/session 重建才会重新读取。 */
+    val sidecar: org.cangnova.cangjie.cfir.serialization.cjd.CjdBinaryAnnotationOverlay? by lazy {
+        sourcePath?.let { org.cangnova.cangjie.cfir.serialization.cjd.CjdBinaryAnnotationOverlay.load(this, it) }
+    }
     /** `allTypes` 索引 -> 已反序列化类型。 */
     val typeCache = ConcurrentHashMap<Int, ConeCangJieType>()
 

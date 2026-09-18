@@ -579,7 +579,7 @@ paramLists[0].params 数量相等；
 
 ⇒ **类型别名会让匹配失败**。这是设计上必须承认的边界。
 
-`PRIMITIVE_TYPE` 有 `Rune → UInt8` 的归一化（`MergeAnnoFromCjd.cpp:147-148`）。
+`PRIMITIVE_TYPE` 在 Type/Type 分支先做 `Rune → UInt8` 名称归一化，但随后仍比较 `kind`（`MergeAnnoFromCjd.cpp:147-154`），不能将两种类型视为等价。Type/Ty 分支直接比较原始名称（`:254-262`）。
 
 **不参与匹配的因素**（本仓必须一致）
 
@@ -2710,7 +2710,7 @@ sealed interface DeclarationMatchKey {
 |---|---|
 | `PRIMARY_CTOR_DECL` → identifier `"init"`，种类 = `Function` | 对齐 `MergeAnnoFromCjd.cpp:363-364` |
 | `PRIMARY_CTOR_DECL` 的键与 `.cjo` 侧 `FUNC_DECL "init"` 相等 | 对齐 `MergeAnnoFromCjd.cpp:411-418` |
-| `Rune` 与 `UInt8` 归一 | 对齐 `MergeAnnoFromCjd.cpp:147-148` |
+| `Type/Type` 分支先归一 `Rune`→`UInt8` 名称，随后仍要求 kind 相同，两种类型**不等价** | 对齐 `MergeAnnoFromCjd.cpp:143-154` |
 | `VAR_WITH_PATTERN_DECL` → 递归展开 pattern 取底层 `VarDecl` | 对齐 `MergeAnnoFromCjd.cpp:360-361` |
 | 类型别名**不展开** | 对齐 `MergeAnnoFromCjd.cpp:169` 的已知限制（D6） |
 | 返回类型**不参与键** | 对齐：官方不比返回类型 |
@@ -3369,7 +3369,114 @@ P4 是本设计中唯一"结论依赖尚未验证的事实"的阶段（其余阶
 - **C-4 判定**：对本批真实 APILevel sidecar，允许继续按不展开宏的方案实施。当前文本没有待展开调用，不要求追溯显式声明在 SDK 构建前的历史生成来源。SysCap/Hide 此样本均无实例，不能宣称其真实 SDK 覆盖；任意宏生成声明仍属于 DIFF-5 已知限制。
 - **真实语法修正**：样本为 `@!APILevel[since: "22"]`，不是普通调用形式；还存在 `throwexception: true`、`permission: "a" & "b"`。解析必须保留方括号、字符串 since、复合表达式、源码顺序及重复，不允许只提取方案 6.5 的简化示例。
 - **解析与索引实现**：新增 `CjdSidecarParser`（磁盘 LightTree / 内存 PSI）、无树引用的 `CjdSidecarIndex`、注解原文/参数/UTF-16 范围及结构匹配键；顺序与重复保留，`matches` 与结构 `equals/hashCode` 分离。真实 SDK 实测 38 文件全部解析成功并提取 6,497 个 APILevel、零诊断（2026-09-17）。本轮修复：FIELD 成员遗漏、PSI 文档注释子语法误报、无体宏声明（`parseMacro` 缺体走 `reportMissingBody`，仅声明模式豁免）及 import 路径 `internal` 等软关键字误报（限定名段消费前重映射为标识符）。回归：`DeclarationFileParsingTest` 21、`DeclarationModeReverseParsingTest` 7、locator 9、parser 9、match key 4，全部通过。
-- **施工中**：注解合并、provider 失效及两条路径接线尚未完成。P5/P6 未由本轮完成，不能把解析切片当成 P4 整体交付。
+- **二进制合并与接线已落地（同日后续）**：`CjdBinaryDeclarationMatcher` / `CjdBinaryTypeAdapter` 基于原始表建立 context 私有匹配计划，按 `allDecls` 索引在声明自身 publication 前追加注解；成员与参数不依赖父声明构造完成。`CjdAnnotationConverter` 保留源码顺序、重复、来源范围与不可转换表达式诊断。`CjoManager.loadPackageSnapshot` 统一包头、buffer 和实际选中路径；provider 与 `CjoDeclarationLoader` 均传入该来源，不从包名或触发用虚拟文件猜测 sidecar 路径。
+- **生命周期契约**：本代按需读取并缓存；CJO、sidecar 或搜索根变化后，重建 `CjoSearchPath`、`CjoManager`、provider 及 session/module 整图，不提供仅清 context 的局部刷新。`testProviderCachesRemainIsolatedAcrossSidecarReplacement` 验证旧 provider 保持旧注解，新 provider 使用独立声明与注解节点。
+- **合并验证（2026-09-17）**：`CjdBinaryAnnotationIntegrationTest` 5 tests 全部通过，覆盖 APILevel 消费、Frozen/overflow/deprecation publication、参数及嵌套成员、幂等缓存、歧义/缺失与二进制签名保持；`CjdDeclarationLoaderIntegrationTest` 1 test 通过，实际调用 provider 和反编译加载器，验证两份声明的有序注解名/参数值/原文逐项相等、不同名 VirtualFile 不影响 sidecar 选择、无物理路径的内存入口不加载 sidecar。
+- **模块回归（2026-09-17）**：队列执行 `:cfir:cfir-serialization:test`（75 tests / 0 failures / 0 errors / 1 skipped）、`:analysis:decompiled:decompiler-to-stubs:test`（5 / 0 / 0 / 0）、`:analysis:decompiled:decompiler-to-file-stubs:test`（1 / 0 / 0 / 0）。序列化模块跳过项为未设置 `CANGJIE_CJD_SDK_DIR` 的真实 SDK parser 用例；前述 38 文件解析证据仍属于此前实测，不能当作本轮真实二进制合并验证。
+- **真实 SDK 合并回归（2026-09-17，同日后续）**：设置 `CANGJIE_CJD_SDK_DIR` 后，队列执行序列化模块测试，14 suites / 80 tests / 0 failures / 0 errors / 0 skipped。38 个 sidecar 匹配 5,031 个 APILevel；生产 provider 加载 `std.math.RoundingMode`、6 个枚举构造项及 `toString`，availability 均为 since="22"。覆盖测试新增全包无 AMBIGUOUS 断言；此统计不代表所有源码注解都应匹配（仍受导出门控和类型元数据限制）。
+- **Rune 类型身份修复**：`TypeKey.primitive` 不再将 Rune 折叠成 UInt8。官方 Type/Type 比较即使归一名称仍检查 kind，Type/Ty 则直接比较原始名称。最小重载回归经红→绿验证，SDK `std.core` 三处歧义消失，总匹配数从 5,014 增至 5,031。同步修正旧 parser 用例，使“修饰符/默认值/返回类型不影响键”使用相同参数类型，而不再暗含 Rune/UInt8 等价。
+- **std.console 缺项归因**：`read(arr)`、`write(buffer)`、`writeln(buffer)` 的 sidecar 参数为 `Array<Byte>`，SDK `std.core` 定义 `Byte = UInt8`；实际 CJO Array 元素 kind 为 `TypeKind.Type`（28），不是 UInt8。当前 adapter 将此元数据返回 Unknown，主类型反序列化器亦不支持该 kind。真实 SDK 测试直接断言原始参数字段、Unknown 与拒绝匹配，禁止将未知类型当通配符；另有自包含测试固化已展开 UInt8 二进制与 Byte 源码键不匹配。不能仅凭别名文本把这三项解释成已展开 UInt8，也不能为提高覆盖数放宽匹配。
+- **尚未完成**：~~完整声明种类边界复核、引用点 availability 诊断端到端验收~~（**两项已于 2026-09-18 完成**，见下），以及 P5/P6 的 IDE/LSP/DevEco 工作；当前不能把合并与接线测试通过等同于 P4 全部验收，也不能把 CFIR 注解相等视为最终 stub/PSI 参数往返相等。DevEco 新增 SDK 布局枚举测试目前在任务依赖阶段被无效 `.host/devEco-studio` 路径阻断，尚未运行到测试体。**边界复核后新增的未覆盖面**：`TYPE_ALIAS`/`MACRO` 注解数为 0、`EXTEND` 仅 1 个带注解样本、无 `FINALIZER`/`MAIN` 条目 ⇒ 这三类在本语料下**无证据**，不能宣称已验证。
+
+#### P4 收尾之一：声明种类边界复核（2026-09-18）
+
+**语料（可复现）**：DevEco 仓颉插件 `26.0.0.821` 内
+`harmonyos-cangjie-sdk-windows/cangjie/build-tools/modules/linux_ohos_aarch64_cjnative/std/`
+—— 38 个 `.cj.d` + 46 个 `.cjo`。测试以环境变量 `CANGJIE_CJD_SDK_DIR` 指向该目录启用。
+
+**① 文本结构统计（已完成，不依赖编译）**
+
+按括号深度切出"顶层声明区域"，剔除注释与字符串后统计 `@!APILevel[...` 的落点：
+
+| 落点 | 数量 |
+|---|---|
+| APILevel 总数 | **6,497** |
+| 顶层声明**自身**带 APILevel | 1,099 |
+| 成员注解，其顶层声明**自身也有**注解 | 4,064 |
+| 成员注解，其顶层声明**自身无**注解 | **1,334** |
+
+统计脚本：会话工作区 `cjd_boundary_stats.py`（纯文本，无需编译器）。总数 6,497 与 1.4.2 记录的
+6,497 **逐字吻合**，两个独立口径互证。
+
+**结论 1（差额主因是官方同款门控，不是实现缺陷）**：
+1,466 的未合并差额中，**1,334（90.9%）** 由官方 `MergeAnnoFromCjd.cpp:486`
+（`toplevelDecl->annotations.empty()` 即 `continue` ⇒ 其成员不进 `memberMapping`）决定。
+本仓 4.4.1 与 `CjdBinaryMatchPlan` 的 `sidecar.declarations.filter { it.annotations.isNotEmpty() && kind != MAIN }`
+是该门控的逐字镜像。
+⇒ **门控内上限 = 1,099 + 4,064 = 5,163**，实测合并 5,031 ⇒ 门控**之内**还剩 **132** 条待匹配层归因。
+
+**结论 2（这条必须登记为显式已知限制）**：
+**6,497 中的 1,334（20.5%）注解在任何实现下都不可能被合并**，涉及 **370 个顶层容器**
+（其自身无 `@APILevel`）。这些容器的成员在 IDE 中**不会**因 APILevel 被提示，
+且该行为与官方 `cjc` 一致。此前文档只有 4.6.5 一行"R13 门控"提到它，没有量化，
+容易被误读成"覆盖率不足的实现缺陷"。⇒ 记为**已知限制**（与 `DIFF-*` 同级的显式差异登记），
+并注明"若要在本仓放宽该门控，属偏离官方语义的独立决策，须单独评审"。
+按文件分布（差额最大的前几个）：`std.overflow` 505、`std.core` 325、`std.unittest.prop_test` 137、
+`std.convert` 62、`std.math` 60、`std.binary` 56。
+
+**② 匹配层归因（已完成，实测）**
+
+`cfir/cfir-serialization/test/.../cjd/CjdSdkDeclarationBoundaryAuditTest.kt`（新增）。
+审计的不是覆盖率数字（随 SDK 版本漂移），而是**无静默丢失**这一硬约束：
+38 个 sidecar 里每条带注解的条目都必须有归宿 —— 被合并 / 有指向它自己的匹配诊断 / 祖先已解释原因；
+"够不到且无人解释"即静默丢失。运行命令：
+
+```bash
+CANGJIE_CJD_SDK_DIR=<std 目录> gradlew-queue.bat :cfir:cfir-serialization:test --tests '*CjdSdkDeclarationBoundaryAuditTest*'
+```
+
+实测（2026-09-18，1 test / 0 failures）：
+
+| 归宿 | allAnnotations | APILevel |
+|---|---|---|
+| 已合并 | 5,656 | **5,031** |
+| `ATTRIBUTED_SELF_MISSING`（匹配失败，有指向它自己的诊断） | 155 | **140** |
+| `UNREACHABLE_BY_ANCESTOR_TOP_LEVEL_GATE`（官方门控，结构性） | 1,545 | **1,326** |
+| `UNATTRIBUTED`（静默丢失） | **0** | **0** |
+| 合计 | 7,356 | **6,497** |
+
+⇒ 账目**逐条闭合**：`5,031 + 140 + 1,326 = 6,497`，且 `UNATTRIBUTED == 0`、`AMBIGUOUS == 0`。
+**"无静默丢失"这条断言现在是可执行的回归防线。**
+
+性质拆分（`1,466`）：
+| 成因 | 数量 | 性质 |
+|---|---|---|
+| 官方同款**顶层门控** | 1,326 | 与官方逐字一致；见 ① |
+| **导出门控**（R13，二进制侧 `NON_EXPORTED` 32 条） | ≤ 32 | 与官方 `IsExportedDecl` 同款 |
+| **参数类型元数据不可解析** | ≈ 108 | 已知限制：`Array<Byte>` 的 CJO 元素 kind 为 `TypeKind.Type`，adapter 返回 Unknown；见 3378 行 std.console 归因 |
+
+`ATTRIBUTED_SELF` 的 140 条按文件分布（可作为后续收窄的靶点）：
+`std.reflect` 33、`std.net` 32、`std.io` 14、`std.unittest` 11、`std.database.sql` 8、`std.core` 6、
+`std.fs` 6、`std.binary` 4、`std.crypto.cipher` 4、`std.unittest.common` 4、`std.unittest.mock` 4、
+`std.console` 3、`std.crypto.digest` 3、`std.env` 3、`std.math.numeric` 2、`std.unittest.prop_test` 2、`std.random` 1。
+`NON_EXPORTED` 的名字全部是包内实现细节（`std.core` 的 `arrayInitByCollection`/`array*OutOfBoundsExceptionMessage`/
+`Future*`、`std.unittest` 的 `TestProgressCollector`/`*ProgressData` 等），符合 R13 的预期。
+
+**声明种类实测分布**（38 个 sidecar 的条目数 / 注解数）：
+`FUNCTION 4462 / 5300`、`PROPERTY 912 / 929`、`VARIABLE 538 / 538`、`EXTEND 372 / 1`、`CLASS 355 / 354`、
+`INTERFACE 102 / 102`、`STRUCT 91 / 95`、`ENUM 37 / 37`、`MACRO 43 / 0`、`TYPE_ALIAS 7 / 0`。
+要点：
+① **`TYPE_ALIAS` 与 `MACRO` 在本语料中注解数为 0** ⇒ D6 的"类型别名不展开导致匹配失败"这一已知限制
+**未被该语料覆盖**，不能据此宣称已验证；
+② `EXTEND` 372 个但只有 1 个带注解，且已合并 ⇒ extend 键（extendedType + inheritedTypes）有效但样本极薄；
+③ 不存在 `FINALIZER` / `MAIN` 条目 ⇒ P4 的 finalizer、main 分支在本语料下**无证据**。
+
+**③ 引用点 availability 端到端验收（已完成，实测）**
+
+`cfir/analysis-tests/tests/.../CjdSidecarAvailabilityDiagnosticTest.kt`（新增）。
+真实 SDK 的 `.cjo` + 同目录 `.cj.d` 经**生产 provider**（`CfirDeserializedSymbolProvider`）加载并合并后，
+在 `projectApiLevel = 20` 的源码会话里引用 `std.math.RoundingMode.Floor`（sidecar `since="22"`），
+经 resolve → `runCheckers` 两段式，**断言产出 `APILEVEL_REF_HIGHER`**，并先断言
+`UNRESOLVED_REFERENCE` 不出现（保证引用确实解析到了 `.cjo` 声明，否则不构成端到端）。
+
+⇒ 4.7"sidecar 注解一旦合并，APILevel checker 自动受益、不做任何改动"由此从**推理**变为**实测**。
+
+> **施工记录（两处非显然的装配要求，供后续同类测试复用）**：
+> ① 库会话必须**自注册** `CfirSymbolProvider` / `CfirProvider` / `CfirExtendProvider` / `StructuredProviders`
+> —— 反序列化 provider 解析跨包引用时查询的是**它自己的**库会话，不是源会话；
+> ② 组件清单必须用生产入口 `CfirSession.registerCliCompilerAndCommonComponents(...)`
+> （`cfir/entrypoint/.../session/ComponentsContainers.kt:86`），
+> 手写会漏掉 `CfirLazyDeclarationResolver` 等 20 余个必需组件、且逐个报错发现。
 
 ### 5.2 破坏性改动的提交切分
 
@@ -4152,7 +4259,7 @@ F2 落地后，两者都只需从**文件**取 `sourceKind` 并传给解析器 �
 | `IsSameFuncByIdentifier` | `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp:271-302` |
 | `IsSameType` | `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp:26-269` |
 | 类型别名限制 | `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp:169` |
-| `Rune`/`UInt8` 归一 | `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp:147-148` |
+| `Rune`/`UInt8` 名称归一后仍要求 kind 相同，不等价 | `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp:143-154` |
 | 注解清理 | `external/cangjie_compiler/src/Sema/CheckAPILevel.cpp:284-304, 708-709` |
 | `@IfAvailable` import 校验 | `external/cangjie_compiler/src/Sema/CheckAPILevel.cpp:252-282` |
 | `IfAvailable` 脱糖 | `external/cangjie_compiler/src/Sema/CheckAPILevel.cpp:309-337` |

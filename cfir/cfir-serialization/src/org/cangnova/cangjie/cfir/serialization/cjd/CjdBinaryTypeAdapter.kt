@@ -34,6 +34,7 @@ interface CjdBinaryTypeAdapter {
     }
 }
 
+/** [CjdBinaryTypeAdapter] 的默认实现；带缓存与递归检测的 SemaTy → 结构类型转换器。 */
 private class CjdBinaryTypeAdapterImpl(
     private val pkg: Package,
     private val resolveTarget: (FullId) -> CjdBinaryTypeTarget?,
@@ -113,9 +114,11 @@ private class CjdBinaryTypeAdapterImpl(
     }
 }
 
+/** 把 1-based 声明引用解码为 allDecls 下标；0、越界与哨兵值均视为无效返回 `null`。 */
 internal fun cjdDeclIndex(pkg: Package, field: UInt): Int? =
     if (field == 0u || field == UInt.MAX_VALUE || field > pkg.allDeclsLength.toUInt()) null else field.toInt() - 1
 
+/** 判断声明属性位图中是否包含给定 [attribute]；位图按 64 位字组织。 */
 internal fun Decl.cjdHasAttribute(attribute: Attribute): Boolean {
     val bit = attribute.ordinal
     return bit / 64 < attributesLength && (attributes(bit / 64).toLong() ushr (bit % 64)) and 1L != 0L

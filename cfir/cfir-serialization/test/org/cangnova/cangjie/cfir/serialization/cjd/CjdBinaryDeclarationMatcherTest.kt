@@ -31,6 +31,41 @@ class CjdBinaryDeclarationMatcherTest {
     }
 
     @Test
+    fun `Rune and UInt8 overloads have distinct source keys and binary selections`() {
+        val fixture = CjdBinaryFixture()
+        val rune = fixture.primitive(TypeKind.Rune)
+        val byte = fixture.primitive(TypeKind.UInt8)
+        val runeParameter = fixture.declaration("value", DeclKind.FuncParam,
+            fixture.compound(TypeKind.Array, listOf(rune)), topLevel = false)
+        val byteParameter = fixture.declaration("value", DeclKind.FuncParam,
+            fixture.compound(TypeKind.Array, listOf(byte)), topLevel = false)
+        val runeFunction = fixture.function("f", listOf(runeParameter))
+        val byteFunction = fixture.function("f", listOf(byteParameter))
+        val entry = cjdBinaryTestEntry(function("f", "value", TypeKey.Ref("Array", listOf(TypeKey.primitive("Rune")))))
+        val matcher = CjdBinaryDeclarationMatcher.create(fixture.build(), cjdBinaryTestIndex(entry))
+        assertSame(entry, matcher.selection(runeFunction.toInt() - 1)?.entry)
+        assertNull(matcher.selection(byteFunction.toInt() - 1))
+        assertFalse(matcher.diagnostics.any { it.kind == CjdBinaryMatchDiagnosticKind.AMBIGUOUS })
+    }
+
+    @Test
+    fun `Byte alias parameter does not match expanded UInt8 binary type`() {
+        val fixture = CjdBinaryFixture()
+        val byte = fixture.primitive(TypeKind.UInt8)
+        val parameter = fixture.declaration("arr", DeclKind.FuncParam,
+            fixture.compound(TypeKind.Array, listOf(byte)), topLevel = false)
+        val binaryFunction = fixture.function("read", listOf(parameter))
+        val pkg = fixture.build()
+        val alias = cjdBinaryTestEntry(function("read", "arr", TypeKey.Ref("Array", listOf(TypeKey.Ref("Byte")))))
+        val expanded = cjdBinaryTestEntry(function("read", "arr", TypeKey.Ref("Array", listOf(TypeKey.primitive("UInt8")))))
+        val matcher = CjdBinaryDeclarationMatcher.create(pkg, cjdBinaryTestIndex(alias))
+        assertNull(matcher.selection(binaryFunction.toInt() - 1))
+        assertTrue(matcher.diagnostics.any { it.sourceRange == alias.range && it.kind == CjdBinaryMatchDiagnosticKind.MISSING })
+        assertSame(expanded, CjdBinaryDeclarationMatcher.create(pkg, cjdBinaryTestIndex(expanded))
+            .selection(binaryFunction.toInt() - 1)?.entry)
+    }
+
+    @Test
     fun `class owner match makes constructor and parameter annotations available before parent publication`() {
         val fixture = CjdBinaryFixture()
         val int = fixture.primitive(TypeKind.Int64)

@@ -20,13 +20,13 @@ internal class CjdAnnotationExpressionConverter(
             if (token?.syntaxKind == "IDENTIFIER") {
                 val referenceName = Name.identifierIfValid(token.rawText.removeSurrounding("`"))
                 if (referenceName != null) return buildNamedAccessExpression {
-                    source = cjdAnnotationSource(syntax.rawText, syntax.range)
+                    source = cjdAnnotationSource(syntax.rawText, syntax.range, sourceId)
                     calleeReference = buildNamedReference { name = referenceName }
                 }
             }
         }
         fun literal(kind: CfirLiteralKind, value: Any?): CfirExpression = buildLiteralExpression {
-            source = cjdAnnotationSource(syntax.rawText, syntax.range)
+            source = cjdAnnotationSource(syntax.rawText, syntax.range, sourceId)
             this.kind = kind
             this.value = value
         }
@@ -86,7 +86,7 @@ internal class CjdAnnotationExpressionConverter(
             sourceId, syntax.range, syntax.rawText, "Unsupported sidecar annotation expression: ${syntax.syntaxKind}: ${syntax.rawText}")
         diagnostics += diagnostic
         return buildErrorExpression {
-            source = cjdAnnotationSource(syntax.rawText, syntax.range)
+            source = cjdAnnotationSource(syntax.rawText, syntax.range, sourceId)
             this.diagnostic = diagnostic
         }
     }

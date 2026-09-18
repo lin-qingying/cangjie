@@ -55,8 +55,9 @@ internal class DecompiledCjoRepository(
         searchRoots: List<File>,
     ): LoadedCjoPackage? {
         val fullPkgName = packageFqName.asString()
-        val pkg = cjoManager.loadPackage(fullPkgName) ?: return null
-        val header = cjoManager.loadPackageHeader(fullPkgName) ?: return null
+        val loaded = cjoManager.loadPackageSnapshot(fullPkgName) ?: return null
+        val pkg = loaded.pkg
+        val header = loaded.header
         return LoadedCjoPackage(
             binaryFile = binaryFile,
             packageFqName = packageFqName,
@@ -64,6 +65,7 @@ internal class DecompiledCjoRepository(
             header = header,
             searchRoots = searchRoots,
             isVersionSupported = CjoBinaryFileReader.isSupportedVersion(pkg),
+            sourcePath = loaded.sourcePath,
         )
     }
 }

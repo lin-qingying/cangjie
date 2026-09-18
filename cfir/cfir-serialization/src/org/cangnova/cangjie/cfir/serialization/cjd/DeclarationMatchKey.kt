@@ -5,7 +5,10 @@ enum class CjdDeclarationKind { FUNCTION, VARIABLE, PROPERTY, CLASS, STRUCT, INT
 
 /** 泛型存在性独立于参数数量；约束顺序与上界顺序均保留。 */
 data class CjdGenericSignature(val parameterNames: List<String>, val constraints: List<CjdTypeConstraint> = emptyList())
+/** 单个泛型约束：约束变量及其上界列表，顺序与源码一致。 */
 data class CjdTypeConstraint(val type: TypeKey, val upperBounds: List<TypeKey>)
+
+/** 函数/变量形参的匹配键：参数名与可选类型（缺失类型不参与比较）。 */
 data class CjdParameterKey(val name: String, val type: TypeKey?)
 
 /**
@@ -94,8 +97,8 @@ sealed interface TypeKey {
     data class Opaque(val syntaxKind: String, val text: String) : TypeKey
 
     companion object {
-        /** Rune/UInt8 归一化入口，目标侧适配器也应使用它。 */
-        fun primitive(name: String): Primitive = Primitive(if (name == "Rune") "UInt8" else name)
+        /** 保留原始类型身份；官方 Type/Type 比较即使归一名称，仍要求 kind 相同。 */
+        fun primitive(name: String): Primitive = Primitive(name)
     }
 }
 
@@ -113,4 +116,5 @@ fun TypeKey.matches(target: TypeKey): Boolean = when (this) {
     is TypeKey.Constant -> this == target
 }
 
+/** 逐位比较两侧类型键列表；长度或任一分量不匹配即失败。 */
 private fun List<TypeKey>.matchesTypes(target: List<TypeKey>): Boolean = size == target.size && indices.all { this[it].matches(target[it]) }

@@ -68,7 +68,7 @@ class CjdBinaryTypeAdapterTest {
     }
 
     @Test
-    fun `Rune normalization is symmetric and independent adapter caches cannot leak`() {
+    fun `Rune retains its identity and independent adapter caches cannot leak`() {
         val runeFixture = CjdBinaryFixture()
         val rune = runeFixture.primitive(TypeKind.Rune)
         val intFixture = CjdBinaryFixture()
@@ -76,8 +76,9 @@ class CjdBinaryTypeAdapterTest {
         assertEquals(rune, int)
         val one = CjdBinaryTypeAdapter.create(runeFixture.build())
         val two = CjdBinaryTypeAdapter.create(intFixture.build())
-        assertTrue(TypeKey.primitive("UInt8").matchesResolved(one.typeFromField(rune)))
-        assertTrue(TypeKey.primitive("Rune").matchesResolved(CjdResolvedType.Primitive("UInt8")))
+        assertTrue(TypeKey.primitive("Rune").matchesResolved(one.typeFromField(rune)))
+        assertFalse(TypeKey.primitive("UInt8").matchesResolved(one.typeFromField(rune)))
+        assertFalse(TypeKey.primitive("Rune").matchesResolved(CjdResolvedType.Primitive("UInt8")))
         assertFalse(TypeKey.primitive("UInt8").matchesResolved(two.typeFromField(int)))
         assertEquals(CjdResolvedType.Primitive("Unit"), one.typeFromField(0u))
     }

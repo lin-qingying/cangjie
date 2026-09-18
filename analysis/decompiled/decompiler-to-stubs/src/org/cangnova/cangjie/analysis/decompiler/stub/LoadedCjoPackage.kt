@@ -30,4 +30,7 @@ data class LoadedCjoPackage(
 
     /** 当前 `.cjo` 版本是否可由本反编译器安全读取。 */
     val isVersionSupported: Boolean,
+
+    /** body 真正来源；可能不同于触发反编译的 binaryFile。旧的内存调用方默认不启用 sidecar。 */
+    val sourcePath: java.nio.file.Path? = null,
 )
