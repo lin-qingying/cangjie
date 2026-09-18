@@ -175,19 +175,19 @@ internal fun createEmptyDeclarationHeaderStubs(
         val name = annotation.annotationSourceName
             ?.removePrefix("@!")
             ?.removePrefix("@")
-            ?.substringAfterLast('.')
             ?.takeIf(String::isNotBlank)
-            ?: annotation.annotationClassId?.shortClassName?.asString()
+            ?: annotation.annotationClassId?.asSingleFqName()?.asString()
             ?: annotation.builtInDescriptor?.sourceName
             ?: return@forEach
-        CangJieAnnotationStubImpl(
+        val annotationStub = CangJieAnnotationStubImpl(
             parent = annotationsStub,
-            shortName = StringRef.fromString(name),
+            shortName = StringRef.fromString(name.substringAfterLast('.')),
             hasValueArguments = annotation.argumentList.arguments.isNotEmpty(),
             classId = annotation.annotationClassId,
             builtInKind = annotation.annotationKind ?: annotation.builtInDescriptor?.kind,
             compileTimeVisible = annotation.isCompileTimeVisible == true,
         )
+        createAnnotationChildrenStubs(annotationStub, annotation, name)
     }
     CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
 }

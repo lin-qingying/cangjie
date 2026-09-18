@@ -54,18 +54,38 @@ interface Multimap<K, out V, out C : Collection<V>> : Iterable<Map.Entry<K, C>> 
     override operator fun iterator(): Iterator<Map.Entry<K, C>>
 }
 
+/**
+ * 支持增删的多值映射视图。
+ *
+ * 在 [Multimap] 只读能力之上提供写入端：单值插入、批量插入、
+ * 按值移除与整键移除；容器类型 `C` 由具体实现决定去重与顺序语义。
+ */
 interface MutableMultimap<K, V, C : Collection<V>> : Multimap<K, V, C> {
+    /** 向 [key] 的容器追加一个值；键不存在时先创建容器。 */
     fun put(key: K, value: V)
+
+    /** 向 [key] 的容器逐个追加 [values] 中的全部值。 */
     fun putAll(key: K, values: Collection<V>) {
         values.forEach { put(key, it) }
     }
 
+    /** 从 [key] 的容器中移除单个值；容器变空时连同键一起移除。 */
     fun remove(key: K, value: V)
+
+    /** 移除整个键并返回其原容器；键不存在时返回空容器。 */
     fun removeKey(key: K): C
 
+    /** 清空全部键值对。 */
     fun clear()
 }
 
+/**
+ * [MutableMultimap] 的通用骨架实现。
+ *
+ * 以 `MutableMap<K, MC>` 存储键到可变容器的映射；子类只需提供容器
+ * 的创建方式（[createContainer]）与只读空容器（[createEmptyContainer]），
+ * 即可确定去重/顺序语义。缺失键的读取一律返回空容器而不是 `null`。
+ */
 abstract class BaseMultimap<K, V, C : Collection<V>, MC : MutableCollection<V>> : MutableMultimap<K, V, C> {
     private val map: MutableMap<K, MC> = mutableMapOf()
     protected abstract fun createContainer(): MC
@@ -121,6 +141,7 @@ abstract class BaseMultimap<K, V, C : Collection<V>, MC : MutableCollection<V>> 
     }
 }
 
+/** 值容器为 [Set] 的多值映射：同一键下值去重、无序。 */
 class SetMultimap<K, V> : BaseMultimap<K, V, Set<V>, MutableSet<V>>() {
     override fun createContainer(): MutableSet<V> {
         return mutableSetOf()
@@ -131,6 +152,7 @@ class SetMultimap<K, V> : BaseMultimap<K, V, Set<V>, MutableSet<V>>() {
     }
 }
 
+/** 值容器为 [List] 的多值映射：同一键下保留插入顺序、允许重复值。 */
 class ListMultimap<K, V> : BaseMultimap<K, V, List<V>, MutableList<V>>() {
     override fun createContainer(): MutableList<V> {
         return mutableListOf()
@@ -141,9 +163,13 @@ class ListMultimap<K, V> : BaseMultimap<K, V, List<V>, MutableList<V>>() {
     }
 }
 
+/** 创建空的 [SetMultimap]（值去重、无序）。 */
 fun <K, V> setMultimapOf(): SetMultimap<K, V> = SetMultimap()
+
+/** 创建空的 [ListMultimap]（值有序、允许重复）。 */
 fun <K, V> listMultimapOf(): ListMultimap<K, V> = ListMultimap()
 
+/** 把 [map] 中每个键的值集合批量并入当前 multimap（`+=` 运算符形式）。 */
 operator fun <K, V> MutableMultimap<K, V, *>.plusAssign(map: Map<K, Collection<V>>) {
     for ((key, values) in map) {
         this.putAll(key, values)

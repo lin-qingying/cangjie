@@ -3,7 +3,12 @@ package org.cangnova.cangjie.analysis.decompiled.psi.text
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.stubs.ObjectStubSerializer
+import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.stubs.StubElement
+import com.intellij.psi.stubs.StubInputStream
+import com.intellij.psi.stubs.StubOutputStream
+import com.intellij.util.io.AbstractStringEnumerator
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.lang.CangJieFileType
@@ -27,10 +32,15 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyAccessorStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieStructStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.deepCopy
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 /**
  * 验证 `.cjo` compiled stub 渲染为仓颉反编译文本时的语法格式契约。
@@ -39,6 +49,103 @@ import org.junit.jupiter.api.Test
  * 属性访问器和修饰符等反编译输出的关键形态。
  */
 class DecompiledTextBuilderTest {
+    @Test
+    fun annotationArgumentsAndCompileTimePrefixSurviveDecompiledText() {
+        withCoreEnvironment { environment ->
+            val annotation = "@!APILevel[since: \"22\", permission: \"a\" & \"b\"]"
+            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
+                "sample.cj", CangJieFileType.INSTANCE,
+                "package sample\n$annotation\nfunc f(): Unit {}",
+            ) as CjFile
+            val rendered = buildDecompiledText(source.calcStubTree().root as CangJieFileStubImpl)
+            assertTrue(rendered.contains(annotation), rendered)
+        }
+    }
+
+    /** 先检查源码 stub 的表达式结构，避免把序列化无损误当成语义完整。 */
+    @Test
+    fun binaryAnnotationArgumentRetainsOperandsAndOperator() {
+        withCoreEnvironment { environment ->
+            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
+                "sample.cj", CangJieFileType.INSTANCE,
+                "package sample\n@!APILevel[permission: \"a\" & \"b\"]\nfunc f(): Unit {}",
+            ) as CjFile
+            val root = source.calcStubTree().root as CangJieFileStubImpl
+            val annotation = root.findChildStubByType(CjStubElementTypes.FUNCTION)!!
+                .findChildStubByType(CjStubElementTypes.ANNOTATIONS)!!
+                .findChildStubByType(CjStubElementTypes.ANNOTATION)!!
+            val argument = annotation.findChildStubByType(CjStubElementTypes.VALUE_ARGUMENT_LIST)!!
+                .findChildStubByType(CjStubElementTypes.VALUE_ARGUMENT)!!
+            val expressions = argument.childrenStubs.filter { it.stubType != CjStubElementTypes.VALUE_ARGUMENT_NAME }
+            assertEquals(listOf("BINARY_EXPRESSION"), expressions.map { it.stubType.toString() })
+            assertEquals(listOf("STRING_TEMPLATE", "OPERATION_REFERENCE", "STRING_TEMPLATE"),
+                expressions.single().childrenStubs.map { it.stubType.toString() })
+        }
+    }
+
+    /** 注解渲染必须可用于已落盘的 compiled stub，不能借用原始文件 AST。 */
+    @Test
+    fun annotationArgumentsSurviveSerializationAndDeepCopy() {
+        withCoreEnvironment { environment ->
+            val annotation = "@!APILevel[since: \"22\", permission: \"a\" & \"b\"]"
+            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
+                "sample.cj", CangJieFileType.INSTANCE,
+                "package sample\n$annotation\nfunc f(): Unit {}",
+            ) as CjFile
+            val sourceStub = source.calcStubTree().root as CangJieFileStubImpl
+            val restored = (roundTripStub(sourceStub) as CangJieFileStubImpl).deepCopy()
+            assertNull(restored.psi, "恢复后的 stub 不得绑定源码 PSI")
+            fun shape(stub: StubElement<*>): String = buildString {
+                append(stub)
+                stub.childrenStubs.forEach { append("\n" + shape(it).prependIndent("  ")) }
+            }
+            assertEquals(shape(sourceStub), shape(restored), "序列化及复制必须保留所有 stub 字段和子节点")
+            println("Restored annotation stub tree:\n${shape(restored)}")
+            val rendered = buildDecompiledText(restored)
+            assertTrue(rendered.contains(annotation), rendered)
+        }
+    }
+
+    /** 逐节点走真实 serializer，恢复的整棵树只保留协议字段，不保留 PSI/AST。 */
+    private fun roundTripStub(
+        original: StubElement<*>,
+        parent: StubElement<*>? = null,
+        strings: AbstractStringEnumerator = TestStringEnumerator(),
+    ): StubElement<*> {
+        @Suppress("DEPRECATION")
+        val serializer = if (original is PsiFileStub<*>) original.type else original.stubType
+        @Suppress("UNCHECKED_CAST")
+        serializer as ObjectStubSerializer<StubElement<*>, StubElement<*>>
+        val bytes = ByteArrayOutputStream()
+        StubOutputStream(bytes, strings).use { serializer.serialize(original, it) }
+        val restored = StubInputStream(ByteArrayInputStream(bytes.toByteArray()), strings).use { input ->
+            serializer.deserialize(input, parent).also {
+                assertEquals(-1, input.read(), "stub serializer 与 deserializer 必须消费相同字节")
+            }
+        }
+        original.childrenStubs.forEach { roundTripStub(it, restored, strings) }
+        return restored
+    }
+
+    private class TestStringEnumerator : AbstractStringEnumerator {
+        private val values = linkedMapOf<String, Int>()
+        private val strings = mutableListOf<String>()
+
+        override fun enumerate(value: String?): Int {
+            if (value == null) return 0
+            return values.getOrPut(value) {
+                strings += value
+                strings.size
+            }
+        }
+
+        override fun valueOf(idx: Int): String? = if (idx == 0) null else strings[idx - 1]
+        override fun markCorrupted(): Unit = error("Unexpected persistent storage operation")
+        override fun close(): Unit = error("Unexpected persistent storage operation")
+        override fun isDirty(): Boolean = error("Unexpected persistent storage operation")
+        override fun force(): Unit = error("Unexpected persistent storage operation")
+    }
+
     /**
      * 验证没有参数列表 stub 的普通 compiled 函数仍会渲染空括号和 compiled body 占位。
      */

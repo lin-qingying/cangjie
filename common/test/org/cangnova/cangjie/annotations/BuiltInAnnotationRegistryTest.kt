@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.annotations
 
+import org.cangnova.cangjie.LanguageVersion
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.name.FqName
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -16,22 +20,21 @@ import kotlin.test.assertTrue
  * 测试通过代替各语义 owner 的正负例验证。
  */
 class BuiltInAnnotationRegistryTest {
-    /** 24 个官方 kind 与 26 个源码拼写必须完整，系统注解不能混入枚举。 */
+    /** 官方 parser builtin 与平台/系统身份必须分域，不能把源码短名混成 kind。 */
     @Test
     fun officialKindsAndSourceSpellingsAreComplete() {
         val expectedSourceNames = setOf(
-            "Java", "JavaMirror", "JavaImpl", "JavaHasDefault", "ObjCMirror", "ObjCImpl",
-            "ObjCInit", "ObjCOptional", "ForeignName", "ForeignGetterName", "ForeignSetterName",
             "CallingConv", "C", "Attribute", "Intrinsic", "OverflowThrowing", "OverflowWrapping",
             "OverflowSaturating", "When", "FastNative", "ConstSafe", "Annotation", "Deprecated",
-            "Frozen", "EnsurePreparedToMock", "NonProduct",
+            "Frozen", "EnsurePreparedToMock",
         )
         val descriptors = BuiltInAnnotationRegistry.languageBuiltIns
 
         assertEquals(expectedSourceNames, descriptors.mapTo(linkedSetOf()) { it.sourceName })
         assertEquals(expectedSourceNames.size, descriptors.size)
-        assertEquals(24, BuiltInAnnotationKind.entries.size)
-        assertEquals(BuiltInAnnotationKind.entries.toSet(), descriptors.mapTo(linkedSetOf()) { it.kind })
+        assertEquals(setOf("NonProduct"), BuiltInAnnotationRegistry.packageDirectives.mapTo(linkedSetOf()) { it.sourceName })
+        assertFalse(descriptors.any { it.kind == BuiltInAnnotationKind.JAVA })
+        assertTrue(BuiltInAnnotationKind.JAVA !in descriptors.mapTo(linkedSetOf()) { it.kind })
         for (descriptor in descriptors) {
             assertSame(descriptor, BuiltInAnnotationRegistry.findLanguageBuiltIn(descriptor.sourceName))
             assertSame(descriptor, BuiltInAnnotationRegistry.find(descriptor.sourceName))
@@ -59,12 +62,10 @@ class BuiltInAnnotationRegistryTest {
         }
     }
 
-    /** Java 保留官方 AST 身份，但 v1.0.0 source parser 不把它列为 builtin；ConstSafe 仍只在 std 模块内建。 */
+    /** Java 只保留官方 AST 身份；平台注解必须通过真实 interop library ClassId 解析。 */
     @Test
-    fun sourceLookupHonorsSpecialJavaAndStdOnlyConstSafe() {
-        val java = builtIn("Java")
-        assertEquals(BuiltInAnnotationKind.JAVA, java.kind)
-        assertFalse(java.hasSourceParserEntry)
+    fun sourceLookupHonorsAstOnlyJavaAndStdOnlyConstSafe() {
+        assertNull(BuiltInAnnotationRegistry.findLanguageBuiltIn("Java"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "std"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("Java", forcedCustom = false, moduleName = "application"))
 
@@ -74,6 +75,52 @@ class BuiltInAnnotationRegistryTest {
         assertSame(builtIn("C"), BuiltInAnnotationRegistry.resolveLanguageBuiltIn("C", false, "application"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("C", true, "application"))
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("sample.C", false, "application"))
+    }
+
+    /** 平台 source-surface descriptor 不会污染语言 builtin lookup。 */
+    @Test
+    fun platformDescriptorsRequireTheirOwnIdentityDomain() {
+        assertNull(BuiltInAnnotationRegistry.findLanguageBuiltIn("ObjCMirror"))
+        assertNull(BuiltInAnnotationRegistry.find("ObjCMirror"))
+        assertNotNull(
+            BuiltInAnnotationRegistry.findPlatformAnnotation(FqName("objc.lang.ObjCMirror")),
+        )
+        assertEquals(1, BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ObjCMirror").size)
+        assertEquals(2, BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ForeignName").size)
+    }
+
+    /** 平台注解必须经过 language-version gate，不能在 1.0.0 中提前生效。 */
+    @Test
+    fun platformAnnotationVersionGateUsesLanguageFeatureSettings() {
+        val descriptor = assertNotNull(
+            BuiltInAnnotationRegistry.findPlatformAnnotation(FqName("objc.lang.ObjCMirror")),
+        )
+        val legacy = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_5,
+            apiVersion = ApiVersion.CANGJIE_1_0_5,
+        )
+        val modern = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_1_0,
+            apiVersion = ApiVersion.CANGJIE_1_1_0,
+        )
+
+        assertEquals(AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION, descriptor.versionSupport(legacy))
+        assertEquals(AnnotationVersionSupportStatus.SUPPORTED, descriptor.versionSupport(modern))
+    }
+
+    /** 显式 feature override 必须与 Kotlin 的 LanguageVersionSettings 优先级一致。 */
+    @Test
+    fun explicitFeatureOverrideRemainsAuthoritativeForAnnotationGate() {
+        val descriptor = assertNotNull(
+            BuiltInAnnotationRegistry.findPlatformAnnotation(FqName("objc.lang.ObjCMirror")),
+        )
+        val overridden = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+            specificFeatures = mapOf(LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.ENABLED),
+        )
+
+        assertEquals(AnnotationVersionSupportStatus.SUPPORTED, descriptor.versionSupport(overridden))
     }
 
     /** Deprecated 的第二个位置参数仍是重复 message，不能顺序分配到 since。 */
@@ -92,21 +139,47 @@ class BuiltInAnnotationRegistryTest {
         assertFalse(schema.variadic)
     }
 
-    /** 外部函数名与 accessor 名共享字符串类型，但只有 accessor 要求未命名实参。 */
+    /** 平台注解的字符串参数契约只在真实平台 descriptor 中描述。 */
     @Test
     fun foreignNameSchemasDistinguishAccessorArguments() {
-        val name = builtIn("ForeignName").argumentSchema
-        assertTrue(name.acceptsArbitrarySingleName)
-        assertTrue(assertNotNull(name.positionalParameter).required)
-        assertEquals(AnnotationParameterKind.STRING, name.positionalParameter?.kind)
+        val descriptors = BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ForeignName")
+        assertEquals(2, descriptors.size)
+        assertTrue(descriptors.all { assertNotNull(it.argumentSchema.positionalParameter).required })
+        assertTrue(descriptors.all { it.argumentSchema.positionalParameter?.kind == AnnotationParameterKind.STRING })
+        assertEquals(
+            setOf(CangjieAnnotationTarget.MEMBER_FUNCTION),
+            assertNotNull(descriptors.single { it.packageFqName == FqName("interoplib.interop") }).declarationTargets,
+        )
+        assertEquals(
+            setOf(CangjieAnnotationTarget.INIT, CangjieAnnotationTarget.MEMBER_PROPERTY, CangjieAnnotationTarget.MEMBER_FUNCTION),
+            assertNotNull(descriptors.single { it.packageFqName == FqName("objc.lang") }).declarationTargets,
+        )
 
         for (sourceName in listOf("ForeignGetterName", "ForeignSetterName")) {
-            val descriptor = builtIn(sourceName)
+            val descriptor = assertNotNull(
+                BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName(sourceName).singleOrNull(),
+            )
             assertFalse(descriptor.argumentSchema.acceptsArbitrarySingleName)
             assertTrue(assertNotNull(descriptor.argumentSchema.positionalParameter).required)
             assertEquals(setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), descriptor.declarationTargets)
             assertEquals(AnnotationSemanticHandler.FOREIGN_NAME, descriptor.semanticHandler)
         }
+    }
+
+    /** ObjCInit 的 selector 参数是可选的单个字符串，而不是无参 builtin。 */
+    @Test
+    fun objcInitAllowsZeroOrOneStringSelector() {
+        val descriptor = assertNotNull(
+            BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ObjCInit").singleOrNull(),
+        )
+        assertEquals(CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, descriptor.argumentSyntax)
+        assertEquals(1, descriptor.argumentSchema.parameters.size)
+        val selector = descriptor.argumentSchema.parameters.single()
+        assertEquals("name", selector.name)
+        assertEquals(AnnotationParameterKind.STRING, selector.kind)
+        assertTrue(selector.acceptsPositional)
+        assertFalse(selector.required)
+        assertEquals(setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), descriptor.declarationTargets)
     }
 
     /** 十类 target 的源码名和官方 ABI 顺序必须稳定，最后一项源码拼写为 Extension。 */
@@ -159,13 +232,25 @@ class BuiltInAnnotationRegistryTest {
         assertTrue(ifAvailable.declarationTargets.isEmpty())
     }
 
-    /** FFI 互斥身份、函数目标和包级 NonProduct 必须由各自的语义 owner 消费。 */
+    /** FFI 语言 kind、平台身份和包级 NonProduct 必须由各自的语义 owner 消费。 */
     @Test
     fun ffiAndCompilerDirectivesKeepTheirSemanticOwners() {
-        assertEquals(setOf(BuiltInAnnotationKind.C, BuiltInAnnotationKind.JAVA,
-            BuiltInAnnotationKind.JAVA_MIRROR, BuiltInAnnotationKind.JAVA_IMPL,
-            BuiltInAnnotationKind.OBJ_C_MIRROR, BuiltInAnnotationKind.OBJ_C_IMPL),
-            BuiltInAnnotationRegistry.ffiExclusiveKinds)
+        assertEquals(setOf(BuiltInAnnotationKind.C), BuiltInAnnotationRegistry.ffiExclusiveKinds)
+        assertEquals(
+            setOf(
+                CangjiePlatformAnnotationKind.JAVA_MIRROR,
+                CangjiePlatformAnnotationKind.JAVA_IMPL,
+                CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT,
+                CangjiePlatformAnnotationKind.OBJ_C_MIRROR,
+                CangjiePlatformAnnotationKind.OBJ_C_IMPL,
+                CangjiePlatformAnnotationKind.OBJ_C_INIT,
+                CangjiePlatformAnnotationKind.OBJ_C_OPTIONAL,
+                CangjiePlatformAnnotationKind.FOREIGN_NAME,
+                CangjiePlatformAnnotationKind.FOREIGN_GETTER_NAME,
+                CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME,
+            ),
+            BuiltInAnnotationRegistry.platformInteropKinds,
+        )
         assertEquals(setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), builtIn("CallingConv").declarationTargets)
         assertEquals(setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION), builtIn("FastNative").declarationTargets)
         assertTrue(builtIn("Intrinsic").declarationTargets.isEmpty())
@@ -176,7 +261,9 @@ class BuiltInAnnotationRegistryTest {
         assertEquals(AnnotationSemanticHandler.MOCK_PREPARATION, mock.semanticHandler)
         assertTrue(mock.allowsExpression)
         assertTrue(mock.declarationTargets.isEmpty())
-        val nonProduct = builtIn("NonProduct")
+        val nonProduct = assertNotNull(BuiltInAnnotationRegistry.findPackageDirective("NonProduct"))
+        assertNull(nonProduct.kind)
+        assertEquals(CangjieAnnotationOrigin.PACKAGE_DIRECTIVE, nonProduct.origin)
         assertEquals(AnnotationSemanticHandler.PACKAGE_PRODUCT, nonProduct.semanticHandler)
         assertTrue(nonProduct.declarationTargets.isEmpty())
         assertEquals(CangjieAnnotationArgumentSyntax.NONE, nonProduct.argumentSyntax)

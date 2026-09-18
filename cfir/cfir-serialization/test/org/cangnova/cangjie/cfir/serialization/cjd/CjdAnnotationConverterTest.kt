@@ -108,6 +108,26 @@ class CjdAnnotationConverterTest : CjParsingTestCase("", "cj.d", CangJieDeclarat
         assertNull(outside.annotations.single().annotationKind)
     }
 
+    @Test fun testPlatformAnnotationPublishesPlatformIdentity() {
+        val foreignName = ClassId.topLevel(FqName("interoplib.interop.ForeignName"))
+        val result = convert(
+            index("import interoplib.interop.ForeignName\n@ForeignName[\"native_f\"]\nfunc f(): Unit"),
+            resolution(foreignName),
+        )
+        val call = result.annotations.single()
+        assertEquals(emptyList<CjdAnnotationConversionDiagnostic>(), result.diagnostics)
+        assertNull(call.annotationKind)
+        assertEquals(CangjieAnnotationOrigin.PLATFORM_DERIVED, call.annotationOrigin)
+        assertEquals(
+            CangjieAnnotationIdentity.PlatformDerived(
+                CangjiePlatformAnnotationKind.FOREIGN_NAME,
+                foreignName.asSingleFqName(),
+                "ForeignName",
+            ),
+            call.annotationIdentity,
+        )
+    }
+
     @Test fun testEscapesAndParserOwnedOverflow() {
         val result = convert(index("@Deprecated[message: \"line\\nnext\"]\n@OverflowWrapping[checked]\nfunc f(): Unit"))
         assertEquals("line\nnext", (result.annotations[0].argumentMapping.mapping[Name.identifier("message")] as CfirLiteralExpression).value)

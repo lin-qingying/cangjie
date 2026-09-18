@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
+import PackageFormat.AnnoKind
 import PackageFormat.Package
 import PackageFormat.PackageKind
 import java.nio.ByteBuffer
@@ -91,6 +92,44 @@ class CjoPackageWriterTest {
         assertEquals(listOf("org::sample.Thing as AliasThing", "sample.star.*"), header.decompiledImportTexts)
         assertEquals(setOf("Box"), header.topLevelClassNames.mapTo(mutableSetOf()) { it.asString() })
         assertEquals(setOf("makeBox"), header.topLevelCallableNames.mapTo(mutableSetOf()) { it.asString() })
+    }
+
+    /** Decl 的 attributes、annotation kind、参数映射和目标引用必须进入 CJO。 */
+    @Test
+    fun `writes declaration semantic annotation metadata`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "f",
+                        attributes = listOf(0x20UL),
+                        annotations = listOf(
+                            CjoAnnotationMetadata(
+                                kind = AnnoKind.Deprecated,
+                                identifier = "Deprecated",
+                                arguments = listOf(CjoAnnotationArgumentMetadata("message", 7u)),
+                                target = CjoAnnotationTargetMetadata(decl = "Owner"),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val declaration = Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allDecls(0)
+        requireNotNull(declaration)
+        assertEquals(1, declaration.attributesLength)
+        assertEquals(0x20UL, declaration.attributes(0))
+        assertEquals(1, declaration.annotationsLength)
+        val annotation = requireNotNull(declaration.annotations(0))
+        assertEquals(AnnoKind.Deprecated, annotation.kind)
+        assertEquals("Deprecated", annotation.identifier)
+        assertEquals(1, annotation.argsLength)
+        assertEquals("message", annotation.args(0)?.name)
+        assertEquals(7u, annotation.args(0)?.expr)
+        assertEquals("Owner", annotation.target?.decl)
     }
 
     /**
