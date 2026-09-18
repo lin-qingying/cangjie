@@ -3940,7 +3940,11 @@ public class C {
 #### F. 版本与提交纪律
 
 - [ ] **C-3（B 组 5 处文案修正）单独提交**，提交信息含改动前后对照（5.2）
-- [ ] **C-5（清理 **9** 个死 `ParsingContext` 预设）独立提交**，不混入功能提交（B-1：不是 11 个）
+- [x] **C-5（清理 **9** 个死 `ParsingContext` 预设）独立提交**，不混入功能提交（B-1：不是 11 个）
+      —— 已于 2026-09-18 完成：`c73127e32 refactor(psi): drop unused ParsingContext presets`
+      （实测 9 个预设全仓 `ParsingContext.<名>` 命中数均为 0；`:psi:test` 73 tests / 0 failures）
+- [ ] **7.4 本清单的逐条执行记录**：A/C/D/E 组的代码级断言已于 2026-09-18 逐条实测（见附录 C.6）；
+      仍未执行的是 E 组的**人工 IDE 验收**与**发布往返**，以及 F 组的历史提交纪律（已发生，不可追溯）
 - [ ] **8.7「施工级不要动清单」逐条确认**
 
 ---
@@ -4540,6 +4544,8 @@ P4 收尾（两个验收项）与 P5 实施期间，相对 v3.1 的**事实更�
 | **6** | **OP3 一致性已核验**：`intellij-ide` 与 `deveco` 的 `CaIdeScopeCangJieFileCollector.kt` 正文**逐字一致**（`diff -q` 无差异） | 7.4-E 对应项可勾选 |
 | **7** | **提交切分与设计不符（实况记录）**：5.2 的"按 C-1..C-5 逐个提交"在**多工作线并行**的工作树上不可达 —— P1/P2/P3 早已随其它提交落地；P3 源收集与 P4 分别成笔，另有 2 处因文件粒度不可分而**披露式提交** | 见 C.7 |
 | **8** | **`deveco` 的 `cjdFiles` 无生产消费方**（仅 `CangjieSdkIntegrityTest` 消费），且该测试在当前环境被无效 `.host/devEco-studio` 路径阻断 | 记入 5.1「尚未完成」；生产接线属后续 |
+| **9** | **C-5（清理 9 个零使用点的 `ParsingContext` 预设）已完成**：实测 `LEGACY`/`REPORT`/`SILENT`/`IF_WHILE_CONDITION`/`MATCH_EXPRESSION_MODE`/`FUNCTION_LITERAL_BLOCK`/`FUNCTION_LITERAL_COLLAPSED`/`MACRO_BACK_TOKEN`/`NO_STRING_INTERPOLATION` 的 `ParsingContext.<名>` 全仓命中数**均为 0**（`DEFAULT` 6 处、`ANNOTATION_ONLY` 1 处仍在用）；顺带删掉注释掉的 `STRICT`（其 `strictMode` 参数已不存在）。`AbstractCangJieParsing.kt` +13/−35，`:psi:test` 73 tests / 0 failures | `c73127e32`（按 5.2 要求**独立提交**） |
+| **10** | **7.4 清单逐条实测结果**：A2（DEFAULT 四格：PSI/LightTree × `.cj`/`.cj.d` 的 `isAbstract`/`isDefault` 全覆盖，见 `DeclarationModeRawCfirStatusTest`）✓、A4（`external/` 零改动）✓、C3（`isDefaultInterfaceMember` 已由 `!isImplicitAbstractClassLikeMember` 派生）✓、C5（恰好 **11** 个 `requiresImplementation get() = true`，三个 checker 基类默认 `false`）✓、B8（`ParsingContext` 无 `isDeclarationFile`/`DECLARATION_FILE`）✓、B9（`CangJieParser.parse` 已无 `endsWith(".cj.macrocall")`，按 `sourceKind` 穷尽 `when`）✓、B10（`CangJieLightParser` 透传 `sourceKind`）✓、E1 前半（`DeclarationFileParsingTest:75` 断言 `file.fileType`）✓ | 见下"仍未执行" |
 
 
 ### C.7 跨仓提交实况（2026-09-18）
@@ -4549,6 +4555,7 @@ P4 收尾（两个验收项）与 P5 实施期间，相对 v3.1 的**事实更�
 | 仓 | 提交 | 分支 | 规模 | 披露 |
 |---|---|---|---|---|
 | `cangjie`（主仓） | `617bf6879` `refactor(frontend): share Cangjie source classification between collectors` | `main` | 4 files, +55/−69 | 无（纯 P3 源收集） |
+| `cangjie` | `c73127e32` `refactor(psi): drop unused ParsingContext presets` | `main` | 1 file, +13/−35 | 无（C-5，独立提交） |
 | `cangjie` | `d563f22a1` `feat(cfir): merge .cj.d sidecar annotations into .cjo declarations` | `main` | 30 files, +1369/−107 | `CfirDeclDeserializer.kt` 同时含**注解序列化**的 `publishDeclarationMetadata` 接缝提取（文件粒度不可分） |
 | `intellij-ide` | `681597be` `feat: register and exclude .cj.d declaration files` | `cfir-new` | 5 files, +52/−3 | 无 |
 | `deveco` | `3c794d9` `feat(declaration): 注册 .cj.d 并排除出声明提供者聚合` | `main` | 3 files, +24 | 无 |
@@ -4559,4 +4566,34 @@ P4 收尾（两个验收项）与 P5 实施期间，相对 v3.1 的**事实更�
 `cjoStubBuilding.kt`、`decompiler-to-psi/*`；`intellij-ide` 的 `CaIdeSourceModuleBase.kt` 与
 `LanguageVersionSettingsProvider.kt` 系列（languageVersionSettings 重构）；`deveco` 的
 `PackageModel.kt` / `CangJieProjectSettingsPanel.kt` / `CjToolchainPathChoosingComboBox.kt`（SDK 选择 UI）。
+
+### C.8 截至 2026-09-18 仍未执行的事项（全部剩余项）
+
+**代码级**：只剩一条低价值项 —— **C7「新增 checker 的默认行为正确」**（4.4.5 / 7.4-C 的"临时加一个空
+checker 验证它不需要知道 `.cj.d` 存在"）。当前机制由两处保证：三个 checker 基类的
+`requiresImplementation` 默认 `false`（实测）、以及 11 项双向用例（`CfirDeclarationModeCheckersTest`）。
+该清单项要求的是一次**一次性的探针动作**，不产生长期工件，故未做。
+
+**环境 / 真实会话级（必须由人在真实环境执行，本仓测试无法覆盖）**：
+
+| # | 事项 | 现状证据 |
+|---|---|---|
+| 1 | **E6 + C.4-R3：主仓发布 `cangjie-frontend-*-for-ide` 到 `build/repo`，并在 `intellij-ide` 侧以 `--refresh-dependencies` 重新解析**（验证"同版本号缓存能否被破"） | 实测 `build/repo/org/cangnova/cangjie/` 下**不存在** `*-for-ide` 工件 |
+| 2 | **E4 + 6.6 的 C-2 六项人工 IDE 验收**：打开/编辑/文件内补全/**跨文件跳转**/**查找引用**/`.cj` 跳转到 `.cjo` | 第 4、5 项最可能因"排除出 Stub 索引"失效；设计稿 6.6 明确把它列为**决策点**而非验收细节 |
+| 3 | **6.6 表格中的人工断言**（无波浪线、折叠/括号匹配、无重复符号告警、`.cj.d` 不出现于聚合与 `classesRoots`） | 静态侧已由 P1 解析用例 + `intellij-ide` 的 `testDeclarationSidecarsAreExcludedFromSourceContent` 间接覆盖，IDE 内的可见行为未验 |
+
+**纪律性遗留（已发生，不可追溯修正）**：
+
+| # | 事项 | 证据 |
+|---|---|---|
+| 4 | **F1：C-3（B 组 5 处诊断文案修正）没有单独提交** | 实测其落在 `9cd5638b5 feat(psi): extend parsing and declaration structures`，与 P1 功能改动同一笔；5.2 要求它必须单独提交、单独评审（它是本设计**唯一**有外部可见行为变化的改动）。代码已生效，历史不建议改写 |
+
+**评审动作（无代码落点）**：A3「每一个 `DIFF-*` 都在评审记录中确认」（含 F6 抽公共类方案被**否决**这条"不实施"的差异记录）。
+
+**不属本特性的独立课题**：C.4-R4「`parseMacro` 的 `functionBody?` 注释与实现矛盾」。
+
+**已判定不需要做**（避免后人重复怀疑）：
+- 4.8.3 的 LSP 配置注入 —— 无落点，行为已由 `compileCjd` 默认 `false` 成立（见 4.8.3「P6 实施记录」）；
+- `deveco` 的 `cjdFiles` 生产接线 —— 当前无消费方。
+
 
