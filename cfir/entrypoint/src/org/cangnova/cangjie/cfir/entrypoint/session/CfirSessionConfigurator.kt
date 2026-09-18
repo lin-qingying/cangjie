@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.analysis.CheckersComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.LanguageVersionSettingsCheckers
+import org.cangnova.cangjie.cfir.analysis.extensions.additionalCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
@@ -98,6 +99,17 @@ class CfirSessionConfigurator(
         val extensionService = session.ensureExtensionService()
         extensionService.registerAll(merged.registrars)
         session.registeredPluginAnnotationsOrNull?.initialize()
+
+        // 与 Kotlin FirSessionConfigurator 的附加 checker 接线保持一致：
+        // 扩展服务中的每个附加 checker 扩展必须进入同一个 session-owned
+        // CheckersComponent，尤其不能遗漏 settings-level checker。否则扩展
+        // 虽然成功创建，language-version gate 却永远不会执行。
+        extensionService.additionalCheckers.forEach { extension ->
+            useCheckers(extension.declarationCheckers)
+            useCheckers(extension.expressionCheckers)
+            useCheckers(extension.typeCheckers)
+            useCheckers(extension.languageVersionSettingsCheckers)
+        }
 
         // 仅源码会话记录诊断工厂容器，保持与 Kotlin 侧语义一致。
         if (session.kind == CfirSession.Kind.Source && merged.diagnosticsContainers.isNotEmpty()) {
