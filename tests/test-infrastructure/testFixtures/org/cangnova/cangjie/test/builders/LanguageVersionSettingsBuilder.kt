@@ -23,7 +23,8 @@ class LanguageVersionSettingsBuilder {
         fun fromExistingSettings(builder: LanguageVersionSettingsBuilder): LanguageVersionSettingsBuilder {
             return LanguageVersionSettingsBuilder().apply {
                 languageVersion = builder.languageVersion
-                enabledFeatures += builder.enabledFeatures
+                apiVersion = builder.apiVersion
+                specificFeatures += builder.specificFeatures
                 analysisFlags += builder.analysisFlags
             }
         }
@@ -34,10 +35,11 @@ class LanguageVersionSettingsBuilder {
      */
     var languageVersion: LanguageVersion = LanguageVersion.LATEST_STABLE
 
-    /**
-     * 保存 `enabledFeatures`，供测试配置构建在测试执行期间读取或传递。
-     */
-    private val enabledFeatures: MutableSet<LanguageFeature> = mutableSetOf()
+    /** 显式 API 版本；未设置时按语言版本推导。 */
+    private var apiVersion: ApiVersion? = null
+
+    /** 保存 feature 的显式状态，必须同时保留 ENABLED 和 DISABLED。 */
+    private val specificFeatures: MutableMap<LanguageFeature, LanguageFeature.State> = mutableMapOf()
     /**
      * 保存 `analysisFlags`，供测试配置构建在测试执行期间读取或传递。
      */
@@ -47,14 +49,14 @@ class LanguageVersionSettingsBuilder {
      * 执行 `enable` 对应的测试配置构建流程，维持测试框架的阶段契约。
      */
     fun enable(feature: LanguageFeature) {
-        enabledFeatures += feature
+        specificFeatures[feature] = LanguageFeature.State.ENABLED
     }
 
     /**
      * 执行 `disable` 对应的测试配置构建流程，维持测试框架的阶段契约。
      */
     fun disable(feature: LanguageFeature) {
-        enabledFeatures -= feature
+        specificFeatures[feature] = LanguageFeature.State.DISABLED
     }
 
     /**
@@ -79,6 +81,11 @@ class LanguageVersionSettingsBuilder {
         directives.singleOrZeroValue(LanguageSettingsDirectives.LANGUAGE_VERSION)?.let { value ->
             languageVersion = LanguageVersion.parse(value)
                 ?: error("Invalid LANGUAGE_VERSION '$value'. Expected format: major.minor.patch")
+        }
+
+        directives.singleOrZeroValue(LanguageSettingsDirectives.API_VERSION)?.let { value ->
+            apiVersion = ApiVersion.parse(value)
+                ?: error("Invalid API_VERSION '$value'. Expected format: major.minor.patch")
         }
 
         directives[LanguageSettingsDirectives.SUPPRESS_WARNINGS]
@@ -122,11 +129,16 @@ class LanguageVersionSettingsBuilder {
      * 执行 `build` 对应的测试配置构建流程，维持测试框架的阶段契约。
      */
     fun build(): LanguageVersionSettings {
+        val effectiveApiVersion = apiVersion ?: ApiVersion.createByLanguageVersion(languageVersion)
+        require(effectiveApiVersion <= ApiVersion.createByLanguageVersion(languageVersion)) {
+            "API_VERSION ${effectiveApiVersion.versionString} cannot be greater than " +
+                "LANGUAGE_VERSION ${languageVersion.versionString}"
+        }
         return LanguageVersionSettingsImpl(
             languageVersion = languageVersion,
-            apiVersion = ApiVersion.LATEST_STABLE,
+            apiVersion = effectiveApiVersion,
             analysisFlags = analysisFlags.toMap(),
-            specificFeatures = enabledFeatures.toSet().associateWith { LanguageFeature.State.ENABLED },
+            specificFeatures = specificFeatures.toMap(),
         )
     }
 }

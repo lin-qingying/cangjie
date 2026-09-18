@@ -55,6 +55,12 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
     }
 }
 
+/**
+ * 隐式返回类型阶段（IMPLICIT_TYPES）的 body 解析计算会话。
+ *
+ * 相比基类增加了 foreign 注解延迟解析锚点：无法按需解析注解的局部
+ * callable 不入锚点表，非局部 callable 则把注解解析推迟到锚点 symbol 上。
+ */
 internal class LLImplicitBodyResolveComputationSession : ImplicitBodyResolveComputationSession() {
     /**
      * The symbol on which foreign annotations will be postponed

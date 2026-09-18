@@ -32,6 +32,8 @@ import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
+import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
+import org.cangnova.cangjie.cfir.session.ExplicitCfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
@@ -42,6 +44,7 @@ import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.WHEN_ENV
 import org.cangnova.cangjie.test.directives.ConfigurationDirectives
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.SimpleDirective
@@ -177,6 +180,27 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             ?.let { resolveTestDataPath(module, it) }
             ?.path
         configuration.apiLevelSyscapBasePath = testDataAnchor?.path
+        module.directives[WHEN_ENV].lastOrNull()?.let { raw ->
+            val values = raw.split(',').map { entry ->
+                val separator = entry.indexOf('=')
+                require(separator > 0) { "WHEN_ENV entries must use key=value: $entry" }
+                entry.substring(0, separator).trim() to entry.substring(separator + 1).trim()
+            }.toMap()
+            fun required(name: String): String = requireNotNull(values[name]) {
+                "WHEN_ENV must explicitly provide $name"
+            }
+            configuration.conditionalCompilationSettings = ExplicitCfirConditionalCompilationSettings(
+                backend = required("backend"),
+                arch = required("arch"),
+                os = required("os"),
+                cjcVersion = required("cjc_version"),
+                debug = required("debug").toBooleanStrictOrNull()
+                    ?: error("WHEN_ENV debug must be true or false"),
+                test = required("test").toBooleanStrictOrNull()
+                    ?: error("WHEN_ENV test must be true or false"),
+                userDefined = values - setOf("backend", "arch", "os", "cjc_version", "debug", "test"),
+            )
+        }
         if (WITH_STDLIB in module.directives && !noPreludeEnabled) {
             addStdlibClasspathRoots(configuration)
         }

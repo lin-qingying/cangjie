@@ -663,6 +663,16 @@ internal class AnnotationNoConstInitImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationNoConstInit
 
+internal class IntrinsicFunctionMustBeToplevelImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IntrinsicFunctionMustBeToplevel
+
+internal class IntrinsicFunctionCannotHaveBodyImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IntrinsicFunctionCannotHaveBody
+
 internal class IllegalUseOfAnnotationImpl(
     override val declarationKind: String,
     override val annotationName: String,
@@ -703,6 +713,23 @@ internal class CfuncCannotHaveUnitArgsImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCannotHaveUnitArgs
+
+internal class CfuncCannotCaptureVarImpl(
+    override val variableName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCannotCaptureVar
+
+internal class CfuncCannotCaptureThisImpl(
+    override val receiverName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncCannotCaptureThis
+
+internal class FuncCaptureVarNotCtypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.FuncCaptureVarNotCtype
 
 internal class CffiCannotHaveTypeParamImpl(
     override val declarationKind: String,
@@ -746,6 +773,16 @@ internal class InvalidCfuncParameterTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidCfuncParameterType
+
+internal class UnsafeFunctionInvokeFailedImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnsafeFunctionInvokeFailed
+
+internal class CfuncVarCannotHaveVarParamImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CfuncVarCannotHaveVarParam
 
 internal class OnlyCfuncCanUseAnnotationImpl(
     override val annotationName: String,
@@ -2057,6 +2094,42 @@ internal class UselessCommandTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UselessCommandType
+
+internal class DeprecatedArgumentsMustBeLiteralConstImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedArgumentsMustBeLiteralConst
+
+internal class DeprecatedArgumentDuplicationImpl(
+    override val argumentName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedArgumentDuplication
+
+internal class DeprecatedWrongArgumentImpl(
+    override val argumentName: String,
+    override val expectedType: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedWrongArgument
+
+internal class DeprecatedEmptyStringArgumentImpl(
+    override val argumentName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedEmptyStringArgument
+
+internal class DeprecatedUnknownArgumentImpl(
+    override val argumentName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedUnknownArgument
+
+internal class DeprecatedInvalidTargetImpl(
+    override val invalidTarget: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.DeprecatedInvalidTarget
 
 internal class DeprecatedErrorImpl(
     override val kind: String,

@@ -74,6 +74,7 @@ internal val CjDeclaration.modality: Modality
         else -> Modality.FINAL
     }
 
+/** 取 compiled PSI 元素的 backing stub：优先绿色 stub，缺失时即时计算并缓存。 */
 internal inline val <T, reified S> T.compiledStub: S
         where T : StubBasedPsiElementBase<in S>, T : CjElement, S : StubElement<*>
     get() = (this.greenStub ?: calculateStub()) as S

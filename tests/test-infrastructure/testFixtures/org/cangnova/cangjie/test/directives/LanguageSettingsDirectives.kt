@@ -10,6 +10,11 @@ object LanguageSettingsDirectives : SimpleDirectivesContainer() {
      * 保存 `LANGUAGE_VERSION`，供测试指令在测试执行期间读取或传递。
      */
     val LANGUAGE_VERSION by stringDirective("Pin test language version.")
+
+    /**
+     * 独立设置测试使用的 API 版本；未指定时由语言版本推导，保持与编译器配置一致。
+     */
+    val API_VERSION by stringDirective("Pin test API version.")
     /**
      * 保存 `LANGUAGE`，供测试指令在测试执行期间读取或传递。
      */
