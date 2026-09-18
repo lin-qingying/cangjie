@@ -11,6 +11,7 @@ import java.nio.ByteBuffer
 internal class CjdBinaryFixture {
     val builder = FlatBufferBuilder(1024)
     private val declarations = mutableListOf<Int>()
+    private val declarationTypes = mutableListOf<UInt>()
     private val types = mutableListOf<Int>()
 
     fun primitive(kind: UShort): UInt = addType(SemaTy.createSemaTy(builder, kind, 0, SemaTyInfo.NONE, 0))
@@ -63,7 +64,9 @@ internal class CjdBinaryFixture {
         val lists = FuncBody.createParamListsVector(builder, intArrayOf(list))
         val body = FuncBody.createFuncBody(builder, lists, 0u, 0u, false, 0u)
         val info = FuncInfo.createFuncInfo(builder, body, 0u, 0u, 0, false, false, false)
-        return declaration(name, DeclKind.FuncDecl, topLevel = topLevel, generic = generic, infoKind = DeclInfo.FuncInfo, info = info)
+        val functionType = compound(TypeKind.Func, parameters.map { declarationTypes[it.toInt() - 1] })
+        return declaration(name, DeclKind.FuncDecl, type = functionType, topLevel = topLevel, generic = generic,
+            infoKind = DeclInfo.FuncInfo, info = info)
     }
 
     fun classDecl(name: String, members: List<UInt>, annotationsExported: Boolean = true): UInt {
@@ -120,6 +123,7 @@ internal class CjdBinaryFixture {
         Decl.addInfoType(builder, infoKind)
         Decl.addInfo(builder, info)
         declarations += Decl.endDecl(builder)
+        declarationTypes += type
         return declarations.size.toUInt()
     }
 

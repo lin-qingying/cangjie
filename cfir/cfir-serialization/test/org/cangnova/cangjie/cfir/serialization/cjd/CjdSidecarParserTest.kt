@@ -87,7 +87,7 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
     @Test fun testReturnModifiersDefaultsDoNotAffectKey() {
         val index = parseBoth("""
             public func f(x!: Rune = r'a'): Unit
-            private func f(x: UInt8): Int64
+            private func f(x: Rune): Int64
         """.trimIndent())
         assertEquals(emptyList<CjdDiagnostic>(), index.diagnostics)
         assertEquals(index.declarations[0].key, index.declarations[1].key)

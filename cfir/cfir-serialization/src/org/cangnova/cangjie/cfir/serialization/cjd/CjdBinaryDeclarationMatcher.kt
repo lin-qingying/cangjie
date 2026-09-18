@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationCo
 /** 匹配失败与缺少 sidecar 条目分开报告；诊断由拥有此计划的库上下文转发。 */
 enum class CjdBinaryMatchDiagnosticKind { MISSING, AMBIGUOUS, UNSUPPORTED, NON_EXPORTED, UNUSABLE_SIDECAR }
 
+/** 一次二进制/sidecar 匹配失败的完整记录，定位信息在无索引时可为 `null`。 */
 data class CjdBinaryMatchDiagnostic(
     val kind: CjdBinaryMatchDiagnosticKind,
     val declarationIndex: Int?,
@@ -46,6 +47,7 @@ interface CjdBinaryDeclarationMatcher {
     }
 }
 
+/** [CjdBinaryDeclarationMatcher] 的默认实现；构造时一次性完成整表匹配并缓存结果。 */
 private class CjdBinaryMatchPlan(
     private val pkg: Package,
     private val sidecar: CjdSidecarIndex,

@@ -45,6 +45,7 @@ class DeclarationMatchKeyTest {
         val function = DeclarationMatchKey.Function("f", listOf(CjdParameterKey("x", TypeKey.Tuple(listOf(array, TypeKey.Option(int))))))
         assertTrue(function.matches(function.copy()))
         assertFalse(function.matches(function.copy(parameters = function.parameters.map { it.copy(name = "y") })))
-        assertEquals(TypeKey.primitive("Rune"), TypeKey.primitive("UInt8"))
+        assertNotEquals(TypeKey.primitive("Rune"), TypeKey.primitive("UInt8"))
+        assertFalse(TypeKey.primitive("Rune").matches(TypeKey.primitive("UInt8")))
     }
 }

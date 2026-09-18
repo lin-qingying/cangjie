@@ -42,6 +42,7 @@ object CjoDeclarationLoader {
             header = loadedPackage.header,
             moduleData = moduleData,
             cjoManager = cjoManager,
+            sourcePath = loadedPackage.sourcePath,
         )
         val typeDeserializer = CfirTypeDeserializer(context)
         val declDeserializer = CfirDeclDeserializer(context, typeDeserializer)

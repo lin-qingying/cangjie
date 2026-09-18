@@ -18,5 +18,6 @@ dependencies {
     testImplementation(intellijCore())
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
     testImplementation(libs.junit.jupiter)
+    testImplementation(kotlin("test"))
     testRuntimeOnly(libs.junit.platform.launcher)
 }

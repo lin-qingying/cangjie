@@ -2,81 +2,49 @@ package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.Package
 import org.cangnova.cangjie.name.FqName
-import java.io.File
 import java.nio.ByteBuffer
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * `.cjo` 文件管理器。
- *
- * 负责按包名搜索、加载和缓存 `.cjo` 文件，
- * 使用 FlatBuffers 零拷贝方式读取，避免不必要的内存分配。
+ * `.cjo` 文件管理器。一次装载原子发布包头、buffer 与实际来源路径。
+ * 已存在/缺失结果在本代内稳定；CJO、sidecar 或搜索根变化后必须连同 provider/session 整体重建。
  */
 class CjoManager(
-    /** `.cjo` 文件搜索路径解析器。 */
     private val searchPath: CjoSearchPath,
-) {
-    /** 已读取的包头缓存，key 为完整包名。 */
-    private val headerCache = ConcurrentHashMap<String, CjoPackageHeader>()
-    /** 已确认不存在的包名集合，用于避免重复文件系统扫描。 */
-    private val missingPackages = ConcurrentHashMap.newKeySet<String>()
-    /** 已读取的 FlatBuffers buffer 缓存，供包头与完整 Package 共享。 */
-    private val bufferCache = ConcurrentHashMap<String, ByteBuffer>()
-
-    /** 判断指定包名是否能在当前 `.cjo` 搜索路径中找到。 */
-    fun hasPackage(fqName: FqName): Boolean {
-        val pkgName = fqName.asString()
-        return headerCache.containsKey(pkgName) || searchPath.findCjoFile(pkgName) != null
+) : CjoLoadedPackageProvider {
+    private class Snapshot(
+        private val buffer: ByteBuffer,
+        override val sourcePath: Path,
+    ) : CjoLoadedPackage {
+        override val header: CjoPackageHeader = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer.duplicate()))
+        override val pkg: Package get() = Package.getRootAsPackage(buffer.duplicate())
     }
 
-    /**
-     * 加载指定完整包名的轻量包头。
-     *
-     * 成功时同时缓存原始 buffer，后续 [loadPackage] 可直接复用同一份 FlatBuffers 数据。
-     */
-    fun loadPackageHeader(fullPkgName: String): CjoPackageHeader? {
-        headerCache[fullPkgName]?.let { return it }
-        if (fullPkgName in missingPackages) return null
+    private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
+    private val missingPackages = ConcurrentHashMap.newKeySet<String>()
 
+    fun hasPackage(fqName: FqName): Boolean =
+        snapshots.containsKey(fqName.asString()) || searchPath.findCjoFile(fqName.asString()) != null
+
+    /** 同一管理器中来源与内容不可分离；串行装载也避免竞争线程发布不同文件版本。 */
+    @Synchronized
+    override fun loadPackageSnapshot(fullPkgName: String): CjoLoadedPackage? {
+        snapshots[fullPkgName]?.let { return it }
+        if (fullPkgName in missingPackages) return null
         val file = searchPath.findCjoFile(fullPkgName)
         if (file == null) {
             missingPackages += fullPkgName
             return null
         }
-
-        val buffer = readFileToByteBuffer(file)
-        bufferCache[fullPkgName] = buffer
-        val header = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer))
-
-        missingPackages.remove(fullPkgName)
-        headerCache.putIfAbsent(fullPkgName, header)
-        return headerCache[fullPkgName] ?: header
-    }
-
-    /**
-     * 加载指定包的完整 FlatBuffers [Package]。
-     *
-     * 如果包头尚未加载，会先触发一次包头加载以建立 buffer 缓存。
-     */
-    fun loadPackage(fullPkgName: String): Package? {
-        if (!bufferCache.containsKey(fullPkgName)) {
-            loadPackageHeader(fullPkgName) ?: return null
+        return Snapshot(ByteBuffer.wrap(file.readBytes()), file.toPath().toAbsolutePath().normalize()).also {
+            snapshots[fullPkgName] = it
         }
-        val buffer = bufferCache[fullPkgName] ?: return null
-        return Package.getRootAsPackage(buffer)
     }
 
-    /** 枚举当前搜索路径可发现的包名集合。 */
-    fun getAvailablePackageNames(): Set<FqName> {
-        return searchPath.getAvailablePackageNames().mapTo(linkedSetOf(), ::FqName)
-    }
+    fun loadPackageHeader(fullPkgName: String): CjoPackageHeader? = loadPackageSnapshot(fullPkgName)?.header
+    fun loadPackage(fullPkgName: String): Package? = loadPackageSnapshot(fullPkgName)?.pkg
 
-    /** 把 `.cjo` 文件内容读入 position 归零的 [ByteBuffer]。 */
-    private fun readFileToByteBuffer(file: File): ByteBuffer {
-        val bytes = file.readBytes()
-        val buffer = ByteBuffer.allocate(bytes.size)
-        buffer.put(bytes)
-        buffer.flip()
-        return buffer
-    }
+    fun getAvailablePackageNames(): Set<FqName> =
+        searchPath.getAvailablePackageNames().mapTo(linkedSetOf(), ::FqName)
 }
