@@ -153,46 +153,24 @@ abstract class AbstractCangJieParsing(
         val processStringInterpolation: Boolean = true,
     ) {
         companion object {
-            // ==================== 通用上下文 ====================
+            /*
+             * 这里只保留**真正被使用的**两个预设。
+             *
+             * 历史上有 11 个预设（另有 1 个注释掉的 STRICT），但全仓实际只用到下面两个；
+             * 其余 9 个零使用点（LEGACY / REPORT / SILENT / IF_WHILE_CONDITION /
+             * MATCH_EXPRESSION_MODE / FUNCTION_LITERAL_BLOCK / FUNCTION_LITERAL_COLLAPSED /
+             * MACRO_BACK_TOKEN / NO_STRING_INTERPOLATION）已删除。
+             *
+             * 原因不是"省几行"，而是这个机制的实际职责只是**给文件级入口选一种解析模式**：
+             * 每个预设都是**全新实例**，任何局部 `with(其它预设)` 都会整体替换上下文
+             * （`parseMacro` 就是这种写法），把它当成"细粒度局部开关"来接语义会静默丢状态。
+             * 需要细粒度控制时请用 `copy(...)`，不要再加预设。
+             */
             /** 默认上下文 */
             val DEFAULT = ParsingContext()
 
             /** 仅注解模式（禁用宏解析） */
             val ANNOTATION_ONLY = ParsingContext(disableMacroParsing = true, enableCustomAnnotation = true)
-
-
-            //            /** 严格模式 */
-//            val STRICT = ParsingContext(strictMode = true)
-//
-//            /** 遗留模式（禁用自定义注解） */
-            val LEGACY = ParsingContext(enableCustomAnnotation = false)
-
-
-            // ==================== 错误报告相关 ====================
-            /** 报告错误 */
-            val REPORT = ParsingContext(shouldReportError = true)
-
-            /** 静默模式（不报告错误） */
-            val SILENT = ParsingContext(shouldReportError = false)
-
-            // ==================== 表达式解析相关 ====================
-            /** if/while条件上下文 */
-            val IF_WHILE_CONDITION = ParsingContext(allowLetExpression = true)
-
-            /** match表达式模式 */
-            val MATCH_EXPRESSION_MODE = ParsingContext(isExpression = true)
-
-            /** 函数字面量块模式 */
-            val FUNCTION_LITERAL_BLOCK = ParsingContext(preferBlock = true)
-
-            /** 函数字面量折叠模式 */
-            val FUNCTION_LITERAL_COLLAPSED = ParsingContext(collapse = true, isDoubleArrow = false)
-
-            /** 宏返回token模式 */
-            val MACRO_BACK_TOKEN = ParsingContext(backToken = true)
-
-            /** 不处理字符串插值 */
-            val NO_STRING_INTERPOLATION = ParsingContext(processStringInterpolation = false)
         }
 
         /**
