@@ -27,6 +27,7 @@ package org.cangnova.cangjie.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.Name.Companion.identifier
 import org.cangnova.cangjie.psi.stubs.CangJieAnnotationStub
@@ -75,7 +76,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
  * - [valueArguments]: 注解参数列表
  *
  * ## 常见用途
- * - FFI 互操作: `@C`, `@Java`, `@JavaImpl`
+     * - 语言级 FFI: `@C`, `@CallingConv`, `@FastNative`
  * - 编译器指令: `@Intrinsic`, `@OverflowThrowing`
  * - 语义标记: `@Deprecated`, `@Frozen`
  * - 条件编译: `@When`
@@ -160,7 +161,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
      * 再通过完整 source 文本猜测 `@!`。
      */
     val isCompileTimeVisible: Boolean
-        get() = stub?.isCompileTimeVisible() == true || findChildByType<PsiElement>(CjTokens.ATEXCL) != null
+        get() = stub?.isCompileTimeVisible() ?: (findChildByType<PsiElement>(CjTokens.ATEXCL) != null)
 
     /**
      * 保存 `typeReference`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -205,10 +206,7 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
      * @return 如果是内置注解返回 true，否则返回 false
      */
     val isBuiltInAnnotation: Boolean
-        get() {
-            val name = shortName?.asString() ?: return false
-            return CjBuiltInAnnotation.isBuiltIn(name)
-        }
+        get() = sourceLanguageBuiltInDescriptor() != null
 
     /**
      * 获取对应的内置注解枚举值
@@ -218,10 +216,25 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
      * @return 对应的内置注解枚举值，如果不是内置注解返回 null
      */
     val builtInAnnotation: CjBuiltInAnnotation?
-        get() {
-            val name = shortName?.asString() ?: return null
-            return CjBuiltInAnnotation.fromName(name)
-        }
+        get() = sourceLanguageBuiltInDescriptor()?.let { CjBuiltInAnnotation.fromName(it.sourceName) }
+
+    /**
+     * 只有未限定、非 `@!` 且满足当前源码模块限制的名称才属于语言 builtin。
+     *
+     * 平台互操作注解是普通互操作库类型；即使源码短名与历史 facade 常量相同，
+     * 也必须等类型解析得到真实 ClassId 后才能进入平台身份模型。
+     */
+    private fun sourceLanguageBuiltInDescriptor() = run {
+        if (isCompileTimeVisible) return@run null
+        val typeElement = typeReference?.typeElement as? CjUserType
+        if (typeElement?.qualifier != null) return@run null
+        val name = shortName?.asString() ?: return@run null
+        val file = containingFile as? CjFile
+        val moduleName = file?.let {
+            BuiltInAnnotationRegistry.sourceModuleName(it.packageFqName, it.packageDirective?.organizationName)
+        } ?: ""
+        BuiltInAnnotationRegistry.resolveLanguageBuiltIn(name, forcedCustom = false, moduleName = moduleName)
+    }
 
     /**
      * 获取 @CallingConv 注解的调用约定参数
@@ -318,7 +331,8 @@ class CjAnnotation : CjElementImplStub<CangJieAnnotationStub>, CjCallElement {
     /**
      * 判断是否为 FFI 互操作注解
      *
-     * FFI 注解包括: @C, @Java, @JavaMirror, @JavaImpl, @ObjCMirror, @ObjCImpl, @ForeignName, @CallingConv
+     * 语言 builtin FFI 注解包括: @C, @CallingConv, @FastNative。
+     * Java/ObjC/ForeignName 属于独立的平台注解身份，不由 PSI builtin facade 表示。
      *
      * @return 如果是 FFI 注解返回 true，否则返回 false
      */

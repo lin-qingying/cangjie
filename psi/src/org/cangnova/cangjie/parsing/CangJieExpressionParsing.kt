@@ -4192,14 +4192,23 @@ open class CangJieExpressionParsing(
     }
 }
 
+/** 判断当前元素类型是否与给定 token 完全相同（引用比较）。 */
 private fun IElementType.equal(token: IElementType): Boolean {
     return token === this
 }
 
+/** 判断当前元素类型是否属于给定 token 集合。 */
 private fun IElementType.equal(tokenSet: TokenSet): Boolean {
     return tokenSet.contains(this)
 }
 
+/**
+ * 模式解析过程中已识别的模式语法类别。
+ *
+ * 解析阶段先按语法形态归类为该枚举，再由 [toPatternType] 映射为
+ * 语义层的 [PatternType]、由 [toNodeType] 映射为具体 AST 节点类型；
+ * 两步分离使同一语法类别可以在不同上下文落成不同节点。
+ */
 private enum class RecognizedPattern {
     VAR_OR_ENUM,
     BINDING,
@@ -4227,6 +4236,14 @@ private enum class RecognizedPattern {
     }
 }
 
+/**
+ * 语义层的模式分类，供诊断与错误恢复按官方模式族分组处理。
+ *
+ * 与 [RecognizedPattern] 的区别：本枚举是完整分类（含 tuple/constant 等
+ * 非延迟形态），而 [RecognizedPattern] 只覆盖语法识别的中间类别。
+ *
+ * @property displayName 诊断信息中的模式族显示名。
+ */
 enum class PatternType(val displayName: String) {
     WILDCARD("Wildcard patterns"),
     VAR_OR_ENUM("Deferred binding-or-enum patterns"),
@@ -4241,6 +4258,7 @@ enum class PatternType(val displayName: String) {
     }
 }
 
+/** TokenSet 的并集运算符，等价于 `TokenSet.orSet(this, set)`，便于解析器内组合 token 集合。 */
 operator fun TokenSet.plus(set: TokenSet): TokenSet {
     return TokenSet.orSet(this, set)
 }

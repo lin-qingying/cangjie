@@ -26,8 +26,8 @@ import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
  *
  * 语义事实只保存在 common 的 [BuiltInAnnotationKind] 和 descriptor 中；本类型只保留
  * 旧 PSI API 的常量、显示属性以及名称查询，禁止在 PSI 再维护一套 builtin kind 枚举。
- * Java/ObjC 等平台注解如果由 registry 描述，仍通过 descriptor 投影，但不会产生第二个
- * kind 身份。
+ * Java/ObjC/ForeignName 等互操作库注解不属于此 facade；它们必须先通过真实注解类
+ * 的解析结果进入平台身份模型，不能由 PSI 短名投影成语言 builtin。
  */
 class CjBuiltInAnnotation private constructor(
     /** common 层发布的静态描述符。 */
@@ -51,32 +51,21 @@ class CjBuiltInAnnotation private constructor(
         }
 
     /** common 层唯一的官方/平台 kind 投影。 */
-    val kind: BuiltInAnnotationKind get() = descriptor.kind
+    val kind: BuiltInAnnotationKind? get() = descriptor.kind
 
     override fun toString(): String = annotationName
 
     companion object {
         private val byName: Map<String, CjBuiltInAnnotation> =
-            BuiltInAnnotationRegistry.languageBuiltIns
+            (BuiltInAnnotationRegistry.languageBuiltIns + BuiltInAnnotationRegistry.packageDirectives)
                 .associate { descriptor -> descriptor.sourceName to CjBuiltInAnnotation(descriptor) }
 
         /** 兼容旧 API 的全部注册项，顺序与 common registry 一致。 */
         @JvmField
         val entries: List<CjBuiltInAnnotation> = byName.values.toList()
 
-        @JvmField val JAVA: CjBuiltInAnnotation = byName.require("Java")
         @JvmField val CALLING_CONV: CjBuiltInAnnotation = byName.require("CallingConv")
         @JvmField val C: CjBuiltInAnnotation = byName.require("C")
-        @JvmField val JAVA_MIRROR: CjBuiltInAnnotation = byName.require("JavaMirror")
-        @JvmField val JAVA_IMPL: CjBuiltInAnnotation = byName.require("JavaImpl")
-        @JvmField val JAVA_HAS_DEFAULT: CjBuiltInAnnotation = byName.require("JavaHasDefault")
-        @JvmField val OBJ_C_MIRROR: CjBuiltInAnnotation = byName.require("ObjCMirror")
-        @JvmField val OBJ_C_IMPL: CjBuiltInAnnotation = byName.require("ObjCImpl")
-        @JvmField val OBJ_C_INIT: CjBuiltInAnnotation = byName.require("ObjCInit")
-        @JvmField val OBJ_C_OPTIONAL: CjBuiltInAnnotation = byName.require("ObjCOptional")
-        @JvmField val FOREIGN_NAME: CjBuiltInAnnotation = byName.require("ForeignName")
-        @JvmField val FOREIGN_GETTER_NAME: CjBuiltInAnnotation = byName.require("ForeignGetterName")
-        @JvmField val FOREIGN_SETTER_NAME: CjBuiltInAnnotation = byName.require("ForeignSetterName")
         @JvmField val ATTRIBUTE: CjBuiltInAnnotation = byName.require("Attribute")
         @JvmField val OVERFLOW_THROWING: CjBuiltInAnnotation = byName.require("OverflowThrowing")
         @JvmField val OVERFLOW_WRAPPING: CjBuiltInAnnotation = byName.require("OverflowWrapping")

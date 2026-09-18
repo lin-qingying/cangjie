@@ -643,8 +643,8 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     private fun parseFeaturesDirectiveIfPresent(): Boolean {
         val directive = mark()
-        if (isAnnotationStart()) {
-            parseAnnotations()
+        with(parseContext.copy(allowPackageDirectiveAnnotations = true)) {
+            if (isAnnotationStart()) parseAnnotations()
         }
         if (!at(FEATURES_KEYWORD)) {
             directive.rollbackTo()
@@ -1423,7 +1423,9 @@ class CangJieParsing private constructor(
 
         // 顶层 `@Macro decl` 由 macro expression 包裹真实声明，PSI 与 LightTree
         // 必须产出同构的 MACRO_EXPRESSION，后续 raw builder 才能建立 construction surface。
-        if (parseMacro && !parseContext.disableMacroParsing && at(AT) && !isBuiltInAnnotation()) {
+        if (parseMacro && !parseContext.disableMacroParsing && at(AT) &&
+            !isBuiltInAnnotation() && !isPlatformAnnotationSurface()
+        ) {
             expressionParsing.parseMacroExpression()
             decl.drop()
             return
@@ -1640,6 +1642,20 @@ class CangJieParsing private constructor(
             return
         }
 
+        if (parseContext.allowPackageDirectiveAnnotations && isPackageDirectiveAnnotation()) {
+            parseAnnotationWithOptionalArguments()
+            return
+        }
+
+        // Platform interop annotations use the ordinary annotation grammar in
+        // the official parser.  They are intentionally not language builtin
+        // kinds in the common model: this branch only preserves the syntax;
+        // TYPES resolves the real ClassId and publishes platform identity.
+        if (isPlatformAnnotationSurface()) {
+            parseAnnotationWithOptionalArguments()
+            return
+        }
+
         if (parseContext.disableMacroParsing) {
             if (!_atSet(AT, ATEXCL)) return
 
@@ -1649,7 +1665,7 @@ class CangJieParsing private constructor(
 
         val mark = mark()
 
-        if (_at(ATEXCL) && languageBuiltInAnnotationAtCurrentToken() != null) {
+        if (_at(ATEXCL) && reservedLanguageBuiltInAnnotationAtCurrentToken() != null) {
             error("Reserved built-in annotation cannot use @!")
         }
         advance() //消耗
@@ -1734,7 +1750,8 @@ class CangJieParsing private constructor(
         if (parseContext.disableMacroParsing) {
             _atSet(AT, ATEXCL)
         } else {
-            at(ATEXCL) || isBuiltInAnnotation()
+            at(ATEXCL) || isBuiltInAnnotation() || isPlatformAnnotationSurface() ||
+                (parseContext.allowPackageDirectiveAnnotations && isPackageDirectiveAnnotation())
         }
 
     /**
@@ -1743,7 +1760,7 @@ class CangJieParsing private constructor(
      * 检查当前位置的注解是否为仓颉语言的内置注解。
      *
      * 内置注解包括:
-     * - FFI相关: @Java, @C, @JavaMirror, @JavaImpl, @ObjCMirror, @ObjCImpl, @ForeignName, @CallingConv
+     * - FFI相关: @C, @CallingConv
      * - 编译器指令: @Attribute, @NumericOverflow, @Intrinsic, @When, @FastNative, @ConstSafe
      * - 语义标记: @Deprecated, @Frozen
      * - 元注解: @Annotation
@@ -1755,8 +1772,49 @@ class CangJieParsing private constructor(
     fun isBuiltInAnnotation(): Boolean =
         _at(AT) && languageBuiltInAnnotationAtCurrentToken() != null
 
+    /**
+     * 判断当前 token 是否为官方平台 annotation 的语法表面。
+     *
+     * 这里不能发布平台语义身份，也不能根据短名进入 checker；它只防止
+     * `@JavaMirror` 等 1.1.x 语法在 parser 中被误判成宏。真实身份仍由
+     * TYPES 阶段解析出的 annotation ClassId 决定，旧语言版本也保留该语法
+     * 并在语义阶段报告版本不支持。
+     */
+    private fun isPlatformAnnotationSurface(): Boolean {
+        if (!_at(AT) || lookahead(1) != IDENTIFIER) return false
+        var tokenIndex = 1
+        var sourceName: String? = null
+        while (lookahead(tokenIndex) == IDENTIFIER) {
+            sourceName = rawTokenText(builder, tokenIndex).toString()
+            if (lookahead(tokenIndex + 1) != DOT) break
+            tokenIndex += 2
+        }
+        val finalSourceName = sourceName ?: return false
+        return BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName(finalSourceName).isNotEmpty()
+    }
+
     /** 语法分派与 @! 保留名检查共享模块约束；显式限定名称属于自定义注解。 */
     private fun languageBuiltInAnnotationAtCurrentToken(): BuiltInAnnotationDescriptor? {
+        if (!_atSet(AT, ATEXCL) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return null
+        val sourceName = rawTokenText(builder, 1).toString()
+        return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
+            sourceName = sourceName,
+            forcedCustom = _at(ATEXCL),
+            moduleName = languageModuleName,
+        )
+    }
+
+    /** `NonProduct` belongs to the file-header features directive only. */
+    private fun isPackageDirectiveAnnotation(): Boolean {
+        if (!_at(AT) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return false
+        return BuiltInAnnotationRegistry.resolvePackageDirective(
+            sourceName = rawTokenText(builder, 1).toString(),
+            forcedCustom = false,
+        ) != null
+    }
+
+    /** `@!` 会改变 annotation provenance，但不能绕过语言 builtin 保留名。 */
+    private fun reservedLanguageBuiltInAnnotationAtCurrentToken(): BuiltInAnnotationDescriptor? {
         if (!_atSet(AT, ATEXCL) || lookahead(1) != IDENTIFIER || lookahead(2) == DOT) return null
         return BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
             sourceName = rawTokenText(builder, 1).toString(),
@@ -1788,6 +1846,9 @@ class CangJieParsing private constructor(
         assert(_atSet(AT))
         val descriptor = checkNotNull(
             org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.findLanguageBuiltIn(rawTokenText(builder, 1).toString())
+                ?: org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.findPackageDirective(
+                    rawTokenText(builder, 1).toString(),
+                )
         )
         // Registry 选择语法形状；参数数量、字面量类型和目标约束由语义阶段统一检查。
         when (descriptor.argumentSyntax) {
@@ -5372,10 +5433,24 @@ class CangJieParsing private constructor(
 
 }
 
+/**
+ * 声明位置出现的宏形态。
+ *
+ * [MACRO_CALL] 是显式宏调用语法（`@Name[...]`），[ANNOTATION] 是
+ * 宏以注解形式出现；两者进入不同的展开流水线。
+ */
 enum class MacroType {
     MACRO_CALL, ANNOTATION,
 }
 
+/**
+ * 声明解析的上下文模式。
+ *
+ * 三个开关分别控制：是否允许解构声明（[destructuringAllowed]）、
+ * 是否允许 accessor 修饰的声明（[accessorsAllowed]）、以及 `enum`
+ * 是否可按软关键字处理（[canBeEnumUsedAsSoftKeyword]）；
+ * 不同声明位置按官方语法选择对应组合。
+ */
 enum class DeclarationParsingMode(
     val destructuringAllowed: Boolean, val accessorsAllowed: Boolean, val canBeEnumUsedAsSoftKeyword: Boolean
 ) {

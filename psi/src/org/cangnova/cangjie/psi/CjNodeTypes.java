@@ -82,9 +82,9 @@ public interface CjNodeTypes {
     IElementType ARRAY_ACCESS_EXPRESSION = new CjNodeType("ARRAY_ACCESS_EXPRESSION", CjArrayAccessExpression.class);
     IElementType IS_EXPRESSION = new CjNodeType("IS_EXPRESSION", CjIsExpression.class);
     IElementType BINARY_WITH_TYPE = new CjNodeType("BINARY_WITH_TYPE", CjBinaryExpressionWithTypeRHS.class);
-    IElementType BINARY_EXPRESSION = new CjNodeType("BINARY_EXPRESSION", CjBinaryExpression.class);
+    IElementType BINARY_EXPRESSION = CjStubElementTypes.BINARY_EXPRESSION;
     IElementType PREFIX_EXPRESSION = new CjNodeType("PREFIX_EXPRESSION", CjPrefixExpression.class);
-    IElementType OPERATION_REFERENCE = new CjNodeType("OPERATION_REFERENCE", CjOperationReferenceExpression.class);
+    IElementType OPERATION_REFERENCE = CjStubElementTypes.OPERATION_REFERENCE;
 
     IElementType OPERATION_NAME = new CjNodeType("OPERATION_NAME", CjOperationName.class);
     IElementType VARIABLE = CjStubElementTypes.VARIABLE;

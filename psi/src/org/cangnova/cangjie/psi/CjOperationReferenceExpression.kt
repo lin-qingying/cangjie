@@ -29,22 +29,35 @@ import org.cangnova.cangjie.name.OperatorConventions
 import org.cangnova.cangjie.parsing.CangJieExpressionParsing
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import com.intellij.psi.impl.source.tree.TreeElement
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.stubs.CangJieOperationReferenceStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import com.intellij.psi.tree.IElementType
 
 /**
  * 表示 `CjOperationReferenceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjOperationReferenceExpression(node: ASTNode) : CjSimpleNameExpressionImpl(node) {
+class CjOperationReferenceExpression : CjExpressionImplStub<CangJieOperationReferenceStub>, CjSimpleNameExpression {
+    constructor(node: ASTNode) : super(node)
+    constructor(stub: CangJieOperationReferenceStub) : super(stub, CjStubElementTypes.OPERATION_REFERENCE)
+
+    override val identifier: PsiElement? get() = null
+    override val referencedName: String
+        get() = stub?.operationToken?.value ?: CjSimpleNameExpressionImpl.getReferencedNameImpl(this)
+    override val referencedNameAsName: Name get() = Name.identifier(referencedName)
+    override val referencedNameElementType: IElementType
+        get() = stub?.operationToken ?: CjSimpleNameExpressionImpl.getReferencedNameElementTypeImpl(this)
+
+    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? =
+        visitor.visitSimpleNameExpression(this, data)
 
     /**
      * 暴露 `referencedNameElement`，实现仓颉 PSI节点对上层接口的属性契约。
      */
-    override val referencedNameElement get() = CangJieExpressionParsing.ALL_OPERATIONS?.let {
-        findChildByType<PsiElement>(
-            it,
-        )
+    override val referencedNameElement get(): PsiElement {
+        if (stub != null) return this
+        return CangJieExpressionParsing.ALL_OPERATIONS?.let { findChildByType<PsiElement>(it) } ?: this
     }
-        ?: this
 
     /**
      * 提供 `isConventionOperator` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
@@ -57,5 +70,5 @@ class CjOperationReferenceExpression(node: ASTNode) : CjSimpleNameExpressionImpl
      * 保存 `operationSignTokenType`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val operationSignTokenType: CjSingleValueToken?
-        get() = (firstChild as? TreeElement)?.elementType as? CjSingleValueToken
+        get() = stub?.operationToken ?: (node.firstChildNode?.elementType as? CjSingleValueToken)
 }

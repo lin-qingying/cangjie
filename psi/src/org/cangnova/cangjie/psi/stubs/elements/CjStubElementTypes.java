@@ -110,6 +110,9 @@ public interface CjStubElementTypes {
             new CjPlaceHolderStubElementType<>("FUNCTION_TYPE_RECEIVER", CjFunctionTypeReceiver.class);
     CjNameBasicReferenceExpressionElementType BASIC_REFERENCE_EXPRESSION = new CjNameBasicReferenceExpressionElementType("BASIC_REFERENCE_EXPRESSION");
 
+    CjOperationReferenceElementType OPERATION_REFERENCE = new CjOperationReferenceElementType("OPERATION_REFERENCE");
+    CjArgumentExpressionElementType<CjBinaryExpression> BINARY_EXPRESSION =
+            new CjArgumentExpressionElementType<>("BINARY_EXPRESSION", CjBinaryExpression.class);
     CjNameReferenceExpressionElementType REFERENCE_EXPRESSION = new CjNameReferenceExpressionElementType("REFERENCE_EXPRESSION");
     CjDotQualifiedExpressionElementType DOT_QUALIFIED_EXPRESSION = new CjDotQualifiedExpressionElementType("DOT_QUALIFIED_EXPRESSION");
     CjPlaceHolderStubElementType<CjTypeArgumentList> TYPE_ARGUMENT_LIST =
