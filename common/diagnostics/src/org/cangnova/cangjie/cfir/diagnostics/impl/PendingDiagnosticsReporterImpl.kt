@@ -253,6 +253,7 @@ private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean
 private fun CjDiagnostic.isCfirDceWarning(): Boolean =
     factoryName == "CFIR_UNUSED_VARIABLE" || factoryName == "CFIR_UNUSED_EXPRESSION"
 
+/** 判断诊断是否是可见性（accessibility）错误；用于同范围诊断的取代规则。 */
 private fun CjDiagnostic.isAccessibilityError(): Boolean = factoryName == "CFIR_ACCESSIBILITY_ERROR"
 
 /**
@@ -273,6 +274,7 @@ private fun CjDiagnostic.isAccessibilityErrorSupersededByReturnTypeError(
         }
 }
 
+/** 能在同范围上取代可见性错误的返回类型诊断名称集合。 */
 private val RETURN_TYPE_OVERRIDE_ERROR_NAMES: Set<String> = setOf(
     "CFIR_RETURN_TYPE_INCOMPATIBLE",
     "CFIR_RETURN_TYPE_INVARIANCE",

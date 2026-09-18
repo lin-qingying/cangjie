@@ -28,6 +28,13 @@ import org.cangnova.cangjie.LanguageOrApiVersion
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.util.DescriptionAware
 
+/**
+ * 标准库 API 版本。
+ *
+ * 与 [LanguageVersion] 关联但独立演进：语言版本表达语义，API 版本表达
+ * 允许引用的标准库表面。实例不可直接构造，只能使用 companion 中的
+ * 官方版本常量；相等性与排序均以底层语言版本为基准。
+ */
 class ApiVersion private constructor(
     val version: LanguageVersion,
     override val versionString: String

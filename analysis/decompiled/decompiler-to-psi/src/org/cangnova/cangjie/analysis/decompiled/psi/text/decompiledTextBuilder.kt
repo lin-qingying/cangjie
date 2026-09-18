@@ -151,8 +151,9 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         /** 将 CJO/CFIR annotation stub 投影回反编译源码前缀。 */
         private fun renderAnnotations(declaration: CjAnnotated) {
             declaration.annotationEntries.forEach { annotation ->
-                append("@")
+                append(if (annotation.isCompileTimeVisible) "@!" else "@")
                 append(annotation.shortName?.asString().orEmpty())
+                annotation.valueArgumentList?.let { append(it.text) }
                 appendLine()
             }
         }

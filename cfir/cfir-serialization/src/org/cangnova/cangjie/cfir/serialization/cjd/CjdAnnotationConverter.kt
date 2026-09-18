@@ -101,7 +101,9 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
             val candidates = if (builtin == null) resolve(syntax.name, context, resolutionContext) else emptyList()
             val classId = candidates.singleOrNull()
             val system = classId?.asSingleFqName()?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
+            val platform = classId?.asSingleFqName()?.let(BuiltInAnnotationRegistry::findPlatformAnnotation)
             val descriptor: AnnotationDescriptor? = builtin ?: system
+            val argumentSchema = descriptor?.argumentSchema ?: platform?.argumentSchema
             val unresolved = builtin == null && classId == null
             val identityDiagnostic = if (unresolved) CjdAnnotationConversionDiagnostic(
                 if (candidates.size > 1) CjdAnnotationDiagnosticKind.AMBIGUOUS_ANNOTATION else CjdAnnotationDiagnosticKind.UNKNOWN_ANNOTATION,
@@ -135,11 +137,13 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 val parameter = if (named != null) parameters?.singleOrNull { it.name == named.argumentName }
                     else parameters?.getOrNull(positionalIndex++)
                 val schemaName = if (parserOwnedArguments) null else named?.argumentName
-                    ?: descriptor?.argumentSchema?.positionalParameter?.name?.let(Name::identifier)
+                    ?: argumentSchema?.positionalParameter?.name?.let(Name::identifier)
                 val parameterName = parameter?.name ?: schemaName
                 val duplicate = parameterName != null && !seen.add(parameterName)
                 if (parameter != null) parameterMapping[argument] = parameter
-                if (parameterName != null && !duplicate && !parserOwnedArguments && (descriptor != null || parameter != null)) map[parameterName] = expression
+                if (parameterName != null && !duplicate && !parserOwnedArguments &&
+                    (descriptor != null || platform != null || parameter != null)
+                ) map[parameterName] = expression
                 if (duplicate) diagnostics += CjdAnnotationConversionDiagnostic(
                     CjdAnnotationDiagnosticKind.DUPLICATE_ARGUMENT, sourceId, syntax.arguments[index].range,
                     syntax.arguments[index].rawText, "Duplicate annotation argument '$parameterName'",
@@ -148,7 +152,9 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                     when {
                         duplicate -> CfirAnnotationArgumentStatus.DUPLICATE
                         expression is CfirErrorExpression -> CfirAnnotationArgumentStatus.ERROR
-                        parameter != null || (descriptor != null && parameterName != null) -> CfirAnnotationArgumentStatus.RESOLVED
+                        parameter != null ||
+                            ((descriptor != null || platform != null) && parameterName != null) ->
+                            CfirAnnotationArgumentStatus.RESOLVED
                         else -> CfirAnnotationArgumentStatus.UNMAPPED
                     }, false, expression as? CfirLiteralExpression, argument.source)
             }
@@ -166,9 +172,26 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 forcedCustom = syntax.forcedCustom
                 isCompileTimeVisible = syntax.forcedCustom
                 sourceModuleName = moduleName
-                annotationOrigin = descriptor?.origin ?: CangjieAnnotationOrigin.CUSTOM
+                annotationOrigin = when {
+                    descriptor != null -> descriptor.origin
+                    platform != null -> CangjieAnnotationOrigin.PLATFORM_DERIVED
+                    else -> CangjieAnnotationOrigin.CUSTOM
+                }
                 annotationIdentity = when {
-                    builtin != null -> CangjieAnnotationIdentity.LanguageBuiltIn(builtin.kind, builtin.sourceName)
+                    builtin != null && builtin.origin == CangjieAnnotationOrigin.PACKAGE_DIRECTIVE ->
+                        CangjieAnnotationIdentity.PackageDirective(
+                            org.cangnova.cangjie.annotations.CangjiePackageDirectiveKind.NON_PRODUCT,
+                            builtin.sourceName,
+                        )
+                    builtin != null -> CangjieAnnotationIdentity.LanguageBuiltIn(
+                        requireNotNull(builtin.kind),
+                        builtin.sourceName,
+                    )
+                    platform != null -> CangjieAnnotationIdentity.PlatformDerived(
+                        kind = platform.platformKind,
+                        classFqName = platform.classFqName,
+                        sourceName = platform.sourceName,
+                    )
                     system != null -> CangjieAnnotationIdentity.SystemMacro(system.classFqName, system.sourceName)
                     classId != null -> CangjieAnnotationIdentity.Custom(classId.asSingleFqName())
                     else -> CangjieAnnotationIdentity.Unknown
@@ -181,7 +204,7 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 this.containingDeclarationSymbol = containingDeclarationSymbol
                 annotationResolveState = when {
                     unresolved || view.any { it.status == CfirAnnotationArgumentStatus.ERROR || it.status == CfirAnnotationArgumentStatus.DUPLICATE } -> CfirAnnotationResolveState.ERROR
-                    descriptor != null -> CfirAnnotationResolveState.SEMANTIC_RESOLVED
+                    descriptor != null || platform != null -> CfirAnnotationResolveState.SEMANTIC_RESOLVED
                     else -> CfirAnnotationResolveState.TYPE_RESOLVED
                 }
             }

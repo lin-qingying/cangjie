@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.util
 
+/** 为对象提供面向用户（诊断、日志、IDE 展示）的可读描述文本。 */
 interface DescriptionAware {
+    /** 当前对象的可读描述，如带状态后缀的版本字符串。 */
     val description: String
 }

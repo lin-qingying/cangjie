@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.annotations
 
+import org.cangnova.cangjie.LanguageFeature
+
 /** 参数语义种类；值参数绑定与常量求值由 CFIR resolve 负责。 */
 public enum class AnnotationParameterKind { STRING, BOOLEAN, INTEGER, EXPRESSION, REFERENCE, TARGET_ARRAY }
 
@@ -58,13 +60,15 @@ public sealed interface AnnotationDescriptor {
     public val repeatable: Boolean
     public val supportsCompileTimeVisibleForm: Boolean
     public val semanticHandler: AnnotationSemanticHandler
+    /** Language feature which introduced this annotation surface. */
+    public val requiredLanguageFeature: LanguageFeature? get() = null
     public val overflowStrategy: CangjieOverflowStrategy? get() = null
 }
 
 /** 官方 AnnotationKind 的静态契约；重复规则按源码名称而非 kind 判定。 */
 public data class BuiltInAnnotationDescriptor(
     override val sourceName: String,
-    override val kind: BuiltInAnnotationKind,
+    override val kind: BuiltInAnnotationKind?,
     override val category: BuiltInAnnotationCategory,
     override val argumentSyntax: CangjieAnnotationArgumentSyntax,
     override val argumentSchema: AnnotationArgumentSchema,
@@ -74,8 +78,10 @@ public data class BuiltInAnnotationDescriptor(
     val standardLibraryOnly: Boolean = false,
     val hasSourceParserEntry: Boolean = true,
     val allowsExpression: Boolean = false,
+    val descriptorOrigin: CangjieAnnotationOrigin = CangjieAnnotationOrigin.LANGUAGE_BUILT_IN,
+    override val requiredLanguageFeature: LanguageFeature? = null,
 ) : AnnotationDescriptor {
-    override val origin: CangjieAnnotationOrigin get() = CangjieAnnotationOrigin.LANGUAGE_BUILT_IN
+    override val origin: CangjieAnnotationOrigin get() = descriptorOrigin
     override val repeatable: Boolean get() = false
     override val supportsCompileTimeVisibleForm: Boolean get() = false
 }
@@ -90,6 +96,7 @@ public data class SystemAnnotationDescriptor(
     override val repeatable: Boolean,
     override val supportsCompileTimeVisibleForm: Boolean,
     override val origin: CangjieAnnotationOrigin = CangjieAnnotationOrigin.SYSTEM_MACRO,
+    override val requiredLanguageFeature: LanguageFeature? = null,
 ) : AnnotationDescriptor {
     override val kind: BuiltInAnnotationKind? get() = null
     override val category: BuiltInAnnotationCategory get() = BuiltInAnnotationCategory.SYSTEM

@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.Package
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,6 +30,12 @@ class CfirDeserializationContext(
     val implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> =
         org.cangnova.cangjie.cfir.serialization.cjd.cjdImplicitSystemAnnotations(sourcePath),
 ) {
+    /**
+     * 反序列化必须消费所属 session 的同一份语言设置；不能为 CJO 重新创建默认设置。
+     */
+    val languageVersionSettings: LanguageVersionSettings
+        get() = moduleData.session.languageVersionSettings
+
     /** 在首次声明物化前完成快照与匹配计划；整代 context/provider/session 重建才会重新读取。 */
     val sidecar: org.cangnova.cangjie.cfir.serialization.cjd.CjdBinaryAnnotationOverlay? by lazy {
         sourcePath?.let { org.cangnova.cangjie.cfir.serialization.cjd.CjdBinaryAnnotationOverlay.load(this, it) }

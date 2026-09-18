@@ -6,13 +6,23 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 import java.util.*
 
+/**
+ * 语言版本与 API 版本的公共视图。
+ *
+ * 统一暴露版本字符串、稳定性、弃用与不受支持等判定，以及面向用户的
+ * [description] 渲染（自动附加 experimental/deprecated/unsupported 后缀）。
+ */
 interface LanguageOrApiVersion : DescriptionAware {
+    /** 版本的可读字符串，如 `1.0.5`。 */
     val versionString: String
 
+    /** 该版本是否已达到稳定状态（不早于当前最新稳定版）。 */
     val isStable: Boolean
 
+    /** 该版本是否处于官方弃用区间。 */
     val isDeprecated: Boolean
 
+    /** 该版本是否低于最早支持版本、不再受支持。 */
     val isUnsupported: Boolean
 
     override val description: String
@@ -24,6 +34,17 @@ interface LanguageOrApiVersion : DescriptionAware {
         }
 }
 
+/**
+ * 仓颉语言版本枚举。
+ *
+ * 按官方三段版本号组织，承载语言语义演进的兼容判定：稳定性以 [LATEST_STABLE]
+ * 为界，弃用与支持范围由 companion 中的边界常量定义。
+ *
+ * @property major 主版本号，表达不兼容语言语义变化。
+ * @property minor 次版本号，表达向后兼容的语言能力扩展。
+ * @property patch 修订版本号，表达补丁级语言行为或标准库同步版本。
+ * @property preReleaseTag 预发布标签；非空表示该版本为预发布版本。
+ */
 enum class LanguageVersion(
     /**
      * 主版本号，表达不兼容语言语义变化。
@@ -56,7 +77,11 @@ enum class LanguageVersion(
     override val isUnsupported: Boolean
         get() = this < FIRST_SUPPORTED
 
-    override val versionString: String = "$major.$minor"
+    /**
+     * 保留完整的三段版本号。补丁号参与版本排序和 feature/API 门禁，不能在
+     * 展示或配置往返时折叠掉，否则 `1.0.5` 会退化为 `1.0.0`。
+     */
+    override val versionString: String = "$major.$minor.$patch"
 
     override fun toString() = versionString
 
@@ -86,11 +111,21 @@ enum class LanguageVersion(
     }
 }
 
+/**
+ * 语言特性在越过 sinceVersion 之后的行为策略。
+ *
+ * 默认 [CannotBeDisabled] 表示特性到达目标版本后强制启用、无法关闭；
+ * [CanStillBeDisabledForNow] 表示短期内仍允许显式关闭，附带关联的工单号。
+ */
 sealed class LanguageFeatureBehaviorAfterSinceVersion {
+    /** 特性已定型，越过 since 版本后不可再关闭。 */
     data object CannotBeDisabled : LanguageFeatureBehaviorAfterSinceVersion()
+
+    /** 特性越过 since 版本后短期内仍可关闭，[relevantTicketId] 记录最终收口工单。 */
     data class CanStillBeDisabledForNow(val relevantTicketId: String) : LanguageFeatureBehaviorAfterSinceVersion()
 }
 
+/** 未指定关联工单时的占位文本。 */
 const val NO_ISSUE_SPECIFIED = "No issue"
 
 /**
@@ -121,6 +156,18 @@ enum class LanguageFeature(
     InvalidBinaryOperatorDiagnostics(LanguageVersion.CANGJIE_1_0_0),
     LexicographicVariableReadinessCalculation(LanguageVersion.CANGJIE_1_0_0),
     EffectHandlers(LanguageVersion.CANGJIE_1_0_0),
+
+    /** Java mirror/implementation annotation family. */
+    JavaInteropAnnotations(LanguageVersion.CANGJIE_1_1_0),
+
+    /** Objective-C mirror/implementation annotation family. */
+    ObjCInteropAnnotations(LanguageVersion.CANGJIE_1_1_0),
+
+    /** Common/specific CJMapping metadata and its derived declaration graph. */
+    InteropCJMapping(LanguageVersion.CANGJIE_1_1_0),
+
+    /** ForeignName/ForeignGetterName/ForeignSetterName metadata. */
+    InteropForeignNameAnnotations(LanguageVersion.CANGJIE_1_1_0),
 
     /**
      * 允许类型推断将互斥下界约束收敛出的交集类型作为固定结果。
@@ -277,28 +324,55 @@ object AnalysisFlags {
 
 }
 
+/**
+ * 语言版本设置的统一查询接口。
+ *
+ * 承载三组正交配置：语言特性开关（[getFeatureSupport]/[supportsFeature]）、
+ * 分析标志（[getFlag]）、以及版本事实（[apiVersion]/[languageVersion]）。
+ *
+ * 注意：不要通过 [languageVersion] 直接开合具体特性或检查——
+ * 应新增 [LanguageFeature] 枚举项并走 [supportsFeature] 查询。
+ */
 interface LanguageVersionSettings {
+    /** 查询特性状态：显式配置优先，否则按版本与 API 版本推导默认值。 */
     fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State
 
+    /** 判断特性是否启用；等价于状态为 [LanguageFeature.State.ENABLED]。 */
     fun supportsFeature(feature: LanguageFeature): Boolean =
         getFeatureSupport(feature) == LanguageFeature.State.ENABLED
 
+    /** 返回显式定制过的特性开关集合（不含按版本推导的默认项）。 */
     fun getCustomizedLanguageFeatures(): Map<LanguageFeature, LanguageFeature.State>
 
+    /** 当前编译是否为预发布状态：语言版本预发布，或启用了强制预发布二进制的特性。 */
     fun isPreRelease(): Boolean
 
+    /** 读取分析标志值；未配置时返回该标志的默认值。 */
     fun <T> getFlag(flag: AnalysisFlag<T>): T
 
+    /** 当前编译目标允许引用的标准库 API 版本。 */
     val apiVersion: ApiVersion
 
     // Please do not use this to enable/disable specific features/checks. Instead add a new LanguageFeature entry and call supportsFeature
     val languageVersion: LanguageVersion
 
     companion object {
+        /** 环境变量配置白名单资源名；仅存在该资源时才允许从环境读取设置。 */
         const val RESOURCE_NAME_TO_ALLOW_READING_FROM_ENVIRONMENT = "META-INF/allow-configuring-from-environment"
     }
 }
 
+/**
+ * [LanguageVersionSettings] 的不可变实现。
+ *
+ * 构造时即把传入的标志与特性映射包为只读；特性查询先查显式定制，
+ * 再按版本边界推导默认状态。
+ *
+ * @property languageVersion 当前语言版本。
+ * @property apiVersion 当前 API 版本。
+ * @param analysisFlags 分析标志覆盖表；缺省项回落到各标志的默认值。
+ * @param specificFeatures 显式特性开关，优先级高于按版本推导。
+ */
 class LanguageVersionSettingsImpl @JvmOverloads constructor(
     override val languageVersion: LanguageVersion,
     override val apiVersion: ApiVersion,
@@ -330,22 +404,39 @@ class LanguageVersionSettingsImpl @JvmOverloads constructor(
                 state == LanguageFeature.State.ENABLED && feature.forcesPreReleaseBinariesIfEnabled()
             }
 
+    override fun toString(): String = buildString {
+        append("Language = $languageVersion, API = $apiVersion")
+        specificFeatures.entries.sortedBy { (feature, _) -> feature.ordinal }.forEach { (feature, state) ->
+            val marker = when (state) {
+                LanguageFeature.State.ENABLED -> '+'
+                LanguageFeature.State.DISABLED -> '-'
+            }
+            append(" $marker$feature")
+        }
+        analysisFlags.entries.sortedBy { (flag, _) -> flag.toString() }.forEach { (flag, value) ->
+            append(" $flag:$value")
+        }
+    }
+
     companion object {
         @JvmField
         val DEFAULT = LanguageVersionSettingsImpl(LanguageVersion.LATEST_STABLE, ApiVersion.LATEST_STABLE)
     }
 }
 
+/** 判断语言版本本身是否为预发布：非稳定版，或带预发布标签的最新稳定版。 */
 fun LanguageVersion.isPreRelease(): Boolean {
     if (!isStable) return true
 
     return this.preReleaseTag != null && this == LanguageVersion.LATEST_STABLE
 }
 
+/** 判断特性启用后是否强制产物为预发布二进制：特性尚未随稳定版发布且声明了该要求。 */
 fun LanguageFeature.forcesPreReleaseBinariesIfEnabled(): Boolean {
     val isFeatureNotReleasedYet = sinceVersion?.isStable != true
     return isFeatureNotReleasedYet && forcesPreReleaseBinaries
 }
 
+/** 推导特性的默认启用状态：since 版本和 API 版本均已到达即默认启用。 */
 fun LanguageVersionSettings.isEnabledByDefault(languageFeature: LanguageFeature): Boolean =
     languageFeature.sinceVersion != null && languageVersion >= languageFeature.sinceVersion && apiVersion >= languageFeature.sinceApiVersion

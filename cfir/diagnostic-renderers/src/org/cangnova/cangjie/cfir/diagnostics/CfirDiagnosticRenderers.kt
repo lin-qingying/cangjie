@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.diagnostics
 
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.diagnostics.rendering.ContextDependentRenderer
 import org.cangnova.cangjie.cfir.diagnostics.rendering.Renderer
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -12,6 +14,9 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * CFIR 诊断参数渲染器集合。
  */
 object CfirDiagnosticRenderers {
+    /** 兼容现有诊断文本，但保留 LanguageVersionSettings 在诊断载荷中。 */
+    val LANGUAGE_FEATURE_SUPPORT = Renderer<Pair<LanguageFeature, LanguageVersionSettings>> { it.first.toString() }
+
 
     /**
      * 渲染单个 cone 类型。

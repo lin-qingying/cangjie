@@ -161,6 +161,9 @@ class CfirDeclDeserializer(
 
     /** 普通声明与直接构造的 pattern binding 共用唯一的 pre-publication 接缝。 */
     private fun publishDeclarationMetadata(index: Int, decl: Decl, result: CfirDeclaration) {
+        result.serializedDeclarationAttributes = CfirSerializedDeclarationAttributes(
+            words = (0 until decl.attributesLength).map(decl::attributes),
+        )
         result.serializedInteropFacts = serializedInteropFacts(decl)
         result.annotationInfo = serializedAnnotationInfo(decl)
         val additional = context.sidecar?.annotations(index, result).orEmpty()
@@ -368,6 +371,7 @@ class CfirDeclDeserializer(
             ?: Name.ERROR_NAME
         val builtin = serializedBuiltinDescriptor(serialized)
         val system = targetClassId?.asSingleFqName()?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
+        val platform = targetClassId?.asSingleFqName()?.let(BuiltInAnnotationRegistry::findPlatformAnnotation)
 
         val annotationTypeRef: CfirTypeRef = if (targetClassId != null) {
             buildResolvedTypeRef {
@@ -410,11 +414,25 @@ class CfirDeclDeserializer(
             isCompileTimeVisible = serialized.kind == AnnoKind.Custom
             annotationOrigin = when {
                 builtin != null -> builtin.origin
+                platform != null -> CangjieAnnotationOrigin.PLATFORM_DERIVED
                 system != null -> system.origin
                 else -> CangjieAnnotationOrigin.CUSTOM
             }
             annotationIdentity = when {
-                builtin != null -> CangjieAnnotationIdentity.LanguageBuiltIn(builtin.kind, builtin.sourceName)
+                builtin != null && builtin.origin == CangjieAnnotationOrigin.PACKAGE_DIRECTIVE ->
+                    CangjieAnnotationIdentity.PackageDirective(
+                        org.cangnova.cangjie.annotations.CangjiePackageDirectiveKind.NON_PRODUCT,
+                        builtin.sourceName,
+                    )
+                builtin != null -> CangjieAnnotationIdentity.LanguageBuiltIn(
+                    requireNotNull(builtin.kind),
+                    builtin.sourceName,
+                )
+                platform != null -> CangjieAnnotationIdentity.PlatformDerived(
+                    kind = platform.platformKind,
+                    classFqName = platform.classFqName,
+                    sourceName = platform.sourceName,
+                )
                 system != null -> CangjieAnnotationIdentity.SystemMacro(system.classFqName, system.sourceName)
                 targetClassId != null -> CangjieAnnotationIdentity.Custom(targetClassId.asSingleFqName())
                 else -> CangjieAnnotationIdentity.Unknown
