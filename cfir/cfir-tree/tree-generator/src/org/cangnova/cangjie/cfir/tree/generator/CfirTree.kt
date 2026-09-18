@@ -48,6 +48,11 @@ object CfirTree : AbstractCfirTreeBuilder() {
      * CFIR source 字段使用的源码元素类型。
      */
     val sourceElementType = type<CjSourceElement>()
+    private val conditionalCompilationFailureType = type(
+        "org.cangnova.cangjie.cfir.session",
+        "CfirConditionalCompilationFailure",
+        exactPackage = true,
+    )
 
     /**
      * 模块数据类型引用。
@@ -482,6 +487,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("isAllUnder", booleanType)
         +field("aliasName", nameType, nullable = true)
         +field("aliasSource", sourceElementType, nullable = true)
+        /** `@When[...] import` 在 raw-CFIR 裁剪前保留的条件表达式。 */
+        +field("condition", expression, nullable = true, withTransform = true, withReplace = true)
     }
 
     /**
@@ -621,8 +628,14 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("sourceFile", sourceFileType, nullable = true)
         +field("featuresDirective", featuresDirective, nullable = true, withReplace = true, withTransform = true)
         +field("packageDirective", packageDirective, withTransform = true)
-        +listField("imports", importDirective, withTransform = true)
+         +listField("imports", importDirective, withReplace = true, withTransform = true)
         +field("sourceFileLinesMapping", sourceFileLinesMappingType, nullable = true)
+        +listField(
+            "conditionalCompilationFailures",
+            conditionalCompilationFailureType,
+            withReplace = true,
+            isChild = false,
+        )
 
         +FieldSets.declarations
     }
@@ -986,7 +999,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         needTransformOtherChildren()
 
         parent(expression)
-        +listField("statements", statement, withTransform = true)
+        +listField("statements", statement, withReplace = true, withTransform = true)
     }
 
     /**

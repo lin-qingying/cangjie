@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -85,6 +86,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         val abiPolicy: CfirAbiPolicy = org.cangnova.cangjie.cfir.session.CfirLanguageAbiPolicy,
         /** 当前 session 使用的互操作/CJMapping 配置。 */
         val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
+        /** compiler invocation 显式注入的 `@When` 环境；缺失时不合成默认环境。 */
+        val conditionalCompilationSettings: CfirConditionalCompilationSettings? = null,
     )
 
     /**
@@ -215,6 +218,9 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        c.conditionalCompilationSettings?.let {
+            register(CfirConditionalCompilationSettings::class, it)
+        }
         c.registerLibrarySessionComponents(this)
     }
 
@@ -252,6 +258,9 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        c.conditionalCompilationSettings?.let {
+            register(CfirConditionalCompilationSettings::class, it)
+        }
         c.registerSourceSessionComponents(this)
     }
 }

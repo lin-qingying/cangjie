@@ -13,20 +13,24 @@ import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedImport
 import org.cangnova.cangjie.cfir.declarations.impl.CfirResolvedImportImpl
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.name.FqName
 
 @CfirBuilderDsl
 class CfirResolvedImportBuilder {
+    var condition: CfirExpression? = null
     lateinit var delegate: CfirImport
     lateinit var packageFqName: FqName
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirResolvedImport {
         return CfirResolvedImportImpl(
+            condition,
             delegate,
             packageFqName,
         )
     }
+
 }
 
 @OptIn(ExperimentalContracts::class)
@@ -43,6 +47,7 @@ inline fun buildResolvedImportCopy(original: CfirResolvedImport, init: CfirResol
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
     val copyBuilder = CfirResolvedImportBuilder()
+    copyBuilder.condition = original.condition
     copyBuilder.delegate = original.delegate
     copyBuilder.packageFqName = original.packageFqName
     return copyBuilder.apply(init).build()

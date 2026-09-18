@@ -49,4 +49,6 @@ class CfirLazyBlockImpl : CfirLazyBlock() {
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         require(newConeTypeOrNull == coneTypeOrNull) { "${javaClass.simpleName}.replaceConeTypeOrNull() called with invalid type '${newConeTypeOrNull}'. Current type is '$coneTypeOrNull'" }
     }
+
+    override fun replaceStatements(newStatements: List<CfirStatement>) {}
 }

@@ -64,7 +64,22 @@ class PreMacroRawBuildResult internal constructor(
     /** 所有文件中收集到的 macro surface（聚合）。 */
     val allSurfaces: List<MacroSurface>
         get() = files.flatMap { it.surfaces }
+
+    /**
+     * 在宏分类前替换 raw 文件集合；保留 construction 边界，不允许调用方直接注册
+     * 被裁剪结果。条件编译、增量过滤等 raw owner 使用该入口发布新的 pre 状态。
+     */
+    public fun mapFiles(transform: (PreMacroCfirFile) -> PreMacroCfirFile): PreMacroRawBuildResult =
+        PreMacroRawBuildResult(session, files.map(transform))
 }
+
+/** 替换单文件 raw CFIR，同时保留该文件尚未消费的 macro surfaces。 */
+public fun PreMacroCfirFile.withCfirFile(cfirFile: CfirFile): PreMacroCfirFile =
+    PreMacroCfirFile(cfirFile, surfaces)
+
+/** 在 raw 裁剪 owner 中同步移除已删除声明对应的 macro surfaces。 */
+public fun PreMacroCfirFile.withSurfaces(predicate: (MacroSurface) -> Boolean): PreMacroCfirFile =
+    PreMacroCfirFile(cfirFile, surfaces.filter(predicate))
 
 /**
  * 构造 [PreMacroRawBuildResult]。

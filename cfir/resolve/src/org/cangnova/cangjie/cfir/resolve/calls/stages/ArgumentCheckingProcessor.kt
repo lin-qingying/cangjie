@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.diagnostic.BuiltinCStringConstructorArgumentTyp
 import org.cangnova.cangjie.cfir.diagnostic.BuiltinPointerConstructorArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
+import org.cangnova.cangjie.cfir.diagnostic.CStructCannotAutobox
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostic.LambdaParameterTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
@@ -38,6 +39,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.resolve.calls.contextualArrayLiteralTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.expectedType
@@ -912,6 +914,21 @@ internal object ArgumentCheckingProcessor {
          */
         if (candidate.isBuiltinCFuncConstructorCandidate() && argumentType is ConePointerType) {
             return
+        }
+
+        // 官方 CFFICheck::CheckCallCompatible 在普通 subtype 检查之后、
+        // 候选降级为类型不匹配之前拒绝 @C struct 的隐式 autobox。
+        // 只在期望类型已是 proper type 时发布该专用诊断；仍含推断变量的
+        // 泛型候选必须先完成自身约束，不能在约束尚未固定时提前判死。
+        if (csBuilder.isProperType(expectedType) &&
+            CfirCTypeSemantics.isCStruct(session, argumentType)
+        ) {
+            val expandedActual = argumentType.fullyExpandedType(session)
+            val expandedExpected = expectedType.fullyExpandedType(session)
+            if (!AbstractTypeChecker.equalTypes(session.typeContext, expandedActual, expandedExpected)) {
+                reportDiagnostic(CStructCannotAutobox(expression, expectedType))
+                return
+            }
         }
 
         fun subtypeError(actualExpectedType: ConeCangJieType): ResolutionDiagnostic {

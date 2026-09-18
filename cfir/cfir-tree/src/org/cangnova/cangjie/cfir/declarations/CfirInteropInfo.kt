@@ -19,6 +19,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.cfir.CfirDeclarationDataKey
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 
@@ -138,8 +139,12 @@ public data class CfirInteropInfo(
     val externalSymbolName: String? = null,
     /** FFI 注解的结构化官方身份；消费者不得从字符串名称重新判断语义。 */
     val ffiAnnotationKinds: Set<BuiltInAnnotationKind> = emptySet(),
+    /** 互操作库注解的结构化平台身份；不混入官方 AnnotationKind。 */
+    val platformAnnotationKinds: Set<CangjiePlatformAnnotationKind> = emptySet(),
     /** 仅用于 renderer/兼容 API 的显示名称投影。 */
     val ffiAnnotationNames: List<String> = emptyList(),
+    /** 平台注解的显示名称投影，不能作为语义输入。 */
+    val platformAnnotationNames: List<String> = emptyList(),
 ) {
     /** Whether this declaration currently has C-function ABI semantics. */
     public val isC: Boolean

@@ -420,6 +420,13 @@ class ConstraintSystemCompleter(
         topLevelAtoms: List<ConeResolutionAtom>,
     ) {
         val typeVariable = variableWithConstraints.typeVariable
+        runCatching {
+            org.cangnova.cangjie.resolve.calls.inference.components.cstTrace(
+                "NOT_ENOUGH var=$typeVariable " +
+                    "cons=${variableWithConstraints.constraints.map { "${it.kind}:${it.type}" }} " +
+                    "atom=${findStatementOfFirstAtomWithVariable(typeVariable, topLevelAtoms)?.text?.toString()?.take(80)}",
+            )
+        }
         // 官方 SynLamExpr 以函数体错误决定 lambda 失败，不再把返回占位的约束不足
         // 报成参数缺少注解。只在最终无法固定变量时传播根错误，不能在临时写回阶段
         // 固化它，否则依赖参数定型后重查的成员访问会失去继续求解的机会。

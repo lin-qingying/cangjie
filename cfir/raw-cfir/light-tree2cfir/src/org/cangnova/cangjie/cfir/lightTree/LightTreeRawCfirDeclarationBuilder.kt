@@ -2299,9 +2299,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 tree.forEachChildren(child) { directive ->
                     if (directive.tokenType == CjNodeTypes.IMPORT_DIRECTIVE) {
                         val directiveBasePath = directive.extractImportDirectiveBasePath()
+                        val condition = directive.whenConditionExpressionOrNull()
                         tree.forEachChildren(directive) { item ->
                             if (item.tokenType == CjNodeTypes.IMPORT_ITEM) {
-                                convertImportItem(item, directiveBasePath)?.let { imports.add(it) }
+                                convertImportItem(item, directiveBasePath, condition)?.let { imports.add(it) }
                             }
                         }
                     }
@@ -2340,7 +2341,11 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /** 转换单个 import item。 */
-    private fun convertImportItem(item: LighterASTNode, directiveBasePath: OrganizationQualifiedPath?): CfirImport? {
+    private fun convertImportItem(
+        item: LighterASTNode,
+        directiveBasePath: OrganizationQualifiedPath?,
+        condition: CfirExpression?,
+    ): CfirImport? {
         // 提取导入的 FQN（从 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION）
         var fqNameText: String? = null
         var isAllUnder = false
@@ -2374,7 +2379,19 @@ class LightTreeRawCfirDeclarationBuilder(
             organizationName = itemPath?.organizationName ?: directiveBasePath?.organizationName
             this.isAllUnder = isAllUnder
             this.aliasName = aliasName
+            this.condition = condition
         }
+    }
+
+    /** 提取 import directive 前导 `@When[...]` 的 raw 条件。 */
+    private fun LighterASTNode.whenConditionExpressionOrNull(): CfirExpression? {
+        val annotation = findFirstDescendantByType(this, CjNodeTypes.ANNOTATION) ?: return null
+        val name = annotationNameInfo(annotation)?.rawName?.substringAfterLast('.') ?: return null
+        if (name != "When") return null
+        val conditionNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_WHEN_CONDITION)
+            ?: return null
+        val expressionNode = expressionBuilder.findFirstExpression(conditionNode) ?: return null
+        return expressionBuilder.convertExpression(expressionNode)
     }
 
     /** 构造文件顶层声明列表。 */

@@ -96,6 +96,13 @@ fun CfirTypeRef.classifyDeclaredSupertype(
     visitedTypeRefs = linkedSetOf(),
 )
 
+/**
+ * 父类型分类的核心递归实现。
+ *
+ * [visitedTypeRefs] 防止解析期构造的循环 typeRef 造成无限递归；
+ * 错误 typeRef 上的诊断按环 / 歧义 / 可恢复等类别细分，
+ * 只有 delegated 结构明确证明目标种类非法时才下派 InvalidTargetKind。
+ */
 private fun CfirTypeRef.classifyDeclaredSupertype(
     expandType: (ConeCangJieType) -> ConeCangJieType,
     visitedTypeRefs: MutableSet<CfirTypeRef>,
@@ -145,6 +152,7 @@ private fun CfirTypeRef.classifyDeclaredSupertype(
     }
 }
 
+/** 把已解析类型归约为分类结果：class-like 合法，错误类型保持主错误，其余一律目标种类非法。 */
 private fun classifyResolvedDeclaredSupertype(type: ConeCangJieType): DeclaredSupertypeClassification =
     when (type) {
         is ConeClassLikeType -> DeclaredSupertypeClassification.ValidNominal(type)
@@ -153,9 +161,11 @@ private fun classifyResolvedDeclaredSupertype(type: ConeCangJieType): DeclaredSu
         else -> DeclaredSupertypeClassification.InvalidTargetKind(type)
     }
 
+/** 若该 typeRef 已解析为错误类型则返回之；未解析或正常类型返回 `null`。 */
 private fun CfirTypeRef.errorTypeOrNull(): ConeErrorType? =
     (this as? CfirResolvedTypeRef)?.coneType as? ConeErrorType
 
+/** 把自引用 / 继承环两类诊断 kind 映射为分类的 LoopOrigin；其余 kind 返回 `null`。 */
 private fun DiagnosticKind.declaredSupertypeLoopOriginOrNull(): DeclaredSupertypeClassification.LoopOrigin? =
     when (this) {
         DiagnosticKind.SupertypeSelfReference -> DeclaredSupertypeClassification.LoopOrigin.DIRECT_SELF_REFERENCE
@@ -163,6 +173,7 @@ private fun DiagnosticKind.declaredSupertypeLoopOriginOrNull(): DeclaredSupertyp
         else -> null
     }
 
+/** 从分类结果中提取环检查所需的 nominal 类型；无可用 owner 时返回 `null`。 */
 private fun DeclaredSupertypeClassification?.nominalTypeForLoopCheckOrNull(): ConeClassLikeType? = when (this) {
     is DeclaredSupertypeClassification.ValidNominal -> type
     is DeclaredSupertypeClassification.RecoverableNominalError -> nominalType
@@ -236,6 +247,12 @@ fun CfirTypeRef.declaredSupertypeClassifierSource(): AbstractCjSourceElement? {
     )
 }
 
+/**
+ * 递归回溯到原始的 [CfirUserTypeRef]。
+ *
+ * error / resolved typeRef 通过 delegated 与 partiallyResolved 链向下追溯；
+ * [visited] 防御循环引用，追溯失败返回 `null`。
+ */
 private fun CfirTypeRef.originalDeclaredSupertypeUserTypeRef(
     visited: MutableSet<CfirTypeRef>,
 ): CfirUserTypeRef? {

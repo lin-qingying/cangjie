@@ -87,9 +87,16 @@ internal fun ConeCangJieType.futureTypeOrNull(): ConeClassifierType? = when (thi
     else -> null
 }
 
+/** 构造 `Future<returnType>` 的标准库 class-like 类型。 */
 private fun constructFutureType(returnType: ConeCangJieType): ConeCangJieType =
     ConeClassLikeType(StdlibClassIds.Future.toLookupTag(), typeArguments = listOf(returnType))
 
+/**
+ * 综合 spawn task 的返回类型。
+ *
+ * 目标期望为 Unit 时只统计显式 `return 值` 的类型；否则把显式 return
+ * 类型与 body 类型合并取公共超类型，无任何候选时回落到 Unit。
+ */
 private fun CfirSpawnExpression.spawnTaskReturnType(
     expectedTaskReturnType: ConeCangJieType?,
     session: CfirSession,
@@ -109,6 +116,12 @@ private fun CfirSpawnExpression.spawnTaskReturnType(
     return if (candidateTypes.isEmpty()) session.builtinTypes.unitType else session.commonSupertype(candidateTypes)
 }
 
+/**
+ * 收集 task body 中全部显式 `return` 表达式的类型。
+ *
+ * 只遍历当前 spawn 直接体：嵌套 lambda 与嵌套 spawn 不属于本次 task 的
+ * 返回路径，遇到时整体跳过其子树；无 result 的 return 记为 Unit。
+ */
 private fun CfirBlock.collectSpawnTaskReturnTypes(session: CfirSession): List<ConeCangJieType> {
     val result = mutableListOf<ConeCangJieType>()
     acceptChildren(object : CfirVisitorVoid() {
@@ -127,6 +140,12 @@ private fun CfirBlock.collectSpawnTaskReturnTypes(session: CfirSession): List<Co
     return result
 }
 
+/**
+ * 计算类型列表的公共超类型。
+ *
+ * 全部相同直接返回；过滤 Nothing 后无剩余取 Nothing、仅剩一个取该类型；
+ * 真正多类型时交给类型系统求解，失败兜底为 Any，空列表回落为 Unit。
+ */
 private fun CfirSession.commonSupertype(types: List<ConeCangJieType>): ConeCangJieType {
     if (types.isEmpty()) return builtinTypes.unitType
     val first = types.first()

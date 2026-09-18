@@ -8,6 +8,12 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.optionElementType
 
+/**
+ * 浮点字面量的显式类型后缀模式。
+ *
+ * 对齐官方 `f16` / `f32` / `f64` 后缀语法；匹配时忽略大小写，
+ * 命中后字面量在综合阶段即定型为对应 primitive，不再保留 ideal 语义。
+ */
 private val floatLiteralSuffix = Regex("(?i)(f16|f32|f64)$")
 
 /**

@@ -22,6 +22,27 @@ fun ConeCangJieType.containsErrorType(): Boolean = contains { type ->
 }
 
 /**
+ * 返回当前类型的直接组成类型。
+ *
+ * 对应官方 `Ty::typeArgs`：函数类型由返回值和参数组成，元组由元素组成，
+ * 数组、指针、交叉与联合类型各自暴露其成员，其余名义类型使用类型实参。
+ * 函数类型与元组的 [typeArguments] 为空，因此任何按“类型包含关系”遍历的地方
+ * 都必须使用该投影，否则会静默漏掉写在函数签名或元组内部的类型。
+ */
+fun ConeCangJieType.directComponentTypes(): List<ConeCangJieType> = when (this) {
+    is ConeFunctionType -> buildList {
+        add(returnType)
+        addAll(parameterTypes)
+    }
+    is ConeTupleType -> elementTypes
+    is ConeVArrayType -> listOf(elementType)
+    is ConePointerType -> listOf(pointeeType)
+    is ConeIntersectionType -> intersectedTypes.toList()
+    is ConeUnionType -> unionTypes.toList()
+    else -> typeArguments.map { it.type }
+}
+
+/**
  * 递归访问当前类型及其内部包含的所有 [ConeCangJieType]。
  *
  * 遍历顺序不作为 API 契约；调用方不能依赖具体访问顺序。
@@ -35,19 +56,7 @@ inline fun ConeCangJieType.forEachType(
     while (stack.isNotEmpty()) {
         val next = stack.popLast().let(prepareType)
         action(next)
-
-        when (next) {
-            is ConeFunctionType -> {
-                stack.add(next.returnType)
-                stack.addAll(next.parameterTypes)
-            }
-            is ConeTupleType -> stack.addAll(next.elementTypes)
-            is ConeVArrayType -> stack.add(next.elementType)
-            is ConePointerType -> stack.add(next.pointeeType)
-            is ConeIntersectionType -> stack.addAll(next.intersectedTypes)
-            is ConeUnionType -> stack.addAll(next.unionTypes)
-            else -> next.typeArguments.forEach { projection -> stack.add(projection.type) }
-        }
+        next.directComponentTypes().forEach { stack.add(it) }
     }
 }
 
@@ -59,15 +68,7 @@ private fun ConeCangJieType.contains(predicate: (ConeCangJieType) -> Boolean, vi
     if (predicate(this)) return true
     visited += this
 
-    return when (this) {
-        is ConeFunctionType -> parameterTypes.any { it.contains(predicate, visited) } || returnType.contains(predicate, visited)
-        is ConeTupleType -> elementTypes.any { it.contains(predicate, visited) }
-        is ConeVArrayType -> elementType.contains(predicate, visited)
-        is ConePointerType -> pointeeType.contains(predicate, visited)
-        is ConeIntersectionType -> intersectedTypes.any { it.contains(predicate, visited) }
-        is ConeUnionType -> unionTypes.any { it.contains(predicate, visited) }
-        else -> typeArguments.any { projection -> projection.type.contains(predicate, visited) }
-    }
+    return directComponentTypes().any { it.contains(predicate, visited) }
 }
 
 /**

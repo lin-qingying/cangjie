@@ -13,6 +13,13 @@ import org.cangnova.cangjie.source.CjFakeSourceElementKind
  */
 private object LambdaParameterTypeOmittedKey : CfirDeclarationDataKey()
 
+/**
+ * lambda 形参是否省略了源码类型标注的原始语法事实。
+ *
+ * 取值语义：`true` / `false` 表示 raw 阶段已记录的省略与否；
+ * `null` 表示该参数尚未被 raw 层标记（如编译器合成参数），
+ * 读取方应回退到 [hasOmittedLambdaParameterType] 的推导逻辑。
+ */
 var CfirValueParameter.isLambdaParameterTypeOmitted: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaParameterTypeOmittedKey)
 
@@ -31,6 +38,12 @@ fun CfirValueParameter.hasOmittedLambdaParameterType(): Boolean =
  */
 private object LambdaParameterShapeExpectedFunctionTypeKey : CfirDeclarationDataKey()
 
+/**
+ * lambda 头部诊断使用的目标函数形状。
+ *
+ * 仅在调用完成阶段由错误候选写入；正常完成时类型已落在
+ * [CfirAnonymousFunction.matchingParameterFunctionType] 上，此键保持为 `null`。
+ */
 var CfirAnonymousFunction.lambdaParameterShapeExpectedFunctionType: ConeFunctionType? by
     CfirDeclarationDataRegistry.data(LambdaParameterShapeExpectedFunctionTypeKey)
 
@@ -42,6 +55,12 @@ var CfirAnonymousFunction.lambdaParameterShapeExpectedFunctionType: ConeFunction
  */
 private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
 
+/**
+ * 当前 lambda 是否位于参数映射已失败的调用实参子树中。
+ *
+ * 由调用完成写回阶段从结构化 ArgumentMappingOutcome 传播；为 `null`
+ * 表示该 lambda 不在任何调用的实参位置，checker 可直接跳过相关检查。
+ */
 var CfirAnonymousFunction.isInsideFailedArgumentMapping: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaInsideFailedArgumentMappingKey)
 
@@ -63,7 +82,14 @@ data class CfirIfAvailableBranchContext(
     val conditionValue: String,
 )
 
+/** [CfirAnonymousFunction.ifAvailableBranchContext] 扩展属性使用的声明数据键。 */
 private object IfAvailableBranchContextKey : CfirDeclarationDataKey()
 
+/**
+ * IfAvailable lambda 携带的 source-independent 条件事实。
+ *
+ * 随匿名函数声明存储，供 APILevel checker 按条件名与取值判断分支合法性；
+ * 嵌套 lambda 按声明遍历顺序自然叠加各自的事实。
+ */
 var CfirAnonymousFunction.ifAvailableBranchContext: CfirIfAvailableBranchContext? by
     CfirDeclarationDataRegistry.data(IfAvailableBranchContextKey)

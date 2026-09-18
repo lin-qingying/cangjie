@@ -145,14 +145,24 @@ open class CfirExpressionsResolveTransformer(
     override fun transformAnnotationCall(annotationCall: CfirAnnotationCall, data: ResolutionMode): CfirAnnotationCall {
         if (annotationCall.annotationResolveState == CfirAnnotationResolveState.UNRESOLVED) {
             if (annotationCall.resolveBuiltinAnnotationIdentity() == null) {
-                annotationCall.replaceTypeRef(transformer.transformTypeRef(annotationCall.typeRef, ResolutionMode.ContextIndependent))
+                annotationCall.replaceTypeRef(
+                    transformer.transformTypeRef(annotationCall.typeRef, ResolutionMode.ContextIndependent),
+                )
                 val classId = annotationCall.typeRef.coneTypeOrNull?.classId
                 annotationCall.replaceAnnotationClassId(classId)
-                annotationCall.replaceAnnotationIdentity(
-                    classId?.asSingleFqName()?.let(CangjieAnnotationIdentity::Custom)
-                        ?: CangjieAnnotationIdentity.Unknown,
-                )
-                annotationCall.replaceAnnotationResolveState(if (annotationCall.typeRef is CfirErrorTypeRef) CfirAnnotationResolveState.ERROR else CfirAnnotationResolveState.TYPE_RESOLVED)
+                if (!annotationCall.resolvePlatformAnnotationIdentity()) {
+                    annotationCall.replaceAnnotationIdentity(
+                        classId?.asSingleFqName()?.let(CangjieAnnotationIdentity::Custom)
+                            ?: CangjieAnnotationIdentity.Unknown,
+                    )
+                    annotationCall.replaceAnnotationResolveState(
+                        if (annotationCall.typeRef is CfirErrorTypeRef) {
+                            CfirAnnotationResolveState.ERROR
+                        } else {
+                            CfirAnnotationResolveState.TYPE_RESOLVED
+                        },
+                    )
+                }
             }
         }
         if (annotationCall.annotationResolveState == CfirAnnotationResolveState.SEMANTIC_RESOLVED ||
@@ -162,7 +172,15 @@ open class CfirExpressionsResolveTransformer(
             context.withAnnotationContext {
                 val builtin = annotationCall.builtInDescriptor
                 if (builtin != null) {
-                    org.cangnova.cangjie.cfir.resolve.transformers.plugin.resolveBuiltinAnnotationArguments(annotationCall, builtin, transformer)
+                    if (builtin.origin == org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.PACKAGE_DIRECTIVE) {
+                        org.cangnova.cangjie.cfir.resolve.transformers.plugin.resolvePackageDirectiveAnnotation(annotationCall)
+                    } else {
+                        org.cangnova.cangjie.cfir.resolve.transformers.plugin.resolveBuiltinAnnotationArguments(
+                            annotationCall,
+                            builtin,
+                            transformer,
+                        )
+                    }
                 } else {
                     context.withCallArgumentResolution {
                         annotationCall.replaceArgumentList(annotationCall.argumentList.transform(transformer, ResolutionMode.ContextDependent))

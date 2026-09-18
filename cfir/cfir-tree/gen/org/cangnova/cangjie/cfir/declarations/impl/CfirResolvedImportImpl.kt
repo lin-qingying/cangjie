@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.declarations.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedImport
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.FqName
@@ -17,6 +18,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
 
 class CfirResolvedImportImpl @CfirImplementationDetail constructor(
+    override var condition: CfirExpression?,
     override var delegate: CfirImport,
     override val packageFqName: FqName,
 ) : CfirResolvedImport() {
@@ -35,9 +37,21 @@ class CfirResolvedImportImpl @CfirImplementationDetail constructor(
     override val importedName: Name?
         get() = importedFqName?.shortName()
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        condition?.accept(visitor, data)
+    }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirResolvedImportImpl {
+        transformCondition(transformer, data)
         return this
+    }
+
+    override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirResolvedImportImpl {
+        condition = condition?.transform(transformer, data)
+        return this
+    }
+
+    override fun replaceCondition(newCondition: CfirExpression?) {
+        condition = newCondition
     }
 }

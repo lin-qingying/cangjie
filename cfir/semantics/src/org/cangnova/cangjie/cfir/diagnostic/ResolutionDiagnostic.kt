@@ -72,6 +72,20 @@ class ArgumentTypeMismatch(
 ) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 /**
+ * 官方 CFFICheck::CheckCallCompatible 的专用规则：带 `@C` 的 struct
+ * 不能在调用实参位置隐式装箱为其他目标类型。
+ *
+ * 该诊断必须在普通 ArgumentTypeMismatch 之前保留，否则候选规约会把
+ * 官方的 `sema_cstruct_cannot_autobox` 降级成泛化的类型不匹配。
+ */
+class CStructCannotAutobox(
+    /** 触发隐式装箱的实参表达式。 */
+    val argument: CfirExpression,
+    /** 官方诊断消息中展示的目标参数类型。 */
+    val expectedType: ConeCangJieType,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
+
+/**
  * Lambda 参数列表个数与目标函数类型参数个数不匹配。
  *
  * 该诊断对应官方 `sema_param_miss_match`，用于把 lambda 头部形状错误
@@ -309,7 +323,12 @@ object InapplicableCandidateByCallableReferenceExpectedType :
  *
  * @property argument 作为函数引用使用、但没有匹配声明的实参表达式。
  */
-/** callable reference 实参失败的结构化分类。 */
+/**
+ * callable reference 实参失败的结构化分类。
+ *
+ * resolve 阶段将函数引用实参的失败原因归入该枚举，供 checker 映射层选择
+ * 对应的诊断模板；不同分类决定后续是否继续做泛型实参推断等补救流程。
+ */
 enum class CallableReferenceFailureKind {
     /** 目标函数类型下没有匹配声明。 */
     NO_MATCH,
@@ -321,6 +340,16 @@ enum class CallableReferenceFailureKind {
     GENERIC_TYPE_ARGUMENT_REQUIRED,
 }
 
+/**
+ * 函数引用实参在当前期望函数类型下没有可适用声明。
+ *
+ * 对齐 Kotlin FIR `UnsuccessfulCallableReferenceArgument`：resolve 阶段记录
+ * callable reference 实参的失败根因和源码锚点，用户可见的 no-match-ref
+ * 诊断由 checker 映射层统一生成。
+ *
+ * @property argument 作为函数引用使用、但没有匹配声明的实参表达式。
+ * @property failureKind 当前外层候选下 callable reference 的失败分类。
+ */
 class UnsuccessfulCallableReferenceArgument(
     /**
      * 作为函数引用使用、但没有匹配声明的实参表达式。

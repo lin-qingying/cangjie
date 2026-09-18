@@ -59,4 +59,10 @@ class CfirBlockImpl @CfirImplementationDetail constructor(
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
     }
+
+    override fun replaceStatements(newStatements: List<CfirStatement>) {
+        if (statements === newStatements) return
+        statements.clear()
+        statements.addAll(newStatements)
+    }
 }

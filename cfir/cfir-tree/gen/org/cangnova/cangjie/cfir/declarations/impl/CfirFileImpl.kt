@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -38,6 +39,7 @@ class CfirFileImpl @CfirImplementationDetail constructor(
     override var packageDirective: CfirPackageDirective,
     override val imports: MutableList<CfirImport>,
     override val sourceFileLinesMapping: CjSourceFileLinesMapping?,
+    override val conditionalCompilationFailures: MutableList<CfirConditionalCompilationFailure>,
     override val declarations: MutableList<CfirDeclaration>,
 ) : CfirFile() {
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
@@ -103,5 +105,17 @@ class CfirFileImpl @CfirImplementationDetail constructor(
 
     override fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?) {
         featuresDirective = newFeaturesDirective
+    }
+
+    override fun replaceImports(newImports: List<CfirImport>) {
+        if (imports === newImports) return
+        imports.clear()
+        imports.addAll(newImports)
+    }
+
+    override fun replaceConditionalCompilationFailures(newConditionalCompilationFailures: List<CfirConditionalCompilationFailure>) {
+        if (conditionalCompilationFailures === newConditionalCompilationFailures) return
+        conditionalCompilationFailures.clear()
+        conditionalCompilationFailures.addAll(newConditionalCompilationFailures)
     }
 }

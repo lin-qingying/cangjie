@@ -34,6 +34,7 @@ public data class CfirDeclarationAnnotationInfo(
     val runtimeVisible: Boolean = false,
 )
 
+/** [CfirDeclaration.annotationInfo] 扩展属性使用的声明数据键。 */
 private object CfirDeclarationAnnotationInfoKey : CfirDeclarationDataKey()
 
 /** annotation owner 发布的不可变语义快照，复制声明 attributes 时完整保留。 */

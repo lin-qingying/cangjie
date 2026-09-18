@@ -33,9 +33,11 @@ internal val CjNamedDeclaration.cfirNameAsSafeName: Name
 internal val CjSimpleNameExpression.cfirReferencedNameAsName: Name
     get() = rawIdentifierName(referencedNameElement.text) ?: referencedNameAsName
 
+/** 将绑定模式（如 `var case x`）的名称转换为 raw CFIR 名称身份，与声明侧同规则保留反引号。 */
 internal val CjBindingPattern.cfirNameAsSafeName: Name
     get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
 
+/** 将 var/enum 模式中的绑定名转换为 raw CFIR 名称身份，同样保留反引号原始拼写。 */
 internal val CjVarOrEnumPattern.cfirNameAsSafeName: Name
     get() = rawIdentifierName(nameIdentifier?.rawIdentifierTokenText()) ?: nameAsSafeName
 

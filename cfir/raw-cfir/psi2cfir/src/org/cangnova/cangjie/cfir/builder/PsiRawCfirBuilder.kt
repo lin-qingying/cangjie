@@ -4051,6 +4051,10 @@ class PsiRawCfirBuilder(
                     organizationName = item.organizationName
                     isAllUnder = item.isAllUnder
                     aliasName = item.aliasName?.let { Name.identifier(it) }
+                    condition = PsiTreeUtil.findChildrenOfType(directive, CjAnnotation::class.java)
+                        .firstOrNull { it.builtInAnnotation == CjBuiltInAnnotation.WHEN }
+                        ?.whenConditionExpression
+                        ?.let(converter::convertExpression)
                 }
             }
         }

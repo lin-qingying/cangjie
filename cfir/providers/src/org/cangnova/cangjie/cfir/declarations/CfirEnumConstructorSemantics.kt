@@ -205,11 +205,20 @@ fun CfirReference.enumPatternConstructorAccessOrNull(): CfirEnumPatternConstruct
     )
 }
 
+/** 枚举模式 owner 限定名的解析结果：classifier 文本与可选的顶层类型实参文本列表。 */
 private data class ParsedEnumPatternOwnerQualifier(
+    /** 去除类型实参后的 classifier 文本（可能带包名限定）。 */
     val classifierText: String,
+    /** 顶层类型实参文本列表；owner 未写类型实参时为 `null`。 */
     val typeArguments: List<String>?,
 )
 
+/**
+ * 把 owner 限定文本解析为 classifier 与类型实参两部分。
+ *
+ * 文本先去除全部空白，再按顶层 `<` 定位类型实参起点；没有实参或
+ * 不以 `>` 结尾时视为无实参的裸限定名。
+ */
 private fun String.parseEnumPatternOwnerQualifier(): ParsedEnumPatternOwnerQualifier {
     val normalized = filterNot(Char::isWhitespace)
     val typeArgumentStart = normalized.firstTopLevelTypeArgumentStart()
@@ -225,16 +234,29 @@ private fun String.parseEnumPatternOwnerQualifier(): ParsedEnumPatternOwnerQuali
     )
 }
 
+/**
+ * 判断 owner 文本是否匹配给定的枚举声明。
+ *
+ * 支持三种拼写：全限定名（`pkg.Name`）、ClassId 形式（`pkg.Name` 的 dot 分隔），
+ * 以及省略包名的顶层短名；与 `enum Name<T>` 的模式书写习惯一一对应。
+ */
 private fun String.matchesEnumOwnerName(enumDeclaration: CfirEnum, enumType: ConeEnumType): Boolean {
     return this == enumType.classId.asFqNameString() ||
             this == enumType.classId.asString() ||
             shortTopLevelName() == enumDeclaration.name.asString()
 }
 
+/** 判断该类型实参文本与实际类型渲染文本是否等价（支持限定名与短名两种形式）。 */
 private fun String.matchesTypeArgumentText(actualText: String): Boolean {
     return this == actualText || shortQualifiedTypeText() == actualText.shortQualifiedTypeText()
 }
 
+/**
+ * 把当前类型渲染为枚举模式比较用的类型文本。
+ *
+ * 输出形如 `Name<Arg1,Arg2>` 的短名形式：有 ClassId 时取短类名，
+ * typealias 取其 ClassId 短名；递归展开类型实参，任一分量不可渲染则整体失败。
+ */
 private fun ConeCangJieType.enumPatternTypeArgumentTextOrNull(): String? {
     val classId = classIdOrPrimitiveClassId
     val baseName = when {
@@ -249,6 +271,12 @@ private fun ConeCangJieType.enumPatternTypeArgumentTextOrNull(): String? {
     return "$baseName<${argumentTexts.joinToString(",")}>"
 }
 
+/**
+ * 把类型文本规约为"短名 + 递归规约的类型实参"形式。
+ *
+ * 用于两侧文本比较前统一拼写：限定名折叠为顶层短名，
+ * 嵌套类型实参逐层递归规约，保证 `pkg.A<pkg.B>` 与 `A<B>` 等价。
+ */
 private fun String.shortQualifiedTypeText(): String {
     val argumentStart = firstTopLevelTypeArgumentStart()
     val classifier = if (argumentStart < 0) this else substring(0, argumentStart)
@@ -260,16 +288,19 @@ private fun String.shortQualifiedTypeText(): String {
     return "$shortClassifier<$arguments>"
 }
 
+/** 取最后一个顶层 `.` 之后的短名；没有限定点时返回原文。 */
 private fun String.shortTopLevelName(): String {
     val dotIndex = lastTopLevelDotIndex()
     return if (dotIndex < 0) this else substring(dotIndex + 1)
 }
 
+/** 去除顶层类型实参部分；没有顶层 `<...>` 时返回原文。 */
 private fun String.stripTopLevelTypeArguments(): String {
     val start = firstTopLevelTypeArgumentStart()
     return if (start >= 0 && endsWith(">")) substring(0, start) else this
 }
 
+/** 返回第一个不在嵌套 `<...>` 内的 `<` 下标；不存在时返回 -1。 */
 private fun String.firstTopLevelTypeArgumentStart(): Int {
     var depth = 0
     for (index in indices) {
@@ -284,6 +315,7 @@ private fun String.firstTopLevelTypeArgumentStart(): Int {
     return -1
 }
 
+/** 返回最后一个不在嵌套 `<...>` 内的 `.` 下标；不存在时返回 -1。 */
 private fun String.lastTopLevelDotIndex(): Int {
     var depth = 0
     for (index in indices.reversed()) {
@@ -296,6 +328,7 @@ private fun String.lastTopLevelDotIndex(): Int {
     return -1
 }
 
+/** 按顶层逗号拆分类型实参文本，逐段去除空白并丢弃空段。 */
 private fun String.splitTopLevelTypeArguments(): List<String> {
     val result = mutableListOf<String>()
     var depth = 0

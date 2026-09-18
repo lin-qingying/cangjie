@@ -299,6 +299,9 @@ inline fun TypeSubstitutorMarker.asCone(): ConeSubstitutor = this as ConeSubstit
 
 /**
  * 保留给旧调用点的冗余转换函数。
+ *
+ * [ConeSubstitutor] 本身已是 cone 层类型，转换是无操作；该函数仅为兼容
+ * 历史调用点保留，编译期直接报错并提示删除调用。
  */
 @Deprecated(message = "This call is redundant, please just drop it", level = DeprecationLevel.ERROR,
     replaceWith = ReplaceWith("this")

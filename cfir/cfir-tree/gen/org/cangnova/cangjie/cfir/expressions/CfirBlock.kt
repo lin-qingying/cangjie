@@ -31,6 +31,8 @@ abstract class CfirBlock : CfirExpression() {
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
+    abstract fun replaceStatements(newStatements: List<CfirStatement>)
+
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirBlock
 
     abstract fun <D> transformStatements(transformer: CfirTransformer<D>, data: D): CfirBlock
