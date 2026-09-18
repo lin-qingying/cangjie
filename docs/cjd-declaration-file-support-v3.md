@@ -2952,6 +2952,37 @@ IDE 侧的注解展示（文档、inspection、light declaration 渲染）走第
 - `.cj.d` **不进入编译单元**，除非 `configuration.compileCjd == true`。
 - 配置注入：LSP 入口需显式设置 `configuration.compileCjd`（4.3.3），并按其决定源收集模式（4.4）。
 
+##### P6 实施记录：`lsp` 项复核（2026-09-18）
+
+逐条核实后，**前两条已成立，第三条无落点（设计假设与实现不符）**：
+
+| 4.8.3 条目 | 实测结论 |
+|---|---|
+| ① `.cj.d` 作为文档走 PSI 路径 | ✅ 由 P0/P1 覆盖：`CangJieDeclarationFileType`（`patterns="*.cj.d"`）+ 声明模式解析 |
+| ② `.cj.d` 不进入编译单元 | ✅ **默认即成立**：`compileCjd` 默认 `false` ⇒ `acceptsCangjieSource(DECLARATION) == false`（4.4.1）。任何未显式开启声明模式的入口（含 LSP、IDE）都自动把 `.cj.d` 排除出源集合，无需 LSP 侧额外代码 |
+| ③ LSP 入口显式设置 `configuration.compileCjd` | ❌ **无落点**，见下 |
+
+**③ 的证据链（三条，逐条可复核）**：
+
+1. `CompilerConfiguration → CFIR session` 的桥**只有一个**：
+   `createDefaultCfirSessionFactoryContext(configuration)`（`cfir/entrypoint/.../session/CfirSessionFactoryContextUtils.kt:27`），
+   它把 `apiLevel` / `interopSettings` / `conditionalCompilationSettings` **和** `compileCjd`
+   （经 `CfirAbstractSessionFactory.kt:257` 的 `CfirDeclarationModeSettingsComponent`）送进 session。
+2. 该桥**唯一调用方**是 `compiler/frontend/.../pipeline/CfirFrontendPipelinePhase.kt:64`（CLI 侧流水线）。
+3. `analysis/` 全模块**零处**引用 `CompilerConfiguration`；`lsp/` 亦零处
+   ⇒ LSP/Analysis API 路径**不构造 `CompilerConfiguration`**，因此"在 LSP 入口写 `configuration.compileCjd = ...`"
+   **没有可写的对象**。
+
+**影响面（有限）**：`CfirDeclarationModeSettingsComponent.compileCjd` 当前**唯一**消费者是
+`CfirProgramEntryChecker`（R6 官方豁免："声明模式不检查程序入口缺失"）。
+LSP 场景下 `.cj.d` 只是文档、不构成编译单元，故该豁免在 LSP 中不被触及；② 又已由默认值保证。
+⇒ **本条不构成缺陷，不需要改代码**，但设计稿的"LSP 入口"表述与实现不符，必须更正。
+
+**后续若 LSP 需要"以声明模式编译"**（例如未来要由服务端产出 `.cjo`）：需要**新建**一条
+`LspProjectConfiguration → CompilerConfiguration → createDefaultCfirSessionFactoryContext` 的桥，
+并把 `compileCjd` 作为 LSP `initializationOptions` 的显式字段（与既有的 `stdLibPathOption` / `targetLib`
+同层，见 `LspProjectConfiguration.fromInitializeParams`）。这属于**新增能力**，不在本次范围内。
+
 ---
 
 ### 4.9 `intellij-ide`
@@ -4494,3 +4525,38 @@ F2 落地后，两者都只需从**文件**取 `sourceKind` 并传给解析器 �
 | 6 | **`MACRO_CALL` 必须被源收集显式拒绝**，而非"恰好落进 else 被拒"（巧合不是规则） | 4.4.1 / 4.4.2 |
 | 7 | 4.5.2 的「护栏 3」段落**重复出现两次**（文档自身缺陷） | 已去重 |
 | 8 | 核实后**否定**的一个怀疑：4.4.2 的 `filter` 是否需要额外修正 —— 初稿的 `filter` 已按 `kind.isDeclaration` 分流，无需再动。记录于此，避免后人重复怀疑 | — |
+
+### C.6 v3.1 → v3.2：P5/P6 实施期发现（2026-09-18）
+
+P4 收尾（两个验收项）与 P5 实施期间，相对 v3.1 的**事实更正**与新增记录：
+
+| # | 实施期发现 | 处置 |
+|---|---|---|
+| **1** | **1.3.5/4.5.2 的 `DEFAULT` 同源派生**已落地并被真实 SDK 覆盖：`std.math.RoundingMode` 及其 6 个枚举构造项的 `ownApiLevelInfo().since == "22"` | 无需改动 |
+| **2** | **官方顶层门控的代价被量化**：6,497 个 APILevel 中 **1,326（20.4%）结构上不可达**（顶层声明自身无注解），涉及 370 个顶层容器 | 登记为**已知限制**（5.1「P4 收尾之一」①），并注明"放宽属偏离官方语义的独立决策" |
+| **3** | **`ATTRIBUTED_SELF` 140 条的两类成因被区分**：≤32 为导出门控（`NON_EXPORTED`，名字全是 `std.core`/`std.unittest` 包内实现细节），≈108 为 CJO 参数类型元数据不可表达 | 记入 5.1 |
+| **4** | **语料盲区**：`TYPE_ALIAS`/`MACRO` 注解数为 0、`EXTEND` 372 个仅 1 个带注解、无 `FINALIZER`/`MAIN` 条目 ⇒ 4.6.4 的 D6（类型别名不匹配）与 finalizer/main 分支**未被该语料覆盖** | 记入 5.1 与 6.4 的"不能宣称已验证" |
+| **5** | **4.8.3 的"LSP 入口"无落点**：全仓唯一 `CompilerConfiguration → session` 桥只被 CLI 侧 `CfirFrontendPipelinePhase` 调用，`analysis/` 零引用 `CompilerConfiguration` | 4.8.3 新增「P6 实施记录」更正表述；行为侧由 `compileCjd` 默认 `false` 自动成立 |
+| **6** | **OP3 一致性已核验**：`intellij-ide` 与 `deveco` 的 `CaIdeScopeCangJieFileCollector.kt` 正文**逐字一致**（`diff -q` 无差异） | 7.4-E 对应项可勾选 |
+| **7** | **提交切分与设计不符（实况记录）**：5.2 的"按 C-1..C-5 逐个提交"在**多工作线并行**的工作树上不可达 —— P1/P2/P3 早已随其它提交落地；P3 源收集与 P4 分别成笔，另有 2 处因文件粒度不可分而**披露式提交** | 见 C.7 |
+| **8** | **`deveco` 的 `cjdFiles` 无生产消费方**（仅 `CangjieSdkIntegrityTest` 消费），且该测试在当前环境被无效 `.host/devEco-studio` 路径阻断 | 记入 5.1「尚未完成」；生产接线属后续 |
+
+
+### C.7 跨仓提交实况（2026-09-18）
+
+三个仓各自独立提交，**未把其它工作线的在途改动混入**（唯一例外见"披露"列）：
+
+| 仓 | 提交 | 分支 | 规模 | 披露 |
+|---|---|---|---|---|
+| `cangjie`（主仓） | `617bf6879` `refactor(frontend): share Cangjie source classification between collectors` | `main` | 4 files, +55/−69 | 无（纯 P3 源收集） |
+| `cangjie` | `d563f22a1` `feat(cfir): merge .cj.d sidecar annotations into .cjo declarations` | `main` | 30 files, +1369/−107 | `CfirDeclDeserializer.kt` 同时含**注解序列化**的 `publishDeclarationMetadata` 接缝提取（文件粒度不可分） |
+| `intellij-ide` | `681597be` `feat: register and exclude .cj.d declaration files` | `cfir-new` | 5 files, +52/−3 | 无 |
+| `deveco` | `3c794d9` `feat(declaration): 注册 .cj.d 并排除出声明提供者聚合` | `main` | 3 files, +24 | 无 |
+| `deveco` | `1eb3ead` `feat(toolchain): 建模 26.x SDK 布局并按 stdlib/ohos/kit 分组注册库` | `main` | 3 files, +413/−164 | 含 **SDK 布局重构主体**（`.cj.d` 特性只需其中的 `cjdFiles` 枚举） |
+
+**刻意未提交（属其它工作线，逐个核实排除）**：主仓的 `cfir/providers/*`（平台注解）、
+`cfir/entrypoint/.../CfirSessionFactoryContextUtils.kt` 与 `CfirFrontendConfigurationKeys.kt`（条件编译）、
+`cjoStubBuilding.kt`、`decompiler-to-psi/*`；`intellij-ide` 的 `CaIdeSourceModuleBase.kt` 与
+`LanguageVersionSettingsProvider.kt` 系列（languageVersionSettings 重构）；`deveco` 的
+`PackageModel.kt` / `CangJieProjectSettingsPanel.kt` / `CjToolchainPathChoosingComboBox.kt`（SDK 选择 UI）。
+
