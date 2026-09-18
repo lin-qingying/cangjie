@@ -4596,4 +4596,51 @@ checker 验证它不需要知道 `.cj.d` 存在"）。当前机制由两处保�
 - 4.8.3 的 LSP 配置注入 —— 无落点，行为已由 `compileCjd` 默认 `false` 成立（见 4.8.3「P6 实施记录」）；
 - `deveco` 的 `cjdFiles` 生产接线 —— 当前无消费方。
 
+---
+
+### C.9 与官方实现的逐项对照：功能缺口清单（2026-09-18）
+
+> 取证范围：官方 `external/cangjie_compiler`（`MergeAnnoFromCjd.cpp` 全文 572 行、`CjdCompilerInstance.h`、`CompileStrategy.cpp`、`Option.cpp`、`ASTWriter.cpp`、`ImportManager.cpp`、`FileUtil.cpp`、`CheckAPILevel.cpp`、`DeclAttributeChecker.cpp`、`TypeChecker.cpp`、`InitializationChecker.cpp`、`StructInheritanceChecker.cpp`、`ParserDiag.cpp`、`ParseDecl.cpp`）
+> 对照本仓 `psi/`、`cfir/`、`compiler/`、`analysis/`、`lsp/` 与 `intellij-ide`、`deveco` 两仓。
+> C.8 列的是「本设计剩余项」；本节列的是「**与官方实现相比**的功能缺口」，两者口径不同。
+
+#### C.9.1 官方有、本仓未实现
+
+| # | 能力 | 官方取证 | 本仓现状 | 影响 |
+|---|---|---|---|---|
+| **N-1** | **宏展开产物的注解合并** | `CompileStrategy.cpp:316-323`：先 `Parser(..., parseDeclFile=true)` 解析，再 `MacroExpansion::Execute`，之后才 `MergeCusAnno`；`MergeAnnoFromCjd.cpp:435-443` 有 `MACRO_EXPAND_DECL` 匹配分支（比 `invocation.fullName` + `identifier`） | `CjdSidecarParser` 纯语法解析、不跑宏；`CjdStructureExtractor.kt:64` 直接跳过 `MACRO_EXPRESSION` 并报 `MACRO_NOT_EXPANDED`；`CjdDeclarationKind.MACRO_EXPAND` **无生产者**，matcher 命中即 `UNSUPPORTED`（`CjdBinaryDeclarationMatcher.kt:133`） | `.cj.d` 里由宏生成的声明，其注解不会合并。DIFF-5 已登记，此处补取证 |
+| **N-2** | **`Rune` 与 `UInt8` 视为同一类型** | `MergeAnnoFromCjd.cpp:147-148`、`:254-263` 两处均做 `"Rune" → "UInt8"` 归一化后再比 | 明确**不等价**：`CjdResolvedType.kt:26` 注释「原始类型保留身份（Rune 不等于 UInt8）」，`CjdBinaryTypeAdapterTest:81`、`DeclarationMatchKeyTest:48` 固化 | 侧车写 `Rune` 而 `.cjo` 侧为 `UInt8`（或反向）时，官方可合并、本仓判 `MISSING`。**与官方行为不一致**（本仓为有意的类型身份设计，取舍需评审） |
+| **N-3** | **形态 A 的调用方接线**（谁执行 `.cj.d` → `.cjo`） | `CjdCompilerInstance.h:20-61`（sema 后跳过全部阶段，仅 `SaveCjo`）+ `FrontendTool.cpp:200-205` 按 `compileCjd` 选实例 | 设计 **D9 已决定本仓不走 `compiler/frontend` 流水线**（`.cjo` 由外部 `cjc -d` 产出），但设计稿所列调用方（`intellij-ide` toolchain 委托、LSP 入口）**两仓 `compileCjd` 命中数均为 0** | IDE 内无法经本插件从 `.cj.d` 产出 `.cjo`，须手工调用 `cjc -d` |
+| **N-4** | **校验完成后清理依赖包 cjd 注解** | `CheckAPILevel.cpp:284-304` `ClearAnnoInfoOfDepPkg`，`:709` 在校验末尾调用 | 无对应实现 | 架构不同（本仓按需物化、诊断不回流），大概率不需要，但**没有等价的生命周期收尾** |
+| **N-5** | `PropDecl` 在 `compileCjd` 下丢弃 getter/setter 写出 | `ASTWriter.cpp:918-936` 写 `PropInfo(isConst,isVar)` | 本仓不产 `.cjo` | **不适用**（D9）。列出仅为闭环，避免被当作缺口 |
+
+#### C.9.2 本仓有、官方没有（超集，非缺口）
+
+- **5 类匹配诊断**（`MISSING`/`AMBIGUOUS`/`UNSUPPORTED`/`NON_EXPORTED`/`UNUSABLE_SIDECAR`）—— 官方只有 `Debugln`，用户不可见。
+- **无静默丢失的可回归断言**：官方靠 debug 期 `FullMoveCheck` 自检；本仓由 `CjdSdkDeclarationBoundaryAuditTest` 长期断言（`UNATTRIBUTED == 0`）。
+- **顶层函数参数注解**：官方只处理 `GetMemberDeclPtrs()` 的成员，顶层函数参数不合并；本仓对所有函数产出 `parameterAnnotations`。
+- **`MAIN_FUNC` 作为可匹配条目**：官方 `:486` 明确跳过 `MAIN_DECL`。
+- **sidecar 读取失败留痕**：本仓 `CjdBinaryAnnotationOverlay.loadDiagnostic`；官方 `CompileStrategy.cpp:307-309` 静默 `continue`。
+
+#### C.9.3 已实现但未接线（无生产消费方）
+
+| 符号 | 位置 | 现状 |
+|---|---|---|
+| `cjdCachePathOption` → `.idea/cjdIdx` | `intellij-ide/.../lsp4ij/CangJieLanguageServerFactory.kt:542,1027` | 已传给语言服务器，但 **`lsp/` 模块零处消费** |
+| 匹配/转换诊断 | `CjdBinaryAnnotationOverlay.kt:17-19` | 仅测试读取，**无用户可见呈现通道** |
+| `CjDependency.derivedCjdPath` | `intellij-ide` / `deveco` 各一处 | **零调用方** |
+| `cjdFiles` / `collectCjdFiles` | `deveco/.../toolchain/api/CangjieSdkLayout.kt:221,539` | 仅 `CangjieSdkIntegrityTest` 消费 |
+| `cjdAnnotationProvenance` | `cjd/CjdAnnotationSource.kt:24` | 仅 `CjdDeclarationLoaderIntegrationTest` 读取 |
+| `CjdSidecarParser.parse(CjFile)` | `cjd/CjdSidecarParser.kt:27,43` | 仅 `CjdAnnotationConverterTest` 使用（IDE 侧无按 PSI 直读 sidecar 的入口） |
+| `CjdBinaryDeclarationMatcher.candidates` | `cjd/CjdBinaryDeclarationMatcher.kt:35` | 仅测试 |
+
+#### C.9.4 已核实**不是**缺口（避免后人重复怀疑）
+
+- **解析/语义豁免面**：官方在 Parser/Sema 共 8 处放宽（`parseDeclFile` 系：属性缺体 `Parser.cpp:398`、const 未初始化 `ParserDiag.cpp:1086`、顶层变量未初始化 `:1113`、`parse_missing_body` `:1218`、finalizer/构造缺体 `ParseDecl.cpp:539,582`、成员函数缺体不标 abstract `:1550-1558`；另 `DeclAttributeChecker.cpp:289-336`、`TypeChecker.cpp:2218-2222`、`InitializationChecker.cpp:503,1517`、`StructInheritanceChecker.cpp:839`）。本仓 PSI 侧只有 2 处（`CangJieParsing.kt:4194,4244`），但**在 CFIR 层以 11 个 checker 的 `requiresImplementation` + `isFromDeclarationFile(context)` 做了等价豁免**（`DeclarationFileKind.kt:34-37`，其中含 4 个初始化检查 `CfirInitializationCheckers.kt:2565,2581,2596,2611`）。⇒ 位置不同、语义等价。
+- **APILevel 5 项检查**：`DiagnosticSema.def:253-260` 的 5 条本仓全有 —— ref-higher、syscap error/warning、multi-diff-syscap、**multi-anno**（`CfirBuiltInAnnotationSemanticsChecker.kt:151`）。
+- **`.cj` 与 `.cj.d` 互斥**（`Option.cpp:744,750`）↔ `CjSourceFileSelection.kt:28-32`。
+- **sidecar 必须同目录同名**（`ImportManager.cpp:289-295`）↔ `CjdSidecarLocator.deriveCjdPath`。
+- **增量日志 / cache / AST Diff 跳过**（`CompilerInstance.cpp:154,330,449`）：本仓不走该流水线，不适用。
+- **APILevel / syscap 数据源**：官方 `CheckAPILevel.cpp:389-467` 从 JSON 定义表读入；本仓 `CfirApiLevelProvider` 由编译驱动 / ohos 目标配置注入（`CfirApiLevelProvider.kt:6-15` 明示对齐 `globalOptions.apiLevel`）。数据源策略不同，非缺口。
+
 
