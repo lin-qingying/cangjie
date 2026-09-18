@@ -26,11 +26,36 @@
 
 ## 当前进行中的特性
 
-- **`.cj.d` 声明文件支持**：设计三稿并存，**以 `docs/cjd-declaration-file-support-v3.md`（v3.1，4299 行，含 P1 实施记录 4.2.8）为准**；
+- **`.cj.d` 声明文件支持**：设计三稿并存，**以 `docs/cjd-declaration-file-support-v3.md`（v3.2，4527+ 行，含 4.2.8 / 4.3 P3 / 4.5.2 P2 / 4.8.3 P6 / 5.1 P4 各实施记录 + 附录 C.6/C.7）为准**；
   动手前先读 `docs/cjd-declaration-file-support-v3-review.md`（复核报告，R1–R14 与 13 处官方取证全部成立）。
-  实施阶段 P0–P6 见 v3 文档 5.1；核心取向：**框架正确性优先于改动最小化**，允许必要的破坏性改动。
-  进度：**P0 已完成**（3 个提交：`fbce2151e` common 契约 / `f6ec382d2` `CjFile.sourceKind` / `470d86192` `-d` 配置；
-  注意 `CangJieDeclarationFileType` 也在 P0 交付）、**P1 已完成但未提交**（psi 声明解析模式，
-  25/25 测试通过；**提交被工作树的 311 文件无关 WIP 阻塞**，见当日日志）、
-  **P2 已完成但未提交**（CFIR 护栏 1/2，10/10 通过；同样被 WIP 阻塞，见当日日志）。
-  后续 P3（源收集 + checker 标记）、P4（sidecar 合并，风险最高，含准入条件 C-3/C-4）、P5（IDE 侧）、P6（声明注入）。
+  核心取向：**框架正确性优先于改动最小化**，允许必要的破坏性改动。
+
+  **进度（2026-09-18 收尾）**：**P0–P4 全部完成且已提交**，
+  P5（IDE 侧）已在 `intellij-ide` / `deveco` 两仓提交，P6 已复核（LSP 项无落点，见 4.8.3）。
+  三个仓的提交见 v3 文档 **附录 C.7**（5 笔，含 2 处披露）。
+  仍缺：**6.6 的 6 项人工 IDE 验收**、`deveco` 的 `cjdFiles` 生产接线（现只有测试消费）。
+
+  **判断进度时用 `git grep <符号> HEAD`，不要依赖记忆或日志** ——
+  P1/P2/P3 早于本记录就已随其它提交落地（`reportMissingBody` / `sourceKind.isDeclaration` /
+  `requiresImplementation` 都在 HEAD 里）。
+
+  **实测基线（真实 SDK 语料，38 个 `.cj.d`）**：APILevel 6,497 个，
+  已合并 5,031 + 匹配失败 140 + 官方顶层门控 1,326（**20.4% 结构上不可达，已登记为已知限制**）。
+  语料盲区：`TYPE_ALIAS`/`MACRO` 注解数为 0、`EXTEND` 372 个仅 1 个带注解、无 `FINALIZER`/`MAIN`。
+
+  **复现入口**：`CANGJIE_CJD_SDK_DIR=<DevEco 插件内的 std 目录>`，
+  能跑通 build-tools/modules/linux_ohos_aarch64_cjnative/std（38 个 `.cj.d` + 46 个 `.cjo`）。
+  两个验收测试：`CjdSdkDeclarationBoundaryAuditTest`（无静默丢失审计）、
+  `CjdSidecarAvailabilityDiagnosticTest`（引用点 availability 端到端）。
+
+### 跑 Gradle 测试的可靠姿势（本仓专用，省时间）
+
+- **`gradlew-queue.bat` 无法从 Git Bash 用 `cmd //c` 调用**（会退化成交互式 cmd 直接退出）。
+  等价且可用：`java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:\code\intellij\cangjie' <任务> --console=plain`。
+- 环境变量（如 `CANGJIE_CJD_SDK_DIR`）能透传到 test JVM；**一次调用可同时跑多个模块**，
+  但**必须加 `--continue`**，否则前一个任务失败会让后面根本不执行：
+  `... :a:test --tests '*P1*' :b:test --tests '*P2*' --continue --console=plain`
+- 测试里的 `println` 不进控制台，在 `build/test-results/test/TEST-*.xml` 的 `<system-out>` 里；
+  用 `sed -e 's/&lt;/</g; s/&gt;/>/g'` 解转义后 grep。
+- 首轮编译 3.5–7 分钟，之后 1–3 分钟。落盘 `> /tmp/x.log 2>&1` 再 `grep -E "^e: |FAILED|BUILD"`。
+

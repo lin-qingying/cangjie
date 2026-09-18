@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cangjie Test Data Semantics Review"
+  short_description: "Review Cangjie test data against real language semantics."
+  default_prompt: "Review the specified Cangjie compiler test data and verify that every expected diagnostic, marker, directive, and output is complete and correct according to real Cangjie semantics."

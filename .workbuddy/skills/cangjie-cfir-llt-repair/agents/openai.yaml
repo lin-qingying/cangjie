@@ -1,0 +1,4 @@
+interface:
+  display_name: "仓颉 CFIR LLT 修复"
+  short_description: "按官方语义修复 CFIR LLT 失败"
+  default_prompt: "使用 $cangjie-cfir-llt-repair，按官方仓颉语义和 Kotlin FIR 设计修复 CFIR LLT 失败。"

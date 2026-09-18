@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kotlin Frontend Parity"
+  short_description: "Align Cangjie frontend work to Kotlin compiler structure."
+  default_prompt: "Use $kotlin-cangjie-frontend-parity to implement a Cangjie frontend change by first checking the Kotlin compiler counterpart."
