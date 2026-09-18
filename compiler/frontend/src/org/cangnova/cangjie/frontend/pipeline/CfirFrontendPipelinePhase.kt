@@ -87,7 +87,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                     sources = sessionSources,
                     environment = environment,
                     useLightTree = configuration.useLightTree,
-                ),
+                ).pruneConditionalCompilation(),
             )
         }
 
