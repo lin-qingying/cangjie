@@ -24,7 +24,6 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -56,6 +55,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 
 /**
  * Extend 补充检查器（ExtendExtra 分组）
@@ -69,14 +69,9 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
  */
 object CfirExtendExtraChecker : CfirExtendChecker() {
     /**
-     * Java 互操作基础注解名称。
-     */
-    private val JAVA = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA
-
-    /**
      * Java 实现类型注解名称。
      */
-    private val JAVA_IMPL = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_IMPL
+    private val JAVA_IMPL = CangjiePlatformAnnotationKind.JAVA_IMPL
 
     /**
      * 对单个 extend 声明执行额外语义检查。
@@ -127,7 +122,11 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir ?: return
-        if (CfirExtendSemantics.hasAnnotation(targetDecl, JAVA)) {
+        if (targetDecl.hasSupportedBuiltinAnnotation(
+                context.languageVersionSettings,
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA,
+            )
+        ) {
             reporter.reportOn(
                 source = targetTypeRef.source ?: extend.source,
                 factory = CfirErrors.EXTEND_A_JAVA_TYPE,
@@ -146,7 +145,10 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir ?: return
-        if (CfirExtendSemantics.hasAnnotation(targetDecl, JAVA_IMPL)) {
+        if (targetDecl.hasSupportedPlatformAnnotation(
+                context.languageVersionSettings,
+                CangjiePlatformAnnotationKind.JAVA_IMPL,
+            )) {
             reporter.reportOn(
                 source = targetTypeRef.source ?: extend.source,
                 factory = CfirErrors.EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL,

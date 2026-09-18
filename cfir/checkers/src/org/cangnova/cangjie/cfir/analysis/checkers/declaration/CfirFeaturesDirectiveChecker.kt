@@ -7,7 +7,7 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -28,7 +28,9 @@ object CfirFeaturesDirectiveChecker : CfirFileChecker() {
         val featuresDirective = declaration.featuresDirective ?: return
         for (annotation in featuresDirective.annotations.filterIsInstance<CfirAnnotationCall>()) {
             val descriptor = annotation.builtInDescriptor ?: continue
-            if (descriptor.kind != BuiltInAnnotationKind.NON_PRODUCT) {
+            if (descriptor.origin != CangjieAnnotationOrigin.PACKAGE_DIRECTIVE ||
+                descriptor.sourceName != "NonProduct"
+            ) {
                 reporter.reportOn(
                     source = annotation.source ?: featuresDirective.source,
                     factory = CfirErrors.ILLEGAL_USE_OF_ANNOTATION,

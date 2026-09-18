@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -15,6 +16,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
+import org.cangnova.cangjie.cfir.expressions.isSupportedBuiltinAnnotation
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationKind
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -263,8 +268,8 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         commonMember: CfirDeclaration,
         @Suppress("UNUSED_PARAMETER") memberName: Name,
     ) {
-        val specificAnnotationKeys = specificMember.annotationKeys()
-        val commonAnnotationKeys = commonMember.annotationKeys()
+        val specificAnnotationKeys = specificMember.annotationKeys(context.languageVersionSettings)
+        val commonAnnotationKeys = commonMember.annotationKeys(context.languageVersionSettings)
 
         if (specificAnnotationKeys != commonAnnotationKeys) {
             reporter.reportOn(
@@ -567,14 +572,27 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCommonSpecificAnnotations(decl: CfirClass) {
         for (ann in decl.annotations) {
-            val kind = ann.annotationKind ?: continue
-            if (kind in DISALLOWED_ON_COMMON_SPECIFIC) {
-                val call = ann as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall ?: continue
-                val descriptor = call.builtInDescriptor ?: continue
+            val call = ann as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall ?: continue
+            val builtinKind = ann.annotationKind
+            val platformKind = call.platformAnnotationKind
+            val supportedPlatform = call.annotationVersionSupport(context.languageVersionSettings) ==
+                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+            val supportedBuiltin = builtinKind == null ||
+                builtinKind != BuiltInAnnotationKind.JAVA ||
+                call.isSupportedBuiltinAnnotation(
+                    BuiltInAnnotationKind.JAVA,
+                    context.languageVersionSettings,
+                )
+            if (supportedBuiltin && builtinKind in DISALLOWED_ON_COMMON_SPECIFIC ||
+                (supportedPlatform && platformKind in DISALLOWED_PLATFORM_ON_COMMON_SPECIFIC)
+            ) {
+                val name = call.builtInDescriptor?.sourceName
+                    ?: call.platformAnnotationDescriptor?.sourceName
+                    ?: continue
                 reporter.reportOn(
                     source = decl.source,
                     factory = CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED,
-                    a = Name.identifier(descriptor.sourceName),
+                    a = Name.identifier(name),
                 )
             }
         }
@@ -735,17 +753,34 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
  * common/specific 匹配必须比较 builtin kind 或 resolved ClassId；短名相同的两个
  * custom annotation 不能被视为同一注解。
  */
-private fun CfirDeclaration.annotationKeys(): Set<AnnotationMatchKey> =
+private fun CfirDeclaration.annotationKeys(
+    settings: org.cangnova.cangjie.LanguageVersionSettings,
+): Set<AnnotationMatchKey> =
     annotations.mapNotNull { annotation ->
         when {
-            annotation.annotationKind != null -> AnnotationMatchKey.BuiltIn(annotation.annotationKind!!)
+            annotation.annotationKind != null &&
+                (annotation as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall)
+                    ?.isSupportedBuiltinAnnotation(annotation.annotationKind!!, settings) != false ->
+                AnnotationMatchKey.BuiltIn(annotation.annotationKind!!)
+            annotation is org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall &&
+                annotation.platformAnnotationKind != null &&
+                annotation.annotationVersionSupport(settings) ==
+                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED ->
+                AnnotationMatchKey.Platform(annotation.platformAnnotationKind!!)
             annotation.annotationClassId != null -> AnnotationMatchKey.Resolved(annotation.annotationClassId!!)
             else -> null
         }
     }.toSet()
 
+/**
+ * 注解身份匹配键，用于 common/specific 双份声明的注解一致性比较。
+ *
+ * [BuiltIn] 按官方 kind 比较，[Platform] 按平台注解身份比较，
+ * [Resolved] 按解析出的 ClassId 比较；三者互不相等，避免不同身份体系误判等价。
+ */
 private sealed interface AnnotationMatchKey {
     data class BuiltIn(val kind: BuiltInAnnotationKind) : AnnotationMatchKey
+    data class Platform(val kind: CangjiePlatformAnnotationKind) : AnnotationMatchKey
     data class Resolved(val classId: org.cangnova.cangjie.name.ClassId) : AnnotationMatchKey
 }
 
@@ -760,9 +795,13 @@ private val DEPRECATED_NAME = Name.identifier("Deprecated")
  * 对齐 C++ MPTypeCheckerImpl::CheckNotAllowedAnnotations。
  */
 private val DISALLOWED_ON_COMMON_SPECIFIC: Set<BuiltInAnnotationKind> = setOf(
-    // C/Java 互操作注解不能与 common/specific 共存
+    // C/Java AST 互操作身份不能与 common/specific 共存
     BuiltInAnnotationKind.C,
     BuiltInAnnotationKind.JAVA,
-    BuiltInAnnotationKind.JAVA_MIRROR,
-    BuiltInAnnotationKind.JAVA_IMPL,
+)
+
+/** common/specific 声明上禁止出现的平台注解身份，对齐官方 CheckNotAllowedAnnotations 的平台侧集合。 */
+private val DISALLOWED_PLATFORM_ON_COMMON_SPECIFIC: Set<CangjiePlatformAnnotationKind> = setOf(
+    CangjiePlatformAnnotationKind.JAVA_MIRROR,
+    CangjiePlatformAnnotationKind.JAVA_IMPL,
 )

@@ -65,6 +65,7 @@ object CfirPlatformAnnotationMacroOrderChecker : CfirFileChecker() {
     }
 }
 
+/** 参与平台注解/宏声明顺序检查的注解短名集合（`@ApiLevel`、`@Hide`）。 */
 private val platformOrderAnnotationNames: Set<Name> = setOf(
     CfirPlatformAnnotationClassIds.API_LEVEL.shortClassName,
     CfirPlatformAnnotationClassIds.HIDE.shortClassName,

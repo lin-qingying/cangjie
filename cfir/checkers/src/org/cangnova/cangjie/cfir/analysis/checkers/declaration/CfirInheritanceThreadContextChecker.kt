@@ -64,6 +64,9 @@ object CfirExtendThreadContextChecker : CfirExtendChecker() {
 
 /**
  * 应用官方 CheckThreadContextInheritance 的判定。
+ *
+ * 依次检查：继承 ThreadContext 却带 `open`（NOT_OPEN）、父类未继承
+ * ThreadContext（SUPER_NOT_THREAD_CONTEXT）等规则，命中一条即返回。
  */
 private context(diagnosticContext: DiagnosticContext)
 fun checkThreadContextInheritance(

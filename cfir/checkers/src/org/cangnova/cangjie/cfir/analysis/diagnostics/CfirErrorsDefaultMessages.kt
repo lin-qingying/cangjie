@@ -52,6 +52,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.DECLARATION_NAME
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE_LIST
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.LANGUAGE_FEATURE_SUPPORT
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactoryToRendererMap
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NOT_RENDERED
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.TO_STRING
@@ -70,6 +71,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
     /** 供诊断渲染层查找的 CFIR 默认消息表。 */
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
+        map.put(
+            CfirErrors.UNSUPPORTED_FEATURE,
+            "language feature ''{0}'' is not supported by the current language version",
+            LANGUAGE_FEATURE_SUPPORT,
+        )
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
         map.put(REF_NOT_BE_TYPE, "type name cannot be used as an expression")
         map.put(CfirErrors.NOT_A_TYPE, "''{0}'' is not a type", RENDER_STRING)
@@ -448,8 +454,50 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.ILLEGAL_USE_OF_ANNOTATION, "{0} cannot be modified with ''{1}''", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.ANNOTATION_CALLING_CONV_NOT_SUPPORT, "''@CallingConv'' does not support ''{0}''", RENDER_STRING)
         map.put(CfirErrors.ANNOTATION_INVALID_ARGS_TYPE, "''{0}'' argument has an invalid type", RENDER_STRING)
+        map.put(CfirErrors.NATIVE_VAR_ERROR, "variable can not be modified with 'foreign' and implicit @C")
         map.put(CfirErrors.CSTRUCT_CANNOT_HAVE_UNIT_FIELDS, "member variables cannot be type Unit in struct with @C")
+        map.put(CfirErrors.CSTRUCT_CANNOT_AUTOBOX, "struct with @C cannot implicitly used as ''{0}''", RENDER_TYPE)
         map.put(CfirErrors.ILLEGAL_MEMBER_OF_CSTRUCT, "member variable ''{0}'' of struct ''{1}'' with @C must satisfy CType", RENDER_NAME, RENDER_NAME)
+        map.put(
+            CfirErrors.ENUM_PATTERN_FUNC_CTYPE_ERROR,
+            "enum constructor ''{0}'' in enum ''{1}'' cannot be used with C struct payload",
+            RENDER_NAME,
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_OP,
+            "conditional compilation ''{0}'' does not support operator ''{1}''",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION,
+            "conditional compilation does not support condition ''{0}''",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE,
+            "builtin condition ''{0}'' does not support ''{1}'', supported values: ''{2}''",
+            RENDER_STRING,
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT,
+            "cjc version format should be ''xx.xx.xx''",
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR,
+            "conditional compilation does not support this expression",
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_NOT_HAVE_CONDITION_EXPR,
+            "conditional compilation should have a condition expression",
+        )
+        map.put(
+            CfirErrors.CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE,
+            "conditional compilation condition value must be a string literal without interpolation",
+        )
         map.put(CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS, "CFunc cannot have named arguments")
         map.put(CfirErrors.CFUNC_CANNOT_HAVE_UNIT_ARGS, "CFunc cannot have arguments of type Unit")
         map.put(CfirErrors.CFUNC_CANNOT_CAPTURE_VAR, "cannot capture variable ''{0}'' in CFunc lambda expression", RENDER_NAME)
@@ -876,6 +924,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE, "cannot assign to immutable value")
         map.put(CfirErrors.INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL, "intrinsic function must be toplevel scope")
         map.put(CfirErrors.INTRINSIC_FUNCTION_CANNOT_HAVE_BODY, "intrinsic function cannot have body")
+        map.put(CfirErrors.INTRINSIC_FUNCTION_DUPLICATED, "duplicated intrinsic function ''{0}''", RENDER_STRING)
+        map.put(CfirErrors.INVALID_INTRINSIC_DECL, "intrinsic function ''{0}'' cannot be declared in ''{1}'' package", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED, "''{0}'' can not be assigned", RENDER_NAME)
         map.put(CfirErrors.DIFFERENT_OR_PATTERN, "patterns connected by '|' should be of the same kind: {0}", RENDER_STRING)
         map.put(CfirErrors.VAR_IN_OR_PATTERN, "cannot introduce variables in patterns connected by '|'")

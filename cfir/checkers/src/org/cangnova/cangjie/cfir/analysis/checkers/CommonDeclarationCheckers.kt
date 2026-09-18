@@ -34,6 +34,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirBuiltInAnnotationDeclarationChecker,
             CfirAnnotationTargetChecker,
             CfirCAnnotationChecker,
+            CfirForeignVariableChecker,
             CfirDeprecatedAnnotationChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
@@ -95,10 +96,12 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         )
 
     /** 对文件级结构、导入、泛型实例化和入口约束执行的 checker 集合。 */
-    override val fileCheckers: Set<CfirFileChecker>
+        override val fileCheckers: Set<CfirFileChecker>
         get() = setOf(
+            CfirConditionalCompilationChecker,
             CfirImportsChecker,
             CfirFeaturesDirectiveChecker,
+            CfirIntrinsicDuplicateChecker,
             CfirPlatformAnnotationMacroOrderChecker,
             CfirGeneralSemanticsChecker,
             CfirGenericInstantiationChecker,

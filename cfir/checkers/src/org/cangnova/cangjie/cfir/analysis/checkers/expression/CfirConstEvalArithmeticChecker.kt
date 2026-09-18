@@ -4,6 +4,7 @@ import java.math.BigInteger
 import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.effectiveOverflowStrategy
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
@@ -131,6 +132,14 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         val range = CfirIntConstantEvalUtils.rangeForLiteralTargetType(rangeTargetType) ?: return
         if (expression.hasOverflowingIntegerConstantOperand(context)) return
         if (!range.contains(result)) {
+            // 官方 `OverflowWrapping`/`OverflowSaturating` 将算术结果转换
+            // 为对应策略的值，不报告 compile-time arithmetic overflow。
+            // Literal range errors、除零和移位计数仍由各自 owner 负责。
+            if (context.effectiveOverflowStrategy() in setOf(
+                    org.cangnova.cangjie.annotations.CangjieOverflowStrategy.WRAPPING,
+                    org.cangnova.cangjie.annotations.CangjieOverflowStrategy.SATURATING,
+                )
+            ) return
             reporter.reportOn(source, CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW, operatorName.asString())
         }
     }

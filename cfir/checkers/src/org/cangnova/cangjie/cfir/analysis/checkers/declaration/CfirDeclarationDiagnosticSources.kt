@@ -238,6 +238,7 @@ internal fun CfirFunction.typeParameterListDiagnosticSource(): AbstractCjSourceE
     return CjOffsetsOnlySourceElement(declarationSource.treeStructure.getStartOffset(node), declarationSource.treeStructure.getEndOffset(node))
 }
 
+/** 返回命名函数 `func` 关键字后的函数名 source；非 PSI source 或找不到名节点时回退声明 source。 */
 internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val functionPsi = when (psi) {

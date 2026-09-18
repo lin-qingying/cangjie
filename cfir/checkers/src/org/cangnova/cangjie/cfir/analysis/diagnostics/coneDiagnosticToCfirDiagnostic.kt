@@ -765,6 +765,12 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 }
             }
 
+            is CStructCannotAutobox -> CfirErrors.CSTRUCT_CANNOT_AUTOBOX.on(
+                rootCause.argument.source ?: source ?: return@mapNotNull null,
+                rootCause.expectedType.substituteTypeVariableTypes(candidate, session),
+                session,
+            )
+
             is ArgumentTypeMismatch -> {
                 candidate.multiLambdaBuilderInferenceDiagnosticFor(rootCause.argument, source, qualifiedAccessSource, session)
                     ?.let { return@mapNotNull it }
@@ -2108,8 +2114,14 @@ private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
 }
 
 /**
- * 当接收者是类型参数而名称解析失败时，我们优先把它归类为“upper bounds 中没有该成员/方法”，
+ * 当接收者是类型参数而名称解析失败时，归类为“upper bounds 中没有该成员”，
  * 而不是继续落到通用 unresolved。
+ *
+ * [ConeUnresolvedNameError] 表示名称在上界成员集合中**完全找不到**，对应官方
+ * `NameReferenceExpr.cpp::DiagMemberAccessNotFound` 的 not-found 变体。官方只在
+ * 名字已解析出候选、但调用没有匹配重载时才报 method 变体
+ * （`TypeCheckCall.cpp::GetErrorKindForCall` 的 `candidatesBeforeCheck` 分支），
+ * 因此“名称未解析”这一事实本身就唯一决定了诊断，不能按源码里有没有 `(` 再分支。
  */
 private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
     source: CjSourceElement?,
@@ -2119,27 +2131,13 @@ private fun ConeUnresolvedNameError.mapGenericUpperBoundAccessDiagnostic(
     if (operator != null) return null
     val typeParameterType = receiverType as? ConeTypeParameterType ?: return null
     val diagnosticSource = source ?: callOrAssignmentSource ?: return null
-    val missingName = name
-    val typeParameterName = typeParameterType.lookupTag.name
 
-    val hostText = callOrAssignmentSource?.text?.toString().orEmpty()
-    val looksLikeMethodCall = argumentTypes.isNotEmpty() || hostText.contains("${missingName.asString()}(")
-
-    return if (!looksLikeMethodCall) {
-        CfirErrors.GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS.on(
-            diagnosticSource,
-            missingName,
-            typeParameterName,
-            session,
-        )
-    } else {
-        CfirErrors.GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS.on(
-            diagnosticSource,
-            missingName,
-            typeParameterName,
-            session,
-        )
-    }
+    return CfirErrors.GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS.on(
+        diagnosticSource,
+        name,
+        typeParameterType.lookupTag.name,
+        session,
+    )
 }
 
 /**

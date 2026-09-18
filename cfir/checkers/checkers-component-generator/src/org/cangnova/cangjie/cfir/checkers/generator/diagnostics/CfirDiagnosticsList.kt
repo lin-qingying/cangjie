@@ -25,6 +25,8 @@
 package org.cangnova.cangjie.cfir.checkers.generator.diagnostics
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.PositioningStrategy
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -45,6 +47,13 @@ import org.cangnova.cangjie.util.PrivateForInline
 @Suppress("UNUSED_VARIABLE", "LocalVariableName", "ClassName", "unused")
 @OptIn(PrivateForInline::class)
 object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
+
+    /** Language-version gates shared by syntax-preserving frontend owners. */
+    val LANGUAGE by object : DiagnosticGroup("Language") {
+        val UNSUPPORTED_FEATURE by error<PsiElement> {
+            parameter<Pair<LanguageFeature, LanguageVersionSettings>>("feature")
+        }
+    }
 
     /**
      * 解析（Resolve）相关的诊断
@@ -613,6 +622,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     val INTRINSIC by object : DiagnosticGroup("Intrinsic") {
         val INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL by error<PsiElement>()
         val INTRINSIC_FUNCTION_CANNOT_HAVE_BODY by error<PsiElement>()
+        val INTRINSIC_FUNCTION_DUPLICATED by error<PsiElement> {
+            parameter<String>("intrinsicName")
+        }
+        val INVALID_INTRINSIC_DECL by error<PsiElement> {
+            parameter<String>("intrinsicName")
+            parameter<String>("packageName")
+        }
     }
 
     /**
@@ -628,10 +644,20 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
         val ANNOTATION_CALLING_CONV_NOT_SUPPORT by error<PsiElement> { parameter<String>("callingConvention") }
         val ANNOTATION_INVALID_ARGS_TYPE by error<PsiElement> { parameter<String>("annotationName") }
+        /** 顶层变量不能仅通过 foreign 隐式获得 C ABI；官方要求显式 @C。 */
+        val NATIVE_VAR_ERROR by error<PsiElement>()
         val CSTRUCT_CANNOT_HAVE_UNIT_FIELDS by error<PsiElement>()
+        val CSTRUCT_CANNOT_AUTOBOX by error<PsiElement> {
+            parameter<ConeCangJieType>("expectedType")
+        }
         val ILLEGAL_MEMBER_OF_CSTRUCT by error<PsiElement> {
             parameter<Name>("fieldName")
             parameter<Name>("structName")
+        }
+        /** @C enum 不允许定义带 payload 的 enum constructor。 */
+        val ENUM_PATTERN_FUNC_CTYPE_ERROR by error<PsiElement> {
+            parameter<Name>("constructorName")
+            parameter<Name>("enumName")
         }
         val CFUNC_CANNOT_HAVE_NAMED_ARGS by error<PsiElement>()
         val CFUNC_CANNOT_HAVE_UNIT_ARGS by error<PsiElement>()
@@ -668,6 +694,28 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val ILLEGAL_SCOPE_USE_OF_ANNOTATION by error<PsiElement> {
             parameter<String>("annotationName")
         }
+    }
+
+    /**
+     * `@When` 条件编译诊断，对齐官方 DiagnosticConditionalCompilation.def。
+     */
+    val CONDITIONAL_COMPILATION by object : DiagnosticGroup("ConditionalCompilation") {
+        val CONDITIONAL_COMPILATION_NOT_SUPPORT_OP by error<PsiElement> {
+            parameter<String>("conditionName")
+            parameter<String>("operator")
+        }
+        val CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION by error<PsiElement> {
+            parameter<String>("conditionName")
+        }
+        val CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE by error<PsiElement> {
+            parameter<String>("conditionName")
+            parameter<String>("value")
+            parameter<String>("supportedValues")
+        }
+        val CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT by error<PsiElement>()
+        val CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR by error<PsiElement>()
+        val CONDITIONAL_COMPILATION_NOT_HAVE_CONDITION_EXPR by error<PsiElement>()
+        val CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE by error<PsiElement>()
     }
 
     /**

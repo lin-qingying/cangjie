@@ -157,6 +157,12 @@ private fun CheckerContext.isCapturedInCFuncLambda(target: CfirDeclaration): Boo
     return false
 }
 
+/**
+ * 判断 [target] 是否由当前函数直接拥有。
+ *
+ * target 是函数形参，或出现在函数 body 子树中；递归遇到嵌套函数即停止，
+ * 嵌套函数体内的声明不归外层函数拥有。
+ */
 private fun CfirFunction.ownsDeclaration(target: CfirDeclaration): Boolean {
     if (valueParameters.any { parameter -> parameter === target }) return true
 
@@ -190,6 +196,7 @@ private fun CheckerContext.reportCFuncCapturedLocal(
     return true
 }
 
+/** 读取限定访问表达式解析到的声明；引用未解析或 symbol 未绑定时返回 `null`。 */
 private fun CfirQualifiedAccessExpression.resolvedTargetDeclarationOrNull(): CfirDeclaration? {
     val symbol: CfirBasedSymbol<*> = when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
@@ -199,6 +206,7 @@ private fun CfirQualifiedAccessExpression.resolvedTargetDeclarationOrNull(): Cfi
     return symbol.takeIf { it.isBound }?.cfir
 }
 
+/** 判断 callable 是否为非静态的实例成员（有 dispatch receiver 且未标记 static）。 */
 private fun CfirCallableDeclaration.isNonStaticInstanceMember(): Boolean =
     this !is CfirConstructor && this !is CfirEnumConstructor &&
         dispatchReceiverType != null && !status.isStatic

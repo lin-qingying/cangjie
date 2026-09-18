@@ -244,6 +244,13 @@ object CfirOrPatternVariableChecker : CfirMatchExpressionChecker() {
     }
 }
 
+/**
+ * or-pattern 约束的报告器。
+ *
+ * 集中实现 `sema_different_or_pattern`（各子模式必须同类）与
+ * `sema_var_in_or_pattern`（不允许引入变量绑定）两条官方规则，
+ * 并按需把约束递归下推到子模式。
+ */
 private object CfirOrPatternConstraintReporter {
     /**
      * 递归检查 or-pattern 约束。

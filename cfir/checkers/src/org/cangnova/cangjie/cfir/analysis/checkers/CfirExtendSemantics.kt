@@ -28,7 +28,6 @@ import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -237,9 +236,7 @@ internal object CfirExtendSemantics {
      * 使用其结构化 typeRef 或 callee reference。这里不再从 source 文本重新解析。
      */
     fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationKind: BuiltInAnnotationKind): Boolean {
-        return declaration.annotations
-            .filterIsInstance<CfirAnnotationCall>()
-            .any { annotation -> annotation.annotationKind == annotationKind }
+        return declaration.annotations.any { annotation -> annotation.annotationKind == annotationKind }
     }
 
     /**

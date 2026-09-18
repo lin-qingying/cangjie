@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundConeTypeOrNull
 import org.cangnova.cangjie.cfir.types.declaredUpperBoundRefsAfterTypeResolve
+import org.cangnova.cangjie.cfir.types.directComponentTypes
 import org.cangnova.cangjie.cfir.types.type
 
 /**
@@ -50,6 +51,7 @@ internal fun CfirTypeParameter.findFirstGenericUpperBoundRecursionIssueInOwner()
     return owner.findFirstGenericUpperBoundRecursionIssue()
 }
 
+/** 在声明自身（作为类型参数 owner）的范围内寻找第一个递归上界根因。 */
 context(session: CfirSession)
 private fun CfirTypeParameterRefsOwner.findFirstGenericUpperBoundRecursionIssue(): CfirGenericUpperBoundRecursionIssue? {
     for (typeParameter in typeParameters) {
@@ -85,7 +87,10 @@ private fun CfirTypeParameterSymbol.hasDirectRecursiveUpperBound(
 
 /**
  * 对齐官方 `IsGenericParamExistInUpperBounds`：只在非 class/interface 上界中，
- * 沿类型实参和同一声明的泛型参数上界继续搜索当前参数。
+ * 沿直接组成类型和同一声明的泛型参数上界继续搜索当前参数。
+ *
+ * 官方沿 `Ty::typeArgs` 前进，因此函数类型的参数/返回值与元组元素都在搜索范围内；
+ * 这里必须使用同一个组成类型投影，不能只读名义类型的 [typeArguments]。
  */
 private fun ConeCangJieType.containsCurrentGenericParameterInUpperBounds(
     currentParameter: CfirTypeParameterSymbol,
@@ -99,8 +104,7 @@ private fun ConeCangJieType.containsCurrentGenericParameterInUpperBounds(
         if (!visited.add(currentType)) continue
         if (currentType.typeParameterSymbolOrNull() == currentParameter) return true
 
-        for (argument in currentType.typeArguments) {
-            val argumentType = argument.type ?: continue
+        for (argumentType in currentType.directComponentTypes()) {
             val argumentSymbol = argumentType.typeParameterSymbolOrNull()
             if (argumentSymbol == null) {
                 queue += argumentType
@@ -115,16 +119,19 @@ private fun ConeCangJieType.containsCurrentGenericParameterInUpperBounds(
     return false
 }
 
+/** 读取类型参数全部已解析的声明上界类型，过滤其中的错误类型。 */
 private fun CfirTypeParameterSymbol.declaredUpperBoundTypes(): List<ConeCangJieType> =
     toLookupTag()
         .declaredUpperBoundRefsAfterTypeResolve()
         .mapNotNull { it.declaredUpperBoundConeTypeOrNull() }
         .filterNot { it is ConeErrorType }
 
+/** 判断上界经 typealias 展开后是否为 class-like 类型。 */
 context(session: CfirSession)
 private fun ConeCangJieType.isClassLikeUpperBound(): Boolean =
     fullyExpandedType(session) is ConeClassLikeType
 
+/** 若该类型是泛型参数类型则返回其 symbol，否则返回 `null`。 */
 private fun ConeCangJieType.typeParameterSymbolOrNull(): CfirTypeParameterSymbol? =
     (this as? ConeTypeParameterType)
         ?.lookupTag

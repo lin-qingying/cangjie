@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -47,6 +48,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
@@ -238,14 +240,21 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkJavaImplRedefinition(file: CfirFile) {
+        if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.JavaInteropAnnotations)) return
         val byName = mutableMapOf<Name, Int>()
         for (decl in file.declarations) {
-            if (!decl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL)) continue
+            if (!decl.hasSupportedPlatformAnnotation(
+                    context.languageVersionSettings,
+                    CangjiePlatformAnnotationKind.JAVA_IMPL,
+                )) continue
             val declName = decl.declarationName() ?: continue
             byName.merge(declName, 1) { a, b -> a + b }
         }
         for (decl in file.declarations) {
-            if (!decl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA_IMPL)) continue
+            if (!decl.hasSupportedPlatformAnnotation(
+                    context.languageVersionSettings,
+                    CangjiePlatformAnnotationKind.JAVA_IMPL,
+                )) continue
             val declName = decl.declarationName() ?: continue
             if ((byName[declName] ?: 0) > 1) {
                 reporter.reportOn(
@@ -266,6 +275,13 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     private fun checkCJMappingConfigValid(file: CfirFile) {
         val settings = context.session.interopSettings
         if (!settings.enableInteropCJMapping || settings.targetInteropLanguage == CfirInteropTarget.NONE) return
+        if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.InteropCJMapping)) return
+        val targetFeature = when (settings.targetInteropLanguage) {
+            CfirInteropTarget.JAVA -> org.cangnova.cangjie.LanguageFeature.JavaInteropAnnotations
+            CfirInteropTarget.OBJC -> org.cangnova.cangjie.LanguageFeature.ObjCInteropAnnotations
+            CfirInteropTarget.NONE -> return
+        }
+        if (!context.languageVersionSettings.supportsFeature(targetFeature)) return
         val provider = context.session.cjMappingConfigProvider
         val path = provider.configPath ?: return
         if (provider.isValid) return
@@ -501,6 +517,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
         }
         if (declaration is CfirEnum) {
             CfirStaticGenericDependencySemantics.check(declaration)
+            checkEnumCffiPayloads(declaration)
         }
         if (declaration is CfirInterface) {
             CfirStaticGenericDependencySemantics.check(declaration)
@@ -548,6 +565,46 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                 source = structDecl.classLikeNameDiagnosticSource(),
                 factory = CfirErrors.CSTRUCT_CANNOT_IMPL_INTERFACES,
             )
+        }
+    }
+
+    /**
+     * 对齐 TypeCheckDecl::SetEnumEleTyHandleFuncDecl / CheckEnumFuncDeclIsCStructParam。
+     *
+     * `@C enum` 的构造器整体禁止 C struct payload；普通 enum 也不能把
+     * `@C struct` 作为 payload（String 是官方保留的特殊例外）。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkEnumCffiPayloads(enumDecl: CfirEnum) {
+        for (constructor in enumDecl.declarations.filterIsInstance<CfirEnumConstructor>()) {
+            if (enumDecl.status.isC) {
+                if (constructor.valueParameters.isNotEmpty()) {
+                    reporter.reportOn(
+                        source = constructor.source,
+                        factory = CfirErrors.ENUM_PATTERN_FUNC_CTYPE_ERROR,
+                        a = constructor.name,
+                        b = enumDecl.name,
+                    )
+                }
+                continue
+            }
+
+            for (parameter in constructor.valueParameters) {
+                val type = parameter.returnTypeRef.coneTypeOrNull
+                    ?.fullyExpandedType(context.session)
+                    ?: continue
+                if (type is ConeErrorType) continue
+                if (type.classIdOrPrimitiveClassId == StdlibClassIds.String) continue
+                if (!CfirCTypeSemantics.isCStruct(context.session, type)) continue
+
+                reporter.reportOn(
+                    source = constructor.source,
+                    factory = CfirErrors.ENUM_PATTERN_FUNC_CTYPE_ERROR,
+                    a = constructor.name,
+                    b = enumDecl.name,
+                )
+                break
+            }
         }
     }
 

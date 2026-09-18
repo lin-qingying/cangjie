@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 
 /**
  * Java 互操作类型传播约束检查器
@@ -31,13 +32,6 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
     /**
      * Java 互操作基础注解名。
      */
-    /** 所有可使声明进入 Java 互操作语义的官方 kind。 */
-    private val JAVA_ANN_KINDS = setOf(
-        BuiltInAnnotationKind.JAVA,
-        BuiltInAnnotationKind.JAVA_MIRROR,
-        BuiltInAnnotationKind.JAVA_IMPL,
-    )
-
     /**
      * 检查字段或属性类型是否把 Java 互操作类型传播到非 Java 互操作上下文。
      */
@@ -79,7 +73,7 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
         val mainDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(classLike.classId)?.cfir
             as? CfirClassLikeDeclaration ?: return
-        if (mainDecl.hasAnyJavaInteropAnnotation()) return
+        if (mainDecl.hasAnyJavaInteropAnnotation(context.languageVersionSettings)) return
 
         for (arg in classLike.typeArguments) {
             val argType = arg.type ?: continue
@@ -102,7 +96,7 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
                 .getClassLikeSymbolByClassId(type.classId)?.cfir
                 as? CfirClassLikeDeclaration
             if (decl != null) {
-                if (decl.hasAnyJavaInteropAnnotation()) {
+                if (decl.hasAnyJavaInteropAnnotation(languageVersionSettings)) {
                     return type
                 }
             }
@@ -123,12 +117,19 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
         val classId = symbol?.callableId?.classId ?: return false
         val ownerDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(classId)?.cfir ?: return false
-        return ownerDecl.hasAnyJavaInteropAnnotation()
+        return ownerDecl.hasAnyJavaInteropAnnotation(context.languageVersionSettings)
     }
 
     /**
      * 判断 class-like 声明是否带任一 Java 互操作注解。
      */
-    private fun CfirClassLikeDeclaration.hasAnyJavaInteropAnnotation(): Boolean =
-        JAVA_ANN_KINDS.any(::hasBuiltinAnnotation)
+    private fun CfirClassLikeDeclaration.hasAnyJavaInteropAnnotation(
+        settings: org.cangnova.cangjie.LanguageVersionSettings,
+    ): Boolean =
+        hasSupportedBuiltinAnnotation(settings, BuiltInAnnotationKind.JAVA) ||
+            hasAnySupportedPlatformAnnotation(
+                settings,
+                CangjiePlatformAnnotationKind.JAVA_MIRROR,
+                CangjiePlatformAnnotationKind.JAVA_IMPL,
+            )
 }

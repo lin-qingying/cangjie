@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -181,6 +183,11 @@ object CfirConflictsDeclarationChecker : CfirBasicDeclarationChecker() {
         reportAllFunctionConflictParticipants: Boolean = false,
     ) {
         declarationConflictingSymbols.forEach { (conflictingDeclaration, symbols) ->
+            // Duplicate intrinsic declarations are owned by the parser-level
+            // intrinsic checker; suppress the generic conflict graph result.
+            if (conflictingDeclaration.isIntrinsicFunction() && symbols.any { it.isIntrinsicFunction() }) {
+                return@forEach
+            }
             // 同签名函数簇只由较晚的声明承载 CONFLICTING_OVERLOADS。但本声明若同时与非函数式
             // 声明（如 let/prop/class）同名，官方仍会在本声明上单独报 sema_redefinition，
             // 因此只有在不存在此类非函数式冲突时才整体跳过本声明。
@@ -308,6 +315,10 @@ private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
  */
 private fun CfirBasedSymbol<*>.isFunctionLikeRedeclaration(): Boolean =
     this is CfirConstructorSymbol || this is CfirFunctionSymbol<*> || this is CfirEnumConstructorSymbol
+
+/** Intrinsic duplicates have a dedicated parser-level diagnostic owner. */
+private fun CfirBasedSymbol<*>.isIntrinsicFunction(): Boolean =
+    (this as? CfirFunctionSymbol<*>)?.cfir?.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) == true
 
 /**
  * 函数体局部重声明 visitor。
@@ -538,6 +549,9 @@ private class LocalRedeclarationVisitor(
         val previousConflicts = declarations.filter { symbol.conflictsWithLocalDeclaration(it) }
         declarations += symbol
         if (previousConflicts.isNotEmpty() && report) {
+            // Intrinsic duplicates have a dedicated parser-level diagnostic
+            // owner; do not add a second overload diagnostic for the same pair.
+            if (symbol.isIntrinsicFunction() && previousConflicts.any { it.isIntrinsicFunction() }) return
             val source = symbol.boundSourceOrNull() ?: return
             val conflicts = previousConflicts + symbol
             val factory = if (symbol.isFunctionLikeRedeclaration() && previousConflicts.any { it.isFunctionLikeRedeclaration() }) {

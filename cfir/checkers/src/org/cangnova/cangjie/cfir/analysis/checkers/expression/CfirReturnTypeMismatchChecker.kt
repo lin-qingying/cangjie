@@ -198,6 +198,7 @@ private fun CfirExpression.returnTypeMismatchError(
         ?.unwrapUnreportedDuplicateDiagnostic() as? ConeTypeMismatchError
 }
 
+/** 剥离未上报重复诊断包装，取原始诊断做类型不匹配等判定。 */
 private fun org.cangnova.cangjie.cfir.types.ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): org.cangnova.cangjie.cfir.types.ConeDiagnostic =
     (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 

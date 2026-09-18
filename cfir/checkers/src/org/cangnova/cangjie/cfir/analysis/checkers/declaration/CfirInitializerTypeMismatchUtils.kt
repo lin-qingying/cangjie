@@ -121,6 +121,12 @@ private fun ConeCangJieType.isCompatibleWithInitializerActualTypeModuloInference
     return matchesModuloUnownedInferencePlaceholders(actualType)
 }
 
+/**
+ * 忽略无主推断 placeholder 后比较期望与实际类型。
+ *
+ * 任一侧是 placeholder 即视为兼容；其余按 function/tuple/VArray/pointer/
+ * class-like/alias/intersection/union 的结构逐位递归比较，形状不同直接判否。
+ */
 private fun ConeCangJieType.matchesModuloUnownedInferencePlaceholders(
     actualType: ConeCangJieType,
 ): Boolean {
@@ -180,8 +186,10 @@ private fun ConeCangJieType.matchesModuloUnownedInferencePlaceholders(
     }
 }
 
+/** 判断类型树中是否含有无主推断 placeholder。 */
 private fun ConeCangJieType.containsUnownedInferencePlaceholder(): Boolean =
     contains { it.isUnownedInferencePlaceholder() }
 
+/** 判断当前类型是否为无主推断 placeholder（无原始类型参数的 type variable）。 */
 private fun ConeCangJieType.isUnownedInferencePlaceholder(): Boolean =
     this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null

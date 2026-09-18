@@ -1,12 +1,14 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.context
 
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.annotationInfo
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.diagnostics.*
@@ -208,6 +210,7 @@ private fun ConeDiagnostic.isRecursiveImplicitTypeDiagnostic(): Boolean {
     return simpleDiagnostic.kind == DiagnosticKind.RecursionInImplicitTypes
 }
 
+/** 剥离未上报重复诊断包装，取原始诊断做递归错误等判定。 */
 private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnostic(): ConeDiagnostic =
     (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 
@@ -453,3 +456,17 @@ inline fun <reified T : CfirDeclaration> CheckerContext.findClosestDeclaration(n
     }
     return null
 }
+
+/**
+ * 返回当前表达式作用域的有效整数溢出策略。
+ *
+ * `@Overflow*` 是声明/匿名函数作用域语义，不能由 expression checker 再扫描
+ * PSI 或源码注解名称推断。状态阶段已经把 parser-owned annotation 归一化到
+ * [CfirDeclaration.annotationInfo]，这里按内到外的声明栈取最近 owner；未声明
+ * 策略时返回 null，由默认编译策略继续负责诊断。
+ */
+fun CheckerContext.effectiveOverflowStrategy(): CangjieOverflowStrategy? =
+    containingDeclarations.asReversed()
+        .asSequence()
+        .mapNotNull { (it.cfir as? CfirDeclaration)?.annotationInfo?.overflowStrategy }
+        .firstOrNull()
