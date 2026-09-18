@@ -45,4 +45,12 @@ class CangJieValueArgumentStubImpl<T : CjValueArgument>(
      * 实现 `isSpread` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun isSpread(): Boolean = isSpread
+
+    /** 参数 stub 的复制保留具体类型及 spread 标记，不能退化为无状态占位节点。 */
+    @Suppress("UNCHECKED_CAST")
+    override fun copyInto(newParent: StubElement<*>?): CangJieValueArgumentStubImpl<T> = CangJieValueArgumentStubImpl(
+        parent = newParent,
+        elementType = stubType as CjValueArgumentElementType<T>,
+        isSpread = isSpread,
+    )
 }

@@ -49,7 +49,6 @@ class CangJieAnnotationStubImpl(
     private val classId: ClassId? = null,
     private val builtInKind: BuiltInAnnotationKind? = null,
     private val compileTimeVisible: Boolean = false,
-//    val valueArguments: Map<Name, ConstantValue<*>>?
 ) : CangJieStubBaseImpl<CjAnnotation>(parent, CjStubElementTypes.ANNOTATION), CangJieAnnotationStub {
 
     /**

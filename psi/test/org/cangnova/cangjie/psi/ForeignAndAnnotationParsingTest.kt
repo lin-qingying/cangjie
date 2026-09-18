@@ -2,7 +2,6 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.util.PsiTreeUtil
-import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjTokens
@@ -85,16 +84,6 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
     fun builtInArgumentFormsPreserveTheirAnnotationNodes() {
         val annotationForms = listOf(
             "C" to "@C",
-            "JavaMirror" to "@JavaMirror[\"java.lang.Object\"]",
-            "JavaImpl" to "@JavaImpl",
-            "JavaHasDefault" to "@JavaHasDefault",
-            "ObjCMirror" to "@ObjCMirror[\"NSObject\"]",
-            "ObjCImpl" to "@ObjCImpl",
-            "ObjCInit" to "@ObjCInit",
-            "ObjCOptional" to "@ObjCOptional",
-            "ForeignName" to "@ForeignName[\"nativeName\"]",
-            "ForeignGetterName" to "@ForeignGetterName[\"getValue\"]",
-            "ForeignSetterName" to "@ForeignSetterName[\"setValue:\"]",
             "CallingConv" to "@CallingConv[CDECL]",
             "Attribute" to "@Attribute[customFlag, \"backendFlag\"]",
             "Intrinsic" to "@Intrinsic",
@@ -108,8 +97,9 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
             "Frozen" to "@Frozen",
         )
         for ((name, form) in annotationForms) {
-            val descriptor = checkNotNull(BuiltInAnnotationRegistry.find(name) as? BuiltInAnnotationDescriptor)
-            val packageHeader = if (descriptor.standardLibraryOnly) "package std.annotation_forms\n\n" else ""
+            val descriptor = BuiltInAnnotationRegistry.findLanguageBuiltIn(name)
+            assertNotNull(descriptor, name)
+            val packageHeader = if (descriptor?.standardLibraryOnly == true) "package std.annotation_forms\n\n" else ""
             val file = parse("annotation$name", "$packageHeader$form\nfunc annotated(): Unit {}")
             val annotation = annotations(file).singleOrNull()
             assertNotNull(annotation, "no annotation PSI for $name: $form")
@@ -120,10 +110,31 @@ class ForeignAndAnnotationParsingTest : CjParsingTestCase(
             )
             assertEquals(expected = form, actual = annotation.text, message = form)
             assertFalse(annotation.isCompileTimeVisible, form)
+            assertEquals(descriptor != null, annotation.isBuiltInAnnotation, form)
             if (name == "CallingConv") {
                 assertEquals(CallingConvention.CDECL, annotation.callingConvention, form)
             }
         }
+    }
+
+    /** 1.1.x 平台注解在 parser 层保留普通 annotation 结构，不降级为宏。 */
+    @Test
+    fun platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade() {
+        val file = parse(
+            "platformAnnotationSurface",
+            """
+            @JavaMirror["java.lang.Object"]
+            public class JObject {}
+
+            @interoplib.interop.JavaMirror["java.lang.Object"]
+            public class QualifiedJObject {}
+            """.trimIndent(),
+        )
+        val entries = annotations(file)
+        assertEquals(listOf("JavaMirror", "JavaMirror"), entries.map { it.shortName?.asString() })
+        assertEquals("@JavaMirror[\"java.lang.Object\"]", entries[0].text)
+        assertEquals("@interoplib.interop.JavaMirror[\"java.lang.Object\"]", entries[1].text)
+        assertTrue(entries.all { !it.isBuiltInAnnotation })
     }
 
     /** @ 与 @! 的区别属于语法来源，不能从名称或声明类型推断。 */

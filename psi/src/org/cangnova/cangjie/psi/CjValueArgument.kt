@@ -54,11 +54,7 @@ open class CjValueArgument :
     override fun getArgumentExpression(): CjExpression? {
         val stub: CangJiePlaceHolderStub<out CjValueArgument>? = stub
         if (stub != null) {
-            val constantExpressions =
-                stub.getChildrenByType(CjNodeTypes.CONSTANT_EXPRESSIONS_TYPES, CjExpression.EMPTY_ARRAY)
-            if (constantExpressions.isNotEmpty()) {
-                return constantExpressions[0]
-            }
+            return stub.childrenStubs.firstNotNullOfOrNull { it.psi as? CjExpression }
         }
 
         var child = node.firstChildNode

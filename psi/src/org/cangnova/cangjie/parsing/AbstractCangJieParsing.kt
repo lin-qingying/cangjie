@@ -98,6 +98,9 @@ abstract class AbstractCangJieParsing(
          * 保存 `allowParseAnnotationsInValueParameter`，供仓颉语法解析流程读取节点结构或语义信息。
          */
         val allowParseAnnotationsInValueParameter: Boolean = true,
+
+        /** Only the file-header features directive may consume package metadata annotations. */
+        val allowPackageDirectiveAnnotations: Boolean = false,
 //        val strictMode: Boolean = false
 
         // ==================== 错误报告相关 ====================

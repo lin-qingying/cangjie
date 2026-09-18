@@ -27,11 +27,16 @@ package org.cangnova.cangjie.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
+import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 表示 `CjBinaryExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperationExpression {
+open class CjBinaryExpression : CjExpressionImplStub<CangJiePlaceHolderStub<CjBinaryExpression>>, CjOperationExpression {
+    constructor(node: ASTNode) : super(node)
+    constructor(stub: CangJiePlaceHolderStub<CjBinaryExpression>) : super(stub, CjStubElementTypes.BINARY_EXPRESSION)
+
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -45,6 +50,10 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
     @get:IfNotParsed
     val left: CjExpression?
         get() {
+            stub?.let { stub ->
+                return stub.childrenStubs.takeWhile { it.stubType != CjStubElementTypes.OPERATION_REFERENCE }
+                    .lastOrNull()?.psi as? CjExpression
+            }
             var node = operationReference.node.treePrev
             while (node != null) {
                 val psi = node.psi
@@ -63,6 +72,10 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
     @get:IfNotParsed
     val right: CjExpression?
         get() {
+            stub?.let { stub ->
+                return stub.childrenStubs.dropWhile { it.stubType != CjStubElementTypes.OPERATION_REFERENCE }
+                    .drop(1).firstOrNull()?.psi as? CjExpression
+            }
             var node = operationReference.node.treeNext
             while (node != null) {
                 val psi = node.psi
@@ -79,10 +92,8 @@ open class CjBinaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperati
      * 暴露 `operationReference`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val operationReference: CjOperationReferenceExpression get() {
-        val operationReference = findChildByType<PsiElement>(CjNodeTypes.OPERATION_REFERENCE)
-            ?: throw NullPointerException("No operation reference for binary expression: " + children.contentToString())
-
-        return operationReference as CjOperationReferenceExpression
+        return getStubOrPsiChild(CjStubElementTypes.OPERATION_REFERENCE)
+            ?: error("No operation reference for binary expression")
     }
 
     /**
