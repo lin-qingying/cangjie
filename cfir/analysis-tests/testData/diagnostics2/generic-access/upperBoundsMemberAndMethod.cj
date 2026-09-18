@@ -18,7 +18,7 @@ func badField<T>(value: T): Int64 where T <: Named {
 }
 
 func badCall<T>(value: T): Unit where T <: Named {
-    value.<!GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS!>reset<!>()
+    value.<!GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS!>reset<!>()
 }
 
 func useOk(): String {

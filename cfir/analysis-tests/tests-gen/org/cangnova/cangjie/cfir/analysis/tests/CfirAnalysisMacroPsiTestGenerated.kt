@@ -1001,6 +1001,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
                 runTest("cfir/analysis-tests/testData/macro/llt/annotation/err_target_type.cj")
             }
 
+            @TestMetadata("intrinsic_duplicate.cj")
+            @Test
+            fun testIntrinsicDuplicate() {
+                runTest("cfir/analysis-tests/testData/macro/llt/annotation/intrinsic_duplicate.cj")
+            }
+
             @TestMetadata("intrinsic_semantics.cj")
             @Test
             fun testIntrinsicSemantics() {
