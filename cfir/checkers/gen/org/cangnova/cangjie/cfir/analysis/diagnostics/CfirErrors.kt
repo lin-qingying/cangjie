@@ -6,9 +6,11 @@ import com.intellij.psi.PsiElement
 import kotlin.Boolean
 import kotlin.Int
 import kotlin.Long
+import kotlin.Pair
 import kotlin.String
 import kotlin.collections.Collection
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.analysis.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
@@ -31,6 +33,9 @@ import org.cangnova.cangjie.psi.CjTypeReference
 /** Generated from: org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST */
 @Suppress("IncorrectFormatting")
 object CfirErrors : CjDiagnosticsContainer() {
+    // Language
+    val UNSUPPORTED_FEATURE: CjDiagnosticFactory1<Pair<LanguageFeature, LanguageVersionSettings>> = CjDiagnosticFactory1("CFIR_UNSUPPORTED_FEATURE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
     // Resolve
     val NO_CONSTRUCTOR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NO_CONSTRUCTOR", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val REF_NOT_BE_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_REF_NOT_BE_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
@@ -162,13 +167,18 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Intrinsic
     val INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INTRINSIC_FUNCTION_CANNOT_HAVE_BODY: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INTRINSIC_FUNCTION_CANNOT_HAVE_BODY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INTRINSIC_FUNCTION_DUPLICATED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_INTRINSIC_FUNCTION_DUPLICATED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INVALID_INTRINSIC_DECL: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INVALID_INTRINSIC_DECL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Interop
     val ILLEGAL_USE_OF_ANNOTATION: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ILLEGAL_USE_OF_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_CALLING_CONV_NOT_SUPPORT: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ANNOTATION_CALLING_CONV_NOT_SUPPORT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_INVALID_ARGS_TYPE: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ANNOTATION_INVALID_ARGS_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NATIVE_VAR_ERROR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NATIVE_VAR_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CSTRUCT_CANNOT_HAVE_UNIT_FIELDS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CSTRUCT_CANNOT_HAVE_UNIT_FIELDS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CSTRUCT_CANNOT_AUTOBOX: CjDiagnosticFactory1<ConeCangJieType> = CjDiagnosticFactory1("CFIR_CSTRUCT_CANNOT_AUTOBOX", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ILLEGAL_MEMBER_OF_CSTRUCT: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2("CFIR_ILLEGAL_MEMBER_OF_CSTRUCT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val ENUM_PATTERN_FUNC_CTYPE_ERROR: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2("CFIR_ENUM_PATTERN_FUNC_CTYPE_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CFUNC_CANNOT_HAVE_NAMED_ARGS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CFUNC_CANNOT_HAVE_NAMED_ARGS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CFUNC_CANNOT_HAVE_UNIT_ARGS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CFUNC_CANNOT_HAVE_UNIT_ARGS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CFUNC_CANNOT_CAPTURE_VAR: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CFUNC_CANNOT_CAPTURE_VAR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
@@ -186,6 +196,15 @@ object CfirErrors : CjDiagnosticsContainer() {
     val CFUNC_VAR_CANNOT_HAVE_VAR_PARAM: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CFUNC_VAR_CANNOT_HAVE_VAR_PARAM", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ONLY_CFUNC_CAN_USE_ANNOTATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ONLY_CFUNC_CAN_USE_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ILLEGAL_SCOPE_USE_OF_ANNOTATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ILLEGAL_SCOPE_USE_OF_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
+    // ConditionalCompilation
+    val CONDITIONAL_COMPILATION_NOT_SUPPORT_OP: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_CONDITIONAL_COMPILATION_NOT_SUPPORT_OP", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE: CjDiagnosticFactory3<String, String, String> = CjDiagnosticFactory3("CFIR_CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_NOT_HAVE_CONDITION_EXPR: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CONDITIONAL_COMPILATION_NOT_HAVE_CONDITION_EXPR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Exception
     val THROW_EXPR_WITH_WRONG_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_THROW_EXPR_WITH_WRONG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.THROW_KEYWORD, PsiElement::class, getRendererFactory())

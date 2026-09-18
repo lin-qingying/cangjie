@@ -42,7 +42,11 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (!declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA)) return
+        if (!declaration.hasSupportedBuiltinAnnotation(
+                context.languageVersionSettings,
+                BuiltInAnnotationKind.JAVA,
+            )
+        ) return
 
         checkStaticMembersNotDependOnGenericParams(declaration)
         checkGenericUpperBoundsAreJava(declaration)
@@ -109,7 +113,11 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
                     val boundSymbol = context.session.symbolProvider
                         .getClassLikeSymbolByClassId(boundClassId) ?: continue
                     val boundDecl = boundSymbol.cfir
-                    if (!boundDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.JAVA)) {
+                    if (!boundDecl.hasSupportedBuiltinAnnotation(
+                            context.languageVersionSettings,
+                            BuiltInAnnotationKind.JAVA,
+                        )
+                    ) {
                         reporter.reportOn(
                             source = bound.source ?: typeParam.source,
                             factory = CfirErrors.GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA,

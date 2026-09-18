@@ -1087,6 +1087,11 @@ private fun CjSourceElement.sourceForOptionalChainNonOptional(
     return prefixCall.source as? CjSourceElement ?: boundarySource
 }
 
+/**
+ * 泛型上界依赖级联诊断的名称集合。
+ *
+ * 命中这些诊断的调用属于静态泛型依赖链，按 lambda 体级联规则抑制重复上报。
+ */
 private val STATIC_GENERIC_DEPENDENCY_CASCADE_DIAGNOSTICS = setOf(
     "CFIR_GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS",
     "CFIR_GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS",
@@ -1130,6 +1135,7 @@ private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
     return lambda.valueParameters.size != expectedFunctionType.parameterTypes.size
 }
 
+/** 判断该诊断是否属于 lambda 体级联类别（歧义、约束矛盾、候选不适用等派生错误）。 */
 private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
     when (unwrapUnreportedDuplicateDiagnosticForLambdaCascade()) {
         is ConeAmbiguityError,
@@ -1143,8 +1149,10 @@ private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
         else -> false
     }
 
+/** 剥离未上报重复诊断包装，取原始诊断做级联类别判定。 */
 private fun ConeDiagnostic.unwrapUnreportedDuplicateDiagnosticForLambdaCascade(): ConeDiagnostic =
     (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this
 
+/** 判断 [other] 的源码区间是否完整落在当前 source 区间之内。 */
 private fun CjSourceElement.containsSource(other: CjSourceElement): Boolean =
     startOffset <= other.startOffset && other.endOffset <= endOffset

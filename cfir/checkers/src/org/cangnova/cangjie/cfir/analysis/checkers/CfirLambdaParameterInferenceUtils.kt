@@ -67,6 +67,7 @@ private fun CfirValueParameter.hasUninferredLambdaParameterType(): Boolean {
     }
 }
 
+/** 判断类型树中是否仍含未推断的 lambda 参数 placeholder（无原始类型参数的 type variable 或其派生错误）。 */
 private fun ConeCangJieType.containsUninferredLambdaParameterType(): Boolean {
     if (this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null) return true
     val diagnostic = (this as? ConeErrorType)?.diagnostic?.unwrapForLambdaParameterInference()
@@ -74,5 +75,6 @@ private fun ConeCangJieType.containsUninferredLambdaParameterType(): Boolean {
     return typeArguments.any { projection -> projection.type.containsUninferredLambdaParameterType() }
 }
 
+/** 剥离未上报重复诊断包装，取原始诊断供推断失败判定使用。 */
 private fun ConeDiagnostic.unwrapForLambdaParameterInference(): ConeDiagnostic =
     (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this

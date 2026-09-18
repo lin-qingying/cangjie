@@ -10,8 +10,11 @@ import org.cangnova.cangjie.cfir.declarations.annotationInfo
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 
@@ -40,6 +43,26 @@ object CfirAnnotationTargetChecker : CfirBasicDeclarationChecker() {
                     source = annotation.source ?: declaration.source,
                     factory = CfirErrors.ANNOTATION_NOT_APPLICABLE_JFFI,
                     a = builtIn.sourceName,
+                    b = target.description,
+                )
+                continue
+            }
+
+            // 平台注解的 target 契约来自已解析的 interop library ClassId。
+            // 它们不属于语言 BuiltInAnnotationKind，也不一定拥有可供 CFIR
+            // 完整解析的 annotation declaration，因此必须在同一个 target
+            // owner 中消费公共平台 descriptor；绝不能按源码短名补判。
+            val platform = annotation.platformAnnotationDescriptor
+            if (platform != null) {
+                if (annotation.annotationVersionSupport(context.session.languageVersionSettings) !=
+                    org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+                ) continue
+                if (target in platform.declarationTargets) continue
+
+                reporter.reportOn(
+                    source = annotation.source ?: declaration.source,
+                    factory = CfirErrors.ANNOTATION_NOT_APPLICABLE_JFFI,
+                    a = platform.sourceName,
                     b = target.description,
                 )
                 continue

@@ -324,6 +324,7 @@ private fun CfirTypeRef.toResolvedSupertypeForInterfaceLegality(): InterfaceSupe
     )
 }
 
+/** 提取父类型的有效 nominal 视图：可恢复的 nominal 错误类型取其 delegated 类型，其余原样返回。 */
 private fun ConeCangJieType.effectiveNominalSupertypeOrNull(): ConeCangJieType? =
     if (this is ConeErrorType) {
         if (diagnostic is ConeRecoverableNominalDiagnostic) delegatedType else null
@@ -331,6 +332,7 @@ private fun ConeCangJieType.effectiveNominalSupertypeOrNull(): ConeCangJieType? 
         this
     }
 
+/** 计算父类型在诊断消息中的显示名：优先已解析声明的类名，否则按 primitive/intersection 兜底。 */
 private fun ConeCangJieType.supertypeDiagnosticName(context: CheckerContext): Name {
     toResolvedSuperDeclaration(context)?.classLikeName()?.let { return it }
     return when (this) {

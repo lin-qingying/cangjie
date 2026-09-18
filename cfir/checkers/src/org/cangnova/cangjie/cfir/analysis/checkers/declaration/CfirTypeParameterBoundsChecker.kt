@@ -188,9 +188,12 @@ private fun ConeCangJieType.findFirstInvalidNestedGenericUpperBoundInstantiation
  *
  * 对具体类型要求其满足全部上界；对泛型实参则沿官方 `Assumption` 暴露的上界逐条
  * 寻找满足关系，避免把 `X <: A<X>` 错误判成不满足 `A<T>` 自身的约束。
+ *
+ * 该判定是声明级与使用点共用的唯一 owner：官方 `CheckGenericDeclInstantiation`
+ * 在两种位置消费的是同一套约束环境，因此使用点不能退化为直接子类型判断。
  */
 context(context: CheckerContext)
-private fun ConeCangJieType.satisfiesGenericUpperBounds(
+internal fun ConeCangJieType.satisfiesGenericUpperBounds(
     upperBounds: List<ConeCangJieType>,
 ): Boolean {
     val typeParameterType = this as? ConeTypeParameterType

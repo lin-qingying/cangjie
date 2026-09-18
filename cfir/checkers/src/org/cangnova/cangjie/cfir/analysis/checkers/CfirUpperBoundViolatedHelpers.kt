@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.satisfiesGenericUpperBounds
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -282,10 +283,7 @@ private fun checkUpperBoundViolated(
             null
         }
         val violatesCurrentUpperBound = currentUpperBound != null &&
-            !argumentType.satisfiesCTypeUpperBoundOrIsSubtypeOf(
-                currentUpperBound,
-                context.session,
-            )
+            !argumentType.satisfiesGenericArgumentUpperBound(currentUpperBound)
 
         val hasInvalidNestedArgument = if (sourceTypeRef == null && argumentSource == null) {
             false
@@ -328,10 +326,11 @@ private fun checkUpperBoundViolated(
  * 接口本身不能作为该约束的实参。这里先调用唯一的 CType 语义 owner，再把其他
  * 上界交给通用类型检查器，避免把所有泛型约束都特殊化。
  */
-private fun ConeCangJieType.satisfiesCTypeUpperBoundOrIsSubtypeOf(
+context(context: CheckerContext)
+private fun ConeCangJieType.satisfiesGenericArgumentUpperBound(
     upperBound: ConeCangJieType,
-    session: org.cangnova.cangjie.cfir.session.CfirSession,
 ): Boolean {
+    val session = context.session
     val expandedUpperBound = upperBound.fullyExpandedType(session)
     if (expandedUpperBound.containsCTypeUpperBound(session)) {
         val satisfiesCType = when (this) {
@@ -357,15 +356,24 @@ private fun ConeCangJieType.satisfiesCTypeUpperBoundOrIsSubtypeOf(
         if (!satisfiesCType) return false
         val nonCTypeUpperBounds = expandedUpperBound.nonCTypeUpperBounds(session)
         return nonCTypeUpperBounds.all { nonCTypeUpperBound ->
-            AbstractTypeChecker.isSubtypeOfForGenericArgument(
-                session.typeContext,
-                this,
-                nonCTypeUpperBound,
-            )
+            satisfiesNonCTypeUpperBound(nonCTypeUpperBound)
         }
     }
+    return satisfiesNonCTypeUpperBound(upperBound)
+}
+
+/**
+ * 泛型实参对单个非 CType 上界的满足判断。
+ *
+ * 具体类型仍走普通子类型；类型参数实参必须走官方 `Assumption` 上界，否则
+ * `T <: A<T>` 会被误判为不满足 `A.T <: C1` 这类由递归上界暴露出来的约束。
+ * 该判定与声明级检查共用同一个 owner，见 `satisfiesGenericUpperBounds`。
+ */
+context(context: CheckerContext)
+private fun ConeCangJieType.satisfiesNonCTypeUpperBound(upperBound: ConeCangJieType): Boolean {
+    if (this is ConeTypeParameterType && satisfiesGenericUpperBounds(listOf(upperBound))) return true
     return AbstractTypeChecker.isSubtypeOfForGenericArgument(
-        session.typeContext,
+        context.session.typeContext,
         this,
         upperBound,
     )
@@ -402,10 +410,12 @@ private fun ConeCangJieType.isGenericTypeWithInvalidUpperBound(): Boolean {
     return typeParameterType.hasInvalidDeclaredUpperBounds(context.session)
 }
 
+/** 判断该类型参数声明是否携带非法上界（合法性检查全部失败时视为非法）。 */
 context(context: CheckerContext)
 private fun CfirTypeParameterRef.hasInvalidDeclaredUpperBounds(): Boolean =
     symbol.toLookupTag().hasInvalidDeclaredUpperBounds(context.session)
 
+/** 读取声明上界类型，优先返回合法子集；全部非法时原样返回，保证检查仍有候选可报。 */
 context(context: CheckerContext)
 private fun CfirTypeParameterRef.declaredUpperBoundTypes(): List<ConeCangJieType> {
     val bounds = symbol.toLookupTag()

@@ -197,9 +197,13 @@ internal val possibleTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = m
 
     OPERATOR_KEYWORD to ModifierTargetPredicate.memberOf(DeclarationKind.FUNCTION),
 
-    // foreign 函数签名当前按 first-party 前端的顶层 CFFI 入口建模，
-    // 不放宽到局部函数或匿名函数，避免把尚未建模的语义提前合法化。
-    FOREIGN_KEYWORD to ModifierTargetPredicate.headOf(DeclarationKind.FUNCTION),
+    // 官方 ParserModifierRules 同时允许顶层函数和顶层变量使用 foreign。
+    // 变量随后由 CFFI 预检查判定是否缺少显式 @C；不能在 modifier target
+    // 层提前吞掉该语义，否则永远无法产生 sema_native_var_error。
+    FOREIGN_KEYWORD to ModifierTargetPredicate.headOf(
+        DeclarationKind.FUNCTION,
+        DeclarationKind.VARIABLE,
+    ),
 
     UNSAFE_KEYWORD to ModifierTargetPredicate.anySiteOf(DeclarationKind.FUNCTION),
 )

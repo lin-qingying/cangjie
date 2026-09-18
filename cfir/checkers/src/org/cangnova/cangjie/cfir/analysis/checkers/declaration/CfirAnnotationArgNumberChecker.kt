@@ -9,6 +9,10 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationArgumentStatus
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 
 /**
  * 内置注解参数数量检查器。
@@ -23,43 +27,49 @@ object CfirAnnotationArgNumberChecker {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     fun check(declaration: CfirDeclaration) {
         for (annotation in declaration.annotations.filterIsInstance<CfirAnnotationCall>()) {
-            val descriptor = annotation.builtInDescriptor ?: continue
-            // ObjC/Java mirror and ForeignName are interop-library annotations,
-            // not official language AnnotationKind entries. Their source grammar
-            // and constructor ownership are handled by the interop annotation
-            // contract; they must not be forced through the language builtin
-            // argument-arity checker.
-            if (descriptor.kind in NON_LANGUAGE_INTEROP_KINDS) continue
-            if (descriptor.kind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV) continue
-            val schema = descriptor.argumentSchema
-            if (schema.variadic) continue
+            val descriptor = annotation.builtInDescriptor
+            val platformDescriptor = annotation.platformAnnotationDescriptor
+            if (descriptor == null && platformDescriptor == null) continue
+            if (annotation.annotationVersionSupport(context.session.languageVersionSettings) !=
+                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+            ) continue
+            val argumentSchema = descriptor?.argumentSchema ?: platformDescriptor!!.argumentSchema
+            if (descriptor?.kind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV) continue
+            // JavaHasDefault has a dedicated official diagnostic for any
+            // argument; its semantic owner must remain the only reporter.
+            if (platformDescriptor?.platformKind == org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT) continue
+            if (argumentSchema.variadic) continue
             val count = annotation.argumentCount()
-            val required = schema.parameters.count { it.required }
-            val maximum = schema.parameters.size
-            if (count in required..maximum) continue
-            val firstArgument = annotation.argumentView?.entries?.firstOrNull { it.argument != null }
-            reporter.reportOn(
-                if (maximum == 0) firstArgument?.source else annotation.source,
-                CfirErrors.ANNOTATION_ERROR_ARG_NUM,
-                "@"+descriptor.sourceName,
-                if (maximum == 0) "no" else "one",
-            )
+            val required = argumentSchema.parameters.count { it.required }
+            val maximum = argumentSchema.parameters.size
+            if (count !in required..maximum) {
+                val firstArgument = annotation.argumentView?.entries?.firstOrNull { it.argument != null }
+                reporter.reportOn(
+                    if (maximum == 0) firstArgument?.source else annotation.source,
+                    CfirErrors.ANNOTATION_ERROR_ARG_NUM,
+                    "@" + (descriptor?.sourceName ?: platformDescriptor!!.sourceName),
+                    if (maximum == 0) "no" else "one",
+                )
+                continue
+            }
+
+            // 平台注解不经过普通 annotation constructor；参数解析 owner 已将
+            // 类型/绑定状态发布到 argument view，这里只把错误状态转换为官方
+            // annotation 参数类型诊断，不重新解析实参。
+            if (platformDescriptor != null) {
+                annotation.argumentView?.entries
+                    ?.filter { it.status == CfirAnnotationArgumentStatus.ERROR }
+                    ?.forEach { entry ->
+                        reporter.reportOn(
+                            entry.source ?: annotation.source,
+                            CfirErrors.ANNOTATION_INVALID_ARGS_TYPE,
+                            "@${platformDescriptor.sourceName}",
+                        )
+                    }
+            }
         }
     }
 
-    /** 官方 AnnotationKind 之外的互操作库注解，不能由通用 builtin arity 规则检查。 */
-    private val NON_LANGUAGE_INTEROP_KINDS = setOf(
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_MIRROR,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_IMPL,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA_HAS_DEFAULT,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_MIRROR,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_IMPL,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_INIT,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.OBJ_C_OPTIONAL,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_NAME,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
-        org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
-    )
 }
 
 /** 面向 CfirClassLikeDeclaration 的分发。 */

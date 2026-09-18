@@ -22,7 +22,7 @@ object DiagnosticComponentsFactory {
             add(TypeCheckersDiagnosticComponent(session, reporter))
             add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
             add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
-//            add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
+            add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
         }.toTypedArray()
         val postSemaComponents = arrayOf<AbstractDiagnosticCollectorComponent>(
             ControlFlowAnalysisDiagnosticComponent(session, reporter),

@@ -91,13 +91,22 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
             lookupOrigin = CfirLookupOrigin.MEMBER,
         )
         val classScope = createOwnMemberScope(declaration)
-        if (!classScope.hasUnimplementedAbstractMember(declaration, context, accessContext)) return
+        val obligation = classScope.findUnimplementedObligation(declaration, context, accessContext) ?: return
 
-        reporter.reportOn(
-            source = declaration.classLikeNameOffsetsDiagnosticSource(),
-            factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
-            a = declaration.name,
-        )
+        when (obligation) {
+            is UnimplementedObligation.AbstractDeclaration -> reporter.reportOn(
+                source = declaration.classLikeNameOffsetsDiagnosticSource(),
+                factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
+                a = declaration.name,
+            )
+            is UnimplementedObligation.InterfaceRequirement -> reporter.reportOn(
+                source = declaration.classLikeNameOffsetsDiagnosticSource(),
+                factory = CfirErrors.INTERFACE_MEMBER_MUST_BE_IMPLEMENTED,
+                a = obligation.memberKind,
+                b = obligation.symbol.name,
+                c = declaration.name.asString(),
+            )
+        }
     }
 
     /**
@@ -125,13 +134,47 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
 }
 
 /**
- * 判断 scope 中是否存在 owner 必须实现但尚未实现的抽象成员。
+ * 未实现成员义务的来源。
+ *
+ * 官方 `StructInheritanceChecker::DiagnoseForUnimplementedInterfaces` 按来源分流诊断：
+ * 抽象成员没有实现走宿主 class/struct 的“缺少实现”诊断；接口要求未被满足走
+ * `sema_interface_member_must_be_implemented`。两者不能共用一条诊断，否则
+ * `class C1 <: I {}`（抽象成员）与接口默认成员冲突会得到相同的错误种类。
  */
-private fun CfirTypeScope.hasUnimplementedAbstractMember(
+private sealed class UnimplementedObligation {
+    /** 触发义务的成员符号。 */
+    abstract val symbol: CfirCallableSymbol<*>
+
+    /**
+     * 声明自身携带的抽象成员没有实现。
+     */
+    class AbstractDeclaration(override val symbol: CfirCallableSymbol<*>) : UnimplementedObligation()
+
+    /**
+     * 接口要求宿主实现该成员（含多个接口同签名成员无法择一的情况）。
+     *
+     * @property memberKind 诊断文案使用的成员种类，与 `RequirementMemberInfo.kind` 取同一套词表。
+     */
+    class InterfaceRequirement(
+        override val symbol: CfirCallableSymbol<*>,
+        val memberKind: String,
+    ) : UnimplementedObligation()
+}
+
+/** 诊断文案中函数成员的种类文本。 */
+private const val FUNCTION_MEMBER_KIND = "function"
+
+/** 诊断文案中属性成员的种类文本。 */
+private const val PROPERTY_MEMBER_KIND = "property"
+
+/**
+ * 判断 scope 中是否存在 owner 必须实现但尚未实现的成员，并返回其义务来源。
+ */
+private fun CfirTypeScope.findUnimplementedObligation(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
     accessContext: CfirAccessContext,
-): Boolean {
+): UnimplementedObligation? {
     for (name in getCallableNames()) {
         val functionSymbols = mutableListOf<CfirFunctionSymbol<*>>()
         val propertySymbols = mutableListOf<CfirPropertySymbol>()
@@ -164,25 +207,26 @@ private fun CfirTypeScope.hasUnimplementedAbstractMember(
         (this as? CfirPropertyInheritanceScope)?.processUnmergedInheritedPropertiesByNameWithProvenance(name) {
             collectAbstractRequirement(it.member, it.lookupProvenance)
         }
-        if (functionSymbols.distinct().hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
-            return true
-        }
 
-        if (propertySymbols.distinct().hasUnimplementedAbstractBySignature(ownerDeclaration, context)) {
-            return true
-        }
+        functionSymbols.distinct()
+            .findUnimplementedObligationBySignature(ownerDeclaration, context, FUNCTION_MEMBER_KIND)
+            ?.let { return it }
+        propertySymbols.distinct()
+            .findUnimplementedObligationBySignature(ownerDeclaration, context, PROPERTY_MEMBER_KIND)
+            ?.let { return it }
     }
-    return false
+    return null
 }
 
 /**
- * 按 override signature 分组检查 callable 符号集合中是否存在未实现抽象成员。
+ * 按 override signature 分组检查 callable 符号集合中是否存在未实现的成员义务。
  */
-private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignature(
+private fun <S : CfirCallableSymbol<*>> List<S>.findUnimplementedObligationBySignature(
     ownerDeclaration: CfirClassLikeDeclaration,
     context: CheckerContext,
-): Boolean {
-    if (isEmpty()) return false
+    memberKind: String,
+): UnimplementedObligation? {
+    if (isEmpty()) return null
 
     val visibleGroups = this
         .asSequence()
@@ -191,7 +235,7 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
 
     for ((_, symbols) in visibleGroups) {
         if (symbols.hasConcreteInterfaceImplementationConflict(ownerDeclaration, context)) {
-            return true
+            return UnimplementedObligation.InterfaceRequirement(symbols.first(), memberKind)
         }
 
         val abstractSymbols = symbols.filter { it.isAbstractLike(context) }
@@ -212,12 +256,12 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
                     )
                 }
                 if (diagnosedAsIncompleteSuperExtend) continue
-                return true
+                return UnimplementedObligation.AbstractDeclaration(abstractSymbol)
             }
         }
     }
 
-    return false
+    return null
 }
 
 /**
