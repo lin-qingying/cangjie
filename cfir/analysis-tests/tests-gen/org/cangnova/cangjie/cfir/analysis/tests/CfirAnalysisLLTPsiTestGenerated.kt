@@ -9963,6 +9963,28 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         }
     }
 
+    @TestMetadata("conditional-compilation")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class ConditionalCompilation : AbstractCfirPsiLlTDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/conditional-compilation")
+        }
+
+        @TestMetadata("basic.cj")
+        @Test
+        fun testBasic() {
+            runTest("cfir/analysis-tests/testData/llt/conditional-compilation/basic.cj")
+        }
+
+        @TestMetadata("invalid.cj")
+        @Test
+        fun testInvalid() {
+            runTest("cfir/analysis-tests/testData/llt/conditional-compilation/invalid.cj")
+        }
+    }
+
     @TestMetadata("const")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -11797,6 +11819,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstringConstructorsNegative.cj")
             }
 
+            @TestMetadata("cstructAutoboxNegative.cj")
+            @Test
+            fun testCstructAutoboxNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/cstructAutoboxNegative.cj")
+            }
+
             @TestMetadata("cstructFieldsNegative.cj")
             @Test
             fun testCstructFieldsNegative() {
@@ -11845,10 +11873,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/ctypeSelfSubtypePositive.cj")
             }
 
+            @TestMetadata("enumCStructPayloadNegative.cj")
+            @Test
+            fun testEnumCStructPayloadNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/enumCStructPayloadNegative.cj")
+            }
+
             @TestMetadata("foreignBlockCallsPositive.cj")
             @Test
             fun testForeignBlockCallsPositive() {
                 runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/foreignBlockCallsPositive.cj")
+            }
+
+            @TestMetadata("foreignVariableNegative.cj")
+            @Test
+            fun testForeignVariableNegative() {
+                runTest("cfir/analysis-tests/testData/llt/ffi/semantic_contract/foreignVariableNegative.cj")
             }
 
             @TestMetadata("pointerConstructorArgumentsNegative.cj")
@@ -17954,6 +17994,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
         @Test
         fun testNumOverflow() {
             runTest("cfir/analysis-tests/testData/llt/operator/num_overflow.cj")
+        }
+
+        @TestMetadata("overflow_annotation.cj")
+        @Test
+        fun testOverflowAnnotation() {
+            runTest("cfir/analysis-tests/testData/llt/operator/overflow_annotation.cj")
         }
 
         @TestMetadata("plus_not_found.cj")

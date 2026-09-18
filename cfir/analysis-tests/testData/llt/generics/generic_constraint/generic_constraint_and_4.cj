@@ -26,7 +26,7 @@ func Foo<U>(a: U) where U <: C & I<U> & I2<U> {
     return b
 }
 
-class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C1<!> <: C & I<C1> & I2<C1> {}
+class <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>C1<!> <: C & I<C1> & I2<C1> {}
 
 main() {
     var a: C1 = Foo<C1>(C1())

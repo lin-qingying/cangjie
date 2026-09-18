@@ -1,15 +1,15 @@
 // FILE: objcInitMethodBoundaryPlaceholder.cj
 // MACRO_PACKAGE: false
 FILE: objcInitMethodBoundaryPlaceholder.cj
-    @R|ObjCMirror|() internal? open class WidgetMirror {
+    @R|<ERROR:Symbol not found for ObjCMirror>|() internal? open class WidgetMirror {
         public? init()
-        @R|ObjCInit|() public static func buildOk(): R|kotlin.Unit| {
+        @R|<ERROR:Symbol not found for ObjCInit>|() public static func buildOk(): R|kotlin.Unit| {
             RETURN {
                 FUNCTION_CALL(WidgetMirror -> CfirConstructorSymbol) {
                 }
             }
         }
-        @R|ObjCInit|() public static func buildBad(): R|kotlin.Unit| {
+        @R|<ERROR:Symbol not found for ObjCInit>|() public static func buildBad(): R|kotlin.Unit| {
             RETURN {
                 INT(0)
             }

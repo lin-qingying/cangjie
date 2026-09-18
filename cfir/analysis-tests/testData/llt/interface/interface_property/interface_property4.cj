@@ -17,7 +17,7 @@ interface I2 {
     }
 }
 
-class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C<!> <: I1 & I2 {}
+class <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>C<!> <: I1 & I2 {}
 
 main() {
     return 0

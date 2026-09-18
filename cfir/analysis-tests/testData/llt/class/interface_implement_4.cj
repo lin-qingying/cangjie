@@ -13,7 +13,7 @@ interface I2 {
     }
 }
 
-open class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>C1<!> <: I1 & I2 {}
+open class <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>C1<!> <: I1 & I2 {}
 
 open class C2 <: I1 & I2 {
     public func foo(): Int64 {
