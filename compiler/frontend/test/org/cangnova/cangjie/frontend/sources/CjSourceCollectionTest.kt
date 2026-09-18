@@ -5,6 +5,8 @@ import com.intellij.openapi.vfs.StandardFileSystems
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.frontend.environment.VfsBasedProjectEnvironment
+import org.cangnova.cangjie.frontend.environment.forAllFiles
+import org.cangnova.cangjie.config.cangjieSourceRoots
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -90,6 +92,8 @@ class CjSourceCollectionTest {
         val sourceDir = tempDir.resolve("src-${compileCjd}-${expectedName}").toFile().apply { mkdirs() }
         File(sourceDir, "sample.cj").writeText("func main() {}")
         File(sourceDir, "declared.cj.d").writeText("func declared(): Int64")
+        File(sourceDir, "generated.cj.macrocall").writeText("@M()")
+        File(sourceDir, "unrelated.txt").writeText("not a source file")
 
         val collector = RecordingMessageCollector()
         val configuration = CompilerConfiguration.createForCfirFrontend(messageCollector = collector)
@@ -109,6 +113,13 @@ class CjSourceCollectionTest {
             "`compileCjd = $compileCjd` 时必须拒绝 $rejectedName（R1 两级互斥），实际收集：$names",
         )
         assertEquals(1, collected.allSources.size, "互斥模式下每个模式只允许一种文件被收集：$names")
+
+        val directNames = mutableListOf<String>()
+        configuration.cangjieSourceRoots.forAllFiles(configuration, environment.project) { file, _, _ ->
+            directNames += file.name
+        }
+        assertEquals(listOf(expectedName), directNames,
+            "forAllFiles 与 collectCjSources 必须遵守同一输入互斥策略")
     }
 
     /**
