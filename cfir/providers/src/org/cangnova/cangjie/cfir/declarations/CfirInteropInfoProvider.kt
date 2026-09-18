@@ -1,11 +1,13 @@
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.annotations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.interopSettings
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.descriptors.Visibilities
 
 /**
@@ -18,9 +20,25 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
     val member = this as? CfirMemberDeclaration ?: return
     val calls = annotations.filterIsInstance<CfirAnnotationCall>()
     fun annotation(kind: BuiltInAnnotationKind): CfirAnnotationCall? = calls.firstOrNull { it.annotationKind == kind }
-    fun has(kind: BuiltInAnnotationKind): Boolean = annotation(kind) != null
+    fun has(kind: BuiltInAnnotationKind): Boolean =
+        annotation(kind)?.isSupportedBuiltinAnnotation(kind, session.languageVersionSettings) == true
     fun name(kind: BuiltInAnnotationKind): String? = annotation(kind)?.stringArgument("name")
+    fun platformAnnotation(kind: CangjiePlatformAnnotationKind): CfirAnnotationCall? =
+        calls.firstOrNull { it.platformAnnotationKind == kind }
+    fun hasPlatform(kind: CangjiePlatformAnnotationKind): Boolean =
+        platformAnnotation(kind)?.annotationVersionSupport(session.languageVersionSettings) ==
+            AnnotationVersionSupportStatus.SUPPORTED
+    fun platformName(kind: CangjiePlatformAnnotationKind): String? =
+        platformAnnotation(kind)
+            ?.takeIf { hasPlatform(kind) }
+            ?.stringArgument("name")
     val serializedFacts = serializedInteropFacts
+    val serializedJavaFacts = serializedFacts?.takeIf {
+        session.languageVersionSettings.supportsFeature(LanguageFeature.JavaInteropAnnotations)
+    }
+    val serializedObjCFacts = serializedFacts?.takeIf {
+        session.languageVersionSettings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
+    }
     val conventionName = annotation(BuiltInAnnotationKind.CALLING_CONV)?.stringArgument("convention")
     val convention = CangjieCallingConvention.entries.firstOrNull { it.name == conventionName }
         ?: serializedFacts?.callingConvention
@@ -29,40 +47,43 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
     // backend-default C ABI is not an explicit source `@C` request.
     val hasExplicitC = has(BuiltInAnnotationKind.C) || serializedFacts?.hasExplicitC == true
     val request = CfirAbiRequest(member.status.isForeign, hasExplicitC, convention, this is CfirFunction)
-    val java = if (has(BuiltInAnnotationKind.JAVA) || has(BuiltInAnnotationKind.JAVA_MIRROR) ||
-        has(BuiltInAnnotationKind.JAVA_IMPL) || has(BuiltInAnnotationKind.JAVA_HAS_DEFAULT) ||
-        serializedFacts?.let {
+    val java = if (has(BuiltInAnnotationKind.JAVA) || hasPlatform(CangjiePlatformAnnotationKind.JAVA_MIRROR) ||
+        hasPlatform(CangjiePlatformAnnotationKind.JAVA_IMPL) || hasPlatform(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT) ||
+        serializedJavaFacts?.let {
             it.isJavaMirror || it.isJavaMirrorSubtype || it.hasJavaDefault ||
                 it.isJavaMirrorSyntheticWrapper || it.isJavaApplication || it.isJavaExtension ||
                 it.isJavaCjMapping || it.isJavaInterfaceForward || it.isJavaInterfaceDefault
         } == true
     ) CfirJavaInteropInfo(
-        isMirror = has(BuiltInAnnotationKind.JAVA_MIRROR) || serializedFacts?.isJavaMirror == true,
-        isMirrorSubtype = serializedFacts?.isJavaMirrorSubtype == true,
-        isImpl = has(BuiltInAnnotationKind.JAVA_IMPL),
-        hasDefault = has(BuiltInAnnotationKind.JAVA_HAS_DEFAULT) || serializedFacts?.hasJavaDefault == true,
-        isSyntheticWrapper = serializedFacts?.isJavaMirrorSyntheticWrapper == true,
-        isApplication = serializedFacts?.isJavaApplication == true,
-        isExtension = serializedFacts?.isJavaExtension == true,
-        isInterfaceForward = serializedFacts?.isJavaInterfaceForward == true,
-        isInterfaceDefault = serializedFacts?.isJavaInterfaceDefault == true,
-        externalName = name(BuiltInAnnotationKind.JAVA_MIRROR) ?: name(BuiltInAnnotationKind.JAVA_IMPL) ?: name(BuiltInAnnotationKind.JAVA),
+        isMirror = hasPlatform(CangjiePlatformAnnotationKind.JAVA_MIRROR) || serializedJavaFacts?.isJavaMirror == true,
+        isMirrorSubtype = serializedJavaFacts?.isJavaMirrorSubtype == true,
+        isImpl = hasPlatform(CangjiePlatformAnnotationKind.JAVA_IMPL),
+        hasDefault = hasPlatform(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT) || serializedJavaFacts?.hasJavaDefault == true,
+        isSyntheticWrapper = serializedJavaFacts?.isJavaMirrorSyntheticWrapper == true,
+        isApplication = serializedJavaFacts?.isJavaApplication == true,
+        isExtension = serializedJavaFacts?.isJavaExtension == true,
+        isInterfaceForward = serializedJavaFacts?.isJavaInterfaceForward == true,
+        isInterfaceDefault = serializedJavaFacts?.isJavaInterfaceDefault == true,
+        externalName = platformName(CangjiePlatformAnnotationKind.JAVA_MIRROR)
+            ?: platformName(CangjiePlatformAnnotationKind.JAVA_IMPL)
+            ?: name(BuiltInAnnotationKind.JAVA),
     ) else null
-    val objc = if (has(BuiltInAnnotationKind.OBJ_C_MIRROR) || has(BuiltInAnnotationKind.OBJ_C_IMPL) ||
-        has(BuiltInAnnotationKind.OBJ_C_INIT) || has(BuiltInAnnotationKind.OBJ_C_OPTIONAL) ||
-        serializedFacts?.let {
+    val objc = if (hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) || hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_IMPL) ||
+        hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_INIT) || hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_OPTIONAL) ||
+        serializedObjCFacts?.let {
             it.isObjCMirror || it.isObjCMirrorSubtype || it.isObjCInit || it.isObjCOptional ||
                 it.isObjCMirrorSyntheticWrapper || it.isObjCCjMapping || it.isObjCInterfaceForward
         } == true
     ) CfirObjCInteropInfo(
-        isMirror = has(BuiltInAnnotationKind.OBJ_C_MIRROR) || serializedFacts?.isObjCMirror == true,
-        isMirrorSubtype = serializedFacts?.isObjCMirrorSubtype == true,
-        isImpl = has(BuiltInAnnotationKind.OBJ_C_IMPL),
-        isInit = has(BuiltInAnnotationKind.OBJ_C_INIT) || serializedFacts?.isObjCInit == true,
-        isOptional = has(BuiltInAnnotationKind.OBJ_C_OPTIONAL) || serializedFacts?.isObjCOptional == true,
-        isSyntheticWrapper = serializedFacts?.isObjCMirrorSyntheticWrapper == true,
-        isInterfaceForward = serializedFacts?.isObjCInterfaceForward == true,
-        externalName = name(BuiltInAnnotationKind.OBJ_C_MIRROR) ?: name(BuiltInAnnotationKind.OBJ_C_IMPL),
+        isMirror = hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) || serializedObjCFacts?.isObjCMirror == true,
+        isMirrorSubtype = serializedObjCFacts?.isObjCMirrorSubtype == true,
+        isImpl = hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_IMPL),
+        isInit = hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_INIT) || serializedObjCFacts?.isObjCInit == true,
+        isOptional = hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_OPTIONAL) || serializedObjCFacts?.isObjCOptional == true,
+        isSyntheticWrapper = serializedObjCFacts?.isObjCMirrorSyntheticWrapper == true,
+        isInterfaceForward = serializedObjCFacts?.isObjCInterfaceForward == true,
+        externalName = platformName(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+            ?: platformName(CangjiePlatformAnnotationKind.OBJ_C_IMPL),
     ) else null
     val abi = when {
         has(BuiltInAnnotationKind.JAVA) || java?.isMirror == true || java?.isImpl == true ->
@@ -71,7 +92,7 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
             CfirResolvedAbi(CfirAbiKind.OBJC, false)
         else -> session.cfirAbiPolicy.resolve(request)
     }
-    val foreignName = name(BuiltInAnnotationKind.FOREIGN_NAME)
+    val foreignName = platformName(CangjiePlatformAnnotationKind.FOREIGN_NAME)
     val symbolName = (this as? CfirCallableDeclaration)?.symbol?.callableId?.callableName?.asString()
     val cjmp = deriveCjmpMappingInfo(session, member, calls, serializedFacts)
     val ffiAnnotationKinds = calls.asSequence()
@@ -84,12 +105,21 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
     val ffiAnnotationNames = ffiAnnotationKinds.mapNotNull { kind ->
         BuiltInAnnotationRegistry.languageBuiltIns.firstOrNull { it.kind == kind }?.sourceName
     }
+    val platformKinds = calls.asSequence()
+        .mapNotNull { it.platformAnnotationKind }
+        .filter(::hasPlatform)
+        .toSet()
+    val platformNames = calls.asSequence()
+        .filter { call -> call.platformAnnotationKind?.let(::hasPlatform) == true }
+        .mapNotNull { it.platformAnnotationDescriptor?.sourceName }
+        .distinct()
+        .toList()
     interopInfo = CfirInteropInfo(
         abiRequest = request,
         resolvedAbi = abi,
         foreignName = foreignName,
-        foreignGetterName = name(BuiltInAnnotationKind.FOREIGN_GETTER_NAME),
-        foreignSetterName = name(BuiltInAnnotationKind.FOREIGN_SETTER_NAME),
+        foreignGetterName = platformName(CangjiePlatformAnnotationKind.FOREIGN_GETTER_NAME),
+        foreignSetterName = platformName(CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME),
         java = java,
         objc = objc,
         cjmp = cjmp,
@@ -99,6 +129,8 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
         externalSymbolName = foreignName ?: java?.externalName ?: objc?.externalName ?: symbolName.takeIf { abi.kind == CfirAbiKind.C },
         ffiAnnotationKinds = ffiAnnotationKinds,
         ffiAnnotationNames = ffiAnnotationNames.distinct(),
+        platformAnnotationKinds = platformKinds,
+        platformAnnotationNames = platformNames,
     )
 }
 
@@ -115,7 +147,18 @@ private fun deriveCjmpMappingInfo(
     calls: List<CfirAnnotationCall>,
     serializedFacts: CfirSerializedInteropFacts?,
 ): CfirCjmpMappingInfo? {
+    // CJMapping is a language feature, not merely a session/backend option.
+    // Apply the gate before consuming either source facts or serialized facts;
+    // otherwise old-language sessions can publish a platform graph from CJO.
+    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.InteropCJMapping)) return null
+
     serializedFacts?.cjmpTarget?.let { serializedTarget ->
+        val targetFeature = when (serializedTarget) {
+            CfirInteropTarget.JAVA -> LanguageFeature.JavaInteropAnnotations
+            CfirInteropTarget.OBJC -> LanguageFeature.ObjCInteropAnnotations
+            CfirInteropTarget.NONE -> return null
+        }
+        if (!session.languageVersionSettings.supportsFeature(targetFeature)) return null
         return CfirCjmpMappingInfo(
             target = serializedTarget,
             declarationKind = declaration.cjmpDeclarationKindOrNull() ?: return null,
@@ -127,10 +170,20 @@ private fun deriveCjmpMappingInfo(
     val settings = session.interopSettings
     if (!settings.enableInteropCJMapping) return null
     if (settings.targetInteropLanguage == CfirInteropTarget.NONE) return null
+    if (settings.targetInteropLanguage == CfirInteropTarget.JAVA &&
+        !session.languageVersionSettings.supportsFeature(LanguageFeature.JavaInteropAnnotations)
+    ) return null
+    if (settings.targetInteropLanguage == CfirInteropTarget.OBJC &&
+        !session.languageVersionSettings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
+    ) return null
 
-    fun has(kind: BuiltInAnnotationKind): Boolean = calls.any { it.annotationKind == kind }
-    if (has(BuiltInAnnotationKind.JAVA_MIRROR) || has(BuiltInAnnotationKind.JAVA_IMPL) ||
-        has(BuiltInAnnotationKind.OBJ_C_MIRROR) || has(BuiltInAnnotationKind.OBJ_C_IMPL)
+    fun hasPlatform(kind: CangjiePlatformAnnotationKind): Boolean = calls.any { call ->
+        call.platformAnnotationKind == kind &&
+            call.annotationVersionSupport(session.languageVersionSettings) ==
+            AnnotationVersionSupportStatus.SUPPORTED
+    }
+    if (hasPlatform(CangjiePlatformAnnotationKind.JAVA_MIRROR) || hasPlatform(CangjiePlatformAnnotationKind.JAVA_IMPL) ||
+        hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) || hasPlatform(CangjiePlatformAnnotationKind.OBJ_C_IMPL)
     ) return null
 
     val declarationKind = when (declaration) {
@@ -154,6 +207,7 @@ private fun deriveCjmpMappingInfo(
     )
 }
 
+/** 把成员声明归约为 CJMapping 声明种类；非 nominal/extend 声明返回 `null`。 */
 private fun CfirMemberDeclaration.cjmpDeclarationKindOrNull(): CfirCjmpDeclarationKind? = when (this) {
     is CfirClass -> CfirCjmpDeclarationKind.CLASS
     is CfirStruct -> CfirCjmpDeclarationKind.STRUCT

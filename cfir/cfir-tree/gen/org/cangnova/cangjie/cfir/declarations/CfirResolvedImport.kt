@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.name.FqName
@@ -22,6 +23,7 @@ abstract class CfirResolvedImport : CfirImport() {
     abstract override val isAllUnder: Boolean
     abstract override val aliasName: Name?
     abstract override val aliasSource: CjSourceElement?
+    abstract override val condition: CfirExpression?
     abstract val delegate: CfirImport
     abstract val packageFqName: FqName
     abstract val importedName: Name?
@@ -32,4 +34,8 @@ abstract class CfirResolvedImport : CfirImport() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformResolvedImport(this, data) as E
+
+    abstract override fun replaceCondition(newCondition: CfirExpression?)
+
+    abstract override fun <D> transformCondition(transformer: CfirTransformer<D>, data: D): CfirResolvedImport
 }

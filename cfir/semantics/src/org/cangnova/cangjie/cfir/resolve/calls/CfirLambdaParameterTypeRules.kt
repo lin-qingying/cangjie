@@ -120,6 +120,13 @@ private fun lambdaPrimitiveParameterSubtypeOfAnnotation(
     return targetKind != null && annotatedKind != null && targetKind == annotatedKind
 }
 
+/**
+ * 将类型归约为 lambda 参数标注检查所需的 primitive 种类。
+ *
+ * ideal literal 归约到对应的 IDEAL_INT / IDEAL_FLOAT 种类，普通 primitive 直接取 kind，
+ * 其余类型按 typealias 展开后的 ClassId 反查 primitive；无法归约时返回 `null`，
+ * 表示该类型不走 primitive 专属规则。
+ */
 private fun ConeCangJieType.primitiveKindForLambdaParameterRule(): PrimitiveTypeKind? =
     when (this) {
         is ConeIdealIntLiteralType -> PrimitiveTypeKind.IDEAL_INT

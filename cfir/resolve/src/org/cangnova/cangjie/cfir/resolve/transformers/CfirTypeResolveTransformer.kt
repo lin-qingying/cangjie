@@ -29,6 +29,7 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.resolveBuiltinAnnotationIdentity
+import org.cangnova.cangjie.cfir.expressions.resolvePlatformAnnotationIdentity
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
@@ -107,9 +108,26 @@ class CfirTypeResolveTransformer(
         val builtin = annotationCall.resolveBuiltinAnnotationIdentity()
         if (builtin != null) {
             annotationCall.replaceAnnotationKind(builtin.kind)
-            annotationCall.replaceAnnotationOrigin(org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.LANGUAGE_BUILT_IN)
+            val isPackageDirective = builtin.origin == org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.PACKAGE_DIRECTIVE
+            annotationCall.replaceAnnotationOrigin(
+                if (isPackageDirective) {
+                    org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.PACKAGE_DIRECTIVE
+                } else {
+                    org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.LANGUAGE_BUILT_IN
+                },
+            )
             annotationCall.replaceAnnotationIdentity(
-                CangjieAnnotationIdentity.LanguageBuiltIn(builtin.kind, builtin.sourceName),
+                if (isPackageDirective) {
+                    CangjieAnnotationIdentity.PackageDirective(
+                        org.cangnova.cangjie.annotations.CangjiePackageDirectiveKind.NON_PRODUCT,
+                        builtin.sourceName,
+                    )
+                } else {
+                    CangjieAnnotationIdentity.LanguageBuiltIn(
+                        requireNotNull(builtin.kind),
+                        builtin.sourceName,
+                    )
+                },
             )
             annotationCall.replaceAnnotationResolveState(CfirAnnotationResolveState.TYPE_RESOLVED)
             return annotationCall
@@ -118,6 +136,7 @@ class CfirTypeResolveTransformer(
         val transformed = annotationCall.transformTypeRef(this, data)
         val classId = transformed.typeRef.coneTypeOrNull?.classId
         transformed.replaceAnnotationClassId(classId)
+        if (transformed.resolvePlatformAnnotationIdentity()) return transformed
         val system = classId?.asSingleFqName()?.let(org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry::findSystemAnnotation)
         transformed.replaceAnnotationOrigin(system?.origin ?: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.CUSTOM)
         transformed.replaceAnnotationIdentity(

@@ -32,6 +32,7 @@ fun CfirCallableDeclaration.containingClassLookupTag(): ConeClassLikeLookupTag? 
  */
 var CfirCallableDeclaration.containingExtend: CfirExtend? by CfirDeclarationDataRegistry.data(ContainingExtendKey)
 
+/** [CfirCallableDeclaration.containingExtend] 扩展属性使用的声明数据键。 */
 private object ContainingExtendKey : CfirDeclarationDataKey()
 
 /**

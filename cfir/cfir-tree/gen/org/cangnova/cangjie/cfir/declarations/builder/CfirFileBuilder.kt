@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirFileImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
@@ -36,6 +37,7 @@ class CfirFileBuilder {
     lateinit var packageDirective: CfirPackageDirective
     val imports: MutableList<CfirImport> = mutableListOf()
     var sourceFileLinesMapping: CjSourceFileLinesMapping? = null
+    val conditionalCompilationFailures: MutableList<CfirConditionalCompilationFailure> = mutableListOf()
     val declarations: MutableList<CfirDeclaration> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
@@ -54,6 +56,7 @@ class CfirFileBuilder {
             packageDirective,
             imports,
             sourceFileLinesMapping,
+            conditionalCompilationFailures,
             declarations,
         )
     }
@@ -86,6 +89,7 @@ inline fun buildFileCopy(original: CfirFile, init: CfirFileBuilder.() -> Unit): 
     copyBuilder.packageDirective = original.packageDirective
     copyBuilder.imports.addAll(original.imports)
     copyBuilder.sourceFileLinesMapping = original.sourceFileLinesMapping
+    copyBuilder.conditionalCompilationFailures.addAll(original.conditionalCompilationFailures)
     copyBuilder.declarations.addAll(original.declarations)
     return copyBuilder.apply(init).build()
 }

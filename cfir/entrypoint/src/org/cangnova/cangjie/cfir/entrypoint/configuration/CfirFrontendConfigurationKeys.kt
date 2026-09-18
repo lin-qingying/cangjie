@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.entrypoint.configuration
 
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 
@@ -79,6 +80,11 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val TARGET_INTEROP_LANGUAGE =
         CompilerConfigurationKey.create<CfirInteropTarget>("TARGET_INTEROP_LANGUAGE")
+
+    /** compiler invocation 显式注入的 `@When` 条件环境；禁止由 session 自行补默认值。 */
+    @JvmField
+    val CONDITIONAL_COMPILATION_SETTINGS =
+        CompilerConfigurationKey.create<CfirConditionalCompilationSettings>("CONDITIONAL_COMPILATION_SETTINGS")
 }
 
 /**
@@ -185,4 +191,12 @@ var CompilerConfiguration.targetInteropLanguage: CfirInteropTarget
     )
     set(value) {
         put(CfirFrontendConfigurationKeys.TARGET_INTEROP_LANGUAGE, value)
+    }
+
+/** 读取/注入显式 `@When` 条件环境。 */
+var CompilerConfiguration.conditionalCompilationSettings: CfirConditionalCompilationSettings?
+    get() = get(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS)
+    set(value) {
+        if (value == null) return
+        put(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS, value)
     }

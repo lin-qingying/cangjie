@@ -17,6 +17,29 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.*
 
+/** 文件/package metadata 不进入声明 annotation constructor resolve。 */
+internal fun resolvePackageDirectiveAnnotation(annotation: CfirAnnotationCall) {
+    // File/package metadata is not a declaration annotation call.  Keep its
+    // source arguments and publish completion without manufacturing a
+    // synthetic constructor or a declaration-level callable symbol.
+    val view = annotation.argumentList.arguments.mapIndexed { index, argument ->
+        CfirAnnotationArgumentViewEntry(
+            sourceOrder = index,
+            explicitName = (argument as? CfirNamedArgumentExpression)?.argumentName,
+            argument = argument,
+            resolvedParameter = null,
+            status = CfirAnnotationArgumentStatus.RESOLVED,
+            isDefaultOrigin = false,
+            constantExpression = argument as? CfirLiteralExpression,
+            source = argument.source,
+        )
+    }
+    annotation.replaceArgumentMapping(CfirEmptyAnnotationArgumentMapping)
+    annotation.replaceArgumentView(CfirAnnotationArgumentView(view))
+    annotation.replaceAnnotationResolveState(CfirAnnotationResolveState.SEMANTIC_RESOLVED)
+    annotation.replaceConeTypeOrNull(ConePrimitiveType.UNIT)
+}
+
 /** 官方内置注解没有用户类构造器，由 Registry 提供签名并沿共享参数映射发布结果。 */
 internal fun resolveBuiltinAnnotationArguments(
     annotation: CfirAnnotationCall,

@@ -203,6 +203,7 @@ private fun Candidate.hasExplicitTypeArgumentConstraintMismatchForNominalRecover
     explicitTypeArgumentsForNominalRecovery().isNotEmpty() &&
         (errors.any { it is ConstraintMismatch } || system.hasContradiction)
 
+/** 收集候选的显式类型实参：优先取 callInfo，qualified access 调用点回退到其自身 typeArguments。 */
 private fun Candidate.explicitTypeArgumentsForNominalRecovery(): List<CfirTypeRef> =
     callInfo.typeArguments.ifEmpty {
         (callInfo.callSite as? CfirQualifiedAccessExpression)?.typeArguments.orEmpty()

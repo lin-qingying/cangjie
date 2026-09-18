@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
 import org.cangnova.cangjie.cfir.entrypoint.configuration.targetInteropLanguage
+import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import java.io.File
@@ -42,6 +43,7 @@ fun createDefaultCfirSessionFactoryContext(
             enableInteropCJMapping = configuration.enableInteropCJMapping,
             targetInteropLanguage = configuration.targetInteropLanguage,
         ),
+        conditionalCompilationSettings = configuration.conditionalCompilationSettings,
         registerSourceSessionComponents = {
             if (apiLevelProvider != null) {
                 register(CfirApiLevelProvider::class, apiLevelProvider)

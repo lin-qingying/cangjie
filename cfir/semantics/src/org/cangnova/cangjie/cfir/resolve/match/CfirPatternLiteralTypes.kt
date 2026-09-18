@@ -37,6 +37,12 @@ data class CfirPatternLiteralTypeResolution(
 /** 一元负号属于数值字面量语义；包装节点不改变模式字面量身份。 */
 fun CfirConstPattern.constantPatternLiteral(): CfirLiteralExpression? = expression.patternLiteral()
 
+/**
+ * 提取常量模式中的字面量表达式。
+ *
+ * 包装节点透明穿透；一元 `+` / `-` 调用若只包裹一个 INT/FLOAT 字面量，
+ * 视为负号/正号字面量语义，返回内层字面量本身。
+ */
 private fun CfirExpression.patternLiteral(): CfirLiteralExpression? = when (this) {
     is CfirWrappedExpression -> expression.patternLiteral()
     is CfirLiteralExpression -> this
@@ -127,12 +133,19 @@ private fun ConeCangJieType.isLiteralBoxableTo(target: ConeCangJieType, session:
     return isLiteralBoxableTo(inner, session)
 }
 
+/** 判断该数值字面量的种类是否与 [target] 的数值族匹配（整数对整数、浮点对浮点）。 */
 private fun CfirLiteralExpression.isNumericPatternKindOf(target: ConeCangJieType): Boolean = when (kind) {
     CfirLiteralKind.INT, CfirLiteralKind.BYTE -> target.isIntegerType
     CfirLiteralKind.FLOAT -> target.isFloatType
     else -> false
 }
 
+/**
+ * 返回字面量在无外部目标时的默认模式类型。
+ *
+ * 有显式后缀（或 byte 语法）时优先使用其定型结果；否则按官方缺省规则：
+ * 整数 → Int64、浮点 → Float64，布尔 / Rune / Unit 直接取对应 primitive。
+ */
 private fun CfirLiteralExpression.defaultPatternLiteralType(explicitType: ConePrimitiveType?): ConeCangJieType? =
     explicitType ?: when (kind) {
         CfirLiteralKind.INT -> ConePrimitiveType.INT64
@@ -154,6 +167,7 @@ private fun CfirLiteralExpression.characterPatternTarget(target: ConeCangJieType
     }
 }
 
+/** 返回该字面量种类在诊断文本中的英文描述，与官方 CannotConvert 消息用词保持一致。 */
 private fun CfirLiteralKind.literalDescription(): String = when (this) {
     CfirLiteralKind.INT, CfirLiteralKind.BYTE -> "integer"
     CfirLiteralKind.FLOAT -> "floating-point"

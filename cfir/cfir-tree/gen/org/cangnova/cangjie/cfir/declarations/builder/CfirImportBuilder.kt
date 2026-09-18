@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.declarations.impl.CfirImportImpl
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -24,6 +25,7 @@ class CfirImportBuilder {
     var isAllUnder: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var aliasName: Name? = null
     var aliasSource: CjSourceElement? = null
+    var condition: CfirExpression? = null
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirImport {
@@ -34,6 +36,7 @@ class CfirImportBuilder {
             isAllUnder,
             aliasName,
             aliasSource,
+            condition,
         )
     }
 

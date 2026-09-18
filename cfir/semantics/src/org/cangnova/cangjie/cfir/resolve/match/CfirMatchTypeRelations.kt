@@ -79,6 +79,13 @@ fun ConeCangJieType.isTypePatternOrdinarySubtypeOf(
     session: CfirSession,
 ): Boolean = isTypePatternOrdinarySubtypeOf(superType, session, allowValueBoxing = true)
 
+/**
+ * type pattern usefulness 的核心递归实现。
+ *
+ * tuple / function 按结构分量逐位比较且禁止内部装箱；[allowValueBoxing]
+ * 为 `false` 时，值类型到 class-like 超类型的关系直接判否，
+ * 保证只有 `ChkTypePattern` 顶层允许 boxed 告警语义。
+ */
 private fun ConeCangJieType.isTypePatternOrdinarySubtypeOf(
     superType: ConeCangJieType,
     session: CfirSession,
@@ -107,6 +114,12 @@ private fun ConeCangJieType.isTypePatternOrdinarySubtypeOf(
     return AbstractTypeChecker.isSubtypeOfWithoutOptionBoxing(session.typeContext, this, superType)
 }
 
+/**
+ * 判断当前值类型要成为 [superType]（`Any` 或 class-like）的子类型是否必须经过装箱。
+ *
+ * primitive / struct / enum / tuple / function / VArray 都是值表示，
+ * 只有通过装箱才能建立与引用语义超类型的关系；typealias 按展开类型递归判断。
+ */
 private fun ConeCangJieType.requiresBoxingToClassLikeSupertype(superType: ConeCangJieType): Boolean {
     if (superType !== ConeAnyType && superType !is ConeClassLikeType) return false
     return when (this) {

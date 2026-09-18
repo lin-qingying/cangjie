@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -34,6 +35,7 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract val packageDirective: CfirPackageDirective
     abstract val imports: List<CfirImport>
     abstract val sourceFileLinesMapping: CjSourceFileLinesMapping?
+    abstract val conditionalCompilationFailures: List<CfirConditionalCompilationFailure>
     abstract val declarations: List<CfirDeclaration>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -48,6 +50,10 @@ abstract class CfirFile : CfirDeclaration(), CfirControlFlowGraphOwner {
     abstract override fun replaceControlFlowGraphReference(newControlFlowGraphReference: CfirControlFlowGraphReference?)
 
     abstract fun replaceFeaturesDirective(newFeaturesDirective: CfirFeaturesDirective?)
+
+    abstract fun replaceImports(newImports: List<CfirImport>)
+
+    abstract fun replaceConditionalCompilationFailures(newConditionalCompilationFailures: List<CfirConditionalCompilationFailure>)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirFile
 

@@ -49,8 +49,20 @@ public data class CfirSerializedInteropFacts(
     val cjmpTarget: CfirInteropTarget? = null,
 )
 
+/** [CfirDeclaration.serializedInteropFacts] 扩展属性使用的声明数据键。 */
 private object CfirSerializedInteropFactsKey : CfirDeclarationDataKey()
 
 /** Serialized interop facts attached by the CJO declaration owner. */
 public var CfirDeclaration.serializedInteropFacts: CfirSerializedInteropFacts? by
     CfirDeclarationDataRegistry.data(CfirSerializedInteropFactsKey)
+
+/** 原始 CJO Decl.attributes 位图快照；保留未被 status/interop 投影消费的官方位。 */
+public data class CfirSerializedDeclarationAttributes(
+    val words: List<ULong>,
+)
+
+private object CfirSerializedDeclarationAttributesKey : CfirDeclarationDataKey()
+
+/** CJO reader 在声明发布时写入的完整 attributes snapshot。 */
+public var CfirDeclaration.serializedDeclarationAttributes: CfirSerializedDeclarationAttributes? by
+    CfirDeclarationDataRegistry.data(CfirSerializedDeclarationAttributesKey)

@@ -135,7 +135,8 @@ class ResultTypeResolver(
         variableWithConstraints: VariableWithConstraints,
         direction: ResolveDirection,
     ): CangJieTypeMarker? {
-val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variableWithConstraints, isStrictMode = false)
+        // 先查等值约束的完整结果：命中即免于走向下界/上界的合并路径。
+        val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variableWithConstraints, isStrictMode = false)
         if (resultTypeFromEqualConstraint?.isAppropriateResultTypeFromEqualityConstraints() == true) return resultTypeFromEqualConstraint
 
         val subType = variableWithConstraints.findSubType()
@@ -143,6 +144,11 @@ val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variable
         val allowIntersectionResult =
             languageVersionSettings.supportsFeature(LanguageFeature.AllowIntersectionTypesInInference)
         if (subTypeIsIntersection && !allowIntersectionResult) {
+            cstTrace(
+                "FAIL-A var=${variableWithConstraints.typeVariable} dir=$direction sub=$subType " +
+                    "super=${variableWithConstraints.findSuperType()} " +
+                    "cons=${variableWithConstraints.constraints.map { "${it.kind}:${it.type}" }}",
+            )
             // 多个互斥下界约束收敛出的交集候选（如 choose(1, true) 得到 Hashable & ToString）：
             // 公共父类型计算（filterStrictSupertypes）保证交集成员互不可比，因此不存在能同时
             // 满足全部下界约束的单一具体类型；对齐官方 cjc 的 sema_unable_to_infer_generic_func
@@ -177,6 +183,11 @@ val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variable
             // 官方FindSolution也要求上界Meet可表示；没有具体下界可选时，不能把两个
             // 不相容名义上界的内部intersection发布为推断实参。具体下界满足两者时仍正常采用。
             if (!allowIntersectionResult && resultType.typeConstructor().isIntersection()) {
+                cstTrace(
+                    "FAIL-B var=${variableWithConstraints.typeVariable} dir=$direction result=$resultType " +
+                        "sub=$subType super=$superType " +
+                        "cons=${variableWithConstraints.constraints.map { "${it.kind}:${it.type}" }}",
+                )
                 return c.createErrorType(SOLVER_FAILURE_MARKER, null)
             }
             return resultType
@@ -185,6 +196,11 @@ val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variable
         // 存在 proper 约束却仍无法确定结果类型（约束矛盾或互斥候选），且不是被特性
         // 开关允许的交集场景时，报告推断失败，由固定阶段生成 UNABLE_TO_INFER_GENERIC_FUNC。
         if (variableWithConstraints.hasProperConstraints() && !(subTypeIsIntersection && allowIntersectionResult)) {
+            cstTrace(
+                "FAIL-C var=${variableWithConstraints.typeVariable} dir=$direction sub=$subType super=$superType " +
+                    "equal=$resultTypeFromEqualConstraint " +
+                    "cons=${variableWithConstraints.constraints.map { "${it.kind}:${it.type}" }}",
+            )
             return c.createErrorType(SOLVER_FAILURE_MARKER, null)
         }
         return null
@@ -572,4 +588,8 @@ val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variable
          */
         const val SOLVER_FAILURE_MARKER = "CJ_SOLVER_FAILURE_MARKER"
     }
+}
+
+fun cstTrace(line: String) {
+    runCatching { java.io.File("D:/code/intellij/cangjie/tmp/cst-debug.txt").appendText(line + "\n") }
 }
