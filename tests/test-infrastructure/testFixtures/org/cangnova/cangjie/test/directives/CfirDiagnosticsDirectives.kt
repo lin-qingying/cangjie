@@ -138,6 +138,12 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
         },
     )
 
+    /** 显式注入 `@When` 条件环境；格式为 `backend=...,arch=...,os=...,cjc_version=...,debug=...,test=...`。 */
+    val WHEN_ENV by stringDirective(
+        description = "Injects the explicit conditional-compilation environment for @When tests.",
+        applicability = DirectiveApplicability.Module,
+    )
+
 
     /**
      * 保存 `SCOPE_DUMP`，供测试指令在测试执行期间读取或传递。

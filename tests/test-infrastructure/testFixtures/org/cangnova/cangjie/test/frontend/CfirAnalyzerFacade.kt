@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.diagnosticsCollector
 import org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionService
+import org.cangnova.cangjie.frontend.pipeline.pruneConditionalCompilation
 import org.cangnova.cangjie.frontend.pipeline.installDefaultMacroFragmentParserFactory
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.prepareMacroArtifactDefinitionsForExpansion
@@ -101,7 +102,7 @@ class CfirAnalyzerFacade(
                 reportFilesAndLines = null,
             )
             CfirParser.Psi -> session.buildPreMacroRawCfirFromCjFiles(cjFiles)
-        }
+        }.pruneConditionalCompilation()
         session.ensureAnnotationMetadataRegistry()
         val classification = MacroDemandClassification.create(pre).also {
             session.register(MacroDemandClassification::class, it)

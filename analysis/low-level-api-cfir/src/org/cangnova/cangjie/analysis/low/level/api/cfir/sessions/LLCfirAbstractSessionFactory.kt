@@ -12,7 +12,6 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
@@ -589,17 +588,18 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
      * IDE 分析需要该特性参与诊断与控制流相关逻辑；如果原设置已开启则直接复用。
      */
     private fun wrapLanguageVersionSettings(original: LanguageVersionSettings): LanguageVersionSettings {
-        return if (original.supportsFeature(LanguageFeature.EnableDfaWarnings)) {
-            original
-        } else {
-            // 对位 Kotlin：LanguageVersionSettingsImpl 通过 specificFeatures 承载特性开关，
-            // 在保留原有定制特性的基础上追加 DFA warnings。
-            LanguageVersionSettingsImpl(
-                languageVersion = original.languageVersion,
-                apiVersion = original.apiVersion,
-                specificFeatures = original.getCustomizedLanguageFeatures() +
-                    (LanguageFeature.EnableDfaWarnings to LanguageFeature.State.ENABLED),
-            )
+        // Kotlin 对位路径始终返回 delegation wrapper：只覆盖 feature 查询，原设置中的
+        // language/API、analysis flags 与其它配置仍由同一实例提供。
+        return object : LanguageVersionSettings by original {
+            override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State =
+                if (feature == LanguageFeature.EnableDfaWarnings) {
+                    LanguageFeature.State.ENABLED
+                } else {
+                    original.getFeatureSupport(feature)
+                }
+
+            override fun supportsFeature(feature: LanguageFeature): Boolean =
+                getFeatureSupport(feature) == LanguageFeature.State.ENABLED
         }
     }
 

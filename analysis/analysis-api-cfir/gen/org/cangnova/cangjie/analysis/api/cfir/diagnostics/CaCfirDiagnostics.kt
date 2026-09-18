@@ -557,6 +557,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = AnnotationNoConstInit::class
     }
 
+    interface IntrinsicFunctionMustBeToplevel : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IntrinsicFunctionMustBeToplevel::class
+    }
+
+    interface IntrinsicFunctionCannotHaveBody : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IntrinsicFunctionCannotHaveBody::class
+    }
+
     interface IllegalUseOfAnnotation : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalUseOfAnnotation::class
         val declarationKind: String
@@ -589,6 +597,20 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface CfuncCannotHaveUnitArgs : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = CfuncCannotHaveUnitArgs::class
+    }
+
+    interface CfuncCannotCaptureVar : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncCannotCaptureVar::class
+        val variableName: Name
+    }
+
+    interface CfuncCannotCaptureThis : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncCannotCaptureThis::class
+        val receiverName: String
+    }
+
+    interface FuncCaptureVarNotCtype : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = FuncCaptureVarNotCtype::class
     }
 
     interface CffiCannotHaveTypeParam : CaCfirDiagnostic<PsiElement> {
@@ -624,6 +646,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface InvalidCfuncParameterType : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = InvalidCfuncParameterType::class
         val actualType: CaType
+    }
+
+    interface UnsafeFunctionInvokeFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnsafeFunctionInvokeFailed::class
+    }
+
+    interface CfuncVarCannotHaveVarParam : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CfuncVarCannotHaveVarParam::class
     }
 
     interface OnlyCfuncCanUseAnnotation : CaCfirDiagnostic<PsiElement> {
@@ -1717,6 +1747,36 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface UselessCommandType : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = UselessCommandType::class
+    }
+
+    interface DeprecatedArgumentsMustBeLiteralConst : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedArgumentsMustBeLiteralConst::class
+    }
+
+    interface DeprecatedArgumentDuplication : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedArgumentDuplication::class
+        val argumentName: String
+    }
+
+    interface DeprecatedWrongArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedWrongArgument::class
+        val argumentName: String
+        val expectedType: String
+    }
+
+    interface DeprecatedEmptyStringArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedEmptyStringArgument::class
+        val argumentName: String
+    }
+
+    interface DeprecatedUnknownArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedUnknownArgument::class
+        val argumentName: String
+    }
+
+    interface DeprecatedInvalidTarget : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = DeprecatedInvalidTarget::class
+        val invalidTarget: String
     }
 
     interface DeprecatedError : CaCfirDiagnostic<PsiElement> {

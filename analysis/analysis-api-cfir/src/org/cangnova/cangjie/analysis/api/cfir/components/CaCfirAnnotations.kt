@@ -65,13 +65,22 @@ private fun CfirAnnotationCall.runtimeVisible(builder: CaSymbolByCfirBuilder): B
     return symbol.cfir.annotationInfo?.runtimeVisible
 }
 
+/** 解析注解调用引用的构造器 symbol 并包装为公开的构造器 symbol；引用未解析时返回 `null`。 */
 private fun CfirAnnotationCall.resolveAnnotationConstructorSymbol(builder: CaSymbolByCfirBuilder): CaConstructorSymbol? {
     val symbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol as? CfirConstructorSymbol ?: return null
     return builder.functionBuilder.buildConstructorSymbol(symbol)
 }
 
+/** 从注解类型的 cone 类型中提取 ClassId；类型未解析时返回 `null`。 */
 internal fun CfirTypeRef.annotationClassIdOrNull(): ClassId? = coneTypeOrNull?.classIdOrPrimitiveClassId
 
+/**
+ * 把 CFIR 注解实参表达式转换为公开的注解值视图。
+ *
+ * 按表达式形态分发：常量值表达式、数组/tuple 字面量、枚举构造引用、
+ * 内置 ABI 字面量各有专属转换；其余一律包装为 error value，
+ * 不让未完成的常量求值伪装成合法结果。
+ */
 private fun CfirExpression.asPublicAnnotationValue(token: CaLifetimeToken): CaAnnotationValue {
     val psi = source?.psi as? CjElement
     return when (this) {
@@ -129,6 +138,7 @@ private fun CfirConstantValue.asPublicValue(psi: CjElement?, token: CaLifetimeTo
     }
 }
 
+/** 把 primitive 常量按其具体 primitive 种类转换为对应宽度的公开常量值；种类不明时返回 error value。 */
 private fun CfirConstantValue.Primitive.asPublicConstant(psi: CjElement?): CaConstantValue = when (kind) {
     CfirLiteralKind.BOOLEAN -> CaBaseAnnotationValues.boolValue(value as Boolean, psi)
     CfirLiteralKind.RUNE -> CaBaseAnnotationValues.runeValue(value as Int, psi)

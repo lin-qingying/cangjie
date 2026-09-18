@@ -37,6 +37,12 @@ internal class CaCfirCInteropComponent(
     }
 }
 
+/**
+ * CFIR 互操作事实的公开视图实现。
+ *
+ * 字段一一直接来自声明的 interop info 快照；生命周期由 [token] 保护，
+ * token 失效后读取方应停止访问。
+ */
 internal class CaCfirInteropInfoImpl(
     override val abi: CaInteropAbi,
     override val isCFunction: Boolean,
@@ -56,17 +62,26 @@ internal class CaCfirInteropInfoImpl(
     override val token: CaLifetimeToken,
 ) : CaInteropInfo
 
+/** 按 PSI 元素定位所属声明并解析到 BODY_RESOLVE 后构建互操作信息；非声明上下文返回 `null`。 */
 internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
     val owner = element as? CjDeclaration ?: element.getStrictParentOfType<CjDeclaration>() ?: return null
     return buildInteropInfo(owner.resolveToCfirSymbol(resolutionFacade, CfirResolvePhase.BODY_RESOLVE))
 }
 
+/** 按 symbol 构建互操作信息；非 CFIR symbol 时返回 `null`。 */
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
     val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol ?: return null
     cfirSymbol.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
     return buildInteropInfo(cfirSymbol)
 }
 
+/**
+ * 从声明的 interop info 快照构建公开互操作信息。
+ *
+ * 二进制声明按需发布 serialized facts；无任何互操作语义（纯仓颉 ABI
+ * 且无 FastNative/frozen/外部名/Java/ObjC 事实）时返回 `null`，
+ * FFI 注解缺失时按 serialized facts 合成无源码的 synthetic annotation。
+ */
 private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaInteropInfo? {
     val declaration = symbol.cfir
     // Source declarations publish the snapshot during STATUS.  A binary

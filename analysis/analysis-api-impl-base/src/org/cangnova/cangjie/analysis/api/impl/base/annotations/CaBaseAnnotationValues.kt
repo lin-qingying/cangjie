@@ -251,6 +251,12 @@ private class UnitValueImpl(override val sourcePsi: CjElement?) : CaConstantValu
     override fun render(): String = "()"
 }
 
+/**
+ * 数组注解值的 base 模块实现。
+ *
+ * 持有元素值列表与源码 PSI 的 backing 字段，读取端统一经
+ * [withValidityAssertion] 校验 lifetime token，token 失效后访问即抛出。
+ */
 private class ArrayValueImpl(
     private val backingValues: List<CaAnnotationValue>,
     private val backingSourcePsi: CjElement?,
@@ -262,6 +268,13 @@ private class ArrayValueImpl(
         get() = withValidityAssertion { backingSourcePsi }
 }
 
+/**
+ * tuple 注解值的 base 模块实现。
+ *
+ * 与 [ArrayValueImpl] 同构：backing 字段 + lifetime token 保护，
+ * 区别在于实现的是 [CaAnnotationValue.TupleValue] 接口，渲染与语义
+ * 按 tuple 处理而不是数组。
+ */
 private class TupleValueImpl(
     /**
      * tuple 内部的注解值列表。
