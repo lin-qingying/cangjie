@@ -5,5 +5,5 @@ func test(a: Array<Int8>): Unit {}
 
 main() {
     var arr: Array<Array<UInt64>> = [[255u64, 0u64, 0u64, 0u64]]
-    var a = test(<!TYPE_MISMATCH!>arr[0]<!>)
+    var a = test(<!ARGUMENT_TYPE_MISMATCH!>arr[0]<!>)
 }

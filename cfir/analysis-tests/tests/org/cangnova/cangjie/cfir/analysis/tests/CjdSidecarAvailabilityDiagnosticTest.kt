@@ -24,10 +24,13 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
+import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
+import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.registerCliCompilerAndCommonComponents
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 
 /**
@@ -71,6 +74,12 @@ class CjdSidecarAvailabilityDiagnosticTest : AbstractCfirAnalysisResolveTest() {
         // 等 20 余个必需组件），不逐个手写 —— 手写必然漏项。
         val librarySession = object : CfirSession(CfirSession.Kind.Library) {}.also { library ->
             library.registerCliCompilerAndCommonComponents(LanguageVersionSettingsImpl.DEFAULT)
+            library.register(
+                CfirImplicitSystemAnnotationsProvider::class,
+                ConfiguredCfirImplicitSystemAnnotationsProvider(
+                    setOf(FqName("ohos.labels.APILevel")),
+                ),
+            )
             library.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }
         val cjoManager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })

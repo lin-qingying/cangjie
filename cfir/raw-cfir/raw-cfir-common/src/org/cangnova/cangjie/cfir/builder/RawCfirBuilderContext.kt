@@ -90,10 +90,26 @@ class Context<T> {
         containerSymbolStack.addLast(actual)
     }
 
-    /** 弹出当前容器符号；[symbol] 用作调用点语义说明，不参与运行时匹配。 */
+    /**
+     * 弹出当前容器符号，并校验 push/pop 的对象身份严格配对。
+     *
+     * Kotlin FIR 的 raw-builder context 将 container symbol 当作 annotation
+     * owner 的栈不变量；空栈或错误 symbol 不能静默恢复，否则临时 fragment
+     * 会把 annotation 绑定到错误声明上。
+     */
     fun popContainerSymbol(symbol: CfirBasedSymbol<*>) {
-        if (containerSymbolStack.isEmpty()) return
-        containerSymbolStack.removeLast()
+        check(containerSymbolStack.isNotEmpty()) {
+            "Cannot pop a container symbol from an empty raw CFIR builder stack."
+        }
+        val removed = containerSymbolStack.removeLast()
+        val expected = if (containerSymbolStack.isEmpty() && forcedContainerSymbol != null) {
+            forcedContainerSymbol!!
+        } else {
+            symbol
+        }
+        check(removed === expected) {
+            "Inconsistent raw CFIR declaration container stack: expected=$expected, actual=$removed."
+        }
     }
 
     /** 当前容器符号；不存在时返回 null。 */

@@ -11,9 +11,9 @@ struct R1 {
 
 func goo() {
     var obj = R1()
-    var fn = <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
-    <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
-    return <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
+    var fn = obj.<!USE_MUTABLE_FUNC_ALONE!>foo<!>
+    obj.<!USE_MUTABLE_FUNC_ALONE!>foo<!>
+    return obj.<!USE_MUTABLE_FUNC_ALONE!>foo<!>
 }
 
 main() {
