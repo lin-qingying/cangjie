@@ -512,7 +512,7 @@ class FrontendMacroConstructionService(
                         ?.payload
                         ?.let { it as? CfirElement }
                         ?.let { registry.registerGeneratedCfirElement(it, surface.surfaceId) }
-                    val parentVisibleTokens = fragment.parentVisibleTokens()
+                    val parentVisibleTokens = fragment.parentVisibleTokens(refreshedTokens)
 
                     if (surface is BuiltinNonMacroSurface) {
                         registry.registerGeneratedDisplayText(
@@ -1742,7 +1742,16 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             val argumentKey = call.arguments.joinToString(separator = ",") { argument ->
                 argument.annotationArgumentMergeKey()
             }
-            return "$nameKey($argumentKey)"
+            // `@!` is semantic provenance in the official parser, not spelling
+            // noise.  A declaration macro may legally carry both `@Hide` and
+            // `@!Hide`; collapsing them here makes replacement consume the
+            // wrong slot and is observable as a macro-expansion failure.
+            val visibilityKey = if (call.isCompileTimeVisible == true || call.forcedCustom == true) {
+                "compile-time-visible:"
+            } else {
+                "runtime-visible:"
+            }
+            return "$visibilityKey$nameKey($argumentKey)"
         }
         return source?.text?.toString()?.normalizedAnnotationMergeText()
             ?.takeIf(String::isNotEmpty)
@@ -1777,9 +1786,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         }
     }
 
-    /** 规范化 `@!` 与空白差异，避免 PSI/LightTree fragment source 表达不同导致重复合并失败。 */
+    /** 只规范化空白；`@!` provenance 由 [annotationMergeKey] 单独保留。 */
     private fun String.normalizedAnnotationMergeText(): String =
-        replace("@!", "@").filterNot(Char::isWhitespace)
+        filterNot(Char::isWhitespace)
 
     /**
      * 从宏替换槽中读取表达式 payload。
@@ -1827,10 +1836,12 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
 /**
  * 返回宏片段对父宏可见的 token 序列。
  */
-private fun MacroFragmentResult.parentVisibleTokens(): List<MacroSurfaceToken> {
+private fun MacroFragmentResult.parentVisibleTokens(
+    refreshedTokens: RefreshedMacroSurfaceTokens,
+): List<MacroSurfaceToken> {
     return when (this) {
         is MacroFragmentResult.Success -> tokens
-        is MacroFragmentResult.CustomAnnotation -> tokens
+        is MacroFragmentResult.CustomAnnotation -> tokens + refreshedTokens.inputTokens
         is MacroFragmentResult.Failure -> emptyList()
     }
 }
@@ -1943,17 +1954,22 @@ private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
 
     var current = this
     val replacements = childResults.entries.asSequence()
-        .filter { (child, _) -> child.parent?.childEdges.orEmpty().any { it.child === child && it.channel == channel } }
+        .mapNotNull { (child, replacement) ->
+            val edge = child.parent?.childEdges.orEmpty()
+                .firstOrNull { it.child === child && it.channel == channel }
+                ?: return@mapNotNull null
+            Triple(child, replacement, edge.replaceRange)
+        }
         .sortedWith(
             compareBy(
-                { it.key.surface.sourceRange?.startOffset ?: Int.MAX_VALUE },
-                { it.key.surface.sourceRange?.endOffset ?: Int.MAX_VALUE },
-                { it.key.surface.surfaceId },
+                { it.third?.startOffset ?: Int.MAX_VALUE },
+                { it.third?.endOffset ?: Int.MAX_VALUE },
+                { it.first.surface.surfaceId },
             ),
         ).toList()
 
-    for ((child, replacement) in replacements) {
-        val range = child.surface.sourceRange ?: continue
+    for ((child, replacement, edgeRange) in replacements) {
+        val range = edgeRange ?: child.surface.sourceRange ?: continue
         val startIndex = current.indexOfFirst { it.isInside(range) }
         if (startIndex < 0) continue
         val endIndex = current.indexOfLast { it.isInside(range) }

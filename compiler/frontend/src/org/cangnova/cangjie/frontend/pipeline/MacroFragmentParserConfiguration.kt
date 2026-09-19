@@ -126,7 +126,9 @@ private fun reparsePsiMacroFragment(
             builder.buildExpressionInPackage(expression, packageFqName)
         }
         else -> {
-            val fragment = psiFactory.createFile(text)
+            // 官方 ReplaceEachMacro 在声明 token reparse 时开启 custom-annotation
+            // 模式；否则 `@!Hide` 会被重新识别为另一个 declaration macro。
+            val fragment = psiFactory.createAnnotationOnlyFile(text)
             builder.buildDeclarationFragmentInPackage(fragment, packageFqName)
         }
     }
@@ -187,7 +189,7 @@ private fun reparseLightTreeMacroFragment(
             parsed.builder.buildExpressionInPackage(expression, packageFqName)
         }
         else -> {
-            val parsed = parseLightTreeFragment(session, text)
+            val parsed = parseLightTreeMacroExpansionFragment(session, text)
             parsed.builder.buildDeclarationFragmentInPackage(parsed.tree.root, packageFqName)
         }
     }
@@ -244,6 +246,14 @@ private fun parseLightTreeFragment(
 ): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text) { builder ->
     // 对齐 ReplaceEachMacro 的新 token parser，不调用 SetModuleName。
     CangJieLightParser.parse(builder, languageModuleName = "")
+}
+
+/** 使用官方 custom-annotation 分派重解析宏返回的声明 token。 */
+private fun parseLightTreeMacroExpansionFragment(
+    session: CfirSession,
+    text: String,
+): ParsedLightTreeFragment = createParsedLightTreeFragment(session, text) { builder ->
+    CangJieLightParser.parseMacroExpansion(builder, languageModuleName = "")
 }
 
 /** 使用 annotation-only 语法解析 custom annotation 宏展开结果。 */

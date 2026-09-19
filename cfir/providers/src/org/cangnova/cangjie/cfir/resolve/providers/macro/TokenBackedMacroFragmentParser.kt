@@ -59,7 +59,10 @@ class TokenBackedMacroFragmentParser(
         // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
         val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
         val source = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
-            input.annotationSnapshot!!.rawSyntax.normalizeForcedCustomAnnotationSyntax().trim()
+            // `@!` 是官方 AST 的 compile-time-visible provenance，不能为了
+            // 让临时 parser 接受文本而把它降成普通 `@`。annotation-only
+            // parser 已经支持 `@!`，因此这里必须把原始 spelling 原样交给它。
+            input.annotationSnapshot!!.rawSyntax.trim()
         } else {
             MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
         }
@@ -121,13 +124,6 @@ class TokenBackedMacroFragmentParser(
     /** 测试哨兵属性；生产逻辑不读取该值。 */
     @Suppress("UNUSED")
     val lastReparseSentinel: Any? get() = null
-}
-
-/** 将 `@!Anno` custom annotation 语法恢复为普通 annotation reparse 可接受的 `@Anno`。 */
-private fun String.normalizeForcedCustomAnnotationSyntax(): String {
-    val atExcl = indexOf("@!")
-    if (atExcl < 0) return this
-    return replaceRange(atExcl, atExcl + 2, "@")
 }
 
 /**

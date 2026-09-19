@@ -36,7 +36,9 @@ interface MacroFragmentParser {
          *
          * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
          */
-        const val VERSION: Int = 2
+        // v3: declaration reparse now uses the official custom-annotation mode,
+        // and custom annotation fragments retain the `@!` provenance verbatim.
+        const val VERSION: Int = 3
     }
 }
 
