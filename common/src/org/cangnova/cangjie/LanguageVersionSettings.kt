@@ -88,7 +88,7 @@ enum class LanguageVersion(
     companion object {
         fun parse(versionString: String): LanguageVersion {
             val parts = versionString.split('.')
-            if (parts.size < 2) error("Invalid version string: $versionString")
+            if (parts.size !in 2..3) error("Invalid version string: $versionString")
             val major = parts[0].toIntOrNull() ?: error("Invalid major version: ${parts[0]}")
             val minor = parts[1].toIntOrNull() ?: error("Invalid minor version: ${parts[1]}")
             val patch = if (parts.size > 2) parts[2].toIntOrNull() ?: error("Invalid patch version: ${parts[2]}") else 0
@@ -106,7 +106,8 @@ enum class LanguageVersion(
         val FIRST_NON_DEPRECATED = CANGJIE_1_0_0
 
         @JvmField
-        val LATEST_STABLE = CANGJIE_1_0_5
+        /** 当前支持矩阵中的最新稳定语言版本。 */
+        val LATEST_STABLE = CANGJIE_1_1_3
 
     }
 }
@@ -157,17 +158,45 @@ enum class LanguageFeature(
     LexicographicVariableReadinessCalculation(LanguageVersion.CANGJIE_1_0_0),
     EffectHandlers(LanguageVersion.CANGJIE_1_0_0),
 
-    /** Java mirror/implementation annotation family. */
-    JavaInteropAnnotations(LanguageVersion.CANGJIE_1_1_0),
+    /** v1.0.0 parser/AST language builtin annotation surface. */
+    BuiltInAnnotations(LanguageVersion.CANGJIE_1_0_0),
+
+    /** v1.0.0 system availability macros and the IfAvailable expression family. */
+    AvailabilityAnnotations(LanguageVersion.CANGJIE_1_0_0),
+
+    /** v1.0.0 declaration-source (`.cj.d`) compilation mode. */
+    DeclarationFiles(LanguageVersion.CANGJIE_1_0_0),
+
+    /** Official AST/metadata-only `@Java` identity, present in the 1.0.0 baseline. */
+    JavaBuiltinAnnotations(LanguageVersion.CANGJIE_1_0_0),
+
+    /** Java mirror/implementation annotation family introduced by the 1.1 line. */
+    JavaInteropAnnotations(
+        LanguageVersion.CANGJIE_1_1_0,
+        ApiVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
 
     /** Objective-C mirror/implementation annotation family. */
-    ObjCInteropAnnotations(LanguageVersion.CANGJIE_1_1_0),
-
-    /** Common/specific CJMapping metadata and its derived declaration graph. */
-    InteropCJMapping(LanguageVersion.CANGJIE_1_1_0),
+    ObjCInteropAnnotations(
+        LanguageVersion.CANGJIE_1_1_0,
+        ApiVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
 
     /** ForeignName/ForeignGetterName/ForeignSetterName metadata. */
-    InteropForeignNameAnnotations(LanguageVersion.CANGJIE_1_1_0),
+    InteropForeignNameAnnotations(
+        LanguageVersion.CANGJIE_1_1_0,
+        ApiVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
+
+    /** `features { @NonProduct ... }` package/product metadata introduced in 1.1.0. */
+    PackageProductMetadata(
+        LanguageVersion.CANGJIE_1_1_0,
+        ApiVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
 
     /**
      * 允许类型推断将互斥下界约束收敛出的交集类型作为固定结果。
@@ -187,10 +216,12 @@ enum class LanguageFeature(
 
     companion object {
         /**
-         * 按名称查找语言特性，忽略大小写以兼容命令行和测试指令输入。
+         * 按 Kotlin `LanguageFeature.fromString` 契约按精确枚举名查找语言特性。
+         * 命令行解析器负责把外部输入规范化；公共身份查找不能把不同拼写
+         * 合并成同一个 feature。
          */
         fun fromName(name: String): LanguageFeature? {
-            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            return entries.firstOrNull { it.name == name }
         }
     }
 }
@@ -363,6 +394,92 @@ interface LanguageVersionSettings {
 }
 
 /**
+ * 语言特性门禁的统一结果。
+ *
+ * 版本比较只允许在这里进行；annotation、checker、resolve 和诊断 renderer
+ * 只能消费这个结果或 [LanguageVersionSettings.supportsFeature]，不得各自复制
+ * `sinceVersion`/`sinceApiVersion` 的判断。
+ */
+enum class LanguageFeatureSupportStatus {
+    SUPPORTED,
+    UNSUPPORTED_LANGUAGE_VERSION,
+    UNSUPPORTED_API_VERSION,
+    DISABLED,
+    EXPERIMENTAL,
+}
+
+/**
+ * 计算一个 feature 在当前设置中的门禁原因。
+ *
+ * 显式 ENABLED 状态优先于默认版本推导，与 Kotlin 的
+ * [LanguageVersionSettingsImpl.getFeatureSupport] 保持相同优先级；显式
+ * DISABLED 仍要先经过版本/API 原因判断，以便诊断不丢失“尚未可用”的事实。
+ */
+fun LanguageVersionSettings.featureSupportStatus(
+    feature: LanguageFeature,
+): LanguageFeatureSupportStatus {
+    val explicitState = getCustomizedLanguageFeatures()[feature]
+    // Kotlin keeps an explicit ENABLED override authoritative even when the
+    // requested language/API version predates the feature.  This is the same
+    // contract as LanguageVersionSettingsImpl.getFeatureSupport.  An explicit
+    // DISABLED state is handled after the version checks below so diagnostics
+    // preserve an older language/API version as the primary reason.
+    if (explicitState == LanguageFeature.State.ENABLED) {
+        return LanguageFeatureSupportStatus.SUPPORTED
+    }
+
+    // The version reason must win over an explicit DISABLED state.  Otherwise
+    // `- LANGUAGE_VERSION` (or an equivalent test setting) is rendered as
+    // merely "disabled", losing the fact that the construct is unavailable
+    // in that language/API version.
+    val sinceVersion = feature.sinceVersion
+    if (sinceVersion != null && languageVersion < sinceVersion) {
+        return LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
+    }
+    // An experimental feature has no since-language version.  Keep this
+    // distinction ahead of the API check, matching Kotlin's renderer.
+    if (sinceVersion == null) {
+        return if (explicitState == LanguageFeature.State.DISABLED) {
+            LanguageFeatureSupportStatus.DISABLED
+        } else {
+            LanguageFeatureSupportStatus.EXPERIMENTAL
+        }
+    }
+    if (apiVersion < feature.sinceApiVersion) {
+        return LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION
+    }
+    if (explicitState == LanguageFeature.State.DISABLED) {
+        return LanguageFeatureSupportStatus.DISABLED
+    }
+    return if (supportsFeature(feature)) {
+        LanguageFeatureSupportStatus.SUPPORTED
+    } else {
+        LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
+    }
+}
+
+/**
+ * 统一 feature gate 的布尔入口；需要诊断原因时使用 [featureSupportStatus]。
+ */
+fun LanguageVersionSettings.requireFeatureSupport(feature: LanguageFeature): Boolean =
+    featureSupportStatus(feature) == LanguageFeatureSupportStatus.SUPPORTED
+
+/** Kotlin KLIB 对位：返回显式开启且尚未按版本默认开启的 feature。 */
+fun LanguageVersionSettings.getCustomizedEffectivelyEnabledLanguageFeatures(): Set<LanguageFeature> =
+    getCustomizedLanguageFeatures().entries.mapNotNullTo(mutableSetOf()) { (feature, state) ->
+        feature.takeIf { !isEnabledByDefault(feature) && state == LanguageFeature.State.ENABLED }
+    }
+
+/** Kotlin KLIB 对位：返回显式关闭但按版本本应默认开启的 feature。 */
+fun LanguageVersionSettings.getCustomizedEffectivelyDisabledLanguageFeatures(): Set<LanguageFeature> =
+    getCustomizedLanguageFeatures().entries.mapNotNullTo(mutableSetOf()) { (feature, state) ->
+        feature.takeIf {
+            isEnabledByDefault(feature) &&
+                state == LanguageFeature.State.DISABLED
+        }
+    }
+
+/**
  * [LanguageVersionSettings] 的不可变实现。
  *
  * 构造时即把传入的标志与特性映射包为只读；特性查询先查显式定制，
@@ -384,6 +501,11 @@ class LanguageVersionSettingsImpl @JvmOverloads constructor(
         Collections.unmodifiableMap(specificFeatures)
 
     override fun getFeatureSupport(feature: LanguageFeature): LanguageFeature.State {
+        // This is intentionally a direct explicit override, exactly like
+        // Kotlin's LanguageVersionSettingsImpl.  The lifecycle policy is a
+        // CLI/configuration validation concern; silently changing the state
+        // here would make all resolver/checker consumers observe a value the
+        // user did not request and would lose the correct diagnostic reason.
         specificFeatures[feature]?.let { return it }
 
         return if (isEnabledByDefault(feature)) {

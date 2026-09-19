@@ -40,6 +40,7 @@ class BuiltInAnnotationRegistryTest {
             assertSame(descriptor, BuiltInAnnotationRegistry.find(descriptor.sourceName))
             assertEquals(CangjieAnnotationOrigin.LANGUAGE_BUILT_IN, descriptor.origin)
             assertFalse(descriptor.supportsCompileTimeVisibleForm, descriptor.sourceName)
+            assertEquals(LanguageFeature.BuiltInAnnotations, descriptor.requiredLanguageFeature, descriptor.sourceName)
         }
     }
 
@@ -108,6 +109,31 @@ class BuiltInAnnotationRegistryTest {
         assertEquals(AnnotationVersionSupportStatus.SUPPORTED, descriptor.versionSupport(modern))
     }
 
+    /** 语言起点到当前支持版本的三段版本矩阵必须稳定。 */
+    @Test
+    fun platformAnnotationGateCoversTheSupportedLanguageVersionMatrix() {
+        val descriptor = assertNotNull(
+            BuiltInAnnotationRegistry.findPlatformAnnotation(FqName("objc.lang.ObjCMirror")),
+        )
+        val expected = listOf(
+            LanguageVersion.CANGJIE_1_0_0 to false,
+            LanguageVersion.CANGJIE_1_0_5 to false,
+            LanguageVersion.CANGJIE_1_1_0 to true,
+            LanguageVersion.CANGJIE_1_1_3 to true,
+        )
+        expected.forEach { (languageVersion, supported) ->
+            val settings = LanguageVersionSettingsImpl(
+                languageVersion = languageVersion,
+                apiVersion = ApiVersion.createByLanguageVersion(languageVersion),
+            )
+            assertEquals(
+                supported,
+                descriptor.versionSupport(settings) == AnnotationVersionSupportStatus.SUPPORTED,
+                languageVersion.versionString,
+            )
+        }
+    }
+
     /** 显式 feature override 必须与 Kotlin 的 LanguageVersionSettings 优先级一致。 */
     @Test
     fun explicitFeatureOverrideRemainsAuthoritativeForAnnotationGate() {
@@ -121,6 +147,41 @@ class BuiltInAnnotationRegistryTest {
         )
 
         assertEquals(AnnotationVersionSupportStatus.SUPPORTED, descriptor.versionSupport(overridden))
+    }
+
+    /** 核心 v1.0.0 C FFI builtin 不得被 1.1.x 平台门禁误伤。 */
+    @Test
+    fun coreCffiBuiltinsRemainAvailableInTheInitialLanguageVersion() {
+        val legacy = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+        )
+        listOf("C", "CallingConv", "FastNative", "Frozen").forEach { sourceName ->
+            assertEquals(
+                AnnotationVersionSupportStatus.SUPPORTED,
+                builtIn(sourceName).versionSupport(legacy),
+                sourceName,
+            )
+        }
+    }
+
+    @Test
+    fun packageMetadataGateStartsInOneOneWhileCoreAndAvailabilityStartInOneZero() {
+        val legacy = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_5,
+            apiVersion = ApiVersion.CANGJIE_1_0_5,
+        )
+        assertEquals(AnnotationVersionSupportStatus.SUPPORTED, builtIn("C").versionSupport(legacy))
+        assertEquals(
+            AnnotationVersionSupportStatus.SUPPORTED,
+            assertNotNull(BuiltInAnnotationRegistry.findSystemAnnotation(FqName("ohos.labels.APILevel")))
+                .versionSupport(legacy),
+        )
+        assertEquals(
+            AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION,
+            assertNotNull(BuiltInAnnotationRegistry.findPackageDirective("NonProduct"))
+                .versionSupport(legacy),
+        )
     }
 
     /** Deprecated 的第二个位置参数仍是重复 message，不能顺序分配到 since。 */
@@ -265,6 +326,7 @@ class BuiltInAnnotationRegistryTest {
         assertNull(nonProduct.kind)
         assertEquals(CangjieAnnotationOrigin.PACKAGE_DIRECTIVE, nonProduct.origin)
         assertEquals(AnnotationSemanticHandler.PACKAGE_PRODUCT, nonProduct.semanticHandler)
+        assertEquals(LanguageFeature.PackageProductMetadata, nonProduct.requiredLanguageFeature)
         assertTrue(nonProduct.declarationTargets.isEmpty())
         assertEquals(CangjieAnnotationArgumentSyntax.NONE, nonProduct.argumentSyntax)
         assertEquals(AnnotationArgumentSchema.NONE, nonProduct.argumentSchema)
