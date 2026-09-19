@@ -13,5 +13,5 @@ public let b = 1
 internal import pkg.a
 
 main() {
-    println(pkg.<!UNRESOLVED_REFERENCE!>b<!>)
+    println(<!UNRESOLVED_REFERENCE!>pkg<!>.b)
 }

@@ -23,5 +23,5 @@ internal import pkg2.y
 
 // Should report "not member of package". NOT "pkg2.x is not imported"
 main() {
-    println(pkg2.<!UNRESOLVED_REFERENCE!>x<!>)
+    println(<!UNRESOLVED_REFERENCE!>pkg2<!>.x)
 }

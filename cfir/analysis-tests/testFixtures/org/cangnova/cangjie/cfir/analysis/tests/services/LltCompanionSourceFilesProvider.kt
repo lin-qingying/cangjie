@@ -12,6 +12,7 @@ import org.cangnova.cangjie.test.services.AdditionalSourceProvider
 import org.cangnova.cangjie.test.services.TestServices
 import java.io.File
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 为官方 LLT 目录型多文件用例补充同目录 companion 源文件。
@@ -36,16 +37,6 @@ class LltCompanionSourceFilesProvider(
      * 与当前测试文件无关，可以按目录缓存，避免每个测试都重新 canonicalize 和读取父级
      * `.cj` 文件。
      */
-    private val ancestorAggregateFilesCache: MutableMap<Path, List<File>> = mutableMapOf()
-
-    /**
-     * 按测试数据目录缓存递归发现的包 companion 候选。
-     *
-     * 包源候选只依赖目录内容，与当前主文件的 import 筛选相互独立；缓存候选集合可以
-     * 避免同一目录中的多个 LLT 入口重复遍历文件树。
-     */
-    private val packageCompanionCandidatesCache: MutableMap<Path, List<PackageCompanionCandidate>> = mutableMapOf()
-
     /**
      * 该 provider 使用的指令容器。
      */
@@ -265,7 +256,7 @@ class LltCompanionSourceFilesProvider(
      */
     private fun packageCompanionCandidates(directory: File): List<PackageCompanionCandidate> {
         val directoryPath = directory.normalizedAbsolutePath()
-        return packageCompanionCandidatesCache.getOrPut(directoryPath) {
+        return packageCompanionCandidatesCache.computeIfAbsent(directoryPath) {
             directory.walkTopDown()
                 .filter { file ->
                     file.isFile &&
@@ -377,16 +368,20 @@ class LltCompanionSourceFilesProvider(
         val result = mutableListOf<File>()
         var directory = testDataFile.parentFile?.parentFile
         while (directory != null && directory.normalizedInvariantSeparatorsPath().contains(lltRootMarker)) {
-            val directoryPath = directory.normalizedAbsolutePath()
-            result += ancestorAggregateFilesCache.getOrPut(directoryPath) {
-                directory.listFiles().orEmpty()
+            // Capture the current directory before entering computeIfAbsent;
+            // the loop variable is mutated after the cache computation and
+            // therefore cannot be smart-cast inside the lambda.
+            val currentDirectory = directory
+            val directoryPath = currentDirectory.normalizedAbsolutePath()
+            result += ancestorAggregateFilesCache.computeIfAbsent(directoryPath) {
+                currentDirectory.listFiles().orEmpty()
                     .asSequence()
                     .filter { it.isFile && it.extension == "cj" }
                     .filter { FILE_DIRECTIVE.containsMatchIn(it.readText(Charsets.UTF_8)) }
                     .sortedBy { it.name }
                     .toList()
             }
-            directory = directory.parentFile
+            directory = currentDirectory.parentFile
         }
         return result
     }
@@ -551,6 +546,14 @@ class LltCompanionSourceFilesProvider(
     )
 
     companion object {
+        /**
+         * 测试 service 会按 testcase 创建 provider 实例；这些缓存必须跨实例共享，
+         * 否则全量 LLT 会对同一组父目录反复做昂贵的文件系统扫描。
+         * 测试数据在一次 Gradle test invocation 内是只读的，因此无需失效策略。
+         */
+        private val ancestorAggregateFilesCache = ConcurrentHashMap<Path, List<File>>()
+        private val packageCompanionCandidatesCache = ConcurrentHashMap<Path, List<PackageCompanionCandidate>>()
+
         /**
          * LLT 测试数据根目录的仓库相对路径。
          */

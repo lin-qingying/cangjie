@@ -21,5 +21,5 @@ public var y = 1
 internal import pkg2.y
 
 main() {
-    println(pkg2.<!UNRESOLVED_REFERENCE!>x<!>)
+    println(<!UNRESOLVED_REFERENCE!>pkg2<!>.x)
 }

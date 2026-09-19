@@ -13,6 +13,6 @@ class A<T> {}
 class B<T> {}
 
 main() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>f(<!TYPE_MISMATCH!>B<Int>()<!>)<!>
-    let s: B<Int> = <!TYPE_MISMATCH!>g(A<Int>())<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(B<Int>())
+    let s: B<Int> = <!UNABLE_TO_INFER_GENERIC_FUNC!>g<!>(A<Int>())
 }
