@@ -16,6 +16,7 @@
 
 package org.cangnova.cangjie.annotations
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -147,24 +148,29 @@ object BuiltInAnnotationRegistry {
         BuiltInAnnotationDescriptor("Annotation", BuiltInAnnotationKind.ANNOTATION, BuiltInAnnotationCategory.META,
             CangjieAnnotationArgumentSyntax.ANNOTATION_TARGET_ARRAY,
             AnnotationArgumentSchema(listOf(AnnotationParameterSchema("target", AnnotationParameterKind.TARGET_ARRAY))),
-            types, AnnotationSemanticHandler.ANNOTATION_TYPE),
+            types, AnnotationSemanticHandler.ANNOTATION_TYPE,
+            requiredLanguageFeature = LanguageFeature.BuiltInAnnotations),
         BuiltInAnnotationDescriptor("Deprecated", BuiltInAnnotationKind.DEPRECATED, BuiltInAnnotationCategory.SEMANTIC,
             CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
             AnnotationArgumentSchema(listOf(
                 AnnotationParameterSchema("message", AnnotationParameterKind.STRING, acceptsPositional = true, defaultValue = AnnotationDefaultValue.StringValue("")),
                 AnnotationParameterSchema("since", AnnotationParameterKind.STRING),
                 AnnotationParameterSchema("strict", AnnotationParameterKind.BOOLEAN, defaultValue = AnnotationDefaultValue.BooleanValue(false)),
-            )), all, AnnotationSemanticHandler.DEPRECATION),
+            )), all, AnnotationSemanticHandler.DEPRECATION,
+            requiredLanguageFeature = LanguageFeature.BuiltInAnnotations),
         BuiltInAnnotationDescriptor("Frozen", BuiltInAnnotationKind.FROZEN, BuiltInAnnotationCategory.SEMANTIC,
-            CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE, functions + CangjieAnnotationTarget.MEMBER_PROPERTY, AnnotationSemanticHandler.C_FFI),
+            CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE, functions + CangjieAnnotationTarget.MEMBER_PROPERTY,
+            AnnotationSemanticHandler.C_FFI, requiredLanguageFeature = LanguageFeature.BuiltInAnnotations),
         BuiltInAnnotationDescriptor("EnsurePreparedToMock", BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK, BuiltInAnnotationCategory.TESTING,
-            CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted, emptySet(), AnnotationSemanticHandler.MOCK_PREPARATION, allowsExpression = true),
+            CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION, unrestricted, emptySet(), AnnotationSemanticHandler.MOCK_PREPARATION,
+            allowsExpression = true, requiredLanguageFeature = LanguageFeature.BuiltInAnnotations),
     )
 
     /** Package/features metadata is deliberately outside the declaration builtin catalog. */
     public val packageDirectives: List<BuiltInAnnotationDescriptor> = listOf(
         directive("NonProduct", null, CangjieAnnotationArgumentSyntax.NONE,
-            AnnotationArgumentSchema.NONE, emptySet(), AnnotationSemanticHandler.PACKAGE_PRODUCT)
+            AnnotationArgumentSchema.NONE, emptySet(), AnnotationSemanticHandler.PACKAGE_PRODUCT,
+            requiredLanguageFeature = LanguageFeature.PackageProductMetadata)
             .copy(descriptorOrigin = CangjieAnnotationOrigin.PACKAGE_DIRECTIVE),
     )
 
@@ -195,6 +201,7 @@ object BuiltInAnnotationRegistry {
                 defaultValue = AnnotationDefaultValue.BooleanValue(false)))), all, repeatable = false, supportsCompileTimeVisibleForm = true),
         SystemAnnotationDescriptor("IfAvailable", null, CangjieAnnotationArgumentSyntax.SPECIAL_EXPRESSION,
             unrestricted, emptySet(), repeatable = true, supportsCompileTimeVisibleForm = false,
+            requiredLanguageFeature = LanguageFeature.AvailabilityAnnotations,
             origin = CangjieAnnotationOrigin.SPECIAL_EXPRESSION),
     )
 
@@ -211,6 +218,16 @@ object BuiltInAnnotationRegistry {
     }
 
     public fun findLanguageBuiltIn(sourceName: String): BuiltInAnnotationDescriptor? = builtInsByName[sourceName]
+    /** 按官方 AST kind 查找语言 builtin；序列化适配器不得重新按 sourceName 建表。 */
+    public fun findLanguageBuiltIn(kind: BuiltInAnnotationKind): BuiltInAnnotationDescriptor? =
+        languageBuiltIns.singleOrNull { it.kind == kind }
+    /** 按已解析官方 kind 与源码 spelling 联合查找；用于共享 kind 的 Overflow 策略。 */
+    public fun findLanguageBuiltIn(
+        kind: BuiltInAnnotationKind,
+        sourceName: String,
+    ): BuiltInAnnotationDescriptor? = languageBuiltIns.singleOrNull {
+        it.kind == kind && it.sourceName == sourceName
+    }
     public fun findPackageDirective(sourceName: String): BuiltInAnnotationDescriptor? = packageDirectivesByName[sourceName]
     public fun find(sourceName: String): AnnotationDescriptor? = bySourceName[sourceName]
     public fun findSystemAnnotation(classFqName: FqName): SystemAnnotationDescriptor? =
@@ -247,12 +264,20 @@ object BuiltInAnnotationRegistry {
         schema: AnnotationArgumentSchema = AnnotationArgumentSchema.NONE,
         targets: Set<CangjieAnnotationTarget>,
         handler: AnnotationSemanticHandler = AnnotationSemanticHandler.C_FFI,
-    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(name, kind, BuiltInAnnotationCategory.FFI, syntax, schema, targets, handler)
+        requiredLanguageFeature: LanguageFeature? = LanguageFeature.BuiltInAnnotations,
+    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(
+        name, kind, BuiltInAnnotationCategory.FFI, syntax, schema, targets, handler,
+        requiredLanguageFeature = requiredLanguageFeature,
+    )
 
     private fun directive(
         name: String, kind: BuiltInAnnotationKind?, syntax: CangjieAnnotationArgumentSyntax,
         schema: AnnotationArgumentSchema, targets: Set<CangjieAnnotationTarget>, handler: AnnotationSemanticHandler,
-    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(name, kind, BuiltInAnnotationCategory.COMPILER_DIRECTIVE, syntax, schema, targets, handler)
+        requiredLanguageFeature: LanguageFeature? = LanguageFeature.BuiltInAnnotations,
+    ): BuiltInAnnotationDescriptor = BuiltInAnnotationDescriptor(
+        name, kind, BuiltInAnnotationCategory.COMPILER_DIRECTIVE, syntax, schema, targets, handler,
+        requiredLanguageFeature = requiredLanguageFeature,
+    )
 
     private fun overflow(name: String, strategy: CangjieOverflowStrategy): BuiltInAnnotationDescriptor =
         directive(name, BuiltInAnnotationKind.NUMERIC_OVERFLOW, CangjieAnnotationArgumentSyntax.OVERFLOW_STRATEGY,
@@ -264,7 +289,7 @@ object BuiltInAnnotationRegistry {
 /** Java 互操作注解所在的官方包名（`interoplib.interop`）。 */
 private val interoplibInterop = FqName("interoplib.interop")
 
-/** ObjC 互操作注解所在的官方包名（`objc.lang`）。 */
+/** ObjC 互操作注解所在的官方包名（`objc.lang`）；`interoplib.objc` 是 CJMapping 配置库。 */
 private val interoplibObjc = FqName("objc.lang")
 
 /**

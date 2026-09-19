@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.annotations
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageFeatureSupportStatus
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.featureSupportStatus
 
 /**
  * Result of applying the language/API version gate to an annotation contract.
@@ -15,6 +17,8 @@ public enum class AnnotationVersionSupportStatus {
     SUPPORTED,
     UNSUPPORTED_LANGUAGE_VERSION,
     UNSUPPORTED_API_VERSION,
+    DISABLED,
+    EXPERIMENTAL,
 }
 
 /** Version gate for language built-ins and system annotations. */
@@ -43,35 +47,21 @@ public fun LanguageFeature.versionSupport(
 /**
  * Apply both the language and API introduced-version constraints.
  *
- * This helper intentionally uses [LanguageVersionSettings.supportsFeature] so
- * explicit feature overrides remain authoritative and no caller can silently
- * introduce a raw version comparison.
+ * This helper delegates to the common [LanguageVersionSettings.featureSupportStatus]
+ * owner so explicit feature overrides remain authoritative and no caller can
+ * introduce a second raw version comparison.
  */
 private fun LanguageFeature?.versionSupportNullable(
     settings: LanguageVersionSettings,
 ): AnnotationVersionSupportStatus {
     this ?: return AnnotationVersionSupportStatus.SUPPORTED
-    // Keep explicit settings authoritative, exactly as LanguageVersionSettings
-    // does for every other consumer.  An explicit disable is a semantic feature
-    // decision, not an API-version failure; an explicit enable may intentionally
-    // exercise a newer feature in a compatibility/test session.
-    settings.getCustomizedLanguageFeatures()[this]?.let { state ->
-        return if (state == LanguageFeature.State.ENABLED) {
-            AnnotationVersionSupportStatus.SUPPORTED
-        } else {
+    return when (settings.featureSupportStatus(this)) {
+        LanguageFeatureSupportStatus.SUPPORTED -> AnnotationVersionSupportStatus.SUPPORTED
+        LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION ->
             AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
-        }
-    }
-
-    if (this.sinceVersion != null && settings.languageVersion < this.sinceVersion) {
-        return AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
-    }
-    if (settings.apiVersion < this.sinceApiVersion) {
-        return AnnotationVersionSupportStatus.UNSUPPORTED_API_VERSION
-    }
-    return if (settings.supportsFeature(this)) {
-        AnnotationVersionSupportStatus.SUPPORTED
-    } else {
-        AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
+        LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION ->
+            AnnotationVersionSupportStatus.UNSUPPORTED_API_VERSION
+        LanguageFeatureSupportStatus.DISABLED -> AnnotationVersionSupportStatus.DISABLED
+        LanguageFeatureSupportStatus.EXPERIMENTAL -> AnnotationVersionSupportStatus.EXPERIMENTAL
     }
 }

@@ -7,6 +7,7 @@ import org.cangnova.cangjie.annotations.versionSupport
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
@@ -20,6 +21,17 @@ class LanguageVersionSettingsTest {
         assertEquals("1.1.3", LanguageVersion.CANGJIE_1_1_3.versionString)
         assertEquals(LanguageVersion.CANGJIE_1_0_5, LanguageVersion.parse("1.0.5"))
         assertEquals(ApiVersion.CANGJIE_1_0_5, ApiVersion.parse("1.0.5"))
+        assertEquals(LanguageVersion.CANGJIE_1_1_3, LanguageVersion.LATEST_STABLE)
+        assertFailsWith<IllegalStateException> { LanguageVersion.parse("1.0.0.extra") }
+    }
+
+    @Test
+    fun featureIdentityLookupUsesExactEnumSpelling() {
+        assertEquals(
+            LanguageFeature.ObjCInteropAnnotations,
+            LanguageFeature.fromName("ObjCInteropAnnotations"),
+        )
+        assertEquals(null, LanguageFeature.fromName("objcinteropannotations"))
     }
 
     @Test
@@ -89,6 +101,100 @@ class LanguageVersionSettingsTest {
         assertEquals(
             AnnotationVersionSupportStatus.SUPPORTED,
             LanguageFeature.ObjCInteropAnnotations.versionSupport(explicitlyEnabled),
+        )
+        assertEquals(
+            AnnotationVersionSupportStatus.SUPPORTED,
+            LanguageFeature.JavaBuiltinAnnotations.versionSupport(oldSettings),
+        )
+    }
+
+    @Test
+    fun featureSupportStatusKeepsLanguageAndApiReasonsInOneOwner() {
+        val languageTooOld = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+        )
+        val apiTooOld = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_1_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+        )
+
+        assertEquals(
+            LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION,
+            languageTooOld.featureSupportStatus(LanguageFeature.ObjCInteropAnnotations),
+        )
+        assertEquals(
+            LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION,
+            apiTooOld.featureSupportStatus(LanguageFeature.ObjCInteropAnnotations),
+        )
+    }
+
+    @Test
+    fun explicitDisabledUsesVersionReasonBeforeDisabledReason() {
+        val oldSettings = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+            specificFeatures = mapOf(
+                LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.DISABLED,
+            ),
+        )
+        val currentSettings = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_1_3,
+            apiVersion = ApiVersion.CANGJIE_1_1_3,
+            specificFeatures = mapOf(
+                LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.DISABLED,
+            ),
+        )
+
+        assertEquals(
+            LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION,
+            oldSettings.featureSupportStatus(LanguageFeature.ObjCInteropAnnotations),
+        )
+        assertEquals(
+            LanguageFeatureSupportStatus.DISABLED,
+            currentSettings.featureSupportStatus(LanguageFeature.ObjCInteropAnnotations),
+        )
+        assertEquals(
+            LanguageFeature.State.DISABLED,
+            currentSettings.getFeatureSupport(LanguageFeature.ObjCInteropAnnotations),
+        )
+        assertEquals(
+            AnnotationVersionSupportStatus.DISABLED,
+            LanguageFeature.ObjCInteropAnnotations.versionSupport(currentSettings),
+        )
+    }
+
+    @Test
+    fun effectivelyDisabledFeaturesFollowKotlinStateProjectionWithoutLifecycleFiltering() {
+        val settings = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_1_3,
+            apiVersion = ApiVersion.CANGJIE_1_1_3,
+            specificFeatures = mapOf(
+                LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.DISABLED,
+                LanguageFeature.BuiltInAnnotations to LanguageFeature.State.DISABLED,
+            ),
+        )
+
+        assertEquals(
+            setOf(LanguageFeature.ObjCInteropAnnotations, LanguageFeature.BuiltInAnnotations),
+            settings.getCustomizedEffectivelyDisabledLanguageFeatures(),
+        )
+    }
+
+    @Test
+    fun experimentalFeatureIsReportedBeforeApiVersionReason() {
+        val settings = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_1_3,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+        )
+
+        assertEquals(
+            LanguageFeatureSupportStatus.EXPERIMENTAL,
+            settings.featureSupportStatus(LanguageFeature.AllowIntersectionTypesInInference),
+        )
+        assertEquals(
+            AnnotationVersionSupportStatus.EXPERIMENTAL,
+            LanguageFeature.AllowIntersectionTypesInInference.versionSupport(settings),
         )
     }
 }
