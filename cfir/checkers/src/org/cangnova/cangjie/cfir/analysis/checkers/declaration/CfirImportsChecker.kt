@@ -576,7 +576,11 @@ object CfirImportsChecker : CfirFileChecker() {
 
         val call = this as? CfirAnnotationCall ?: return null
         if (!call.forcedCustom) return null
-        return when (call.annotationSourceName?.removePrefix("@")) {
+        // Raw PSI/LightTree may preserve the `!` marker in the source spelling
+        // while the resolved annotation identity is still unavailable.  The
+        // fallback is restricted to forced custom syntax and the two exact
+        // imported ClassIds; it does not promote arbitrary short names.
+        return when (call.annotationSourceName?.removePrefix("@")?.removePrefix("!")) {
             CfirPlatformAnnotationClassIds.API_LEVEL.shortClassName.asString() ->
                 CfirPlatformAnnotationClassIds.API_LEVEL
 

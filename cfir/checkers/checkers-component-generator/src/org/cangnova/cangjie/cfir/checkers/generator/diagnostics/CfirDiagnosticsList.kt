@@ -144,6 +144,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("className")
         }
 
+        // struct / enum 的父类型只能是 interface（官方 TypeCheckDecl.cpp:429/550），
+        // 锚定在声明节点起始位置。
+        val TYPE_IMPLEMENT_NON_INTERFACE by error<PsiElement> {
+            parameter<String>("typeKind")
+            parameter<Name>("declarationName")
+        }
+
         // 类有多个超类：一个类试图继承多个具体的类（不支持多重继承）
         val MULTIPLE_CLASS_SUPER_TYPES by error<CjTypeReference> {
             parameter<Name>("className")  // 该类名
@@ -262,8 +269,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("memberName")
         }
 
-        // mut 修饰符只能用于属性声明以及 struct 体内的函数声明
-        val MUT_ONLY_ON_FUNCTION by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        // mut 修饰符只能用于属性声明以及 struct 体内的函数声明。
+        // 官方 `sema_invalid_mut_modifier_extend_of_struct` 锚定在成员的 `mut` 修饰符 token
+        // （DeclAttributeChecker.cpp:243-251 的 `*mutDecl`），不是声明名；因此与
+        // WRONG_MODIFIER_TARGET / REDUNDANT_MODIFIER 等修饰符类诊断一样使用默认定位策略，
+        // 保持报告方给出的 source 范围原样渲染。
+        val MUT_ONLY_ON_FUNCTION by error<PsiElement> {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 

@@ -180,11 +180,25 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             val classification = superTypeRef.classifyDeclaredSupertype(context.session)
             when (classification) {
                 is DeclaredSupertypeClassification.InvalidTargetKind -> {
-                    reporter.reportOn(
-                        source = superTypeRef.declaredSupertypeClassifierSource(),
-                        factory = CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE,
-                        a = declaration.classLikeName(),
-                    )
+                    // 官方对「父类型不是 interface」按声明种类分流（TypeCheckDecl.cpp:429/550 与
+                    // TypeCheckClassLike.cpp:149）：struct / enum 的父类型只能是 interface，
+                    // 诊断锚定在声明节点起始位置（cjc JSON 主范围即声明首字符）；class 才是
+                    // class_inherit_non_class_nor_interface，锚定在父类型引用上。
+                    if (declaration is CfirStruct || declaration is CfirEnum) {
+                        val typeKind = if (declaration is CfirStruct) "struct" else "enum"
+                        reporter.reportOn(
+                            source = declaration.source?.firstCharacterDiagnosticSource(),
+                            factory = CfirErrors.TYPE_IMPLEMENT_NON_INTERFACE,
+                            a = typeKind,
+                            b = declaration.classLikeName(),
+                        )
+                    } else {
+                        reporter.reportOn(
+                            source = superTypeRef.declaredSupertypeClassifierSource(),
+                            factory = CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE,
+                            a = declaration.classLikeName(),
+                        )
+                    }
                     continue
                 }
 

@@ -20,7 +20,9 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.isBoolean
 import org.cangnova.cangjie.cfir.types.isFloatType
 import org.cangnova.cangjie.cfir.types.isIntegerType
+import org.cangnova.cangjie.cfir.types.isOption
 import org.cangnova.cangjie.cfir.types.isRune
+import org.cangnova.cangjie.cfir.types.optionElementType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 
@@ -102,10 +104,23 @@ internal fun literalConversionMismatch(
     session: CfirSession,
 ): CfirSpecificTypeMismatch.CannotConvertLiteral? {
     val literal = expression?.unwrapWrappedExpression() as? CfirLiteralExpression ?: return null
-    val target = expectedType.fullyExpandedType(session)
+    // 官方 `TypeManager::IsLitBoxableType`（TypeManager.cpp:1077-1080）：目标为 Option 时
+    // 对其实参递归判定字面量可转换性（`var a: Option<Int64> = 1` 官方 0 诊断）。Option 在
+    // CFIR 中有两种表示（显式 `Option<Int64>` 是 std/core 的 enum，`?T` 语法糖是
+    // class-like），统一解包到元素类型后再分类。
+    val originalTarget = expectedType.fullyExpandedType(session)
+    var target = originalTarget
+    while (target.isOption) {
+        target = target.optionElementType ?: break
+    }
+    val isOptionTarget = target !== originalTarget
     val explicitType = literal.explicitNumericLiteralType()
     val targetKind = BuiltinPrimitiveOperators.primitiveOperandKind(target)
-    if (explicitType != null && targetKind != null && explicitType.kind != targetKind &&
+    // 官方 `ChkLitConstExprOf*` 的「后缀种类 vs 目标种类」检查只在目标本身就是该标量
+    // primitive 时进行（`target.IsIntegerSubType()` 分支）；Option-boxable 路径不做该
+    // 检查（`?UInt8 { 1i32 }`、`?Float32 { 1.0f64 }` 官方 0 诊断），否则会把后缀差异
+    // 误报成 cannot_convert_literal。
+    if (!isOptionTarget && explicitType != null && targetKind != null && explicitType.kind != targetKind &&
         (explicitType.kind.isInteger && targetKind.isInteger || explicitType.kind.isFloat && targetKind.isFloat)
     ) {
         return CfirSpecificTypeMismatch.CannotConvertLiteral(literal.value.toString(), expectedType)

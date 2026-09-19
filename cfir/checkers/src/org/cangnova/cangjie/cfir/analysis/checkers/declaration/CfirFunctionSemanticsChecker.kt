@@ -130,9 +130,12 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
      *
      * `mut` 函数只允许出现在 struct / interface 及 struct 的扩展内（官方 mut.md）；
      * class / enum 成员由通用 modifier checker 以 WRONG_MODIFIER_TARGET 报告
-     * （对应官方 `parse_illegal_modifier_in_scope`），此处不重复。extend 的非 struct
-     * 目标（class / 原始类型 / enum）由官方 `sema_invalid_mut_modifier_extend_of_struct`
-     * 管辖，映射为 MUT_ONLY_ON_FUNCTION，报告锚定 `mut` 关键字（与官方位置一致）。
+     * （对应官方 `parse_illegal_modifier_in_scope`），此处不重复。
+     *
+     * extend 体内的 `mut` 函数（官方 `sema_invalid_mut_modifier_extend_of_struct`，
+     * 锚定 `mut` 关键字）归 [CfirExtendMutFunctionModifierChecker] 管辖：该规则的唯一
+     * 前提「被扩展目标是不是 struct」只有 extend 声明掌握，且函数声明 checker 不遍历
+     * extend 成员，这里的 extend 分支永远命中不到，故删除以避免同一条规则两个 owner。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkMutFunction(function: CfirNamedFunction) {
@@ -141,17 +144,7 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
         val containingDeclaration = context.closestContainingTypeDeclaration()
         if (containingDeclaration is CfirStruct) return
         if (containingDeclaration is CfirInterface) return
-        if (containingDeclaration is CfirExtend) {
-            val target = CfirExtendSemantics.targetDeclaration(context, containingDeclaration)
-            if (target is CfirStruct) return
-            val mutSource = function.source?.realSourceModifiers()?.modifierByToken(CjTokens.MUT_KEYWORD)?.source
-            reporter.reportOn(
-                source = mutSource ?: function.functionNameDiagnosticSource(),
-                factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
-                a = function.name,
-            )
-            return
-        }
+        if (containingDeclaration is CfirExtend) return
         // class / enum 成员的源码显式 `mut` 由通用 modifier checker 诊断，
         // 这里只覆盖无源码 mut 修饰符的隐式 mut 状态（如接口实现继承），避免重复报告。
         if (function.hasSourceModifier(CjTokens.MUT_KEYWORD)) return

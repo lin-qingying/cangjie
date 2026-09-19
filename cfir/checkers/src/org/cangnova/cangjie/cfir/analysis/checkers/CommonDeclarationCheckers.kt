@@ -135,6 +135,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendGenericUsageChecker,
             CfirExtendImmutableMutInterfaceChecker,
             CfirExtendImmutableMemberChecker,
+            CfirExtendMutFunctionModifierChecker,
             CfirExtendSpecializationConflictChecker,
             CfirExtendDefaultIndependentMemberShadowChecker,
             CfirExtendInheritanceDeepChecker,

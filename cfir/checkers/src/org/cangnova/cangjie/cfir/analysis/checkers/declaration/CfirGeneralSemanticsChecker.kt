@@ -275,7 +275,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     private fun checkCJMappingConfigValid(file: CfirFile) {
         val settings = context.session.interopSettings
         if (!settings.enableInteropCJMapping || settings.targetInteropLanguage == CfirInteropTarget.NONE) return
-        if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.InteropCJMapping)) return
         val targetFeature = when (settings.targetInteropLanguage) {
             CfirInteropTarget.JAVA -> org.cangnova.cangjie.LanguageFeature.JavaInteropAnnotations
             CfirInteropTarget.OBJC -> org.cangnova.cangjie.LanguageFeature.ObjCInteropAnnotations

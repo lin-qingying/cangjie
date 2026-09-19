@@ -29,6 +29,20 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.source.CjSourceElement
 import java.util.*
 
+/**
+ * 当前诊断收集轮次内的递归隐式返回类型判定缓存。
+ *
+ * `isDiagnosticSuppressed` 会在同一函数体的每个待提交诊断上询问相同的
+ * recursive-implicit-return 事实。该事实只依赖 CFIR 节点身份，使用 identity
+ * cache 既避免重复遍历，也避免结构化类型的深层 hashCode 成本。
+ */
+internal class RecursiveImplicitReturnDependencyCache {
+    val expressions = IdentityHashMap<CfirExpression, Boolean>()
+    val typeRefs = IdentityHashMap<CfirTypeRef, Boolean>()
+    val coneTypes = IdentityHashMap<ConeCangJieType, Boolean>()
+    val inProgress = Collections.newSetFromMap(IdentityHashMap<CfirExpression, Boolean>())
+}
+
 /** checker 执行期间可读取的诊断上下文，暴露当前 session、作用域和遍历栈信息。 */
 abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder {
 
@@ -68,6 +82,9 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     /** 当前 checker context 绑定的 CFIR session。 */
     override val session
         get() = sessionHolder.session
+
+    /** 当前诊断轮次共享的递归隐式返回类型事实缓存。 */
+    internal abstract val recursiveImplicitReturnDependencyCache: RecursiveImplicitReturnDependencyCache
 
     /** 当前 checker context 绑定的作用域 session。 */
     override val scopeSession
@@ -134,43 +151,62 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
 
         return (containingStatements.asSequence() + callsOrAssignments.asSequence() + containingElements.asSequence())
             .filterIsInstance<CfirExpression>()
-            .any { expression -> expression.dependsOnRecursiveImplicitReturnType() }
+            .any { expression -> this@CheckerContext.dependsOnRecursiveImplicitReturnType(expression) }
     }
 }
 
 /**
  * 判断表达式类型或引用目标是否依赖“隐式返回类型递归”的 callable。
  */
-private fun CfirExpression.dependsOnRecursiveImplicitReturnType(): Boolean {
-    if (coneTypeOrNull.hasRecursiveImplicitTypeError()) return true
-    if ((this as? CfirResolvable)?.recursiveImplicitReturnCallableOrNull() != null) return true
+private fun CheckerContext.dependsOnRecursiveImplicitReturnType(expression: CfirExpression): Boolean {
+    recursiveImplicitReturnDependencyCache.expressions[expression]?.let { return it }
+    // CFIR contains no cyclic expression ownership in the normal tree, but a
+    // malformed/error tree can point back to an ancestor.  Treat the recursive
+    // query as inconclusive while that node is being computed; the root
+    // recursive return diagnostic remains owned by the declaration checker.
+    if (!recursiveImplicitReturnDependencyCache.inProgress.add(expression)) return false
 
-    var found = false
-    acceptChildren(object : CfirVisitorVoid() {
-        override fun visitElement(element: CfirElement) {
-            if (found) return
-            if (element is CfirAnonymousFunctionExpression) return
-            when {
-                element is CfirExpression && element.coneTypeOrNull.hasRecursiveImplicitTypeError() -> {
-                    found = true
-                    return
-                }
+    var result = false
+    val checkerContext = this
+    try {
+        if (expression.coneTypeOrNull.hasRecursiveImplicitTypeError(recursiveImplicitReturnDependencyCache)) {
+            result = true
+            return true
+        }
+        if ((expression as? CfirResolvable)?.recursiveImplicitReturnCallableOrNull(recursiveImplicitReturnDependencyCache) != null) {
+            result = true
+            return true
+        }
 
-                element is CfirResolvable && element.recursiveImplicitReturnCallableOrNull() != null -> {
-                    found = true
-                    return
+        var found = false
+        expression.acceptChildren(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                if (found) return
+                if (element is CfirAnonymousFunctionExpression) return
+                when {
+                    element is CfirExpression && checkerContext.dependsOnRecursiveImplicitReturnType(element) -> {
+                        found = true
+                        return
+                    }
+
+                    else -> element.acceptChildren(this, null)
                 }
             }
-            element.acceptChildren(this, null)
-        }
-    }, null)
-    return found
+        }, null)
+        result = found
+        return result
+    } finally {
+        recursiveImplicitReturnDependencyCache.inProgress.remove(expression)
+        recursiveImplicitReturnDependencyCache.expressions[expression] = result
+    }
 }
 
 /**
  * 若当前可解析表达式引用了返回类型递归失败的 callable，返回该 callable 声明。
  */
-private fun CfirResolvable.recursiveImplicitReturnCallableOrNull(): CfirCallableDeclaration? {
+private fun CfirResolvable.recursiveImplicitReturnCallableOrNull(
+    cache: RecursiveImplicitReturnDependencyCache,
+): CfirCallableDeclaration? {
     val symbol = when (val reference = calleeReference) {
         is CfirResolvedNamedReference -> reference.resolvedSymbol
         is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
@@ -180,26 +216,36 @@ private fun CfirResolvable.recursiveImplicitReturnCallableOrNull(): CfirCallable
         else -> null
     } as? CfirCallableSymbol<*> ?: return null
 
-    return symbol.cfir.takeIf { it.returnTypeRef.hasRecursiveImplicitTypeError() }
+    return symbol.cfir.takeIf { it.returnTypeRef.hasRecursiveImplicitTypeError(cache) }
 }
 
 /**
  * 判断类型引用是否承载隐式返回类型递归错误。
  */
-private fun CfirTypeRef.hasRecursiveImplicitTypeError(): Boolean = when (this) {
-    is CfirErrorTypeRef -> diagnostic.isRecursiveImplicitTypeDiagnostic()
-    is CfirResolvedTypeRef -> coneType.hasRecursiveImplicitTypeError()
-    else -> false
+private fun CfirTypeRef.hasRecursiveImplicitTypeError(cache: RecursiveImplicitReturnDependencyCache): Boolean {
+    cache.typeRefs[this]?.let { return it }
+    val result = when (this) {
+        is CfirErrorTypeRef -> diagnostic.isRecursiveImplicitTypeDiagnostic()
+        is CfirResolvedTypeRef -> coneType.hasRecursiveImplicitTypeError(cache)
+        else -> false
+    }
+    cache.typeRefs[this] = result
+    return result
 }
 
 /**
  * 判断类型树内部是否包含隐式返回类型递归错误。
  */
-private fun org.cangnova.cangjie.cfir.types.ConeCangJieType?.hasRecursiveImplicitTypeError(): Boolean {
+private fun org.cangnova.cangjie.cfir.types.ConeCangJieType?.hasRecursiveImplicitTypeError(
+    cache: RecursiveImplicitReturnDependencyCache,
+): Boolean {
     if (this == null) return false
-    return contains { type ->
+    cache.coneTypes[this]?.let { return it }
+    val result = contains { type ->
         type is ConeErrorType && type.diagnostic.isRecursiveImplicitTypeDiagnostic()
     }
+    cache.coneTypes[this] = result
+    return result
 }
 
 /**
@@ -227,6 +273,8 @@ class MutableCheckerContext private constructor(
     override val returnTypeCalculator: ReturnTypeCalculator,
     /** 当前正在遍历的文件 symbol。 */
     override var containingFileSymbol: CfirFileSymbol?,
+    /** 当前诊断轮次共享的递归隐式返回类型缓存。 */
+    override val recursiveImplicitReturnDependencyCache: RecursiveImplicitReturnDependencyCache,
     /** 可变声明符号栈（对齐 Kotlin `containingDeclarations: MutableList<FirBasedSymbol<*>>`，压 `declaration.symbol` 而非声明节点本身）。 */
     override val containingDeclarations: MutableList<CfirBasedSymbol<*>>,
     /** 可变语句栈。 */
@@ -268,6 +316,7 @@ class MutableCheckerContext private constructor(
         sessionHolder = sessionHolder,
         returnTypeCalculator = returnTypeCalculator,
         containingFileSymbol = null,
+        recursiveImplicitReturnDependencyCache = RecursiveImplicitReturnDependencyCache(),
         containingDeclarations = mutableListOf(),
         containingStatements = mutableListOf(),
         containingElements = mutableListOf(),
@@ -336,6 +385,7 @@ class MutableCheckerContext private constructor(
             sessionHolder = sessionHolder,
             returnTypeCalculator = returnTypeCalculator,
             containingFileSymbol = containingFileSymbol,
+            recursiveImplicitReturnDependencyCache = recursiveImplicitReturnDependencyCache,
             containingDeclarations = containingDeclarations,
             containingStatements = containingStatements,
             containingElements = containingElements,

@@ -8,6 +8,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.analysis.checkers.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -15,6 +17,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
 
 /**
  * 文件前导 `features` 的注解语义 owner。
@@ -36,6 +39,16 @@ object CfirFeaturesDirectiveChecker : CfirFileChecker() {
                     factory = CfirErrors.ILLEGAL_USE_OF_ANNOTATION,
                     a = "features directive",
                     b = "@${descriptor.sourceName}",
+                )
+                continue
+            }
+            if (annotation.annotationVersionSupport(context.languageVersionSettings) !=
+                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+            ) {
+                context.requireFeatureSupport(
+                    LanguageFeature.PackageProductMetadata,
+                    annotation.source ?: featuresDirective.source,
+                    reporter,
                 )
                 continue
             }

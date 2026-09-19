@@ -2,7 +2,9 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -49,7 +51,11 @@ internal fun CfirDeclaration.hasSupportedBuiltinAnnotation(
     settings: LanguageVersionSettings,
     kind: BuiltInAnnotationKind,
 ): Boolean = annotations.any {
-    val call = it as? CfirAnnotationCall ?: return@any it.annotationKind == kind
+    val call = it as? CfirAnnotationCall
+    if (call == null) {
+        return@any it.annotationKind == kind &&
+            (kind != BuiltInAnnotationKind.JAVA || settings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations))
+    }
     call.isSupportedBuiltinAnnotation(kind, settings)
 }
 
@@ -58,7 +64,11 @@ internal fun CfirDeclaration.findSupportedBuiltinAnnotations(
     settings: LanguageVersionSettings,
     kind: BuiltInAnnotationKind,
 ): List<CfirAnnotation> = annotations.filter {
-    val call = it as? CfirAnnotationCall ?: return@filter it.annotationKind == kind
+    val call = it as? CfirAnnotationCall
+    if (call == null) {
+        return@filter it.annotationKind == kind &&
+            (kind != BuiltInAnnotationKind.JAVA || settings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations))
+    }
     call.isSupportedBuiltinAnnotation(kind, settings)
 }
 

@@ -95,6 +95,58 @@ internal fun CfirTypeRef.hasInvalidGenericTypeArgument(): Boolean {
 }
 
 /**
+ * 使用点类型是否为违反其声明上界的泛型实例化（只判定不报告）。
+ *
+ * `GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT` 的唯一报告点仍是 [checkUpperBoundViolated]
+ * （声明级与使用点检查器）。该查询供「类型已失效 ⇒ 不再从它派生普通值类型不匹配」的消费者
+ * 使用，对齐官方 `CheckGenericDeclInstantiation`（TypeCheckGeneric.cpp:218-287）返回 false
+ * 之后下游检查整体跳过的效果。
+ *
+ * 官方对照实验（cjc 1.0.5）：`class C<T> where T <: I {}` 时 `let v: C<Unit> = 1` 与
+ * `foo(1)` 一条诊断都不报；把约束换成 `class C<T> {}` 后同一份代码报 2 条
+ * `sema_cannot_convert_literal`。即失效边界由「实例化是否违反上界」决定。
+ *
+ * [fallbackSource] 仅用于让嵌套实参的递归判定有位置可用，不参与报告；为 null 时只判定顶层实参。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+internal fun ConeCangJieType.violatesDeclaredGenericUpperBound(
+    fallbackSource: CjSourceElement? = null,
+): Boolean = checkUpperBoundViolated(
+    type = this,
+    sourceTypeRef = null,
+    fallbackSource = fallbackSource,
+    reportDiagnostics = false,
+)
+
+/**
+ * 单个泛型实参违反的声明上界；null 表示不违规。
+ *
+ * 官方 `CheckUpperBoundsLegalityRecursively` 的逐实参判定。报告路径与只判定路径共用这一实现，
+ * 因此 `ConeErrorType` / 自身上界已失效的实参 / `isIgnoreTypeParameters` 的排除条件只有一处；
+ * 返回值同时供诊断渲染（`b =` 上界类型）与失效判定使用。
+ */
+context(context: CheckerContext)
+private fun genericArgumentViolatedUpperBound(
+    argumentType: ConeCangJieType,
+    upperBounds: List<ConeCangJieType>,
+    substitutor: ConeSubstitutor,
+    isIgnoreTypeParameters: Boolean,
+): ConeCangJieType? {
+    if (argumentType is ConeErrorType) return null
+    if (argumentType.isGenericTypeWithInvalidUpperBound()) return null
+    if (isIgnoreTypeParameters && (argumentType.typeArguments.isNotEmpty() || argumentType is ConeTypeParameterType)) {
+        return null
+    }
+    if (upperBounds.isEmpty()) return null
+
+    val substitutedUpperBound = substitutor.substituteOrSelf(
+        context.session.typeContext.intersectTypes(upperBounds) as ConeCangJieType,
+    ) as ConeCangJieType
+    if (substitutedUpperBound is ConeErrorType) return null
+    return substitutedUpperBound.takeIf { !argumentType.satisfiesGenericArgumentUpperBound(it) }
+}
+
+/**
  * 检查一个已解析类型在使用点上的泛型实参是否满足声明上界。
  *
  * 调用方可以提供原始 source type ref，用于把诊断精确落到用户写出的类型实参；
@@ -265,25 +317,13 @@ private fun checkUpperBoundViolated(
             }
             ?: fallbackSource
 
-        val currentUpperBound: ConeCangJieType? = if (
-            argumentType !is ConeErrorType &&
-            !argumentType.isGenericTypeWithInvalidUpperBound() &&
-            (!isIgnoreTypeParameters || (argumentType.typeArguments.isEmpty() && argumentType !is ConeTypeParameterType))
-        ) {
-            val upperBounds = typeParameters[index].declaredUpperBoundTypes()
-            if (upperBounds.isNotEmpty()) {
-                val substitutedUpperBound = substitutor.substituteOrSelf(
-                    context.session.typeContext.intersectTypes(upperBounds) as ConeCangJieType,
-                ) as ConeCangJieType
-                if (substitutedUpperBound is ConeErrorType) null else substitutedUpperBound
-            } else {
-                null
-            }
-        } else {
-            null
-        }
-        val violatesCurrentUpperBound = currentUpperBound != null &&
-            !argumentType.satisfiesGenericArgumentUpperBound(currentUpperBound)
+        val violatedUpperBound = genericArgumentViolatedUpperBound(
+            argumentType = argumentType,
+            upperBounds = typeParameters[index].declaredUpperBoundTypes(),
+            substitutor = substitutor,
+            isIgnoreTypeParameters = isIgnoreTypeParameters,
+        )
+        val violatesCurrentUpperBound = violatedUpperBound != null
 
         val hasInvalidNestedArgument = if (sourceTypeRef == null && argumentSource == null) {
             false
@@ -302,13 +342,13 @@ private fun checkUpperBoundViolated(
          * 官方 `CheckUpperBoundsLegalityRecursively` 在发现更深层的非法实例化后，
          * 只保留最深层实参诊断；当前层由声明级诊断覆盖，不能再重复标记外层泛型名。
          */
-        if (reportDiagnostics && violatesCurrentUpperBound && !hasInvalidNestedArgument) {
+        if (reportDiagnostics && violatedUpperBound != null && !hasInvalidNestedArgument) {
             if (argumentSource != null) {
                 reporter.reportOn(
                     source = argumentSource,
                     factory = CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT,
                     a = argumentType,
-                    b = currentUpperBound,
+                    b = violatedUpperBound,
                     c = diagnosticGenericType ?: typeParameters[index].symbol.constructType(),
                 )
             }

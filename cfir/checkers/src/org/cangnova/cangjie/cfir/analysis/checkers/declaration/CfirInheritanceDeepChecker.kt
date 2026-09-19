@@ -41,6 +41,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingExtend
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
+import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
+import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExtendMemberScope
@@ -64,6 +66,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
@@ -397,8 +400,24 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         implementationInfo.hasMutFunctionConflict(superInfo) &&
                         reportedMutConflicts.add(superInfo.name)
                     ) {
+                        // 锚定到 extend 内实现成员的 `public` 修饰符（单字符），与该组 fixture 的标记一致；
+                        // 若冲突成员并非在 extend 内声明（仅由被扩展 struct 继承而来），则回退到 `extend` 子句
+                        // （如 extend_mutable_function_invalid_1.cj 锚定在 `e`）。
+                        val ownMemberSource = implementationCandidates.firstOrNull { cand ->
+                            cand.origin == ExtendImplementationOrigin.OWN_MEMBER &&
+                                cand.declarationSource != null &&
+                                cand.info.canImplement(superInfo)
+                        }?.declarationSource
+                        val source = ownMemberSource
+                            ?.realSourceModifiers()
+                            ?.modifierByToken(CjTokens.PUBLIC_KEYWORD)
+                            ?.source
+                            ?.firstCharacterDiagnosticSource()
+                            ?: ownMemberSource?.firstCharacterDiagnosticSource()
+                            ?: extend.source?.firstCharacterDiagnosticSource()
+                            ?: superTypeRef.source
                         reporter.reportOn(
-                            source = extend.source?.firstCharacterDiagnosticSource() ?: superTypeRef.source,
+                            source = source,
                             factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
                         )
                     }

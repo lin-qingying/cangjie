@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
+import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
@@ -189,9 +190,10 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
         val captureContext = context.currentInstanceFieldCaptureContext(field) ?: return
         // `ILLEGAL_CAPTURE_THIS` 归属于被捕获的 this，而不是字段 selector；隐式
         // receiver 没有独立源码节点时才回到字段引用本身（struct mut 语义）。
-        val source = (expression.explicitReceiver as? CfirThisReceiverExpression)?.source
-            ?: expression.calleeReference.source
-            ?: expression.source
+        // `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 对 `this` 接收者同样锚定在 `this`
+        // 首字符（官方 `sema_capture_this_or_instance_field_in_func` 对 `this.i` 也命名 `'this'`）。
+        val thisSource = (expression.explicitReceiver as? CfirThisReceiverExpression)?.source
+        val fieldSource = expression.calleeReference.source ?: expression.source
 
         when (val outerFunction = captureContext.outerFunction) {
             is CfirConstructor -> {
@@ -203,7 +205,7 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
                     else -> return
                 }
                 reporter.reportOn(
-                    source = source,
+                    source = thisSource ?: fieldSource,
                     factory = CfirErrors.ILLEGAL_CAPTURE_THIS,
                     a = description,
                 )
@@ -211,7 +213,7 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
 
             is CfirNamedFunction -> if (outerFunction.status.isMut) {
                 reporter.reportOn(
-                    source = source,
+                    source = thisSource?.firstCharacterDiagnosticSource() ?: fieldSource,
                     factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
                     a = field.name,
                     b = "mutable function '${outerFunction.name.asString()}'",
@@ -238,6 +240,12 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
         val receiver = expression.explicitReceiver ?: return
         val targetFunction = expression.resolvedOrDeclaredUpperBoundMutFunctionOrNull() ?: return
         if (!targetFunction.status.isMut || targetFunction.status.isConst) return
+        // 官方 `CheckLetInstanceAccessMutableFunc` 由两个条件共同决定：
+        // 1. 整体门槛：仅当接收者静态类型是 struct（`MaybeStruct(baseExpr->ty)`）时才运行，
+        //    interface / class 接收者被整体跳过 —— record_mut_ok_7.cj（interface 接收者）不报；
+        // 2. 触发条件：接收者本身是不可变值（`let` / 属性），可变 `var` 接收者调用 mut 函数合法
+        //    —— record_mut_ok_1.cj / record_mut_ok_2.cj（`var obj = R1(); obj.foo2()`）不报。
+        if (!receiver.isStructReceiverType()) return
         if (!receiver.isImmutableStructValueForMutableFunctionAccess()) return
 
         reporter.reportOn(
@@ -246,6 +254,37 @@ object CfirImmutableValueCannotAccessMutableFunctionChecker : CfirFunctionCallCh
             source = receiver.source?.includingEnclosingParentheses() ?: expression.source,
             factory = CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION,
             a = receiver.diagnosticNameOr(targetFunction.name),
+            b = targetFunction.name,
+        )
+    }
+}
+
+/**
+ * 不可变（非 `mut`）成员函数中，以 bare 名字（隐式 `this`）引用一个 `mut` 成员函数时，
+ * 报告 [CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION]。
+ *
+ * 调用形式（`foo()`）由 [CfirImmutableFunctionCannotAccessMutableFunctionChecker] 处理；本检查只覆盖
+ * 非调用的取值形式（`return foo`、`let a = cc`），这些形式此前错误落入 `USE_MUTABLE_FUNC_ALONE`
+ * （显式 struct 接收者的取值形式），而 interface / struct 语境下 bare 名字都应命中本规则（见 §1 证据）。
+ */
+object CfirImmutableFunctionBareReferenceChecker : CfirQualifiedAccessChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirQualifiedAccessExpression) {
+        // 仅处理隐式 `this` 的 bare 名字引用：显式接收者由 USE_MUTABLE / 其它规则管辖，
+        // 且调用形式由 CfirImmutableFunctionCannotAccessMutableFunctionChecker 处理。
+        if (expression is CfirFunctionCall) return
+        if (expression.explicitReceiver != null) return
+
+        val targetFunction = expression.resolvedFunctionSymbolOrNull()
+            ?.takeIf { it.isBound }
+            ?.cfir as? CfirNamedFunction ?: return
+        if (!targetFunction.status.isMut || targetFunction.status.isConst) return
+
+        val currentFunction = context.currentImmutableStructFunction() ?: return
+        reporter.reportOn(
+            source = expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION,
+            a = currentFunction.name,
             b = targetFunction.name,
         )
     }
@@ -419,6 +458,14 @@ private fun CheckerContext.currentInstanceFieldCaptureOwnerAndIndex(): Pair<Cfir
     for (index in containingDeclarations.indices.reversed()) {
         when (val symbol = containingDeclarations[index]) {
             is CfirStructSymbol -> return symbol.cfir to index
+            is CfirExtendSymbol -> {
+                // extend-of-struct 成员体内的字段捕获与 struct 成员体等价：把 owner 还原为
+                // extend 目标 struct，否则 extend 声明本身不是 CfirStructSymbol/CfirClassSymbol，
+                // 会导致 record_extend_mut_invalid_3.cj 的 `this.i` / 裸 `i` 捕获漏报。
+                val target = CfirExtendSemantics.targetDeclaration(this, symbol.cfir) as? CfirStruct ?: continue
+                return target to index
+            }
+
             is CfirClassSymbol -> return symbol.cfir to index
             else -> Unit
         }
@@ -556,6 +603,43 @@ private fun CfirExpression.isImmutableStructValueForMutableFunctionAccess(): Boo
         is CfirPropertySymbol -> true
         else -> true
     }
+}
+
+/**
+ * 判断表达式是否表示 struct 值类型的接收者。
+ *
+ * 与 [isImmutableStructValueForMutableFunctionAccess] 的关键区别：这里**排除 interface /
+ * class 等引用类型**。官方 `CheckLetInstanceAccessMutableFunc` 仅在 `MaybeStruct(baseExpr->ty)`
+ * 成立时才对显式接收者上的 `mut` 函数访问做检查，interface 接收者会被整体跳过（见 §3 证据）。
+ *
+ * 允许两类 struct 接收者：
+ * 1. 直接的 [ConeStructType]；
+ * 2. 类型参数且其（合法或非法声明）上界中存在 struct（如 `T <: R1`）。
+ */
+context(context: CheckerContext)
+internal fun CfirExpression.isStructReceiverType(): Boolean {
+    if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
+    if (isResolvedTypeQualifier(context.session)) return false
+    val type = coneTypeOrNull ?: return false
+    return type.isStructReceiverType()
+}
+
+/**
+ * 类型层面的 struct 接收者判定（供 [CfirExpression.isStructReceiverType] 与类型参数上界递归复用）。
+ */
+context(context: CheckerContext)
+internal fun ConeCangJieType.isStructReceiverType(): Boolean = when (this) {
+    is ConeStructType -> true
+    is ConeTypeParameterType -> {
+        val typeParameter = lookupTag.typeParameterSymbol
+        when {
+            mayBeStructValueType() -> true
+            !typeParameter.cfir.hasInvalidDeclaredUpperBoundsInCurrentContext() -> false
+            else -> typeParameter.cfir.declaredUpperBoundTypesInCurrentContext()
+                .any { it.isStructReceiverType() }
+        }
+    }
+    else -> false
 }
 
 /**
