@@ -14,8 +14,12 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirMockSettingsComponent
+import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
+import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -85,9 +89,13 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         /** 当前 session 使用的 ABI policy。 */
         val abiPolicy: CfirAbiPolicy = org.cangnova.cangjie.cfir.session.CfirLanguageAbiPolicy,
         /** 当前 session 使用的互操作/CJMapping 配置。 */
-        val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
+         val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
+        /** 当前编译调用的 mock/test capability；不能从 source path 推断。 */
+        val mockSettings: CfirMockSettingsComponent = CfirMockSettingsComponent(),
         /** compiler invocation 显式注入的 `@When` 环境；缺失时不合成默认环境。 */
         val conditionalCompilationSettings: CfirConditionalCompilationSettings? = null,
+        /** 平台显式授权的隐式系统注解；不能从 CJO/source 路径推断。 */
+        val implicitSystemAnnotations: Set<FqName> = emptySet(),
     )
 
     /**
@@ -218,6 +226,13 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        register(CfirMockSettingsComponent::class, c.mockSettings)
+        if (c.implicitSystemAnnotations.isNotEmpty()) {
+            register(
+                CfirImplicitSystemAnnotationsProvider::class,
+                ConfiguredCfirImplicitSystemAnnotationsProvider(c.implicitSystemAnnotations),
+            )
+        }
         c.conditionalCompilationSettings?.let {
             register(CfirConditionalCompilationSettings::class, it)
         }
@@ -258,6 +273,13 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        register(CfirMockSettingsComponent::class, c.mockSettings)
+        if (c.implicitSystemAnnotations.isNotEmpty()) {
+            register(
+                CfirImplicitSystemAnnotationsProvider::class,
+                ConfiguredCfirImplicitSystemAnnotationsProvider(c.implicitSystemAnnotations),
+            )
+        }
         c.conditionalCompilationSettings?.let {
             register(CfirConditionalCompilationSettings::class, it)
         }

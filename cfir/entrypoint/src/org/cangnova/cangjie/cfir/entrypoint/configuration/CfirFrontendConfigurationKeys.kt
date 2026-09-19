@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
+import org.cangnova.cangjie.name.FqName
 
 /**
  * 前端阶段配置键集合。
@@ -85,6 +86,11 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val CONDITIONAL_COMPILATION_SETTINGS =
         CompilerConfigurationKey.create<CfirConditionalCompilationSettings>("CONDITIONAL_COMPILATION_SETTINGS")
+
+    /** 平台入口显式授权的隐式系统注解 ClassId 集合。 */
+    @JvmField
+    val IMPLICIT_SYSTEM_ANNOTATIONS =
+        CompilerConfigurationKey.create<Set<FqName>>("IMPLICIT_SYSTEM_ANNOTATIONS")
 }
 
 /**
@@ -200,3 +206,12 @@ var CompilerConfiguration.conditionalCompilationSettings: CfirConditionalCompila
         if (value == null) return
         put(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS, value)
     }
+
+/**
+ * 平台入口注入的隐式系统注解授权。
+ *
+ * 该配置只表达编译调用方已经确认的能力；解析器和 CJO loader 不得根据路径或包名猜测。
+ */
+var CompilerConfiguration.implicitSystemAnnotations: Set<FqName>
+    get() = get(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, emptySet())
+    set(value) = put(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, value.toSet())
