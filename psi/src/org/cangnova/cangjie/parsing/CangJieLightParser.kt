@@ -68,6 +68,20 @@ object CangJieLightParser {
     ): FlyweightCapableTreeStructure<LighterASTNode> =
         parseWith(builder, errorListener, languageModuleName, sourceKind) { parseOnlyAnnotationFile() }
 
+    /**
+     * 解析官方宏展开后的声明 token。
+     *
+     * 与 [parse] 共享完整声明 grammar，但启用 custom annotation 分派，
+     * 对齐官方 `ReplaceEachMacro` 的 `EnableCustomAnno` 重解析阶段。
+     */
+    fun parseMacroExpansion(
+        builder: PsiBuilder,
+        errorListener: LightTreeParsingErrorListener? = null,
+        languageModuleName: String = "",
+        sourceKind: CjSourceKind = CjSourceKind.SOURCE,
+    ): FlyweightCapableTreeStructure<LighterASTNode> =
+        parseWith(builder, errorListener, languageModuleName, sourceKind) { parseMacroExpansionFile() }
+
     /** 统一创建 parser、执行指定语法入口并完成 LightTree 错误上报。 */
     private inline fun parseWith(
         builder: PsiBuilder,
