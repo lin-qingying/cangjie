@@ -224,3 +224,49 @@ Report verification from XML/test output, not from stale HTML or truncated conso
 ## Final Report
 
 Report only evidence-backed facts, using both Repair Report Fields groups for each accepted fix, plus the remaining-failures rollup. Keep summaries short unless the user asks for detail.
+
+## Session-Proven Tooling & Pitfalls (2026-09-19)
+
+1. **回归判定方法**: 只用「同一条命令的全量控制台日志」做 `FAILED` 行（suite > group > test 全名）集合差。
+   不同 `--tests` 切片的失败总数不可互相比较——曾被误读为"越修越多"。
+2. **取证工具**:
+   - 多包 fixture: `python cfir/analysis-tests/tools/cjc_multipkg.py cfir/analysis-tests/testData/<rel>/main.cj`
+     （fixture 是目录 + `main.cj`，不是单文件；单文件多包会报 "more than one package declaration"）。
+   - 单构造探针: 写 `/tmp` 临时 `.cj` + `cjc --diagnostic-format=json --output-type=staticlib`，
+     用 JSON 的 `MainHint.Range` 拿精确锚点（End 列 = 末字符列 + 1）。
+3. **定位产生点必须先插桩验证 live 路径**: 凭代码直觉猜 owner 两次都猜错
+   （`recordAssignmentRhsLiteralMismatch` 只见已解包类型；真 owner 是
+   `CfirTypeSemanticsDiagnostics.literalConversionMismatch`）。`System.err.println` 进
+   `build/test-results/test/TEST-*.xml`，用 `grep -a -o` 提取（注意 XML 转义）。
+4. **级联抑制守卫的陷阱**: 「实参含错误类型 → 不报外层 UNABLE_TO_INFER」这类守卫必须挂在
+   「推断确实失败」的分支内（如 `containsAnyTypeVariable()` 成立时）。挂在之前会把
+   推断成功的合法调用降级成错误引用，破坏下游可达性/穷尽性分析（enum14 教训）。
+5. **Option 的两种 CFIR 表示**: 显式 `Option<Int64>` 是 `ConeEnumType`，`?T` 语法糖是
+   `ConeClassLikeType`——同一条判定对两种表示行为可能不同（回归只出现在其中一种时先查这个）。
+6. **`ConeUnreportedDuplicateDiagnostic`**: cone→CfirDiagnostic 映射对它返回 emptyList，
+   是「错误继续传播但不重复报告」的既定机制。
+7. **语料自相矛盾（同一构造两种期望）→ 先停下问用户**，不要替用户选口径；用户裁决后
+   按「保留工程既定约定、修离群 fixture」执行，并在 checker 内留注释登记与官方的差异点。
+
+## Session-Proven Tooling & Pitfalls (2026-09-19 晚)
+
+8. **【必读·会直接导致误判】同一文件在同一消息里发两处 `Edit` 时只有最后一处落盘。**
+   症状：插桩（`System.err.println`）"装了但没输出"，`grep` 源码才发现根本没写进去；
+   由此得出"真路径在别处"的错误结论，白跑数轮。
+   纪律：**单文件单次 Edit**；每次 Edit 后立刻 `grep -n <新符号> <file>` + `git diff --numstat <file>`
+   核验落盘，再启动测试。多文件可并行，同一文件不可。
+9. **插桩判定 live 路径时，必须同时确认"入口 print 出现了"**。只看到深层 print 命中、
+   却看不到入口 print，第一反应应是"插桩没落盘"，而不是"存在另一个调用者"。
+10. **级联抑制（poisoning）的权威规则位置**：`external/cangjie_compiler/src/Sema/TypeArgumentInference.cpp:578`
+    —— `GenerateTypeMappingByInference` 仅当 `!Utils::In(ce.args, [](const auto& a){ return !Ty::IsTyCorrect(a->ty); })`
+    （无任何实参类型为错误类型）时才 `DiagnoseForCallInference` 报 `sema_unable_to_infer_generic_func`。
+    CFIR 对应：`payloadEnumConstructorInferenceDiagnostic` 里对 `ConeUnableToInferGenericFuncError`
+    用 `Candidate.hasErrorTypedArgument()` 抑制；**`isUninferredParameter` 的 error type 要排除**
+    （它对应官方"类型正确但含未定类型变量"，如 `Some(None)`）。
+11. **Cangjie 官方对照实验法（强烈推荐）**：判断某诊断是否由某构造"触发/抑制"时，
+    写一对只差一个条件的探针（如"有上界约束 / 无上界约束"）跑 cjc，对比诊断集合。
+    decl_0 的结论就是这样一次得到的：无约束时 `let v: C<Unit> = 1` 报 cannot_convert_literal，
+    有约束（`Unit` 违反 `T <: I`）时**一条都不报** → 证明非法泛型实例化会抑制下游值类型检查。
+12. **fixture 期望值与官方不一致 ≠ 可以按 CFIR 现状改写**。`sync_0.cj` 期望 0 诊断，
+    官方实测 3 条；正确做法是先把 CFIR 的实现补到与官方一致（字面量→interface 形参应报
+    `CANNOT_CONVERT_LITERAL`），再按官方口径写 fixture；不能把"CFIR 现在报什么"当期望。

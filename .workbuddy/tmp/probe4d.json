@@ -1,0 +1,121 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "chir_dce_unused_function",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused function:'inner'",
+                "Location": {
+                    "File": "probe4d.cj",
+                    "Line": 4,
+                    "Column": 9
+                },
+                "MainHint": {
+                    "Content": "unused function",
+                    "Range": {
+                        "Begin": {
+                            "File": "probe4d.cj",
+                            "Line": 4,
+                            "Column": 9
+                        },
+                        "End": {
+                            "File": "probe4d.cj",
+                            "Line": 6,
+                            "Column": 10
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "chir_dce_unused_variable",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused variable:'f'",
+                "Location": {
+                    "File": "probe4d.cj",
+                    "Line": 7,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "unused variable",
+                    "Range": {
+                        "Begin": {
+                            "File": "probe4d.cj",
+                            "Line": 7,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "probe4d.cj",
+                            "Line": 7,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "chir_dce_unused_function_main",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused function:'main'",
+                "Location": {
+                    "File": "probe4d.cj",
+                    "Line": 11,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "unused function",
+                    "Range": {
+                        "Begin": {
+                            "File": "probe4d.cj",
+                            "Line": 11,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "probe4d.cj",
+                            "Line": 11,
+                            "Column": 20
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 3,
+        "PrintedWarnings": 3
+    }
+}

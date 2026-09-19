@@ -1,0 +1,44 @@
+==========================================================================================
+CfirAnalysisLLTTestGenerated$Record$RecordImplementInterface :: testRecordImplementInterfaceN1()
+@@ -1,2 +1,3 @@
+ 
+-<!TYPE_IMPLEMENT_NON_INTERFACE!>s<!>truct A <: A {}
++struct A <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>A<!> {}
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$Record :: testRecordVardeclCheck()
+@@ -31,3 +31,3 @@
+ let arr = FooArray()
+-<!INVALID_SUBSCRIPT_EXPR!>arr[0]<!>.b = 4
++<!WRONG_NUMBER_OF_ARGUMENTS!>arr[0]<!>.b = 4
+ let f: F = A()
+@@ -36 +36,2 @@
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$Record :: testRecord3()
+@@ -12,3 +12,3 @@
+ l_a = r_a.a
+-if (l_a == Int32(2)) {
++if (l_a <!INVALID_BINARY_OPERATOR!>==<!> Int32(2)) {
+ return 0
+@@ -17 +17,2 @@
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$Record :: testRecordAccessControl()
+@@ -55,3 +55,3 @@
+ A().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>l<!>()
+-<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>.l()
++A.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>l<!>()
+ 
+@@ -60,3 +60,3 @@
+ 
+-<!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!>().o()
++A().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>o<!>()
+ A.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>o<!>()
+@@ -69 +69,2 @@
+ }
++
+
+[shown=4]
