@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.session
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.cangnova.cangjie.config.MockSupportKind
 
 /** 验证 session 组件访问器始终以声明的接口类型作为注册键。 */
 class CfirSessionComponentAccessorTest {
@@ -35,6 +38,31 @@ class CfirSessionComponentAccessorTest {
 
         assertSame(settings, session.conditionalCompilationSettings)
         assertEquals("enabled", session.conditionalCompilationSettings.userDefined["feature"])
+    }
+
+    @Test
+    fun `mock capability follows official test and mock options`() {
+        val session = TestSession()
+        val settings = CfirMockSettingsComponent(
+            enableCompileTest = true,
+            mockSupportKind = MockSupportKind.DEFAULT,
+        )
+
+        session.register(CfirMockSettingsComponent::class, settings)
+
+        assertTrue(session.mockSettings.enableCompileTest)
+        assertTrue(session.mockSettings.mockCompatibleIfNeeded)
+        assertTrue(session.mockSettings.mockCompatible)
+        assertFalse(session.mockSettings.mockCompileOnly)
+    }
+
+    @Test
+    fun `mock capability does not infer test mode from source path`() {
+        val session = TestSession()
+
+        assertFalse(session.mockSettings.enableCompileTest)
+        assertFalse(session.mockSettings.mockCompatible)
+        assertFalse(session.mockSettings.mockCompileOnly)
     }
 
     /** 测试专用的最小源码 session。 */
