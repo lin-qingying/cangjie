@@ -90,6 +90,14 @@ object CommonConfigurationKeys {
     /** 是否为 `.cj.d` 声明模式。对齐官方 `GlobalOptions.compileCjd`。 */
     @JvmField
     val COMPILE_CJD = CompilerConfigurationKey.create<Boolean>("COMPILE_CJD")
+
+    /** 是否以官方 `--test` 方式编译当前包。 */
+    @JvmField
+    val ENABLE_COMPILE_TEST = CompilerConfigurationKey.create<Boolean>("ENABLE_COMPILE_TEST")
+
+    /** 官方 `--mock=on|off|runtime-error` 配置；默认值为 [MockSupportKind.DEFAULT]。 */
+    @JvmField
+    val MOCK_SUPPORT_KIND = CompilerConfigurationKey.create<MockSupportKind>("MOCK_SUPPORT_KIND")
 }
 
 /**
@@ -278,4 +286,18 @@ var CompilerConfiguration.compileCjd: Boolean
     get() = getBoolean(CommonConfigurationKeys.COMPILE_CJD)
     set(value) {
         put(CommonConfigurationKeys.COMPILE_CJD, value)
+    }
+
+/** 是否以官方 test compilation 模式编译当前包。 */
+var CompilerConfiguration.enableCompileTest: Boolean
+    get() = getBoolean(CommonConfigurationKeys.ENABLE_COMPILE_TEST)
+    set(value) {
+        put(CommonConfigurationKeys.ENABLE_COMPILE_TEST, value)
+    }
+
+/** 官方 mock 支持选项；不设置时保持 DEFAULT，而不是根据文件路径猜测。 */
+var CompilerConfiguration.mockSupportKind: MockSupportKind
+    get() = get(CommonConfigurationKeys.MOCK_SUPPORT_KIND, MockSupportKind.DEFAULT)
+    set(value) {
+        put(CommonConfigurationKeys.MOCK_SUPPORT_KIND, value)
     }

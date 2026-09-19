@@ -5,7 +5,7 @@ import org.cangnova.cangjie.arguments.dsl.types.AllCangJieArgumentTypes
 /**
  * 编译器参数 schema 的根模型。
  */
-data class KotlinCompilerArguments(
+data class CangJieCompilerArguments(
     /**
      * 参数 schema 格式版本。
      */
@@ -28,7 +28,7 @@ data class KotlinCompilerArguments(
  * 构造编译器参数 schema 根模型的 DSL builder。
  */
 @CangJieArgumentsDslMarker
-class KotlinCompilerArgumentsBuilder {
+class CangJieCompilerArgumentsBuilder {
     /**
      * DSL 中配置完成的根参数层级。
      */
@@ -40,9 +40,9 @@ class KotlinCompilerArgumentsBuilder {
     fun topLevel(
         name: String,
         mergeWith: Set<CangJieCompilerArgumentsLevel> = emptySet(),
-        config: KotlinCompilerArgumentsLevelBuilder.() -> Unit
+        config: CangJieCompilerArgumentsLevelBuilder.() -> Unit
     ) {
-        val levelBuilder = KotlinCompilerArgumentsLevelBuilder(name)
+        val levelBuilder = CangJieCompilerArgumentsLevelBuilder(name)
         config(levelBuilder)
         topLevel = mergeWith.fold(levelBuilder.build()) { init, level -> init.mergeWith(level) }
     }
@@ -50,7 +50,7 @@ class KotlinCompilerArgumentsBuilder {
     /**
      * 将 DSL builder 状态构造成不可变 schema 根模型。
      */
-    fun build(): KotlinCompilerArguments = KotlinCompilerArguments(
+    fun build(): CangJieCompilerArguments = CangJieCompilerArguments(
         topLevel = topLevel
     )
 }
@@ -59,9 +59,9 @@ class KotlinCompilerArgumentsBuilder {
  * 编译器参数 schema 的顶层 DSL 入口。
  */
 fun compilerArguments(
-    config: KotlinCompilerArgumentsBuilder.() -> Unit,
-): KotlinCompilerArguments {
-    val kotlinArguments = KotlinCompilerArgumentsBuilder()
-    config(kotlinArguments)
-    return kotlinArguments.build()
+    config: CangJieCompilerArgumentsBuilder.() -> Unit,
+): CangJieCompilerArguments {
+    val cangJieArguments = CangJieCompilerArgumentsBuilder()
+    config(cangJieArguments)
+    return cangJieArguments.build()
 }
