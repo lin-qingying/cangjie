@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
+import org.cangnova.cangjie.cfir.session.implicitSystemAnnotations
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import java.util.concurrent.ConcurrentHashMap
@@ -26,9 +27,9 @@ class CfirDeserializationContext(
     val cjoManager: CjoManager,
     /** 实际读取 CJO 的路径；内存/旧调用方默认不加载 sidecar。 */
     val sourcePath: java.nio.file.Path? = null,
-    /** 平台显式授权的隐式系统注解，普通库默认关闭。 */
+    /** 从 session-owned 平台配置读取隐式系统注解；绝不从 sourcePath 推断。 */
     val implicitSystemAnnotations: Set<org.cangnova.cangjie.name.FqName> =
-        org.cangnova.cangjie.cfir.serialization.cjd.cjdImplicitSystemAnnotations(sourcePath),
+        moduleData.session.implicitSystemAnnotations,
 ) {
     /**
      * 反序列化必须消费所属 session 的同一份语言设置；不能为 CJO 重新创建默认设置。

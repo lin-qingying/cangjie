@@ -28,6 +28,7 @@ import PackageFormat.*
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.annotations.CangjieCallingConvention
 import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
@@ -521,20 +522,14 @@ class CfirDeclDeserializer(
 
     /** Resolve the serialized `AnnoKind`; source spelling is never used as its semantic key. */
     private fun serializedBuiltinDescriptor(serialized: Anno): BuiltInAnnotationDescriptor? {
-        val sourceName = when (serialized.kind) {
-            AnnoKind.Deprecated -> "Deprecated"
-            AnnoKind.TestRegistration -> "Attribute"
-            AnnoKind.Frozen -> "Frozen"
-            AnnoKind.JavaMirror -> "JavaMirror"
-            AnnoKind.JavaImpl -> "JavaImpl"
-            AnnoKind.ObjCMirror -> "ObjCMirror"
-            AnnoKind.ObjCImpl -> "ObjCImpl"
-            AnnoKind.ForeignName -> "ForeignName"
-            AnnoKind.JavaHasDefault -> "JavaHasDefault"
-            AnnoKind.Annotation -> "Annotation"
+        val kind = when (serialized.kind) {
+            AnnoKind.Deprecated -> BuiltInAnnotationKind.DEPRECATED
+            AnnoKind.TestRegistration -> BuiltInAnnotationKind.ATTRIBUTE
+            AnnoKind.Frozen -> BuiltInAnnotationKind.FROZEN
+            AnnoKind.Annotation -> BuiltInAnnotationKind.ANNOTATION
             else -> null
         } ?: return null
-        return BuiltInAnnotationRegistry.findLanguageBuiltIn(sourceName)
+        return BuiltInAnnotationRegistry.findLanguageBuiltIn(kind)
     }
 
     /** 恢复 CJO 注解参数允许的 LitConstExpr。 */

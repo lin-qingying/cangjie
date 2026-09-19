@@ -2,8 +2,13 @@ package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
 import PackageFormat.AnnoKind
+import PackageFormat.ExprInfo
+import PackageFormat.ExprKind
+import PackageFormat.LitConstInfo
+import PackageFormat.LitConstKind
 import PackageFormat.Package
 import PackageFormat.PackageKind
+import PackageFormat.ReferenceInfo
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
@@ -15,6 +20,21 @@ import kotlin.test.assertTrue
  * 验证 CJO 包写入器产出的 FlatBuffers 数据可被包头读取器消费。
  */
 class CjoPackageWriterTest {
+    @Test
+    fun `official cjo format version is independent from language release version`() {
+        assertEquals(0, org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MAJOR)
+        assertEquals(1, org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MINOR)
+        assertEquals(0, org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_PATCH)
+
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(fullPackageName = "version.pkg", moduleName = "version"),
+        )
+        val version = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).cjoVersion)
+        assertEquals(0u, version.majorNum)
+        assertEquals(1u, version.minorNum)
+        assertEquals(0u, version.patchNum)
+    }
+
     /**
      * 验证宏包元数据写入后能被包头读取器还原。
      */
@@ -115,6 +135,16 @@ class CjoPackageWriterTest {
                         ),
                     ),
                 ),
+                // AnnoArg.expr is a 1-based reference.  Raw index 7 therefore
+                // resolves to allExprs[6], which must be a real literal node.
+                expressions = List(6) { CjoExpressionMetadata() } +
+                    CjoExpressionMetadata(
+                        kind = ExprKind.LitConstExpr,
+                        literal = CjoLiteralExpressionMetadata(
+                            value = "message",
+                            constKind = LitConstKind.String,
+                        ),
+                    ),
             ),
         )
 
@@ -130,6 +160,59 @@ class CjoPackageWriterTest {
         assertEquals("message", annotation.args(0)?.name)
         assertEquals(7u, annotation.args(0)?.expr)
         assertEquals("Owner", annotation.target?.decl)
+        assertEquals(7, Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allExprsLength)
+        val expression = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allExprs(6))
+        assertEquals(ExprKind.LitConstExpr, expression.kind)
+        assertEquals(ExprInfo.LitConstInfo, expression.infoType)
+        assertEquals("message", (expression.info(LitConstInfo()) as LitConstInfo).strValue)
+    }
+
+    @Test
+    fun `writes annotation expression pool for arrays and references`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "AnnotationType",
+                        annotations = listOf(
+                            CjoAnnotationMetadata(
+                                kind = AnnoKind.Annotation,
+                                identifier = "Annotation",
+                                arguments = listOf(CjoAnnotationArgumentMetadata(expr = 3u)),
+                            ),
+                        ),
+                    ),
+                ),
+                expressions = listOf(
+                    CjoExpressionMetadata(
+                        kind = ExprKind.LitConstExpr,
+                        literal = CjoLiteralExpressionMetadata(
+                            value = "Target",
+                            constKind = LitConstKind.String,
+                        ),
+                    ),
+                    CjoExpressionMetadata(
+                        kind = ExprKind.RefExpr,
+                        reference = CjoReferenceExpressionMetadata(reference = "Target"),
+                    ),
+                    CjoExpressionMetadata(
+                        kind = ExprKind.ArrayLit,
+                        operands = listOf(1u, 2u),
+                    ),
+                ),
+            ),
+        )
+
+        val pkg = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
+        assertEquals(3, pkg.allExprsLength)
+        assertEquals(ExprKind.RefExpr, pkg.allExprs(1)?.kind)
+        assertEquals("Target", (pkg.allExprs(1)?.info(ReferenceInfo()) as ReferenceInfo).reference)
+        assertEquals(ExprKind.ArrayLit, pkg.allExprs(2)?.kind)
+        assertEquals(listOf(1u, 2u), (0 until pkg.allExprs(2)!!.operandsLength)
+            .map { pkg.allExprs(2)!!.operands(it) })
+        assertEquals(3u, pkg.allDecls(0)?.annotations(0)?.args(0)?.expr)
     }
 
     /**

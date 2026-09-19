@@ -12,12 +12,17 @@ object CjoConstants {
     /** .cjo 文件扩展名 */
     const val FILE_EXTENSION = ".cjo"
 
-    /** 当前支持的 .cjo 格式主版本。 */
-    const val VERSION_MAJOR: Int = 1
-    /** 当前支持的 .cjo 格式次版本。 */
-    const val VERSION_MINOR: Int = 0
-    /** 当前支持的 .cjo 格式补丁版本。 */
-    const val VERSION_PATCH: Int = 5
+    /**
+     * 官方 ModuleFormat.CjoVersion 的格式主版本。
+     *
+     * 这是二进制 schema 版本，不是仓颉语言发布版本；官方 v1.0.0 到
+     * v1.1.3 的 CJO 头部均使用 0.1.0。
+     */
+    const val VERSION_MAJOR: Int = 0
+    /** 官方 CJO 格式次版本。 */
+    const val VERSION_MINOR: Int = 1
+    /** 官方 CJO 格式修订版本。 */
+    const val VERSION_PATCH: Int = 0
 
     /** 包名分隔符（仓颉用 '.' 分隔包路径） */
     const val PACKAGE_SEPARATOR = '.'
