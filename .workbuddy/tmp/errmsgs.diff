@@ -1,0 +1,131 @@
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs$AccessNotImported01 :: testMain()
+@@ -16,3 +16,4 @@
+ main() {
+-println(pkg.<!UNRESOLVED_REFERENCE!>b<!>)
++println(<!UNRESOLVED_REFERENCE!>pkg<!>.b)
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs$AccessNotImported02 :: testMain()
+@@ -24,3 +24,4 @@
+ main() {
+-println(pkg2.<!UNRESOLVED_REFERENCE!>x<!>)
++println(<!UNRESOLVED_REFERENCE!>pkg2<!>.x)
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs$AccessNotImported03 :: testMain()
+@@ -26,3 +26,4 @@
+ main() {
+-println(pkg2.<!UNRESOLVED_REFERENCE!>x<!>)
++println(<!UNRESOLVED_REFERENCE!>pkg2<!>.x)
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testDecl0()
+@@ -5,8 +5,9 @@
+ 
+-func foo(x: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>U<!>nit>) {}
++func foo(x: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Unit<!>>) {}
+ 
+ main() {
+-let v: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>U<!>nit> = 1
+-foo(1)
++let v: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>Unit<!>> = <!TYPE_MISMATCH!>1<!>
++foo(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
+ ()
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testSync0()
+@@ -2,5 +2,5 @@
+ main() {
+-let b = synchronized(()) {}
+-let c: Bool = synchronized(false) {
+-1
++let b = synchronized(<!TYPE_MISMATCH!>()<!>) {}
++let c: Bool = synchronized(<!TYPE_MISMATCH!>false<!>) {
++<!CANNOT_CONVERT_LITERAL!>1<!>
+ }
+@@ -8 +8,3 @@
+ }
++
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testVarDecl0()
+@@ -6,5 +6,5 @@
+ 
+-let (a1, a2): (<!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T<!>1>, <!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T<!>2>) = (false, false)
+-let <!TUPLE_PATTERN_NOT_MATCH!>(<!>b1, b2) = false
+-let (c1, c2): (Int64, Bool) = (<!CANNOT_CONVERT_LITERAL!>t<!>rue, false)
++let (a1, a2): (<!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T1<!>>, <!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T2<!>>) = (false, false)
++let <!TUPLE_PATTERN_NOT_MATCH!>(b1, b2)<!> = false
++let (c1, c2): (Int64, Bool) = <!TYPE_MISMATCH!>(true, false)<!>
+ 
+@@ -12 +12,2 @@
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testCoalescing0()
+@@ -2,4 +2,4 @@
+ main() {
+-(Some(<!NO_MATCH_OPERATOR_FUNCTION_CALL!>1<!>(true)) ?? false) + true
+-(Some(true) ?? <!CANNOT_CONVERT_LITERAL!>1<!>) * false
++(<!UNABLE_TO_INFER_GENERIC_FUNC!>Some<!>(<!NO_MATCH_OPERATOR_FUNCTION_CALL!>1<!>(true)) ?? false) + true
++(Some(true) ?? 1) <!INVALID_BINARY_OPERATOR!>*<!> false
+ 
+@@ -9 +9,2 @@
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testCoalescing1()
+@@ -2,4 +2,5 @@
+ main() {
+-(Some(1 <!INVALID_BINARY_OPERATOR!>+<!> true) ?? <!NO_MATCHING_OPERATOR_INVOKE!>2<!>(false)) + true
++(<!UNABLE_TO_INFER_GENERIC_FUNC!>Some<!>(1 <!INVALID_BINARY_OPERATOR!>+<!> true) ?? <!NO_MATCH_OPERATOR_FUNCTION_CALL!>2<!>(false)) + true
+ 0
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testSubscript01()
+@@ -6,3 +6,4 @@
+ var arr: Array<Array<UInt64>> = [[255u64, 0u64, 0u64, 0u64]]
+-var a = test(<!TYPE_MISMATCH!>arr[0]<!>)
++var a = test(<!ARGUMENT_TYPE_MISMATCH!>arr[0]<!>)
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testAssignment1()
+@@ -9,3 +9,3 @@
+ var a: CPointer<UInt64> = unsafe { malloc(4 * 1) }
+-var groupNumber = unsafe { getgroups(0, <!TYPE_MISMATCH!>CPointer<UInt64>(a)<!>) }
++var groupNumber = unsafe { getgroups(0, <!ARGUMENT_TYPE_MISMATCH!>CPointer<UInt64>(a)<!>) }
+ var a2: CPointer<UInt64> = unsafe { malloc(4 * Int64(groupNumber)) }
+@@ -14 +14,2 @@
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testTypeArgInfer3()
+@@ -13,4 +13,5 @@
+ main() {
+-<!UNABLE_TO_INFER_GENERIC_FUNC!>f(<!TYPE_MISMATCH!>B<Int>()<!>)<!>
+-let s: B<Int> = <!TYPE_MISMATCH!>g(A<Int>())<!>
++<!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(B<Int>())
++let s: B<Int> = <!UNABLE_TO_INFER_GENERIC_FUNC!>g<!>(A<Int>())
+ }
++
+==========================================================================================
+CfirAnalysisLLTTestGenerated$ErrMsgs :: testTypeArgInfer5()
+@@ -4,4 +4,4 @@
+ func f<T>() where T <: A {
+-func g<R>(): R where R <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!> & A {
+-let v: Int64 = <!UNABLE_TO_INFER_GENERIC_FUNC!>g()<!>
++func g<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>R<!>>(): R where R <: T & A {
++let v: Int64 = <!UNABLE_TO_INFER_GENERIC_FUNC!>g<!>()
+ return g<R>()
+@@ -12 +12,2 @@
+ }
++
+
+[shown=13]

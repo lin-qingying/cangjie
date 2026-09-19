@@ -1,0 +1,70 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_use_this_as_an_expression_in_func",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'this' cannot be used as an expression in the mutable function 'foo5'",
+                "Location": {
+                    "File": "probe4a.cj",
+                    "Line": 4,
+                    "Column": 16
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "probe4a.cj",
+                            "Line": 4,
+                            "Column": 16
+                        },
+                        "End": {
+                            "File": "probe4a.cj",
+                            "Line": 4,
+                            "Column": 17
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_use_this_as_an_expression_in_func",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'this' cannot be used as an expression in the mutable function 'foo6'",
+                "Location": {
+                    "File": "probe4a.cj",
+                    "Line": 7,
+                    "Column": 17
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "probe4a.cj",
+                            "Line": 7,
+                            "Column": 17
+                        },
+                        "End": {
+                            "File": "probe4a.cj",
+                            "Line": 7,
+                            "Column": 18
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 2,
+        "PrintedErrors": 2,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

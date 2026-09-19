@@ -24,6 +24,20 @@
 - 同名文件可能有 `intellij-ide` / `deveco` 两份副本（如 `CaIdeScopeCangJieFileCollector.kt`），改动需同步。
 - 并发跑 Gradle 一律用 `gradlew-queue.bat`（`AGENTS.md` §4.1），不要直连 `gradlew.bat`。
 
+## LLT / fixture 修复纪律（用户明确要求）
+
+- **不得为了让失败用例变绿而改写原本通过的期望。** 若语料内部自相矛盾
+  （同一诊断、同一构造，两个 fixture 期望不同范围），**先停下问用户**，不要替用户选一个口径。
+- **范围（range）改动的唯一证据是 `cjc` 实测 + `external/cangjie_compiler`**，
+  不能靠"Policy 应该怎么读"推理出来。Diagnostic Range Policy 的实际含义是
+  "把 cjc 的**首字符**锚点展开成**完整 token**"（`func abc` 的 `a` → `abc`）；
+  对 `obj.foo` 这类，cjc 锚在成员名 `foo`，展开后仍是 `foo`，**不是** `obj.foo`。
+  只有锚点本身不是单个 token 的构造（如 `extend R <: I {`）才去参考 Kotlin 对位的范围选择。
+- 改动前先做**同族全量扫描**（grep 诊断名），确认影响面；只改触发调查的那一个 = 局部补丁。
+- **并行会话**（另一个 agent 窗口）会同时改同一批文件并抢 Gradle 全局锁。
+  开跑前 `find <dirs> -newermt "-5 minutes" -not -path "*/build/*"` 看有没有他人在写；
+  若在自己要改的文件上，先问用户是否继续。历史教训：fixture 被并行会话批量回滚过。
+
 ## 当前进行中的特性
 
 - **`.cj.d` 声明文件支持**：设计三稿并存，**以 `docs/cjd-declaration-file-support-v3.md`（v3.2，4527+ 行，含 4.2.8 / 4.3 P3 / 4.5.2 P2 / 4.8.3 P6 / 5.1 P4 各实施记录 + 附录 C.6/C.7）为准**；
