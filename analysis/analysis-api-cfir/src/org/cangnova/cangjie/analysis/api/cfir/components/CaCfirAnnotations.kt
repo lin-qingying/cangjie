@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
@@ -37,6 +38,9 @@ internal fun CfirAnnotationCall.asPublicAnnotation(
     constructorSymbol = resolveAnnotationConstructorSymbol(builder),
     token = token,
     builtInKind = annotationKind,
+    origin = annotationOrigin ?: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.CUSTOM,
+    platformKind = platformAnnotationKind,
+    versionSupport = annotationVersionSupport(builder.analysisSession.cfirSession.languageVersionSettings),
     isCompileTimeVisible = isCompileTimeVisible,
     isForcedCustom = forcedCustom.takeIf { isCompileTimeVisible != null },
     target = annotationTarget,
@@ -109,18 +113,72 @@ private fun CfirExpression.asPublicAnnotationValue(token: CaLifetimeToken): CaAn
             }
         }
         // 内置 ABI 字符串在 BODY_RESOLVE 已经验证，可在 BODY 常量规范化前查询。
-        is CfirLiteralExpression -> {
-            val constant = when {
-                kind == CfirLiteralKind.STRING && value is String -> CaBaseAnnotationValues.stringValue(value as String, psi)
-                kind == CfirLiteralKind.BOOLEAN && value is Boolean -> CaBaseAnnotationValues.boolValue(value as Boolean, psi)
-                kind == CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
-                else -> CaBaseAnnotationValues.errorValue("Annotation constant evaluation has not completed", psi)
-            }
-            CaBaseAnnotationValues.constant(constant, psi, token)
-        }
+        is CfirLiteralExpression -> asPublicLiteralAnnotationValue(psi, token)
         else -> CaBaseAnnotationValues.constant(
             CaBaseAnnotationValues.errorValue("Annotation argument is not a resolved constant", psi), psi, token,
         )
+    }
+}
+
+/**
+ * 将已完成 resolve 的 literal 按其 canonical Cone primitive 类型投影为 Analysis API
+ * 常量。不能把整数/浮点退化为 error 或字符串；CJO 和源码注解必须暴露相同的精确值。
+ */
+private fun CfirLiteralExpression.asPublicLiteralAnnotationValue(
+    psi: CjElement?,
+    token: CaLifetimeToken,
+): CaAnnotationValue {
+    val primitiveKind = (coneTypeOrNull as? ConePrimitiveType)?.kind
+    val constant = when (kind) {
+        CfirLiteralKind.BOOLEAN -> (value as? Boolean)?.let { CaBaseAnnotationValues.boolValue(it, psi) }
+        CfirLiteralKind.RUNE -> (value as? Int)?.let { CaBaseAnnotationValues.runeValue(it, psi) }
+        CfirLiteralKind.STRING -> (value as? String)?.let { CaBaseAnnotationValues.stringValue(it, psi) }
+        CfirLiteralKind.UNIT -> CaBaseAnnotationValues.unitValue(psi)
+        CfirLiteralKind.INT,
+        CfirLiteralKind.BYTE,
+        -> publicIntegralConstant(value, primitiveKind, psi)
+        CfirLiteralKind.FLOAT -> publicFloatingConstant(value, primitiveKind, psi)
+    } ?: CaBaseAnnotationValues.errorValue(
+        "Annotation constant evaluation has not completed",
+        psi,
+    )
+    return CaBaseAnnotationValues.constant(constant, psi, token)
+}
+
+private fun publicIntegralConstant(
+    value: Any?,
+    kind: PrimitiveTypeKind?,
+    psi: CjElement?,
+): CaConstantValue? {
+    val integer = value as? BigInteger ?: return null
+    return when (kind) {
+        PrimitiveTypeKind.INT8 -> CaBaseAnnotationValues.int8Value(integer.byteValueExact(), psi)
+        PrimitiveTypeKind.INT16 -> CaBaseAnnotationValues.int16Value(integer.shortValueExact(), psi)
+        PrimitiveTypeKind.INT32 -> CaBaseAnnotationValues.int32Value(integer.intValueExact(), psi)
+        PrimitiveTypeKind.INT64, PrimitiveTypeKind.IDEAL_INT ->
+            CaBaseAnnotationValues.int64Value(integer.longValueExact(), psi)
+        PrimitiveTypeKind.INT_NATIVE -> CaBaseAnnotationValues.intNativeValue(integer.longValueExact(), psi)
+        PrimitiveTypeKind.UINT8 -> CaBaseAnnotationValues.uint8Value(integer.toString().toUByte(), psi)
+        PrimitiveTypeKind.UINT16 -> CaBaseAnnotationValues.uint16Value(integer.toString().toUShort(), psi)
+        PrimitiveTypeKind.UINT32 -> CaBaseAnnotationValues.uint32Value(integer.toString().toUInt(), psi)
+        PrimitiveTypeKind.UINT64 -> CaBaseAnnotationValues.uint64Value(integer.toString().toULong(), psi)
+        PrimitiveTypeKind.UINT_NATIVE -> CaBaseAnnotationValues.uintNativeValue(integer.toString().toULong(), psi)
+        else -> null
+    }
+}
+
+private fun publicFloatingConstant(
+    value: Any?,
+    kind: PrimitiveTypeKind?,
+    psi: CjElement?,
+): CaConstantValue? {
+    val floating = value as? Double ?: return null
+    return when (kind) {
+        PrimitiveTypeKind.FLOAT16 -> CaBaseAnnotationValues.float16Value(floating.toFloat(), psi)
+        PrimitiveTypeKind.FLOAT32 -> CaBaseAnnotationValues.float32Value(floating.toFloat(), psi)
+        PrimitiveTypeKind.FLOAT64, PrimitiveTypeKind.IDEAL_FLOAT ->
+            CaBaseAnnotationValues.float64Value(floating, psi)
+        else -> null
     }
 }
 

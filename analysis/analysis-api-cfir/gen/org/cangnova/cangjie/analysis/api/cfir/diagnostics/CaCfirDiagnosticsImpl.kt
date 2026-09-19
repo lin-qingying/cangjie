@@ -3,6 +3,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.diagnostics
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -25,6 +27,12 @@ import org.cangnova.cangjie.psi.CjTypeReference
  * 本文件由生成器自动生成
  * 请勿手动修改
  */
+
+internal class UnsupportedFeatureImpl(
+    override val feature: Pair<LanguageFeature, LanguageVersionSettings>,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnsupportedFeature
 
 internal class NoConstructorImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -118,6 +126,13 @@ internal class ClassInheritNonClassNorInterfaceImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ClassInheritNonClassNorInterface
+
+internal class TypeImplementNonInterfaceImpl(
+    override val typeKind: String,
+    override val declarationName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypeImplementNonInterface
 
 internal class MultipleClassSuperTypesImpl(
     override val className: Name,
@@ -255,7 +270,7 @@ internal class MutOnlyOnFunctionImpl(
     override val declarationName: Name?,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.MutOnlyOnFunction
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MutOnlyOnFunction
 
 internal class NothingToOverrideImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -673,6 +688,19 @@ internal class IntrinsicFunctionCannotHaveBodyImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IntrinsicFunctionCannotHaveBody
 
+internal class IntrinsicFunctionDuplicatedImpl(
+    override val intrinsicName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IntrinsicFunctionDuplicated
+
+internal class InvalidIntrinsicDeclImpl(
+    override val intrinsicName: String,
+    override val packageName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidIntrinsicDecl
+
 internal class IllegalUseOfAnnotationImpl(
     override val declarationKind: String,
     override val annotationName: String,
@@ -692,10 +720,21 @@ internal class AnnotationInvalidArgsTypeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationInvalidArgsType
 
+internal class NativeVarErrorImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NativeVarError
+
 internal class CstructCannotHaveUnitFieldsImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CstructCannotHaveUnitFields
+
+internal class CstructCannotAutoboxImpl(
+    override val expectedType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CstructCannotAutobox
 
 internal class IllegalMemberOfCstructImpl(
     override val fieldName: Name,
@@ -703,6 +742,13 @@ internal class IllegalMemberOfCstructImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalMemberOfCstruct
+
+internal class EnumPatternFuncCtypeErrorImpl(
+    override val constructorName: Name,
+    override val enumName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.EnumPatternFuncCtypeError
 
 internal class CfuncCannotHaveNamedArgsImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -795,6 +841,47 @@ internal class IllegalScopeUseOfAnnotationImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalScopeUseOfAnnotation
+
+internal class ConditionalCompilationNotSupportOpImpl(
+    override val conditionName: String,
+    override val operator: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationNotSupportOp
+
+internal class ConditionalCompilationNotSupportThisConditionImpl(
+    override val conditionName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationNotSupportThisCondition
+
+internal class ConditionalCompilationNotSupportBuiltinValueImpl(
+    override val conditionName: String,
+    override val value: String,
+    override val supportedValues: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationNotSupportBuiltinValue
+
+internal class ConditionalCompilationNotSupportCjcVersionFormatImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationNotSupportCjcVersionFormat
+
+internal class ConditionalCompilationInvalidConditionExprImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationInvalidConditionExpr
+
+internal class ConditionalCompilationNotHaveConditionExprImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationNotHaveConditionExpr
+
+internal class ConditionalCompilationInvalidConditionValueImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConditionalCompilationInvalidConditionValue
 
 internal class ThrowExprWithWrongTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,

@@ -130,6 +130,7 @@ internal object CfirToCjConversionCreator {
         val nullable = type.isMarkedNullable
         val kClass = type.classifier as KClass<*>
         return tryMapAllowedType(kClass)
+            ?: tryMapStructuredPublicType(type, kClass)
             ?: tryMapPsiElementType(kClass)
             ?: tryMapCfirTypeToCjType(kClass, nullable)
             ?: tryMapPlatformType(type, kClass)
@@ -165,6 +166,17 @@ internal object CfirToCjConversionCreator {
      */
     private fun tryMapAllowedType(kClass: KClass<*>): HLParameterConversion? {
         if (kClass in allowedTypesWithoutTypeParams) return HLIdParameterConversion
+        return null
+    }
+
+    /**
+     * 保留已经由公开类型参数组成的标准库结构值。
+     * `UNSUPPORTED_FEATURE` 必须完整携带 feature 与 settings，不能降级为字符串。
+     */
+    private fun tryMapStructuredPublicType(type: KType, kClass: KClass<*>): HLParameterConversion? {
+        if (kClass == Pair::class && type.arguments.size == 2 && type.arguments.all { it.type != null }) {
+            return HLIdParameterConversion
+        }
         return null
     }
 

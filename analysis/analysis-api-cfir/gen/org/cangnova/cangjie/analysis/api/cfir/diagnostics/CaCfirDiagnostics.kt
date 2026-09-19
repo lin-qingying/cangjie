@@ -3,6 +3,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.diagnostics
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -26,6 +28,11 @@ import org.cangnova.cangjie.psi.CjTypeReference
  */
 
 sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
+    interface UnsupportedFeature : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnsupportedFeature::class
+        val feature: Pair<LanguageFeature, LanguageVersionSettings>
+    }
+
     interface NoConstructor : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = NoConstructor::class
     }
@@ -101,6 +108,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface ClassInheritNonClassNorInterface : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = ClassInheritNonClassNorInterface::class
         val className: Name
+    }
+
+    interface TypeImplementNonInterface : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TypeImplementNonInterface::class
+        val typeKind: String
+        val declarationName: Name
     }
 
     interface MultipleClassSuperTypes : CaCfirDiagnostic<CjTypeReference> {
@@ -213,7 +226,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val memberName: Name
     }
 
-    interface MutOnlyOnFunction : CaCfirDiagnostic<CjNamedDeclaration> {
+    interface MutOnlyOnFunction : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = MutOnlyOnFunction::class
         val declarationName: Name?
     }
@@ -565,6 +578,17 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = IntrinsicFunctionCannotHaveBody::class
     }
 
+    interface IntrinsicFunctionDuplicated : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IntrinsicFunctionDuplicated::class
+        val intrinsicName: String
+    }
+
+    interface InvalidIntrinsicDecl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InvalidIntrinsicDecl::class
+        val intrinsicName: String
+        val packageName: String
+    }
+
     interface IllegalUseOfAnnotation : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalUseOfAnnotation::class
         val declarationKind: String
@@ -581,14 +605,29 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val annotationName: String
     }
 
+    interface NativeVarError : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NativeVarError::class
+    }
+
     interface CstructCannotHaveUnitFields : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = CstructCannotHaveUnitFields::class
+    }
+
+    interface CstructCannotAutobox : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = CstructCannotAutobox::class
+        val expectedType: CaType
     }
 
     interface IllegalMemberOfCstruct : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalMemberOfCstruct::class
         val fieldName: Name
         val structName: Name
+    }
+
+    interface EnumPatternFuncCtypeError : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = EnumPatternFuncCtypeError::class
+        val constructorName: Name
+        val enumName: Name
     }
 
     interface CfuncCannotHaveNamedArgs : CaCfirDiagnostic<PsiElement> {
@@ -664,6 +703,40 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface IllegalScopeUseOfAnnotation : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = IllegalScopeUseOfAnnotation::class
         val annotationName: String
+    }
+
+    interface ConditionalCompilationNotSupportOp : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationNotSupportOp::class
+        val conditionName: String
+        val operator: String
+    }
+
+    interface ConditionalCompilationNotSupportThisCondition : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationNotSupportThisCondition::class
+        val conditionName: String
+    }
+
+    interface ConditionalCompilationNotSupportBuiltinValue : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationNotSupportBuiltinValue::class
+        val conditionName: String
+        val value: String
+        val supportedValues: String
+    }
+
+    interface ConditionalCompilationNotSupportCjcVersionFormat : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationNotSupportCjcVersionFormat::class
+    }
+
+    interface ConditionalCompilationInvalidConditionExpr : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationInvalidConditionExpr::class
+    }
+
+    interface ConditionalCompilationNotHaveConditionExpr : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationNotHaveConditionExpr::class
+    }
+
+    interface ConditionalCompilationInvalidConditionValue : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ConditionalCompilationInvalidConditionValue::class
     }
 
     interface ThrowExprWithWrongType : CaCfirDiagnostic<PsiElement> {

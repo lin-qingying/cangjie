@@ -33,6 +33,10 @@ public class CaBaseAnnotationImpl(
      */
     override val token: CaLifetimeToken,
     builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind? = null,
+    origin: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin =
+        org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.CUSTOM,
+    platformKind: org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind? = null,
+    versionSupport: org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus? = null,
     isCompileTimeVisible: Boolean? = null,
     isForcedCustom: Boolean? = null,
     target: org.cangnova.cangjie.annotations.CangjieAnnotationTarget? = null,
@@ -41,6 +45,9 @@ public class CaBaseAnnotationImpl(
     evaluatedInstance: CaAnnotationValue? = null,
 ) : CaAnnotation {
     private val backingBuiltInKind = builtInKind
+    private val backingOrigin = origin
+    private val backingPlatformKind = platformKind
+    private val backingVersionSupport = versionSupport
     private val backingCompileTimeVisible = isCompileTimeVisible
     private val backingForcedCustom = isForcedCustom
     private val backingTarget = target
@@ -49,6 +56,12 @@ public class CaBaseAnnotationImpl(
     private val backingEvaluatedInstance = evaluatedInstance
     override val builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind?
         get() = withValidityAssertion { backingBuiltInKind }
+    override val origin: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+        get() = withValidityAssertion { backingOrigin }
+    override val platformKind: org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind?
+        get() = withValidityAssertion { backingPlatformKind }
+    override val versionSupport: org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus?
+        get() = withValidityAssertion { backingVersionSupport }
     override val isCompileTimeVisible: Boolean?
         get() = withValidityAssertion { backingCompileTimeVisible }
     override val isForcedCustom: Boolean?
@@ -126,6 +139,9 @@ public class CaBaseAnnotationImpl(
             backingShortName == other.backingShortName &&
             backingPsi == other.backingPsi &&
             backingBuiltInKind == other.backingBuiltInKind &&
+            backingOrigin == other.backingOrigin &&
+            backingPlatformKind == other.backingPlatformKind &&
+            backingVersionSupport == other.backingVersionSupport &&
             backingCompileTimeVisible == other.backingCompileTimeVisible &&
             backingForcedCustom == other.backingForcedCustom &&
             backingTarget == other.backingTarget &&
@@ -141,6 +157,9 @@ public class CaBaseAnnotationImpl(
         backingShortName,
         backingPsi,
         backingBuiltInKind,
+        backingOrigin,
+        backingPlatformKind,
+        backingVersionSupport,
         backingCompileTimeVisible,
         backingForcedCustom,
         backingTarget,

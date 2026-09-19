@@ -10,6 +10,9 @@ import org.cangnova.cangjie.analysis.api.evaluation.CaScalarValueKind
 import org.cangnova.cangjie.analysis.api.evaluation.CaTupleCompileTimeValue
 import org.cangnova.cangjie.analysis.api.interop.CaInteropBackend
 import org.cangnova.cangjie.analysis.api.interop.CaInteropCallingConvention
+import org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
@@ -162,6 +165,11 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
             assertFalse(structInfo.isForeignDeclaration)
             assertEquals(listOf("C"), structInfo.ffiAnnotationNames)
 
+            val cAnnotation = nativeStruct.classSymbol.annotations.first { it.builtInKind == BuiltInAnnotationKind.C }
+            assertEquals(CangjieAnnotationOrigin.LANGUAGE_BUILT_IN, cAnnotation.origin)
+            assertNull(cAnnotation.platformKind)
+            assertEquals(AnnotationVersionSupportStatus.SUPPORTED, cAnnotation.versionSupport)
+
             val structSymbolInfo = nativeStruct.classSymbol.getInteropInfo()
             assertNotNull(structSymbolInfo, "@C struct symbol should expose backend interop info")
             assertEquals(structInfo.backends, structSymbolInfo!!.backends)
@@ -169,7 +177,9 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
 
             val psiInfo = function.getInteropInfo()
             assertNotNull(psiInfo, "foreign function PSI should expose C interop info")
-            assertTrue(psiInfo!!.backends.isEmpty())
+            // Official SetForeignABIAttr materializes the effective C ABI for
+            // `foreign`; `isForeignDeclaration` remains the source-level fact.
+            assertEquals(listOf(CaInteropBackend.C), psiInfo!!.backends)
             assertTrue(psiInfo.isForeignDeclaration)
             assertTrue(psiInfo.isFastNative)
             assertEquals("native_sum", psiInfo.externalName)
