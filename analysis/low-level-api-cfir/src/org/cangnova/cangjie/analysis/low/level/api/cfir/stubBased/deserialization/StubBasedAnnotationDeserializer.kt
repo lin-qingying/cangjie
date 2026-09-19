@@ -120,6 +120,16 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
             )
         }
         val system = BuiltInAnnotationRegistry.findSystemAnnotation(classId.asSingleFqName())
+        // Decompiled CJO PSI carries the real annotation class id.  Platform
+        // interop annotations must therefore be restored from that identity,
+        // exactly as the direct CFIR deserializer does; source short names
+        // are not sufficient because Java/ObjC libraries intentionally share
+        // spellings such as ForeignName.
+        val platform = if (!annotation.isCompileTimeVisible) {
+            BuiltInAnnotationRegistry.findPlatformAnnotation(classId.asSingleFqName())
+        } else {
+            null
+        }
         val typeRef = buildResolvedTypeRef {
             this.source = source
             coneType = classId.toLookupTag().constructClassType()
@@ -148,9 +158,15 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
             forcedCustom = annotation.isCompileTimeVisible
             annotationKind = builtin?.kind
             isCompileTimeVisible = annotation.isCompileTimeVisible
-            annotationOrigin = builtin?.origin ?: system?.origin ?: CangjieAnnotationOrigin.CUSTOM
+            annotationOrigin = builtin?.origin ?: platform?.origin ?: system?.origin ?: CangjieAnnotationOrigin.CUSTOM
             annotationIdentity = builtin?.let {
-                CangjieAnnotationIdentity.LanguageBuiltIn(it.kind, it.sourceName)
+                CangjieAnnotationIdentity.LanguageBuiltIn(requireNotNull(it.kind), it.sourceName)
+            } ?: platform?.let {
+                CangjieAnnotationIdentity.PlatformDerived(
+                    kind = it.platformKind,
+                    classFqName = it.classFqName,
+                    sourceName = it.sourceName,
+                )
             } ?: system?.let {
                 CangjieAnnotationIdentity.SystemMacro(it.classFqName, it.sourceName)
             } ?: CangjieAnnotationIdentity.Custom(classId.asSingleFqName())

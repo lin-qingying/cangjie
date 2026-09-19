@@ -7,13 +7,19 @@ import PackageFormat.Anno
 import PackageFormat.AnnoArg
 import PackageFormat.Decl
 import PackageFormat.DeclKind
+import PackageFormat.Expr
+import PackageFormat.ExprInfo
+import PackageFormat.ExprKind
 import PackageFormat.FullId
 import PackageFormat.ImportSpec
+import PackageFormat.LitConstInfo
 import PackageFormat.Imports
 import PackageFormat.Package
 import PackageFormat.PackageAccessLevel
 import PackageFormat.PackageKind
+import PackageFormat.ReferenceInfo
 import com.google.flatbuffers.FlatBufferBuilder
+import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -68,9 +74,20 @@ object CjoPackageWriter {
             ?.toIntArray()
             ?.let { Package.createAllDeclsVector(builder, it) }
             ?: 0
+        validateExpressionReferences(metadata)
+        val allExprsOffset = metadata.expressions
+            .takeIf(List<CjoExpressionMetadata>::isNotEmpty)
+            ?.map { it.write(builder) }
+            ?.toIntArray()
+            ?.let { Package.createAllExprsVector(builder, it) }
+            ?: 0
 
         Package.startPackage(builder)
-        metadata.cjoVersion?.let { version ->
+        (metadata.cjoVersion ?: CjoFormatVersion(
+            CjoConstants.VERSION_MAJOR.toUByte(),
+            CjoConstants.VERSION_MINOR.toUByte(),
+            CjoConstants.VERSION_PATCH.toUByte(),
+        )).let { version ->
             val cjoVersionOffset = CjoVersion.createCjoVersion(
                 builder,
                 version.major,
@@ -98,6 +115,9 @@ object CjoPackageWriter {
         }
         if (allDeclsOffset != 0) {
             Package.addAllDecls(builder, allDeclsOffset)
+        }
+        if (allExprsOffset != 0) {
+            Package.addAllExprs(builder, allExprsOffset)
         }
         Package.addKind(builder, metadata.kind)
         Package.addAccess(builder, metadata.access)
@@ -201,6 +221,91 @@ object CjoPackageWriter {
         } ?: 0
         return Anno.createAnno(builder, kind, identifierOffset, argsOffset, targetOffset)
     }
+
+    /**
+     * 验证 ModuleFormat 的 1-based expression reference 约束。
+     *
+     * `AnnoArg.expr` 不是常量值，也不是 `allExprs` 的 0-based 下标；官方
+     * reader 将 0/UINT_MAX 视为无引用，其余值减一后索引 `Package.allExprs`。
+     * writer 在 FlatBuffers 构造前拒绝悬空引用，避免生成 reader 静默丢参的
+     * “看似成功” CJO。
+     */
+    private fun validateExpressionReferences(metadata: CjoPackageMetadata) {
+        val expressionCount = metadata.expressions.size.toUInt()
+        fun validate(rawIndex: UInt, owner: String) {
+            if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) {
+                // Both values are official “no expression” sentinels.  They
+                // are valid only as an explicit absent reference and do not
+                // need an allExprs entry.
+                return
+            }
+            require(rawIndex <= expressionCount) {
+                "$owner references expression $rawIndex, but allExprs has $expressionCount entries"
+            }
+        }
+
+        metadata.declarations.forEach { declaration ->
+            declaration.annotations.forEach { annotation ->
+                annotation.arguments.forEachIndexed { index, argument ->
+                    validate(argument.expr, "${declaration.identifier}.${annotation.identifier} argument #$index")
+                }
+            }
+        }
+        metadata.expressions.forEachIndexed { index, expression ->
+            expression.operands.forEachIndexed { operandIndex, operand ->
+                validate(operand, "allExprs[$index].operands[$operandIndex]")
+            }
+        }
+    }
+
+    /** 写出一个 reader 当前支持的语义表达式节点。 */
+    private fun CjoExpressionMetadata.write(builder: FlatBufferBuilder): Int {
+        val operandsOffset = operands
+            .takeIf(List<UInt>::isNotEmpty)
+            ?.toUIntArray()
+            ?.let { Expr.createOperandsVector(builder, it) }
+            ?: 0
+        val (infoType, infoOffset) = when {
+            literal != null -> {
+                val valueOffset = literal.value?.let(builder::createString) ?: 0
+                ExprInfo.LitConstInfo to LitConstInfo.createLitConstInfo(
+                    builder,
+                    valueOffset,
+                    literal.constKind,
+                    literal.stringKind,
+                )
+            }
+            reference != null -> {
+                val referenceOffset = builder.createString(reference.reference)
+                val targetOffset = reference.target?.let { target ->
+                    val declOffset = target.decl?.let(builder::createString) ?: 0
+                    FullId.createFullId(builder, target.pkgId, declOffset, target.index)
+                } ?: 0
+                val instantiationOffset = reference.instantiatedTypes
+                    .takeIf(List<UInt>::isNotEmpty)
+                    ?.toUIntArray()
+                    ?.let { ReferenceInfo.createInstTysVector(builder, it) }
+                    ?: 0
+                ExprInfo.ReferenceInfo to ReferenceInfo.createReferenceInfo(
+                    builder,
+                    referenceOffset,
+                    targetOffset,
+                    instantiationOffset,
+                    reference.matchedParentType,
+                )
+            }
+            else -> ExprInfo.NONE to 0
+        }
+        Expr.startExpr(builder)
+        Expr.addKind(builder, kind)
+        if (operandsOffset != 0) Expr.addOperands(builder, operandsOffset)
+        Expr.addType(builder, type)
+        if (infoOffset != 0) {
+            Expr.addInfoType(builder, infoType)
+            Expr.addInfo(builder, infoOffset)
+        }
+        return Expr.endExpr(builder)
+    }
 }
 
 /**
@@ -219,8 +324,12 @@ data class CjoPackageMetadata(
     val access: UByte = PackageAccessLevel.PUBLIC,
     /** 旧格式版本字符串。 */
     val version: String? = null,
-    /** 结构化 CJO 格式版本。 */
-    val cjoVersion: CjoFormatVersion? = null,
+    /** 结构化 CJO 格式版本；缺省时写出官方 ModuleFormat 0.1.0。 */
+    val cjoVersion: CjoFormatVersion? = CjoFormatVersion(
+        CjoConstants.VERSION_MAJOR.toUByte(),
+        CjoConstants.VERSION_MINOR.toUByte(),
+        CjoConstants.VERSION_PATCH.toUByte(),
+    ),
     /** 包依赖信息的原始字符串。 */
     val packageDependencyInfo: String? = null,
     /** 包级导入文本列表。 */
@@ -231,6 +340,8 @@ data class CjoPackageMetadata(
     val fileImports: List<CjoPackageFileImports> = emptyList(),
     /** 需要写入 `allDecls` 的声明索引项。 */
     val declarations: List<CjoPackageDeclaration> = emptyList(),
+    /** `Package.allExprs` 表达式池；索引由声明/注解中的 1-based 引用使用。 */
+    val expressions: List<CjoExpressionMetadata> = emptyList(),
     /** FlatBuffers builder 初始缓冲区大小。 */
     val initialBufferSize: Int = 1024,
 ) {
@@ -298,6 +409,52 @@ data class CjoAnnotationArgumentMetadata(
 
 /** ModuleFormat.FullId 的目标引用。 */
 data class CjoAnnotationTargetMetadata(
+    val pkgId: Int = 0,
+    val decl: String? = null,
+    val index: UInt = 0u,
+)
+
+/** `Package.allExprs` 中一个可被注解参数引用的表达式节点。 */
+data class CjoExpressionMetadata(
+    /** `PackageFormat.ExprKind` 的稳定数值。 */
+    val kind: UShort = ExprKind.InvalidExpr,
+    /** `allTypes` 中的 1-based 类型引用；未知时为 0。 */
+    val type: UInt = 0u,
+    /** 子表达式的 1-based `allExprs` 引用。 */
+    val operands: List<UInt> = emptyList(),
+    /** literal expression 的结构化值。 */
+    val literal: CjoLiteralExpressionMetadata? = null,
+    /** reference expression 的结构化引用。 */
+    val reference: CjoReferenceExpressionMetadata? = null,
+) {
+    init {
+        require(literal == null || reference == null) { "CJO expression cannot be both literal and reference" }
+        require(kind != ExprKind.LitConstExpr || literal != null) {
+            "LitConstExpr must carry LitConstInfo"
+        }
+        require(kind != ExprKind.RefExpr || reference != null) {
+            "RefExpr must carry ReferenceInfo"
+        }
+    }
+}
+
+/** `LitConstInfo` 的公共输入模型。 */
+data class CjoLiteralExpressionMetadata(
+    val value: String? = null,
+    val constKind: UByte,
+    val stringKind: UByte = PackageFormat.StringKind.Normal,
+)
+
+/** `ReferenceInfo` 的公共输入模型。 */
+data class CjoReferenceExpressionMetadata(
+    val reference: String,
+    val target: CjoExpressionTargetMetadata? = null,
+    val instantiatedTypes: List<UInt> = emptyList(),
+    val matchedParentType: UInt = 0u,
+)
+
+/** expression reference target 的 FullId。 */
+data class CjoExpressionTargetMetadata(
     val pkgId: Int = 0,
     val decl: String? = null,
     val index: UInt = 0u,

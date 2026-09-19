@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationCo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
@@ -81,7 +82,14 @@ class CjdSdkDeclarationBoundaryAuditTest :
                 manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName),
                 "$path: no CJO for ${sidecar.annotationContext.packageFqName}",
             )
-            val context = CfirDeserializationContext(loaded.pkg, loaded.header, Module(), manager, loaded.sourcePath)
+            val context = CfirDeserializationContext(
+                loaded.pkg,
+                loaded.header,
+                Module(),
+                manager,
+                loaded.sourcePath,
+                setOf(FqName("ohos.labels.APILevel")),
+            )
             val matcher = CjdBinaryDeclarationMatcher.create(context, sidecar)
             ambiguous += matcher.diagnostics
                 .filter { it.kind == CjdBinaryMatchDiagnosticKind.AMBIGUOUS }

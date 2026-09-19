@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*
+import org.cangnova.cangjie.LanguageVersionSettingsImpl
+import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 
 /** 真正执行 binary -> CFIR publication；自包含 FlatBuffers 与磁盘 sidecar，不执行宏。 */
 class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFileType, CangJieParserDefinition()) {
@@ -149,7 +151,14 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         """.trimIndent())
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
-        val context = CfirDeserializationContext(loaded.pkg, loaded.header, Module(), manager, loaded.sourcePath)
+        val context = CfirDeserializationContext(
+            loaded.pkg,
+            loaded.header,
+            Module(),
+            manager,
+            loaded.sourcePath,
+            setOf(FqName("ohos.labels.APILevel")),
+        )
         val box = assertIs<CfirClass>(context.createDeclDeserializer().deserializeDecl(owner.toInt() - 1))
         val function = assertIs<CfirNamedFunction>(box.declarations.single())
         assertTrue(box.interopInfo!!.isFrozen)
@@ -196,7 +205,14 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")
         val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_STDLIB_MODULE") directory else null })
         val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("std.console"))
-        val context = CfirDeserializationContext(loaded.pkg, loaded.header, Module(), manager, loaded.sourcePath)
+        val context = CfirDeserializationContext(
+            loaded.pkg,
+            loaded.header,
+            Module(),
+            manager,
+            loaded.sourcePath,
+            setOf(FqName("ohos.labels.APILevel")),
+        )
         val sidecar = CjdSidecarParser.create().parse(CjdSidecarLocator.deriveCjdPath(loaded.sourcePath))
         assertTrue(sidecar.isUsable)
         val matcher = CjdBinaryDeclarationMatcher.create(context, sidecar)
@@ -258,7 +274,14 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
             val sidecar = CjdSidecarParser.create().parse(path)
             assertTrue(sidecar.isUsable, "$path: ${sidecar.diagnostics}")
             val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName))
-            val context = CfirDeserializationContext(loaded.pkg, loaded.header, Module(), manager, loaded.sourcePath)
+            val context = CfirDeserializationContext(
+                loaded.pkg,
+                loaded.header,
+                Module(),
+                manager,
+                loaded.sourcePath,
+                setOf(FqName("ohos.labels.APILevel")),
+            )
             val matcher = CjdBinaryDeclarationMatcher.create(context, sidecar)
             val selections = (0 until loaded.pkg.allDeclsLength).mapNotNull(matcher::selection)
             val count = selections.sumOf { it.annotations.count { annotation -> annotation.name == "APILevel" } }
@@ -283,6 +306,10 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         override val isCommon = false
         override val stableModuleName = "cjd-test"
         override val session = object : CfirSession(Kind.Library) {}.also {
+            it.register(
+                CfirLanguageSettingsComponent::class,
+                CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT),
+            )
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }
         init { bindSession(session) }

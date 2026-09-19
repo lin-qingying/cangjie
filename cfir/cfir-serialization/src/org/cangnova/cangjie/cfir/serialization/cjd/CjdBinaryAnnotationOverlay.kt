@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir.serialization.cjd
 
 import PackageFormat.DeclKind
-import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
 import org.cangnova.cangjie.name.ClassId
@@ -77,9 +76,3 @@ private class BinaryAnnotationOverlay(
         return result.annotations
     }
 }
-
-/** HarmonyOS 平台的显式预导入策略；普通本机/第三方库不通过短名自动提升为系统注解。 */
-fun cjdImplicitSystemAnnotations(sourcePath: Path?): Set<FqName> =
-    if (sourcePath?.any { it.toString().contains("_ohos_") } == true)
-        BuiltInAnnotationRegistry.systemAndSpecial.mapNotNull { it.classFqName }.toSet()
-    else emptySet()
