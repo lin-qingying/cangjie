@@ -301,20 +301,25 @@ private fun CfirAnnotationCall.argumentLiteralText(
  * 读取 APILevel 的有效版本参数。
  *
  * 官方 APILevel 有两个仍需兼容的 ABI 形态：新定义使用命名的
- * `since: String`，旧定义使用位置参数（通常形参名为 `level_val`）。
- * 位置参数只有在源码实参确实未命名时才可作为旧版 level，不能把任意
- * 命名实参错误解释成 since。
+ * `since: String`（部分 SDK 也使用 `level`），旧定义使用形参
+ * `level_val: UInt8`。参数身份必须来自 resolved mapping/argument view；
+ * 不能把任意未命名实参猜成 API level。
  */
 public fun CfirAnnotationCall.apiLevelSinceArgumentText(): String? =
     argumentLiteralText("since")
         ?: argumentLiteralText("level")
-        ?: explicitArguments()
-            .firstOrNull()
-            ?.takeUnless { it is CfirNamedArgumentExpression }
-            ?.unwrapNamedArgument()
-            ?.let { argument ->
-                (argument as? CfirLiteralExpression)?.value?.toString()
+        ?: argumentLiteralText("level_val")
+        ?: argumentView
+            ?.entries
+            ?.asSequence()
+            ?.filterNot { it.isDefaultOrigin }
+            ?.filter { entry ->
+                entry.resolvedParameter?.name?.asString() in setOf("since", "level", "level_val")
             }
+            ?.mapNotNull { entry ->
+                (entry.argument?.unwrapNamedArgument() as? CfirLiteralExpression)?.value?.toString()
+            }
+            ?.firstOrNull()
 
 /** 读取布尔注解参数；非结构化布尔字面量返回 null。 */
 private fun CfirAnnotationCall.booleanArgument(name: String): Boolean? =

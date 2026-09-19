@@ -22,8 +22,7 @@ public val CfirAnnotationCall.builtInDescriptor: BuiltInAnnotationDescriptor?
     get() {
         return when (val identity = annotationIdentity) {
             is CangjieAnnotationIdentity.LanguageBuiltIn ->
-                BuiltInAnnotationRegistry.findLanguageBuiltIn(identity.sourceName)
-                    ?.takeIf { it.kind == identity.kind }
+                BuiltInAnnotationRegistry.findLanguageBuiltIn(identity.kind, identity.sourceName)
             is CangjieAnnotationIdentity.PackageDirective ->
                 BuiltInAnnotationRegistry.findPackageDirective(identity.sourceName)
                     ?.takeIf { it.origin == CangjieAnnotationOrigin.PACKAGE_DIRECTIVE }
@@ -60,11 +59,15 @@ public fun CfirAnnotationCall.annotationVersionSupport(
 ): AnnotationVersionSupportStatus? =
     builtInDescriptor?.versionSupport(settings)
         ?: platformAnnotationDescriptor?.versionSupport(settings)
+        ?: (annotationIdentity as? CangjieAnnotationIdentity.SystemMacro)
+            ?.classFqName
+            ?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
+            ?.versionSupport(settings)
         ?: when (annotationKind) {
             // JAVA is an official AST/metadata identity, not a source builtin
             // descriptor.  It still belongs to the Java interop feature gate.
             org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA ->
-                LanguageFeature.JavaInteropAnnotations.versionSupport(settings)
+                LanguageFeature.JavaBuiltinAnnotations.versionSupport(settings)
             else -> null
         }
 

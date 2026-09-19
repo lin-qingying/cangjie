@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.declarations
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.requireFeatureSupport
 import org.cangnova.cangjie.annotations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -34,7 +35,12 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
             ?.stringArgument("name")
     val serializedFacts = serializedInteropFacts
     val serializedJavaFacts = serializedFacts?.takeIf {
-        session.languageVersionSettings.supportsFeature(LanguageFeature.JavaInteropAnnotations)
+        val hasJavaBuiltinFacts = it.isJavaApplication || it.isJavaExtension
+        val hasJavaPlatformFacts = it.isJavaMirror || it.isJavaMirrorSubtype || it.hasJavaDefault ||
+            it.isJavaMirrorSyntheticWrapper || it.isJavaCjMapping || it.isJavaInterfaceForward ||
+            it.isJavaInterfaceDefault
+        (!hasJavaBuiltinFacts || session.languageVersionSettings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations)) &&
+            (!hasJavaPlatformFacts || session.languageVersionSettings.requireFeatureSupport(LanguageFeature.JavaInteropAnnotations))
     }
     val serializedObjCFacts = serializedFacts?.takeIf {
         session.languageVersionSettings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
@@ -147,11 +153,6 @@ private fun deriveCjmpMappingInfo(
     calls: List<CfirAnnotationCall>,
     serializedFacts: CfirSerializedInteropFacts?,
 ): CfirCjmpMappingInfo? {
-    // CJMapping is a language feature, not merely a session/backend option.
-    // Apply the gate before consuming either source facts or serialized facts;
-    // otherwise old-language sessions can publish a platform graph from CJO.
-    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.InteropCJMapping)) return null
-
     serializedFacts?.cjmpTarget?.let { serializedTarget ->
         val targetFeature = when (serializedTarget) {
             CfirInteropTarget.JAVA -> LanguageFeature.JavaInteropAnnotations
