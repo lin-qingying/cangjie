@@ -1317,6 +1317,34 @@ class CangJieParsing private constructor(
         }
 
     }
+
+    /**
+     * 解析官方宏展开后的声明片段。
+     *
+     * 官方 `ReplaceEachMacro` 在重新解析宏返回 token 时启用
+     * `EnableCustomAnno`：展开结果中的 `@!Name` 必须进入 custom annotation
+     * 集合，而不能再次被当成待执行的声明宏。这个入口与普通源码文件解析
+     * 保持同一声明语法，只改变该次重解析的 annotation 分派模式。
+     */
+    fun parseMacroExpansionFile() {
+        with(
+            ParsingContext.DEFAULT.copy(
+                disableMacroParsing = true,
+                enableCustomAnnotation = true,
+            )
+        ) {
+            val fileMarker = mark()
+
+            parsePreamble()
+            while (!eof()) {
+                parseTopLevelDeclaration()
+            }
+
+            checkUnclosedBlockComment()
+            fileMarker.done(CJ_FILE)
+        }
+    }
+
     /**
      * 解析仓颉源文件
      *

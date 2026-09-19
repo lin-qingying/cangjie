@@ -169,7 +169,9 @@ class CangJieParser(project: Project) : PsiParser {
 
             // 入口分派：穷尽 when，无 else —— 新增文件种类时编译器会强制在此表态。
             when (sourceKind) {
-                CjSourceKind.MACRO_CALL -> cjParsing.parseOnlyAnnotationFile()
+                // 宏返回 token 的官方 reparse 入口等价于 Parser::EnableCustomAnno：
+                // 保留完整声明 grammar，同时把 `@!Name` 作为 custom annotation。
+                CjSourceKind.MACRO_CALL -> cjParsing.parseMacroExpansionFile()
                 CjSourceKind.SOURCE,
                 CjSourceKind.DECLARATION -> cjParsing.parseFile()
             }
