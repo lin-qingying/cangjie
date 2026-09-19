@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.violatesDeclaredGenericUpperBound
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -49,6 +50,12 @@ fun checkTypeMismatch(
     if (actualType.hasErrorTypeInAliasExpansion() || expectedType.hasErrorTypeInAliasExpansion()) return false
     val effectiveActualType = IdealTypeResolver.resolveIfIdeal(actualType, expectedType)
     val diagnosticSource = preferredSpecializedSource ?: source
+    // 泛型实例化违反声明上界时，官方同样不从该类型派生值类型不匹配：失效边界与上面的 InvalidTy
+    // 一致，`GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT` 由声明级/使用点上界检查器唯一承担。
+    if (expectedType.violatesDeclaredGenericUpperBound(
+            diagnosticSource as? org.cangnova.cangjie.source.CjSourceElement,
+        )
+    ) return false
     specificTypeMismatchDiagnostic(
         source = diagnosticSource,
         expectedType = expectedType,

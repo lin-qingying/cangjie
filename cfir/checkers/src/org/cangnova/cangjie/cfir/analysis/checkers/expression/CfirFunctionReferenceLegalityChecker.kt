@@ -35,6 +35,9 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         val targetSymbol = expression.resolvedCallableSymbolOrNull()
         if (targetSymbol == null) {
             val recoveredMutFunction = expression.declaredUpperBoundMutFunctionOrNull() ?: return
+            // 仅 struct 接收者触发；interface 接收者由官方整体跳过（见 §3 证据）。
+            val explicitReceiver = expression.explicitReceiver
+            if (explicitReceiver == null || !explicitReceiver.isStructReceiverType()) return
             val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
             reporter.reportOn(
                 source = diagnosticSource,
@@ -46,6 +49,9 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
 
         targetSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val targetDeclaration = targetSymbol.takeIf { it.isBound }?.cfir ?: return
+        // 诊断锚定被引用的成员名（`obj.foo` 中的 `foo`），与官方
+        // `sema_use_mutable_func_alone` / `sema_unsafe_func_can_only_be_called`
+        // 的锚点一致。
         val diagnosticSource = expression.calleeReference.source ?: expression.source ?: return
 
         if (targetDeclaration is CfirEnumConstructor && targetDeclaration.valueParameters.isNotEmpty()) {
@@ -58,8 +64,11 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
         }
 
         val targetFunction = targetDeclaration as? CfirNamedFunction ?: return
+        val explicitReceiver = expression.explicitReceiver
 
-        if (targetFunction.status.isMut) {
+        // 仅显式 struct 接收者触发 USE_MUTABLE_FUNC_ALONE；bare 名字（隐式 this）由
+        // IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION 管辖，interface 接收者整体跳过。
+        if (targetFunction.status.isMut && explicitReceiver != null && explicitReceiver.isStructReceiverType()) {
             reporter.reportOn(
                 source = diagnosticSource,
                 factory = CfirErrors.USE_MUTABLE_FUNC_ALONE,

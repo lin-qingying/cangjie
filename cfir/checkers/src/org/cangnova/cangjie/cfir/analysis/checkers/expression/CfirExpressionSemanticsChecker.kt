@@ -40,6 +40,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
@@ -60,10 +63,14 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -253,6 +260,10 @@ object CfirMutFuncReferenceChecker : CfirQualifiedAccessChecker() {
             ?.cfir as? CfirNamedFunction
         val function = resolvedFunction ?: expression.declaredUpperBoundMutFunctionOrNull() ?: return
         if (!function.status.isMut) return
+        // 仅显式 struct 接收者触发；bare 名字（隐式 this）由
+        // IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION 管辖，interface 接收者整体跳过（B1）。
+        val explicitReceiver = expression.explicitReceiver
+        if (explicitReceiver == null || !explicitReceiver.isStructReceiverType()) return
 
         reporter.reportOn(
             source = expression.calleeReference.source ?: expression.source,
@@ -392,9 +403,84 @@ object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
         if (!containingFunction.status.isStatic) return
 
+            reporter.reportOn(
+                source = expression.calleeReference.source ?: expression.source,
+                factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
+            )
+    }
+}
+
+/**
+ * 返回当前 struct / interface / extend 作用域内、类型声明之后的成员函数链（由外到内）。
+ *
+ * 区分裸 `this` 的两种非法用法：
+ * - size == 1：直接位于最外层 `mut` 成员函数体内 → 作表达式使用（THIS_AS_EXPRESSION_IN_FUNC）；
+ * - size >= 2：被嵌套函数 / lambda 捕获 → CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC。
+ */
+context(context: CheckerContext)
+private fun CheckerContext.enclosingStructMemberFunctions(): List<CfirFunction> {
+    val ownerIndex = containingDeclarations.indexOfLast { symbol ->
+        symbol is CfirStructSymbol || symbol is CfirInterfaceSymbol || symbol is CfirExtendSymbol
+    }
+    if (ownerIndex < 0) return emptyList()
+    return containingDeclarations.drop(ownerIndex + 1)
+        .filterIsInstance<CfirFunctionSymbol<*>>()
+        .map { it.cfir }
+}
+
+/**
+ * struct / extend-of-struct 的 `mut` 成员函数中，裸 `this` 直接作为表达式使用（如 `return this`、
+ * `var a = this`）时报告 [CfirErrors.THIS_AS_EXPRESSION_IN_FUNC]。
+ *
+ * 对齐官方 `TypeCheckReference.cpp::CheckUsageOfThis`：最外层函数带 `mut` 且裸 `this` 不是成员访问
+ * 接收者时非法；嵌套函数 / lambda 内的裸 `this` 归为捕获（见 [CfirThisCaptureInMutFuncChecker]）。
+ */
+object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirStatement) {
+        if (expression !is CfirThisReceiverExpression) return
+        if (expression.calleeReference.isImplicit) return
+        val parent = context.callsOrAssignments.lastOrNull() as? CfirQualifiedAccessExpression
+        if (parent?.explicitReceiver === expression || parent?.dispatchReceiver === expression) return
+
+        val functions = context.enclosingStructMemberFunctions()
+        if (functions.size != 1) return
+        val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
+
         reporter.reportOn(
-            source = expression.calleeReference.source ?: expression.source,
-            factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
+            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                ?: expression.source?.firstCharacterDiagnosticSource(),
+            factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
+            a = "mutable function '${outermost.name.asString()}'",
+        )
+    }
+}
+
+/**
+ * struct / extend-of-struct 的 `mut` 成员函数中，裸 `this` 被嵌套函数或 lambda 捕获时报告
+ * [CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC]。
+ *
+ * 与 [CfirInstanceFieldCaptureChecker]（处理 `this.i` / 裸实例字段）互补：本检查覆盖裸 `this`
+ * 本身作为被捕获值的情况。是否捕获取决于最外层成员函数是否带 `mut`。
+ */
+object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirStatement) {
+        if (expression !is CfirThisReceiverExpression) return
+        if (expression.calleeReference.isImplicit) return
+        val parent = context.callsOrAssignments.lastOrNull() as? CfirQualifiedAccessExpression
+        if (parent?.explicitReceiver === expression || parent?.dispatchReceiver === expression) return
+
+        val functions = context.enclosingStructMemberFunctions()
+        if (functions.size < 2) return
+        val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
+
+        reporter.reportOn(
+            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
+                ?: expression.source?.firstCharacterDiagnosticSource(),
+            factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
+            a = Name.identifier("this"),
+            b = "mutable function '${outermost.name.asString()}'",
         )
     }
 }

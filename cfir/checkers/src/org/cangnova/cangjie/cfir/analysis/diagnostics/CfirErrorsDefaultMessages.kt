@@ -73,7 +73,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(
             CfirErrors.UNSUPPORTED_FEATURE,
-            "language feature ''{0}'' is not supported by the current language version",
+            "{0}",
             LANGUAGE_FEATURE_SUPPORT,
         )
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
@@ -154,6 +154,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         )
         map.put(CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS, "interface ''{0}'' cannot inherit non-interface type ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.CLASS_INHERIT_NON_CLASS_NOR_INTERFACE, "class ''{0}'' can only inherit a class or implement interfaces", RENDER_NAME)
+        map.put(CfirErrors.TYPE_IMPLEMENT_NON_INTERFACE, "''{0}'' ''{1}'' can only implement interface", RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.MULTIPLE_CLASS_SUPER_TYPES, "type ''{0}'' has multiple class supertypes: {1}", RENDER_NAME, RENDER_NAME_LIST)
         map.put(CfirErrors.ILLEGAL_MULTI_INHERITANCE, "only one super class may appear in supertype list of class ''{0}''", RENDER_NAME)
         map.put(CfirErrors.SUPERCLASS_MUST_BE_PLACED_AT_FIRST, "super class ''{0}'' must be placed at the beginning of supertype list", RENDER_NAME)

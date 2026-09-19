@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
+import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -40,6 +42,7 @@ import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnionType
@@ -322,6 +325,59 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
                 source = diagnosticSource,
                 factory = CfirErrors.EXTEND_INTERFACE_NOT_EXTENDABLE,
                 a = leak.interfaceClassId.shortClassName,
+            )
+        }
+    }
+}
+
+/**
+ * extend 体内 `mut` 函数修饰符合法性检查器。
+ *
+ * 官方 `sema_invalid_mut_modifier_extend_of_struct`：extend 体内不允许 `mut` 函数，
+ * **除非被扩展目标是 struct 值类型**（`extend R { mut func f() {} }`，R 为 struct，
+ * cjc 1.0.5 实测无诊断）。该判定的唯一前提「被扩展目标是不是 struct」只有 extend 声明
+ * 自身掌握，因此规则归 extend 层，而不是函数声明层：函数声明层看不到 extend 目标类型，
+ * 只能退化成一个永远不会命中的分支。
+ */
+object CfirExtendMutFunctionModifierChecker : CfirExtendChecker() {
+    /**
+     * 检查 extend 体内声明的 `mut` 函数是否合法。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirExtend) {
+        val targetConeType = declaration.extendedTypeRef.semanticExtendType(context.session) ?: return
+
+        // 官方 DeclAttributeChecker::CheckExtendAttribute（DeclAttributeChecker.cpp:231-252）：
+        // 命中条件是「成员带 MUT 语义属性 **且** 成员源码上存在 `mut` 修饰符 token」，
+        // 诊断锚定在该 `mut` token 上；随后
+        //  - 扩展目标声明不是 struct 且成员不是属性（PROP_DECL）→ 非法；
+        //  - 或扩展目标是 primitive 类型 → 非法。
+        // struct 目标上的 `mut` 成员合法（cjc 1.0.5 实测 `extend R1 { public mut func foo() }` 无诊断）。
+        // 源码 `mut` 修饰符就是官方 `mutDecl` 这一事实本身（属性 setter 的隐式 mut 没有
+        // 源码 token，天然被排除），因此这里以修饰符 token 为唯一入口，与官方判据一致。
+        val targetIsStruct = targetConeType is ConeStructType
+        val targetIsPrimitive = targetConeType is ConePrimitiveType
+
+        for (member in declaration.declarations) {
+            val memberName = when (member) {
+                is CfirNamedFunction -> member.name
+                is CfirProperty -> member.name
+                else -> null
+            } ?: continue
+            val mutSource = member.source
+                ?.realSourceModifiers()
+                ?.modifierByToken(CjTokens.MUT_KEYWORD)
+                ?.source ?: continue
+            val illegal = when (member) {
+                is CfirProperty -> targetIsPrimitive
+                else -> !targetIsStruct || targetIsPrimitive
+            }
+            if (!illegal) continue
+
+            reporter.reportOn(
+                source = mutSource,
+                factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
+                a = memberName,
             )
         }
     }

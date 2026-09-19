@@ -240,21 +240,24 @@ internal object CfirExtendSemantics {
     }
 
     /**
-     * 判断 CFIR 声明是否标记了 FFI 互操作注解（@C / @Java）。
+     * 判断 CFIR 声明是否处于 FFI 互操作边界。
      *
-     * TODO: 注解系统尚未完整实现，当前仅通过 CFIR 注解的 typeRef 做 ClassId 级别的判断。
-     *       等注解系统完善后需要补充对内置注解的完整支持。
+     * STATUS/BODY_RESOLVE 已发布的 [CfirInteropInfo] 是唯一语义事实源；这里不能
+     * 再从 source spelling、typeRef 或短名推断 Java/ObjC 身份。C 核心 builtin
+     * 保留直接 kind 检查，覆盖尚未发布 snapshot 的早期声明检查路径。
      */
     fun isForeignInteropBoundary(declaration: CfirClassLikeDeclaration): Boolean {
+        val interop = declaration.resolvedInteropInfoOrNull()
+        if (interop != null) {
+            return interop.abiRequest.hasExplicitC || interop.java != null || interop.objc != null
+        }
         return ffiBoundaryAnnotationKinds.any { annotationKind -> hasAnnotation(declaration, annotationKind) }
     }
 
     /**
      * 判断 extend 目标是否落在 FFI 边界上。
      *
-     * 通过 CFIR provider 和 symbol provider 解析目标声明，然后检查其注解。
-     *
-     * TODO: 注解系统尚未完整实现，等完善后需要增强 FFI 边界判断逻辑。
+     * 目标声明先由统一 provider 解析，再消费声明拥有的 interop snapshot。
      */
     fun isForeignInteropBoundaryTarget(context: CheckerContext, extend: CfirExtend): Boolean {
         val targetDeclaration = targetDeclaration(context, extend) ?: return false

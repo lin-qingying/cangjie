@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvider
@@ -25,6 +27,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
+import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.expressions.stringArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionMismatch
@@ -73,7 +76,7 @@ object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
     override fun check(declaration: CfirDeclaration) {
         checkAnnotationMetaRules(declaration)
         checkAnnotationTargetConstants(declaration)
-        if (reportUnsupportedPlatformAnnotationVersions(declaration)) return
+        if (reportUnsupportedAnnotationVersions(declaration)) return
         checkPlatformAnnotationSyntax(declaration)
         checkForeignNameRules(declaration)
     }
@@ -106,16 +109,17 @@ object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
  * resolved platform identity; it is never reinterpreted as a custom call.
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
-private fun reportUnsupportedPlatformAnnotationVersions(declaration: CfirDeclaration): Boolean {
+private fun reportUnsupportedAnnotationVersions(declaration: CfirDeclaration): Boolean {
     var reported = false
     declaration.annotations.filterIsInstance<CfirAnnotationCall>().forEach { annotation ->
-        val descriptor = annotation.platformAnnotationDescriptor ?: return@forEach
-        if (annotation.annotationVersionSupport(context.session.languageVersionSettings) == AnnotationVersionSupportStatus.SUPPORTED) return@forEach
-        reporter.reportOn(
-            source = annotation.source ?: declaration.source,
-            factory = CfirErrors.UNSUPPORTED_FEATURE,
-            a = descriptor.requiredLanguageFeature to context.session.languageVersionSettings,
-        )
+        val feature = annotation.platformAnnotationDescriptor?.requiredLanguageFeature
+            ?: annotation.builtInDescriptor?.requiredLanguageFeature
+            ?: (annotation.annotationIdentity as? org.cangnova.cangjie.annotations.CangjieAnnotationIdentity.SystemMacro)
+                ?.classFqName
+                ?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
+                ?.requiredLanguageFeature
+            ?: return@forEach
+        if (context.requireFeatureSupport(feature, annotation.source ?: declaration.source, reporter)) return@forEach
         reported = true
     }
     return reported
@@ -123,18 +127,13 @@ private fun reportUnsupportedPlatformAnnotationVersions(declaration: CfirDeclara
 
 context(context: CheckerContext)
 private fun hasUnsupportedPlatformAnnotationVersion(declaration: CfirDeclaration): Boolean {
-    if (declaration.annotations.filterIsInstance<CfirAnnotationCall>().any { annotation ->
+    // 每个 declaration checker 由统一遍历分别消费自己的 annotation。不能递归
+    // 查看 class 的 children：某个成员使用旧版本平台注解时，只应抑制该成员
+    // 自身的后续平台语义，不能吞掉同一 class 其它成员的独立诊断。
+    return declaration.annotations.filterIsInstance<CfirAnnotationCall>().any { annotation ->
             annotation.annotationVersionSupport(context.session.languageVersionSettings)
                 ?.let { it != AnnotationVersionSupportStatus.SUPPORTED } == true
         }
-    ) return true
-
-    val children = when (declaration) {
-        is CfirClassLikeDeclaration -> declaration.declarations
-        is CfirExtend -> declaration.declarations
-        else -> emptyList()
-    }
-    return children.any { child -> hasUnsupportedPlatformAnnotationVersion(child) }
 }
 
 /**

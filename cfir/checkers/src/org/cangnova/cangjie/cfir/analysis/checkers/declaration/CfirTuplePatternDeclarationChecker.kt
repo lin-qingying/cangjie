@@ -36,6 +36,10 @@ object CfirTuplePatternDeclarationChecker : CfirPatternVariableChecker() {
             CfirTuplePatternShape.Unresolved -> return false
             is CfirTuplePatternShape.NotTuple -> {
                 if (isRoot) {
+                    // 工程既定锚点：整个元组模式（与 multipleAssignExpr / InitializationCheck /
+                    // TuplePattern 各 fixture 一致）。官方 `sema_tuple_pattern_not_match`
+                    // 锚定在 `(` token（cjc 实测 L:C9→C10）；若未来做官方对标，这里是已知的
+                    // 锚点差异点。
                     reporter.reportOn(pattern.source, CfirErrors.TUPLE_PATTERN_NOT_MATCH, "initializer")
                 } else {
                     reporter.reportOn(pattern.source, CfirErrors.TYPE_MISMATCH, type, ConeTupleType(emptyList()), false)

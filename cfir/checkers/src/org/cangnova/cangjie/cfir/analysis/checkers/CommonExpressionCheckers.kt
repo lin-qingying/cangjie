@@ -47,6 +47,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfAvailableExpressionChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThisAsExpressionInMutFuncChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThisCaptureInMutFuncChecker,
             CfirTypeConversionOverflowChecker,
         )
 
@@ -135,6 +137,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
             CfirCaptureHasShadowVariableChecker,
             CfirInstanceFieldCaptureChecker,
+            CfirImmutableFunctionBareReferenceChecker,
             CfirCFuncCaptureNamedAccessChecker,
             CfirCFuncVariadicReferenceChecker,
             CfirClassifierAsExpressionChecker,

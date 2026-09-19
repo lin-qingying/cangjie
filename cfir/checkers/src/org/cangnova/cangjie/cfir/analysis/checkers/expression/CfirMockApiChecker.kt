@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.mockSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -67,8 +68,19 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
             return
         }
 
-        if (!context.containingFilePath.orEmpty().contains("test", ignoreCase = true)) {
+        val mockSettings = context.session.mockSettings
+        if (!mockSettings.enableCompileTest) {
             reporter.reportOn(source, CfirErrors.MOCK_NOT_IN_TEST_MODE, "--test")
+            return
+        }
+
+        // 官方 TestManager 在 mock=off 下在目标声明检查之前结束；runtime-error
+        // 也不产生编译期诊断，而是交给后续 desugar/backend 生成运行时异常路径。
+        // 这里必须消费 session capability，不能由声明是否存在或文件路径决定。
+        if (!mockSettings.mockCompatible) {
+            if (!mockSettings.mockCompileOnly) {
+                reporter.reportOn(source, CfirErrors.MOCK_DISABLED, "--mock")
+            }
             return
         }
 
@@ -105,7 +117,6 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
             return
         }
 
-        reporter.reportOn(source, CfirErrors.MOCK_DISABLED, "--mock")
     }
 
     /**

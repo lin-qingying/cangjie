@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.cfir.diagnostics
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageFeatureSupportStatus
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.featureSupportStatus
 import org.cangnova.cangjie.cfir.diagnostics.rendering.ContextDependentRenderer
 import org.cangnova.cangjie.cfir.diagnostics.rendering.Renderer
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -14,8 +16,28 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  * CFIR 诊断参数渲染器集合。
  */
 object CfirDiagnosticRenderers {
-    /** 兼容现有诊断文本，但保留 LanguageVersionSettings 在诊断载荷中。 */
-    val LANGUAGE_FEATURE_SUPPORT = Renderer<Pair<LanguageFeature, LanguageVersionSettings>> { it.first.toString() }
+    /**
+     * 按 Kotlin `LanguageFeatureMessageRenderer` 的职责渲染完整版本原因。
+     *
+     * 诊断载荷必须保留 settings：仅渲染 feature 名称会把“语言版本过低、API
+     * 版本过低、显式关闭、实验特性未开启”全部错误地压成同一条消息。
+    */
+    val LANGUAGE_FEATURE_SUPPORT = Renderer<Pair<LanguageFeature, LanguageVersionSettings>> { (feature, settings) ->
+        val sinceVersion = feature.sinceVersion
+        val supportStatus = settings.featureSupportStatus(feature)
+        val reason = when {
+            feature.testOnly -> "unsupported"
+            supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION && sinceVersion != null ->
+                "only available since language version ${sinceVersion.versionString}"
+            supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION ->
+                "only available since API version ${feature.sinceApiVersion.versionString}"
+            supportStatus == LanguageFeatureSupportStatus.DISABLED -> "disabled"
+            supportStatus == LanguageFeatureSupportStatus.EXPERIMENTAL ->
+                "experimental and must be enabled explicitly"
+            else -> "not supported by the current language settings"
+        }
+        "The feature \"${feature.name}\" is $reason"
+    }
 
 
     /**
