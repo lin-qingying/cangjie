@@ -186,6 +186,8 @@ private fun MutableList<CaAnnotation>.addSyntheticFfiAnnotation(
             constructorSymbol = null,
             token = token,
             builtInKind = kind,
+            origin = org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.LANGUAGE_BUILT_IN,
+            versionSupport = org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED,
             isCompileTimeVisible = false,
             isForcedCustom = false,
             resolutionStatus = CaAnnotationResolutionStatus.RESOLVED,

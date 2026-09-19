@@ -88,6 +88,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions67()
     addConversions68()
     addConversions69()
+    addConversions70()
     addConversions71()
     addConversions72()
     addConversions73()
@@ -556,6 +557,12 @@ private fun CaDiagnosticConverterBuilder.addConversions13() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions14() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR) { cfirDiagnostic ->
+        ConditionalCompilationInvalidConditionExprImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.MACRO_EXECUTOR_TIMEOUT) { cfirDiagnostic ->
         MacroExecutorTimeoutImpl(
             cfirDiagnostic.a,
@@ -925,6 +932,12 @@ private fun CaDiagnosticConverterBuilder.addConversions31() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions32() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE) { cfirDiagnostic ->
+        ConditionalCompilationInvalidConditionValueImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.GENERIC_ARGUMENT_NO_MATCH) { cfirDiagnostic ->
         GenericArgumentNoMatchImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -1211,6 +1224,14 @@ private fun CaDiagnosticConverterBuilder.addConversions44() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions45() {
+    add(CfirErrors.TYPE_IMPLEMENT_NON_INTERFACE) { cfirDiagnostic ->
+        TypeImplementNonInterfaceImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION) { cfirDiagnostic ->
         ImmutableFunctionCannotAccessMutableFunctionImpl(
             cfirDiagnostic.a,
@@ -1247,6 +1268,14 @@ private fun CaDiagnosticConverterBuilder.addConversions47() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions48() {
+    add(CfirErrors.INVALID_INTRINSIC_DECL) { cfirDiagnostic ->
+        InvalidIntrinsicDeclImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.CSTRUCT_CANNOT_HAVE_UNIT_FIELDS) { cfirDiagnostic ->
         CstructCannotHaveUnitFieldsImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -1505,6 +1534,13 @@ private fun CaDiagnosticConverterBuilder.addConversions57() {
             token,
         )
     }
+    add(CfirErrors.CSTRUCT_CANNOT_AUTOBOX) { cfirDiagnostic ->
+        CstructCannotAutoboxImpl(
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.JAVA_MIRROR_PROP_MUST_BE_JAVA_MIRROR) { cfirDiagnostic ->
         JavaMirrorPropMustBeJavaMirrorImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -1516,6 +1552,13 @@ private fun CaDiagnosticConverterBuilder.addConversions57() {
 private fun CaDiagnosticConverterBuilder.addConversions58() {
     add(CfirErrors.OBJECT_CANNOT_ACCESS_STATIC_MEMBER) { cfirDiagnostic ->
         ObjectCannotAccessStaticMemberImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.INTRINSIC_FUNCTION_DUPLICATED) { cfirDiagnostic ->
+        IntrinsicFunctionDuplicatedImpl(
             cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
@@ -1705,6 +1748,15 @@ private fun CaDiagnosticConverterBuilder.addConversions69() {
     }
     add(CfirErrors.MOCK_UNSUPPORTED_TYPE) { cfirDiagnostic ->
         MockUnsupportedTypeImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions70() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_NOT_HAVE_CONDITION_EXPR) { cfirDiagnostic ->
+        ConditionalCompilationNotHaveConditionExprImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2130,6 +2182,14 @@ private fun CaDiagnosticConverterBuilder.addConversions89() {
 private fun CaDiagnosticConverterBuilder.addConversions90() {
     add(CfirErrors.DEPRECATED_MODIFIER_CONTAINING_DECLARATION) { cfirDiagnostic ->
         DeprecatedModifierContainingDeclarationImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.ENUM_PATTERN_FUNC_CTYPE_ERROR) { cfirDiagnostic ->
+        EnumPatternFuncCtypeErrorImpl(
             cfirDiagnostic.a,
             cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
@@ -2683,6 +2743,13 @@ private fun CaDiagnosticConverterBuilder.addConversions115() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions116() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION) { cfirDiagnostic ->
+        ConditionalCompilationNotSupportThisConditionImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.VAR_IN_OR_CONDITION) { cfirDiagnostic ->
         VarInOrConditionImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -3266,6 +3333,13 @@ private fun CaDiagnosticConverterBuilder.addConversions144() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions145() {
+    add(CfirErrors.UNSUPPORTED_FEATURE) { cfirDiagnostic ->
+        UnsupportedFeatureImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.ENUM_PATTERN_PARAM_SIZE_ERROR) { cfirDiagnostic ->
         EnumPatternParamSizeErrorImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -3398,6 +3472,12 @@ private fun CaDiagnosticConverterBuilder.addConversions152() {
     add(CfirErrors.NEED_NAMED_ARGUMENT) { cfirDiagnostic ->
         NeedNamedArgumentImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.NATIVE_VAR_ERROR) { cfirDiagnostic ->
+        NativeVarErrorImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -3869,6 +3949,14 @@ private fun CaDiagnosticConverterBuilder.addConversions173() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions174() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_OP) { cfirDiagnostic ->
+        ConditionalCompilationNotSupportOpImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.CJMAPPING_STRUCT_GENERIC_NOT_SUPPORTED) { cfirDiagnostic ->
         CjmappingStructGenericNotSupportedImpl(
             cfirDiagnostic.a,
@@ -4310,6 +4398,15 @@ private fun CaDiagnosticConverterBuilder.addConversions193() {
             token,
         )
     }
+    add(CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE) { cfirDiagnostic ->
+        ConditionalCompilationNotSupportBuiltinValueImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic.c,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions194() {
@@ -4360,6 +4457,12 @@ private fun CaDiagnosticConverterBuilder.addConversions195() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions196() {
+    add(CfirErrors.CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT) { cfirDiagnostic ->
+        ConditionalCompilationNotSupportCjcVersionFormatImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.SPAWN_ARG_INVALID) { cfirDiagnostic ->
         SpawnArgInvalidImpl(
             cfirDiagnostic as CjPsiDiagnostic,

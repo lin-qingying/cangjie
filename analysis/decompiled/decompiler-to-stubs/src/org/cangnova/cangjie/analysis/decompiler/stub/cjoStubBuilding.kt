@@ -6,9 +6,11 @@ import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoImportEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
@@ -172,18 +174,27 @@ internal fun createEmptyDeclarationHeaderStubs(
 ) {
     val annotationsStub = CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
     annotations.filterIsInstance<CfirAnnotationCall>().forEach { annotation ->
+        val platformIdentity = annotation.annotationIdentity as? CangjieAnnotationIdentity.PlatformDerived
         val name = annotation.annotationSourceName
             ?.removePrefix("@!")
             ?.removePrefix("@")
             ?.takeIf(String::isNotBlank)
+            ?: platformIdentity?.sourceName
             ?: annotation.annotationClassId?.asSingleFqName()?.asString()
             ?: annotation.builtInDescriptor?.sourceName
             ?: return@forEach
+        // Official platform annotations can have an AnnoKind without a
+        // constructor target in older CJO revisions.  Preserve the resolved
+        // platform identity in the decompiled PSI stub by synthesizing the
+        // top-level ClassId from the already-resolved identity; never infer it
+        // from the short source spelling.
+        val annotationClassId = annotation.annotationClassId
+            ?: platformIdentity?.classFqName?.let(ClassId::topLevel)
         val annotationStub = CangJieAnnotationStubImpl(
             parent = annotationsStub,
             shortName = StringRef.fromString(name.substringAfterLast('.')),
             hasValueArguments = annotation.argumentList.arguments.isNotEmpty(),
-            classId = annotation.annotationClassId,
+            classId = annotationClassId,
             builtInKind = annotation.annotationKind ?: annotation.builtInDescriptor?.kind,
             compileTimeVisible = annotation.isCompileTimeVisible == true,
         )

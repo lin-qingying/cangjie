@@ -20,6 +20,12 @@ import org.cangnova.cangjie.psi.CjElement
 interface CaAnnotation : CaLifetimeOwner {
     /** 官方内置身份；系统类注解由 classId 表示。 */
     val builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind?
+    /** 注解来源身份；平台注解不能被压缩成普通 builtin/custom。 */
+    val origin: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+    /** 已由 CFIR ClassId 解析确认的平台注解 kind。 */
+    val platformKind: org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind?
+    /** 当前 analysis session 对该注解的语言/API 版本支持状态。 */
+    val versionSupport: org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus?
     val isCompileTimeVisible: Boolean?
     val isForcedCustom: Boolean?
     val target: org.cangnova.cangjie.annotations.CangjieAnnotationTarget?
