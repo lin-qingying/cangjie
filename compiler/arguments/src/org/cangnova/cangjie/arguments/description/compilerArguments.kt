@@ -23,7 +23,8 @@ val cangjieCompilerArguments = compilerArguments {
                 description = "Enable verbose logging".asReleaseDependent()
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
-                lifecycle(CangJieReleaseVersion.V_1_0_5)
+                // Official v1.0.0 Options.inc already exposes --verbose.
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
 
             compilerArgument {
@@ -49,7 +50,8 @@ val cangjieCompilerArguments = compilerArguments {
                 description = "Compile declaration file(s) (.cj.d)".asReleaseDependent()
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
-                lifecycle(CangJieReleaseVersion.V_1_0_5)
+                // 官方 v1.0.0 Options.inc 已声明 -d；1.0.5 不是该能力的引入版本。
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
         }
     }

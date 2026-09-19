@@ -51,7 +51,7 @@ data class CangJieCompilerArgumentsLevel(
  * 构造单个参数层级及其子层级的 DSL builder。
  */
 @CangJieArgumentsDslMarker
-class KotlinCompilerArgumentsLevelBuilder(
+class CangJieCompilerArgumentsLevelBuilder(
     /**
      * 当前 builder 负责构造的参数层级名称。
      */
@@ -94,9 +94,9 @@ class KotlinCompilerArgumentsLevelBuilder(
     fun subLevel(
         name: String,
         mergeWith: Set<CangJieCompilerArgumentsLevel> = emptySet(),
-        config: KotlinCompilerArgumentsLevelBuilder.() -> Unit
+        config: CangJieCompilerArgumentsLevelBuilder.() -> Unit
     ) {
-        val levelBuilder = KotlinCompilerArgumentsLevelBuilder(name)
+        val levelBuilder = CangJieCompilerArgumentsLevelBuilder(name)
         config(levelBuilder)
         nestedLevels.add(
             mergeWith.fold(levelBuilder.build()) { current, mergingWith ->
@@ -120,9 +120,9 @@ class KotlinCompilerArgumentsLevelBuilder(
  */
 fun compilerArgumentsLevel(
     name: String,
-    config: KotlinCompilerArgumentsLevelBuilder.() -> Unit
+    config: CangJieCompilerArgumentsLevelBuilder.() -> Unit
 ) = ReadOnlyProperty<Any?, CangJieCompilerArgumentsLevel> { _, _ ->
-    val levelBuilder = KotlinCompilerArgumentsLevelBuilder(name)
+    val levelBuilder = CangJieCompilerArgumentsLevelBuilder(name)
     config(levelBuilder)
     levelBuilder.build()
 }
