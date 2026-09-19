@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.body
 
 import java.math.BigInteger
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.requireFeatureSupport
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
@@ -522,6 +523,13 @@ open class CfirExpressionsResolveTransformer(
         actualType: ConeCangJieType,
     ) {
         val expectedType = context.assignmentExpectedTypeForRoot(literalExpression) ?: return
+        // `ChkLitConstExprOf*` uses the Option payload as the numeric target.
+        // resolveLiteralType has already recorded that payload type in the
+        // literal, so a subtype check against the outer Option would
+        // incorrectly manufacture CANNOT_CONVERT_LITERAL for `?UInt8 { 1i32 }`
+        // and `?Float32 { 1.0f64 }`.  Range/overflow checking remains a separate
+        // owner and still runs for values such as `256i32` boxed into UInt8.
+        if (literalExpression.numericLiteralBoxTargetType(expectedType, session) != null) return
         val integerRangeMismatch = literalExpression.isOutOfAssignmentIntegerRange(expectedType)
         if (!integerRangeMismatch &&
             AbstractTypeChecker.isSubtypeOf(session.typeContext, actualType, expectedType) == true
@@ -3683,7 +3691,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         performExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
 
-        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.EffectHandlers)) {
+        if (!session.languageVersionSettings.requireFeatureSupport(LanguageFeature.EffectHandlers)) {
             performExpression.replaceConeTypeOrNull(
                 ConeErrorType(ConeEffectsFeatureDisabledError("perform"))
             )
@@ -3712,7 +3720,7 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         resumeExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
 
-        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.EffectHandlers)) {
+        if (!session.languageVersionSettings.requireFeatureSupport(LanguageFeature.EffectHandlers)) {
             resumeExpression.replaceConeTypeOrNull(
                 ConeErrorType(ConeEffectsFeatureDisabledError("resume"))
             )
@@ -5307,7 +5315,7 @@ open class CfirExpressionsResolveTransformer(
         handleClause.transformAnnotations(transformer, data)
         resolveCommandPatternTypeRefs(handleClause.commandPattern)
 
-        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.EffectHandlers)) {
+        if (!session.languageVersionSettings.requireFeatureSupport(LanguageFeature.EffectHandlers)) {
             handleClause.transformBody(transformer, ResolutionMode.ContextIndependent)
             val delegatedType = normalizeTypeForJoin(handleClause.body.coneTypeOrNull) ?: builtinTypes.unitType
             handleClause.replaceConeTypeOrNull(

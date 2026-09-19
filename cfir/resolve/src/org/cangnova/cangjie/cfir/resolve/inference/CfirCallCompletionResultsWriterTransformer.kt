@@ -576,11 +576,33 @@ class CfirCallCompletionResultsWriterTransformer(
                 atom.failureKind == CallableReferenceFailureKind.GENERIC_TYPE_ARGUMENT_REQUIRED
             }
         ) return null
-        if (completedResultType.containsAnyTypeVariable()) {
-            return ConeUnableToInferGenericFuncError()
+        val diagnostic = if (completedResultType.containsAnyTypeVariable()) {
+            ConeUnableToInferGenericFuncError()
+        } else {
+            completedResultType.findGenericInferenceDiagnostic()
         }
-        return completedResultType.findGenericInferenceDiagnostic()
+        // 官方 `GenerateTypeMappingByInference`（TypeArgumentInference.cpp:578）只在
+        // `!Utils::In(ce.args, [](const auto& arg) { return !Ty::IsTyCorrect(arg->ty); })`
+        // ——即没有任何实参的类型是错误类型——时才报告 `sema_unable_to_infer_generic_func`。
+        // 实参自身的根诊断已经单独报告时，owner 的推断失败只是错误恢复级联（cjc 1.0.5 实测
+        // `(Some(1 + true) ?? 2(false)) + true` 只报内层 invalid_binary_expr 与
+        // no_match_operator_function_call，不报 Some 的 unable_to_infer）。
+        if (diagnostic is ConeUnableToInferGenericFuncError && hasErrorTypedArgument()) return null
+        return diagnostic
     }
+
+    /**
+     * 判断调用实参中是否已经有类型为错误类型的实参。
+     *
+     * `isUninferredParameter` 的 error type 是**本次推断自身**尚未求解的结果
+     * （`Some(None)` 里 `None` 的类型参数），在官方对应「类型正确、但含未定类型变量」，
+     * 不属于实参上已有的根诊断，因此不参与级联抑制判定。
+     */
+    private fun Candidate.hasErrorTypedArgument(): Boolean =
+        callInfo.arguments.any { argument ->
+            val errorType = argument.coneTypeOrNull as? ConeErrorType ?: return@any false
+            !errorType.isUninferredParameter
+        }
 
     /** 判断完成类型是否仍保留未完成的推断变量。 */
     private fun ConeCangJieType.containsAnyTypeVariable(): Boolean = when (this) {
