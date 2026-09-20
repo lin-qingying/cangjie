@@ -17,6 +17,8 @@ public data class AnnotationParameterSchema(
     val required: Boolean = false,
     val acceptsPositional: Boolean = false,
     val defaultValue: AnnotationDefaultValue? = null,
+    /** Feature gate for a parameter added after the annotation's original schema. */
+    val requiredLanguageFeature: LanguageFeature? = null,
 )
 
 /**

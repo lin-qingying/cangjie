@@ -167,6 +167,9 @@ enum class LanguageFeature(
     /** v1.0.0 declaration-source (`.cj.d`) compilation mode. */
     DeclarationFiles(LanguageVersion.CANGJIE_1_0_0),
 
+    /** OpenHarmony APILevel `since: String` parameter introduced after the v1.0.0 schema. */
+    ApiLevelSinceParameter(LanguageVersion.CANGJIE_1_0_5, ApiVersion.CANGJIE_1_0_5),
+
     /** Official AST/metadata-only `@Java` identity, present in the 1.0.0 baseline. */
     JavaBuiltinAnnotations(LanguageVersion.CANGJIE_1_0_0),
 
@@ -208,6 +211,36 @@ enum class LanguageFeature(
      */
     AllowIntersectionTypesInInference(null),
     ;
+
+    /**
+     * 与 Kotlin `LanguageFeature` 相同的元模型不变量：test-only 特性不能
+     * 同时声明一个会按语言版本默认启用的版本。否则旧版本配置和命令行
+     * test-only 语义会互相矛盾，消费者无法区分“默认能力”和“仅测试能力”。
+     */
+    init {
+        if (testOnly && sinceVersion != null) {
+            error("$this: test-only feature must not have a default since version $sinceVersion")
+        }
+    }
+
+    /** 面向诊断和 IDE 的可读特性名称，不暴露 Kotlin 枚举命名约定。 */
+    val presentableName: String
+        get() = name
+            .split("(?<!^)(?=[A-Z])".toRegex())
+            .joinToString(separator = " ", transform = String::lowercase)
+
+    /** 包含可选提示链接的可读特性文本。 */
+    val presentableText: String
+        get() = if (hintUrl == null) presentableName else "$presentableName (See: $hintUrl)"
+
+    /**
+     * progressive 模式可自动开启的状态计算。
+     *
+     * 本项目当前没有 Kotlin CLI 的 progressive 配置入口，因此这里只提供
+     * 与 Kotlin 相同的无副作用元数据投影，不在任何 session 中隐式开启特性。
+     */
+    val actuallyEnabledInProgressiveMode: Boolean
+        get() = enabledInProgressiveMode && sinceVersion != null
 
     enum class State(override val description: String) : DescriptionAware {
         ENABLED("Enabled"),

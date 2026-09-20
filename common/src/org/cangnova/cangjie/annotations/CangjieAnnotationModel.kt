@@ -192,9 +192,14 @@ object BuiltInAnnotationRegistry {
     public val systemAndSpecial: List<SystemAnnotationDescriptor> = listOf(
         SystemAnnotationDescriptor("APILevel", FqName("ohos.labels.APILevel"), CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
             AnnotationArgumentSchema(listOf(
-                AnnotationParameterSchema("since", AnnotationParameterKind.STRING, required = true),
+                AnnotationParameterSchema(
+                    "since",
+                    AnnotationParameterKind.STRING,
+                    requiredLanguageFeature = LanguageFeature.ApiLevelSinceParameter,
+                ),
                 AnnotationParameterSchema("syscap", AnnotationParameterKind.STRING, defaultValue = AnnotationDefaultValue.StringValue("")),
                 AnnotationParameterSchema("level", AnnotationParameterKind.INTEGER, acceptsPositional = true),
+                AnnotationParameterSchema("level_val", AnnotationParameterKind.INTEGER),
             )), all, repeatable = true, supportsCompileTimeVisibleForm = true),
         SystemAnnotationDescriptor("Hide", FqName("ohos.labels.Hide"), CangjieAnnotationArgumentSyntax.CUSTOM_EXPRESSION,
             AnnotationArgumentSchema(listOf(AnnotationParameterSchema("isChecked", AnnotationParameterKind.BOOLEAN,

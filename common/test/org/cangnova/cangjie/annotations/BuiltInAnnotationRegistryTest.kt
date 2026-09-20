@@ -184,6 +184,21 @@ class BuiltInAnnotationRegistryTest {
         )
     }
 
+    @Test
+    fun apiLevelSchemaSeparatesLegacyLevelFromSinceParameter() {
+        val schema = assertNotNull(
+            BuiltInAnnotationRegistry.findSystemAnnotation(FqName("ohos.labels.APILevel")),
+        ).argumentSchema
+        assertEquals(setOf("since", "syscap", "level", "level_val"), schema.parameters.mapTo(linkedSetOf()) { it.name })
+        assertEquals(
+            LanguageFeature.ApiLevelSinceParameter,
+            schema.parameters.single { it.name == "since" }.requiredLanguageFeature,
+        )
+        assertFalse(schema.parameters.single { it.name == "since" }.required)
+        assertTrue(schema.parameters.single { it.name == "level" }.acceptsPositional)
+        assertFalse(schema.parameters.single { it.name == "level_val" }.acceptsPositional)
+    }
+
     /** Deprecated 的第二个位置参数仍是重复 message，不能顺序分配到 since。 */
     @Test
     fun deprecatedSchemaHasOnePositionalMessageAndNamedSinceStrict() {
