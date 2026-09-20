@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjd
 
 import PackageFormat.DeclKind
+import PackageFormat.AnnoKind
 import PackageFormat.TypeKind
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
@@ -63,6 +64,7 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val function = assertIs<CfirNamedFunction>(context.createDeclDeserializer().deserializeDecl(1))
         assertEquals(listOf("APILevel", "APILevel", "Frozen", "OverflowWrapping", "Deprecated"), function.annotations.map { it.annotationSourceName })
         assertEquals(CangjieAnnotationIdentity.SystemMacro(FqName("ohos.labels.APILevel"), "APILevel"), function.annotations.first().annotationIdentity)
+        assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, (function.annotations.first() as CfirAnnotationCall).annotationResolveState)
         assertEquals("22", ((function.annotations.first() as CfirAnnotationCall).argumentMapping.mapping[Name.identifier("since")] as CfirLiteralExpression).value)
         assertEquals("22", CfirDeclarationAvailabilityProvider(context.moduleData.session).ownApiLevelInfo(function)?.since)
         assertTrue(function.interopInfo!!.isFrozen)
@@ -71,11 +73,47 @@ class CjdBinaryAnnotationIntegrationTest : CjParsingTestCase("", "cj.d", CangJie
         val parameter = function.valueParameters.single()
         assertSame(parameter, context.declCache[0])
         assertEquals("APILevel", parameter.annotations.single().annotationSourceName)
+        assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, (parameter.annotations.single() as CfirAnnotationCall).annotationResolveState)
         assertSame(parameter.symbol, (parameter.annotations.single() as CfirAnnotationCall).containingDeclarationSymbol)
         assertSame(function, context.createDeclDeserializer().deserializeDecl(1))
         assertEquals(5, function.annotations.size)
         assertTrue(context.sidecar!!.conversionDiagnostics.isEmpty(), context.sidecar!!.conversionDiagnostics.toString())
         assertTrue(context.sidecar!!.matchDiagnostics.isEmpty(), context.sidecar!!.matchDiagnostics.toString())
+    }
+
+    @Test fun testOfficialPlatformAnnoKindWithoutTargetRestoresIdentity() {
+        val fixture = CjdBinaryFixture()
+        val int = fixture.primitive(TypeKind.Int64)
+        val param = fixture.declaration("x", DeclKind.FuncParam, int, topLevel = false)
+        fixture.function(
+            "f",
+            listOf(param),
+            annotations = listOf(AnnoKind.JavaMirror to "JavaMirror"),
+        )
+        fixture.build()
+        val path = root.resolve("platform-kind.cjo")
+        Files.write(path, fixture.builder.sizedByteArray())
+        val manager = CjoManager(CjoSearchPath { if (it == "CANGJIE_LIBRARY") root.toString() else null })
+        val loaded = kotlin.test.assertNotNull(manager.loadPackageSnapshot("test.pkg"))
+        val context = CfirDeserializationContext(
+            loaded.pkg,
+            loaded.header,
+            Module(),
+            manager,
+            loaded.sourcePath,
+        )
+
+        val function = assertIs<CfirNamedFunction>(context.createDeclDeserializer().deserializeDecl(1))
+        val annotation = assertIs<CfirAnnotationCall>(function.annotations.single())
+        assertEquals(
+            CangjieAnnotationIdentity.PlatformDerived(
+                org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind.JAVA_MIRROR,
+                FqName("interoplib.interop.JavaMirror"),
+                "JavaMirror",
+            ),
+            annotation.annotationIdentity,
+        )
+        assertEquals(ClassId.topLevel(FqName("interoplib.interop.JavaMirror")), annotation.annotationClassId)
     }
 
     @Test fun testWholeContextRebuildAndBinarySignaturePreserved() {

@@ -58,15 +58,25 @@ internal class CjdBinaryFixture {
         return Generic.createGeneric(builder, params, bounds)
     }
 
-    fun function(name: String, parameters: List<UInt>, topLevel: Boolean = true, generic: Int = 0): UInt {
+    fun function(
+        name: String,
+        parameters: List<UInt>,
+        topLevel: Boolean = true,
+        generic: Int = 0,
+        annotations: List<Pair<UShort, String>> = emptyList(),
+    ): UInt {
         val params = FuncParamList.createParamsVector(builder, parameters.toUIntArray())
         val list = FuncParamList.createFuncParamList(builder, params, 0)
         val lists = FuncBody.createParamListsVector(builder, intArrayOf(list))
         val body = FuncBody.createFuncBody(builder, lists, 0u, 0u, false, 0u)
         val info = FuncInfo.createFuncInfo(builder, body, 0u, 0u, 0, false, false, false)
         val functionType = compound(TypeKind.Func, parameters.map { declarationTypes[it.toInt() - 1] })
+        val annotationOffsets = annotations.map { (kind, identifier) ->
+            val identifierOffset = builder.createString(identifier)
+            Anno.createAnno(builder, kind, identifierOffset, 0, 0)
+        }
         return declaration(name, DeclKind.FuncDecl, type = functionType, topLevel = topLevel, generic = generic,
-            infoKind = DeclInfo.FuncInfo, info = info)
+            infoKind = DeclInfo.FuncInfo, info = info, annotations = annotationOffsets)
     }
 
     fun classDecl(name: String, members: List<UInt>, annotationsExported: Boolean = true): UInt {
@@ -108,11 +118,14 @@ internal class CjdBinaryFixture {
         attributes: List<Attribute> = listOf(Attribute.PUBLIC),
         infoKind: UByte = DeclInfo.NONE,
         info: Int = 0,
+        annotations: List<Int> = emptyList(),
     ): UInt {
         val identifier = builder.createString(name)
         val words = ULongArray((attributes.maxOfOrNull { it.ordinal } ?: 0) / 64 + 1)
         attributes.forEach { words[it.ordinal / 64] = words[it.ordinal / 64] or (1uL shl (it.ordinal % 64)) }
         val attrs = Decl.createAttributesVector(builder, words)
+        val annotationVector = annotations.takeIf(List<Int>::isNotEmpty)
+            ?.let { Decl.createAnnotationsVector(builder, it.toIntArray()) }
         Decl.startDecl(builder)
         Decl.addIdentifier(builder, identifier)
         Decl.addKind(builder, kind)
@@ -122,6 +135,9 @@ internal class CjdBinaryFixture {
         Decl.addAttributes(builder, attrs)
         Decl.addInfoType(builder, infoKind)
         Decl.addInfo(builder, info)
+        if (annotationVector != null) {
+            Decl.addAnnotations(builder, annotationVector)
+        }
         declarations += Decl.endDecl(builder)
         declarationTypes += type
         return declarations.size.toUInt()
