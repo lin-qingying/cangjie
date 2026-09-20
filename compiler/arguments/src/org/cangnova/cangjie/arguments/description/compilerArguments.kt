@@ -15,7 +15,15 @@ val cangjieCompilerArguments = compilerArguments {
                 description = "Language version".asReleaseDependent()
                 argumentType = StringType(defaultValue = ReleaseDependent(null))
                 valueType = StringType(defaultValue = ReleaseDependent(null))
-                lifecycle(CangJieReleaseVersion.V_1_0_5)
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "api-version"
+                description = "API version".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
 
             compilerArgument {
@@ -51,6 +59,24 @@ val cangjieCompilerArguments = compilerArguments {
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 // 官方 v1.0.0 Options.inc 已声明 -d；1.0.5 不是该能力的引入版本。
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "output"
+                compilerName = "outputFile"
+                description = "Product name or output directory".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "output-dir"
+                compilerName = "outputDirectory"
+                description = "Output directory".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
         }

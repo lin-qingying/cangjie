@@ -23,6 +23,12 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = if (value.isNullOrEmpty()) null else value
         }
 
+    var apiVersion: String? = null
+        set(value) {
+            checkFrozen()
+            field = if (value.isNullOrEmpty()) null else value
+        }
+
     var verbose: Boolean = false
         set(value) {
             checkFrozen()
@@ -45,6 +51,18 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
         set(value) {
             checkFrozen()
             field = value
+        }
+
+    var outputFile: String? = null
+        set(value) {
+            checkFrozen()
+            field = if (value.isNullOrEmpty()) null else value
+        }
+
+    var outputDirectory: String? = null
+        set(value) {
+            checkFrozen()
+            field = if (value.isNullOrEmpty()) null else value
         }
 
 }

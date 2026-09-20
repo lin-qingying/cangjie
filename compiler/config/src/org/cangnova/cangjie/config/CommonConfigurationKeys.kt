@@ -91,6 +91,10 @@ object CommonConfigurationKeys {
     @JvmField
     val COMPILE_CJD = CompilerConfigurationKey.create<Boolean>("COMPILE_CJD")
 
+    /** Live CFIR CJO producer 的输出目录；未配置时只返回内存前端产物。 */
+    @JvmField
+    val CJO_OUTPUT_DIRECTORY = CompilerConfigurationKey.create<String>("CJO_OUTPUT_DIRECTORY")
+
     /** 是否以官方 `--test` 方式编译当前包。 */
     @JvmField
     val ENABLE_COMPILE_TEST = CompilerConfigurationKey.create<Boolean>("ENABLE_COMPILE_TEST")
@@ -286,6 +290,16 @@ var CompilerConfiguration.compileCjd: Boolean
     get() = getBoolean(CommonConfigurationKeys.COMPILE_CJD)
     set(value) {
         put(CommonConfigurationKeys.COMPILE_CJD, value)
+    }
+
+/** Live CFIR CJO 输出目录；由 frontend serializer owner 负责写出。 */
+var CompilerConfiguration.cjoOutputDirectory: String?
+    get() = get(CommonConfigurationKeys.CJO_OUTPUT_DIRECTORY)
+    set(value) {
+        if (value == null) {
+            return
+        }
+        put(CommonConfigurationKeys.CJO_OUTPUT_DIRECTORY, value)
     }
 
 /** 是否以官方 test compilation 模式编译当前包。 */
