@@ -2288,9 +2288,12 @@ class PsiRawCfirBuilder(
 
             if (opToken.isAssignmentToken()) {
                 if (opToken == CjTokens.EQ) {
-                    if (left is CfirTupleLiteral) {
-                        return desugarDestructuringAssignment(psi, left, right)
-                    }
+                    // 多重赋值 `(a, b, ...) = rhs` 保持结构化的元组左值，不在建树期脱糖：
+                    // 官方 `Sema/TypeCheckExpr/AssignExpr.cpp` 的 `CheckMultipleAssignExpr`
+                    // 一次性按 tuple 结构判定元数/嵌套/分量类型，并统一报
+                    // `sema_mismatched_types_multiple_assign`（范围锚在 RHS）。脱糖成
+                    // 「临时绑定 + 逐元素下标赋值」会让合成节点泄漏诊断（合成名字重复、
+                    // RHS 短于目标数时的内建下标越界），也让 resolve 层的多重赋值判定失效。
                     return buildAssignment {
                         source = psi.toCjPsiSourceElement()
                         lValue = left

@@ -20,9 +20,16 @@ import org.cangnova.cangjie.descriptors.Visibilities
 public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
     val member = this as? CfirMemberDeclaration ?: return
     val calls = annotations.filterIsInstance<CfirAnnotationCall>()
-    fun annotation(kind: BuiltInAnnotationKind): CfirAnnotationCall? = calls.firstOrNull { it.annotationKind == kind }
+    val settings = session.languageVersionSettings
+    // The resolved kind is only an identity.  ABI facts may be consumed here
+    // only after the same feature gate used by all other semantic owners.
+    // Keeping this gate in the shared interop publisher prevents CallingConv
+    // (which is otherwise read directly from its argument) from bypassing the
+    // BuiltInAnnotations setting.
+    fun annotation(kind: BuiltInAnnotationKind): CfirAnnotationCall? =
+        calls.firstOrNull { it.isSupportedBuiltinAnnotation(kind, settings) }
     fun has(kind: BuiltInAnnotationKind): Boolean =
-        annotation(kind)?.isSupportedBuiltinAnnotation(kind, session.languageVersionSettings) == true
+        annotation(kind) != null
     fun name(kind: BuiltInAnnotationKind): String? = annotation(kind)?.stringArgument("name")
     fun platformAnnotation(kind: CangjiePlatformAnnotationKind): CfirAnnotationCall? =
         calls.firstOrNull { it.platformAnnotationKind == kind }
@@ -34,24 +41,33 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
             ?.takeIf { hasPlatform(kind) }
             ?.stringArgument("name")
     val serializedFacts = serializedInteropFacts
+    // Core language builtin facts are semantic only when the builtin annotation
+    // feature is supported in the current session.  Binary attributes may be
+    // displayed as raw metadata, but must not re-enable C/CallingConv/FastNative
+    // after an explicit language-feature disable.
+    val serializedCoreFacts = serializedFacts?.takeIf {
+        settings.supportsFeature(LanguageFeature.BuiltInAnnotations)
+    }
     val serializedJavaFacts = serializedFacts?.takeIf {
         val hasJavaBuiltinFacts = it.isJavaApplication || it.isJavaExtension
         val hasJavaPlatformFacts = it.isJavaMirror || it.isJavaMirrorSubtype || it.hasJavaDefault ||
             it.isJavaMirrorSyntheticWrapper || it.isJavaCjMapping || it.isJavaInterfaceForward ||
             it.isJavaInterfaceDefault
-        (!hasJavaBuiltinFacts || session.languageVersionSettings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations)) &&
-            (!hasJavaPlatformFacts || session.languageVersionSettings.requireFeatureSupport(LanguageFeature.JavaInteropAnnotations))
+        val javaFactsSupported =
+            (!hasJavaBuiltinFacts || settings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations)) &&
+            (!hasJavaPlatformFacts || settings.requireFeatureSupport(LanguageFeature.JavaInteropAnnotations))
+        javaFactsSupported
     }
     val serializedObjCFacts = serializedFacts?.takeIf {
-        session.languageVersionSettings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
+        settings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
     }
     val conventionName = annotation(BuiltInAnnotationKind.CALLING_CONV)?.stringArgument("convention")
     val convention = CangjieCallingConvention.entries.firstOrNull { it.name == conventionName }
-        ?: serializedFacts?.callingConvention
+        ?: serializedCoreFacts?.callingConvention
     // CJO stores the C ABI attribute separately from `Anno`; source `@C` and
     // that serialized fact are the same request, while a foreign declaration's
     // backend-default C ABI is not an explicit source `@C` request.
-    val hasExplicitC = has(BuiltInAnnotationKind.C) || serializedFacts?.hasExplicitC == true
+    val hasExplicitC = has(BuiltInAnnotationKind.C) || serializedCoreFacts?.hasExplicitC == true
     val request = CfirAbiRequest(member.status.isForeign, hasExplicitC, convention, this is CfirFunction)
     val java = if (has(BuiltInAnnotationKind.JAVA) || hasPlatform(CangjiePlatformAnnotationKind.JAVA_MIRROR) ||
         hasPlatform(CangjiePlatformAnnotationKind.JAVA_IMPL) || hasPlatform(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT) ||
@@ -102,12 +118,16 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
     val symbolName = (this as? CfirCallableDeclaration)?.symbol?.callableId?.callableName?.asString()
     val cjmp = deriveCjmpMappingInfo(session, member, calls, serializedFacts)
     val ffiAnnotationKinds = calls.asSequence()
+        .filter { call ->
+            val kind = call.annotationKind ?: return@filter false
+            call.isSupportedBuiltinAnnotation(kind, settings)
+        }
         .mapNotNull { it.annotationKind }
         .filter { kind -> BuiltInAnnotationRegistry.languageBuiltIns.any { it.kind == kind && it.category == BuiltInAnnotationCategory.FFI } }
         .toMutableSet()
     if (hasExplicitC) ffiAnnotationKinds += BuiltInAnnotationKind.C
-    if (serializedFacts?.callingConvention != null) ffiAnnotationKinds += BuiltInAnnotationKind.CALLING_CONV
-    if (serializedFacts?.isFastNative == true) ffiAnnotationKinds += BuiltInAnnotationKind.FASTNATIVE
+    if (serializedCoreFacts?.callingConvention != null) ffiAnnotationKinds += BuiltInAnnotationKind.CALLING_CONV
+    if (serializedCoreFacts?.isFastNative == true) ffiAnnotationKinds += BuiltInAnnotationKind.FASTNATIVE
     val ffiAnnotationNames = ffiAnnotationKinds.mapNotNull { kind ->
         BuiltInAnnotationRegistry.languageBuiltIns.firstOrNull { it.kind == kind }?.sourceName
     }
@@ -130,7 +150,7 @@ public fun CfirDeclaration.publishInteropInfo(session: CfirSession) {
         objc = objc,
         cjmp = cjmp,
         overflowStrategy = annotationInfo?.overflowStrategy,
-        isFastNative = has(BuiltInAnnotationKind.FASTNATIVE) || serializedFacts?.isFastNative == true,
+        isFastNative = has(BuiltInAnnotationKind.FASTNATIVE) || serializedCoreFacts?.isFastNative == true,
         isFrozen = has(BuiltInAnnotationKind.FROZEN),
         externalSymbolName = foreignName ?: java?.externalName ?: objc?.externalName ?: symbolName.takeIf { abi.kind == CfirAbiKind.C },
         ffiAnnotationKinds = ffiAnnotationKinds,
@@ -168,13 +188,13 @@ private fun deriveCjmpMappingInfo(
         )
     }
 
-    val settings = session.interopSettings
-    if (!settings.enableInteropCJMapping) return null
-    if (settings.targetInteropLanguage == CfirInteropTarget.NONE) return null
-    if (settings.targetInteropLanguage == CfirInteropTarget.JAVA &&
+    val interopSettings = session.interopSettings
+    if (!interopSettings.enableInteropCJMapping) return null
+    if (interopSettings.targetInteropLanguage == CfirInteropTarget.NONE) return null
+    if (interopSettings.targetInteropLanguage == CfirInteropTarget.JAVA &&
         !session.languageVersionSettings.supportsFeature(LanguageFeature.JavaInteropAnnotations)
     ) return null
-    if (settings.targetInteropLanguage == CfirInteropTarget.OBJC &&
+    if (interopSettings.targetInteropLanguage == CfirInteropTarget.OBJC &&
         !session.languageVersionSettings.supportsFeature(LanguageFeature.ObjCInteropAnnotations)
     ) return null
 
@@ -193,7 +213,7 @@ private fun deriveCjmpMappingInfo(
         is CfirEnum -> CfirCjmpDeclarationKind.ENUM
         is CfirInterface -> CfirCjmpDeclarationKind.INTERFACE
         is CfirExtend -> CfirCjmpDeclarationKind.EXTEND.takeIf {
-            settings.targetInteropLanguage == CfirInteropTarget.JAVA
+            interopSettings.targetInteropLanguage == CfirInteropTarget.JAVA
         }
         else -> null
     } ?: return null
@@ -203,7 +223,7 @@ private fun deriveCjmpMappingInfo(
     if (declaration !is CfirExtend && declaration.status.visibility != Visibilities.Public) return null
 
     return CfirCjmpMappingInfo(
-        target = settings.targetInteropLanguage,
+        target = interopSettings.targetInteropLanguage,
         declarationKind = declarationKind,
     )
 }
