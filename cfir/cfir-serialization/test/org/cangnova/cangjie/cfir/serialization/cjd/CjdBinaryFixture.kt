@@ -87,16 +87,22 @@ internal class CjdBinaryFixture {
     }
 
     fun pattern(bindings: List<UInt>): UInt {
+        require(bindings.isNotEmpty())
+        val patternType = declarationTypes[bindings.first().toInt() - 1]
         val patterns = bindings.map { binding ->
             val refs = Pattern.createExprsVector(builder, uintArrayOf(binding))
+            val types = Pattern.createTypesVector(builder, uintArrayOf(patternType))
             Pattern.startPattern(builder)
             Pattern.addKind(builder, PatternKind.VarPattern)
+            Pattern.addTypes(builder, types)
             Pattern.addExprs(builder, refs)
             Pattern.endPattern(builder)
         }
         val nested = Pattern.createPatternsVector(builder, patterns.toIntArray())
+        val tupleTypes = Pattern.createTypesVector(builder, uintArrayOf(patternType))
         Pattern.startPattern(builder)
         Pattern.addKind(builder, PatternKind.TuplePattern)
+        Pattern.addTypes(builder, tupleTypes)
         Pattern.addPatterns(builder, nested)
         val tuple = Pattern.endPattern(builder)
         val info = VarWithPatternInfo.createVarWithPatternInfo(builder, false, false, tuple, 0u)

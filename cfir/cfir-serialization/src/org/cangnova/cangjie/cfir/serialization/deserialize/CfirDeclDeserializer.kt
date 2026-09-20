@@ -369,7 +369,21 @@ class CfirDeclDeserializer(
         serialized: Anno,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirAnnotationCall? {
-        val rawIdentifier = serialized.identifier.orEmpty()
+        // Keep the Cangjie v1.0.0 loader contract at the wire boundary.  The
+        // official ASTLoader rejects an annotation kind it does not know; it
+        // does not turn an unknown enum value into a custom annotation.  Doing
+        // that here would publish a semantically usable CFIR node whose
+        // identity was invented by the deserializer, and every downstream
+        // checker would then be forced to guess what the producer meant.
+        require(serialized.kind in supportedAnnotationKinds) {
+            "Unhandled CJO annotation kind ${serialized.kind}"
+        }
+        val rawIdentifier = checkNotNull(serialized.identifier) {
+            "CJO annotation identifier is absent"
+        }
+        require(rawIdentifier.isNotBlank()) {
+            "CJO annotation identifier is blank"
+        }
         // For a custom annotation the official CJO writer stores the annotation
         // constructor FullId in Anno.target.  That FullId points to a child
         // FuncDecl, so resolving it as a class-like declaration loses the
@@ -565,6 +579,31 @@ class CfirDeclDeserializer(
             else -> null
         } ?: return null
         return BuiltInAnnotationRegistry.findLanguageBuiltIn(kind)
+    }
+
+    /**
+     * Annotation kinds understood by this repository's decoder.
+     *
+     * The first four are the official v1.0.0 ModuleFormat domain.  The
+     * remaining values are the repository's additive CJO profile and are
+     * decoded by the platform/builtin identity paths below.  Unknown wire
+     * values remain hard errors; they must never be silently reclassified as
+     * custom annotations.
+     */
+    private companion object {
+        private val supportedAnnotationKinds = setOf(
+            AnnoKind.Deprecated,
+            AnnoKind.TestRegistration,
+            AnnoKind.Frozen,
+            AnnoKind.Custom,
+            AnnoKind.JavaMirror,
+            AnnoKind.JavaImpl,
+            AnnoKind.ObjCMirror,
+            AnnoKind.ObjCImpl,
+            AnnoKind.ForeignName,
+            AnnoKind.JavaHasDefault,
+            AnnoKind.Annotation,
+        )
     }
 
     /**
@@ -1688,23 +1727,41 @@ class CfirDeclDeserializer(
         return when (value) {
         is CjoConstValueReader.Value.Scalar -> {
             val primitive = when (value.tag) {
-                ConstValue.Float32Value, ConstValue.Float64Value ->
-                    CfirConstantValue.Primitive(expectedType ?: ConePrimitiveType.FLOAT64, CfirLiteralKind.FLOAT,
-                        (value.value as Number).toDouble())
-                else -> CfirConstantValue.Primitive(expectedType ?: ConePrimitiveType.INT64, CfirLiteralKind.INT,
-                    when (val scalar = value.value) {
+                ConstValue.Float32Value,
+                ConstValue.Float64Value,
+                -> CfirConstantValue.Primitive(
+                    type = serializedScalarType(value.tag),
+                    kind = CfirLiteralKind.FLOAT,
+                    value = (value.value as? Number)?.toDouble() ?: return null,
+                )
+
+                ConstValue.Int8Value,
+                ConstValue.Int16Value,
+                ConstValue.Int32Value,
+                ConstValue.Int64Value,
+                ConstValue.UInt8Value,
+                ConstValue.UInt16Value,
+                ConstValue.UInt32Value,
+                ConstValue.UInt64Value,
+                -> CfirConstantValue.Primitive(
+                    type = serializedScalarType(value.tag),
+                    kind = CfirLiteralKind.INT,
+                    value = when (val scalar = value.value) {
                         is UByte -> BigInteger.valueOf(scalar.toLong())
                         is UShort -> BigInteger.valueOf(scalar.toLong())
                         is UInt -> BigInteger(scalar.toString())
                         is ULong -> BigInteger(scalar.toString())
                         is Number -> BigInteger.valueOf(scalar.toLong())
                         else -> return null
-                    })
+                    },
+                )
+
+                else -> return null
             }
             primitive
         }
         is CjoConstValueReader.Value.StringValue ->
-            CfirConstantValue.Primitive(expectedType ?: ConePrimitiveType.UNIT, CfirLiteralKind.STRING, value.value)
+            CfirConstantValue.Primitive(stringConstantType(), CfirLiteralKind.STRING, value.value)
         is CjoConstValueReader.Value.ArrayValue -> {
             val elements = value.elements.mapIndexed { index, element ->
                 checkNotNull(materializeSerializedConstant(element, expectedType?.arrayElementType)) {
@@ -1744,6 +1801,27 @@ class CfirDeclDeserializer(
             error("Raw composite reference ${value.index} reached semantic constant materialization")
         }
     }
+
+    /** Preserve the primitive type carried by the official ConstValue union tag. */
+    private fun serializedScalarType(tag: UByte): ConeCangJieType = when (tag) {
+        ConstValue.Int8Value -> ConePrimitiveType.INT8
+        ConstValue.Int16Value -> ConePrimitiveType.INT16
+        ConstValue.Int32Value -> ConePrimitiveType.INT32
+        ConstValue.Int64Value -> ConePrimitiveType.INT64
+        ConstValue.UInt8Value -> ConePrimitiveType.UINT8
+        ConstValue.UInt16Value -> ConePrimitiveType.UINT16
+        ConstValue.UInt32Value -> ConePrimitiveType.UINT32
+        ConstValue.UInt64Value -> ConePrimitiveType.UINT64
+        ConstValue.Float32Value -> ConePrimitiveType.FLOAT32
+        ConstValue.Float64Value -> ConePrimitiveType.FLOAT64
+        else -> error("Not a scalar ConstValue tag: $tag")
+    }
+
+    /** Build the canonical std.core.String type when no declaration expected type exists. */
+    private fun stringConstantType(): ConeCangJieType = ConeClassLikeType(
+        lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.String),
+        typeArguments = emptyList(),
+    )
 
     /** ExtendDecl → CfirExtend */
     private fun convertVariableWithPattern(decl: Decl): CfirPatternVariable {
@@ -1825,6 +1903,9 @@ class CfirDeclDeserializer(
 
         return when (fbPattern.kind) {
             PatternKind.VarPattern -> {
+                require(fbPattern.typesLength == 1 && fbPattern.exprsLength == 1) {
+                    "Malformed CJO VarPattern: expected exactly one type and one declaration reference"
+                }
                 val bindingVariable = deserializePatternBindingVariable(
                     rawDeclRef = fbPattern.exprs(0),
                     fallbackName = fallbackName,
@@ -1854,6 +1935,9 @@ class CfirDeclDeserializer(
             }
 
             PatternKind.TypePattern -> {
+                require(fbPattern.typesLength == 1 && fbPattern.patternsLength == 1) {
+                    "Malformed CJO TypePattern: expected exactly one type and one child pattern"
+                }
                 val resolvedTypeRef = buildTypeRef(fbPattern.types(0))
                 val nestedPattern = fbPattern.patterns(0)
                 val nestedBindingVariable = nestedPattern
@@ -1876,6 +1960,9 @@ class CfirDeclDeserializer(
             }
 
             PatternKind.EnumPattern -> buildEnumPattern {
+                require(fbPattern.typesLength == 1 && fbPattern.exprsLength == 1) {
+                    "Malformed CJO EnumPattern: expected exactly one type and one constructor expression"
+                }
                 val referenceName = decodeExprRef(fbPattern.exprs(0))
                     ?.let(::extractReferenceName)
                     ?.takeIf { it.isNotBlank() }
