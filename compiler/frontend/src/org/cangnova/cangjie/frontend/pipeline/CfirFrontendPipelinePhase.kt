@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFact
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.pipeline.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
+import org.cangnova.cangjie.cfir.serialization.cjo.CfirCjoPackageMetadataProducer
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.*
@@ -32,6 +34,8 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 /**
  * CFIR 前端管线阶段。
@@ -127,12 +131,44 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             output
         }
 
+        if (!writeLiveCjoOutputs(configuration, outputs)) return null
+
         return DefaultCfirFrontendPipelineArtifact(
             frontendOutput = AllModulesFrontendOutput(outputs),
             configuration = configuration,
             environment = environment,
             sourceFiles = sources.allSources,
         )
+    }
+
+    /**
+     * Kotlin FIR writes library metadata after frontend analysis.  CFIR keeps
+     * the same phase boundary: this producer consumes resolved CFIR and writes
+     * one package artifact per package when an explicit output directory is set.
+     */
+    private fun writeLiveCjoOutputs(
+        configuration: CompilerConfiguration,
+        outputs: List<SingleModuleFrontendOutput>,
+    ): Boolean {
+        val outputDirectory = configuration.cjoOutputDirectory?.let(Path::of) ?: return true
+        return try {
+            Files.createDirectories(outputDirectory)
+            outputs
+                .flatMap { it.fir }
+                .groupBy { it.packageDirective.packageFqName.asString() }
+                .forEach { (packageName, files) ->
+                    val metadata = CfirCjoPackageMetadataProducer.produce(files)
+                    val fileName = packageName.replace("::", "@") + ".cjo"
+                    CjoPackageWriter.write(outputDirectory.resolve(fileName), metadata)
+                }
+            true
+        } catch (failure: Throwable) {
+            configuration.messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                "Cannot produce live CJO metadata: ${failure.message ?: failure::class.simpleName}",
+            )
+            false
+        }
     }
 
     /**
