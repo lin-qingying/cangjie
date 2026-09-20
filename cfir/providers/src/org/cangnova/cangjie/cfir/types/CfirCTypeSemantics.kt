@@ -3,8 +3,10 @@ package org.cangnova.cangjie.cfir.types
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.isSupportedBuiltinAnnotation
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.name.ClassId
@@ -130,5 +132,10 @@ object CfirCTypeSemantics {
     private fun CfirStruct.hasCAnnotation(): Boolean =
         annotations.asSequence()
             .filterIsInstance<CfirAnnotationCall>()
-            .any { annotation -> annotation.annotationKind == BuiltInAnnotationKind.C }
+            .any { annotation ->
+                annotation.isSupportedBuiltinAnnotation(
+                    BuiltInAnnotationKind.C,
+                    moduleData.session.languageVersionSettings,
+                )
+            }
 }

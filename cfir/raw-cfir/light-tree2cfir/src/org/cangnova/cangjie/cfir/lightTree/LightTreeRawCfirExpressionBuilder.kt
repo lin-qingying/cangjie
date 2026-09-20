@@ -331,9 +331,9 @@ class LightTreeRawCfirExpressionBuilder(
         // 赋值
         if (op.isAssignmentToken()) {
             if (op == CjTokens.EQ) {
-                if (leftExpr is CfirTupleLiteral) {
-                    return desugarDestructuringAssignment(node, leftExpr, rightExpr)
-                }
+                // 多重赋值 `(a, b, ...) = rhs` 与 PSI 侧保持同一表示：保留结构化元组左值，
+                // 语义由 resolve/checker 按 tuple 结构判定（官方 `CheckMultipleAssignExpr`）。
+                // 建树期脱糖会让合成节点泄漏诊断并使该判定失效，详见 PSI 侧同一处注释。
                 return buildAssignment {
                     source = node.toSource()
                     lValue = leftExpr

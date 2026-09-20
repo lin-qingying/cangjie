@@ -142,7 +142,7 @@ class CfirProviderImpl(
     private fun recordFileInternal(file: CfirFile) {
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)
-        recordPackageAndParents(packageName)
+        recordDeclaredPackage(packageName)
 
         for (declaration in file.declarations) {
             recordDeclaration(
@@ -232,9 +232,9 @@ class CfirProviderImpl(
          */
         override val symbolNamesProvider: CfirSymbolNamesProvider = object : CfirSymbolNamesProvider() {
             /**
-             * 返回源码 provider 已知的所有包及其父包。
+             * 返回源码 provider 声明的所有包。
              */
-            override fun getPackageNames(): Set<String> = state.allSubPackages.mapTo(linkedSetOf()) { it.asString() }
+            override fun getPackageNames(): Set<String> = state.declaredPackages.mapTo(linkedSetOf()) { it.asString() }
 
             /**
              * source provider 的 classifier 包集合复用通用包集合。
@@ -304,10 +304,13 @@ class CfirProviderImpl(
         }
 
         /**
-         * 判断 source 索引中是否存在指定包或其子包路径。
+         * 判断源码索引中是否存在指定包。
+         *
+         * 只回答「该包被源码声明」，不把名字前缀当作包；父包判定由调用点按需
+         * 单独处理，避免包存在性与路径前缀两种事实互相污染。
          */
         override fun hasPackage(fqName: FqName): Boolean =
-            fqName in state.allSubPackages
+            fqName in state.declaredPackages
     }
 
     /**
@@ -318,7 +321,7 @@ class CfirProviderImpl(
      * 同名时保持先到先得，让本包物理声明优先。
      */
     private fun resolveSourcePackageTopLevelNames(packageFqName: FqName): SourceExportedTopLevelNames {
-        if (packageFqName !in state.allSubPackages) {
+        if (packageFqName !in state.declaredPackages) {
             return EMPTY_EXPORTED_TOP_LEVEL_NAMES
         }
         return resolveAvailableTopLevelNames(packageFqName, linkedSetOf())
@@ -334,7 +337,7 @@ class CfirProviderImpl(
         visiting: LinkedHashSet<FqName>,
     ): SourceExportedTopLevelNames {
         exportedTopLevelNamesCache[packageFqName]?.let { return it }
-        if (packageFqName !in state.allSubPackages) {
+        if (packageFqName !in state.declaredPackages) {
             return resolveDelegatedTopLevelNames(packageFqName)
         }
         if (!visiting.add(packageFqName)) return EMPTY_EXPORTED_TOP_LEVEL_NAMES
@@ -436,7 +439,7 @@ class CfirProviderImpl(
      * 解析 source 包中顶层 class-like 短名对应的 symbol。
      */
     private fun resolveSourcePackageTopLevelClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
-        if (classId.packageFqName !in state.allSubPackages) return null
+        if (classId.packageFqName !in state.declaredPackages) return null
         val target = resolveSourcePackageTopLevelNames(classId.packageFqName)
             .classifierTargets[classId.shortClassName]
             ?: return null
@@ -450,7 +453,7 @@ class CfirProviderImpl(
         packageFqName: FqName,
         name: Name,
     ): List<CfirCallableSymbol<*>> {
-        if (packageFqName !in state.allSubPackages) return emptyList()
+        if (packageFqName !in state.declaredPackages) return emptyList()
         val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
         return loadTargetCallableSymbols(target)
     }
@@ -462,7 +465,7 @@ class CfirProviderImpl(
         packageFqName: FqName,
         name: Name,
     ): List<CfirNamedFunctionSymbol> {
-        if (packageFqName !in state.allSubPackages) return emptyList()
+        if (packageFqName !in state.declaredPackages) return emptyList()
         val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
         return loadTargetFunctionSymbols(target)
     }
@@ -474,7 +477,7 @@ class CfirProviderImpl(
         packageFqName: FqName,
         name: Name,
     ): List<CfirPropertySymbol> {
-        if (packageFqName !in state.allSubPackages) return emptyList()
+        if (packageFqName !in state.declaredPackages) return emptyList()
         val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
         return loadTargetPropertySymbols(target)
     }
@@ -550,15 +553,12 @@ class CfirProviderImpl(
     }
 
     /**
-     * 记录包及所有父包，保证包存在性查询可以识别中间包路径。
+     * 将文件声明的包登记为已知包。
+     *
+     * 只登记声明本身；父包是名字前缀而不是包，不能进入包存在性判定。
      */
-    private fun recordPackageAndParents(packageName: FqName) {
-        var current = packageName
-        while (true) {
-            state.allSubPackages.add(current)
-            if (current.isRoot) break
-            current = current.parent()
-        }
+    private fun recordDeclaredPackage(packageName: FqName) {
+        state.declaredPackages.add(packageName)
     }
 
     /**
@@ -869,9 +869,16 @@ class CfirProviderImpl(
         val fileMap: MutableMap<FqName, MutableList<CfirFile>> = hashMapOf()
 
         /**
-         * 已知包及其父包集合。
+         * 本 provider 中**由源码文件直接声明**的包集合。
+         *
+         * 只收录 `package` 指令声明的包本身，**不**收录仅作为路径前缀出现的父包：
+         * 「`a.b` 是不是包」与「`a.b` 是不是某个已声明包的路径前缀」是两个不同的事实，
+         * 把它们并成一个集合会让 `import a.b.*`（`a.b` 未声明）被当成已解析包。
+         * 官方以包查找结果判定包存在（`external/cangjie_compiler/src/Modules/ImportManager.cpp`
+         * 的 `CheckCjoPathLegality` / `package_search_error`），Kotlin FIR 的
+         * `calculatePartiallyResolvablePackageSegments` 也只接受真实存在的包。
          */
-        val allSubPackages: MutableSet<FqName> = hashSetOf()
+        val declaredPackages: MutableSet<FqName> = hashSetOf()
 
         /**
          * ClassId 到 class-like symbol 的索引。

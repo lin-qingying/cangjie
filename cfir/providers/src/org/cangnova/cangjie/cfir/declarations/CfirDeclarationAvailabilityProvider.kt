@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageFeatureSupportStatus
+import org.cangnova.cangjie.featureSupportStatus
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -16,6 +19,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -104,8 +108,13 @@ open class CfirDeclarationAvailabilityProvider(
     open fun ownApiLevelInfo(declaration: CfirDeclaration): CfirApiLevelAnnotationInfo? {
         val annotations = findAnnotations(declaration, CfirPlatformAnnotationClassIds.API_LEVEL)
         val annotation = annotations.firstOrNull() ?: return null
+        val supportsSince = session.languageVersionSettings.featureSupportStatus(LanguageFeature.ApiLevelSinceParameter) ==
+            LanguageFeatureSupportStatus.SUPPORTED
         val since = annotations
-            .mapNotNull { it.apiLevelSinceArgumentText()?.toIntOrNull() }
+            .mapNotNull { entry ->
+                val hasNewSince = entry.argumentMapping.mapping.containsKey(Name.identifier("since"))
+                if (hasNewSince && !supportsSince) null else entry.apiLevelSinceArgumentText()?.toIntOrNull()
+            }
             .minOrNull()
             ?.toString()
         return CfirApiLevelAnnotationInfo(

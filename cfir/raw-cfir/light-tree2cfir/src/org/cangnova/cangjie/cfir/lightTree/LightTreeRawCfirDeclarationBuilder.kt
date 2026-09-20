@@ -1449,7 +1449,10 @@ class LightTreeRawCfirDeclarationBuilder(
             )
         }
 
-        when (BuiltInAnnotationRegistry.findLanguageBuiltIn(annotationName.substringAfterLast('.'))?.kind) {
+        // Language builtins are only the unqualified source surface.  Do not
+        // truncate a qualified custom annotation (`user.Attribute`) to its
+        // short name here; PSI and the parser deliberately keep it custom.
+        when (BuiltInAnnotationRegistry.findLanguageBuiltIn(annotationName)?.kind) {
             BuiltInAnnotationKind.ATTRIBUTE -> {
                 val attributeNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNTATION_ATTR_ATTRIBUTE)
                     ?: return emptyList()
@@ -2386,7 +2389,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /** 提取 import directive 前导 `@When[...]` 的 raw 条件。 */
     private fun LighterASTNode.whenConditionExpressionOrNull(): CfirExpression? {
         val annotation = findFirstDescendantByType(this, CjNodeTypes.ANNOTATION) ?: return null
-        val name = annotationNameInfo(annotation)?.rawName?.substringAfterLast('.') ?: return null
+        val name = annotationNameInfo(annotation)?.rawName ?: return null
         if (name != "When") return null
         val conditionNode = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_WHEN_CONDITION)
             ?: return null
@@ -3416,7 +3419,10 @@ class LightTreeRawCfirDeclarationBuilder(
         kind: BuiltInAnnotationKind,
     ): Boolean = annotations.any { annotation ->
         val rawName = annotationNameInfo(annotation)?.rawName ?: return@any false
-        BuiltInAnnotationRegistry.findLanguageBuiltIn(rawName.substringAfterLast('.'))?.kind == kind
+        // Keep the complete source spelling as the lookup key.  A qualified
+        // annotation may have the same short name as a builtin but is a user
+        // annotation until type resolution proves otherwise.
+        BuiltInAnnotationRegistry.findLanguageBuiltIn(rawName)?.kind == kind
     }
 
     /**

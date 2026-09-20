@@ -1,21 +1,29 @@
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.annotations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import java.math.BigInteger
 import java.util.IdentityHashMap
 
 /** 在注解参数绑定后发布 declaration 语义；checker 和 Analysis 只消费该快照。 */
-fun CfirDeclaration.publishAnnotationInfo() {
+fun CfirDeclaration.publishAnnotationInfo(session: CfirSession) {
     val calls = annotations.filterIsInstance<CfirAnnotationCall>()
+    val builtInsSupported = session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
+    val supportedCalls = calls.filter { call ->
+        val kind = call.annotationKind ?: return@filter true
+        builtInsSupported && call.isSupportedBuiltinAnnotation(kind, session.languageVersionSettings)
+    }
     val declarationTarget = annotationTargetFor()
     calls.forEach { it.replaceAnnotationTarget(declarationTarget) }
-    fun has(kind: BuiltInAnnotationKind): Boolean = calls.any { it.annotationKind == kind }
-    val annotation = calls.firstOrNull { it.annotationKind == BuiltInAnnotationKind.ANNOTATION }
+    fun has(kind: BuiltInAnnotationKind): Boolean = supportedCalls.any { it.annotationKind == kind }
+    val annotation = supportedCalls.firstOrNull { it.annotationKind == BuiltInAnnotationKind.ANNOTATION }
     val targetArgument = annotation?.argumentValue("target") as? CfirArrayLiteral
     // A missing target argument means all targets; an explicitly empty array means no target.
     val targetEvaluator = AnnotationKindConstantEvaluator()
@@ -35,7 +43,7 @@ fun CfirDeclaration.publishAnnotationInfo() {
         CfirAnnotationTargetResolutionStatus.RESOLVED -> evaluatedTargets!!.filterNotNull().toSet()
         CfirAnnotationTargetResolutionStatus.INVALID -> emptySet()
     }
-    val overflow = calls.lastOrNull { it.annotationKind == BuiltInAnnotationKind.NUMERIC_OVERFLOW }?.let { call ->
+    val overflow = supportedCalls.lastOrNull { it.annotationKind == BuiltInAnnotationKind.NUMERIC_OVERFLOW }?.let { call ->
         // Overflow is parser-owned syntax.  Its optional square-bracket
         // identifier is intentionally not an ordinary named argument, so it
         // is read from the preserved raw argument surface when no mapping
@@ -50,7 +58,7 @@ fun CfirDeclaration.publishAnnotationInfo() {
             else -> CangjieOverflowStrategy.NA
         }
     } ?: serializedInteropFacts?.overflowStrategy
-    val attributes = calls.filter { it.annotationKind == BuiltInAnnotationKind.ATTRIBUTE }.flatMap { call ->
+    val attributes = supportedCalls.filter { it.annotationKind == BuiltInAnnotationKind.ATTRIBUTE }.flatMap { call ->
         val original = (call.argumentList as? CfirResolvedArgumentList)?.originalArgumentList ?: call.argumentList
         original.arguments.mapNotNull { expression ->
             when (expression) {
@@ -60,7 +68,7 @@ fun CfirDeclaration.publishAnnotationInfo() {
             }
         }
     } + serializedInteropFacts?.attributeNames.orEmpty()
-    val serialized = annotationInfo
+    val serialized = annotationInfo.takeIf { builtInsSupported }
     annotationInfo = CfirDeclarationAnnotationInfo(
         isAnnotation = annotation != null || serialized?.isAnnotation == true,
         annotationTargets = if (annotation == null && serialized != null) serialized.annotationTargets else targetSet,
@@ -71,7 +79,11 @@ fun CfirDeclaration.publishAnnotationInfo() {
         },
         isIntrinsic = has(BuiltInAnnotationKind.INTRINSIC) || serializedInteropFacts?.isIntrinsic == true,
         isConstSafe = has(BuiltInAnnotationKind.CONSTSAFE),
-        isMockSupported = has(BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK),
+        isEnsurePreparedToMock = has(BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK),
+        // EnsurePreparedToMock belongs to an annotation lambda.  A declaration's
+        // mock capability is a separate official AST/CJO attribute and must not
+        // be inferred from that lambda annotation.
+        isMockSupported = serializedInteropFacts?.isMockSupported == true,
         attributes = attributes.distinct(),
         overflowStrategy = overflow ?: serialized?.overflowStrategy,
         runtimeVisible = serialized?.runtimeVisible == true,
