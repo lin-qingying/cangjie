@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 
 /**
  * `@Annotation` 修饰的声明必须提供可在编译期构造的 const constructor。
@@ -19,7 +18,10 @@ object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
     /** 检查被 `@Annotation` 标记的 class-like 声明是否拥有 const 构造器。 */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (!declaration.hasBuiltInAnnotation()) return
+        if (!declaration.hasSupportedBuiltinAnnotation(
+                context.languageVersionSettings,
+                BuiltInAnnotationKind.ANNOTATION,
+            )) return
 
         val constructors = declaration.declarations.filterIsInstance<CfirConstructor>()
         val hasConstConstructor = constructors.any { constructor ->
@@ -34,9 +36,3 @@ object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
         )
     }
 }
-
-/** 只使用 annotation resolve 发布的官方 kind，不从 PSI 文本或短名推断语义。 */
-private fun CfirClassLikeDeclaration.hasBuiltInAnnotation(): Boolean =
-    annotations.filterIsInstance<CfirAnnotationCall>().any {
-        it.annotationKind == BuiltInAnnotationKind.ANNOTATION
-    }

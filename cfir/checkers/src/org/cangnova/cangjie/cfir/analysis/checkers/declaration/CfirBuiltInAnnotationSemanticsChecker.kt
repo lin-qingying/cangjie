@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAvailabilityProvide
 import org.cangnova.cangjie.cfir.declarations.CfirHideAnnotationState
 import org.cangnova.cangjie.cfir.declarations.CfirPlatformAnnotationClassIds
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -28,6 +30,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.isSupportedBuiltinAnnotation
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.expressions.stringArgument
 import org.cangnova.cangjie.cfir.analysis.diagnostics.literalConversionMismatch
@@ -76,10 +79,41 @@ object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
     override fun check(declaration: CfirDeclaration) {
         checkAnnotationMetaRules(declaration)
         checkAnnotationTargetConstants(declaration)
+        checkEnsurePreparedToMockTarget(declaration)
         if (reportUnsupportedAnnotationVersions(declaration)) return
         checkPlatformAnnotationSyntax(declaration)
         checkForeignNameRules(declaration)
     }
+}
+
+/**
+ * `@EnsurePreparedToMock` is parser-owned annotation-lambda metadata.  It is
+ * never a capability marker on the declaration selected by `createMock`.
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkEnsurePreparedToMockTarget(declaration: CfirDeclaration) {
+    declaration.annotations.filterIsInstance<CfirAnnotationCall>()
+        .filter {
+            it.annotationKind == BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK &&
+                it.isSupportedBuiltinAnnotation(
+                    BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK,
+                    context.languageVersionSettings,
+                )
+        }
+        .forEach { annotation ->
+            if (declaration is CfirAnonymousFunction) return@forEach
+            reporter.reportOn(
+                source = annotation.source ?: declaration.source,
+                factory = CfirErrors.ILLEGAL_USE_OF_ANNOTATION,
+                a = when (declaration) {
+                    is CfirFunction -> "function"
+                    is CfirProperty -> "property"
+                    is CfirClassLikeDeclaration -> "type declaration"
+                    else -> "declaration"
+                },
+                b = "@EnsurePreparedToMock",
+            )
+        }
 }
 
 /**
@@ -212,7 +246,12 @@ context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkAnnotationTargetConstants(declaration: CfirDeclaration) {
     val annotation = declaration.annotations
         .filterIsInstance<CfirAnnotationCall>()
-        .firstOrNull { it.annotationKind == org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ANNOTATION }
+        .firstOrNull {
+            it.isSupportedBuiltinAnnotation(
+                org.cangnova.cangjie.annotations.BuiltInAnnotationKind.ANNOTATION,
+                context.languageVersionSettings,
+            )
+        }
         ?: return
     val target = annotation.argumentByName("target") as? org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
         ?: return
@@ -261,6 +300,14 @@ private fun checkPlatformAnnotationSyntax(
     if (apiLevelEntries.isNotEmpty()) {
         val seenSyscaps = linkedSetOf<String>()
         for (entry in apiLevelEntries) {
+            val sinceArgument = entry.argumentByName("since")
+            if (sinceArgument != null) {
+                context.requireFeatureSupport(
+                    feature = LanguageFeature.ApiLevelSinceParameter,
+                    source = sinceArgument.annotationLiteralDiagnosticSource(entry.source),
+                    reporter = reporter,
+                )
+            }
             if (!entry.hasApiLevelSinceArgument()) {
                 reporter.reportOn(
                     source = entry.toSourceOrDeclarationSource(declaration),

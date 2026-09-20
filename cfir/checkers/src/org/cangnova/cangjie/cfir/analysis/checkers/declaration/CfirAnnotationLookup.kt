@@ -8,6 +8,7 @@ import org.cangnova.cangjie.requireFeatureSupport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -35,11 +36,27 @@ internal fun CfirDeclaration.findAnnotations(annotationClassId: ClassId): List<C
  * 误认为语言内置注解。
  */
 internal fun CfirDeclaration.hasBuiltinAnnotation(kind: BuiltInAnnotationKind): Boolean =
-    annotations.any { it.annotationKind == kind }
+    annotations.any { annotation ->
+        val call = annotation as? CfirAnnotationCall
+        if (call != null) {
+            call.isSupportedBuiltinAnnotation(kind, moduleData.session.languageVersionSettings)
+        } else {
+            annotation.annotationKind == kind &&
+                moduleData.session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
+        }
+    }
 
 /** 按 resolver 已发布的官方 kind 返回全部内置注解，不做源码拼写匹配。 */
 internal fun CfirDeclaration.findBuiltinAnnotations(kind: BuiltInAnnotationKind): List<CfirAnnotation> =
-    annotations.filter { it.annotationKind == kind }
+    annotations.filter { annotation ->
+        val call = annotation as? CfirAnnotationCall
+        if (call != null) {
+            call.isSupportedBuiltinAnnotation(kind, moduleData.session.languageVersionSettings)
+        } else {
+            annotation.annotationKind == kind &&
+                moduleData.session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
+        }
+    }
 
 /**
  * 返回当前版本允许 semantic owner 消费的 builtin identity。

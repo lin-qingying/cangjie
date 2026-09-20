@@ -4,7 +4,6 @@ import org.cangnova.cangjie.cfir.lookupTracker
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -14,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
@@ -551,11 +551,7 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
     }
 
     val conflictingDeclaration = if (conflictingSymbol.isBound) conflictingSymbol.cfir else return
-    if (
-        conflictingDeclaration is CfirCallableDeclaration &&
-        conflictingDeclaration.status.visibility == Visibilities.Private &&
-        actualConflictingFile != containingFile
-    ) {
+    if (conflictingDeclaration.isExemptCrossFileTopLevelPrivate(actualConflictingFile, containingFile)) {
         return
     }
 
@@ -565,6 +561,23 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
     ) {
         declarationConflictingSymbols.getOrPut(declaration) { SmartSet.create() }.add(conflictingSymbol)
     }
+}
+
+/**
+ * 判断先前声明是否因「顶层 private 只对所在文件可见」而不与当前文件构成重复声明。
+ *
+ * 官方 `Sema/PreCheck.cpp:246-251` 对 `GLOBAL + PRIVATE` 且位于**不同文件**的两个声明豁免
+ * `sema_redefinition`，依据是 `Sema/LookUpImpl.cpp:454-458`（`IsTargetVisibleToNode`）：
+ * 顶层 private 目标仅对同文件引用可见。该豁免与声明种类无关——函数、属性与 class-like
+ * 一律适用；同一文件内的重名仍按普通重复声明处理。
+ */
+private fun CfirDeclaration.isExemptCrossFileTopLevelPrivate(
+    conflictingFile: CfirFile?,
+    containingFile: CfirFile,
+): Boolean {
+    if (conflictingFile == null || conflictingFile == containingFile) return false
+    val visibility = (this as? CfirMemberDeclaration)?.status?.visibility ?: return false
+    return visibility == Visibilities.Private
 }
 
 /**

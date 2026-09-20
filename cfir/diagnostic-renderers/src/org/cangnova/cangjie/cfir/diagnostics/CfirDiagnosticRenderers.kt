@@ -25,18 +25,25 @@ object CfirDiagnosticRenderers {
     val LANGUAGE_FEATURE_SUPPORT = Renderer<Pair<LanguageFeature, LanguageVersionSettings>> { (feature, settings) ->
         val sinceVersion = feature.sinceVersion
         val supportStatus = settings.featureSupportStatus(feature)
+        val featureFlag = "-XXLanguage:+${feature.name}"
         val reason = when {
-            feature.testOnly -> "unsupported"
-            supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION && sinceVersion != null ->
+            feature.testOnly -> "unsupported."
+            sinceVersion == null ->
+                "experimental and should be enabled explicitly. This can be done by supplying the compiler argument '$featureFlag', but note that no stability guarantees are provided."
+            supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION ->
                 "only available since language version ${sinceVersion.versionString}"
             supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION ->
                 "only available since API version ${feature.sinceApiVersion.versionString}"
-            supportStatus == LanguageFeatureSupportStatus.DISABLED -> "disabled"
-            supportStatus == LanguageFeatureSupportStatus.EXPERIMENTAL ->
-                "experimental and must be enabled explicitly"
+            supportStatus == LanguageFeatureSupportStatus.DISABLED -> "disabled."
             else -> "not supported by the current language settings"
         }
-        "The feature \"${feature.name}\" is $reason"
+        buildString {
+            append("The feature \"")
+            append(feature.presentableName)
+            append("\" is ")
+            append(reason)
+            feature.hintUrl?.let { append(" (see: ").append(it).append(')') }
+        }
     }
 
 

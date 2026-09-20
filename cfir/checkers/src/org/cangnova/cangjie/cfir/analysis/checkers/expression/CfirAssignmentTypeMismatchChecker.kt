@@ -53,7 +53,9 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             else -> null
         }
         if (multipleAssignmentDiagnostic != null) {
-            val rValueSource = expression.rValue.source as? AbstractCjSourceElement ?: return
+            // 官方 `Diags.cpp` 的 `DiagInvalidMultipleAssignExpr` 以 RHS 表达式作为诊断目标。
+            // RHS 的 source 取不到时才退回整条赋值；不能因为取不到 source 就静默丢弃诊断。
+            val rValueSource = expression.rValue.source ?: expression.source ?: return
             reporter.reportOn(
                 rValueSource,
                 CfirErrors.TYPE_MISMATCH,

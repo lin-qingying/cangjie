@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.annotationInfo
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
@@ -106,7 +107,15 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
             return
         }
 
-        if (!targetDeclaration.hasBuiltinAnnotation(BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK)) {
+        val targetSupportsMocking = targetDeclaration is CfirInterface ||
+            targetDeclaration.annotationInfo?.isMockSupported == true ||
+            // A source package becomes mock-compatible on the same compilation
+            // when it contains a mock use.  The official TestManager marks its
+            // declarations before handling the call; this checker is the
+            // declaration-side consumer of that session capability.
+            targetDeclaration.origin == org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source &&
+                mockSettings.mockCompatible
+        if (!targetSupportsMocking) {
             reporter.reportOn(
                 source = source,
                 factory = CfirErrors.MOCK_DOESNT_SUPPORT_MOCKING,

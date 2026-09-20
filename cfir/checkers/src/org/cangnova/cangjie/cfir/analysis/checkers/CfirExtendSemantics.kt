@@ -32,10 +32,13 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.isSupportedBuiltinAnnotation
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendType
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -236,7 +239,17 @@ internal object CfirExtendSemantics {
      * 使用其结构化 typeRef 或 callee reference。这里不再从 source 文本重新解析。
      */
     fun hasAnnotation(declaration: CfirClassLikeDeclaration, annotationKind: BuiltInAnnotationKind): Boolean {
-        return declaration.annotations.any { annotation -> annotation.annotationKind == annotationKind }
+        return declaration.annotations.any { annotation ->
+            val call = annotation as? CfirAnnotationCall
+            if (call != null) {
+                call.isSupportedBuiltinAnnotation(annotationKind, declaration.moduleData.session.languageVersionSettings)
+            } else {
+                annotation.annotationKind == annotationKind &&
+                    declaration.moduleData.session.languageVersionSettings.supportsFeature(
+                        org.cangnova.cangjie.LanguageFeature.BuiltInAnnotations,
+                    )
+            }
+        }
     }
 
     /**
