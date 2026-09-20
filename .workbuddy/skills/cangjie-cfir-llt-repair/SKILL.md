@@ -270,3 +270,26 @@ Report only evidence-backed facts, using both Repair Report Fields groups for ea
 12. **fixture 期望值与官方不一致 ≠ 可以按 CFIR 现状改写**。`sync_0.cj` 期望 0 诊断，
     官方实测 3 条；正确做法是先把 CFIR 的实现补到与官方一致（字面量→interface 形参应报
     `CANNOT_CONVERT_LITERAL`），再按官方口径写 fixture；不能把"CFIR 现在报什么"当期望。
+
+## Session-Proven Tooling & Pitfalls (2026-09-20)
+
+13. **核对"改动是否还在"必须用 `git grep <符号> HEAD`，不能看 `git status`。**
+    并行会话（或在 `.claude/worktrees/<branch>/` 工作的人）会 `git commit` 掉你工作区的改动；
+    之后 `git status` 干净、看起来像"我的改动被回滚了"，其实已在 HEAD 里。先 `git log --oneline -3`
+    + `git grep -l <符号> HEAD -- <dir>` 确认，再决定要不要重做。
+14. **上界判定（upper-bound）一族目前只能在 `CheckerContext` 下调用。**
+    `satisfiesGenericArgumentUpperBound` / `satisfiesNonCTypeUpperBound` / `declaredUpperBoundTypes` /
+    `isGenericTypeWithInvalidUpperBound` / `satisfiesGenericUpperBounds`（另一文件）全是
+    `context(CheckerContext)`，且 `withSession`（`cfir-tree/SessionHolder.kt`）只能提供 `SessionHolder`，
+    满足不了它们。想给"只有 session"的消费点（如 `coneDiagnosticToCfirDiagnostic.toCfirDiagnostics`
+    / `argumentTypeMismatch`）加失效守卫，只有两条路：
+    ①给该入口增加可选 `CheckerContext`（由 `ErrorNodeDiagnosticCollectorComponent.reportCfirDiagnostic` 传入，
+    它同时持有 context 与 reporter）；②在收集器里按 cone 诊断的候选形参
+    `returnTypeRef.hasInvalidGenericTypeArgument()`（既有使用点谓词）判定。
+    **不要**试图把这一族降成 session 级——实测需要改 5 个函数（含跨文件），成本远超收益。
+15. **多元素语料的锚点可能有两种约定，取决于错误种类。** `sema_mismatched_types_multiple_assign`
+    （元数不匹配）锚 **RHS 元组**；元素类型不匹配则锚**整个赋值**。改锚点前必须先判断是哪种错误，
+    不要用一个 fixture 的期望去推定同类构造。
+16. **多个 `Edit` 打在同一文件时，只有最后一次落盘**（已在 8 条记录）。补充实操：
+    需要改同一文件的"导入段 + 函数体"两处时，**分两条消息**各自 Edit，并在两次之间用
+    `grep -n <新符号> <file>` 核验，再启动测试。
