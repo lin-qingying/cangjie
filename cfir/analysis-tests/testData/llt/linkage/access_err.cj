@@ -3,7 +3,7 @@
 
 package a.b.c
 
-import a.b.*
+import <!UNRESOLVED_IMPORT!>a<!>.b.*
 
 main() {
     println(DDDD().f4())

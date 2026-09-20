@@ -2,7 +2,7 @@
 
 
 
-import <!UNRESOLVED_IMPORT!>pkga<!>
+import pkga
 
 main() {
     var a = pkga.AA<Int64>()
