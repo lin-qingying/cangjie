@@ -35,6 +35,30 @@ class LanguageVersionSettingsTest {
     }
 
     @Test
+    fun featureMetadataUsesKotlinPresentableNameContract() {
+        assertEquals("api level since parameter", LanguageFeature.ApiLevelSinceParameter.presentableName)
+        assertFalse(LanguageFeature.EnableDfaWarnings.actuallyEnabledInProgressiveMode)
+        assertEquals("allow intersection types in inference", LanguageFeature.AllowIntersectionTypesInInference.presentableText)
+    }
+
+    @Test
+    fun apiLevelSinceParameterStartsInOneZeroFive() {
+        val legacy = LanguageVersionSettingsImpl(
+            LanguageVersion.CANGJIE_1_0_0,
+            ApiVersion.CANGJIE_1_0_0,
+        )
+        val introduced = LanguageVersionSettingsImpl(
+            LanguageVersion.CANGJIE_1_0_5,
+            ApiVersion.CANGJIE_1_0_5,
+        )
+        assertEquals(
+            LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION,
+            legacy.featureSupportStatus(LanguageFeature.ApiLevelSinceParameter),
+        )
+        assertTrue(introduced.supportsFeature(LanguageFeature.ApiLevelSinceParameter))
+    }
+
+    @Test
     fun explicitFeatureStateOverridesVersionDefaultInBothDirections() {
         val feature = LanguageFeature.ObjCInteropAnnotations
         val oldVersion = LanguageVersionSettingsImpl(
