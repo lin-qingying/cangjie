@@ -900,6 +900,7 @@ open class CangJieExpressionParsing(
             }
 
             IDENTIFIER_Id -> parseSimpleNameExpression()
+            UNDERLINE_Id -> parseWildcardExpression()
             LBRACE_Id -> parseFunctionLiteral()
             OPEN_QUOTE_Id -> parseStringTemplate()
             TRUE_KEYWORD_Id, FALSE_KEYWORD_Id -> parseOneTokenExpression(BOOLEAN_CONSTANT)
@@ -919,6 +920,22 @@ open class CangJieExpressionParsing(
             )
         }
         return ok
+    }
+
+    /**
+     * 解析通配表达式 `_`。
+     *
+     * 官方把 `_` 作为独立 token 在原子表达式位置解析成 `WildcardExpr`
+     * （`Parse/ParseAtom.cpp` 的 `Seeing(WILDCARD) -> ParseWildcardExpr`），由后续语义决定
+     * 它只在赋值目标等允许丢弃的位置合法。本仓库沿用同一形式：`_` 只在原子位置被接受，
+     * 语义层按丢弃目标处理，因此这里同样产出一个引用形态的表达式节点，名称即 `_`。
+     */
+    context(context: ParsingContext)
+    private fun parseWildcardExpression() {
+        assert(_at(UNDERLINE))
+        val wildcard = mark()
+        advance()
+        wildcard.done(REFERENCE_EXPRESSION)
     }
 
     /**
@@ -4031,6 +4048,7 @@ open class CangJieExpressionParsing(
                 DO_KEYWORD,
                 VARRAY_KEYWORD,
                 IDENTIFIER,
+                UNDERLINE,
                 LBRACKET,
                 UNSAFE_KEYWORD,
                 SPAWN_KEYWORD,
