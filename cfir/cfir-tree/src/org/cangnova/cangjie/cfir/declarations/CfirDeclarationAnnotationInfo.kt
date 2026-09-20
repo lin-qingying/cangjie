@@ -27,6 +27,9 @@ public data class CfirDeclarationAnnotationInfo(
         else CfirAnnotationTargetResolutionStatus.NOT_ANNOTATION,
     val isIntrinsic: Boolean = false,
     val isConstSafe: Boolean = false,
+    /** `@EnsurePreparedToMock` belongs to an annotation lambda, not its target. */
+    val isEnsurePreparedToMock: Boolean = false,
+    /** Official package/declaration mock capability (`MOCK_SUPPORTED`). */
     val isMockSupported: Boolean = false,
     val attributes: List<String> = emptyList(),
     val overflowStrategy: CangjieOverflowStrategy? = null,

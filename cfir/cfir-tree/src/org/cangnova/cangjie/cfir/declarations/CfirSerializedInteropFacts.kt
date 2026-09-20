@@ -25,6 +25,8 @@ public data class CfirSerializedInteropFacts(
     val isIntrinsic: Boolean = false,
     /** `FuncInfo.isFastNative` was set by the official AST writer. */
     val isFastNative: Boolean = false,
+    /** `Attribute::MOCK_SUPPORTED` restored from the official CJO declaration. */
+    val isMockSupported: Boolean = false,
     /** Official AST attributes materialized from Java FFI and CJMapping. */
     val isJavaMirror: Boolean = false,
     val isJavaMirrorSubtype: Boolean = false,
