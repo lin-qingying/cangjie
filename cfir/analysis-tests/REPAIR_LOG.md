@@ -7584,3 +7584,466 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
   `satisfiesGenericArgumentUpperBound` / `satisfiesNonCTypeUpperBound` / `declaredUpperBoundTypes` /
   `isGenericTypeWithInvalidUpperBound` / `satisfiesGenericUpperBounds`（最后一个在另一文件），
   属多文件签名重构，已回退（本轮尝试的 session 级遍历已全部还原）。
+
+## 2026-09-20：门禁 + `variable_use_before_init_03` 定位结论
+
+- 全量门禁（decl_0 守卫 + fixture 修正后）: `8658 tests completed, 156 failed, 308 skipped`；
+  与基线逐条 diff **新增回归 0**，累计修复 59。decl_0 的靶点已部分消除但该用例仍差最后 1 条
+  （`foo(1)` 的 ARGUMENT_TYPE_MISMATCH），故失败数未变。
+- `variable_use_before_init_03` 的 owner 定位（插桩结论）: `CfirAssignmentTypeMismatchChecker.check` 中
+  多重赋值分支（`ConeMismatchedTypesMultipleAssignError`）**从未命中**——插桩显示所有 `CfirAssignment`
+  的 `expression.coneTypeOrNull` 都不是该错误（`root=null`），因此 CFIR 那条"锚整个赋值"的 TYPE_MISMATCH
+  不来自这里，需继续向上追（`if` 条件 checker 已排除：`CfirIfConditionTypeMismatchChecker` 对
+  `ConeErrorType` 直接 return）。下轮入口：对 `if ((a, b) = (1, 2, 3))` 节点的 `coneTypeOrNull` 与
+  各 TYPE_MISMATCH 报告点做一次全量插桩（`reportOn` 侧打点）。
+- 官方锚点（已取证，可直接用）: `sema_mismatched_types_multiple_assign` 锚 **RHS 元组**
+  （L4 C18→C27 = `(1, 2, 3)`）；而 `Assign/case03` 的元素类型不匹配期望锚整个赋值 → 两种锚点对应
+  不同错误种类（元数不匹配 vs 元素类型不匹配），修锚点时不可一刀切。
+
+## 2026-09-20：CJO/.cj.d/stub 注解状态契约
+
+- problem type: annotation resolve state publication across source sidecar, CJO deserialization and stub deserialization。
+- root cause: sidecar/CJO/stub builders constructed annotation identity and argument nodes but directly published
+  `SEMANTIC_RESOLVED`; this bypassed the declaration-owned semantic phase and made Analysis API/semantic consumers
+  treat unvalidated binary or sidecar arguments as complete.
+- official/framework evidence:
+  - official CJD flow merges declaration annotations before CJO publication (`CjdCompilerInstance` and
+    `MergeAnnoFromCjd.cpp`); the CFIR owner must therefore publish facts before consumers, not vice versa。
+  - Kotlin FIR annotation deserialization restores annotation nodes/argument mapping, while semantic checking remains
+    phase-owned; no consumer is a second semantic producer。
+- CFIR owner files changed:
+  - `CjdAnnotationConverter.kt`。
+  - `CfirDeclDeserializer.kt`。
+  - `StubBasedAnnotationDeserializer.kt`。
+  - `CaCfirCInteropComponent.kt`。
+- repair principle: source/CJO/stub paths publish at most `TYPE_RESOLVED` until the declaration owner validates
+  arguments and semantics; Analysis API only consumes the canonical interop snapshot already published by STATUS or
+  binary deserialization and never manufactures it on demand。
+- fixtures covered: `CjdAnnotationConverterTest` (7), `CjdBinaryAnnotationIntegrationTest` (8, 3 SDK-gated).
+- verification: `gradlew-queue.bat :cfir:cfir-serialization:test --tests '*CjdAnnotationConverterTest*' --tests
+  '*CjdBinaryAnnotationIntegrationTest*' :analysis:analysis-api-cfir:compileKotlin :analysis:low-level-api-cfir:compileKotlin`
+  → BUILD SUCCESSFUL; 7/7 converter tests passed, binary integration 5 passed/3 skipped。
+
+## 2026-09-20：LightTree builtin identity与CFunc内建顺序
+
+- problem type: PSI/LightTree builtin identity parity and C FFI builtin candidate ordering。
+- root cause: LightTree truncated qualified annotation names before registry lookup; the direct/class builtin resolver
+  placed CFunc before Array/VArray although official `ChkBuiltinCall` order is Pointer → CString → Array → VArray → CFunc。
+- official Cangjie evidence: `external/cangjie_compiler/src/Sema/TypeCheckBuiltinExpr.cpp:579-594` and the shared
+  parser/registry contract require qualified custom annotations to remain custom and preserve the builtin probe order。
+- CFIR owner files changed:
+  - `LightTreeRawCfirDeclarationBuilder.kt`。
+  - `CfirBuiltInCallResolver.kt`。
+- repair principle: both source paths use complete annotation spelling for identity, and all builtin call entry points
+  use one official classifier order so the first applicable candidate owns diagnostics。
+- fixtures covered: FFI generated LLT/PSI suites and the LightTree raw annotation path。
+- verification: `gradlew-queue.bat :cfir:analysis-tests:test --tests
+  '*CfirAnalysisLLTTestGenerated$Ffi*' --tests '*CfirAnalysisLLTPsiTestGenerated$Ffi*'`
+  → BUILD SUCCESSFUL; fresh XML shows LightTree 41/41 passed and PSI 41/41 passed。
+
+## 2026-09-20：全量回归复核与泛型上界级联边界
+
+- first fresh full run: `8658 tests completed, 156 failed, 308 skipped`；相对
+  `20260920-full-after-macro-nested-token-fix` 为 `fixed=2`、`regressed=2`。
+- regression root cause: the shared generic-upper-bound cascade suppression in
+  `ErrorNodeDiagnosticCollectorComponent` ran before diagnostic conversion and swallowed
+  `DelegatingConstructorCall` diagnostics, including `super(0)` in `generic_parameters1`。
+- repair: keep the official upper-bound suppression for ordinary inapplicable candidates,
+  but preserve `AbstractCallKind.DelegatingConstructorCall` for its dedicated constructor-call
+  diagnostic owner。
+- focused verification: `generic_parameters1` and `decl_0`, both LightTree and PSI → BUILD SUCCESSFUL。
+- final fresh full run: `8658 tests completed, 154 failed, 308 skipped`；fresh ledger
+  `20260920-full-after-cjd-state-lighttree-cfunc-delegating-fix` records `8659` testcase keys,
+  compared with the immediately preceding fresh ledger: `fixed=2`, `regressed=0`, `new=0`,
+  `removed=0`, `unchangedFailures=154`, `changedFailures=0`。
+- remaining scope: complete FFI/annotation implementation and CJO/.cj.d/stub/decompiled/Analysis API
+  path matrix remain open；this is a non-regressing partial result, not a completeness claim。
+
+## 2026-09-20：CJO writer declaration info union
+
+- problem type: CJO producer parity for declaration `info` metadata。
+- root cause: writer accepted `Decl.attributes` and `Anno` only, while the reader already consumed official
+  `FuncInfo`/`VarInfo`/`PropInfo` tables; a locally produced CJO therefore lost overflow policy, const/inline,
+  FastNative and property/variable declaration facts。
+- owner change: `CjoPackageWriter.kt` adds explicit `CjoDeclarationInfo` producer contracts:
+  `CjoFunctionInfo`, `CjoVariableInfo`, `CjoPropertyInfo`; writer emits the official `Decl.infoType/info` union。
+  `CjoFunctionInfo` maps `CangjieOverflowStrategy` to official `PackageFormat.OverflowPolicy` and does not invent
+  fields absent from ModuleFormat。
+- verification: `gradlew-queue.bat :cfir:cfir-serialization:test --tests '*CjoPackageWriterTest*'` → BUILD SUCCESSFUL;
+  writer test verifies `FuncInfo`, saturating overflow, const, inline and FastNative round-trip。
+- remaining scope: producer integration from live CFIR declaration snapshots into this input model, full CJO reader/
+  writer round-trip for every declaration kind, `.cj.d` overlay, stub/decompiled and Analysis API path matrices remain open。
+
+## 2026-09-20：CJO AnnoKind 平台身份恢复
+
+- problem type: official CJO platform annotation entries without `Anno.target`。
+- root cause: deserializer only resolved Java/ObjC platform identity through target ClassId; official `AnnoKind`
+  entries from older/smaller CJO records could therefore lose `JavaMirror`/`JavaImpl`/`JavaHasDefault`/
+  `ObjCMirror`/`ObjCImpl` identity。
+- repair: `CfirDeclDeserializer.serializedPlatformDescriptor()` restores only unambiguous official kinds to their
+  registry ClassId; `ForeignName` remains deliberately unresolved when Java/ObjC ownership is ambiguous。
+- verification: added binary FlatBuffers fixture with `AnnoKind.JavaMirror` and no target; CJO binary integration
+  suite → BUILD SUCCESSFUL。
+
+## 2026-09-20：APILevel 1.0.0/1.0.5 参数版本门禁
+
+- official evidence: v1.0.0 uses the legacy numeric APILevel form; v1.0.5 adds the named `since: String` form
+  while retaining the legacy level form.  v1.1.x does not introduce a new core parser annotation family。
+- implementation: added `LanguageFeature.ApiLevelSinceParameter` with `sinceVersion=1.0.5`; the common APILevel
+  schema now keeps `level`, `level_val`, and gated `since` as separate parameter identities。
+- semantic owner: `CfirBuiltInAnnotationSemanticsChecker` reports the unified unsupported-feature diagnostic for
+  `since` on pre-1.0.5 sessions; `CfirDeclarationAvailabilityProvider` refuses to consume `since` as availability
+  fact before that gate, while legacy level forms remain available。
+- verification: common language/registry tests and `:cfir:providers:compileKotlin :cfir:checkers:compileKotlin`
+  → BUILD SUCCESSFUL。
+
+## 2026-09-20：CJO FuncBody/type pool wire contract
+
+- official evidence: `ASTWriter::SaveFuncBody` and `ASTLoader` require a `FuncBody` table even for bodyless
+  library declarations; it carries parameter Decl indices and return type index, which CJD matching and decompiled
+  stubs consume。
+- owner change: `CjoPackageWriter` now emits `Package.allTypes`, `Decl.type`, `CjoFunctionBodyInfo`, parameter-list
+  vectors, return type and bodyless-function metadata, with 1-based declaration/type reference validation。
+- verification: `CjoPackageWriterTest` now round-trips a typed function with a parameter through `FuncInfo.funcBody`;
+  `:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest*'` → BUILD SUCCESSFUL。
+- remaining scope: live CFIR semantic producer wiring, `VarInfo` ConstValue, property accessor consumer and full
+  CJO → deserializer → stub/Analysis API round-trip remain open。
+
+- reader follow-up: `CfirDeclDeserializer.convertVariableOrEnumConstructor` now restores a representable
+  `VarInfo.initializer` expression through the existing 1-based expression reader; it does not infer values from
+  names/source text. `VarInfo.ConstValue` and property accessor vectors remain explicitly open。
+
+- reader follow-up: `PropInfo` getter/setter declaration references are now materialized as
+  `CfirPropertyAccessor` nodes during property deserialization, preserving accessor symbols, parameter lists,
+  return types and annotations; full `ConstValue` and decompiled accessor projection remain open。
+
+- CJO writer follow-up: added a typed `CjoConstValueInfo` seam with an `Int64` union producer and writer test;
+  the FlatBuffers union tag is preserved, while generated Kotlin access to scalar struct union payloads remains
+  limited by the current generated API and broader ConstValue reader/materialization is still open。
+
+## 2026-09-20：annotation semantic snapshot version gate
+
+- problem type: CJO/source annotation semantic facts bypassing the unified language gate。
+- repair: `publishAnnotationInfo(session)` now consumes only supported language builtin identities and refuses to
+  publish builtin annotation metadata from a session with `BuiltInAnnotations` disabled; all source, deserializer and
+  body-resolve call sites pass the owning session explicitly。
+- verification: `:cfir:providers:compileKotlin :cfir:resolve:compileKotlin :cfir:checkers:compileKotlin
+  :cfir:cfir-serialization:compileKotlin` → BUILD SUCCESSFUL。
+
+- follow-up: CJO serialized core FFI facts now obey `BuiltInAnnotations` before rebuilding ABI/CallingConv/FastNative
+  facts; central builtin lookup and CType/extend boundary consumers are session-aware; Analysis API filters unsupported
+  FFI annotation calls before exposing interop annotations. Affected providers/checkers/Analysis API compilation →
+  BUILD SUCCESSFUL。
+
+- fresh full verification after all version/consumer gates: `8658 tests completed, 154 failed, 308 skipped`；ledger
+  `20260920-full-after-version-and-consumer-gates` has `8659` records and compares against the immediately prior
+  fresh ledger as `fixed=0, regressed=0, new=0, removed=0, unchangedFailures=154, changedFailures=0`。
+
+- latest fresh full verification after VarInfo initializer and session-aware CType/extend/Analysis API consumers:
+  `8658 tests completed, 154 failed, 308 skipped`；ledger
+  `20260920-full-after-latest-consumer-gates` compared with the previous fresh ledger: `fixed=0, regressed=0,
+  new=0, removed=0, unchangedFailures=154, changedFailures=0`。
+
+- final fresh full verification after the latest session-gated semantic consumers and VarInfo reader compile:
+  `8658 tests completed, 154 failed, 308 skipped`；ledger
+  `20260920-full-after-final-session-gate-and-varinfo-reader` compared with the previous fresh ledger:
+  `fixed=0, regressed=0, new=0, removed=0, unchangedFailures=154, changedFailures=0`。
+
+- property reader follow-up fresh verification: `8658 tests completed, 154 failed, 308 skipped`；ledger
+  `20260920-full-after-property-reader` compared with the previous fresh ledger: `fixed=0, regressed=0, new=0,
+  removed=0, unchangedFailures=154, changedFailures=0`。
+
+## 2026-09-20：CJO FuncBody/type pool validation and APILevel regression result
+
+- CJO writer now emits the minimum official bodyless-function wire contract: `Package.allTypes`, `Decl.type`,
+  `FuncBody`, parameter lists, return type and validated 1-based references; incompatible `DeclKind`/info unions
+  are rejected at DTO construction。
+- CJO writer tests → BUILD SUCCESSFUL。
+- APILevel full family after the 1.0.5 gate: `212 tests completed, 42 failed` (all failures are existing fixture
+  rendering/UNUSED_IMPORT or merge expectation differences; no compile regression). The new gate compiles, but
+  this family requires separate fixture/version-policy cleanup before claiming green。
+
+- FFI/CJO focused verification after unified gate changes: CJO writer/CJD integration and LightTree/PSI FFI suites
+  → BUILD SUCCESSFUL; FFI XML slice remains 41/41 per path。
+
+## 2026-09-20：Kotlin 语言特性元模型与 CJO ConstValue reader
+
+- framework evidence: Kotlin `LanguageFeature` requires explicit `sinceVersion`/`sinceApiVersion`
+  metadata, rejects `testOnly` features with a default version, exposes `presentableName` and
+  `actuallyEnabledInProgressiveMode`, and keeps unsupported-feature reporting in the semantic checker
+  rather than dropping syntax in the parser。
+- owner changes: `common/LanguageVersionSettings.kt` now enforces the metadata invariant and exposes the
+  Kotlin-shaped presentation/progressive projections; the CFIR diagnostic renderer uses the readable
+  feature name. `CfirInteropInfoProvider` and builtin checkers consume only gate-approved identities.
+- CJO owner changes: `CjoPackageWriter` adds typed ConstValue producers for all official scalar variants,
+  string, array and composite-index values. `CjoConstValueReader` is the single generated-FlatBuffers
+  adapter for struct/string union members and validates array union shape; no generated file or source text
+  fallback is used.
+- official evidence: Kotlin `external/kotlin/compiler/util/.../LanguageVersionSettings.kt` and FIR
+  `FirHelpers.requireFeatureSupport`; Cangjie `external/cangjie_compiler/schema/ModuleFormat.fbs` ConstValue
+  union and official AST serialization contract。
+- focused verification: `:common:test --tests '*LanguageVersionSettingsTest*'`,
+  `:cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Ffi*' --tests
+  '*CfirAnalysisLLTPsiTestGenerated$Ffi*'`, and
+  `:cfir:cfir-serialization:test --tests '*CjoConstValueReaderTest' --tests '*CjoPackageWriterTest'`
+  → BUILD SUCCESSFUL。
+- full verification: `:cfir:analysis-tests:test` → `8658 tests completed, 154 failed, 308 skipped`;
+  fresh ledger `20260920-full-after-cjo-constvalue-reader-2` contains 8659 testcase records because the
+  new serialization test adds one skipped record. Compared with `20260920-full-after-property-reader`:
+  `fixed=0`, `regressed=0`, `new=0`, `removed=0`, `unchangedFailures=154`, `changedFailures=0`。
+- remaining scope: ConstValue is now wire-readable but is not yet materialized into CFIR declaration
+  constant semantics; live CFIR→CJO producer integration, full property/accessor projection, `.cj.d`,
+  stub/decompiled/Analysis API paths and the existing 154 failure families remain open。 This is a
+  non-regressing partial result, not a completeness claim。
+
+## 2026-09-20：CJO composite value pool and strict initializer handling
+
+- parity review findings applied: `CjoVariableInfo` no longer accepts an untyped `valueType/valueOffset`
+  escape; every constant value is supplied through the typed `CjoConstValueInfo` hierarchy. Composite
+  indices are validated against `Package.allValues` and the writer now emits `CompositeValue`/`MemberValue`
+  entries through that official pool。
+- deserializer owner correction: the existing CJO expression decoder is now shared by annotation arguments
+  and declaration initializers; a non-empty variable initializer reference that is malformed or outside the
+  supported producer expression contract fails explicitly instead of silently becoming `null`。
+- focused verification: CJO writer, ConstValue reader, CJD converter and binary annotation integration tests
+  → BUILD SUCCESSFUL。
+- remaining ABI caveat: the repository `ModuleFormat.fbs` is an extended schema relative to official v1.0.0
+  (`Anno.target` is a local extension). The current writer must not be described as strict official binary
+  compatible until the schema profile/binding boundary is separated and validated。
+
+- regression guard: an attempted fail-fast exception for unsupported ordinary CJO initializer expressions
+  caused broad PSI LLT `IllegalArgumentException` failures and was removed immediately. The safe path keeps
+  the shared expression decoder but preserves the existing nullable behavior until the complete CJO expression
+  decoder is implemented. Fresh full verification after the correction remains `8658 tests completed,
+  154 failed, 308 skipped`; ledger `20260920-full-after-composite-values-and-safe-initializer` compared with
+  `20260920-full-after-cjo-constvalue-reader-2`: `fixed=0`, `regressed=0`, `new=0`, `removed=0`,
+  `unchangedFailures=154`, `changedFailures=0`。
+
+## 2026-09-20：CJO schema profile boundary and fresh full regression
+
+- owner change: `CjoSchemaProfile` distinguishes the repository-extended ModuleFormat from the official
+  v1.0.0 subset. Selecting the official profile rejects repository-only `Anno.target`, platform AnnoKind,
+  and declaration dependency extensions instead of silently claiming strict ABI compatibility。
+- CJO writer now emits repository dependency FullIds and validates typed composite constant indices against
+  the official `Package.allValues` pool. Raw untyped VarInfo union inputs were removed。
+- focused verification: `:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest' --tests
+  '*CjoConstValueReaderTest'` → BUILD SUCCESSFUL。
+- fresh full verification: `:cfir:analysis-tests:test` → `8658 tests completed, 154 failed, 308 skipped`;
+  ledger `20260920-full-after-schema-profile-boundary` compared with the previous fresh snapshot:
+  `fixed=0`, `regressed=0`, `new=0`, `removed=0`, `unchangedFailures=154`, `changedFailures=0`。
+
+## 2026-09-20：CJO primitive constant materialization
+
+- semantic owner: `CfirDeclDeserializer` now reads typed `VarInfo.ConstValue` and publishes the
+  primitive/string/array subset into the existing `CfirVariable.evaluatedInitializer` slot as a
+  `CfirConstantValueExpression`; composite values remain wire-pool data until the declaration/member
+  symbol graph can build an `ObjectValue` without guessing fields。
+- verification: CJO/CJD serialization and integration focused tests pass; source LLT behavior remains
+  unchanged in the fresh full run (`8658 tests`, `154 failed`, `308 skipped`, no testcase-key delta).
+- remaining scope: `Pattern.values`, `MemberValue.value` consumers, composite `ObjectValue` materialization,
+  full CJO producer integration, and downstream stub/Analysis API constant exposure remain open。
+
+## 2026-09-20：`.cj.d` PSI source collection parity
+
+- official evidence: `FrontendTool` selects `CjdCompilerInstance` for `compileCjd`, and official option
+  handling rejects implementation `.cj` inputs in declaration mode; the normal import path only consumes
+  sibling `.cj.d` as metadata and never registers it as a second declaration provider。
+- root cause: LightTree source collection already used `cangjieSourceKind` plus `acceptsCangjieSource`, but
+  `CfirFrontendPipelinePhase.collectPsiSources()` bypassed that shared gate and could feed `.cj` and `.cj.d`
+  together into a PSI session。
+- owner change: PSI collection now uses the same source-kind/compileCjd acceptance owner as LightTree.
+- verification: `:compiler:frontend:test --tests '*CjSourceCollectionTest*'` → BUILD SUCCESSFUL。
+- remaining `.cj.d` scope: production equivalent of `CjdCompilerInstance` (skip post-sema stages and emit CJO
+  from live CFIR), macro expansion during sidecar parsing, and full CJO producer integration remain open。
+
+- final fresh full verification after the PSI source gate and primitive ConstValue materialization:
+  `8658 tests completed, 154 failed, 308 skipped`; ledger
+  `20260920-full-after-cjd-psi-gate-and-const-materialization` compared with the previous fresh ledger:
+  `fixed=0`, `regressed=0`, `new=0`, `removed=0`, `unchangedFailures=154`, `changedFailures=0`。
+
+## 2026-09-20：失败 import 的诊断与级联抑制（P1，已实施 / **未通过验证**）
+
+- problem type: 失败的 import 的诊断口径与下游级联抑制。
+- 本轮基线（实跑 `:cfir:analysis-tests:test --continue --console=plain`）：`8658 tests completed, 156 failed,
+  308 skipped`；非宏 = 78 条 = 39 个 fixture × PSI/LightTree 两条路径（清单
+  `cfir/analysis-tests/build/prev-full-xml/fails_nonmacro.txt`）。相对 01:47 基线：`ErrMsgs/testDecl0` 已修，
+  新增回归 `Generics/testGenericParameters1`（2 条）。
+- fixtures covered: `Linkage/access01.cj`、`Linkage/access02.cj`、`Linkage/access_err.cj`、
+  `Typealias/typealias36.cj`（LLT + PSI 共 8 条）。
+- root cause: `CfirSourceSymbolProvider` 用一个集合 `allSubPackages` 同时回答两个不同问题——
+  「该包被声明」与「该包是某个已声明包的路径前缀」（`recordPackageAndParents` 会把 `a`/`a.b` 都写入）。
+  于是 `package a.b.c` 的文件里 `hasPackage(a.b)` 为真，`import a.b.*` 在
+  `CfirImportBindingResolver:91` 拿到 `Package(a.b)` 目标：`targets` 非空 ⇒ 既不报 `UNRESOLVED_IMPORT`，
+  又逃过 `CfirImportErrorUtils.isUnresolvedCascadeAfterFailedImport` 的 `targets.isEmpty()` 守卫
+  （每个 `AAAA` 仍报 `UNRESOLVED_REFERENCE`），并且 `hasResolvedTerminalImportTarget` 为真使
+  `reportUnusedImports` 把整条 import 报成 `UNUSED_IMPORT`。
+- official Cangjie evidence:
+  - cjc 1.0.5 实测：包不存在时 `package_search_error`（`can not find package 'a.b'`），
+    `MainHint.Range` 覆盖**整个包名路径**（`a.b` 列 8–11；`pkga` 列 8–12）。
+  - `external/cangjie_compiler/include/cangjie/Basic/DiagRefactor/DiagnosticPackage.def:12`
+    `ERROR(package_search_error, "can not find package '%s'")`；
+    `src/Modules/ImportManager.cpp:396-403` 用 `GetPackageNameRange` 生成该范围；
+    `ImportManager.cpp:207-216` 的 `prefixPoses.empty() ? MakeRange(im.identifier) : MakeRange(prefixPoses.front(), ...)`。
+  - cjc 对照探针：`package a.b.c` + `import a.b.*` + `var x: Int64 = "hello"` 只报 package_search_error，
+    本应出现的 `sema_mismatched_types` 被抑制 ⇒ 抑制边界是**整个编译单元**。
+  - `RemoveUnusedImport` 只对已解析出 `ImportedValue` 的 import 判定 ⇒ 失败的 import 不报 unused。
+- Kotlin counterpart files consulted: `fir/semantics/.../resolve/transformers/ImportUtils.kt:24-60`
+  （`findLongestExistingPackage` / `ConeUnresolvedParentInImport`）、
+  `fir/checkers/.../syntax/FirUnresolvedInMiddleOfImportChecker.kt:39-89`（专用 checker 单一权威上报）、
+  `fir/checkers/.../diagnostics/coneDiagnosticToFirDiagnostic.kt:638`（该 cone 错误映射为 null）；
+  另 `CfirSpecificTypeResolverTransformer.calculatePartiallyResolvablePackageSegments` 本就声明对齐
+  Kotlin 同名函数，而 Kotlin 该函数只接受真实存在的包。
+- CFIR owner files changed: `cfir/providers/src/.../resolve/providers/CfirSourceSymbolProvider.kt`
+  —— `State.allSubPackages` → `declaredPackages`（只登记 `package` 指令声明的包）、
+  `recordPackageAndParents` → `recordDeclaredPackage`；`hasPackage`、`getPackageNames` 与 6 处内部
+  存在性守卫统一收敛到精确语义。诊断侧无需新增报告点：`CfirImportsChecker` 的既有链路
+  （`findUnresolvedParentSegmentIndex` → 失败前缀片段 → `UNRESOLVED_IMPORT`）、
+  `isUnresolvedCascadeAfterFailedImport`、`hasResolvedTerminalImportTarget` 在新语义下自动全部生效。
+- repair principle: 「包是否存在」与「包名是否是某个已声明包的前缀」被合并成一个集合，是同一事实的两种
+  来源互相污染；把它拆回单一精确语义后，import 失败的事实自然流经既有的三条消费者，无需逐点加守卫。
+- fixture 修正（Fixture Edit Gate 条件 1 成立）：
+  - `Linkage/access_err.cj`：补 `import <!UNRESOLVED_IMPORT!>a<!>.b.*`（迁移时该用例走的是上游外部
+    stderr `*.expect` 比对，内联标记为空；cjc 在本 harness 的编译单元下实测报该诊断）。
+  - `Typealias/typealias36.cj`：删除 `<!UNRESOLVED_IMPORT!>pkga<!>` 标记。该 fixture 的
+    `typealias36_dep.cj`（`package pkga`）会被 `LltCompanionSourceFilesProvider` 按官方 `_dep.cj`
+    命名约定自动并入编译单元；cjc 实测该单元（dep 编成 `pkga.cjo` 后与主文件同批）**前端零诊断**。
+- 锚点口径：保持**失败片段**（`a`），与 Kotlin `FirUnresolvedInMiddleOfImportChecker` 的段级定位一致，
+  也与 fixture 现有期望一致；官方 cjc 的「整包名」锚点属 CLI 口径，按项目 Diagnostic Range Policy
+  取 Kotlin 对位逻辑，不据此加宽。
+- verification command(s) and outcome:
+  - 聚焦（切片含 4 个 fixture + 回归用例）：
+    `--tests '*TestGenerated$Linkage*' --tests '*TestGenerated$Typealias*' --tests '*TestGenerated$Import00*' --continue`
+    → `136 tests completed, 6 failed`，且这 6 条全部是尚未修复的 P2 `Linkage > PrivateLimit > PrivateDup0{1,2,3}`；
+    P1 的 4 个 fixture（LLT+PSI 共 8 条）全部通过。
+  - 中途曾经出现、已按下列修正消除的回归：
+    ① `CfirAnalysisDiagnostics{,2}TestGenerated$Typealias.testCrossPackageImportedAliasInFunctionSignature`——
+      仅按"每个前缀都必须是已声明包"判定会误报 `import sample.lib.*`；修正为
+      「包部分 = 最长已声明包前缀；只有它短于包部分长度时才报」，并在 `canResolveTerminalImportTarget`
+      先行接受「终端名称本身是包」（官方 `import m1.p1` 形式的包导入）。
+    ② `Function$Import00` 的 4 个用例（`import m1.p1` / `import m1.p1 as p2`）——同上，修正后通过。
+  - 全量 A（修正前的中间态，`11:16:38`）：`8658 tests completed, 162 failed, 308 skipped`；
+    逐条 diff 得 fixed=10（P1 八条 + `Generics.testGenericParameters1` 两条）、
+    回归=12（`Function$Import00` 八条 + 宏 `APILevelChecker$Hide` 四条，后者属并行会话的注解重构范围）。
+  - 仍未完成的验证：修正后的全量回归（本条目的最终门禁）在下一次汇报中补齐；当时工作树被并行会话
+    再次打断（`CjoPackageWriter.kt:349` / `CfirDeclDeserializer.kt:1635` 的 when 非穷尽）。
+- 附带修复（同问题类型内、共享 owner）: `CfirImportsChecker.findUnresolvedParentSegmentIndex` 改为按
+  「最长已声明包前缀」判定包部分是否存在（旧实现逐段要求每段都是已声明包，会把 `import m1.p1` 与
+  `import sample.lib.X` 误判为失败）；`canResolveTerminalImportTarget` 先行接受包导入形式。
+
+## 2026-09-20：P1 最终门禁 + 顶层 private 作用域（P2，进行中）
+
+- P1 最终全量门禁（`11:48:57`，`--continue --console=plain`）：
+  `8658 tests completed, **146 failed**, 308 skipped`（本轮基线 156）。
+  按完整用例名逐条 diff：**fixed = 10**（`Linkage.testAccess01/testAccess02/testAccessErr`、
+  `Typealias.testTypealias36` 各 LLT+PSI 四条，加 `Generics.testGenericParameters1` LLT+PSI 两条），
+  **regressions = 0**。P1 至此闭合。
+- P2（`Linkage/PrivateLimit/private_dup0{1,2,3}`，LLT+PSI 共 6 条）进度：
+  - 已修：`CfirConflictsHelpers.collectTopLevelConflict` 的「跨文件顶层 private 豁免」原来只覆盖
+    `CfirCallableDeclaration`，现按官方 `Sema/PreCheck.cpp:246-251`（GLOBAL+PRIVATE 且不同文件即豁免，
+    **与声明种类无关**）抽成 `CfirDeclaration.isExemptCrossFileTopLevelPrivate`。
+    实测渲染中 `CLASSIFIER_REDECLARATION` 已消失。
+  - 剩余：`testa.cj` 的 `A` 报 `AMBIGUOUS_USE`，`testb.cj` 的 `A` 报 `UNDECLARED_TYPE_NAME` +
+    `UNRESOLVED_REFERENCE`（fixture 期望两者都零诊断）。官方规则为
+    `Sema/LookUpImpl.cpp:454-458`（`IsTargetVisibleToNode`）：顶层 private 目标只对**同文件**引用可见。
+  - 关键发现（下一轮入口）：该规则在 CFIR **已经有实现**——
+    `cfir/providers/src/.../resolve/providers/CfirAccessibilityChecker.kt:554-570` 的 `privateAccessible`，
+    第 565 行 `if (ownerClass == null) return useSiteFile != null && useSiteFile == declarationFile`
+    正是「顶层 private 只对同文件可见」。但**分类器/类型候选收集路径没有消费它**：
+    `CfirPackageMemberScope`（`cfir/providers/src/.../scopes/impl/CfirPackageMemberScope.kt:87-97`）
+    经 `symbolProvider.getClassLikeSymbolByClassId` 返回包内同名 class-like（跨文件 private 也在内），
+    而该 scope 在 `CfirFileLookupScopes.kt:65` 的构造点**持有 use-site file**，具备过滤条件。
+    下一轮应先插桩确认 `processClassifiersByName` 在两份文件里各自返回了哪个 `A`
+    （`getClassLikeSymbolByClassId` 按 `ClassId` 索引，两份 `A` 同 ClassId，只有一份能留在
+    `state.classifierMap`），再决定是「在 scope 内按 use-site file 过滤」还是
+    「在候选收集处统一调用 CfirAccessibilityChecker」——后者与 Kotlin `FirVisibilityChecker`
+    在 tower/候选过滤处的角色一致，属更正确的接缝。
+
+## 2026-09-20：多重赋值 `(a, b, ...) = rhs`（P4，进行中 / 根因已定位）
+
+- problem type: 多重赋值表达式的语义与诊断。
+- fixtures covered: `llt/assign/multipleAssignExpr/{case01,case03,case04,case05,case06,err_optional_chain_00}.cj`
+  （LLT+PSI 共 12 条）。
+- root cause（双侧 raw builder 的建树期脱糖）:
+  `PsiRawCfirBuilder.desugarDestructuringAssignment`（:2292 调用，:2359 定义）与
+  `LightTreeRawCfirExpressionBuilder.desugarDestructuringAssignment`（:335 调用，:402 定义）
+  把 `(a, b) = rhs` 在建树期展开为
+  `let <destructuring-0> = rhs; a = <destructuring-0>[0]; b = <destructuring-0>[1]`。两个后果：
+  1. 合成临时绑定名固定为 `<destructuring-N>` 且每次调用都从 `nextTemporaryId = 0` 起算，
+     同一文件里第二条及以后的多重赋值就与前者重名 ⇒ 在整条赋值上报 `REDECLARATION`；
+  2. 目标数多于 RHS 元数时仍生成 `temp[k]` 读取 ⇒ `BUILTIN_INDEX_IN_BOUND`。
+  更根本的是：脱糖后 `CfirAssignment.lValue` 再也不是 `CfirTupleLiteral`，于是
+  `CfirExpressionsResolveTransformer.transformAssignment`（:3935-3941）里既有的多重赋值判定
+  （`firstMultipleAssignmentTypeMismatch` :3970 → `ConeMismatchedTypesMultipleAssignError`）
+  与 `CfirAssignmentTypeMismatchChecker`（:48-65）的专用上报分支**全部成为死代码**。
+  这与本仓库早前「多重赋值分支从未命中」的插桩结论完全吻合。
+- official Cangjie evidence（cjc 1.0.5，11 个探针）:
+  - 四类失败（元数不匹配 / RHS 非元组 / 分量类型不匹配 / 嵌套元数不匹配）**统一报**
+    `sema_mismatched_types_multiple_assign`，`MainHint.Range` **锚在 RHS 表达式**（`(1,2)`、`(1,2,3,4)`、`f()`、`"TEST"`、`1`）。
+  - `external/cangjie_compiler/src/Sema/TypeCheckExpr/Diags.cpp:16-22` 的 `DiagInvalidMultipleAssignExpr`
+    以 `rightExpr` 作为诊断目标、LHS 仅作次要 hint；入口 `AssignExpr.cpp:141 CheckMultipleAssignExpr`
+    （调用点 :100 元数 / :115,:162 RHS 非元组 / :133 分量类型）。
+  - `include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:13` 定义该诊断。
+  - `TUPLE_PATTERN_NOT_MATCH`（官方 `sema_tuple_pattern_not_match`，`DiagnosticSema.def:63`）
+    只用于 `Sema/TypeCheckPattern.cpp:476` 的**元组 pattern 匹配**，**从不用于多重赋值**。
+  - 对照：`if ((a, b) = (1, 2, 3))` 与语句位置写法诊断名、锚点完全相同（不存在位置差异）。
+  - LHS 元素级错误仍各自独立：`(a, d, e) = (1,2,3)` 报 undeclared×2（锚标识符）＋ multiple_assign（锚 RHS）；
+    `(a.x, a.y)` 报 not_member_of×2＋multiple_assign；下标目标报 cannot_assign_to_subscript＋multiple_assign；
+    `(t?[1], _) = (C(), 1)` 报 optional_chain_non_optional＋multiple_assign。
+- CFIR owner files changed（本轮）:
+  - `cfir/raw-cfir/psi2cfir/src/.../builder/PsiRawCfirBuilder.kt`：`CiTokens.EQ` 分支不再对元组左值脱糖，
+    统一 `buildAssignment`；普通/复合赋值路径逐字未变。
+  - `cfir/raw-cfir/light-tree2cfir/src/.../lightTree/LightTreeRawCfirExpressionBuilder.kt`：同上。
+  - fixture 修正（Fixture Edit Gate 条件 1：官方 cjc 证明期望错）：`case03/04/05/err_optional_chain_00`
+    的 `TYPE_MISMATCH` 外锚从「整条赋值」收窄到 **RHS**；`case03` 两处 `TUPLE_PATTERN_NOT_MATCH`
+    改为 `TYPE_MISMATCH`（官方在多重赋值中不使用该诊断）。
+- repair principle: 多重赋值的唯一语义来源应是「结构化元组左值 + 按 tuple 结构下钻的判定」
+  （官方 `CheckMultipleAssignExpr`，CFIR 里已有对应实现），而不是在建树期把它展开成普通赋值——
+  后者既让该实现失效，又把合成节点的诊断泄漏给用户。
+- verification command(s) and outcome: **未完成**。
+  - 已确认的正向效果：`--tests '*TestGenerator...$Assign*'` 下 case03/04/05/err_optional_chain_00 的渲染中
+    `REDECLARATION` 与 `BUILTIN_INDEX_IN_BOUND` **全部消失**（此前的全部噪声来源）。
+  - 仍未达成：期望的 `TYPE_MISMATCH` 与元素级诊断（`UNRESOLVED_REFERENCE`/`NOT_MEMBER_OF`/
+    `CANNOT_ASSIGN_TO_SUBSCRIPT`/`OPTIONAL_CHAIN_NON_OPTIONAL`）当前都不出现——说明 LHS 元组元素
+    没有被当作写目标解析。一次插桩（`transformAssignment` 入口 + 元组分支）显示**元组分支从未进入**，
+    入口 print 也未出现（该次运行成功执行），即 `(assignment.lValue as? CfirTupleLiteral)` 在此阶段为假；
+    插桩已全部移除（`grep -c "DBG-"` = 0）。下一轮入口：确认 `transformLValue` 对 tuple 左值
+    是否走 write-target 路径并下钻元素（对比脱糖前的逐元素赋值路径）。
+  - 环境：本轮后半段并行会话的重构开始**跨套件崩溃**
+    （`CJO FuncParamList.desugars is not representable by the current CFIR parameter model`、
+    `Cannot materialize CJO variable initializer`），`--tests '*TestGenerated$Const*' --tests '*TestGenerated$InitializationCheck*'`
+    切片出现 `455 tests / 388 failed` 的异常读数；已核对我的改动只触及元组左值分支
+    （普通与复合赋值分支逐字未变），不可能影响 Constructor/Constraints/ConstEval 等套件，
+    因此该读数不可用于判定本问题类型。
+
+## 2026-09-20：P4 多重赋值 —— 第一轮修复与实测剩余（12 条）
+
+- 本轮改动（3 处共享 owner + 4 个 fixture）：
+  1. 两个 raw builder 不再在建树期脱糖（见上一条）。
+  2. `CfirExpressionsResolveTransformer.transformAssignment`：`lValue is CfirTupleLiteral` 时
+     `rValueMode` 取 `ContextIndependent`（原先会把左值元组类型当作右值的目标类型）。
+  3. `CfirAssignmentTypeMismatchChecker`：多重赋值分支原先用
+     `expression.rValue.source as? AbstractCjSourceElement ?: return` —— **取不到 source 就静默丢弃诊断**
+     （实测这是诊断不出现的真因）。改为 `expression.rValue.source ?: expression.source ?: return`，
+     保持官方锚点仍落在 RHS。
+- 实测（`--tests '*TestGenerated$Assign*'`，干净树、46 tests）：**12 failed**，全部在 `MultipleAssignExpr`。
+  修复过程中确诊的中间读数：改动前 12 failed（case01/03/04/05/06/err_optionalChain），
+  诊断静默丢弃修好后 case02/04/07 转为通过，其余收敛为下面 6 个 fixture。
+- 逐 fixture 剩余缺口（LLT/PSI 各一条，共 12）：
+  - `case01`：`(a1[a2], a2[a1]) = (a2, a1)`（`class A` 只定义 setter `operator func [](arg: A, value!: A)`）——
+    期望零诊断；CFIR 报 `INVALID_SUBSCRIPT_EXPR`×2 + `TYPE_MISMATCH`。
+  - `case05`：`(class_a[class_b], class_b[class_a]) = ...` —— 期望 `CANNOT_ASSIGN_TO_SUBSCRIPT`；
+    CFIR 报 `INVALID_SUBSCRIPT_EXPR`。`= 1`（RHS 非元组）那条已不再是唯一差异。
+  - `case08`：`(val, a[0]) = (2, 3)`（`class A` 同时有 getter 与 setter，写入合法）—— 期望零诊断；
+    CFIR 报 `TYPE_MISMATCH`（因为把 `a[0]` 的**读取类型** `A` 当成写入期望类型）。
+  - `case03`：第 5 条 `(a, _, c, e) = ((1, 2), (3, 4), (5, 6))` 完全没有诊断（期望 `UNRESOLVED_REFERENCE`+`TYPE_MISMATCH`）；
+    插桩显示前 4 条都进入了 `transformAssignment`/`firstMultipleAssignmentTypeMismatch`，第 5 条没有——需查建树期。
+  - `case06`：match 的 `case None => -1` 被报 `UNREACHABLE_PATTERN`（期望不报，属可空性/穷尽性分析）。
+  - `err_optional_chain_00`：`OPTIONAL_CHAIN_NON_OPTIONAL` 已有，仍缺外层 `TYPE_MISMATCH`。
+- 结论（下一轮的唯一主线）: **元组左值的元素必须以「赋值写目标」语义解析**，而不是当普通表达式读取：
+  它同时解释 case01/case05 的 `INVALID_SUBSCRIPT_EXPR`、case08 的伪 `TYPE_MISMATCH`（期望类型取成了读取类型）
+  以及 `err_optional_chain_00` 缺外层不匹配（无效写目标应计入不匹配）。做法是把 `transformAssignment` 里
+  单目标（下标 set / 限定成员 / 变量）的解析抽成可复用入口，由元组左值逐个元素调用，并让每个槽位的期望类型
+  取该目标的**写入类型**（setter 的 `value!` 形参类型 / 属性类型）。注意这与已删除的建树期脱糖不同：
+  不引入合成临时绑定、不生成合成赋值语句（合成节点正是诊断泄漏的来源）。
+  这条同样要落到 `CfirAssignmentLegalityChecker`（它目前只认 `lValue` 是下标或限定访问，元组左值时整段跳过，
+  所以 `CANNOT_ASSIGN_TO_SUBSCRIPT` 丢失、case05/case01 的差异无法闭合）。
