@@ -202,9 +202,15 @@ private class SyntaxCjdAnnotationConverter : CjdAnnotationConverter {
                 argumentView = CfirAnnotationArgumentView(view)
                 calleeReference = buildNamedReference { name = Name.identifierIfValid(syntax.name.substringAfterLast('.')) ?: Name.ERROR_NAME }
                 this.containingDeclarationSymbol = containingDeclarationSymbol
+                // A declaration sidecar contains syntax and identity facts only.  It
+                // has not gone through the declaration owner's annotation phase, so
+                // it must not publish SEMANTIC_RESOLVED here.  The normal CFIR
+                // resolver/checker path owns the transition after type/argument
+                // resolution and semantic validation.  This is also important for
+                // platform annotations: their ClassId is known, but their target and
+                // argument rules are still declaration-owned semantics.
                 annotationResolveState = when {
                     unresolved || view.any { it.status == CfirAnnotationArgumentStatus.ERROR || it.status == CfirAnnotationArgumentStatus.DUPLICATE } -> CfirAnnotationResolveState.ERROR
-                    descriptor != null || platform != null -> CfirAnnotationResolveState.SEMANTIC_RESOLVED
                     else -> CfirAnnotationResolveState.TYPE_RESOLVED
                 }
             }

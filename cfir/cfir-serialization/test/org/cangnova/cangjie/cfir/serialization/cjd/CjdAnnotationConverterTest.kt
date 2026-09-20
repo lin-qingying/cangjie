@@ -49,6 +49,7 @@ class CjdAnnotationConverterTest : CjParsingTestCase("", "cj.d", CangJieDeclarat
         assertNull(call.annotationKind)
         assertEquals(CangjieAnnotationIdentity.SystemMacro(apiLevel.asSingleFqName(), "APILevel"), call.annotationIdentity)
         assertEquals(apiLevel, (assertIs<CfirResolvedTypeRef>(call.typeRef).coneType as ConeClassLikeType).classId)
+        assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, call.annotationResolveState)
         assertSame(owner, call.containingDeclarationSymbol)
         assertEquals("22", (call.argumentMapping.mapping[Name.identifier("since")] as CfirLiteralExpression).value)
         assertEquals(true, (call.argumentMapping.mapping[Name.identifier("flag")] as CfirLiteralExpression).value)
@@ -126,6 +127,7 @@ class CjdAnnotationConverterTest : CjParsingTestCase("", "cj.d", CangJieDeclarat
             ),
             call.annotationIdentity,
         )
+        assertEquals(CfirAnnotationResolveState.TYPE_RESOLVED, call.annotationResolveState)
     }
 
     @Test fun testEscapesAndParserOwnedOverflow() {

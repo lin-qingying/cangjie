@@ -2,6 +2,11 @@ package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.DeclKind
 import PackageFormat.AnnoKind
+import PackageFormat.DeclInfo
+import PackageFormat.FuncInfo
+import PackageFormat.OverflowPolicy
+import PackageFormat.ConstValue
+import PackageFormat.VarInfo
 import PackageFormat.ExprInfo
 import PackageFormat.ExprKind
 import PackageFormat.LitConstInfo
@@ -9,17 +14,45 @@ import PackageFormat.LitConstKind
 import PackageFormat.Package
 import PackageFormat.PackageKind
 import PackageFormat.ReferenceInfo
+import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
  * 验证 CJO 包写入器产出的 FlatBuffers 数据可被包头读取器消费。
  */
 class CjoPackageWriterTest {
+    @Test
+    fun `official schema profile rejects repository-only anno target extension`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    schemaProfile = CjoSchemaProfile.OFFICIAL_V1_0_0,
+                    declarations = listOf(
+                        CjoPackageDeclaration(
+                            identifier = "f",
+                            annotations = listOf(
+                                CjoAnnotationMetadata(
+                                    kind = AnnoKind.Custom,
+                                    identifier = "Custom",
+                                    target = CjoAnnotationTargetMetadata(decl = "Owner"),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+    }
+
     @Test
     fun `official cjo format version is independent from language release version`() {
         assertEquals(0, org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MAJOR)
@@ -121,6 +154,7 @@ class CjoPackageWriterTest {
             CjoPackageMetadata(
                 fullPackageName = "sample.pkg",
                 moduleName = "sample",
+                schemaProfile = CjoSchemaProfile.REPOSITORY_EXTENDED,
                 declarations = listOf(
                     CjoPackageDeclaration(
                         identifier = "f",
@@ -168,11 +202,93 @@ class CjoPackageWriterTest {
     }
 
     @Test
+    fun `writes declaration info union for ffi and overflow facts`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                schemaProfile = CjoSchemaProfile.REPOSITORY_EXTENDED,
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "x",
+                        kind = DeclKind.FuncParam,
+                        type = 1u,
+                    ),
+                    CjoPackageDeclaration(
+                        identifier = "nativeCall",
+                        type = 1u,
+                        info = CjoFunctionInfo(
+                            overflowStrategy = CangjieOverflowStrategy.SATURATING,
+                            body = CjoFunctionBodyInfo(
+                                parameterLists = listOf(listOf(1u)),
+                                returnType = 1u,
+                            ),
+                            isConst = true,
+                            isInline = true,
+                            isFastNative = true,
+                        ),
+                    ),
+                ),
+                types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Int64)),
+            ),
+        )
+
+        val packageData = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
+        val declaration = requireNotNull(packageData.allDecls(1))
+        assertEquals(DeclInfo.FuncInfo, declaration.infoType)
+        assertEquals(1u, declaration.type)
+        val info = declaration.info(FuncInfo()) as FuncInfo
+        assertNotNull(info.funcBody)
+        assertEquals(1, info.funcBody!!.paramListsLength)
+        assertEquals(1u, info.funcBody!!.paramLists(0)!!.params(0))
+        assertEquals(1u, info.funcBody!!.retType)
+        assertEquals(OverflowPolicy.Saturating, info.overflowPolicy)
+        assertTrue(info.isConst)
+        assertTrue(info.isInline)
+        assertTrue(info.isFastNative)
+    }
+
+    @Test
+    fun `rejects declaration info union with incompatible declaration kind`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageDeclaration(
+                identifier = "bad",
+                kind = DeclKind.VarDecl,
+                info = CjoFunctionInfo(),
+            )
+        }
+    }
+
+    @Test
+    fun `writes variable int64 const value union`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "answer",
+                        kind = DeclKind.VarDecl,
+                        info = CjoVariableInfo(
+                            isConst = true,
+                            constValue = CjoInt64ConstValue(42L),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val declaration = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allDecls(0))
+        val info = declaration.info(VarInfo()) as VarInfo
+        assertEquals(ConstValue.Int64Value, info.valueType)
+    }
+
+    @Test
     fun `writes annotation expression pool for arrays and references`() {
         val bytes = CjoPackageWriter.toByteArray(
             CjoPackageMetadata(
                 fullPackageName = "sample.pkg",
                 moduleName = "sample",
+                schemaProfile = CjoSchemaProfile.REPOSITORY_EXTENDED,
                 declarations = listOf(
                     CjoPackageDeclaration(
                         identifier = "AnnotationType",
