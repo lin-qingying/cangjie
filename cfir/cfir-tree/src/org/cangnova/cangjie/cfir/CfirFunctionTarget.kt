@@ -25,6 +25,9 @@ class CfirFunctionTarget(
      */
     private lateinit var targetSymbol: CfirFunctionSymbol<*>
 
+    override val isBound: Boolean
+        get() = this::targetSymbol.isInitialized
+
     /**
      * 当前 target 绑定的函数声明。
      */

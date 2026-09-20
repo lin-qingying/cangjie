@@ -16,4 +16,7 @@ class CfirLoopTarget(
      * 绑定到该 target 的循环表达式。
      */
     override lateinit var _labeledElement: CfirLoopExpression
+
+    override val isBound: Boolean
+        get() = this::_labeledElement.isInitialized
 }

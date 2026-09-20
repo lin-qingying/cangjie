@@ -23,6 +23,7 @@ abstract class CfirAbstractTarget<E : CfirTargetElement>(
     final override val labeledElement: E
         get() = _labeledElement
 
+
     /**
      * 写入当前 target 绑定的元素。
      */
