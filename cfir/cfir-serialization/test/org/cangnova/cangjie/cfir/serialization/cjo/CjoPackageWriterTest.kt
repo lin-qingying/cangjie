@@ -4,9 +4,12 @@ import PackageFormat.DeclKind
 import PackageFormat.AnnoKind
 import PackageFormat.DeclInfo
 import PackageFormat.FuncInfo
+import PackageFormat.FuncTyInfo
 import PackageFormat.OverflowPolicy
 import PackageFormat.ConstValue
 import PackageFormat.VarInfo
+import PackageFormat.VarWithPatternInfo
+import PackageFormat.PatternKind
 import PackageFormat.ExprInfo
 import PackageFormat.ExprKind
 import PackageFormat.LitConstInfo
@@ -28,6 +31,90 @@ import kotlin.test.assertTrue
  * 验证 CJO 包写入器产出的 FlatBuffers 数据可被包头读取器消费。
  */
 class CjoPackageWriterTest {
+    @Test
+    fun `encodes semantic type info with the package builder`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                types = listOf(
+                    CjoTypeMetadata(
+                        kind = PackageFormat.TypeKind.Func,
+                        typeArguments = listOf(1u),
+                        semanticInfo = CjoFunctionTypeInfoMetadata(
+                            returnType = 1u,
+                            isC = true,
+                            hasVariableLenArg = true,
+                        ),
+                    ),
+                    CjoTypeMetadata(kind = PackageFormat.TypeKind.Int64),
+                ),
+            ),
+        )
+
+        val functionType = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allTypes(0))
+        val info = assertNotNull(functionType.info(FuncTyInfo()) as? FuncTyInfo)
+        assertEquals(PackageFormat.SemaTyInfo.FuncTyInfo, functionType.infoType)
+        assertEquals(1u, info.retType)
+        assertTrue(info.isC)
+        assertTrue(info.hasVariableLenArg)
+    }
+
+    @Test
+    fun `writes VarWithPatternDecl with official VarWithPatternInfo union`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "binding",
+                    ),
+                    CjoPackageDeclaration(
+                        identifier = "owner",
+                        kind = DeclKind.VarWithPatternDecl,
+                        info = CjoVarWithPatternInfo(
+                            isVar = true,
+                            irrefutablePattern = CjoPatternMetadata(
+                                kind = PatternKind.VarPattern,
+                                types = listOf(1u),
+                                exprs = listOf(1u),
+                            ),
+                        ),
+                    ),
+                ),
+                types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+            ),
+        )
+        val declaration = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allDecls(1))
+        assertEquals(DeclKind.VarWithPatternDecl, declaration.kind)
+        assertEquals(DeclInfo.VarWithPatternInfo, declaration.infoType)
+        val info = assertNotNull(declaration.info(VarWithPatternInfo()) as? VarWithPatternInfo)
+        assertTrue(info.isVar)
+        assertEquals(PatternKind.VarPattern, info.irrefutablePattern?.kind)
+    }
+
+    @Test
+    fun `rejects VarPattern without declaration and type references`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = listOf(
+                        CjoPackageDeclaration(
+                            identifier = "owner",
+                            kind = DeclKind.VarWithPatternDecl,
+                            info = CjoVarWithPatternInfo(
+                                irrefutablePattern = CjoPatternMetadata(kind = PatternKind.VarPattern),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+        }
+    }
+
     @Test
     fun `official schema profile rejects repository-only anno target extension`() {
         assertFailsWith<IllegalArgumentException> {
@@ -221,6 +308,7 @@ class CjoPackageWriterTest {
                             overflowStrategy = CangjieOverflowStrategy.SATURATING,
                             body = CjoFunctionBodyInfo(
                                 parameterLists = listOf(listOf(1u)),
+                                desugaredParameterLists = listOf(listOf(0u)),
                                 returnType = 1u,
                             ),
                             isConst = true,
@@ -255,6 +343,29 @@ class CjoPackageWriterTest {
                 identifier = "bad",
                 kind = DeclKind.VarDecl,
                 info = CjoFunctionInfo(),
+            )
+        }
+    }
+
+    @Test
+    fun `rejects parameter desugaring vectors with different arity`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    declarations = listOf(
+                        CjoPackageDeclaration(
+                            identifier = "f",
+                            info = CjoFunctionInfo(
+                                body = CjoFunctionBodyInfo(
+                                    parameterLists = listOf(listOf(1u)),
+                                    desugaredParameterLists = listOf(emptyList()),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
             )
         }
     }

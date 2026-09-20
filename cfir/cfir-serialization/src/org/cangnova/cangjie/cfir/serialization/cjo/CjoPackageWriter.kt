@@ -34,8 +34,14 @@ import PackageFormat.Int64Value
 import PackageFormat.ArrayValue
 import PackageFormat.CompositeValueIndex
 import PackageFormat.CompositeValue
+import PackageFormat.ArrayTyInfo
+import PackageFormat.CompositeTyInfo
+import PackageFormat.FuncTyInfo
+import PackageFormat.GenericTyInfo
 import PackageFormat.MemberValue
 import PackageFormat.Pattern
+import PackageFormat.PatternKind
+import PackageFormat.Position
 import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.annotations.CangjieOverflowStrategy
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
@@ -409,18 +415,113 @@ object CjoPackageWriter {
         metadata: CjoPackageMetadata,
         owner: String,
     ) {
-        pattern.types.forEachIndexed { index, type ->
-            require(type == 0u || type == UInt.MAX_VALUE || type <= metadata.types.size.toUInt()) {
+        fun validateType(index: Int, type: UInt) {
+            require(type in 1u..metadata.types.size.toUInt()) {
                 "$owner.types[$index] references $type, but allTypes has ${metadata.types.size} entries"
             }
         }
-        pattern.exprs.forEachIndexed { index, expr ->
-            require(expr == 0u || expr == UInt.MAX_VALUE || expr <= metadata.expressions.size.toUInt()) {
+
+        fun validateExpression(index: Int, expr: UInt) {
+            require(expr in 1u..metadata.expressions.size.toUInt()) {
                 "$owner.exprs[$index] references $expr, but allExprs has ${metadata.expressions.size} entries"
             }
         }
-        pattern.patterns.forEachIndexed { index, child ->
-            validatePatternReferences(child, metadata, "$owner.patterns[$index]")
+
+        fun validateDeclaration(index: Int, declaration: UInt) {
+            require(declaration in 1u..metadata.declarations.size.toUInt()) {
+                "$owner.exprs[$index] references declaration $declaration, but allDecls has ${metadata.declarations.size} entries"
+            }
+        }
+
+        fun requireSize(field: String, actual: Int, expected: Int) {
+            require(actual == expected) {
+                "$owner.$field must contain $expected entries for pattern kind ${pattern.kind}, got $actual"
+            }
+        }
+
+        // ModuleFormat uses the same vector field for different reference
+        // domains.  In particular VarPattern.exprs contains a declaration
+        // index, while ConstPattern/EnumPattern.exprs contains allExprs
+        // indices.  Validate by the official PatternKind instead of applying
+        // one expression-pool rule to every pattern.
+        when (pattern.kind) {
+            PatternKind.VarPattern -> {
+                requireSize("types", pattern.types.size, 1)
+                requireSize("exprs", pattern.exprs.size, 1)
+                require(pattern.patterns.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner VarPattern may only contain one type and one declaration reference"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                pattern.exprs.forEachIndexed(::validateDeclaration)
+            }
+
+            PatternKind.ConstPattern -> {
+                require(pattern.exprs.size in 1..2) {
+                    "$owner ConstPattern must contain one or two expression references"
+                }
+                requireSize("types", pattern.types.size, 1)
+                require(pattern.patterns.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner ConstPattern may not contain child patterns or values"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                pattern.exprs.forEachIndexed(::validateExpression)
+            }
+
+            PatternKind.EnumPattern -> {
+                requireSize("types", pattern.types.size, 1)
+                requireSize("exprs", pattern.exprs.size, 1)
+                require(pattern.values.isEmpty()) {
+                    "$owner EnumPattern may not contain constant values"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                pattern.exprs.forEachIndexed(::validateExpression)
+                pattern.patterns.forEachIndexed { index, child ->
+                    validatePatternReferences(child, metadata, "$owner.patterns[$index]")
+                }
+            }
+
+            PatternKind.WildcardPattern -> {
+                requireSize("types", pattern.types.size, 1)
+                require(pattern.patterns.isEmpty() && pattern.exprs.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner WildcardPattern may only contain one type"
+                }
+                pattern.types.forEachIndexed(::validateType)
+            }
+
+            PatternKind.TuplePattern -> {
+                requireSize("types", pattern.types.size, 1)
+                require(pattern.exprs.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner TuplePattern may only contain child patterns and one type"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                pattern.patterns.forEachIndexed { index, child ->
+                    validatePatternReferences(child, metadata, "$owner.patterns[$index]")
+                }
+            }
+
+            PatternKind.TypePattern -> {
+                requireSize("types", pattern.types.size, 1)
+                requireSize("patterns", pattern.patterns.size, 1)
+                require(pattern.exprs.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner TypePattern may only contain one type and one child pattern"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                validatePatternReferences(pattern.patterns.single(), metadata, "$owner.patterns[0]")
+            }
+
+            PatternKind.ExceptTypePattern -> {
+                require(pattern.types.isNotEmpty()) {
+                    "$owner ExceptTypePattern must contain at least one type"
+                }
+                requireSize("patterns", pattern.patterns.size, 1)
+                require(pattern.exprs.isEmpty() && pattern.values.isEmpty()) {
+                    "$owner ExceptTypePattern may only contain types and one child pattern"
+                }
+                pattern.types.forEachIndexed(::validateType)
+                validatePatternReferences(pattern.patterns.single(), metadata, "$owner.patterns[0]")
+            }
+
+            else -> error("Unsupported CJO pattern kind ${pattern.kind} at $owner")
         }
     }
 
@@ -531,8 +632,12 @@ object CjoPackageWriter {
         val valuesOffset = encodedValues.map { it.second }.toIntArray()
             .takeIf(IntArray::isNotEmpty)
             ?.let { Pattern.createValuesVector(builder, it) } ?: 0
+        val beginOffset = begin?.write(builder) ?: 0
+        val endOffset = end?.write(builder) ?: 0
 
         Pattern.startPattern(builder)
+        if (beginOffset != 0) Pattern.addBegin(builder, beginOffset)
+        if (endOffset != 0) Pattern.addEnd(builder, endOffset)
         if (patternsOffset != 0) Pattern.addPatterns(builder, patternsOffset)
         if (typesOffset != 0) Pattern.addTypes(builder, typesOffset)
         if (exprsOffset != 0) Pattern.addExprs(builder, exprsOffset)
@@ -571,8 +676,27 @@ object CjoPackageWriter {
             ?.toUIntArray()
             ?.let { SemaTy.createTypeArgsVector(builder, it) }
             ?: 0
-        return SemaTy.createSemaTy(builder, kind, argumentsOffset, infoType, infoOffset)
+        val semanticInfo = semanticInfo?.write(builder)
+        return SemaTy.createSemaTy(
+            builder,
+            kind,
+            argumentsOffset,
+            semanticInfo?.first ?: infoType,
+            semanticInfo?.second ?: infoOffset,
+        )
     }
+}
+
+/** Official ModuleFormat.Position input model used by pattern metadata. */
+data class CjoPositionMetadata(
+    val file: UInt = 0u,
+    val pkgId: UInt = 0u,
+    val line: Int = 0,
+    val column: Int = 0,
+    val ignore: Boolean = false,
+) {
+    fun write(builder: FlatBufferBuilder): Int =
+        Position.createPosition(builder, file, pkgId, line, column, ignore)
 }
 
 /**
@@ -660,6 +784,8 @@ data class CjoCompositeValueFieldMetadata(
 /** Official ModuleFormat.Pattern input model for VarWithPatternInfo. */
 data class CjoPatternMetadata(
     val kind: Byte = PackageFormat.PatternKind.InvalidPattern,
+    val begin: CjoPositionMetadata? = null,
+    val end: CjoPositionMetadata? = null,
     val patterns: List<CjoPatternMetadata> = emptyList(),
     val types: List<UInt> = emptyList(),
     val exprs: List<UInt> = emptyList(),
@@ -746,12 +872,15 @@ data class CjoFunctionBodyInfo(
     val captureKind: UByte = 0u,
 ) {
     fun write(builder: FlatBufferBuilder): Int {
-        require(desugaredParameterLists.isEmpty() || desugaredParameterLists.size == parameterLists.size) {
+        require(desugaredParameterLists.size == parameterLists.size) {
             "FuncBody desugared parameter-list count must match parameter-list count"
         }
         val lists = parameterLists.mapIndexed { listIndex, parameters ->
             val paramsOffset = FuncParamList.createParamsVector(builder, parameters.toUIntArray())
-            val desugars = desugaredParameterLists.getOrNull(listIndex).orEmpty()
+            val desugars = desugaredParameterLists[listIndex]
+            require(desugars.size == parameters.size) {
+                "FuncParamList[$listIndex] desugared parameter count must match parameter count"
+            }
             val desugarsOffset = desugars.takeIf(List<UInt>::isNotEmpty)
                 ?.toUIntArray()
                 ?.let { FuncParamList.createDesugarsVector(builder, it) }
@@ -769,7 +898,60 @@ data class CjoTypeMetadata(
     val typeArguments: List<UInt> = emptyList(),
     val infoType: UByte = SemaTyInfo.NONE,
     val infoOffset: Int = 0,
+    /** Semantic type info; encoded by the same FlatBufferBuilder as SemaTy. */
+    val semanticInfo: CjoTypeInfoMetadata? = null,
 )
+
+/**
+ * Builder-owned semantic information for ModuleFormat.SemaTy.
+ *
+ * The old [CjoTypeMetadata.infoOffset] remains for hand-built wire fixtures;
+ * live CFIR producers must use this model and never pass an offset belonging
+ * to another FlatBufferBuilder.
+ */
+sealed interface CjoTypeInfoMetadata {
+    fun write(builder: FlatBufferBuilder): Pair<UByte, Int>
+}
+
+data class CjoArrayTypeInfoMetadata(val dimsOrSize: Long) : CjoTypeInfoMetadata {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+        SemaTyInfo.ArrayTyInfo to ArrayTyInfo.createArrayTyInfo(builder, dimsOrSize)
+}
+
+data class CjoFunctionTypeInfoMetadata(
+    val returnType: UInt,
+    val isC: Boolean,
+    val hasVariableLenArg: Boolean,
+) : CjoTypeInfoMetadata {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+        SemaTyInfo.FuncTyInfo to FuncTyInfo.createFuncTyInfo(builder, returnType, isC, hasVariableLenArg)
+}
+
+data class CjoCompositeTypeInfoMetadata(
+    val declarationIndex: UInt,
+    val packageId: Int = -2,
+    val isThisType: Boolean = false,
+) : CjoTypeInfoMetadata {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val fullId = FullId.createFullId(builder, packageId, 0, declarationIndex)
+        return SemaTyInfo.CompositeTyInfo to CompositeTyInfo.createCompositeTyInfo(builder, fullId, isThisType)
+    }
+}
+
+data class CjoGenericTypeInfoMetadata(
+    val declarationIndex: UInt,
+    val upperBounds: List<UInt> = emptyList(),
+    val packageId: Int = -2,
+) : CjoTypeInfoMetadata {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val fullId = FullId.createFullId(builder, packageId, 0, declarationIndex)
+        val bounds = upperBounds.toUIntArray()
+            .takeIf { it.isNotEmpty() }
+            ?.let { GenericTyInfo.createUpperBoundsVector(builder, it) }
+            ?: 0
+        return SemaTyInfo.GenericTyInfo to GenericTyInfo.createGenericTyInfo(builder, fullId, bounds)
+    }
+}
 
 /** VarInfo 的官方字段；initializer/value union 由已有 expression pool 提供。 */
 data class CjoVarWithPatternInfo(
