@@ -43,6 +43,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -50,6 +51,7 @@ import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
@@ -76,31 +78,64 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val lValue = expression.lValue
+        if (lValue is CfirTupleLiteral) {
+            // 官方把多重赋值脱糖为逐元素单赋值后逐个目标执行 IsAssignable
+            //（Sema/TypeCheckExpr/AssignExpr.cpp 的 DesugarAssignExprRecursively + IsAssignable），
+            // 因此这里同样按叶子目标逐个分类，诊断锚在目标自身而不是整条赋值。
+            lValue.elements.forEach { checkAssignmentTarget(it, expression) }
+            return
+        }
         if (lValue is CfirSubscriptExpression) {
-            when (val target = CfirMutationTargetClassifier.classifySubscriptAssignment(lValue, expression)) {
-                is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
-                    reporter.reportOn(
-                        source = expression.source ?: lValue.source,
-                        factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
-                    )
-                }
-
-                is CfirMutationTargetClassifier.MutationTarget.NonAssignableName -> {
-                    reporter.reportOn(
-                        source = lValue.source ?: expression.source,
-                        factory = CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED,
-                        a = target.name,
-                    )
-                }
-
-                CfirMutationTargetClassifier.MutationTarget.Assignable,
-                null,
-                -> Unit
-            }
+            checkSubscriptTarget(lValue, expression)
             return
         }
 
         val access = lValue as? CfirQualifiedAccessExpression ?: return
+        checkQualifiedTarget(access, expression)
+    }
+
+    /** 按叶子目标递归执行左值合法性分类；丢弃占位 `_` 没有可解析目标，自然跳过。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkAssignmentTarget(target: CfirExpression, assignment: CfirAssignment) {
+        when (target) {
+            is CfirTupleLiteral -> target.elements.forEach { checkAssignmentTarget(it, assignment) }
+            is CfirSubscriptExpression -> checkSubscriptTarget(target, assignment)
+            is CfirQualifiedAccessExpression -> checkQualifiedTarget(target, assignment)
+            else -> Unit
+        }
+    }
+
+    /** 下标目标的合法性：VArray 内建规则优先，元组接收者报 "tuple element"。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkSubscriptTarget(lValue: CfirSubscriptExpression, expression: CfirAssignment) {
+        when (val target = CfirMutationTargetClassifier.classifySubscriptAssignment(lValue, expression)) {
+            is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
+                reporter.reportOn(
+                    source = expression.source ?: lValue.source,
+                    factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
+                )
+            }
+
+            is CfirMutationTargetClassifier.MutationTarget.NonAssignableName -> {
+                reporter.reportOn(
+                    source = lValue.source ?: expression.source,
+                    factory = CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED,
+                    a = target.name,
+                )
+            }
+
+            CfirMutationTargetClassifier.MutationTarget.Assignable,
+            null,
+            -> Unit
+        }
+    }
+
+    /** 限定访问目标的合法性：VArray size 只读，其余交给修改目标分类器。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkQualifiedTarget(
+        access: CfirQualifiedAccessExpression,
+        expression: CfirAssignment,
+    ) {
         val selectorSource = checkNotNull(access.calleeReference.source) {
             "Qualified assignment target must retain its callee selector source"
         }
@@ -222,6 +257,12 @@ object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionCheck
  * 分类结果只描述目标语义，不直接负责诊断上报。
  */
 internal object CfirMutationTargetClassifier {
+
+    /**
+     * 元组下标作为赋值目标时官方诊断里的目标描述（`AssignExpr.cpp` 的 `DiagInvalidAssign(
+     * diag, se, "tuple element")`），渲染为 `'tuple element' can not be assigned`。
+     */
+    private val TUPLE_ELEMENT_TARGET_NAME = Name.identifier("tuple element")
     /**
      * 按 VArray 内建下标赋值规则分类修改目标。
      *
@@ -233,8 +274,15 @@ internal object CfirMutationTargetClassifier {
         subscript: CfirSubscriptExpression,
         assignment: CfirAssignment,
     ): MutationTarget? {
-        subscript.receiver.coneTypeOrNull
-            ?.fullyExpandedType(context.session) as? ConeVArrayType ?: return null
+        val expandedReceiver = subscript.receiver.coneTypeOrNull?.fullyExpandedType(context.session)
+        // 官方 IsAssignableSubscriptExpr（Sema/TypeCheckExpr/AssignExpr.cpp:71-76）：元组下标
+        // 是 "tuple element"，不可作为赋值目标，诊断参数即该字面描述；
+        // MaySubscriptAssignOnlyBeOverload（:60-64）同时保证元组接收者不尝试 set 重载，
+        // 因此这里先于 VArray / 运算符重载分类拦截。
+        if (expandedReceiver is ConeTupleType) {
+            return MutationTarget.NonAssignableName(TUPLE_ELEMENT_TARGET_NAME)
+        }
+        if (expandedReceiver !is ConeVArrayType) return null
 
         return when (val receiver = subscript.receiver) {
             is CfirSubscriptExpression -> MutationTarget.ImmutableValue

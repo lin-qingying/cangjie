@@ -155,6 +155,31 @@ private class CfirInitializationFlowAnalyzer(
     private var functionExitCollection: FunctionExitCollection? = null
 
     /**
+     * 当前正在收集 break / continue 状态的循环帧（最内层）。
+     *
+     * 与 [functionExitCollection] 同构：合法跳转把当前状态交给所属循环——continue
+     * 进入条件求值入口，break 进入循环出口（对位 Kotlin FIR CFG 的
+     * `addBackEdge(loopBlockExitNode, conditionEnterNode)` / `loopExitNodes`）。
+     */
+    private var loopJumpFrame: LoopJumpFrame? = null
+
+    /**
+     * 单个循环的跳转状态收集帧。
+     */
+    private class LoopJumpFrame(val loop: CfirLoopExpression) {
+        val breakStates = mutableListOf<InitializationState>()
+        val continueStates = mutableListOf<InitializationState>()
+
+        /**
+         * 是否正在分析该循环自身的条件表达式。
+         *
+         * 条件里的 break/continue 属于非法循环控制（官方 `CheckInitInLoop` 只处理
+         * 循环体内的 jump），不得并入该循环的状态帧。
+         */
+        var collectingCondition: Boolean = false
+    }
+
+    /**
      * 当前分析器已经报告的初始化流诊断数。
      *
      * 官方初始化检查对二元表达式按 `left && right` 组合检查结果：左操作数已经
@@ -236,21 +261,14 @@ private class CfirInitializationFlowAnalyzer(
                         }
                     }
                     declaration.initializer?.let { initializer ->
-                        reportStaticGlobalReadsBeforeInitialization(
-                            currentDeclaration = declaration,
+                        state = collectAndBindTopLevelDestructuring(
+                            targets = declaration.variables,
                             initializer = initializer,
+                            currentDeclaration = declaration,
                             trackedBySymbol = trackedBySymbol,
-                            initialized = state.initialized,
+                            state = state,
+                            recursiveStaticFunctionReads = recursiveStaticFunctionReads,
                         )
-                        val ownerVisitOrder = declaration.variables.minOfOrNull { variable -> variable.visitOrder }
-                            ?: declaration.visitOrder
-                        collectRecursiveStaticFunctionReads(
-                            root = initializer,
-                            ownerVisitOrder = ownerVisitOrder,
-                            trackedBySymbol = trackedBySymbol,
-                            destination = recursiveStaticFunctionReads,
-                        )
-                        state = declaration.markVariablesInitialized(state)
                     }
                 }
 
@@ -543,6 +561,8 @@ private class CfirInitializationFlowAnalyzer(
                 ?.add(afterResult)
             afterResult.terminate()
         }
+        is CfirContinueExpression -> analyzeLoopJump(expression, state, isContinue = true)
+        is CfirBreakExpression -> analyzeLoopJump(expression, state, isContinue = false)
         is CfirThrowExpression -> analyzeExpression(expression.exception, state).terminate()
         is CfirThisReceiverExpression -> analyzeThisReceiver(expression, state)
         is CfirFunctionCall -> analyzeFunctionCall(expression, state)
@@ -634,6 +654,17 @@ private class CfirInitializationFlowAnalyzer(
         }
         val rightValueHasPriorityDiagnostic =
             reportedInitializationDiagnosticCount != diagnosticCountBeforeRightValue
+        if (afterRightValue.terminated) {
+            /*
+             * 官方 `InitializationChecker`：赋值右值若中断（如 `c = throw Exception()`、
+             * `a = Some(1) ?? throw Exception()`），该赋值不会完成，目标不进入定值集合
+             * （cjc 实测 terminated_01/04：try-catch 之后 use 报
+             * `sema_used_before_initialization`）。顺序流在右值处终止，后续语句不可达；
+             * catch 路径由 `analyzeTryExpression` 以清除终止标记的体结束状态进入，
+             * 因此这里不能把目标标记进已初始化集合。
+             */
+            return afterRightValue
+        }
         return analyzeAssignmentTarget(
             assignment = assignment,
             lValue = assignment.lValue,
@@ -959,8 +990,11 @@ private class CfirInitializationFlowAnalyzer(
         // 官方 `CheckInitInTryExpr` 先分析 try 块再分析 catch 块：try 块中已全路径初始化的
         // `let` 变量在 catch 块中再次赋值属于重复赋值（CANNOT_ASSIGN_TO_IMMUTABLE），
         // 因此 catch 块的入口状态必须是 try 块分析后的状态，而不是 try 之前的状态。
+        // 但 try 体以 throw/中断收尾时（如 `c = throw Exception()`），结束状态是 terminated，
+        // 若原样进入 catch 体会让 catch 体被当成不可达而整体跳过；异常路径本身是可达的，
+        // 故进入前清除终止标记（cjc 实测 terminated_01：catch 之后的 use 报 UBI）。
         val catchStates = expression.catches.map { catchClause ->
-            analyzeScopedBlock(catchClause.body, tryState)
+            analyzeScopedBlock(catchClause.body, tryState.withoutTermination())
         }
 
         val mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)
@@ -976,22 +1010,90 @@ private class CfirInitializationFlowAnalyzer(
         expression: CfirLoopExpression,
         state: InitializationState,
     ): InitializationState {
-        return if (expression.isDoWhile) {
-            val repeatableBodyState = analyzeScopedBlock(
-                expression.body,
-                state.enterRepeatableRegion(),
-            ).restoreRepeatableDepth(state.repeatableDepth)
-            val afterFirstBody = repeatableBodyState.withoutTermination()
-            val afterCondition = analyzeExpression(expression.condition, afterFirstBody)
-            if (repeatableBodyState.terminated) afterCondition.terminate() else afterCondition
-        } else {
-            val afterCondition = analyzeExpression(expression.condition, state)
-            val afterBody = analyzeScopedBlock(
-                expression.body,
-                afterCondition.enterRepeatableRegion(),
-            ).restoreRepeatableDepth(afterCondition.repeatableDepth)
-            mergeBranchStates(afterCondition, afterBody)
+        /*
+         * 官方 `InitializationChecker::CheckInitInLoop`（Sema/LegalityOfUsage/
+         * InitializationChecker.cpp:1360）把循环体内的 break/continue 视为控制流出口：
+         * continue 到达条件求值入口，break 到达循环出口。没有这层帧时，
+         * `do { if (true) { continue }; b = 1 } while (b == 0)` 的条件与循环后会
+         * 错误地认为 `b` 已初始化。
+         */
+        val frame = LoopJumpFrame(expression)
+        val previousFrame = loopJumpFrame
+        loopJumpFrame = frame
+        try {
+            return if (expression.isDoWhile) {
+                val repeatableBodyState = analyzeScopedBlock(
+                    expression.body,
+                    state.enterRepeatableRegion(),
+                ).restoreRepeatableDepth(state.repeatableDepth)
+                val conditionEntryState = frame.continueStates
+                    .fold(repeatableBodyState) { accumulated, jumpState ->
+                        mergeBranchStates(accumulated, jumpState.restoreRepeatableDepth(state.repeatableDepth))
+                    }
+                    .withoutTermination()
+                frame.collectingCondition = true
+                val afterCondition = try {
+                    analyzeExpression(expression.condition, conditionEntryState)
+                } finally {
+                    frame.collectingCondition = false
+                }
+                val loopExitState = frame.breakStates
+                    .fold(afterCondition) { accumulated, jumpState ->
+                        mergeBranchStates(accumulated, jumpState.restoreRepeatableDepth(state.repeatableDepth))
+                    }
+                // 体全部终止且没有 continue 路径时，条件不可达；否则条件至少经 continue 可达。
+                if (repeatableBodyState.terminated && frame.continueStates.isEmpty()) {
+                    loopExitState.terminate()
+                } else {
+                    loopExitState
+                }
+            } else {
+                val afterCondition = analyzeExpression(expression.condition, state)
+                val bodyState = analyzeScopedBlock(
+                    expression.body,
+                    afterCondition.enterRepeatableRegion(),
+                ).restoreRepeatableDepth(afterCondition.repeatableDepth)
+                val conditionReentryState = frame.continueStates
+                    .fold(bodyState) { accumulated, jumpState ->
+                        mergeBranchStates(accumulated, jumpState.restoreRepeatableDepth(afterCondition.repeatableDepth))
+                    }
+                val mergedExitState = mergeBranchStates(afterCondition, conditionReentryState)
+                frame.breakStates
+                    .fold(mergedExitState) { accumulated, jumpState ->
+                        mergeBranchStates(accumulated, jumpState.restoreRepeatableDepth(afterCondition.repeatableDepth))
+                    }
+            }
+        } finally {
+            loopJumpFrame = previousFrame
         }
+    }
+
+    /**
+     * 分析循环跳转语句。
+     *
+     * 只有**合法**跳转才参与定值流：目标是当前最内层循环、不在条件表达式中、
+     * 也不在嵌套函数/lambda 体内（后两者分别由 `collectingCondition` 与
+     * `inNestedFunction` 拦截——lambda 体内的跳转延迟执行，条件里的跳转属非法
+     * 循环控制）。非法跳转由其专属检查器上报，此处保持旧实现语义：不终止顺序流。
+     */
+    private fun analyzeLoopJump(
+        jump: CfirLoopJump,
+        state: InitializationState,
+        isContinue: Boolean,
+    ): InitializationState {
+        val frame = loopJumpFrame
+        // 非法跳转（循环外 break/continue）在 resolve 阶段不绑定 target，
+        // 读取 labeledElement 会抛 UninitializedPropertyAccessException。
+        val targetLoop = jump.target.takeIf { it.isBound }?.labeledElement
+        val isValidJump = frame != null &&
+                targetLoop === frame.loop &&
+                !frame.collectingCondition &&
+                !state.inNestedFunction
+        if (isValidJump) {
+            if (isContinue) frame.continueStates += state else frame.breakStates += state
+            return state.terminate()
+        }
+        return state
     }
 
     /**
@@ -1109,6 +1211,20 @@ private class CfirInitializationFlowAnalyzer(
                     state = currentState,
                 )
             }
+        }
+
+        if (expression.argumentList.arguments.any { it is CfirNamedArgumentExpression }) {
+            /*
+             * 官方对含命名实参的调用放弃定值分析：实参求值顺序未规定，
+             * 读与写都不产生初始化诊断（cjc 实测：
+             * `fseq(b: println(y), a: (y = 10))` 中 `let y: Int64` 未初始化却零诊断，
+             * 而位置实参 `fs2(println(y), (y = 10))` 照常报 y 的 UBI）。
+             * 调用自身的 receiver/callee 检查不受影响。
+             */
+            if (expression.origin == CfirFunctionCallOrigin.ConstructorDelegationThis) {
+                currentState = currentState.markAllInstanceFieldsInitialized()
+            }
+            return currentState
         }
 
         for (argument in expression.argumentList.arguments) {
@@ -1799,13 +1915,67 @@ private class CfirInitializationFlowAnalyzer(
      * 官方 `IsVarUsedBeforeDefinition` 对同一文件中的 static/global 变量按源码位置判断；
      * 这里复用 resolved symbol，而不是重新做名字查找。
      */
+    /**
+     * 按官方语义检查并绑定一个顶层解构声明。
+     *
+     * 官方把元组解构按**分量下钻**增量绑定：元组目标与元组右值逐层配对，先求值第 i 个
+     * 分量、绑定第 i 个目标，再求值第 i+1 个分量（cjc 实测：`let (a, (b, c)) = (f(), (g(), h()))`
+     * 只报 f 中的 a；h 求值时 b 已绑定）。右值不是与目标同构的元组字面量时（含 `_` 丢弃位
+     * 导致目标数与分量数不等），官方脱糖为先 `var $tmp = rhs` 再逐目标下标绑定，
+     * 因此整个右值先求值、随后一次性绑定全部目标——读边按当前绑定状态判定。
+     */
+    private fun collectAndBindTopLevelDestructuring(
+        targets: List<StaticGlobalInitializerVariable>,
+        initializer: CfirExpression,
+        currentDeclaration: StaticGlobalInitializerDeclaration,
+        trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
+        state: InitializationState,
+        recursiveStaticFunctionReads: MutableList<StaticGlobalUseEdge>,
+    ): InitializationState {
+        val tupleElements = (initializer as? CfirTupleLiteral)?.elements
+        if (tupleElements == null || tupleElements.size != targets.size || targets.size == 1) {
+            val ownerVisitOrder = targets.minOfOrNull { variable -> variable.visitOrder }
+                ?: currentDeclaration.visitOrder
+            reportStaticGlobalReadsBeforeInitialization(
+                currentDeclaration = currentDeclaration,
+                initializer = initializer,
+                trackedBySymbol = trackedBySymbol,
+                initialized = state.initialized,
+            )
+            collectRecursiveStaticFunctionReads(
+                root = initializer,
+                ownerVisitOrder = ownerVisitOrder,
+                trackedBySymbol = trackedBySymbol,
+                destination = recursiveStaticFunctionReads,
+            )
+            var bound = state
+            for (variable in targets) {
+                variable.initialized = true
+                bound = bound.markInitialized(variable.symbol)
+            }
+            return bound
+        }
+
+        var bound = state
+        targets.forEachIndexed { index, variable ->
+            bound = collectAndBindTopLevelDestructuring(
+                targets = listOf(variable),
+                initializer = tupleElements[index],
+                currentDeclaration = currentDeclaration,
+                trackedBySymbol = trackedBySymbol,
+                state = bound,
+                recursiveStaticFunctionReads = recursiveStaticFunctionReads,
+            )
+        }
+        return bound
+    }
+
     private fun reportStaticGlobalReadsBeforeInitialization(
         currentDeclaration: StaticGlobalInitializerDeclaration,
         initializer: CfirExpression,
         trackedBySymbol: Map<CfirBasedSymbol<*>, StaticGlobalInitializerVariable>,
         initialized: Set<CfirBasedSymbol<*>>,
-    ) {
-        initializer.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+    ) {        initializer.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
             override fun visitElement(element: CfirElement) {
                 element.acceptChildren(this, null)
             }

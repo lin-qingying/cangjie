@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.*
@@ -652,6 +653,20 @@ private class CfirConstExpressionEvaluator(
             return false
         }
 
+        val tupleTarget = expression.lValue as? CfirTupleLiteral
+        if (tupleTarget != null) {
+            /*
+             * 官方把多重赋值脱糖为「临时绑定 + 逐元素单赋值」后按块做常量检查
+             * （`ConstEvaluationChecker.cpp:527` 的 `CheckDesugaredMultipleAssignment`）：
+             * 右值只检查一次（对应临时绑定的初始化器），每个叶子目标按单赋值目标规则检查。
+             */
+            var result = checkExpression(expression.rValue, isWeak, allowReturn = false)
+            multipleAssignmentTargetLeaves(tupleTarget).forEach { leaf ->
+                if (!checkAssignmentTargetLeaf(leaf, isWeak)) result = false
+            }
+            return result
+        }
+
         val target = expression.lValue.resolvedSymbolOrNull()
         if (inConstInit && target?.isMemberFieldSymbol() == true) {
             return checkExpression(expression.rValue, isWeak, allowReturn)
@@ -662,6 +677,41 @@ private class CfirConstExpressionEvaluator(
         }
         reportExpectExpression(expression, isWeak)
         return false
+    }
+
+    /**
+     * 按叶子展开多重赋值目标；丢弃占位 `_` 没有可解析目标，不参与常量检查。
+     */
+    private fun multipleAssignmentTargetLeaves(target: CfirTupleLiteral): List<CfirExpression> =
+        target.elements.flatMap { element ->
+            when {
+                element is CfirTupleLiteral -> multipleAssignmentTargetLeaves(element)
+                element.isWildcardDiscardTarget() -> emptyList()
+                else -> listOf(element)
+            }
+        }
+
+    /**
+     * 检查单个叶子目标的常量可写性，规则与单目标赋值一致。
+     */
+    private fun checkAssignmentTargetLeaf(leaf: CfirExpression, isWeak: Boolean): Boolean {
+        val target = leaf.resolvedSymbolOrNull()
+        if (inConstInit && target?.isMemberFieldSymbol() == true) {
+            return true
+        }
+
+        checkMutatingTargetAccess(leaf, isWeak, allowReturn = false)?.let { isConstTargetAccess ->
+            if (!isConstTargetAccess) return false
+        }
+        reportExpectExpression(leaf, isWeak)
+        return false
+    }
+
+    /** 判断多重赋值目标是否为丢弃占位 `_`。 */
+    private fun CfirExpression.isWildcardDiscardTarget(): Boolean {
+        val access = this as? CfirQualifiedAccessExpression ?: return false
+        val reference = access.calleeReference as? CfirNamedReference ?: return false
+        return reference.name.asString() == "_"
     }
 
     /**
