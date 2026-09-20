@@ -1,5 +1,17 @@
 # CFIR LLT Repair Log
 
+## 2026-09-20：EffectHandlers 版本门控恢复实验语义
+
+- problem type: 语言特性版本门控失效——`LanguageFeature.EffectHandlers` 因 `sinceVersion=CANGJIE_1_0_0`（44faa9dd3 钉入）而 `isEnabledByDefault` 恒真，feature 在任何配置下默认开启，resolve 层 3 处 `requireFeatureSupport` 门禁与 `EFFECTS_FEATURE_DISABLED` 诊断不可达，disabled-path fixture（effectsFeatureDisabledRich.cj）期望不可满足后被清空成 0 字节空壳。
+- root cause: 把官方实验性 opt-in 特性钉到最低支持版本 1.0.0，与官方定位冲突；版本枚举最低即 1.0.0，使"since 版本已到达"的默认推导失去意义。
+- official Cangjie evidence: 官方测试体系以 `%enableEH` 显式开启 effect handlers（本仓库从官方测试数据移植的 `perform_incorrect_type.cj` 原始 directive，见 bde4c461c 引入时的 `// ERRCHECK: %compiler %enableEH ...`）；官方文档 TokenKind 附录登记 HANDLE/PERFORM/RESUME/THROWING（external/cangjie_docs `tokenkind_type.md`，自 v1.0.2 tag 起存在）但已开源编译器镜像（gitcode，全 9 commit 历史）无实现；OCX 2026 公开介绍时官方标注"积极开发中的实验性部分"。仓库先例：`AllowIntersectionTypesInInference(null)` 同形态。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/util/src/org/jetbrains/kotlin/config/LanguageVersionSettings.kt`——Kotlin 只有两态：`sinceVersion=null`（实验性，`-XXLanguage:+Feature` 显式 opt-in，永不默认启用，枚举 L562 `// Experimental features` 段）与 `sinceVersion=X.Y`（该语言版本起默认启用，KDoc L19-49）；实验→稳定按 null→钉版本迁移，语义破坏性变化按 `Coroutines`→`ReleaseCoroutines` 模式新开条目。本仓库 `LanguageFeature`/`isEnabledByDefault`/`featureSupportStatus` 为同构移植，布尔门禁语义一致。
+- CFIR owner files changed: `common/src/org/cangnova/cangjie/LanguageVersionSettings.kt`（`EffectHandlers(LanguageVersion.CANGJIE_1_0_0)` → `EffectHandlers(null)` + KDoc 记录官方证据与毕业条件：官方稳定表面 + stdx.effect stdlib + 端到端 LLT 三条件齐备后同时钉 sinceVersion/sinceApiVersion 并以 CanStillBeDisabledForNow 设过渡窗，对齐 JavaInteropAnnotations 形态）；fixture 侧 3 个 LLT effect 用例加 `// LANGUAGE: +EffectHandlers` directive，`testData/diagnostics/effects/effectsFeatureDisabledRich.cj` 恢复 git 历史原内容（3 个 EFFECTS_FEATURE_DISABLED 期望，默认关路径）。
+- repair principle: 特性生命周期归位是共享所有者修复——恢复"实验性=sinceVersion=null"的元模型不变量（Kotlin 同构），使版本推导重新有意义；不修改 resolve 门禁代码与诊断定义，disabled 路径机制自 2026-04 起即正确，只是被错误的 sinceVersion 钉死而不可达。
+- fixtures covered: `llt/effect/perform_incorrect_type.cj`、`llt/effect/command_class_not_available.cj`、`llt/effect/resume_outside_handle.cj`（双路径）、`diagnostics/effects/effectsFeatureDisabledRich.cj`（×3 生成类）。
+- verification command(s) and outcome: 定向 `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Effect' --tests '*CfirAnalysisLLTPsiTestGenerated$Effect' --tests '*CfirAnalysisDiagnosticsTestGenerated$Effects' --tests '*CfirAnalysisDiagnosticsPsiTestGenerated$Effects' --tests '*CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated$Effects'` → 14 tests, 2 failed（仅 testPerformIncorrectType ×2，为本日志外的独立级联问题族）；effectsFeatureDisabledRich ×3 与其余全部 PASS。全量 `gradlew-queue.bat :cfir:analysis-tests:test` → 8658 tests, 126 failed, 308 skipped；与 `20260917-full-after-raw-annotation` 基线对比 `FIXED=93 / REGRESSED=0 / UNCHANGED_FAILURES=126 / NEW_KEYS_FAILED=0 / REMOVED=0`；失败集合中无 EFFECTS_FEATURE_DISABLED 相关条目。
+- remaining risks: `stdx.effect` stdlib 缺失使 effect 系统无法端到端使用（23 个官方移植 fixture 因此被删，未恢复）；CLI 无 `-XXLanguage` 式特性开关通道（真实编译调用无法 opt-in，本轮决策不加）；perform 操作数错误类型的 `COMMAND_INCOMPATIBLE_TYPE` 级联（transformPerformExpression 无错误短路）为独立问题族待修；毕业时需同步建立消息双分支渲染（对齐 Kotlin LanguageFeatureMessageRenderer 的 experimental/version-gated 措辞区分）。
+
 ## 2026-09-18：版本身份、settings 派生与 NonProduct 身份分域批次
 
 - problem type: 1.0.0～1.1.3 版本模型往返、Analysis API settings 派生丢 flags、package directive 被误投影为 builtin kind。
@@ -8047,3 +8059,143 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
   不引入合成临时绑定、不生成合成赋值语句（合成节点正是诊断泄漏的来源）。
   这条同样要落到 `CfirAssignmentLegalityChecker`（它目前只认 `lValue` 是下标或限定访问，元组左值时整段跳过，
   所以 `CANNOT_ASSIGN_TO_SUBSCRIPT` 丢失、case05/case01 的差异无法闭合）。
+
+## 2026-09-20：P4 第二轮 —— 元组左值写目标语义 + `_` 通配表达式（Assign 族清零）
+
+- 本轮起点：Assign 族 12 条失败（case01/03/04/05/06/08/err_optionalChain ×2）。其中 case08 已由
+  并行会话对 `CfirExpressionsResolveTransformer` 的增量（`resolveMultipleAssignmentSetCalls` +
+  `firstMultipleAssignmentTypeMismatch` 的 setter 期望类型）修复，本轮在其骨架上补齐三处共享 owner。
+- **改动 1（左值目标语义）**：`transformAssignment` 不再对元组左值调用 `transformLValue`
+  （那会把它当普通表达式求值、给下标槽位走读取语义）；新增
+  `CfirExpression.resolveAsAssignmentTarget()`：元组槽位递归到叶子并按叶子写入类型重建
+  `ConeTupleType`；下标叶子只解析接收者与下标（`set` 语义留给右值就绪后的
+  `resolveMultipleAssignmentSetCalls`）；丢弃 `_` 不解析。
+  `resolveMultipleAssignmentSetCalls` 在 `set` 成功后把槽位类型固定为**写入类型**
+  （`set` 的 `value!` 形参类型，经 `CfirResolvedArgumentList.mapping` 取得），失败保留其错误类型。
+  效果：case01（只有 setter 的 `operator func []`）与 case05 line23（RHS 非元组）不再泄漏读侧诊断。
+- **改动 2（`_` 通配表达式，psi 解析器）**：根因是词法层 `_` 早已是独立 token
+  `CjTokens.UNDERLINE`（`CangJieLexer.flex:816`），但 `parseAtomicExpression` 与
+  `EXPRESSION_FIRST` 都不认识它 ⇒ `(a, _, c, e) = ...` 在 `_` 处截断成 `(a,`，**整条语句丢失**。
+  这同时解释了 case01 test5 此前的"通过"是假阴性、err_optional_chain_00 缺外层 TYPE_MISMATCH、
+  case03 第 5 条完全无诊断。修复：`parseAtomicExpression` 增加
+  `UNDERLINE_Id -> parseWildcardExpression()`（产出 `REFERENCE_EXPRESSION`，名字 `_`，与 PSI 既有
+  `isPlaceholder`、resolve 既有 `isMultipleAssignmentDiscardTarget` 的表示一致），并把 `UNDERLINE`
+  加入 `EXPRESSION_FIRST`。官方依据 `Parse/ParseAtom.cpp:56-58`（`Seeing(WILDCARD) -> ParseWildcardExpr`）、
+  `Parse/ParseExpr.cpp:219-226`；cjc 实测 `_ = 1 + one()` 零诊断、`let x = _` 报 parse 级
+  `parse_unexpected_expected_found`（本仓库此处会报 UNRESOLVED_REFERENCE，已登记为已知偏差）。
+  `transformAssignment` 对 `_ = rhs` 的唯一左值同样跳过左值解析。
+- **改动 3（元组下标目标）**：官方 `IsAssignableSubscriptExpr`（`AssignExpr.cpp:71-76`）把元组下标
+  判为 `"tuple element" can not be assigned`，且 `MaySubscriptAssignOnlyBeOverload`（:60-64）
+  对元组接收者**不做 set 重载尝试**。落地：`CfirMutationTargetClassifier.classifySubscriptAssignment`
+  对元组接收者返回 `NonAssignableName("tuple element")`（消息渲染与官方逐字一致）；
+  `resolveSubscriptSetAssignment` 对元组接收者跳过 set 合成、槽位类型置 Unit；
+  `firstMultipleAssignmentTypeMismatch` 跳过该类槽位（对应官方 `tysOfExpr` 的 IsTyCorrect 逃逸）；
+  `CfirAssignmentLegalityChecker` 增加 tuple 目标下钻（此前 tuple 左值整体 return，从不检查叶子）。
+- **fixture 修正（Fixture Edit Gate 条件 1：官方 cjc 反证）**：
+  - `case02.cj`：`(tuple[0], _, tuple[2]) = (4, 5, 6)` 官方报 2 处
+    `sema_unqualified_left_value_assigned`（锚各下标），原期望零诊断错误 → 补
+    `<!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>`（该语句此前被 `_` 截断吞掉，属假阴性转正）。
+  - `case01.cj` test8 两处、`case06.cj` test1 一处 `case None`：官方 cjc 报
+    `chir_unreachable_pattern`（warning，unused 组；探针文件逐行列对齐 L98/L102、L17）→ 补
+    `<!UNREACHABLE_PATTERN!>None<!>`。CFIR 的 `ControlFlowAnalysisDiagnosticComponent` 正是对位
+    官方 CHIR `ConstAnalysis`+`UnreachableBranchCheck`，语料中已有 95 个文件使用该标记。
+- verification command(s) and outcome:
+  - `--tests '*Assign*'`：`188 tests completed`，失败从 12 → 6，且 **MultipleAssignExpr 全部通过**；
+    剩余 6 条全部是 `InitializationCheck.testVariableAssignmentTerminated0{1,4,42}`（属 P3
+    定值初始化问题类型，见其条目）。
+  - 全量门禁（`--continue --console=plain`）：见下一条记录。
+
+## 2026-09-20：P4 门禁与回归收口
+
+- 全量门禁（首轮，`--continue --console=plain`）：`8658 tests completed, 132 failed, 308 skipped`
+  （本轮起点 146）。逐条 diff（对 `fails_after_p1b.txt`）：fixed = 16
+  （MultipleAssignExpr 六个 fixture ×2 + `InitializationCheck.testVariableUseBeforeInit03/04` ×2 ——
+  后者的 `(a, b) = (1, 2, 3)` 期望本就依赖 `_` 可解析的语句形态）；regressions = 2：
+  `Const.testDesugarexpr`（LLT+PSI）。
+- `Const.testDesugarexpr` 根因：`const init() { (a, b) = (1, -1) }` 在常量语境下，
+  结构化元组左值不再被建树期脱糖展开，`CfirConstDeclarationChecker.checkAssignment` 对
+  tuple 左值没有分支，落到 `reportExpectExpression` 误报 `EXPECT_CONST`。
+  官方在 `ConstEvaluationChecker.cpp:527` 有专门入口
+  `CheckDesugaredMultipleAssignment`（对脱糖块逐节点检查）。落地：
+  `checkAssignment` 增加 tuple 左值分支——右值检查一次，每个叶子目标按单赋值目标规则检查
+  （`multipleAssignmentTargetLeaves` + `checkAssignmentTargetLeaf`，丢弃 `_` 跳过）。
+  实测 `--tests '*TestGenerated$Const*' --tests '*TestGenerated$Assign*'`：
+  `399 tests completed, 2 failed`，仅剩既有的 P7 `ConstraintCheck.testOptionWithElement01`。
+- 最终全量门禁：见下一条。
+
+## 2026-09-20：P4 最终门禁（Assign 族清零）
+
+- `--continue --console=plain`：`8658 tests completed, 130 failed, 308 skipped`（本轮起点 146）。
+  对上一门禁（132）逐条 diff：fixed = 2（`Const.testDesugarexpr` LLT+PSI），**regressions = 0**。
+  本轮累计：146 → 130，fixed = 18、regressions = 0。
+- **Assign（多重赋值）问题类型至此清零**：MultipleAssignExpr 八个 fixture（case01–case08、
+  err_optional_chain_00）LLT+PSI 共 16 条全部通过，`testWildcard01` 通过；
+  顺带修好 `InitializationCheck.testVariableUseBeforeInit03/04` 与 `Const.testDesugarexpr`
+  （它们依赖同一根因链：`_` 可解析 + 结构化元组左值）。
+- 剩余非宏 52 条按族：InitializationCheck 16（P3 定值初始化：try/throw 截断、do-while continue、
+  跨函数解构绑定顺序、static init 顺序，取证结论已在本文件 2026-09-20 早前条目固化）、
+  ErrMsgs 10（P5/P6）、Linkage 6（P2 剩余：AMBIGUOUS_USE / UNDECLARED_TYPE_NAME）、
+  Lookup 4（P6）、Record 4（P9）、Box 2、ConstraintCheck 2（P7）、DesugarErrorReport 2、
+  Effect 2、ExtendsImplements 2（P8）、FuzzInvalidParse 2（P8）。
+
+## 2026-09-20：定值初始化（vubi_12 / vubi_15）—— 严格技能管线重跑（已验证）
+
+- 本轮按技能重走 EI→AM→实现：派 `EI-ubi`（5 组 cjc 探针）与 `AM-ubi`（回归归因 + 上报方定位）。
+  **上一轮的教训被证实**：我此前未确认上报方就写的增量绑定改动确实无效（目标用例不变），
+  continue/break 帧的第一版也因三处模型缺陷产生 20 条回归并已回退（回退后门禁精确恢复 130）。
+- **official evidence（EI-ubi，cjc 1.0.5）**：
+  - 顶层元组解构按**分量下钻**增量绑定：`let (a,(b,c)) = (f(),(g(),h()))` 只报 f 中的 a，
+    h 求值时 b 已绑定 ⇒ 下钻式而非扁平绑定；`_` 丢弃位仍求值/分析（g() 内的未定义引用照报）；
+    元组目标在自身 RHS 内直接互读报 `sema_undeclared_identifier`（不经绑定路径）。
+  - continue/break（`InitializationChecker.cpp:1360 CheckInitInLoop(block, shouldUnset)`；
+    while 默认 shouldUnset=true，do-while 显式 false 且用 `GetReferencedDeclsBeforeJumpExpr`）：
+    while+continue / while+break / do-while+break 三形态的 use 全报；
+    1.0.5 **不支持标签循环**（`outer: while` 解析报错），故无标签合并问题。
+  - vubi_01：`let y = (x = 1)` 在 `var x = 2` 前仅报 `sema_undefined_variable`
+    （`InitializationChecker.cpp:732`：GLOBAL 且同文件且 `re.begin < target->begin`；
+    `LookUpImpl.cpp:480-483 IsDefinedAfter`）⇒ **顶层存储变量按声明点词法序可见**，函数/类型不受限。
+- **CFIR 改动（AM-ubi 定位的共享 owner）**：
+  1. `CfirInitializationCheckers.checkFileStaticGlobalInitialization`：元组解构改走
+     `collectAndBindTopLevelDestructuring`——目标与右值逐层配对，逐元素报告并逐个绑定
+     （读边 ownerVisitOrder 用**该元素目标自己的 visitOrder**；右值与目标不同构/含 `_` 时
+     整体求值后一次性绑定，对应官方脱糖 `var $tmp = rhs`）。上一轮无效的根因：读边的上报方是
+     `reportRecursiveStaticFunctionReadsBeforeInitialization`（:1736，由 `collectRecursiveStaticFunctionReads`
+     喂边），且必须用元素自己的 visitOrder 而非 min。
+  2. `analyzeLoopExpression` + 新增 `analyzeLoopJump`/`LoopJumpFrame`：合法跳转（目标=当前最内层循环、
+     不在条件表达式、不在嵌套函数/lambda 体内）才把状态并入 continue（条件入口）/break（循环出口）帧并
+     终止顺序流；非法跳转（INVALID_LOOP_CONTROL）保持旧语义不终止。第一版 20 条回归的根因即这三类
+     非法跳转被误终止/误并入（Jump/Loops/BottomType 的 lambda 内 break、TuplePattern 的循环外 continue）。
+  3. `CfirTarget.isBound`（接口 + `CfirAbstractTarget` 契约、`CfirLoopTarget`/`CfirFunctionTarget` 实现）：
+     **非法跳转在 resolve 阶段不绑定 target**，直接读 `labeledElement` 抛
+     `UninitializedPropertyAccessException` 并使整个文件分析以 FileAnalysisException 终止
+     （这正是第一版 `INVALID_LOOP_CONTROL` 全部消失 + FileAnalysisException 的根因）。
+- verification: 高风险切片（InitializationCheck/Jump/Loops/Lookup/BottomType/TuplePattern/Const/Assign，
+  587 tests）18 failed 全部为基线既有；最终全量门禁
+  `8658 tests completed, 126 failed, 308 skipped`（起点 130），对回退后基线逐条 diff：
+  **fixed = 4**（vubi_12、vubi_15 各 LLT+PSI），**regressions = 0**。
+- vubi_01 **未实施**（正确停手）：修复点在名字解析——顶层存储变量需按声明点词法序可见。
+  接缝已由 AM 定位：`CfirFileDeclaredTopLevelScope.processCallablesByName`（providers/src/.../
+  CfirFileDeclaredTopLevelScope.kt:170，`callablesByName` 保序但不过滤 offset）；难点是该 scope
+  API 不携带引用点位置，需先把引用位置传入 tower（跨切面 API 变更），应单独立项走完整 EI/AM 管线。
+
+## 2026-09-20：定值初始化（named_args / terminated_01/04/04_2）—— 已实施 / **未通过验证**
+
+- 按技能走 EI（3 组新探针 p8/p9/p10）+ AM（`AM-abort`）后实施三处共享 owner 修复（`CfirInitializationCheckers`）：
+  1. `analyzeAssignment`：**RHS 结束状态 terminated（赋值右值中断，如 `c = throw Exception()`、
+     `a = Some(1) ?? throw`）时不把目标标记进定值集合**，顺序流在右值处终止（官方实测
+     terminated_01/04 的 use 报 `sema_used_before_initialization`）。
+  2. `analyzeTryExpression`：catch 入口 = `tryState.withoutTermination()`——try 体以中断收尾时
+     异常路径本身可达，不能让 catch 体被当成不可达整体跳过（这是 terminated_01 UBI 缺失的直接原因）。
+     catch 入口沿用体结束状态（含定值事实）与官方一致（探针 f1/f12：catch 内 `a = 2` 报
+     CANNOT_ASSIGN_TO_IMMUTABLE）。
+  3. `analyzeFunctionCall`：**含命名实参的调用整体放弃定值分析**（实参求值顺序未规定；官方实测
+     `fseq(b: println(y), a: (y = 10))` 零诊断，而位置实参 `fs2(println(y), (y = 10))` 照报）。
+- **未验证**：① 第一次切片的结果目录被并行会话的全量运行覆盖（共享 `build/test-results`）；
+  ② 重跑时并行会话对 `compiler/frontend/src/.../AbstractFrontendPipeline.kt` 的在途改动
+  （`cjoOutputDirectory` 未解析引用）使工作树不可编译。因此本轮**没有可用的验证结论**，
+  不得视为已修复。待工作树连续可编译后需补：InitializationCheck/Jump/Loops/Lookup/BottomType/
+  TuplePattern/Const/Assign/Try 切片 + 全量门禁。
+- 附带官方语义存档（探针 p8/p9/p10）：catch 入口 = try 体结束状态（f1/f12 的 catch `a = 2`
+  报 CANNOT_ASSIGN_TO_IMMUTABLE）；"RHS 可能中断"事实不具粘性（f5：先前无关 `if(c){return}`
+  之后的 `a = 2` 照报）；try 体在可能中断的赋值之后的语句官方不再检查（f4 的 `a = 2` 不报、
+  terminated_04_2 的 `println(a)` 不报）——当前 CFIR 的 terminated 早退恰好复现该行为。

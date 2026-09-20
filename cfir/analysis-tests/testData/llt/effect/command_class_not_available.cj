@@ -1,3 +1,5 @@
+// LANGUAGE: +EffectHandlers
+
 class Eff {}
 
 main():Int64 {

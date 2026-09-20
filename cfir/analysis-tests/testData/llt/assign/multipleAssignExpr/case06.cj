@@ -14,7 +14,7 @@ func test1() {
     (a?[0], a?[1]) = (1, 2)
     match (a) {
         case Some(arr) => arr[0] + arr[1] - 3
-        case None => -1
+        case <!UNREACHABLE_PATTERN!>None<!> => -1
     }
 }
 
