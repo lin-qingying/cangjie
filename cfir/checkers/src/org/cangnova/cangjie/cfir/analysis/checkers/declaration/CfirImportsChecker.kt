@@ -813,52 +813,55 @@ object CfirImportsChecker : CfirFileChecker() {
     )
 
     /**
-     * 查找 import 父路径中第一个无法解析为包前缀的片段下标。
+     * 查找 import 路径中「包名不再对应任何已声明包」的首个片段下标。
      *
-     * 对星号导入会把完整路径都视为父路径；对普通导入则只检查终端名称之前的路径片段。
+     * 官方以包查找判定包是否存在（`external/cangjie_compiler/src/Modules/ImportManager.cpp` 的
+     * `CheckCjoPathLegality` 与 `package_search_error`），**名字前缀本身不是包**：只有整段包名
+     * 真的对应一个已声明包时 import 才解析成功。
+     *
+     * 包部分的长度由最长已声明包前缀决定：整条路径就是包时（`import m1.p1`）是包导入；星号导入
+     * 要求整条路径都是包；普通导入的包部分是终端名称之前的片段，终端名称也可以解析为包。
+     * 因此失败位置就是该最长前缀长度——包名正是在这一段脱离了真实包。
      */
     context(context: CheckerContext)
     private fun findUnresolvedParentSegmentIndex(pathSegments: List<Name>, isAllUnderImport: Boolean): Int? {
-        val parentSegmentCount = if (isAllUnderImport) pathSegments.size else pathSegments.size - 1
-        if (parentSegmentCount <= 0) return null
+        if (pathSegments.isEmpty()) return null
 
-        for (index in 0 until parentSegmentCount) {
-            val prefix = pathSegments.subList(0, index + 1)
-            if (!canResolvePackageOrClassPrefix(prefix)) return index
-        }
-        return null
-    }
-
-    /**
-     * 判断给定路径片段是否可以作为 import 的包前缀解析。
-     *
-     * 当前实现使用 session 的 symbol provider 查询包存在性，保证前缀解析与文件导入解析
-     * 使用同一套符号提供入口。
-     */
-    context(context: CheckerContext)
-    private fun canResolvePackageOrClassPrefix(prefixSegments: List<Name>): Boolean {
         val symbolProvider = context.session.symbolProvider
-        if (prefixSegments.isEmpty()) return true
-        val packageFqName = FqName.fromSegments(prefixSegments.map { it.asString() })
-        return symbolProvider.hasPackage(packageFqName)
+        var declaredPrefixLength = 0
+        for (length in pathSegments.size downTo 1) {
+            val candidate = FqName.fromSegments(pathSegments.subList(0, length).map { it.asString() })
+            if (symbolProvider.hasPackage(candidate)) {
+                declaredPrefixLength = length
+                break
+            }
+        }
+
+        if (declaredPrefixLength == pathSegments.size) return null
+
+        val packageSegmentCount = if (isAllUnderImport) pathSegments.size else pathSegments.size - 1
+        return if (declaredPrefixLength < packageSegmentCount) declaredPrefixLength else null
     }
 
     /**
      * 判断普通 import 的终端目标是否可以解析。
      *
-     * 终端目标可以是类符号、顶层可调用符号或包；当父包本身不存在时直接返回 false，
+     * 终端目标可以是类符号、顶层可调用符号或包。`import m1.p1` 的终端名称本身就是被导入的包，
+     * 此时父段不必是包（官方按被导入的包名整体查找）；否则父包不存在时直接返回 false，
      * 避免把不存在路径上的终端名称误判为可解析。
      */
     context(context: CheckerContext)
     private fun canResolveTerminalImportTarget(importedFqName: FqName): Boolean {
         val symbolProvider = context.session.symbolProvider
+        if (symbolProvider.hasPackage(importedFqName)) return true
+
         val packageFqName = importedFqName.parent()
         val importedName = importedFqName.shortName()
         if (!packageFqName.isRoot && !symbolProvider.hasPackage(packageFqName)) return false
 
         val classLike = symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName))
         val callableSymbols = symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName)
-        return classLike != null || callableSymbols.isNotEmpty() || symbolProvider.hasPackage(importedFqName)
+        return classLike != null || callableSymbols.isNotEmpty()
     }
 
     /**

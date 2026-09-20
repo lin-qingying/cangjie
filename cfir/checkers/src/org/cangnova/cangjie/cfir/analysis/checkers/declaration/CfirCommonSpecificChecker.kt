@@ -578,12 +578,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
             val platformKind = call.platformAnnotationKind
             val supportedPlatform = call.annotationVersionSupport(context.languageVersionSettings) ==
                 org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
-            val supportedBuiltin = builtinKind == null ||
-                builtinKind != BuiltInAnnotationKind.JAVA ||
-                call.isSupportedBuiltinAnnotation(
-                    BuiltInAnnotationKind.JAVA,
-                    context.languageVersionSettings,
-                )
+            val supportedBuiltin = builtinKind?.let { kind ->
+                call.isSupportedBuiltinAnnotation(kind, context.languageVersionSettings)
+            } ?: true
             if (supportedBuiltin && builtinKind in DISALLOWED_ON_COMMON_SPECIFIC ||
                 (supportedPlatform && platformKind in DISALLOWED_PLATFORM_ON_COMMON_SPECIFIC)
             ) {

@@ -25,6 +25,11 @@ object CfirCAnnotationChecker : CfirBasicDeclarationChecker() {
         }
         for (annotation in declaration.annotations.filterIsInstance<CfirAnnotationCall>()) {
             val kind = annotation.annotationKind ?: continue
+            // Unsupported builtins remain in CFIR for diagnostics and tooling,
+            // but must not enter the FFI semantic owner.  In particular this
+            // prevents a disabled language feature from producing a second
+            // ABI/target diagnostic from the resolved annotation payload.
+            if (!annotation.isSupportedBuiltinAnnotation(kind, context.languageVersionSettings)) continue
             val descriptor = annotation.builtInDescriptor ?: continue
             val label = "@"+descriptor.sourceName
             val source = annotation.source

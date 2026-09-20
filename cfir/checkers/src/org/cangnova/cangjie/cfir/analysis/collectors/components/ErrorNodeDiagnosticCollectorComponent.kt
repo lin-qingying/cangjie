@@ -2,9 +2,11 @@
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
+import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidGenericTypeArgument
 import org.cangnova.cangjie.cfir.analysis.checkers.isUnresolvedCascadeAfterFailedImport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.semantics.AbstractCallKind
 import org.cangnova.cangjie.cfir.analysis.checkers.hasUninferredOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.analysis.checkers.isTypeParameterWithInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.lambdaExpectedFunctionType
@@ -994,6 +996,22 @@ class ErrorNodeDiagnosticCollectorComponent(
                 return
             }
             if (diagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(effectiveSource, context)) {
+                return
+            }
+
+            // 抑制规则 6：泛型实例化违反声明上界时，官方不再从该类型派生值类型不匹配
+            //（对照实验见 CfirUpperBoundViolatedHelpers.violatesDeclaredGenericUpperBound 的 KDoc）。
+            // 候选不适用只是失效实例化的级联，诊断由声明级/使用点上界检查器唯一承担。
+            if (diagnostic is org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError &&
+                diagnostic.candidate.callInfo.semanticCallKind != AbstractCallKind.DelegatingConstructorCall &&
+                with(context) {
+                    with(reporter) {
+                        diagnostic.candidate.argumentMapping.values.any { parameter ->
+                            parameter.returnTypeRef.hasInvalidGenericTypeArgument()
+                        }
+                    }
+                }
+            ) {
                 return
             }
 

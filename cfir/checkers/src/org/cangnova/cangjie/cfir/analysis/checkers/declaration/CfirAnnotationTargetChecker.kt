@@ -32,6 +32,9 @@ object CfirAnnotationTargetChecker : CfirBasicDeclarationChecker() {
         for (annotation in declaration.annotations.filterIsInstance<CfirAnnotationCall>()) {
             val builtIn = annotation.builtInDescriptor
             if (builtIn != null) {
+                if (annotation.annotationVersionSupport(context.session.languageVersionSettings) !=
+                    org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+                ) continue
                 // C/CallingConv/FastNative/Frozen 拥有各自的官方错误分类与
                 // 作用域顺序，由 CfirCAnnotationChecker 统一负责；这里不能
                 // 再生成一般的 ANNOTATION_NOT_APPLICABLE_JFFI。
