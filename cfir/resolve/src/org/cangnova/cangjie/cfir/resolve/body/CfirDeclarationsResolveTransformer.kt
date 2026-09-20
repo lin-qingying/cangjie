@@ -99,7 +99,7 @@ open class CfirDeclarationsResolveTransformer(
     protected fun resolveDeclarationAnnotations(declaration: CfirDeclaration, data: ResolutionMode) {
         if (transformer.implicitTypeOnly) return
         declaration.transformAnnotations(transformer, data)
-        declaration.publishAnnotationInfo()
+        declaration.publishAnnotationInfo(session)
     }
 
     // ── File ───────────────────────────────────────────────────────────────

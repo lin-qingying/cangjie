@@ -21,6 +21,8 @@ import org.cangnova.cangjie.frontend.environment.forAllFiles
 import org.cangnova.cangjie.frontend.sources.CollectedCjSources
 import org.cangnova.cangjie.frontend.sources.GroupedCjSources
 import org.cangnova.cangjie.frontend.sources.allFiles
+import org.cangnova.cangjie.frontend.sources.acceptsCangjieSource
+import org.cangnova.cangjie.frontend.sources.cangjieSourceKind
 import org.cangnova.cangjie.frontend.sources.collectCjSources
 import org.cangnova.cangjie.messages.CompilerMessageLocationWithRange
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
@@ -197,6 +199,12 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val sourcesByModuleName = linkedMapOf<String, MutableSet<CjSourceFile>>()
 
         configuration.cangjieSourceRoots.forAllFiles(configuration, environment.project) { virtualFile, isCommon, moduleName ->
+            // Keep PSI collection exactly aligned with the LightTree source
+            // collector: source recognition and compileCjd acceptance are one
+            // owner.  Without this gate PSI can feed `.cj` and `.cj.d` into the
+            // same declaration/session, unlike the official compileCjd mode.
+            val sourceKind = virtualFile.cangjieSourceKind()
+            if (sourceKind == null || !configuration.acceptsCangjieSource(sourceKind)) return@forAllFiles
             val psiFile = com.intellij.psi.PsiManager.getInstance(environment.project).findFile(virtualFile) as? CjFile ?: return@forAllFiles
             val sourceFile = CjPsiSourceFile(psiFile)
             if (moduleName == null) {

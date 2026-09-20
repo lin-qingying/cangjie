@@ -105,13 +105,6 @@ internal class CfirBuiltInCallResolver(
                 resolutionMode = resolutionMode,
             )
         }
-        if (name == StandardNames.CFUNC && classifier.isBuiltin(CfirBuiltInTypeKind.CFUNC)) {
-            return collectBuiltinCFuncConstructorCandidates(
-                functionCall = functionCall,
-                name = name,
-                resolutionMode = resolutionMode,
-            )
-        }
         if (name == StandardNames.ARRAY && classifier.isStdlibArrayClassifier()) {
             return collectBuiltinArrayConstructorCandidates(
                 functionCall = functionCall,
@@ -129,8 +122,17 @@ internal class CfirBuiltInCallResolver(
                 resolutionMode = resolutionMode,
             )
         }
-        // CFunc is a type-level builtin. It is handled by classifier → ConeType construction,
-        // and intentionally does not synthesize a value-level call candidate here.
+        // Keep CFunc after Array/VArray. The official ChkBuiltinCall
+        // classifier order is Pointer -> CString -> Array -> VArray -> CFunc;
+        // candidate construction must preserve that order because the first
+        // matching builtin owns diagnostics and applicability.
+        if (name == StandardNames.CFUNC && classifier.isBuiltin(CfirBuiltInTypeKind.CFUNC)) {
+            return collectBuiltinCFuncConstructorCandidates(
+                functionCall = functionCall,
+                name = name,
+                resolutionMode = resolutionMode,
+            )
+        }
         return null
     }
 
@@ -206,13 +208,6 @@ internal class CfirBuiltInCallResolver(
                     resolutionMode = resolutionMode,
                 )
 
-            CfirBuiltInTypeKind.CFUNC ->
-                return collectBuiltinCFuncConstructorCandidates(
-                    functionCall = functionCall,
-                    name = classifier.name,
-                    resolutionMode = resolutionMode,
-                )
-
             else -> Unit
         }
 
@@ -221,6 +216,13 @@ internal class CfirBuiltInCallResolver(
                 functionCall = functionCall,
                 name = classifier.name,
                 target = BuiltinArrayConstructorTarget.Array,
+                resolutionMode = resolutionMode,
+            )
+        }
+        if (actualKind == CfirBuiltInTypeKind.CFUNC) {
+            return collectBuiltinCFuncConstructorCandidates(
+                functionCall = functionCall,
+                name = classifier.name,
                 resolutionMode = resolutionMode,
             )
         }
