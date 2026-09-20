@@ -3914,6 +3914,11 @@ open class CfirExpressionsResolveTransformer(
         // 丢失真实返回类型，既无法判断非内建左值是否合法，也无法生成专有 TYPE_INCOMPATIBLE。
         val rValueMode = when {
             assignment.augmentedOperation != null -> ResolutionMode.ContextIndependent
+            // 多重赋值的右值是独立表达式：左值元组类型不是它的目标类型，结构、元数与分量
+            // 兼容性由随后的 `firstMultipleAssignmentTypeMismatch` 按 tuple 结构判定。
+            // 若把左值元组类型当作期望类型传入，会污染右值内部的调用/字面量解析
+            //（例：`f()` 以元组为期望类型时会丢掉 lambda 变量的可调用性）。
+            assignment.lValue is CfirTupleLiteral -> ResolutionMode.ContextIndependent
             lValueType != null -> withExpectedType(lValueType)
             else -> ResolutionMode.ContextIndependent
         }

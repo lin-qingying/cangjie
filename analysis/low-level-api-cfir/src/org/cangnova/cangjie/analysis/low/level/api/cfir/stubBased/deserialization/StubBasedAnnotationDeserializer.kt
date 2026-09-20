@@ -191,7 +191,11 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
                 }
             }
             containingDeclarationSymbol = owner
-            annotationResolveState = CfirAnnotationResolveState.SEMANTIC_RESOLVED
+            // A stub restores the annotation's resolved type and syntax facts.  It
+            // is not a declaration-phase semantic checker and therefore cannot
+            // claim SEMANTIC_RESOLVED.  The owner phase must validate targets and
+            // arguments before publishing that state.
+            annotationResolveState = CfirAnnotationResolveState.TYPE_RESOLVED
         }
 
         val constructor = classSymbol?.cfir?.declarations

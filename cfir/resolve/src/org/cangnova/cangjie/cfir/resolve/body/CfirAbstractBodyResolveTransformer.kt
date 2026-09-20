@@ -304,7 +304,7 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
             // Annotation metadata is declaration-owned. Publish it only after all
             // annotation calls in this declaration have passed through the body
             // annotation resolver, never from the generic call-completion writer.
-            transformed.publishAnnotationInfo()
+            transformed.publishAnnotationInfo(session)
         }
         return transformed
     }

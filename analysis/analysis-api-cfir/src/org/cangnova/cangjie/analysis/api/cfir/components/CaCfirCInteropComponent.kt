@@ -13,11 +13,15 @@ import org.cangnova.cangjie.analysis.api.lifetime.*
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.annotations.AnnotationSemanticHandler
+import org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus
 import org.cangnova.cangjie.annotations.BuiltInAnnotationCategory
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
+import org.cangnova.cangjie.annotations.versionSupport
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.publishInteropInfo
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
+import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.psi.CjDeclaration
@@ -84,11 +88,10 @@ internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
  */
 private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaInteropInfo? {
     val declaration = symbol.cfir
-    // Source declarations publish the snapshot during STATUS.  A binary
-    // declaration is already at BODY_RESOLVE and therefore does not pass that
-    // source phase; its deserializer attaches serialized facts, which this
-    // same canonical producer materializes on demand.
-    if (declaration.interopInfo == null) declaration.publishInteropInfo(cfirSession)
+    // Both source STATUS and binary deserialization publish the snapshot before
+    // this consumer is reachable.  Analysis API must not become a second
+    // producer by manufacturing interop facts on demand; a missing snapshot is
+    // an incomplete phase contract and remains unavailable to the consumer.
     val info = declaration.interopInfo ?: return null
     if (info.resolvedAbi.kind == CfirAbiKind.CANGJIE && !info.isFastNative && !info.isFrozen &&
         info.foreignName == null && info.foreignGetterName == null && info.foreignSetterName == null &&
@@ -105,7 +108,14 @@ private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaIntero
     val annotationCalls = declaration.annotations.filterIsInstance<CfirAnnotationCall>().filter {
         val descriptor = it.builtInDescriptor
         descriptor?.category == BuiltInAnnotationCategory.FFI || descriptor?.semanticHandler == AnnotationSemanticHandler.C_FFI
+    }.filter {
+        it.annotationVersionSupport(cfirSession.languageVersionSettings) ==
+            org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
     }
+    val languageSettings = cfirSession.languageVersionSettings
+    fun syntheticVersionSupport(kind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind): AnnotationVersionSupportStatus =
+        BuiltInAnnotationRegistry.findLanguageBuiltIn(kind)?.versionSupport(languageSettings)
+            ?: AnnotationVersionSupportStatus.SUPPORTED
     val annotations = buildList {
         addAll(annotationCalls.map { it.asPublicAnnotation(cfirSymbolBuilder, token) })
         val serializedFacts = declaration.serializedInteropFacts
@@ -114,6 +124,7 @@ private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaIntero
                 kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.C,
                 name = "C",
                 token = token,
+                versionSupport = syntheticVersionSupport(org.cangnova.cangjie.annotations.BuiltInAnnotationKind.C),
             )
         }
         if (serializedFacts?.callingConvention != null &&
@@ -124,6 +135,7 @@ private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaIntero
                 kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV,
                 name = "CallingConv",
                 token = token,
+                versionSupport = syntheticVersionSupport(org.cangnova.cangjie.annotations.BuiltInAnnotationKind.CALLING_CONV),
                 arguments = listOf(
                     CaBaseNamedAnnotationValue(
                         Name.identifier("convention"),
@@ -143,6 +155,7 @@ private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaIntero
                 kind = org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FASTNATIVE,
                 name = "FastNative",
                 token = token,
+                versionSupport = syntheticVersionSupport(org.cangnova.cangjie.annotations.BuiltInAnnotationKind.FASTNATIVE),
             )
         }
     }
@@ -175,6 +188,7 @@ private fun MutableList<CaAnnotation>.addSyntheticFfiAnnotation(
     kind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind,
     name: String,
     token: CaLifetimeToken,
+    versionSupport: AnnotationVersionSupportStatus,
     arguments: List<CaNamedAnnotationValue> = emptyList(),
 ) {
     add(
@@ -187,7 +201,7 @@ private fun MutableList<CaAnnotation>.addSyntheticFfiAnnotation(
             token = token,
             builtInKind = kind,
             origin = org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.LANGUAGE_BUILT_IN,
-            versionSupport = org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED,
+            versionSupport = versionSupport,
             isCompileTimeVisible = false,
             isForcedCustom = false,
             resolutionStatus = CaAnnotationResolutionStatus.RESOLVED,
