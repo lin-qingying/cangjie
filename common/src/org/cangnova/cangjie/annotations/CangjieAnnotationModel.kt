@@ -222,6 +222,43 @@ object BuiltInAnnotationRegistry {
         platformAnnotations.mapTo(linkedSetOf()) { it.platformKind }
     }
 
+    /**
+     * Validate the official v1.0.0 parser catalog at class initialization.
+     *
+     * The C++ parser's `NAME_TO_ANNO_KIND` is the authority for this language
+     * builtin set.  Keeping the expected spellings here makes a missing entry
+     * a construction-time failure instead of silently routing it through the
+     * custom annotation path.  Platform and package identities are deliberately
+     * excluded because they are separate official domains.
+     */
+    init {
+        val expectedLanguageBuiltIns = setOf(
+            "CallingConv",
+            "C",
+            "Attribute",
+            "Intrinsic",
+            "OverflowThrowing",
+            "OverflowWrapping",
+            "OverflowSaturating",
+            "When",
+            "FastNative",
+            "Annotation",
+            "ConstSafe",
+            "Deprecated",
+            "Frozen",
+            "EnsurePreparedToMock",
+        )
+        check(languageBuiltIns.mapTo(linkedSetOf()) { it.sourceName } == expectedLanguageBuiltIns) {
+            "Built-in annotation catalog does not match the official parser catalog"
+        }
+        check(languageBuiltIns.none { it.kind == null }) {
+            "Language builtin annotation is missing its official AnnotationKind"
+        }
+        check(languageBuiltIns.count { it.kind == BuiltInAnnotationKind.NUMERIC_OVERFLOW } == 3) {
+            "Numeric overflow spellings must retain one descriptor per source spelling"
+        }
+    }
+
     public fun findLanguageBuiltIn(sourceName: String): BuiltInAnnotationDescriptor? = builtInsByName[sourceName]
     /** 按官方 AST kind 查找语言 builtin；序列化适配器不得重新按 sourceName 建表。 */
     public fun findLanguageBuiltIn(kind: BuiltInAnnotationKind): BuiltInAnnotationDescriptor? =
