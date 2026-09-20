@@ -221,4 +221,25 @@ class LanguageVersionSettingsTest {
             LanguageFeature.AllowIntersectionTypesInInference.versionSupport(settings),
         )
     }
+
+    @Test
+    fun explicitlyEnabledExperimentalFeatureIsSupported() {
+        val settings = LanguageVersionSettingsImpl(
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
+            apiVersion = ApiVersion.CANGJIE_1_0_0,
+            specificFeatures = mapOf(
+                LanguageFeature.AllowIntersectionTypesInInference to LanguageFeature.State.ENABLED,
+            ),
+        )
+
+        assertTrue(settings.supportsFeature(LanguageFeature.AllowIntersectionTypesInInference))
+        assertEquals(
+            LanguageFeatureSupportStatus.SUPPORTED,
+            settings.featureSupportStatus(LanguageFeature.AllowIntersectionTypesInInference),
+        )
+        assertEquals(
+            AnnotationVersionSupportStatus.SUPPORTED,
+            LanguageFeature.AllowIntersectionTypesInInference.versionSupport(settings),
+        )
+    }
 }

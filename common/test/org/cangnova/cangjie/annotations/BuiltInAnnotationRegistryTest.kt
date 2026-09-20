@@ -44,6 +44,19 @@ class BuiltInAnnotationRegistryTest {
         }
     }
 
+    @Test
+    fun officialCatalogValidationIsExecutableAtRuntime() {
+        // Accessing the registry runs its invariant checks; this assertion
+        // keeps the test explicit for callers that use the catalog lazily.
+        assertEquals(14, BuiltInAnnotationRegistry.languageBuiltIns.size)
+        assertEquals(
+            setOf("CallingConv", "C", "Attribute", "Intrinsic", "OverflowThrowing", "OverflowWrapping",
+                "OverflowSaturating", "When", "FastNative", "Annotation", "ConstSafe", "Deprecated",
+                "Frozen", "EnsurePreparedToMock"),
+            BuiltInAnnotationRegistry.languageBuiltIns.mapTo(linkedSetOf()) { it.sourceName },
+        )
+    }
+
     /** Overflow 的源码策略不能因为共享官方 kind 而丢失或合并。 */
     @Test
     fun overflowSpellingsRetainDistinctStrategies() {

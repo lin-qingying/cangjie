@@ -156,7 +156,23 @@ enum class LanguageFeature(
     LambdaReturnTypeMismatchAsArgumentTypeMismatch(LanguageVersion.CANGJIE_1_0_0),
     InvalidBinaryOperatorDiagnostics(LanguageVersion.CANGJIE_1_0_0),
     LexicographicVariableReadinessCalculation(LanguageVersion.CANGJIE_1_0_0),
-    EffectHandlers(LanguageVersion.CANGJIE_1_0_0),
+
+    /**
+     * Effect handlers（`perform`/`resume`/`handle`/`throwing` 语法与 `Command<T>` 语义）。
+     *
+     * 实验特性，默认全版本关闭（sinceVersion = null）：官方将 effect handlers 定位为
+     * 实验性 opt-in 特性（官方测试体系以 `%enableEH` 显式开启；截至 OCX 2026 公开介绍时
+     * 官方仍标注"积极开发中的实验性部分"，没有任何已发布官方编译器版本包含它，
+     * 已开源镜像亦无实现）。关闭时 perform/resume/handle 在 resolve 层报
+     * EFFECTS_FEATURE_DISABLED；语法层因 perform/resume/throwing 为硬关键字仍可解析。
+     *
+     * 毕业条件（满足后才钉 sinceVersion，对齐 JavaInteropAnnotations 形态）：
+     * ① 官方规范/发布说明将 effect handlers 列入稳定语言表面；② 本仓库 stdlib
+     * 提供 stdx.effect 包；③ perform→handle→resume 端到端 LLT 通过。毕业时必须
+     * 同时钉 sinceVersion 与 sinceApiVersion（Command/Resumption 是 stdlib 类型，
+     * API 版本不得留默认 1.0.0），并以 CanStillBeDisabledForNow 设过渡窗。
+     */
+    EffectHandlers(null),
 
     /** v1.0.0 parser/AST language builtin annotation surface. */
     BuiltInAnnotations(LanguageVersion.CANGJIE_1_0_0),
@@ -470,7 +486,11 @@ fun LanguageVersionSettings.featureSupportStatus(
         return LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
     }
     // An experimental feature has no since-language version.  Keep this
-    // distinction ahead of the API check, matching Kotlin's renderer.
+    // distinction ahead of the API check, matching Kotlin's renderer.  An
+    // explicit ENABLED state was handled above and is already supported;
+    // reaching this branch therefore means the feature is still experimental
+    // (or explicitly disabled) rather than that an explicit enable should be
+    // rejected by the status layer.
     if (sinceVersion == null) {
         return if (explicitState == LanguageFeature.State.DISABLED) {
             LanguageFeatureSupportStatus.DISABLED
