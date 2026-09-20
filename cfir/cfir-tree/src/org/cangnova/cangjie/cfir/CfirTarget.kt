@@ -13,8 +13,16 @@ interface CfirTarget<E : CfirTargetElement> {
 
     /**
      * 当前 target 绑定的 CFIR 元素。
+     *
+     * 合法跳转在 resolve 阶段完成绑定；非法跳转（如循环外 break/continue）不绑定，
+     * 访问本属性前必须先检查 [isBound]。
      */
     val labeledElement: E
+
+    /**
+     * target 是否已完成绑定。
+     */
+    val isBound: Boolean
 
     /**
      * 将 target 绑定到 [element]。

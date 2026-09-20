@@ -196,11 +196,24 @@ open class CfirExpressionsResolveTransformer(
                     if (completed.annotationResolveState == CfirAnnotationResolveState.ARGUMENTS_RESOLVED) {
                         completed.replaceAnnotationResolveState(CfirAnnotationResolveState.SEMANTIC_RESOLVED)
                     }
+                    completed.publishContainingDeclarationInteropInfo()
                     return@withAnnotationContext completed
                 }
+                annotationCall.publishContainingDeclarationInteropInfo()
                 annotationCall
             }
         }
+    }
+
+    /**
+     * Body resolve is the owner that has the completed annotation argument
+     * mapping.  Refresh the declaration-owned interop snapshot through the
+     * canonical publisher after that mapping is available; Analysis API and
+     * checkers consume the snapshot and never reconstruct it themselves.
+     */
+    private fun CfirAnnotationCall.publishContainingDeclarationInteropInfo() {
+        (containingDeclarationSymbol.cfir as? CfirMemberDeclaration)
+            ?.publishInteropInfo(session)
     }
 
     /**
@@ -3684,6 +3697,11 @@ open class CfirExpressionsResolveTransformer(
      *
      * feature 未启用时产生特性禁用错误；启用后要求 operand 类型最终能关联到
      * `Command<T>`，并把 `perform` 的结果类型设为命令结果 `T`。
+     *
+     * operand 自身已带错误类型时（例如操作数二元表达式已报 INVALID_BINARY_OPERATOR），
+     * 错误已在更深的 pivot 节点上报告过，官方对 `perform ("Hello" + 45)` 类输入只报
+     * `sema_invalid_binary_expr` 一个诊断，因此 perform 不追加 COMMAND_INCOMPATIBLE_TYPE，
+     * 仅以非报告错误包装传播，保证外层节点仍把 perform 视为错误类型。
      */
     override fun transformPerformExpression(
         performExpression: CfirPerformExpression,
@@ -3698,11 +3716,20 @@ open class CfirExpressionsResolveTransformer(
             return performExpression
         }
 
-        val commandSupertype = findCommandSupertype(performExpression.expression.coneTypeOrNull)
+        val operandType = performExpression.expression.coneTypeOrNull
+        val operandErrorType = operandType as? ConeErrorType
+        if (operandErrorType != null) {
+            performExpression.replaceConeTypeOrNull(
+                ConeErrorType(ConeUnreportedDuplicateDiagnostic(operandErrorType.diagnostic)),
+            )
+            return performExpression
+        }
+
+        val commandSupertype = findCommandSupertype(operandType)
         performExpression.replaceConeTypeOrNull(
             commandSupertype?.typeArguments?.firstOrNull()?.type
                 ?: ConeErrorType(
-                    ConeCommandIncompatibleTypeError(performExpression.expression.coneTypeOrNull),
+                    ConeCommandIncompatibleTypeError(operandType),
                 ),
         )
         return performExpression
@@ -3906,7 +3933,20 @@ open class CfirExpressionsResolveTransformer(
         }
 
         assignment.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-        assignment.transformLValue(transformer, ResolutionMode.ContextIndependent)
+        when {
+            // 丢弃占位 `_` 作为唯一左值：官方 `WildcardExpr` 不解析名字，也没有可写性或
+            // 初始化语义（cjc 实测 `_ = 1 + f()` 零诊断），这里跳过左值解析即可。
+            assignment.lValue.isWildcardDiscardTarget() -> Unit
+            assignment.lValue is CfirTupleLiteral -> {
+                // 多重赋值的左值是**目标集合**而不是读取表达式：官方把 `(t1, ..., tn) = rhs`
+                // 脱糖为逐元素单赋值（`Sema/Desugar/DesugarBeforeTypeCheck.cpp` 的
+                // `DesugarAssignExprRecursively`），下标槽位只走 `set` 语义，从不作为读取表达式
+                // 解析。若在这里按普通表达式求值元组左值，读侧诊断会泄漏到赋值目标上。
+                assignment.lValue.resolveAsAssignmentTarget()
+            }
+
+            else -> assignment.transformLValue(transformer, ResolutionMode.ContextIndependent)
+        }
         val lValueType = assignment.lValue.coneTypeOrNull?.takeUnless { it is ConeErrorType }
         // 复合赋值先独立解析解糖后的 operator call，再由 AssignExpr 层比较其结果与左值。
         // 官方 Sema 也先尝试完整的 operator-overload assignment，再对未重载情形执行
@@ -3939,8 +3979,9 @@ open class CfirExpressionsResolveTransformer(
         assignment.replaceTypeMismatchOutcome(typeMismatchOutcome)
         val multipleAssignmentMismatch = (assignment.lValue as? CfirTupleLiteral)
             ?.let { tupleTarget ->
+                resolveMultipleAssignmentSetCalls(tupleTarget, assignment.rValue)
                 resolvedRValueType?.let { actualType ->
-                    tupleTarget.firstMultipleAssignmentTypeMismatch(actualType)
+                    tupleTarget.firstMultipleAssignmentTypeMismatch(actualType, assignment.rValue)
                 }
             }
         assignment.replaceConeTypeOrNull(
@@ -3974,6 +4015,7 @@ open class CfirExpressionsResolveTransformer(
      */
     private fun CfirExpression.firstMultipleAssignmentTypeMismatch(
         actualType: ConeCangJieType,
+        actualExpression: CfirExpression? = null,
     ): MultipleAssignmentTypeMismatch? {
         if (actualType is ConeErrorType) return null
         if (isMultipleAssignmentDiscardTarget()) return null
@@ -3992,13 +4034,30 @@ open class CfirExpressionsResolveTransformer(
             }
             for (index in elements.indices) {
                 elements[index]
-                    .firstMultipleAssignmentTypeMismatch(actualElementTypes[index])
+                    .firstMultipleAssignmentTypeMismatch(
+                        actualElementTypes[index],
+                        (actualExpression as? CfirTupleLiteral)?.elements?.getOrNull(index),
+                    )
                     ?.let { return it }
             }
             return null
         }
 
-        val expandedExpectedType = expectedType.fullyExpandedType()
+        // 官方对元组下标目标（IsAssignableSubscriptExpr 的 isTupleAccess 分支）只报
+        // "tuple element 不可赋值"，且该槽位不计入多重赋值的结构比对——对应
+        // CheckMatchOfDimensionAndTypes 里 tysOfExpr 的 IsTyCorrect 逃逸。
+        if (isTupleElementAssignmentTarget()) return null
+
+        val setterExpectedType = (this as? CfirSubscriptExpression)
+            ?.resolvedSetCall
+            ?.argumentList
+            ?.let { it as? CfirResolvedArgumentList }
+            ?.mapping
+            ?.values
+            ?.lastOrNull()
+            ?.returnTypeRef
+            ?.coneTypeOrNull
+        val expandedExpectedType = (setterExpectedType ?: expectedType).fullyExpandedType()
         val expandedActualType = actualType.fullyExpandedType()
         return if (
             AbstractTypeChecker.isSubtypeOf(
@@ -4013,12 +4072,111 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
+    /**
+     * 按“赋值目标”语义解析多重赋值的左值子树。
+     *
+     * 官方把 `(t1, ..., tn) = rhs` 展开成逐元素的单赋值后再合成
+     * （`Sema/Desugar/DesugarBeforeTypeCheck.cpp` 的 `DesugarAssignExprRecursively`），
+     * 所以每个槽位只承担**写入**语义：
+     *
+     * - 元组槽位递归到叶子，并按叶子的写入类型重建元组类型；
+     * - 丢弃占位 `_` 不参与名称解析（官方 `WildcardExpr` 同样没有可解析的名字），
+     *   它的“不受分量类型约束”由 [firstMultipleAssignmentTypeMismatch] 负责；
+     * - 下标槽位只解析接收者与下标，`set` 语义留到右值就绪后由
+     *   [resolveMultipleAssignmentSetCalls] 完成，避免解析成读取表达式；
+     * - 其余槽位（名称、成员、可选链）按普通写目标解析，可写性由检查器阶段判定。
+     */
+    private fun CfirExpression.resolveAsAssignmentTarget(): CfirExpression {
+        if (isMultipleAssignmentDiscardTarget()) return this
+        when (this) {
+            is CfirTupleLiteral -> {
+                val elements = this.elements as? MutableList<CfirExpression>
+                    ?: error("CfirTupleLiteral elements must be mutable during body resolve")
+                for (index in elements.indices) {
+                    elements[index] = elements[index].resolveAsAssignmentTarget()
+                }
+                replaceConeTypeOrNull(
+                    ConeTupleType(
+                        elements.map { it.coneTypeOrNull ?: errorType("unresolved multiple-assignment target") },
+                    ),
+                )
+            }
+
+            is CfirSubscriptExpression -> {
+                transformReceiver(transformer, ResolutionMode.ReceiverResolution)
+                transformIndices(transformer, ResolutionMode.ContextIndependent)
+            }
+
+            else -> transform(transformer, ResolutionMode.ContextIndependent)
+        }
+        return this
+    }
+
+    /** Resolve user `set` operators for subscript leaves inside a multiple assignment. */
+    private fun resolveMultipleAssignmentSetCalls(
+        target: CfirExpression,
+        value: CfirExpression,
+    ) {
+        when (target) {
+            is CfirTupleLiteral -> target.elements.forEachIndexed { index, element ->
+                value.takeIf { it is CfirTupleLiteral }
+                    ?.let { it as CfirTupleLiteral }
+                    ?.elements?.getOrNull(index)
+                    ?.let { resolveMultipleAssignmentSetCalls(element, it) }
+            }
+            is CfirSubscriptExpression -> {
+                if (target.resolvedSetCall != null) return
+                resolveSubscriptSetAssignment(
+                    buildAssignment {
+                        source = target.source
+                        lValue = target
+                        rValue = value
+                    },
+                    target,
+                    ResolutionMode.ContextIndependent,
+                )
+                // 写入类型（`set` 的 `value!` 形参类型）是槽位在多重赋值比对中的期望类型：
+                // 官方 `CheckMatchOfDimensionAndTypes` 比较的正是脱糖后单赋值左值的类型。
+                // `set` 失败时保留其错误类型，供结构比对生成整条赋值的诊断。
+                target.replaceConeTypeOrNull(
+                    target.setterValueTypeOrNull() ?: target.coneTypeOrNull,
+                )
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * 取得下标槽位 `set` 解析成功后的写入类型。
+     *
+     * `set(receiver, index..., value)` 的最后一个实参就是被写入的值，其在已解析实参映射中的
+     * 期望类型即该槽位接受的类型。
+     */
+    private fun CfirSubscriptExpression.setterValueTypeOrNull(): ConeCangJieType? =
+        resolvedSetCall
+            ?.argumentList
+            ?.let { it as? CfirResolvedArgumentList }
+            ?.mapping
+            ?.values
+            ?.lastOrNull()
+            ?.returnTypeRef
+            ?.coneTypeOrNull
+
     /** 判断当前目标是否为多重赋值中的丢弃占位 `_`。 */
     private fun CfirExpression.isMultipleAssignmentDiscardTarget(): Boolean {
         val access = this as? CfirQualifiedAccessExpression ?: return false
         val reference = access.calleeReference as? CfirNamedReference ?: return false
         return reference.name.asString() == "_"
     }
+
+    /** 判断槽位是否为元组下标目标：官方只报左值合法性，不参与结构比对。 */
+    private fun CfirExpression.isTupleElementAssignmentTarget(): Boolean {
+        val subscript = this as? CfirSubscriptExpression ?: return false
+        return subscript.receiver.coneTypeOrNull?.fullyExpandedType() is ConeTupleType
+    }
+
+    /** 判断左值是否为丢弃占位 `_`（既覆盖元组槽位，也覆盖 `_ = rhs` 的唯一左值）。 */
+    private fun CfirExpression.isWildcardDiscardTarget(): Boolean = isMultipleAssignmentDiscardTarget()
 
     /**
      * 取得复合下标赋值中已经按 get 语义解析出的元素类型。
@@ -5677,6 +5835,18 @@ open class CfirExpressionsResolveTransformer(
         }
 
         /*
+         * 官方 `MaySubscriptAssignOnlyBeOverload`（Sema/TypeCheckExpr/AssignExpr.cpp:60-64）
+         * 对元组接收者不做 `set` 重载尝试："tuple element 不可赋值"由左值合法性检查
+         * （`IsAssignableSubscriptExpr` 的 isTupleAccess 分支）报告。槽位类型沿用本文件对
+         * “作为赋值目标的下标”的既有约定（`set` 成功后为 Unit），使多重赋值的结构比对
+         * 不再因该槽位产生整条赋值的不匹配——对应官方 `tysOfExpr` 的 IsTyCorrect 逃逸。
+         */
+        if (receiverType is ConeTupleType) {
+            subscriptExpression.replaceConeTypeOrNull(builtinTypes.unitType)
+            return
+        }
+
+        /*
          * Array 的 Range 下标读操作产生 Array<T>，普通赋值只有在右值也是相同元素
          * 类型的 Array 时才成立；它不是普通单元素 `set`。复合赋值必须先读取左值
          * 再回写，而 Range 没有对应的可写 `set` 运算符。两种失败都保留 operator
@@ -6582,17 +6752,18 @@ open class CfirExpressionsResolveTransformer(
         is CfirInterface -> declaration.typeParameters
         is CfirStruct -> declaration.typeParameters
         is CfirEnum -> declaration.typeParameters
-        is CfirFunction -> declaration.typeParameters
+        is CfirMacroDeclaration -> declaration.typeParameters
+        is CfirMainFunction -> declaration.typeParameters
+        is CfirFinalizer -> declaration.typeParameters
         is CfirConstructor -> declaration.typeParameters
+        is CfirFunction -> declaration.typeParameters
         is CfirProperty -> declaration.typeParameters
         is CfirFieldVariable -> declaration.typeParameters
         is CfirValueParameter -> declaration.typeParameters
         is CfirExtend -> declaration.typeParameters
         is CfirTypeAlias -> declaration.typeParameters
         is CfirPatternVariable -> declaration.typeParameters
-        is CfirMacroDeclaration -> declaration.typeParameters
-        is CfirMainFunction -> declaration.typeParameters
-        is CfirFinalizer -> declaration.typeParameters
+
         is CfirEnumConstructor -> declaration.typeParameters
         else -> emptyList()
     }
