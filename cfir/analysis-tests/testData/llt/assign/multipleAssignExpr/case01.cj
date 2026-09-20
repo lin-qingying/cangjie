@@ -95,11 +95,11 @@ func test8() {
     (a?[0], b?[1]) = (3, 4)
     var res1 = match (a) {
         case Some(t) => t[0]
-        case None => -1
+        case <!UNREACHABLE_PATTERN!>None<!> => -1
     }
     var res2 = match (b) {
         case Some(t) => t[1]
-        case None => -1
+        case <!UNREACHABLE_PATTERN!>None<!> => -1
     }
     return res1 + res2 - 7
 }
