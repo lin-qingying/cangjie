@@ -62,6 +62,7 @@ enum class LanguageVersion(
 ) : DescriptionAware, LanguageOrApiVersion {
 
     CANGJIE_1_0_0(1, 0, 0),
+    CANGJIE_1_0_2(1, 0, 2),
     CANGJIE_1_0_5(1, 0, 5),
     CANGJIE_1_1_0(1, 1, 0),
     CANGJIE_1_1_3(1, 1, 3);
@@ -189,7 +190,14 @@ enum class LanguageFeature(
     /** Official AST/metadata-only `@Java` identity, present in the 1.0.0 baseline. */
     JavaBuiltinAnnotations(LanguageVersion.CANGJIE_1_0_0),
 
-    /** Java mirror/implementation annotation family introduced by the 1.1 line. */
+    /**
+     * 本项目对官方 v1.1.0 parser/AST 互操作身份启用的兼容门禁。
+     *
+     * 官方 cjc 本身没有 Kotlin 式 `-language-version`/`-api-version` feature
+     * 配置；这里是 CFIR 为 1.0.0 起点提供的版本化分析策略。官方 parser
+     * schema 的引入证据由 annotation catalog 保存，不能把该枚举误读为 cjc
+     * 原生诊断名称。
+     */
     JavaInteropAnnotations(
         LanguageVersion.CANGJIE_1_1_0,
         ApiVersion.CANGJIE_1_1_0,
@@ -214,6 +222,23 @@ enum class LanguageFeature(
     PackageProductMetadata(
         LanguageVersion.CANGJIE_1_1_0,
         ApiVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
+
+    /**
+     * 同包内多个同名顶层 private nominal 声明均需导出时报 `EXPORT_SAME_PRIVATE_DECL`。
+     *
+     * 官方于 v1.0.2 引入（提交 `e3200e1`，2025-09-16，`CheckFunctionLinkage.cpp`
+     * `AnalyzeFunctionLinkage` 末尾遍历 `IsNominalDecl() && private && linkage != INTERNAL`
+     * 的声明）；v1.0.0 无此检查。上游注释自述为 `PrivateDecl.ti` 符号名不含文件名的
+     * 临时 workaround（"It should be remove when bug of PrivateDecl.ti is fixed"）。
+     * cjc 1.0.0 / 1.0.5 双 SDK 实测确认该分界：v1.0.0 下同名顶层 private 零诊断，
+     * v1.0.5 起报 `currently, it is not possible to export two private declarations
+     * with the same name`（锚点为首个声明的 identifier，后续声明附 note）。
+     * 证据与探针见 `cfir/analysis-tests/build/linkage-private-dup-analysis-20260921.md` §3.2/§3.2b。
+     */
+    ExportSamePrivateDeclCheck(
+        LanguageVersion.CANGJIE_1_0_2,
         behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
     ),
 
