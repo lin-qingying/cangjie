@@ -191,6 +191,23 @@ class CfirProviderImpl(
         state.classifierContainerFileMap[fqName]
 
     /**
+     * symbol 级归属：按 symbol 身份回答"声明在哪个文件"。
+     *
+     * 同包跨文件的同名顶层声明各自持有归属（[State.classifierDeclarationFileMap]），
+     * 不得折回 ClassId 键单值表，否则顶层 private 的同文件可见判定
+     * （`CfirAccessibilityChecker.privateAccessible`）会对两个同名符号给出同一个文件。
+     * 未按 symbol 登记过的符号（如反序列化侧）回落 ClassId 查询。
+     */
+    override fun getCfirClassifierContainerFileIfAny(symbol: CfirClassLikeSymbol<*>): CfirFile? =
+        state.classifierDeclarationFileMap[symbol] ?: getCfirClassifierContainerFileIfAny(symbol.classId)
+
+    /**
+     * symbol 级归属的非空版本，语义同 [getCfirClassifierContainerFileIfAny]。
+     */
+    override fun getCfirClassifierContainerFile(symbol: CfirClassLikeSymbol<*>): CfirFile =
+        state.classifierDeclarationFileMap[symbol] ?: getCfirClassifierContainerFile(symbol.classId)
+
+    /**
      * 返回 source callable 对应的容器文件。
      */
     override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? =
@@ -781,6 +798,7 @@ class CfirProviderImpl(
     ) {
         val classId = computeClassId(packageFqName, shortName)
         if (symbol != null) {
+            state.classifierDeclarationFileMap[symbol] = containingFile
             val previousSymbol = state.classifierMap[classId]
             if (previousSymbol == null) {
                 state.classifierMap[classId] = symbol
@@ -887,8 +905,21 @@ class CfirProviderImpl(
 
         /**
          * ClassId 到声明所在文件的索引。
+         *
+         * 只服务 ClassId 语义的消费点（`getClassLikeSymbolByClassId` 的稳定首项、import 解析）；
+         * symbol 级归属查询必须走 [classifierDeclarationFileMap]，否则同包跨文件的同名顶层
+         * 声明会被折叠成同一个"声明文件"，顶层 private 的同文件可见判定随之失效。
          */
         val classifierContainerFileMap: MutableMap<ClassId, CfirFile> = hashMapOf()
+
+        /**
+         * 按 symbol 身份索引的声明所在文件。
+         *
+         * 与 [callableContainerFileMap] 同形：归属事实挂在 symbol 上，而不是 ClassId 上。
+         * 同 ClassId 的每个声明（含只进 [org.cangnova.cangjie.cfir.session.nameConflictsTracker]
+         * 的重声明）都在这里持有自己的文件。
+         */
+        val classifierDeclarationFileMap: MutableMap<CfirClassLikeSymbol<*>, CfirFile> = hashMapOf()
 
         /**
          * 包名到顶层 classifier 短名集合的索引。
