@@ -1,5 +1,18 @@
 # CFIR LLT Repair Log
 
+## 2026-09-20：perform 操作数错误类型的 COMMAND_INCOMPATIBLE_TYPE 级联抑制
+
+- problem type: Resolve / 级联诊断——`perform` 的操作数自身已报错误（如 `perform ("Hello" + 45)` 中 `+` 已报 INVALID_BINARY_OPERATOR）时，`transformPerformExpression` 对 `ConeErrorType` 操作数不做短路，`findCommandSupertype` 返回 null 后落入新错误分支，在操作数全范围多报 `COMMAND_INCOMPATIBLE_TYPE`。
+- root cause: resolve 层缺少"操作数已携带错误类型则不再追加本节点错误"的传播抑制；同一二元表达式树上应只有一个 pivot 诊断。
+- official Cangjie evidence: 本仓库从官方测试数据移植的 `perform_incorrect_type.cj`（bde4c461c 引入，华为版权头 + `// ASSERT: scan sema_invalid_binary_expr`）证明官方 cjc（`%enableEH` 开启）对 `perform ("Hello" + 45)` 只报 `sema_invalid_binary_expr` 一个诊断；官方 DiagnosticSema.def L61 存在该诊断定义。官方编译器无 perform 实现可读（开源镜像未含 effect 系统），语义以官方测试数据期望为准。
+- Kotlin counterpart files consulted: Kotlin FIR 的错误类型传播策略——`ConeErrorType` 在后续检查中短路（错误只报一次于 pivot），与 `CfirErrorNodeDiagnosticCollectorComponent` 中 unwrap/unreported 处理同构；未引入 Kotlin 语言语义。
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt` `transformPerformExpression`——在 `findCommandSupertype` 之前检查操作数类型：为 `ConeErrorType` 时以 `ConeErrorType(ConeUnreportedDuplicateDiagnostic(operandErrorType.diagnostic))` 传播并 return；仅此分支，非 Command 的合法类型仍报 `COMMAND_INCOMPATIBLE_TYPE`（语义不变）。
+- repair principle: 复用诊断映射层对 `ConeUnreportedDuplicateDiagnostic` 的 `return emptyList()` 跳过机制（coneDiagnosticToCfirDiagnostic.kt L97）与 `resolveCatchPatternType` 先例，使 perform 与 catch/lambda 等既有错误传播路径共享同一"非报告错误"约定——是共享所有者修复而非 fixture 特判。
+- fixtures covered: `llt/effect/perform_incorrect_type.cj`（LLT + LLTPsi 双路径，本轮唯一期望该行为的 fixture；全仓无其它 fixture 使用 perform 语法或期望 COMMAND_INCOMPATIBLE_TYPE）。
+- verification command(s) and outcome: `gradlew-queue.bat :cfir:analysis-tests:test --tests '*CfirAnalysisLLTTestGenerated$Effect' --tests '*CfirAnalysisLLTPsiTestGenerated$Effect' --tests '*CfirAnalysisDiagnosticsTestGenerated$Effects' --tests '*CfirAnalysisDiagnosticsPsiTestGenerated$Effects' --tests '*CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated$Effects'` → BUILD SUCCESSFUL，Effect/Effects 全部 14 tests 通过（含 testPerformIncorrectType 双路径，实际输出只剩 `+` 上的 INVALID_BINARY_OPERATOR，与官方期望一致）。
+- regression attribution: 全量 `:cfir:analysis-tests:test` 回归两度被环境阻塞——第一轮被并行 Gradle 客户端竞争中断（队列存在大量陈旧 RUNNING 条目，test-results 目录被覆盖）；第二轮 `:compiler:frontend:compileKotlin` 因并行开发中未完成的 `cjoOutputDirectory` 引用而编译失败（非本问题族改动，AbstractFrontendPipeline.kt 属其它会话半成品）。在编译可用的窗口期已完成定向验证；全量对比待环境空闲后补跑（上一次门控改动轮的全量对比为 FIXED=93 / REGRESSED=0，可作参照基线）。
+- remaining risks: 操作数 `coneTypeOrNull == null`（未定型）场景未加抑制——无官方证据支持，保持既有行为；`perform` 语义的完整对位（如官方对非 Command 合法类型的消息文案）待 stdx.effect stdlib 落地后复核。
+
 ## 2026-09-20：EffectHandlers 版本门控恢复实验语义
 
 - problem type: 语言特性版本门控失效——`LanguageFeature.EffectHandlers` 因 `sinceVersion=CANGJIE_1_0_0`（44faa9dd3 钉入）而 `isEnabledByDefault` 恒真，feature 在任何配置下默认开启，resolve 层 3 处 `requireFeatureSupport` 门禁与 `EFFECTS_FEATURE_DISABLED` 诊断不可达，disabled-path fixture（effectsFeatureDisabledRich.cj）期望不可满足后被清空成 0 字节空壳。
@@ -8199,3 +8212,1268 @@ XML为8549 → 8557 records，均为308 skipped（含一条聚合记录）。完
   报 CANNOT_ASSIGN_TO_IMMUTABLE）；"RHS 可能中断"事实不具粘性（f5：先前无关 `if(c){return}`
   之后的 `a = 2` 照报）；try 体在可能中断的赋值之后的语句官方不再检查（f4 的 `a = 2` 不报、
   terminated_04_2 的 `println(a)` 不报）——当前 CFIR 的 terminated 早退恰好复现该行为。
+
+## 2026-09-20（晚）：named_args / terminated_01/04/04_2 —— 实施后回归，已整体回退（恢复 126 基线）
+
+- 树恢复可编译（并行会话提交的 `AbstractFrontendPipeline.kt` 缺
+  `import org.cangnova.cangjie.config.cjoOutputDirectory`，已机械补上——该扩展属性在
+  `compiler/config/.../CommonConfigurationKeys.kt:296` 本就存在）。
+- 切片实测（620 tests）：上一轮三处改动产生 **6 条回归**（terminated_01/03/04/042/05、named_args
+  全部新增 `CANNOT_ASSIGN_TO_IMMUTABLE`），4 个目标用例无一转绿。
+- **根因（本轮回退的原因，下一轮的设计输入）**：
+  1. `analyzeAssignment` 对 RHS-terminated 提前返回，跳过了 `recordAssignmentClassification`
+     ⇒ 这些赋值在 `CfirInitializationAssignmentClassifier.classifyAssignment`（它会**重跑**
+     一遍流分析）里查不到分类 ⇒ NOT_TRACKED ⇒ `CfirAssignmentLegalityChecker` 按
+     `isImmutableVariableAssignmentForbidden` 误报 CANNOT_ASSIGN_TO_IMMUTABLE。
+  2. 正确形态应为：RHS 中断时**仍然分析目标并登记分类（INITIALIZATION），只是不
+     `markInitialized`**（需要给 `analyzeAssignmentTarget`/`analyzeAssignmentTargetAccess`
+     增加 `assignmentCompletes` 参数穿透到 :790/:838 两个标记点）。
+  3. 中断点**之后**的语句（04_2 的 `a = 2`、`println(a)`）流分析会跳过 ⇒ 同样查不到分类 ⇒
+     `a = 2` 仍会被 NOT_TRACKED 误报。官方对这些语句**完全不再检查**（f4/04_2 实测），
+     因此下一轮还需让 `analyzeStatements` 在 terminated 状态下继续以「只登记分类、不上报、
+     不标记」的方式扫完剩余语句——这是本轮没有预算完成的核心设计点。
+  4. 命名实参放弃分析同样需要为实参内的赋值登记分类（按调用点状态：未定值目标记
+     INITIALIZATION），否则 named_args 的 `y = 10` 会因 NOT_TRACKED 误报。
+- 已整体回退三处改动并用切片验证恢复原状（18 failed，与回退前基线逐条一致，无新增）。
+  顺带保留：`AbstractFrontendPipeline.kt` 的缺失 import 修复（机械性，让树可编译）。
+
+## 2026-09-21：named_args / terminated_01/04/04_2 —— 按设计输入实施并验证通过（4 用例闭合）
+
+- 承接上一轮的失败诊断（提前返回丢失分类登记），本轮把"分类登记"与"状态推进"分离，共四处改动
+  （均在 `CfirInitializationCheckers` 的 `CfirInitializationFlowAnalyzer`）：
+  1. `analyzeAssignment` 计算 `assignmentCompletes = !afterRightValue.terminated` 并穿透
+     `analyzeAssignmentTarget` → `analyzeAssignmentTargetAccess`；
+  2. 新增 `InitializationState.markAssignedIfCompletes(symbol, assignmentCompletes)` 取代两个
+     `markInitialized` 标记点：**分类登记照常（INITIALIZATION/REASSIGNMENT 判定不变），
+     仅在赋值真正完成时推进定值状态**——右值中断（`c = throw`、`a = ?? throw`）因此不再进入定值集合，
+     同时不再产生 NOT_TRACKED 误报。
+  3. `analyzeTryExpression`：catch 入口 = `tryState.withoutTermination()`。try 体以中断收尾时异常
+     路径仍然可达，原实现让 catch 体被当不可达整体跳过，并连带把 catch 之后的语句也当不可达（漏报 UBI）。
+  4. `analyzeStatements`：中断后的语句改为"不可达区域只补登记分类"——官方对这些语句完全不再检查
+     （不报 UBI、不做重复赋值判定，cjc 实测 terminated_04_2 的 `a = 2`/`println(a)` 零诊断），
+     但赋值合法性检查器读的是本分析登记的分类，漏登记会被当作 NOT_TRACKED 误报
+     CANNOT_ASSIGN_TO_IMMUTABLE；新增 `recordUnreachableAssignmentClassifications` +
+     `CfirElement.forEachExpressionElement`（不进入嵌套函数/lambda 体）。诊断模式下分类表为 `null`，
+     该路径退化为无操作，故不给不可达代码引入任何诊断。
+  5. `analyzeFunctionCall`：含命名实参的调用放弃定值分析（官方：实参求值顺序未规定；
+     cjc 实测 `fseq(b: println(y), a: (y = 10))` 零诊断，位置实参 `fs2(...)` 照报），
+     但按调用点状态为实参内赋值**补登记分类**（未定值 → INITIALIZATION），
+     否则 `y = 10` 会因 NOT_TRACKED 被误报。
+- verification: 高风险切片（InitializationCheck/Try/Jump/Loops/Lookup/BottomType/TuplePattern/Const/Assign，
+  620 tests）10 failed 全部为基线既有；**全量门禁 `8658 tests completed, 116 failed, 308 skipped`**
+  （上一门禁 126），逐条 diff：**fixed = 10，regressions = 0**。其中 `InitializationCheck`
+  的 4 个目标 fixture（named_args / terminated_01 / terminated_04 / terminated_04_2，各 LLT+PSI）
+  共 8 条全部转绿；`Effect.testPerformIncorrectType` ×2 由并行会话提交的 effect-gating 改动修复
+  （非本轮改动）。
+- 附带：`AbstractFrontendPipeline.kt` 补 `import org.cangnova.cangjie.config.cjoOutputDirectory`
+  （并行会话提交时漏 import，属性本身在 `compiler/config/.../CommonConfigurationKeys.kt:296`）。
+
+## 2026-09-21：Kotlin feature renderer 与 1.1.x interop annotation identity —— 已编译验证
+
+- Kotlin parity evidence: Kotlin `LanguageVersionSettings` 的 feature 元数据与
+  `supportsFeature` 是配置/消费契约；本项目没有生产环境 `-XXLanguage` 参数解析入口，
+  因此 CFIR 诊断不再输出不可执行的 `-XXLanguage:+Feature` 建议。实验 feature 现在只报告
+  当前 settings 未启用及无稳定性保证，避免诊断承诺不存在的命令行能力。
+- Official Cangjie evidence: v1.0.0 `Parser.h::NAME_TO_ANNO_KIND` 不包含 Java/ObjC/ForeignName
+  家族；官方 v1.1.x parser/AST 增加了 `JavaMirror`、`JavaImpl`、`JavaHasDefault`、
+  `ObjCMirror`、`ObjCImpl`、`ObjCInit`、`ObjCOptional`、`ForeignName`、
+  `ForeignGetterName`、`ForeignSetterName`。公共模型新增 `BuiltInAnnotationKind` 的正式身份，
+  同时在平台 descriptor 保留精确 FqName 派生身份和 `officialKind`，不以短名替代类型解析。
+- CFIR annotation version support now routes the new official identities through the existing
+  Java/ObjC/ForeignName `LanguageFeature` gates; v1.0.0 platform-derived behavior remains
+  separately representable.
+- CJO producer annotation selection was corrected to follow official `ASTWriter::SaveAnnotations`:
+  resolved identity only; serialize Deprecated/Frozen/TestRegistration and compile-time-visible
+  Custom, while C/FFI facts remain in Decl attributes/FuncInfo. It no longer maps source text
+  `Annotation` to a repository-only AnnoKind.
+- verification: `:common:test --tests '*LanguageVersionSettingsTest*' --tests
+  '*BuiltInAnnotationRegistryTest*' :cfir:providers:compileKotlin
+  :cfir:cfir-serialization:compileKotlin --console=plain` → BUILD SUCCESSFUL;
+  `git diff --check` passed. A fresh full analysis-tests run is still required; no regression claim
+  is made from this focused verification alone.
+- follow-up CJO producer change: `ExtendInfo` is now represented and validated from resolved
+  CFIR `CfirExtend` declarations instead of failing at the producer boundary. The producer emits
+  the extended target type, inherited type references and body declaration references; writer
+  validation checks all three 1-based pools. `:cfir:cfir-serialization:compileKotlin` → BUILD SUCCESSFUL.
+- The same live producer now emits official `ClassInfo`/`InterfaceInfo`/`StructInfo`/`EnumInfo`
+  declaration tables with local body and inherited-type references, annotation class flags and
+  enum argument/non-exhaustive facts. This is wire-level producer coverage only; external-package
+  type identity, generic constraints, AutoDiff and position metadata remain explicit follow-up gaps.
+  Compile verification remained BUILD SUCCESSFUL.
+- Official CJD matching evidence then corrected `ExtendDecl.identifier`: the upstream matcher
+  ignores the identifier for `DeclKind.ExtendDecl` and matches `Decl.type` plus `ExtendInfo`.
+  The producer now writes an empty identifier for extends and the DTO validation permits blank
+  identifiers only for that official kind; non-extend declarations remain strict.
+
+## 2026-09-21：ConstraintCheck / option_with_element_01 —— 取证与定位完成，修复待下一轮（本轮未改代码）
+
+**问题类型**：泛型函数实参类型推断中的 `Option` 元素加宽。CFIR 对 fixture 的 4 条调用全部误报
+`UNABLE_TO_INFER_GENERIC_FUNC`（锚在 callee `f`），官方零诊断。
+
+### EI 结论（cjc 1.0.5 实测，全部可复现）
+- `func f<T>(_: T, _: T) where T <: Equatable<T>` 上 `f(1, Some(1))`（顺序无关）⇒ **T = Option<Int64>**；
+  `f(1, Some(Some(1)))` ⇒ **T = Option<Option<Int64>>**（递归对齐到最深 Option 层级）；三参同理。
+- `f(1, 2)` ⇒ T = Int64；`f(Some(1), Some(2))` ⇒ T = Option<Int64>。
+- 真正冲突 `f(Some(1), "s")` / `f(Some(1), 2.0)` ⇒ 官方**仍报** `sema_unable_to_infer_generic_func`（锚 callee），
+  即"该诊断同时覆盖加宽成功/无解两种情形"，修复时不得把它整体消掉。
+- **加宽仅 core Option 专有**：自定义 `enum M<T> { MS(T) | MN }` 的 `g(1, MS(1))` 推断失败。
+- 形参侧装箱是另一条路径：`func k(x: Option<Int64>) {}; k(1)` OK（与"实参合并加宽"不同）。
+- 官方实现：`Sema/LocalTypeArgumentSynthesis.cpp:388`/`:784`（`JoinAndMeet(...).JoinAsVisibleTy()` 合并下界）、
+  `:269-281`（`UnifyOne` 把非 Option 侧对齐到更深 Option 层级）、底层子类型规则
+  `Sema/TypeManager.cpp:836`（`root.IsCoreOptionType() && allowOptionBox && CountOptionNestedLevel(leaf) <
+  CountOptionNestedLevel(root)`）。
+
+### AM 结论（两轮，全部经读码确认）
+- 下界 join 链：`ArgumentCheckingProcessor.kt:1010 addSubtypeConstraint`（登记 `arg <: T` 为 LOWER bound）
+  → 固定阶段 `ResultTypeResolver.findResultTypeOrNull`(:134) → `findSubType`(:369) →
+  **`CommonSuperTypeCalculator.commonSuperType`(:385) 确实在链上** → `commonSuperTypeInternal`(:116)
+  → `findSmallestSupertype`(:137)；无关类型最终 `return c.anyType()`（:157/:161/:174）。
+- **Option 装箱规则在 CFIR 已存在且默认开启**：`common/.../type/AbstractTypeChecker.kt:335-342`
+  （`ctx.optionBoxedElementTypeOf` + `optionNestedLevelOf`，受 `state.isOptionBoxingAllowed` 控制，
+  `TypeCheckerState.kt:35` 默认 true；全仓无 `allowOptionBoxing=false`）；Cone 侧实现
+  `cfir/providers/.../types/ConeTypeContext.kt:277`（`classId == StdlibClassIds.Option` → 唯一类型实参）；
+  计算器所用 state（`CommonSuperTypeCalculator:126`）未关闭装箱 ⇒
+  `findSmallestSupertype([Int64, Option<Int64>])` **本应**返回 `Option<Int64>`。
+- 失败根因**未确认**，已收敛到两个候选（AM 明确标注需运行时 trace）：
+  (a) where 约束校验：候选 `Option<Int64>` 需满足 `Option<Int64> <: Equatable<Option<Int64>>`
+      （`ResultTypeResolver.isSuitableType` :320/:330/:339）；
+  (b) 整数字面量 ideal 通道：`ArgumentCheckingProcessor:1001
+      addIdealLiteralConstraintForCurrentInferenceVariable` 可能把 `1` 的下界改走 ideal 通道，
+      与 `Option<Int64>` 下界冲突。
+- 若需实现官方 `UnifyOne` 的"下界对齐到最深 Option 层"：`TypeSystemContext` **没有**构造 `Option<T>` 的原语
+  （只有 `createSimpleType:136`/`anyType:118`/`createTypeArgument:146`），需新增
+  `createOptionType(element)` 并在 Cone 侧用
+  `ConeClassLikeType.create(ConeClassLikeLookupTag(StdlibClassIds.Option), isNullable=false,
+  typeArguments=listOf(element))` 实现。
+
+### 本轮实测（CFIR）
+- fixture 4 条 `f(...)` 全失败；判别探针（已删除）：
+  - **最小复现收敛为单条 `f4(1, Some(1))`**（`f4<T>(_: T, _: T) where T <: Equatable<T>`）——
+    `probe_opt02`（`f4(1, Some(1))` / `f4(Some(1), 1)`）、`probe_opt03`（`f4(A(), Some(A()))` /
+    `f4(Some(A()), A())`）、`probe_opt04`（仅 `f4(1, Some(1))`）**三条在 CFIR 全部失败**，
+    而官方对三者**全部零诊断**（NOJSON）。
+  - 无 where 约束的 `f2(1, Some(1))`、同型 + 约束的 `f4(Some(1), Some(2))`/`f4(1, 2)` 在 CFIR 通过
+    ⇒ 失败**仅限「混合类型 + where 约束」**，与 (a)/(b) 两个候选一致。
+- 本轮**未修改任何实现代码**（两个候选都需要运行时定位，按纪律不做推测性修复）；
+  探针 fixture 已全部删除，工作树仅剩本日志。
+
+## 2026-09-21：live CJO generic declaration metadata
+
+- Live CJO producer now indexes source type parameters as `GenericParamDecl` and emits
+  `Decl.generic` with `Generic.typeParameters`, `Constraint.type`, and upper-bound type
+  references. Generic parameter declarations, CJO type references and generic constraints are
+  validated against the declaration/type pools. `ExtendDecl` retains the official empty identifier.
+- Added a writer-level round-trip test for `Decl.generic`, `Generic.typeParameters`, and
+  `Constraint.uppers`; it guards the new generic wire contract independently of live CFIR fixture
+  construction.
+- Compile and focused serialization verification are pending the current Gradle queue; the
+  previous compile before this test addition passed.
+
+## 2026-09-21：官方 v1.1.3 CJO annotation mapping
+
+- Fetched official compiler tag `v1.1.3` into the detached reference repository for read-only
+  evidence. `Parser.h::NAME_TO_ANNO_KIND` includes JavaMirror/JavaImpl/JavaHasDefault,
+  ObjCMirror/ObjCImpl/ObjCInit/ObjCOptional, ForeignName/ForeignGetterName/ForeignSetterName
+  and NonProduct. `ASTWriter::SaveAnnotations` serializes only JavaMirror, JavaImpl,
+  JavaHasDefault, ObjCMirror, ObjCImpl and ForeignName; the other new parser kinds fall through
+  and are not CJO `AnnoKind` records. `SaveAnnotationArgs` remains literal-only except for
+  `@Annotation`.
+- CJO schema profile now distinguishes official v1.0.0 from official v1.1.0 wire capabilities.
+  Live producer selects the profile from the session language version and serializes the six
+  official v1.1 annotation kinds only for language versions at or above 1.1.0; ObjCInit,
+  ObjCOptional and accessor-name kinds remain explicit non-CJO annotation facts, matching the
+  upstream writer rather than inventing wire records.
+- Writer test added for official v1.1 platform kind acceptance. Compile and focused verification
+  after this change are pending.
+- Verification completed: `:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest*'`
+  → BUILD SUCCESSFUL, including generic metadata and official v1.1 platform-kind round trips.
+- The public annotation model now also carries official v1.1 `NON_PRODUCT` identity while keeping
+  package-directive origin/ownership separate from declaration annotations; registry tests were
+  updated accordingly.
+- Combined common registry/version tests and CJO writer tests passed after the `NON_PRODUCT` and
+  v1.1.3 profile changes.
+
+## 2026-09-21：fresh full regression after v1.1.3 CJO profile
+
+- Fresh `:cfir:analysis-tests:test --continue --console=plain` completed with `8658 tests
+  completed, 112 failed, 308 skipped`.
+- Fresh XML/key ledger:
+  `cfir/analysis-tests/build/ffi-annotation-verification/20260921-full-after-v113-cjo-profile`.
+  Compared with `20260920-full-after-api-config-and-catalog`: `fixed=18`, `regressed=0`,
+  `new=0`, `removed=0`, `unchangedFailures=112`, `changedFailures=0`.
+- This is a non-regressing full run; the remaining 112 failures are not closed by this CJO/identity
+  work, so no completeness claim is made.
+
+## 2026-09-21：NON_PRODUCT and v1.1.3 CJO final fresh comparison
+
+- Re-ran the full suite after adding official `NON_PRODUCT` identity and selecting the v1.1.3 CJO
+  profile from session language version: `8658 tests completed, 112 failed, 308 skipped`.
+- Fresh ledger:
+  `cfir/analysis-tests/build/ffi-annotation-verification/20260921-full-after-nonproduct-v113-cjo`.
+  Compared with the immediately preceding fresh full ledger:
+  `fixed=0`, `regressed=0`, `new=0`, `removed=0`, `unchangedFailures=112`, `changedFailures=0`.
+
+## 2026-09-21：`.cj.d` output contract correction
+
+- Official `GlobalOptions::ReprocessOutputs` treats `--output-dir` as a directory and `-o` as
+  the product/output path; the CFIR frontend previously conflated both into
+  `CJO_OUTPUT_DIRECTORY`, causing `-o file.cjo` to be treated as a directory.
+- Configuration now keeps `cjoOutputDirectory` and the product path separate. The live CJO writer
+  derives the output directory from `-o` when no `--output-dir` is present, then always writes
+  package-named `<package>.cjo` files; it never replaces the package name with `-o` and never
+  overwrites multiple packages into one file.
+- Focused compile/test verification is pending.
+- Verification: `:compiler:frontend:compileKotlin :cfir:cfir-serialization:compileKotlin`
+  → BUILD SUCCESSFUL; the latest full XML comparison remains non-regressing (`112` unchanged
+  failures) because the output-path contract changes are outside analysis fixture semantics.
+- `:common:test --tests '*BuiltInAnnotationRegistryTest*' --tests '*LanguageVersionSettingsTest*'`
+  → BUILD SUCCESSFUL after the official `NON_PRODUCT` identity addition.
+- Live producer external class/struct/enum types now produce imported-package `FullId` references
+  instead of failing on every non-local type: the producer collects package imports, assigns the
+  official nonnegative import index, and writes the declaration reference key; writer validation
+  rejects missing import/key pairs. Compile and CJO writer focused tests → BUILD SUCCESSFUL.
+- Fresh full validation after the latest CJO/output-path/annotation changes:
+  `8658 tests completed, 112 failed, 308 skipped`; ledger
+  `20260921-full-after-latest-cjo-and-output` compared with the prior fresh ledger:
+  `fixed=0`, `regressed=0`, `new=0`, `removed=0`, `unchangedFailures=112`, `changedFailures=0`.
+- After the latest imported-type, AliasInfo, expression-pool and package-path corrections, another
+  fresh full run produced the same `8658/112/308` totals and
+  `fixed=0, regressed=0, new=0, unchangedFailures=112`; snapshot:
+  `20260921-full-after-cjo-complete-pass`.
+
+## 2026-09-21：FFI focused gate
+
+- Fresh FFI slice covering both LightTree and PSI generated FFI suites:
+  `82 records, 0 failed, 0 skipped`.
+- This confirms the current FFI semantic slice is not among the remaining 112 full-suite failures;
+  it does not close the separate CJO/Analysis API/.cj.d completeness gates.
+- Official v1.1.3 schema comparison found one missing field in the repository FlatBuffers source:
+  `Constraint.isImplicitlyIntroduced`. It is now added to `ModuleFormat.fbs`, regenerated by the
+  normal FlatBuffers task, and exposed in `CjoConstraintMetadata`; the CJO writer test suite
+  remains BUILD SUCCESSFUL.
+- `CfirCjoPackageMetadataProducer` now emits official `AliasInfo` for type aliases instead of
+  treating aliases as class-like info; the writer validates the aliased type reference.
+- Schema-profile validation now uses explicit per-profile `AnnoKind` allowlists rather than a
+  numeric upper bound, so unknown numeric kinds cannot pass as official metadata.
+- v1.1.3 `@Annotation` calls with explicit arguments now serialize as official
+  `AnnoKind.Annotation`; nested array expression items that cannot be represented by the current
+  expression pool fail explicitly instead of being silently dropped. Full non-literal expression
+  coverage and `Anno.target`/common-specific custom annotation relations remain open.
+
+## 2026-09-21：live CJO generic declaration metadata
+
+- Live CJO producer now indexes source type parameters as `GenericParamDecl` and emits
+  `Decl.generic` with `Generic.typeParameters`, `Constraint.type`, and upper-bound type
+  references. Generic parameter declarations, CJO type references and generic constraints are
+  validated against the declaration/type pools.
+- `ExtendDecl` retains the official empty identifier; its generic metadata is still matched by
+  `Decl.type` and `ExtendInfo`, never by a synthetic target name.
+- Verification: `:cfir:cfir-serialization:compileKotlin` and focused
+  `CjoPackageWriter`/`CjdBinaryDeclarationMatcher` tests → BUILD SUCCESSFUL.
+
+## 2026-09-21：ConstraintCheck 运行时定位尝试（无结论，插桩已回退）
+
+- 最小复现 `probe_opt05.cj`（仅 `f4(1, Some(1))`，`f4<T>(_: T, _: T) where T <: Equatable<T>`）在 CFIR 失败、
+  官方零诊断（已确认）。
+- 按计划对两个候选点插桩（`ResultTypeResolver.findSubType` 的下界/join 结果、
+  `isSuitableType` 的约束拒绝原因），跑 `--tests '*LLTTestGenerated$ConstraintCheck.testProbeOpt05'`：
+  测试确实执行（`1 test completed, 1 failed`），但**结果 XML 与日志中都没有任何 DBG 输出**。
+  由于无法确认插桩是否被编译/是否被该测试的 stderr 采集，本次定位**无结论**（不能据此断言
+  `findSubType` 不在失败路径上）。
+- 已把插桩**全部回退**（残留 DBG = 0）并删除探针 fixture，工作树不含调试代码。
+- 下一轮的定位路线（替代 println 插桩，避免采集不确定性）：
+  1. 在 `cfir/analysis-tests` 内写一个**只断言不比较 fixture** 的最小单测：直接调用
+     `CommonSuperTypeCalculator.commonSuperType(listOf(Int64, Option<Int64>))` 断言结果，
+     用 JUnit assertion 的失败消息拿到 join 实际值（无需依赖 stderr 采集）；
+  2. 若 join = `Option<Int64>` ⇒ 断点在固定阶段之后（候选验收/`isSuitableType`/where 校验），
+     再对 `VariableWithConstraints` 的 proper 约束集合写同类单测；
+  3. 若 join = `Any` ⇒ 回到 ideal-literal 通道（`ArgumentCheckingProcessor:1001`）与
+     `prepareLowerConstraints`（下界集合是否含 `Int64` 与 `Option<Int64>` 两者）。
+
+## 2026-09-21：InitializationCheck 顶层前向引用与跨文件 static 初始化环（PSI + LightTree，已验证）
+
+本条目闭合 `InitializationCheck` 切片最后两个失败族：`variable_use_before_init_01.cj` 与
+`static_variable_use_before_init_05/file1.cj`（PSI 与 LightTree 各 2 条，共 4 条）。
+
+### PT-A 顶层存储变量前向引用必须报 undefined variable，而不是初始化顺序诊断
+
+- problem type: 同一文件内对**包级（`Attribute::GLOBAL`）存储变量**的引用点早于其声明点时，
+  官方报 `sema_undefined_variable`（"used before being defined"）；CFIR 报 `USED_BEFORE_INITIALIZATION`。
+- root cause: 初始化顺序上报点只比较「定值状态 / `visitOrder`」，从不比较「引用点偏移 vs 声明点偏移」。
+  名字查找本身照常绑定该目标，于是同一个前向引用被当成「读未初始化变量」处理。
+- official Cangjie evidence（cjc 1.0.5 `--diagnostic-format=json`）:
+  - `let y = (x = 1)` / `var x = 2` / `main() {}` → 仅 `sema_undefined_variable` @ L1C10-11；
+  - `var x = 2` / `let y = x` → 零诊断（后向引用合法）；
+  - `func f() { println(x) }` 在 `var x = 2` 之前 → `sema_undefined_variable`（函数体同样适用）；
+  - 实例字段 / static 字段 / struct 实例字段初始化式读取后声明的顶层 `let c` → 三者均 `sema_undefined_variable`；
+  - `class A { public var a: Int64 = c }`（`c` 在类后声明）→ `sema_undefined_variable` @ L2C27。
+  - 实现位置：`external/cangjie_compiler/src/Sema/LegalityOfUsage/InitializationChecker.cpp`
+    `CheckInitInRefExpr`（:690-751，判定在 :732-736：`target->TestAttr(GLOBAL) &&
+    target->begin.fileID == re.begin.fileID && re.begin < target->begin`）与
+    `CheckInitInMemberAccess`（:753-796，同构判定在 :783-788）；定义见
+    `include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:17`。
+  - 归属证据：`LookUpImpl.cpp:479-482` 把 `targetDecl->scopeLevel == 0`（顶层）显式排除在
+    `IsDefinedAfter` 顺序过滤之外 ⇒ 顶层声明**按名可见且必然绑定**，该诊断属于**初始化检查器**，
+    不是名字解析失败（名字解析的未声明是另一个 `sema_undeclared_identifier`）。
+    `sema_undefined_variable` 全仓仅 2 个发射点（`InitializationChecker.cpp:735`、`:786`），无碰撞。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirPropertyInitializationChecker.kt:23-67`
+  （`declaredLater` 倒序收集 + `calleeReference.toResolvedCallableSymbol()` 取**已解析**目标后报
+  `INITIALIZATION_BEFORE_DECLARATION`，锚 `lValue.source`）与 `fir/analysis/cfa/FirPropertyInitializationAnalyzer.kt`；
+  Kotlin 同样把「前向引用」放在初始化/CFA 检查器而非 resolve。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt`
+  —— 新增共享判定 `reportGlobalReferenceBeforeItsDefinition`（两个重载：访问表达式 / 源码位置），
+  并接入三个同族上报点：`reportStaticGlobalReadsBeforeInitialization`（文件级初始化式）、
+  `reportInstanceMemberInitializerStaticGlobalReadsBeforeInitialization`（实例字段初始化式）、
+  `reportRecursiveStaticFunctionReadsBeforeInitialization`（static init 可达 callable 内的读取）。
+  新增哨兵常量 `UNKNOWN_SOURCE_OFFSET`，缺失源码位置时不做偏移比较。
+- repair principle: 把官方「GLOBAL + 同文件 + 引用点早于声明点 ⇒ `sema_undefined_variable`」这一条规则
+  收敛为**一个共享判定**，由所有「会误报初始化顺序」的上报点统一调用；判定只对
+  `nominalOwnerClassId == null`（包级存储变量）生效，class-like static 成员仍走既有
+  `visitOrder`/`GlobalVarChecker` 语义，因此不引入新的语义分支。
+- fixtures covered: PSI 与 LightTree `InitializationCheck/variable_use_before_init_01.cj`、
+  `class/class_init_default_constructor1.cj`；同族回归面为 `Class`（含 `StaticOrGlobalVar`、
+  `StaticInit`、`LetInInit`、`ClassProperty`、`ClassFinalizer`）与 `InitializationCheck` 全部子套件。
+- fixture correction（Gate 条件 1：cjc 反证）: `class/class_init_default_constructor1.cj` 的
+  `<!USED_BEFORE_INITIALIZATION!>c<!>` 改为 `<!UNRESOLVED_REFERENCE!>c<!>` —— cjc 对
+  `class A { public var a: Int64 = c }` + 后置 `let c` 实测报 `sema_undefined_variable`，
+  该 fixture 期望的诊断种类与官方不符；`UNRESOLVED_REFERENCE` 是本仓库对
+  "used before being defined" 的既有渲染名（`variable_use_before_init_10.cj`、
+  `initializer_binding_scope.cj` 同族）。
+
+### PT-B 跨文件 static/global 初始化依赖环
+
+- problem type: 同一包内两个文件各自的 `static init` 互相读取对方的 static 字段（跨文件环）时，
+  官方报 `sema_used_before_initialization`；CFIR 完全不上报。
+- root cause: `checkFileStaticGlobalInitialization` 是**逐文件**分析，`trackedBySymbol` 与
+  `visitOrder` 都按单文件构造，跨文件的读取边根本不会进入同一张图；官方 `GlobalVarChecker`
+  的第二阶段（跨文件拓扑排序）在 CFIR 中没有对应实现。
+- official Cangjie evidence（`external/cangjie_compiler/src/Sema/LegalityOfUsage/GlobalVarChecker.cpp`）:
+  - `DoCheck`（:643-651）先 `CheckInSameFile`（:529-561），**同文件全部合法才**进入
+    `CheckCrossFile`（:575-584）：`AddInitializationOrderEdge`（:586-599）为同一文件内相邻
+    顶层 `VAR_DECL` 补「后声明依赖先声明」的假边，再由 `CheckByToposort`（:601-612）做三色
+    DFS 拓扑排序；`ToposortDFS`（:619-641）遇到指向 GRAY 节点的回边即报
+    `sema_used_before_initialization`（诊断参数只有被读取变量名），并**立即返回**（每包至多一条）。
+  - 节点迭代序 `std::map<...,CmpNodeByPos>`（:239）按 `begin.fileID`（`Node.h:2874-2891`）排序，
+    而官方 fileID 来自源文件 **basename 升序**（`CompileStrategy.cpp:233-246` 显式 `std::sort`
+    后按序 `AddSource`；`SourceManager.cpp:80` `fileID = sources.size()`）。cjc 探针证实：
+    交换命令行参数顺序结果不变，改名 `aaa.cj`/`zzz.cj` 后上报位置随 basename 序迁移。
+  - cjc 1.0.5 实测本 fixture：`sema_used_before_initialization` "variable 'y' is used before
+    initialization" @ file2.cj L4 C17-18 —— 即**回边 `x→y`**（Bar.static init 里的 `Foo.y`），
+    与 `ToposortDFS` 从 fileID 最小的 file1（`y` 节点）起 DFS 的推演一致。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirTopLevelPropertiesChecker.kt:44-95`
+  （逐文件、基于文件自身 CFG）与 `fir/analysis/cfa/FirPropertyInitializationAnalyzer.kt`；
+  Kotlin 前端**没有**跨文件初始化顺序图（顶层属性顺序是 codegen/file facade 职责），
+  因此跨文件部分按官方 `GlobalVarChecker` 结构实现，Kotlin 仅用于确认「归属初始化检查器、逐文件触发」的框架形态。
+- CFIR owner files changed: 同 `CfirInitializationCheckers.kt` —— 新增
+  `checkCrossFileStaticGlobalInitializationCycle(file)` 及配套
+  `collectStaticInitDependencyReads`、`addStaticGlobalInitializationOrderEdges`、
+  `toposortStaticGlobalDependency`、`reportStaticGlobalInitializationCycle`、
+  `collectStaticGlobalDependencyReads`、`CfirFile.staticGlobalInitializationPackageFiles()`、
+  `CfirFile.staticGlobalInitializationFileIdentity()`，以及节点/边/三色模型
+  `StaticGlobalDependencyNode`、`StaticGlobalDependencyEdge`、`StaticGlobalDependencyColor`；
+  `CfirFileStaticGlobalInitializationChecker.check` 在同一次调用里追加该包级阶段。
+- repair principle: 逐文件阶段保持原样，只把官方 `GlobalVarChecker` 的第二阶段按同一算法补上——
+  同包全部文件汇入一张按 symbol 键控的图（单一 `visitOrder` 计数、basename 序），
+  同文件阶段已上报就不进入跨文件阶段，跨文件阶段只报闭合环的那条读取边；
+  诊断归属沿用仓库既有逐文件模型（每个文件重放同一张图、只报引用点位于当前文件的回边），
+  与 `CfirImportsChecker.collectPackageImportUsage` 的「文件 checker 扫描同包文件」形态一致。
+- fixtures covered: PSI 与 LightTree `InitializationCheck/static_variable_use_before_init_05/file1.cj`；
+  多文件 static/global 回归面为 `static_variable_use_before_init_02/06`、
+  `global_variable_not_assignable_01/02`、`class/static_init/generic_class_static_init_01/02`、
+  `record/static_init/generic_struct_static_init_01`、`class/static_or_global_var/static_or_global_var14`。
+- fixture correction（仅范围，Diagnostic Range Policy）: `static_variable_use_before_init_05/file1.cj`
+  的 `<!USED_BEFORE_INITIALIZATION!>Foo.y<!>` 收窄为 `Foo.<!USED_BEFORE_INITIALIZATION!>y<!>`。
+  依据：`CfirErrors.USED_BEFORE_INITIALIZATION` 声明的定位策略是
+  `SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED`，其
+  `FindReferencePositioningStrategy` 对 `CjQualifiedExpression` 取 **selector**
+  （`common/diagnostics/.../PositioningStrategies.kt:284-306`）；仓库内同类已通过 fixture
+  （`class/static_or_global_var/static_or_global_var.cj` 的 `B.<!USED_BEFORE_INITIALIZATION!>a<!>` 等 8 处）
+  一律只标成员名；cjc 也只锚 `y`（L4 C17-18）。因此原标记覆盖整个 `Foo.y` 与本仓库范围契约不符。
+
+### Verification（主 agent 执行）
+
+- 切片验证命令: `.\gradlew-queue.bat :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$InitializationCheck' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$InitializationCheck' -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --console=plain`
+- 切片验证结果: **BUILD SUCCESSFUL**；`InitializationCheck` LightTree 41/41、PSI 41/41，`failures=0`（修复前为 102 tests / 4 failed）。
+- 家族验证命令: 同上再加 `$Class`（PSI 与 LightTree）。
+- 家族验证结果: **BUILD SUCCESSFUL in 3m 12s**；`Class` LightTree 235/235、PSI 235/235，`failures=0`；
+  子套件 `Class$StaticOrGlobalVar` 14、`Class$StaticInit` 7、`Class$LetInInit` 19、`Class$ClassProperty` 30、
+  `Class$ClassFinalizer` 7、`Class$SuperThis` 15、`Class$ThisType` 33 全部 `failures=0`；
+  `InitializationCheck$StaticVariableUseBeforeInit02/05/06`、`$GlobalVariableNotAssignable01/02` 全部 `failures=0`。
+- 全量回归命令: `.\gradlew-queue.bat :cfir:analysis-tests:test -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --console=plain`
+- 全量回归结果: `8660 tests completed, 114 failed, 308 skipped`（**BUILD FAILED**，全套件未绿，与基线一致）。
+  逐条导出 114 个失败键后确认：`Class` 与 `InitializationCheck` **均为 0**；
+  其余失败全部落在既有基线族：ErrMsgs 10、Linkage(PrivateLimit) 6、Lookup 4、Record 4、
+  ConstraintCheck 4（含并行会话遗留探针 `testProbeOpt05`）、Box 2、DesugarErrorReport 2、
+  ExtendsImplementsInterfaceDuplicated 2、FuzzInvalidParse 2，以及 Macro 系列。
+- 回归排除证据（逐条）:
+  - 修复前同族全量（本修复的中间版本）为 `8664 tests completed, 120 failed, 308 skipped`，
+    其失败集合中含 `Class :: testClassInitDefaultConstructor1`（PSI + LightTree 各 1），
+    即本修复引入的唯一一处期望差异；修正 fixture 后全量变为 `118 failed`，恰好减 2。
+  - `Record :: testRecordVardeclCheck` / `testRecordAccessControl` 已用 `git stash push` 单独回退本修复
+    后重跑确认：**无本修复时同样失败**（前者期望 `INVALID_SUBSCRIPT_EXPR` 实得 `WRONG_NUMBER_OF_ARGUMENTS`，
+    后者期望 `ILLEGAL_ACCESS_NON_STATIC_MEMBER`/`OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 实得
+    `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`），与初始化顺序语义无关。
+  - 全量计数从 8664 降到 8660、失败从 118 降到 114，来自并行会话删除其遗留的
+    `ConstraintCheck::testProbeOpt02/03/04` 探针用例，与本修复无关。
+- 环境说明: 工作树由多个会话共享。验证期间 `cfir/checkers/.../CfirInitializationCheckers.kt` 中还带有
+  并行会话尚未提交的 `assignmentCompletes` / 命名实参登记改动（`git diff` 中非本条目所述的 hunk），
+  以及 `cfir/cfir-serialization` 的在途编辑曾使工作树两次无法编译（已由该会话自行修复）。
+  本条目只声明上述 PT-A / PT-B 相关 hunk 与两个 fixture 修正，未触碰他人改动。
+
+## 2026-09-21：语言版本特性入口审查与官方版本证据
+
+- 按 `kotlin-cangjie-frontend-parity` 技能复核 Kotlin：`LanguageFeature`/`LanguageVersionSettingsImpl`
+  的显式 feature override、progressive、`-XXLanguage` 入口属于 Kotlin CLI 配置链，不能在没有
+  仓颉官方参数证据时直接移植。
+- 官方标签核验：`external/cangjie_compiler` 的 `v1.0.0`、`v1.0.5` 只有核心
+  `CallingConv`/`C`/`FastNative`/`ConstSafe`/`Frozen` 等 FFI builtin；`v1.1.0` 首次确认
+  `JavaMirror`/`JavaImpl`/`JavaHasDefault`/ObjC/ForeignName/NonProduct parser identity。
+- 因此保留 `LanguageFeature.JavaInteropAnnotations`、`ObjCInteropAnnotations`、
+  `InteropForeignNameAnnotations` 的 `sinceVersion = 1.1.0`；核心 FFI 不加版本门禁。
+- 修正 `cfir/providers/.../CfirAnnotationUtils.kt`：`JAVA` 使用 v1.0.0 的
+  `JavaBuiltinAnnotations`；Java mirror/impl/has-default 改用 v1.1.0 的
+  `JavaInteropAnnotations`，ObjC 和 ForeignName 使用各自身份域的 feature。
+- 曾尝试接入 Kotlin-only 的 `manuallyConfiguredFeatures`/`progressive` CLI 链；经 gatekeeper
+  发现官方仓颉没有对应选项，已全部撤回，未留下生成参数或 pipeline 解析路径。
+- 验证：`:compiler:config:test --tests LanguageVersionSettingsConfiguratorTest`、前端生成与编译
+  BUILD SUCCESSFUL；一次 providers 的 `--tests '*Annotation*Test'` 因没有匹配测试类失败，非源码失败。
+- Gatekeeper 结论：当前语言版本入口和 CJO/Analysis API/`.cj.d` 全量目标仍未完成；本条只闭合
+  Java kind 的版本映射和官方版本证据，不宣称完整。
+- 本次全量回归（快照 `cfir/analysis-tests/build/ffi-annotation-verification/20260921-full-after-java-kind-version-fix`）：
+  `8658 tests completed, 113 failed, 308 skipped`；与 `20260921-full-after-cjo-complete-pass`
+  testcase-key 对比为 `fixed=0, regressed=1, unchangedFailures=112`。
+  唯一 apparent regression 是并行会话在运行期间新增 `constraint_check/probe_opt06.cj`～
+  `probe_opt09.cj`，而本次按要求跳过了测试生成任务，触发 `testAllFilesPresent`；它与 Java
+  kind 修正无关，需由新增 fixture 所属会话重新生成测试入口后再复核。除该生成一致性问题外，
+  没有新增失败或失败消息变化。
+- 随后将 AST kind→feature 的映射收敛到 `common` 的
+  `BuiltInAnnotationKind.requiredLanguageFeature`，providers 不再维护第二套 kind `when`。
+  定向 `LanguageVersionSettingsTest`、providers 编译和 `CjdBinaryAnnotationIntegrationTest`
+  均 BUILD SUCCESSFUL。
+- 进一步收敛 builtin kind/interop target 的 gate consumer：`supportsBuiltinAnnotationKind`、
+  `CfirInteropTarget.requiredLanguageFeature` 成为公共入口；annotation lookup、CJO interop
+  provider、CJMP checker 不再复制 `JAVA`/Java/ObjC 的 kind-to-feature 特判。平台 descriptor
+  的 gate 从 official kind 派生，`NON_PRODUCT` 仍保留独立 package-directive identity 和
+  `PACKAGE_DIRECTIVE` origin。
+- CJO 按官方 `ModuleFormat` 增加 `Package.allFileInfo` 与 `allDependentStdPkgs` 输入模型、
+  writer 和 FlatBuffers 读回测试；`:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest'`
+  BUILD SUCCESSFUL。
+- `allFileInfo` writer 初次测试发现 FlatBuffers struct 必须 inline；已修正 `CjoFileInfoMetadata`
+  的 begin/end 写入顺序，最终 18/18 `CjoPackageWriterTest` 通过。producer 尚未填充这些字段，
+  因为当前 CFIR 没有官方 `fileID`/std dependency facts 的统一 owner；继续接入前必须先建立该事实来源。
+- gatekeeper 复审指出的版本隔离已补：`CfirAnnotationCall.isSupportedBuiltinAnnotation` 现在先消费
+  common kind gate；CJO `OFFICIAL_V1_0_0` 明确拒绝 `allFileInfo`/`allDependentStdPkgs`，
+  新增 package-field 测试显式使用 `OFFICIAL_V1_1_3`，schema 注释按两个 official profile 分支说明。
+- 最新定向验证：`:common:test --tests '*LanguageVersionSettingsTest'`、`:cfir:providers:compileKotlin`
+  和 `:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest'` 均 BUILD SUCCESSFUL（CJO
+  writer 18/18）。
+- 最后一次 gate-consumer 收敛后，`:cfir:checkers:compileKotlin`、`:cfir:providers:compileKotlin`
+  仍 BUILD SUCCESSFUL；`CfirAnnotationLookup` 四个 builtin 查询入口均直接使用 common
+  `supportsBuiltinAnnotationKind`。
+- CJO `Decl` writer/model 继续补齐官方现有字段契约：`genericDecl`、begin/end/identifierPos、
+  `mangledBeforeSema`、`DeclHash`；generic writer 读回断言已加入，`:cfir:cfir-serialization:test
+  --tests '*CjoPackageWriterTest'` BUILD SUCCESSFUL。CFIR producer 暂不填充无真实 owner 的
+  mangle/hash/position，避免从短名或源码文本伪造官方事实。
+- `CfirCjoPackageMetadataProducer` 现将 CFIR source-owned `CfirFile.name` 写入官方
+  `Package.allFiles`；std dependency list 暂不填充，因当前 `CfirModuleData.dependencies`
+  只提供合成模块容器，尚无官方 std package identity owner。
+- `.cj.d` 定向回归通过：sidecar parser、binary matcher/integration、source collection、
+  LightTree declaration-mode raw CFIR status tests 均 BUILD SUCCESSFUL。
+- FFI 定向任务 `CfirAnalysisLLTTestGenerated$Ffi` 与 PSI 对位套件 BUILD SUCCESSFUL；但由于
+  多会话并发覆盖共享 `test-results/test`，随后 ledger 只能捕获另一个并发 ConstraintCheck
+  的单条失败，不能作为 FFI fresh XML 统计。必须在隔离/无并发写入时重跑 ledger 才能形成有效
+  FFI testcase-key 报告。
+- 并行会话的 resolve 编译曾被遗留 `DBG-L-FRESH` 调试输出引用不存在的 `nameOrNull` 阻断；
+  已移除该非语义插桩，`:cfir:resolve:compileKotlin :cfir:providers:compileKotlin
+  :cfir:checkers:compileKotlin` BUILD SUCCESSFUL。
+- producer 位置事实进一步闭合：按 CFIR 文件集合建立稳定的 1-based file index，从
+  `CfirFile.sourceFileLinesMapping` 与 declaration `source` 生成 v1.1.3 `allFileInfo`、
+  declaration begin/end；无 source mapping 时保留空字段。producer 的 `allFiles` 遵循官方
+  `ASTWriter::SaveFileInfo` 非绝对路径规则写为 `packageName/fileName`。
+- 该批 producer/CJO 变更已通过 `:cfir:cfir-serialization:test --tests '*CjoPackageWriterTest'`
+  与 `:compiler:frontend:compileKotlin`；`.cj.d` 和 FFI 定向测试仍通过。完整系统与 Analysis
+  API/stub/decompiled 仍未完成，不能宣称最终完整。
+
+## 2026-09-21：ConstraintCheck 判别矩阵（决定性证据，探针已删除）
+
+CFIR 实跑（`--tests '*LLTTestGenerated$ConstraintCheck*'`，57 tests / 4 failed），官方对四个探针**全部零诊断**：
+
+| 探针 | 内容 | 官方 | CFIR |
+|---|---|---|---|
+| opt06 | `let i: Int64 = 1; f4(i, Some(1))`（无字面量实参） | 零诊断 | **失败** |
+| opt07 | `f4(1, Some(1))`（字面量实参） | 零诊断 | **失败** |
+| opt08 | `f4(A(), Some(A()))`（类 + Option，无字面量） | 零诊断 | **失败** |
+| opt09 | `let o: Option<Int64> = Some(1); f4(o, Some(2))`（两侧皆 Option） | 零诊断 | **通过** |
+
+结论（三条）：
+1. **候选 (b) ideal-literal 通道被排除**：去掉字面量（opt06）同样失败 ⇒ 不是整数字面量通道。
+2. **失败与元素类型无关**：`Int64`/`Option<Int64>` 与 `A`/`Option<A>` 都失败 ⇒ 断点在"非 Option 类型与 Option 类型合并"这一步本身。
+3. **同型 Option 合并正常**（opt09 通过）⇒ 计算器的公共父类型求解在"输入已一致"时可工作；
+   差异只出现在**需要 element→Option 加宽**的合并上。
+
+⇒ 断点收敛为：`CommonSuperTypeCalculator.commonSuperTypeInternal` 的 `findSmallestSupertype`
+（步骤二）在该输入下**没有**通过 `AbstractTypeChecker` 的 Option 装箱分支把 `Int64` 判为 `Option<Int64>`
+的子类型，于是继续走到通用路径并落到 `c.anyType()`；`T = Any` 再撞上 `T <: Equatable<T>` ⇒
+`UNABLE_TO_INFER_GENERIC_FUNC`。
+（注意：AM 读码认为该装箱分支"本应生效"，与实测不符 ⇒ 需下一轮**在同一 cycle 内**给出该分支的实际取值。）
+
+下一轮定位（一次 cycle 内完成，同时拿到事实与修复依据）：
+- 在 `findSmallestSupertype` 内对每个 `(it, candidate)` 对打印/断言：
+  `it`、`candidate`、`it.asRigidType()` 的实际类别、`optionBoxedElementType(candidate)`、
+  `optionNestedLevel(it)`/`optionNestedLevel(candidate)`、`state.isOptionBoxingAllowed`、
+  `AbstractTypeChecker.isSubtypeOf(state, it, candidate)`，用 **JUnit 断言**（非 stderr）暴露取值；
+- 依结果选择修复位置：(i) 若装箱分支未触发 ⇒ 修 `commonSuperTypeInternal`/子类型调用处的 state 或
+  rigid 形态处理；(ii) 若装箱触发但后续通用路径丢掉了候选 ⇒ 修候选构造；两种都必须同时保
+  "真冲突仍报 UNABLE_TO_INFER"（EI 已证）。
+
+## 2026-09-21：ConstraintCheck —— `error()` 探针（可靠通道）否定结果 + 通道有效性待验证
+
+用**异常探针**（`error(...)`，信息必进测试失败消息，不依赖 stderr 采集）替代 println 插桩：
+
+1. 探针 A（仅当 `prepareLowerConstraints` 下界数 > 1 时触发）→ **未触发**。
+2. 探针 A2（**无条件**在 `ResultTypeResolver.findSubType()` 入口触发，并打印下界个数）→ **仍未触发**；
+   同一用例依旧报 `UNABLE_TO_INFER_GENERIC_FUNC`。
+
+两种读法（尚未区分）：
+- **R1（倾向）**：`findSubType` 在本用例中根本没被调用 ⇒ 失败发生在**固定阶段之前**
+  （候选筛选 / `CfirCallCompleter` 的 `isInferred` 判定等），与 AM 第二轮给出的"join 链"不符；
+- **R2**：`resolution.common` 的改动未进入该测试实际使用的产物（模块产物/编译顺序问题），
+  若是这样，则本轮与上一轮所有"插桩无输出"的否定结果**全部作废**。
+
+下一轮必须先验证 R2 再继续：在 `common` 模块的 `AbstractTypeChecker.isSubtypeOf(state, sub, super)`
+入口放同款 `error("DBG-C-ISSUBTYPE")`（任何分析都会经过它）——
+若触发 ⇒ 探针通道有效 ⇒ 确认 R1，转向候选筛选/`isInferred` 阶段定位；
+若不触发 ⇒ 通道本身无效，先解决测试实际消费的产物来源问题。
+
+已回退全部插桩（残留 DBG/error = 0）并删除探针 fixture，工作树不含调试代码。
+
+## 2026-09-21：ConstraintCheck —— **根因定位并修复（推断层已验证）**，仍有下游客未定位
+
+### 定位链（全部由 stderr 探针实测，探针已全部移除）
+1. `ArgumentCheckingProcessor`（`cfir/resolve`）实参下界登记：两个实参分别为
+   `IdealInt`（第一轮）/`Option<TypeVariable(T)>`（第二轮为 `Option<Int64>`），expected 均为 `TypeVariable(T)`。
+2. `ResultTypeResolver.findResultTypeOrNull` **确实被调用**，且 T 的约束里含 **EQUALITY** 约束
+   （第一轮 `[EQUALITY:IdealInt, EQUALITY:Int64, UPPER:Equatable<T>, UPPER:Equatable<Int64>]`；
+   第二轮追加 `EQUALITY:Option<Int64>, UPPER:Equatable<Option<Int64>>`）⇒ 走的是**等值约束代表选择**，
+   `findSubType`/下界 join **不在本用例路径上**（这纠正了此前两轮 AM 的链路结论）。
+3. 等值代表由 `representativeFromEqualityConstraints` → `singleBestRepresentative()` 决定。
+   **CFIR 的实现是占位版**：`cfir/providers/.../ConeInferenceContext.kt:731` 只返回"第一个非 error 类型"，
+   而 Kotlin FIR 同名实现的契约是"为等价约束集合挑出一个可代表其余项的类型，挑不出返回 null"。
+
+### 已实施修复（本轮唯一代码改动，保留在树里）
+`ConeInferenceContext.singleBestRepresentative()` 改为：过滤 error 后，选出"其余类型全部是其子类型"的候选；
+子类型判定使用本上下文（即含官方 `allowOptionBox` 元素→Option 包装规则，见 `optionBoxedElementType`）。
+实测效果（探针输出）：`in=[Int64, Option<Int64>] → out=Option<Int64>`，
+`findResultTypeOrNull eq=Option<Int64> appropriate=true` ⇒ **T 现在被正确固定为 `Option<Int64>`，
+与官方 cjc 对 `f(1, Some(1))` 的结论一致**。
+
+### 仍未闭合
+`ConstraintCheck` 切片 106 tests / 2 failed，仍只剩 `testOptionWithElement01`（LLT+PSI）。
+已用探针排除的剩余候选（均无输出）：
+- enum 构造 payload 推断诊断路径（`payloadEnumConstructorInferenceDiagnostic`，返回 null）；
+- `CfirCallCompleter` 的 builtin-pointer 分支；
+- `findResultTypeOrNull` 的 `SOLVER_FAILURE` / `null` 返回分支（探针 H 无输出）⇒ 固定阶段本身已成功。
+⇒ 剩余失败发生在**固定之后的验收/写回**阶段（`completedFunctionCallResultType` 里仍出现
+`isUninferredParameter` 标记的错误类型，或约束系统的 contradiction 判定），下一轮直接用探针
+打 `transformFunctionCall` 的 `completedResultType` 与该类型中的 `isUninferredParameter` 节点即可定位。
+
+### 该修复已回退（引入 4 条 Varray 回归）
+全量门禁实测：`8658 tests / 116 failed`，fixed = 4（`InitializationCheck.StaticVariableUseBeforeInit05`、
+`testVariableUseBeforeInit01` 各 ×2，属并行会话本轮完成的定值初始化收尾），
+但 **NEW = 4：`Varray.testVarray06` / `testVarray09`（各 LLT+PSI）**。
+根因研判：新实现把"无公共代表"的情形从原来的 `first()`（旧占位行为）改成 `null`，导致调用方
+`representativeFromEqualityConstraints` 走到 `constraintTypes.singleBestRepresentative()` 与
+`findExplicitTypeArgumentConstraintFor` 回退分支时选出与旧行为不同的类型（VArray 相关等价约束集合）。
+由于该目标用例本身也**未因此转绿**（仍只剩 `testOptionWithElement01`），按"引入回归即优先回退"的纪律，
+本次改动已**完整回退**，基线恢复 116。下一轮的正确形态：
+先让 `singleBestRepresentative` 在"无公共代表"时保持旧有的 `first()` 兜底（即只新增
+"存在公共代表时选它"的分支，不改无代表时的行为），再复测 Varray + ConstraintCheck 双向切片。
+
+## 2026-09-21（续）：ConstraintCheck —— Option 限制版修复（Varray 回归已消除）+ 剩余触发点定位
+
+- `singleBestRepresentative` 改为 **Option 限制版**：只"存在 core Option 候选、且其余候选都通过
+  Option 包装（`optionNestedLevel`>0 + `isSubtypeOf`）成为其子类型"时才改选最深层 Option，
+  其余情形保持既有 `first()` 兜底。实测（ConstraintCheck + Varray 双切片，172 tests）：
+  **Varray.testVarray06/09 回归消失**，仅剩 `ConstraintCheck.testOptionWithElement01`（LLT+PSI）。
+  该改动当前**保留在树里**（Varray 已不再回归，但目标用例未闭合 ⇒ 尚不能算"完成"，需继续）。
+- 映射探针（`coneDiagnosticToCfirDiagnostic` 的三处 UNABLE_TO_INFER 映射点）**全部未命中** ⇒
+  该诊断不来自 cone 诊断映射，而来自 `callCandidates` 的**直接归一化**分支
+  （`coneDiagnosticToCfirDiagnostic.kt:476-492`）：
+  1. `candidate.hasGenericCallNotEnoughTypeInformation(session)`（:477）
+  2. `isImplicitEnumConstructorPayloadInferenceMismatch()`（:483）
+  3. `hasGenericInferenceConstraintMismatch(session)`（:487，注释明确"矛盾约束 CONFLICTING_CONSTRAINTS
+     与信息不足统一归一为 sema_unable_to_infer_generic_func"）
+  三者都调用 `unableToInferGenericFunctionDiagnostic(...)`。
+- 结合前序探针（T 已正确固定为 `Option<Int64>`，`SOLVER_FAILURE`/null 分支未触发），剩余根因最可能是
+  **固定之后的约束冲突**：`T <: Equatable<T>` 在 T = `Option<Int64>` 下要求
+  `Option<Int64> <: Equatable<Option<Int64>>`（stdlib 的 `extend<T> Option<T> <: Equatable<Option<T>>`
+  扩展未解析/未命中）或实参侧约束二次校验失败。
+- 下一轮定位（一次 cycle）：在上述三处分别打印命中项 + `session` 的约束系统错误明细
+  （`ConstraintMismatch` / `CONFLICTING_CONSTRAINTS` 的 position 与类型），确定是哪一个触发，
+  再按官方语义修（官方对同一输入不产生冲突 ⇒ 是 CFIR 约束登记/校验的缺口）。
+
+## 2026-09-21（续2）：**真正断点定位到实参间的约束登记**
+
+探针（`coneDiagnosticToCfirDiagnostic` 归一化分支前）实测输出（8 次，对应 4 条调用×2 pass）：
+
+```
+notEnough=false  enumPayload=false  constraintMismatch=true
+errors=[
+  Option<TypeVariable(T)> <: Int64,
+  Option<TypeVariable(T)> <: Equatable<Int64>,
+  Option<TypeVariable(T)> <: Int64,
+  Option<TypeVariable(T)> <: Equatable<Int64>,
+  Int64 <: Equatable<Option<TypeVariable(T)>>,
+  Option<Int64> <: … ]
+```
+
+⇒ 归一化由 `hasGenericInferenceConstraintMismatch(session)` 触发（:487），根因是
+**实参之间被登记了不可满足的约束 `arg2 <: arg1`（即 `Option<T> <: Int64`）**，
+而不是"两个实参都作为 T 的下界、再由 Option 对齐合并"。
+
+正确语义（官方 cjc 已证）：两个实参各自登记 `arg_i <: T`，T 由下界/等价约束合并（含 Option 层级对齐）
+得到 `Option<Int64>`，此时 `Int64 <: Option<Int64>`（装箱）与 `Option<Int64> <: Option<Int64>`（同一）
+同时成立 ⇒ 无冲突。CFIR 现在把 `arg2 <: arg1` 形式写进约束系统，`Option<T> <: Int64` 永不可满足 ⇒ CONFLICT。
+
+**下一轮修复点**：`CfirCallCompleter` 的 `candidate.addSameClassifierArgumentTypeConstraints()`
+（调用点见同文件，约束 `sameClassifierArgumentTypeConstraints` 的构造处）——应改为把每个实参类型
+登记为目标类型变量 T 的下界（与 `ArgumentCheckingProcessor` 的 `addSubtypeConstraint(argType, T)` 一致），
+而不是实参之间的相互约束；改后需同时复测 ConstraintCheck + Varray 双切片与全量门禁。
+（本轮已保留的改动：`ConeInferenceContext.singleBestRepresentative` 的 Option 限制版 ——
+Varray 回归已消除，属必要前置。）
+
+### 断点细化（由约束错误集反推，供下一轮直接落地）
+结合探针实测的约束集合与两轮固定过程，冲突的生成链是：
+1. **第一轮固定**：T 的等价约束集为 `{IdealInt, Int64}`（来自字面量实参的 ideal/等值登记），
+   `representativeFromEqualityConstraints` 取 `nonLiteralTypes = {Int64}` → **T 被提前固定为 `Int64`**。
+2. **闭包求值**：此时第二个实参的类型是 `Option<TypeVariable(T)>`（`Some(1)` 以 expected `T` 解析），
+   在 `arg2 <: T` 与 `T == Int64` 的闭包下派生出 **`Option<Int64> <: Int64`** —— 永不可满足。
+3. 第二轮/候选验收阶段看到 CONFLICTING_CONSTRAINTS ⇒ `hasGenericInferenceConstraintMismatch` ⇒
+   `unableToInferGenericFunctionDiagnostic` ⇒ 用户可见的 `UNABLE_TO_INFER_GENERIC_FUNC`。
+
+⇒ 真正缺口在**字面量实参的约束登记**：ideal/等值约束让 T 在 Option 实参的类型尚未参与的情况下被固定，
+而官方 `LocalTypeArgumentSynthesis` 会把两个实参的（下界/等价）约束**一起**收集后再做 Option 层级对齐
+合并（`UnifyOne`），因此得到 `Option<Int64>` 而非 `Int64`。
+**下一轮修复点（按优先级）**：
+- 先查 `ArgumentCheckingProcessor.addIdealLiteralConstraintForCurrentInferenceVariable`（:1399 附近）
+  与 `addSubtypeConstraintIfCompatible`（:1008）在"expected 是类型变量 + 另一实参含 Option"时的登记方式，
+  确认 ideal 字面量是否被登记为**等值**约束而抢先把 T 固定；
+- 对应官方语义：字面量实参贡献的是**下界**（ideal 类型），最终由下界合并（含 Option 对齐）决定 T；
+  把它从等值通道改回下界通道后，`{IdealInt, Option<T>}` 会与 Option 候选对齐 → T = `Option<Int64>` ⇒ 无冲突；
+- 验证：ConstraintCheck + Varray 双切片 → 全量门禁（并确认 `f(Some(1), "s")`、`f(Some(1), 2.0)`
+  等真冲突用例仍报 UNABLE_TO_INFER）。
+
+### 已排除与最终修复方案（下一轮直接实施）
+- 已读代码排除：`addIdealLiteralConstraintForCurrentInferenceVariable`（:1399）与
+  `addSubtypeConstraintIfCompatible`（ConstraintSystemBuilder.kt:193）= **LOWER** 通道，不是等值；
+  `ArgumentCheckingProcessor:1169 addEqualityConstraintIfCompatible` 属**类型实参不变式分解**
+  （`A<Int64>` vs `A<T>` → `T == Int64`），语义正确；`CfirCallCompleter:536
+  addSameClassifierArgumentTypeConstraints` 只对本分类器类型实参做等值分解。
+  ⇒ T 上的 `EQUALITY:IdealInt/Int64` 是**子调用（`Some(1)`）的字面量约束经约束系统 incorporation
+  传播到 T** 的结果（T 与 `Option<X>` 相联，X 的 ideal 约束上浮）。
+- **最终修复方案（按官方语义）**：`ResultTypeResolver.representativeFromEqualityConstraints` 取出的
+  等值代表必须具备**与变量其余 proper 约束一致**的性质——对每条 `LOWER t <: T` 需 `t <: 候选` 成立、
+  对每条 `UPPER T <: t` 需 `候选 <: t` 成立；不满足则**返回 null 不再早退**，让
+  `findResultTypeOrNull` 继续走下界 `findSubType()`/join 路径（配合已落地的 Option 对齐代表选择，
+  下界 `{IdealInt, Option<*>>}` 会收敛到 `Option<Int64>`，从而同时满足两条实参约束 ⇒ 无 CONFLICT）。
+  验证顺序：ConstraintCheck + Varray 双切片 → 全量门禁 → 复核 `f(Some(1),"s")` 等真冲突仍报错。
+
+### 一致性守卫尝试结果（已回退）
+在 `representativeFromEqualityConstraints` 加"等值代表须满足其余 proper 约束"的守卫：
+切片实测新增 2 条 ConstraintCheck 回归（`testConstraintCheckTest42n`、`testConstraintCheckTest61` ×2），
+且目标用例仍未转绿 ⇒ **已回退**（守卫过宽：其余约束含未固定变量时会误判不一致）。
+另经推理核对：单纯"不早退、改走下界 join"对本例无效——第二实参的类型是 `Option<TypeVariable(T)>`
+（内层 `Some(1)` 的类型实参被外层期望类型 `T` 绑定），下界 `{IdealInt, Option<T>}` 在
+`findSmallestSupertype` 下无最小公共父类型（装箱判定 `IdealInt <: T` 因 T 未固定而失败），
+仍会落到 `anyType()` ⇒ SOLVER_FAILURE。
+**真正的偏差在内层调用**：官方让 `Some(1)` 独立推断为 `Option<Int64>`，再由 Option 对齐与外层 `T` 合并；
+CFIR 把外层 `T` 传播进内层类型实参得到 `Option<T>`。下一轮修复点应落在
+"实参调用解析时 expected type 为类型变量时，内层构造器调用的类型实参独立推断/合并顺序"
+（`CfirCallCompleter`/`ArgumentCheckingProcessor` 的 expected-type 传播与 fresh variable 绑定处）。
+当前树状态：仅保留 `singleBestRepresentative` 的 Option 限制版；ConstraintCheck+Varray 切片 172 tests / 2 failed
+（仅 `testOptionWithElement01`），无新增回归。
+
+### 排除：enum 期望类型约束路径未触发
+探针打在 `addExpectedEnumOwnerConstraints`（EnumConstructorTargetTyping.kt:35）：**零输出** ⇒
+内层 `Some(1)` 的类型实参被外层 `T` 顶替**不是**经由该 enum-owner 等值约束路径发生的。
+加上此前已排除的路径（`ArgumentCheckingProcessor` 的实参下界登记、`addIdealLiteralConstraint*`、
+`addSameClassifierArgumentTypeConstraints`、`findResultTypeOrNull` 的 SOLVER_FAILURE/null 分支、
+三处 cone 诊断映射），剩余唯一嫌疑是：**内层构造器候选的 fresh 类型实参创建/绑定阶段**
+（`CfirCreateFreshTypeVariableSubstitutorStage` 的 fresh variable 生成，或
+`system.addSubtypeConstraint(Option<X>, T)` 在 ConstraintInjector 里被变量-变量统一成 `X := T`）。
+下一轮第一步：探针打在这两处，打印 fresh 变量的 `typeConstructor` 与 `Option<X> <: T` 注入后的
+`currentStorage()` 快照，确认 `X` 是被创建为 fresh 还是直接取用了 `T`。
+
+### 实测：内层构造器确实拿到独立 fresh 变量（排除 fresh 创建阶段）
+探针打 `CfirCreateFreshTypeVariableSubstitutorStage.buildFreshVariableSubstitutionMap`：
+```
+DBG-M-MAP decl=CfirEnumConstructorImpl  fresh=[TypeVariable(T)@52f118aa]
+DBG-M-MAP decl=CfirNamedFunctionImpl    fresh=[TypeVariable(T)@1b5623b4]
+... (各 4 次：内层 Some 构造器候选 / 外层 f 候选，身份哈希彼此不同)
+```
+⇒ 内层 `Some(...)` 的 payload 类型实参是**独立 fresh 变量**（`Option<X@hash>`），
+**不是**在 fresh 创建阶段就取用了外层 `T`；且按名回退（byName）与按符号（bySymbol）一致，无串味。
+⇒ 因此 `Option<X>` → `Option<T>` 的替换发生在**候选创建之后的约束注入/完成写回**阶段。
+**下一轮定位点（已收窄到唯一候选）**：`ConstraintInjector`/`ConstraintSystemImpl.addSubtypeConstraint`
+在注入 `Option<X> <: T`（T 为外层 fresh 变量）时的处理——若该实现把"变量 <: 变量"或"含变量的 classifier
+<: 变量"统一为 `X := T`（而不是保留约束让 T 的下界集合包含 `Option<X>`），即与本例冲突根源一致；
+探针打印注入前后的 `currentStorage().notFixedTypeVariables` 快照即可确认；确认后按官方语义
+（实参类型整体作为 T 的**下界**，不与其类型实参做变量-变量合并）修。
+
+### 决定性事实：注入的约束就是 `Option<T> <: T`
+探针打 `ConstraintInjector.addInitialSubtypeConstraint`（限定 lower 含 Option 且 upper 是未固定变量）：
+```
+DBG-N-INJECT lower=enum std/core/Option<TypeVariable(T)> upper=TypeVariable(T)
+              vars=[ConeTypeVariableTypeConstructor(T), ConeTypeVariableTypeConstructor(T)]   ×8（4 调用 ×2 pass）
+```
+⇒ 外层实参约束登记时，第二个实参的类型**已经是 `Option<T>`**（payload 的 fresh 变量已被换成外层 `T`），
+于是注入的是自引用约束 `Option<T> <: T`，闭包派生 `Option<Int64> <: Int64` ⇒ CONFLICT。
+结合已排除项（fresh 创建阶段给内层独立变量 ✓、enum-owner 约束未触发 ✓、等值代表选择已验证 ✓），
+**剩余唯一落点**：内层调用 `Some(1)` 的**完成写回**阶段——其 payload fresh 变量在此被外层 substitutor 覆盖
+（或内层结果类型直接用外层 `T` 参与定型）。
+下一轮第一步（唯一）：探针打 `CfirCallCompleter` 处理内层调用完成结果的写回处
+（`result.replaceConeTypeOrNull(...)` / `completedFunctionCallResultType` 的 substitutor 选择），
+打印写回前后的结果类型与所用 substitutor 映射；确认 payload 变量被外层 T 覆盖后，
+按官方语义让内层调用独立完成（payload 由自身实参定型），只把 `Option<payload>` 作为外层 T 的下界。
+
+### 决定性事实 2：内层调用完成结果是**正确**的 `Option<Int64>`
+探针打 `CfirCallCompletionResultsWriterTransformer.transformFunctionCall`（每次写回打印 resolved/expected/completed）：
+```
+resolved=Option<T>  expected=Option<Int64>  completed=Option<Int64>   ← 内层 Some(1) 写回正确
+resolved=Option<T>  expected=Int64         completed=Option<Int64>
+resolved=Unit       expected=null          completed=Unit             ← 外层 f(...)
+```
+⇒ 内层调用**并不**把 payload 变量错误地留成外层 T；它自己完成成 `Option<Int64>` ✓。
+结合此前的约束注入事实（`Option<T> <: T` 是被注入的约束）可断定：
+**外层实参检查发生在内层写回之前**（第一趟候选），此时第二实参的类型是尚未完成的 `Option<T>`，
+于是约束 `Option<T> <: T` 被写入；而 T 又因**等值约束 `EQUALITY:Int64`**（字面量在 CFIR 里进了等值通道）
+被固定成 `Int64`，闭包因此派生 `Option<Int64> <: Int64` ⇒ CONFLICT ⇒ UNABLE_TO_INFER。
+**真正的缺口＝字面量约束的通道**：官方让字面量只贡献**下界**（ideal），T 的约束集是
+`{IdealInt<:T, Option<Int64><:T, T<:Equatable<T>}`，其下界 join（配合已落地的 Option 对齐代表选择）
+= `Option<Int64>`，两条实参约束同时满足 ⇒ 无冲突；CFIR 却出现 `EQUALITY:Int64` 把 T 钉死。
+下一轮第一步（唯一）：探针在 `ConstraintInjector.addInitialEqualityConstraint` 上打点，找出**谁**把
+`Int64 == T` 写成等值约束（候选：`ArgumentCheckingProcessor:1169` 的不变式分解路径被误用于
+"ideal 实参 vs 类型变量"；或写回阶段用完成类型做了等值统一），确认后改为下界登记即可闭合。
+
+### 决定性事实 3：`T == Int64` 等值来自 fixVariable 本身（即**第一趟固定的结果**）
+探针打 `ConstraintInjector.addInitialEqualityConstraint`（带调用栈）：
+```
+DBG-P-EQ a=TypeVariable(T) b=Int64        caller=ConstraintInjector.addInitialEqualityConstraint:191
+                                              < ConstraintSystemImpl.fixVariable:1002
+                                              < ConstraintSystemCompleter.fixVariable:582
+                                              < ConstraintSystemCompleter.fixVariableIfReady:374
+DBG-P-EQ a=TypeVariable(T) b=Option<Int64> (同一条调用栈)
+```
+⇒ 两条等值都是**固定阶段写回的产物**（`fixVariable` 把选定结果写成 `T == 选中类型`），不是输入约束：
+- 第一趟固定选出 **`Int64`** ⇒ 写入 `T == Int64`；此后第二趟才选出 `Option<Int64>`。
+- 冲突由第一趟的 `T == Int64` 与实参下界 `Option<T> <: T` 的闭包派生（`Option<Int64> <: Int64`）。
+
+**结论（下一轮直接实施）**：问题不是"谁写入了 `EQUALITY:Int64`"，而是**第一趟固定过早地把 T 定成 `Int64`**——
+此时另一实参的 `Option<...>` 信息尚未进入等值集合。修法（窄且可验证）：
+在 `ResultTypeResolver.representativeFromEqualityConstraints`（或 `findResultTypeOrNull` 的等值早退处）加入
+**"存在自引用下界则推迟固定"** 判定——即当变量存在形如 `<含 T 的类型> <: T` 的 proper 下界约束时，
+不采用等值子集代表（返回 null），让固定推迟到 `Option<Int64>` 已进入约束集合的那一趟；
+届时配合已落地的 `singleBestRepresentative`（Option 对齐）即可选出 `Option<Int64>` ⇒ 两条实参约束同时满足 ⇒ 无 CONFLICT。
+（注意：上一轮"等值代表须满足其余 proper 约束"的宽守卫会误伤 `testConstraintCheckTest42n/61`；
+本判定只针对**自引用**下界，范围小得多。）
+
+### 窄守卫实施遇到 API 问题（本轮已回退）
+在 `representativeFromEqualityConstraints` 里内联"自引用下界判定"时，`constraint.type.contains { ... }`
+报 receiver 类型不匹配（`contains` 需要 Cone 侧 receiver / `TypeSystemInferenceExtensionContext`，
+而此处 `Constraint.type` 的静态类型是 `CangJieTypeMarker`）；试图加 `context(c: Context)` 与抽 helper
+都未解决，且一次误删把该文件改坏（已 `git checkout` 完整恢复）。
+⇒ 该守卫**待下一轮**用可用的"类型是否含某变量"API 实现（候选：把判定放到 cfir 侧
+`CfirCallCompleter`/`CfirCreateFreshTypeVariableSubstitutorStage` 已有的
+`containsSystemNotFixedVariable(...)` 同类工具旁，或在 `resolution.common` 内用
+`with(c) { (constraint.type as? ConeCangJieType)?.contains { ... } }` 并补依赖/导入）。
+当前树状态：`ResultTypeResolver.kt` 与 HEAD 一致；仅保留 `singleBestRepresentative` 的 Option 限制版；
+目标用例 `testOptionWithElement01` 仍失败；全量门禁 112、无回归。
+
+### 守卫版（用现有 API）实测：不回归但不生效 ⇒ 已回退
+用 `!constraint.type.isProperTypeForFixation()` 表达"存在含未固定变量的下界"，编译通过，
+双向切片 172 tests / 2 failed（**无新增回归**，Varray 全绿），但目标用例**仍未转绿**。
+原因（结合探针 O 的 `resolved=Option<T> → completed=Option<Int64>`）：推迟固定后
+`findResultTypeOrNull` 走 `findSubType()` 下界 join，而下界是自引用的 `Option<T> <: T`，
+`findSmallestSupertype` 里装箱判定需要 `IdealInt <: T`（T 未固定）失败 ⇒ 落 `anyType()` ⇒ 同一诊断。
+⇒ **真正的最后一步**：内层调用的 pending 类型里 payload 变量**在完成之前就被换成了外层 `T`**
+（resolved 已是 `Option<T>`，而非 `Option<X>`），需要定位是谁在外层实参检查前把 X 绑定为 T
+（下一轮探针点：`CfirCreateFreshTypeVariableSubstitutorStage` 之后 `CfirCallCompleter` 对
+sub-call 的 `substitutor` 写入，或 `ConstraintInjector` 对 `Option<X> <: T` 的 incorporation
+把 `X := T`）。该守卫本身无回归，可保留为后续修复的配套，但本轮按纪律回退（不留下未验证的行为变更）。
+
+## 2026-09-21 `testOptionWithElement01` 根因链（十轮探针实测，已全部撤回；树无行为改动）
+
+fixture `testData/llt/constraint_check/option_with_element_01.cj` 期望**无任何诊断**；
+实际 4 个调用全部产出 `UNABLE_TO_INFER_GENERIC_FUNC`。探针法逐点排除/确认如下。
+
+### 已确认的事实（每条均有探针输出）
+
+1. **实参 `1` 的 ideal 字面量路径是对的。**
+   `Some(1)` 内层 payload 变量走 `ArgumentCheckingProcessor:971-973`
+   （`candidate.isEnumConstructorPayloadInference() && addIdealLiteralEqualityConstraintForCurrentInferenceVariable`），
+   注入 `X == IdealInt`，随后由 `fixVariable` 归一化为 `X == Int64`。
+   → 这是注释里设计的用途，**不是**本 bug。
+
+2. **外层 `f` 的 T 只被错误地加了"上界"。**
+   在约束落点 `MutableConstraintStorage.addConstraint` 加探针，打印"加 `UPPER:Int64` 时的完整约束表"：
+   `UPPER:Equatable<TypeVariable(T)> ; LOWER:Int64`
+   → `UPPER:Equatable<T>` 是 `f` 的 `where T <: Equatable<T>`，**证明该变量就是 `f` 的 T**。
+   → T 上出现 `T <: Int64`（上界）与 `Int64 <: T`（下界）⇒ 在 `MutableConstraintStorage:187-218`
+     合并成 `EQUALITY:Int64` ⇒ **T 被钉死为 `Int64`**；随后 `Option<Int64> <: T` 与之矛盾。
+
+3. **注入 `T <: Int64` 的唯一调用栈指向 PCLA fork point 分支应用：**
+   `MutableVariableWithConstraints.addConstraint` ← `ConstraintInjector.processGivenConstraints:295`
+   ← `processConstraintsIgnoringForksData:277` ← `processGivenForkPointBranchConstraints:247`
+   ← `ConstraintSystemImpl.applyForkPointBranch:983` ← `applyTheBestBranchFromForkPoint:962`
+   ← `resolveForkPointsConstraints:901` ← `ConstraintSystemCompleter.runCompletion:139`
+
+4. **但 fork point 分支内容本身是正确的、且不含 `UPPER:Int64`。**
+   `DBG-B` 实测 fork point 只有 2 个分支：
+   - `n=2 branches=[[LOWER(Option<T>), UPPER(Option<T>)],`
+     `               [UPPER(Equatable<T>), LOWER(Option<T>), UPPER(Option<T>)]]`（来自 `Incorporate Option<T> <: T`）
+   - `n=2 branches=[[UPPER(A), LOWER(A)], [UPPER(Equatable<T>), UPPER(A), LOWER(A)]]`（来自 `Incorporate T == A`）
+   → **`UPPER:Int64` 不在分支里**，是分支应用期间由类型检查器/incorporation 派生后经
+     `extractAllConstraints()` 回流，再被 `processGivenConstraints` 落到 T 上。
+
+### 已排除的候选（探针为 0 命中，不要再走）
+
+- `EnumConstructorTargetTyping.addExpectedEnumOwnerConstraints`（含 `system.addEqualityConstraint(...)`）：
+  在函数入口与 fire 点双探针，**enter=0 / fire=0** ⇒ 从未被调用。
+- `substituteType` 的 `enumConstructorOwnerTargetSubstitutor`：对 `expectedType = T`（TypeVariable，
+  非 `ConeLookupTagBasedType`）会在 `shouldUseExpectedTypeForEnumConstructor` 处 `return null`。
+- `addIdealLiteralEqualityConstraintForCurrentInferenceVariable`：已确认只对 enum payload 场景生效且行为正确。
+
+### 下一轮应做的事（不要跳步）
+
+1. 定位"分支应用期间把 `T <: Int64` 派生出来"的 incorporation 规则：
+   在 `ConstraintIncorporator` 里对"变量同时持有 `LOWER:<ideal 归一化后的整数类型>` 与
+   新增的 `T == Option<X>` 上界"的推导加探针（打印 derivation），确认是
+   `LOWER:Int64 <: UPPER:Option<X>` 检查被误做成给 T 加上界，还是
+   `fixVariableIfReady` 在 fork 应用期就判定 T 可固定为 `Int64`。
+   注意 `DBG-S` 已记录：存在 `ConeFixVariableConstraintPosition` 的 `T == Int64` 注入，
+   栈为 `ConstraintSystemCompleter.fixVariable:582 ← fixVariableIfReady:374 ← runCompletion:217`。
+2. 修改前先跑**同范围 baseline**（`--tests '*TestGenerated$ConstraintCheck*' --tests '*TestGenerated$Varray*'`）
+   并存 diff；改完必须重跑同一 slice 对比，禁止跨 slice 比失败数。
+
+### 工具纪律（本轮踩坑，务必遵守）
+
+- **不要用 `io.open(p,'w')` 写仓库里的 Kotlin 文件**：Windows 上会把 LF 转成 CRLF，
+  造成 `git status` 显示 M 而 `git diff` 为空（`numstat` 也空）。如需脚本改写，用 `newline=''`。
+- `ConstraintSystemImpl.kt:750` 风格的行内探针里，`typeVariable.typeConstructor()` 需要
+  `TypeSystemContext` receiver（`with(c) { ... }`）；`position.from` 在该作用域不可用。
+  取变量身份请用 `System.identityHashCode(typeVariable)`。
+- 本轮期间**工作树里有并行会话的改动**（`analysis/`、`cfir/checkers`、`cfir/providers`、
+  `cfir/cfir-serialization` 等约 20 个文件）。测试单轮耗时从 6 分钟涨到 17 分钟（Gradle 全局锁竞争）。
+  改文件前先 `git status --short` 看清是谁的文件；对**非自己**的文件不要 `git checkout --`。
+
+## 2026-09-21：Box `box_export` sortBy 弃用告警补标（PSI + LightTree，已验证）
+
+- problem type: CJO 反序列化函数级 `@Deprecated` 已浮出后，`llt/box/box_export/src/service/main.cj`
+  中 `list.sortBy { ... }`（ReflectUtilities.cj 片段）缺少 `DEPRECATED_WARNING` 标记；
+  CFIR 实际输出与官方一致，fixture 期望过时。
+- 背景（REPAIR_LOG 2026-08-30 条目遗留项闭合）: 该条目曾把「binary-cjo 函数级 `@Deprecated`
+  永远不上报」登记为 newly discovered problem type 未修；并行会话完成 AnnoKind 反序列化修复后，
+  CFIR 开始正确上报该告警，问题方向反转为 fixture 缺标记。
+- official Cangjie evidence（cjc 1.0.5 `--diagnostic-format=json`）:
+  - 把聚合 fixture 按 `// FILE:` 拆回 6 个源文件（剥离标记）整体编译，恰好 3 条警告：
+    `sema_unused_import` ClassTypeInfo / collectArrayList @ ActivatorUtilties.cj（fixture 已有标记）、
+    `sema_deprecated_warning` "function 'sortBy' is deprecated. Use global function
+    `public func sort<T>(...)` in std.sort instead." @ ReflectUtilities.cj（fixture 缺标记）。
+  - 最小探针（ArrayList.sortBy + 排序 lambda）同样只报 `sema_deprecated_warning`，
+    锚 `sortBy` 标识符（窄范围）。
+- family check: 全 testData 树 `\.sortBy` 仅此一处调用点；同族先例
+  `llt/array/array_sort.cj:6` 已带完全相同的 `<!DEPRECATED_WARNING!>sortBy<!>` 标记
+  （selector 全 token，符合 Diagnostic Range Policy 与 cjc 锚点）。
+- CFIR owner files changed: 无。语义行为（函数级 CJO 弃用告警）由既有
+  `CfirDeprecatedCallChecker` + AnnoKind 反序列化路径产生，与官方一致；本轮仅 fixture 修正。
+- fixture correction（Fixture Edit Gate tier-1，cjc 反证）:
+  `llt/box/box_export/src/service/main.cj` L324 `list.sortBy {` →
+  `list.<!DEPRECATED_WARNING!>sortBy<!> {`。
+- verification（主 agent 执行）:
+  - 切片命令: `.\gradlew-queue.bat :cfir:analysis-tests:test --tests
+    'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Box'
+    --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Box'
+    --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Array'
+    --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Array'
+    -x :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --console=plain`
+  - 切片结果: **BUILD SUCCESSFUL**；Box（含 BoxExport$Src$Service.testMain PSI/LightTree）
+    与 Array（含同族先例 array_sort.cj）全部 `failures=0`。
+  - 全量命令: `.\gradlew-queue.bat :cfir:analysis-tests:test -x
+    :cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests --console=plain`
+  - 全量结果: `8658 tests completed, 116 failed, 308 skipped`。与上一基线（114）逐条 diff：
+    fixed = 4（Box Service testMain ×2 + 并行会话删除的 `ConstraintCheck.testProbeOpt05` ×2）；
+    new = 6（`Diagnostics2$Interop` 的 ObjCMirror/ObjCInit/ForeignName 占位测试 ×6，
+    属并行会话在途的 `CangjieAnnotationModel`/`cfir-serialization` 平台注解改动领域，
+    与本条目单文件 fixture 标记无接触面，未触碰）。
+  - 本条目净效果: **Box 族清零，回归 0**。
+
+## 2026-09-21（补：按 skill 流程重做的一半）官方证据 + 修正后的根因 —— 状态：**未修复 / 未验证**
+
+> 上一节是"先看 CFIR 实现"得到的推理，本节按 skill 的 Core Contract 证据顺序重做：
+> **① cjc 实测 → ② external/cangjie_compiler → ③ Kotlin 对位 → ④ CFIR 现状**。
+> 上一节里"T 被钉死为 Int64"的描述仍成立，但**机制判断有误**（见下）。
+
+### 问题类型
+Type Inference（泛型推断）。触发 fixture：`testData/llt/constraint_check/option_with_element_01.cj`。
+
+### ① 官方 cjc 实测（skill 要求的第一顺位证据）
+`cjc` 路径：`C:/Users/lin17/.cangjie/sdks/cangjie-1.0.5/bin/cjc.exe`（原生 Windows 程序，路径要 `cygpath -w`）。
+把 fixture 原样拷到临时目录后：
+```
+cjc --diagnostic-format=json --output-type=staticlib <win>\probe.cj -o <win>\out
+→ Num: { Errors: 0, Warnings: 1 }   （唯一警告是 chir_dce_unused_function_main，非 sema）
+```
+⇒ **fixture 期望（无诊断）正确，错的是 CFIR**。4 个调用的 `UNABLE_TO_INFER_GENERIC_FUNC` 全是 CFIR 的假阳性。
+
+### ② external/cangjie_compiler 官方语义
+- **`T` 解为 `Option<Int64>`**，靠仓颉的 **Option auto-boxing**（`Int64 <: Option<Int64>`）：
+  `src/Sema/TypeManager.cpp:836-839`；两个下界 join 取最小公共超型 `src/Sema/JoinAndMeet.cpp:103-173`。
+- **本用例在官方源码里有同名注释**：
+  `src/Sema/LocalTypeArgumentSynthesis.cpp:32-60` ——
+  "`A` & `Option<A>` & `Equatable<T>` results in upper bound `Equatable<Option<A>>`"。
+  ⇒ 官方做法：**先由下界 join 解出 `T = Option<Int64>`，再把声明上界实例化为 `Equatable<Option<Int64>>`**，
+  是"实例化已有上界"，**不是**"为了满足上界去把 T 钉成 Int64"。
+- **正常推断只写子类型（lbs/ubs）约束**：`LocalTypeArgumentSynthesis.cpp:329` 的等价约束分支
+  要求 `deterministic && IsGreedySolution(...)`；而 `deterministic=true` 只在
+  `TypeArgumentInference.cpp:524` 的**诊断重跑**里用（正常路径是 `:499` 的 `false`）。
+- **fork point 分支约束必须隔离**：`TypeArgumentInference.cpp:448-450` 用
+  `PData::CommitScope(typeManager.constraints)` + `:528` `PData::Reset` 包住每个分支组合
+  （`include/cangjie/Utils/PartiallyPersistent.h`），分支的临时约束**不落地**，只保留 per-call 的 `SubstPack`。
+  （注：没有"分支不得写固定结果"的成文规则，是靠 CommitScope/Reset 结构性保证的。）
+
+### ③ Kotlin 对位（上游 canonical，本仓未 vendored）
+- `ForkPointData` / `ForkPointBranchDescription` 是 `ConstraintSystem.kt` 里的 typealias；
+  应用在 `org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintSystemImpl`
+  的 `resolveForkPointsConstraints` → `applyTheBestBranchFromForkPoint` → `applyForkPointBranch`
+  → `processGivenForkPointBranchConstraints`。CFIR 是 1:1 镜像（父代理给出镜像行号）。
+- **关键结构事实**：Kotlin 侧 fork-apply 这条链**只调 ConstraintInjector / ConstraintIncorporator，
+  从不调 `VariableFixationFinder` 或 `fixVariable`**；变量固定是 completion 的独立晚期阶段。
+  "apply 时不会固定"是靠**阶段顺序 + runTransaction 回滚**保证的，不是一个 flag。
+- 固定判据在 `VariableFixationFinder.isVariableReady` / `getVariableForFixation`（返回带 direction 的
+  `VariableForFixation`）；"固定成什么"在 `ConstraintSystemCompleter.fixVariable` →
+  `ResultTypeResolver.findResultType`。
+
+### ④ CFIR 现状 + 实测修正（本节是这次真正新增的硬证据）
+探针打在 `ConstraintInjector.processGivenConstraints`，只对 `kind == UPPER && type == "Int64"` 打印
+**该约束的 position（携带派生来源）**：
+```
+DBG-W var=TypeVariable(T) pos=Incorporate Int64 <: TypeVariable(T)
+      from Argument CfirLiteralExpressionImpl@29c244e
+DBG-W var=TypeVariable(T) pos=Incorporate IdealInt <: TypeVariable(T) from Argument <literal>  （另一 pass）
+```
+**⇒ 修正后的根因链：**
+1. 实参 `1`（字面量）给 `T` 下界 `Int64 <: T`（这一步对）。
+2. incorporation 规则 `A <: α <: B ⇒ A <: B`（`ConstraintIncorporator.directWithVariable`，≈165-226 行）
+   把这条下界与 `T` 的**声明上界** `T <: Equatable<T>` 配成 `Int64 <: Equatable<T>` 送进
+   `processNewInitialConstraintFromIncorporation` → `runIsSubtypeOf`（`ConstraintInjector` ≈660-677）。
+3. 该子类型检查为了满足不变量 `Equatable<T>`，**反手给 `T` 加了下界方向之外的 `T <: Int64`**
+   （`UPPER:Int64`）。
+4. 第 1 步的 `Int64 <: T` 与它被 `MutableConstraintStorage.addConstraint`（≈187-219 行）
+   简化合并成 `EQUALITY:Int64` ⇒ **`T` 被钉死为 `Int64`**。
+5. 随后 `Option<Int64> <: T` 与之矛盾 ⇒ `UNABLE_TO_INFER_GENERIC_FUNC`。
+
+**与官方第 ② 条的偏离点（一句话）**：官方是"下界 join 先解出 `T`，再实例化声明上界"
+（`Equatable<Option<Int64>>`）；CFIR 在 incorporation 里**提前**把声明上界当成一条待满足的子类型关系去解，
+于是把 `T` 反向约束成了 `Int64`。
+
+### 剩余未知（下一步唯一要查的一件事）
+第 3 步里"给 `T` 加 `T <: Int64`"的**具体发出点**还没定位到（不在 `ConstraintIncorporator`，
+而在 `runIsSubtypeOf` 内部的子类型检查器里；该检查器在 `resolution.common` 的类型检查器实现中，
+需下一轮插桩 `TypeCheckerStateForConstraintInjector` / `ConstraintInjector` 的
+`addUpperConstraint`(≈610) 入口，同时打印 lower/upper，确认是哪个 pair 触发）。
+定位到之后，修法方向应落在"声明上界参与 incorporation 的时机/方式"，
+而不是在 `MutableConstraintStorage` 的 EQUALITY 合并处打补丁（那是症状点，不是 owner）。
+
+### 本轮验证状态
+- **未修复、未跑全类型回归**，无行为改动；树内 `resolution.common/` 与 HEAD 一致。
+- 注意：`cfir/resolve/.../ArgumentCheckingProcessor.kt` 与
+  `CfirCallCompletionResultsWriterTransformer.kt` 当前在工作树里是 M 状态，**不是本次改动**（并行会话）。
+
+## 2026-09-21（Kotlin 版本门禁审查与 CJO/.cj.d 状态修复）
+
+### Kotlin 语言版本特性审查
+- 已按 `kotlin-cangjie-frontend-parity` 技能核对 Kotlin：
+  `LanguageFeature.sinceVersion/sinceApiVersion`、`LanguageVersionSettingsImpl` 的显式覆盖优先级、
+  `supportsFeature` 消费方式和结构化 `UNSUPPORTED_FEATURE` 诊断。
+- 官方仓颉 `cjc` 没有 Kotlin 的 `-XXLanguage`/`progressiveMode` 入口；本项目不引入这套 Kotlin-only CLI 语义。
+- 仓颉版本 gate 继续由 `LanguageFeature` 与 `LanguageVersionSettings` 统一承载，具体版本事实仍以官方
+  `external/cangjie_compiler` 1.0.0/1.0.5/1.1.0/1.1.3 证据为准。
+
+### 本轮代码变更
+- CJO producer 的 typealias `Decl.type` 改为写入展开后的语义类型，对齐官方
+  `ASTWriter::SaveTypeAliasDecl`；别名身份仍由 `DeclInfo.AliasInfo` 承载。
+- CJO producer 的 custom annotation 序列化补齐 `common/specific` 声明条件，
+  对齐官方 `ASTWriter::SaveAnnotations` 的一致性检查元数据保留规则。
+- `CompilerConfiguration` 增加正式 `remove` 契约；`.cj.d` 输出目录/文件可空 setter 现在会真正清除旧值。
+- 前端每次执行前清空上一次 invocation 的 CJO 输出状态，避免复用配置对象造成路径泄漏。
+
+### 本轮验证
+- `:cfir:cfir-serialization:compileKotlin`：通过。
+- `:cfir:cfir-serialization:test --tests *CjoPackageWriterTest`：通过。
+- `:compiler:frontend:compileKotlin`：通过。
+- `:compiler:config:test --tests org.cangnova.cangjie.CompilerConfigurationTest`：通过。
+- 修复并行改动在 `AnalysisApiCfirComponentExecutionTest` 引入的重复
+  `BuiltInAnnotationKind` import；随后
+  `:analysis:analysis-api-cfir:test --tests ...AnalysisApiCfirComponentExecutionTest.cInteropInfo`：通过。
+- 全量 `:cfir:analysis-tests:test` 尚未重新运行；当前队列快照存在大量失效 PID 的遗留 RUNNING 记录，不能把该快照当作新鲜全量结果。
+- 重新执行 FFI 定向双路径类（PowerShell 使用单引号保留 `$Ffi` 测试类名）：
+  LightTree/PSI 共 82 条记录，`failures=0, errors=0, skipped=0`。
+
+### v1.1.3 interop test-data migration
+- 官方 v1.1.3 `Parser.h`/`AST::AnnotationKind` 已确认 `ObjCMirror`、`ObjCImpl`、
+  `ObjCInit`、`ForeignName` 为正式 annotation identity；3 个旧 placeholder fixture
+  中的 `UNRESOLVED_REFERENCE` 标记已删除。
+- `foreignNameLegalityPlaceholder.cj` 由实际语义检查补充
+  `JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED`，不是把错误降级为 unresolved reference。
+- `objcInitMethodBoundaryPlaceholder.macro.cfir.txt` 按框架生成结果更新为已解析的
+  `ObjCMirror`/`ObjCInit` symbol；`ObjCInit` 的合法/非法返回值语义仍保留在 fixture 中。
+- 更新模式因旧配置缓存曾触发 `ModuleDataProvider` classpath 错误，已使用
+  `--no-configuration-cache --no-build-cache` 重新执行并成功。
+- 随后不更新数据重跑四个 Macro/MacroPsi interop suites：30 tests，`failures=0`。
+- 更新测试数据期间发现并修复并行会话残留的 `[PROBE-NOCTOR]` 调试插桩；
+  `:cfir:checkers:compileKotlin` 已通过。
+
+### 全量门禁现状（本轮）
+- 两次全量主体均执行到 `8658 tests completed`，console 失败数分别为 122、130；
+  但 Gradle test executor 最终均因 Windows `test-results/test/binary/in-progress-results-*.bin`
+  缺失退出，完整 XML 被清理/覆盖，不能据此生成 testcase-key 差异或宣称全量基线。
+- 第二次使用 `cleanTest --max-workers=1 --no-parallel`，仍复现同一 report aggregation 竞态；
+  当前只保留不完整 XML。该结果记录为环境/测试报告器故障，不能归因于本轮 CJO 或注解修改。
+- 本轮可采信的独立证据仍为：FFI 双路径 82/0、Analysis API `cInteropInfo` 通过、
+  CJO writer 18/18（此前验证）、interop Macro/MacroPsi 30/0，以及上述 v1.1.3 fixture 语义迁移后的定向通过。
+
+### 官方 kind 与平台派生身份统一消费
+- 新增 `CangjiePlatformAnnotationKind.officialKind` 唯一映射。
+- `CfirAnnotationLookup` 增加 `hasInteropAnnotation`、`hasAnyInteropAnnotation`、
+  `findInteropAnnotations`，同时消费 v1.1.x 官方 kind 和 v1.0.x 精确 ClassId 派生身份。
+- `CfirBuiltInAnnotationSemanticsChecker` 的 Java/ObjC/ForeignName 语义检查已迁移到该统一入口，
+  修复 unqualified 官方 `@ObjCMirror/@ObjCImpl/@ObjCInit/@ForeignName` 路径被漏检的问题。
+- checker task 已完成 Kotlin 编译；最后退出码仅受 Gradle daemon `registry.bin` 写缓存故障影响。
+
+### v1.1 official kind semantic-consumer repair
+- 发现 `CfirBuiltInAnnotationSemanticsChecker` 之前只读取 platform-derived
+  `ClassId` 身份，未消费 unqualified v1.1 official kind。
+- 增加 `CangjiePlatformAnnotationKind.officialKind`，并将 Java/ObjC/ForeignName
+  语义检查统一切换到双来源 `hasInteropAnnotation`/`findInteropAnnotations`。
+- 这保持 v1.0 精确平台类身份约束，同时让 v1.1 parser kind 走同一 target、继承、ForeignName、
+  JavaHasDefault、ObjCInit 和类型兼容性 owner。
+- `:cfir:checkers:compileKotlin` 任务主体通过；随后 Gradle 因 C 盘空间耗尽/daemon registry
+  无法写入而退出，尚未重新取得完整进程退出码。
+
+## 2026-09-21（晚）：ConstraintCheck / option_with_element_01 —— **已修复并提交（切片验证通过），全量归因待并行会话稳定**
+
+**问题类型**: Type Inference（自引用声明上界 × Option 加宽的合并派生污染）。
+
+### 根因（两级断点，均有探针实证，探针已全部撤回）
+1. **第一断点（发出点，此前轮次的"剩余未知"）**: `ConstraintIncorporator.directWithVariable`
+   把 `LOWER Int64 <: T` × `UPPER T <: Equatable<T>`（声明上界，position.from =
+   `ConeDeclaredUpperBoundConstraintPosition`）派生成 `Int64 <: Equatable<T>`；该派生关系在
+   `ConstraintInjector.runIsSubtypeOf` 里经 `AbstractTypeChecker.isSubtypeForSameConstructor`
+   （仓颉泛型不变 → `equalTypes` 反向支）反推 `UPPER T <: Int64`，与既有 `LOWER:Int64` 在
+   `MutableConstraintStorage.addConstraint` 合并成 `EQUALITY:Int64`，T 在第二实参登记前被钉死为 Int64。
+2. **第二断点（第一刀抑制写回后由 DBG-E 探针暴露）**: 第二类合并
+   `generateNewConstraintForSecondIncorporationKind` 把固定等值 `T == Option<Int64>` 代入
+   自引用声明上界，重录 `T <: Equatable<Option<Int64>>`；其再与历史下界 `Int64 <: T` 传递配对，
+   硬检 `Int64 <: Equatable<Option<Int64>>` 失败（`A <: Equatable<Option<A>>` 同理）——官方从不需要该关系。
+
+### 证据
+- **官方**: cjc 1.0.5 对 fixture 报 **0 条 sema 诊断**（T = Option<Int64>，靠 Option auto-boxing，
+  `TypeManager.cpp:836-839`，allowOptionBox 默认 true）；`LocalTypeArgumentSynthesis.cpp:377-400`
+  正常路径按下界 **join** 做 lb↔ub 交叉校验（`:383` 注明 join 携带 Option box；`SetJoinedType`
+  成功返回 `{}` ⇒ `:389` 用 join 而非裸 lb），等价约束/sum 仅在 `deterministic`（诊断重跑）路径
+  （`:329-335`、`:385`、`:402-428`），声明上界由 `InitConstraints:147-169` 直接落 cms；
+  全 Sema 无 incorporation 概念（`grep -ri incorporat` 仅 LICENSE/llvmPatch.diff）。
+- **Kotlin 对位**: `external/kotlin/compiler/resolution.common/.../ConstraintIncorporator.kt:85-134`
+  与 CFIR 的 `directWithVariable` 逐字同构（含 `isFromDeclaredUpperBound` 守卫）；
+  Kotlin `runIsSubtypeOf` 无 `checksDeclaredUpperBound` 分支（该入口是本项目自加）。
+  声明上界参与派生在 Kotlin 安全，因为 Kotlin 无隐式装箱（`L <: T` 必然蕴含 `L ≅ T`）；
+  仓颉的 `Int64 <: Option<Int64>` 打破了这一前提。
+
+### 修复（共享 owner = ConstraintIncorporator，1 文件 +15 行，单机制）
+`resolution.common/.../ConstraintIncorporator.kt`：
+1. `directWithVariable`：声明上界约束不作为配对对象（`position.from is
+   DeclaredUpperBoundConstraintPosition<*>` → 跳过）——第一断点在派生层消失。
+2. `generateNewConstraintForSecondIncorporationKind`：声明上界约束不作为第二类合并的替换目标
+   ——第二断点消失。
+原始声明上界约束仍留在存储中（fixation readiness、self-type 默认、上界违反检查等读取
+`DeclaredUpperBound` position 的消费方不受影响）；非声明的硬失败仍走 `runIsSubtypeOf` 刚性路径报错。
+前置改动：`ConeInferenceContext.singleBestRepresentative` 的 core Option 代表选择（同日提交，Varray 无回归）。
+**提交**: `335281088`（Option 代表选择）、`76d04a8ae`（合并器排除声明上界派生）。
+
+### fixtures covered
+`testData/llt/constraint_check/option_with_element_01.cj`（LLT + PSI 两个生成类）。
+同族扫描：`where T <: X<T>` 自引用上界 56 个 fixture 中同时含 Option 实参者仅此 1 个；
+真冲突用例（`f(Some(1),"s")` 等，官方仍报 unable_to_infer，锚 callee）走下界 join 冲突通道，不受影响。
+
+### 验证
+- 基线（同命令）：ConstraintCheck+Varray 双切片 172 tests / 2 failed（仅目标 ×2）。
+- 切片（改动后同命令）：**BUILD SUCCESSFUL，172/0** ✅ 目标转绿、无回归。
+- **全量门禁（含改动）：8658 tests / 130 failed**——84 条 Macro 家族（LLT/PSI 对称，与本修复无关的既有家族）；
+  23×2 条非 Macro（SolveTypeArgs×3、ErrMsgs×5、Call/Class/Typealias/FlowExpr/Record/Lookup/
+  DesugarErrorReport/FuzzInvalidParse/ExtendsImplements/Linkage 等）。**归因未完成**：
+  两次对照轮（临时切回 HEAD~1 的 ConstraintIncorporator.kt）分别因 `~/.gradle/caches/journal-1/journal-1.lock`
+  拒绝访问与 `cfir/checkers/build` 目录锁基础设施失败；随后并行会话对 `coneDiagnosticToCfirDiagnostic.kt`
+  的在途编辑使树一度不可编译（19:30 仍在改）。其中 SolveTypeArgs / ErrMsgs-type_arg_infer /
+  Call-inferred_and_explicit 属自引用上界同族，**不能排除第二刀的影响**。
+
+### 遗留 / 下一步
+1. 并行会话稳定后跑聚焦对照（上述 23 用例 with/without `76d04a8ae`，同命令日志做集合差）完成归因；
+   若确有新回归：评估官方形态的补位诊断——"变量解出后对实例化上界做一次校验"（`T_sol <: B(T_sol)`），
+   而不是回退派生排除（回退会 reintroduce 目标用例）。
+2. 官方 C++ `UnifyNominal` 为何不派生反向 ub 的机制细节已不再阻塞本修复（行为证据 + join 交叉校验 +
+   cms 候选集结构足以支撑），留档不再追。
+
+## 2026-09-21（晚·续）：option_with_element_01 归因完成 —— 第二刀排除过宽，收窄为"自引用声明上界"（8/9 回归消除）
+
+**问题类型**: Type Inference（上一条目遗留归因 + 修复精确化）。
+
+### 归因（A/B 对照，两轮间唯一差量 = ConstraintIncorporator.kt，归因纯净）
+- **A 轮（含 `76d04a8ae` 全量排除）**：12 族聚焦（Call/Class/DesugarErrorReport/ErrMsgs/ExtendsImplements/
+  FlowExpr/FuzzInvalidParse/Linkage/Lookup/Record/SolveTypeArgs/Typealias 双入口）1748 tests / 46 failed =
+  **23 unique**，与门禁记录的 23×2 完全吻合。
+- **B 轮（`76d04a8ae` 临时切回 `76d04a8ae~1`，跑后字节级恢复并 `git diff --quiet` 验证）**：1748 / 28 =
+  14 unique。两轮之间并行会话零写入（`find -newermt` 复核）。
+- **集合差**：仅 A 失败（回归）9 unique —— SolveTypeArgs×3（dependent_upper_bounds/f_bounded_1/unused_tyvar）、
+  Call-inferred_and_explicit、Class-class_redef12、FlowExpr×2（composition3/12）、Typealias×2（27/29）；
+  仅 B 失败 0；A∩B = 14 unique 既有失败（ErrMsgs×5、Lookup×2、Record×2、Linkage×2、Desugar/Fuzz/Extends 各 1），
+  与本修复无关。**第一刀确引入 9 个（×2 入口）回归，全部形态为误报 `UNABLE_TO_INFER_GENERIC_FUNC`。**
+
+### 根因（排除条件过宽）
+第一刀把"声明上界"整类排除出合并派生/第二类替换。但 Kotlin 原版对声明上界**只标记不排除**
+（`isFromDeclaredUpperBound` 传下游），且声明上界的跨变量传播是必要求解通道：
+- `f_bounded_1.cj`：`where Y <: Z, Z <: I<Y>`（两变量互引，非自引用）。Y 的下界 `D <: Y` ×
+  声明上界 `Y <: Z` 派生 `D <: Z` 是 **Z 的唯一求解通道**（Z 无实参对应）；排除后 Z 无解 → 误报。
+- 危险形态有精确边界：仅当声明上界的 **type 引用其属主变量自身**（`T <: Equatable<T>`）时，
+  "下界 × 声明上界"派生 `L <: B(T)` 的不变实参检查才会经 equalTypes 反向支把 T 钉死
+  （option_with_element_01 根因）；跨变量上界（`Y <: Z`、`Z <: I<Y>`）的反向目标是**其他**变量，
+  属合法约束传播。
+
+### 修复精确化（同文件两处，`ConstraintIncorporator.kt`）
+排除条件从 `position.from is DeclaredUpperBoundConstraintPosition<*>` 收窄为
+**"声明上界 且 type 中出现属主变量自身"**：
+1. `directWithVariable` 块 2：`it.type.contains { nested -> nested.typeConstructor() == ownerConstructor }`
+   （`ownerConstructor = typeVariable.freshTypeConstructor()` 在 lambda 外求值——contains 谓词 lambda 内
+   解析不到 TypeSystemContext receiver，与同文件 :153 及 CangjieTypeVariableDependencyGraph:37-40 的
+   既有模式一致）。
+2. `generateNewConstraintForSecondIncorporationKind`：替换目标判定同型（属主 = `otherVariable`）。
+   第二类合并遍历"约束含 α 的变量 β"且 **β 可等于 α**（`getVariablesWithConstraintsContainingGivenTypeVariable`
+   不排除自身）——`T == Option<Int64>` 代入自引用上界 `T <: Equatable<T>` 正经此通道重录
+   `T <: Equatable<Option<Int64>>`（第二断点）；非自引用的 `Z <: I<Y>` 被引用变量固定后的代入必须放行。
+
+### 验证
+- 12 族 + ConstraintCheck 聚焦（1854 tests）：15 unique failed = 14 既有 + 1 残留；相对第一刀
+  **零新增**；8/9 回归转绿；目标 option_with_element_01（双入口）保持修复。
+- **残留 1（已知，未修）**：`Call/ErrMsgs? — call/inferred_and_explicit_constraints.cj` 双入口
+  `ordered(Plain())`/`orderedArray(values)`（Plain 不实现 `Comparable<T>`，声明上界 `T <: Comparable<T>`
+  自引用）**漏报** `UNABLE_TO_INFER_GENERIC_FUNC`：修复前该诊断恰由"下界×自引用上界"派生
+  `Plain <: Comparable<T>` 的无解冲突触发；自引用排除把它一并挡掉。官方形态补位 =
+  "变量解出后对实例化上界做一次校验"（`T_sol <: B(T_sol)`，completion 阶段），需与官方 join 语义
+  （Option auto-boxing，`LocalTypeArgumentSynthesis.cpp:383-389`）一致，独立任务进行。
+- 实现教训：同文件两处 Edit 不可并行发（双写竞态，后写覆盖前写，表现为"编辑成功但内容未变"）。
+
+
+
+## 2026-09-21（晚·续 2）：自引用上界补位校验 —— **已修复并提交（d111b16e4），全量门禁 8658/112 零新增**
+
+**问题类型**: Type Inference（上一条目残留漏报的补位）。
+
+### 补位机制（官方 LTAS 交叉校验对位）
+`320f5b50c` 把自引用声明上界排除出合并派生后，其违反不再经"派生无解"暴露：
+`inferred_and_explicit_constraints.cj` 的 `ordered(Plain())`（Plain 不实现 `Comparable<T>`）
+漏报 `UNABLE_TO_INFER_GENERIC_FUNC`。修复前该诊断恰由排除前的派生无解**碰巧**触发。
+
+补位 = `ResultTypeResolver.findResultTypeOrNull` 解出后对自引用声明上界做
+`T_sol <: B(T_sol)` 校验（官方 `LocalTypeArgumentSynthesis.cpp:377-400` 下界 join 后
+逐上界 `UnifyAndTrim` 的对位），失败打 `SOLVER_FAILURE_MARKER` 复用固定阶段统一
+无法推断报告（锚 callee）。覆盖两个出口：下界合并出口 + 推断等值出口
+（Array 不变形参解出 `T == Plain` 场景）；显式实参等值出口不校验。
+
+### 触发判据（关键，三轮探针迭代定稿）
+校验仅对携带**实参直接信息**的变量触发。f_bounded_2 解出终态探针实证：
+解出阶段声明上界可升格为 EQUALITY（position 仍是 DeclaredUpperBound），固定产生
+FixVariable 等值，二者 derivedFrom 均空——排除条件五项缺一不可：
+1. `derivedFrom` 非空排除（incorporation 派生传播的下界，官方对 f_bounded_2 的 Y 不报冲突）；
+2. `FixVariableConstraintPosition` 排除（解出产物非输入）；
+3. `DeclaredUpperBoundConstraintPosition` 排除（声明上界本身/升格等值）;
+4. `ExplicitTypeParameterConstraintPosition` 排除（显式实参违反由使用点
+   GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT 报告，不能报 unable_to_infer）;
+5. 纯上界解出（约束只有声明上界，如 f_bounded_2 的 Y）不参与——其解来自上界近似，
+   自查自证必然失败。
+
+Option 包装解出（T_sol = Option<X>）直接校验失败时用元素类型解包重试（`X <: B(X)`），
+对齐官方 TypeManager allowOptionBox（TypeManager.cpp:836-839）；本环境语料无
+std `extend Option <: Equatable`，名义检查不可用。
+
+### 验证
+- 判据切片（ConstraintCheck/Call/SolveTypeArgs/ErrMsgs 双入口，418 tests）：仅剩 ErrMsgs
+  既有 5×2；inferred_and_explicit 双入口**转绿**、f_bounded_2 回归**修复**、
+  option_with_element_01 保持全绿（解包重试通道实测通过）。
+- 全量门禁：**8658 tests / 112 failed**（-2 vs 320f5b50c 的 114，恰为漏报消除量，零新增）；
+  非 Macro 失败 = 14 既有 unique，无 inferred_and_explicit。
+- 探针已全部撤回（含 findResultTypeOrNull 出口探针）。
+
+### 教训
+- 解出阶段约束形态与 incorporation 期不同（声明上界升格等值、固定产生 FixVariable），
+  任何基于约束形态的判定必须探针实证解出终态，不能由 incorporation 期形态推演。
+- same-file 多处 Edit 串行执行（本轮再次验证）。
+
+## 2026-09-22：Linkage/PrivateLimit 全绿 + EXPORT_SAME_PRIVATE_DECL 版本门禁化（P0/P1/P0.5/P2/P3 闭环）
+
+- problem type: 同包跨文件同名顶层 private 分类器的解析期可见性（Resolve/Visibility）；
+  附带 v1.0.2 新增 `sema_export_same_private_decl` 的版本门禁化支持。
+- root cause（三层，全部插桩/探针定案）：
+  1. `CfirSourceSymbolProvider` 的 `classifierMap`/`classifierContainerFileMap` 以 ClassId 单值索引
+     class-like 声明及其文件——第二个同名声明只进 nameConflictsTracker，"声明属于哪个文件"这一事实
+     被压平，两个同名符号的归属都读成首登记文件 ⇒ `privateAccessible`（规则本身正确）拿到错误输入：
+     第一文件 2 候选报 AMBIGUOUS_USE，第二文件自己的声明被过滤报 UNDECLARED_TYPE_NAME。
+  2. NO_CONSTRUCTOR（P0 修复后暴露）：隐式主构造器 status 镜像类可见性（Private），而
+     `privateAccessible` 的 callable 分支要求 use-site 词法位于 owner 类内部——同文件其它类里的
+     裸 `A()` 调用 containingDeclarations 永不含 owner ⇒ 构造器候选被 prefilter 全丢
+     （ctorCollect ctors=1 → ctorEmpty cands=0）。
+  3. NO_CONSTRUCTOR 的上游错配：`CfirProvider.getContainingClass` 对 callable 经
+     `callableId.classId` 路由首项索引，第二个同名类的构造器宿主被错配到第一个类，
+     外围链检查在 testb 判 A_testa 不可见而提前失败。
+- official Cangjie evidence：
+  - 解析期文件规则：`src/Sema/LookUpImpl.cpp:454-458 IsTargetVisibleToNode`（private 仅同文件可见）、
+    `:567` 过滤点、`PreCheck.cpp:246-251` 跨文件 private 重名豁免、`Mangle/BaseMangler.cpp:161-171`
+    mangle 拼文件名（同名 private 在语言层合法）。
+  - `sema_export_same_private_decl`：v1.0.2（提交 e3200e1，2025-09-16）新增于
+    `CheckFunctionLinkage.cpp:631-648`，前置 `IsNominalDecl() && private && linkage != INTERNAL`；
+    上游注释自述为 PrivateDecl.ti 符号名不含文件名的临时 workaround；v1.0.0 镜像无此检查。
+    cjc 1.0.0/1.0.5 双 SDK 实测（6 探针矩阵）：1.0.0 下 dup01/02/03 全零诊断，1.0.5 起 dup01/02
+    报错（锚 testa 侧 identifier + note）、dup03 零诊断——口径按 v1.0.0 语义，门禁按版本分界。
+- Kotlin counterpart files consulted: `FirVisibilityChecker.kt:254-277/:515-527`（private 顶层判定与
+  CFIR 同构）、`FirPackageMemberScope.kt:37-52`、`FirTypeCandidateCollector.kt:35-63`（K2 保留候选
+  降级 ConeVisibilityError vs CFIR 直接丢弃）、`ImportingScopes.kt:105-115`（K2 无文件级顶层 scope）。
+- CFIR owner files changed（4 笔提交）：
+  - `0882db5a4` providers：`classifierDeclarationFileMap`（symbol 身份 → 文件）+ symbol 级
+    `getCfirClassifierContainerFileIfAny/getCfirClassifierContainerFile` override（未登记回落 ClassId）。
+  - `d093bef46` common：`LanguageVersion.CANGJIE_1_0_2` + `LanguageFeature.ExportSamePrivateDeclCheck`
+    （CanStillBeDisabledForNow，KDoc 记录双 SDK 证据）。
+  - `a29169fba` providers：`checkDeclarationVisibility` 顶部对构造器应用 owner 的同文件规则；
+    `getContainingClass` 重声明组按 callable 容器文件在组内配对宿主（基类注释预留的覆写接缝）。
+  - `6417e7e8f` checkers + testData：孤儿实现（逐文件同名计数）替换为包级导出面检查——
+    `supportsFeature(ExportSamePrivateDeclCheck)` 门禁；`getCfirFilesByPackage` 文件序收集同名组；
+    导出面 oracle 移植官方最小链（public 顶层 nominal 种子 → 继承类型/内存布局实例成员/
+    可导出成员/enum case 参数 → 类型引用按文件私有规则解析 → 恒等集传播 worklist）；
+    同名组 ≥2 且全部成员被导出面引用才报，ERROR 锚首个声明 identifier
+    （classLikeNameDiagnosticSource，对齐官方 MakeRangeForDeclIdentifier）。
+- repair principle: "声明属于哪个文件"是单一事实，归属必须挂在 symbol 身份上而不是 ClassId 上；
+  构造器可见性从属其所在类（文件规则），不能套用成员的词法包含规则；导出面是 visibility+引用图
+  的派生事实，用 session 级计算承载而不引入 Linkage 字段（CFIR 无 linkage 模型，官方 linkage 本体
+  属 codegen 层，sema 面唯一消费点就是这条诊断）。
+- fixtures covered: `Linkage/private_limit/private_dup0{1,2,3}`（6 条旧失败全绿）；
+  新增 `private_dup01_langver100`、`private_dup03_langver100`（LANGUAGE_VERSION: 1.0.0 钉门禁关，零诊断）、
+  `private_dup_noreference`（同名 private 无 public 面引用，门禁开但不报）——LLT+PSI 共 6 个新测试类全绿。
+  同族回归面：Linkage/access01/02/err、base01/02、Lookup/MultiFilesPrivate00 全部通过。
+- verification command(s) and outcome:
+  - 切片：`--tests '*TestGenerated$Linkage*'` → BUILD SUCCESSFUL（含 6 个新测试类）。
+  - 全量：`:cfir:analysis-tests:test --continue` → **8670 tests, 108 failed, 308 skipped**
+    （对比 2026-09-21 晚基线 8658/112：-6 = Linkage/PrivateLimit 全修，+12 tests = 本轮 6 个新
+    fixture 用例与其余并行会话增量；**失败清单中 Linkage 组为 0**，
+    ledger `build/fails_ledger_20260922-linkage-fix.txt`）。
+  - 剩余 108 条全部位于既有基线族与并行会话 interop 重构领域（Macro/APILevelChecker 42、
+    QuoteExpr 10、Macro/Interop 6、ErrMsgs 10、Record 4 等），与本轮改动无关。
+- 遗留（登记）：① 官方 note（后续声明）不实现——诊断基建无 note 家族；② V1 不含
+  `AnalyzeExternalLinkageBySrcExportedDecl`（src-exported 声明体引用传播）——泛型函数体内引用
+  private 类的形状语料未覆盖；③ 会话级 memoization 待诊断面外消费方出现时再建独立 component。
