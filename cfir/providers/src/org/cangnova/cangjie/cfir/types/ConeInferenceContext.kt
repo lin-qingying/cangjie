@@ -729,9 +729,33 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
      * 从类型集合中选择一个代表类型。
      */
     override fun Collection<CangJieTypeMarker>.singleBestRepresentative(): CangJieTypeMarker? {
-        if (isEmpty()) return null
-        // 取第一个非 error 类型
-        return firstOrNull { !(it as ConeCangJieType).isError } ?: first()
+        val candidates = filter { !(it as ConeCangJieType).isError }
+        if (candidates.isEmpty()) return null
+        if (candidates.size == 1) return candidates.first()
+        /*
+         * 官方 `LocalTypeArgumentSynthesis` 在合并等价/下界约束前会按 Option 层级对齐
+         *（`UnifyOne`，Sema/LocalTypeArgumentSynthesis.cpp:269-281），底层依据是
+         * `TypeManager::IsSubtype` 的 `allowOptionBox` 规则（仓颉侧实现见本上下文的
+         * `optionBoxedElementType`）：`A <: Option<A>`。因此 `{Int64, Option<Int64>}`
+         * 的代表是层级最深的 core Option（`Option<Int64>`），与官方 cjc 对
+         * `f(1, Some(1))` 推断 T = Option<Int64> 一致（constraint_check/option_with_element_01）。
+         *
+         * 该加宽**仅对 core Option 生效**（官方同为 Option 专有：自定义 `enum M<T>` 不参与），
+         * 因此这里只在"存在 core Option 候选、且其余候选都通过 Option 包装成为其子类型"时
+         * 改变选择；其余情形保持既有兜底行为（取第一个非 error 候选），不影响 VArray 等场景。
+         */
+        val optionCandidate = candidates
+            .filter { with(this@ConeInferenceContext) { it.optionNestedLevel() } > 0 }
+            .maxByOrNull { with(this@ConeInferenceContext) { it.optionNestedLevel() } }
+        if (optionCandidate != null &&
+            candidates.all { other ->
+                other === optionCandidate ||
+                        AbstractTypeChecker.isSubtypeOf(this@ConeInferenceContext, other, optionCandidate)
+            }
+        ) {
+            return optionCandidate
+        }
+        return candidates.first()
     }
 
     /**
