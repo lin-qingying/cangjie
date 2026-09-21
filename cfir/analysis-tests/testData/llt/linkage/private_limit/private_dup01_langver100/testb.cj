@@ -1,7 +1,9 @@
+// LANGUAGE_VERSION: 1.0.0
+
 // FILE: testa.cj
 package testa
 
-private class <!EXPORT_SAME_PRIVATE_DECL!>A<!> {}
+private class A {}
 
 public class D<T> {
     private let a: A = A()
@@ -12,10 +14,8 @@ public class D<T> {
 // FILE: testb.cj
 package testa
 
-private struct A {}
+private class A {}
 
 public class C<T> {
     private let a: A = A()
 }
-
-

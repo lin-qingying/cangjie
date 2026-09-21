@@ -1,7 +1,7 @@
 // FILE: testa.cj
 package testa
 
-private class A {}
+private class <!EXPORT_SAME_PRIVATE_DECL!>A<!> {}
 
 public class D<T> {
     private let a: A = A()
