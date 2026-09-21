@@ -2,7 +2,9 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -354,6 +356,25 @@ class CfirAccessibilityChecker(
     ): CfirAccessibilityResult.Inaccessible? {
         val declarationFile = symbol.getContainingFile()
         val useSiteFile = context.useSiteFile
+        // 构造器的可见性从属其所在类（status 阶段镜像类可见性）：顶层 private 类的构造器
+        // 在**同文件**内按官方文件规则可见——private 声明仅对同文件引用可见
+        // （external/cangjie_compiler src/Sema/LookUpImpl.cpp:454-458 IsTargetVisibleToNode，
+        //  经由对类本身的判定传导）。不能套用"词法位于 owner 类内部"的成员规则：
+        // 同文件其它类里的裸 `A()` 调用，containingDeclarations 永远不含 owner 类，
+        // 构造器会被错误过滤成 NO_CONSTRUCTOR（llt/linkage private_limit 家族）。
+        if (declaration is CfirConstructor || declaration is CfirEnumConstructor) {
+            val ownerClass = symbol.getContainingClass()
+            if (ownerClass != null && ownerClass.getContainingClass() == null &&
+                (ownerClass.cfir as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Private
+            ) {
+                val ownerFile = ownerClass.getContainingFile()
+                return if (useSiteFile != null && useSiteFile == ownerFile) {
+                    null
+                } else {
+                    CfirAccessibilityResult.Inaccessible(symbol, dispositionFor(symbol, declaration, context))
+                }
+            }
+        }
         val declarationPackage = symbol.getDeclarationPackage()
         val useSitePackage = useSiteFile?.packageDirective?.packageFqName
         val accessible = when (declaration.status.visibility) {

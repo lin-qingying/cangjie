@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -229,6 +230,10 @@ class CfirProviderImpl(
 
     /**
      * 返回 source symbol 所属的 class-like 宿主。
+     *
+     * 同 ClassId 存在重声明组（同包跨文件同名顶层类）时，callable 的宿主按其**声明
+     * 文件**在组内配对：首项索引会把第二个同名类的构造器宿主错配到第一个类，顶层
+     * private 的同文件可见判定随之失效。单声明组与未登记符号维持首项索引语义。
      */
     override fun getContainingClass(symbol: org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
@@ -237,7 +242,21 @@ class CfirProviderImpl(
         }
 
         val ownerClassId = normalizedSymbol.callableId.classId ?: state.callableOwnerClassIdMap[normalizedSymbol]
-        return ownerClassId?.let(state.classifierMap::get) ?: super.getContainingClass(normalizedSymbol)
+            ?: return super.getContainingClass(normalizedSymbol)
+        val redeclarations = session.nameConflictsTracker
+            ?.getClassifierRedeclarations(ownerClassId)
+            .orEmpty()
+        if (redeclarations.isEmpty()) {
+            return ownerClassId.let(state.classifierMap::get) ?: super.getContainingClass(normalizedSymbol)
+        }
+        val callableFile = state.callableContainerFileMap[normalizedSymbol]
+            ?: return ownerClassId.let(state.classifierMap::get) ?: super.getContainingClass(normalizedSymbol)
+        val group = buildList {
+            state.classifierMap[ownerClassId]?.let(::add)
+            redeclarations.forEach { add(it.classifierSymbol) }
+        }.distinct()
+        return group.firstOrNull { owner -> state.classifierDeclarationFileMap[owner] == callableFile }
+            ?: super.getContainingClass(normalizedSymbol)
     }
 
     /**
