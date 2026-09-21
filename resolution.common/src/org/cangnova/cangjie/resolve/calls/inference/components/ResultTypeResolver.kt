@@ -137,7 +137,16 @@ class ResultTypeResolver(
     ): CangJieTypeMarker? {
         // 先查等值约束的完整结果：命中即免于走向下界/上界的合并路径。
         val resultTypeFromEqualConstraint = findResultIfThereIsEqualsConstraint(variableWithConstraints, isStrictMode = false)
-        if (resultTypeFromEqualConstraint?.isAppropriateResultTypeFromEqualityConstraints() == true) return resultTypeFromEqualConstraint
+        if (resultTypeFromEqualConstraint?.isAppropriateResultTypeFromEqualityConstraints() == true) {
+            // 推断等值（非显式实参来源，如不变形参位置解出 T == Plain）同样受自引用
+            // 声明上界约束：官方对解出统一交叉校验（LocalTypeArgumentSynthesis.cpp:377-400）。
+            // 纯显式实参的等值由 violatesSelfReferentialDeclaredUpperBound 内部排除——
+            // 其违反由使用点 GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT 报告。
+            if (violatesSelfReferentialDeclaredUpperBound(variableWithConstraints, resultTypeFromEqualConstraint)) {
+                return c.createErrorType(SOLVER_FAILURE_MARKER, null)
+            }
+            return resultTypeFromEqualConstraint
+        }
 
         val subType = variableWithConstraints.findSubType()
         val subTypeIsIntersection = subType?.typeConstructor()?.isIntersection() == true
@@ -180,6 +189,11 @@ class ResultTypeResolver(
             if (!allowIntersectionResult && resultType.typeConstructor().isIntersection()) {
                 return c.createErrorType(SOLVER_FAILURE_MARKER, null)
             }
+            // 自引用声明上界的解出后校验：合并派生已排除自引用上界（ConstraintIncorporator），
+            // 其违反在此显式检查，失败走统一无法推断路径。
+            if (violatesSelfReferentialDeclaredUpperBound(variableWithConstraints, resultType)) {
+                return c.createErrorType(SOLVER_FAILURE_MARKER, null)
+            }
             return resultType
         }
 
@@ -189,6 +203,73 @@ class ResultTypeResolver(
             return c.createErrorType(SOLVER_FAILURE_MARKER, null)
         }
         return null
+    }
+
+    /**
+     * 自引用声明上界的解出后校验（官方 LTAS 正常路径 lb↔ub 交叉校验的对位，
+     * LocalTypeArgumentSynthesis.cpp:377-400：下界 join 解出后逐上界 UnifyAndTrim）。
+     *
+     * 自引用声明上界（T <: B(T)）不参与合并派生（见 ConstraintIncorporator 两处排除），
+     * 其违反无法经"派生无解"暴露，必须在解出后显式校验；跨变量声明上界（Y <: Z、
+     * Z <: I<Y>）的违反仍由参与派生的既有路径报告，此处不查（否则 reintroduce
+     * f_bounded_1 族回归）。显式实参的等值出口不走此处——其违反由使用点
+     * GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT 报告。
+     *
+     * 官方 std 经 `extend Option <: Equatable` 使 `Option<T> <: Equatable<Option<T>>`
+     * 成立；本环境语料无 std extend，T_sol 为 Option 包装且直接校验失败时，按官方
+     * TypeManager allowOptionBox（TypeManager.cpp:836-839）的解包语义用元素类型
+     * 重试。上界代入后仍含未固定类型变量的场景（B(T, U)）保守跳过，不引入误报。
+     */
+    context(c: Context)
+    private fun violatesSelfReferentialDeclaredUpperBound(
+        variableWithConstraints: VariableWithConstraints,
+        resultType: CangJieTypeMarker,
+    ): Boolean {
+        if (resultType.isError()) return false
+        // 官方交叉校验的对象是下界 join（LocalTypeArgumentSynthesis.cpp:383 JoinAndMeet(lbs)），
+        // lbs 收集的是实参直接给出的信息。仅对带"非派生、非解出产物"的下界/等值约束的变量触发：
+        // - derivedFrom 非空 = incorporation 派生传播来的（如 f_bounded_2 中经 X <: Y 传入 Y 的
+        //   D <: Y），官方对其不报冲突；
+        // - FixVariableConstraintPosition = 固定阶段写入的解出产物，不是输入；
+        // - DeclaredUpperBoundConstraintPosition 升格的等值 = 声明上界本身；
+        // - ExplicitTypeParameterConstraintPosition = 显式实参，其违反由使用点
+        //   GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT 报告。
+        // 纯上界解出（约束只有声明上界）的变量（如 f_bounded_2 的 Y）不参与——其解本就
+        // 来自上界近似，自查自证必然失败。
+        val hasInputFromArguments = variableWithConstraints.constraints.any {
+            (it.kind == ConstraintKind.LOWER || it.kind == ConstraintKind.EQUALITY) &&
+                it.derivedFrom.isEmpty() &&
+                it.position.from !is ExplicitTypeParameterConstraintPosition<*> &&
+                it.position.from !is FixVariableConstraintPosition<*> &&
+                it.position.from !is DeclaredUpperBoundConstraintPosition<*>
+        }
+        if (!hasInputFromArguments) return false
+        val selfConstructor = variableWithConstraints.typeVariable.freshTypeConstructor()
+        val selfReferentialBounds = variableWithConstraints.constraints.filter {
+            it.kind != ConstraintKind.LOWER &&
+                it.position.from is DeclaredUpperBoundConstraintPosition<*> &&
+                it.type.contains { nested -> nested.typeConstructor() == selfConstructor }
+        }
+        if (selfReferentialBounds.isEmpty()) return false
+
+        // ILT 先近似为具体整型，避免整型字面量类型参与上界代入后语义漂移。
+        val solvedType = resultType.approximateToSuperTypeOrSelf(null)
+        if (solvedType.isError()) return false
+        val substitutor = c.typeSubstitutorByTypeConstructor(mapOf(selfConstructor to solvedType))
+        return selfReferentialBounds.any { bound ->
+            val substitutedBound = substitutor.safeSubstitute(bound.type)
+            if (!substitutedBound.isError() &&
+                substitutedBound.contains { nested -> nested.typeConstructor().isTypeVariable() }
+            ) {
+                return@any false
+            }
+            if (AbstractTypeChecker.isSubtypeOf(c, solvedType, substitutedBound)) return@any false
+            // Option 包装解出：官方经 std extend 等价于解包后校验，本环境无 extend，解包重试。
+            val optionElement = with(c) { solvedType.optionBoxedElementType() } ?: return@any true
+            val elementSubstitutedBound = c.typeSubstitutorByTypeConstructor(mapOf(selfConstructor to optionElement))
+                .safeSubstitute(bound.type)
+            !AbstractTypeChecker.isSubtypeOf(c, optionElement, elementSubstitutedBound)
+        }
     }
 
     /**
