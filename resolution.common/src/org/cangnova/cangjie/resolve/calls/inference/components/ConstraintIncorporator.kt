@@ -195,13 +195,20 @@ class ConstraintIncorporator(
         if (constraint.kind != ConstraintKind.UPPER) {
             typeVariable.forEachConstraint {
                 if (it !== constraint && it.kind != ConstraintKind.LOWER) {
-                    // 声明上界不参与传递配对：官方 LocalTypeArgumentSynthesis 的正常路径只把
-                    // 声明上界作为 ubs 参与按下界 join 的交叉校验（LocalTypeArgumentSynthesis.cpp:377-400），
-                    // 等价约束/sum 仅在 deterministic（诊断重跑）路径出现，从不在推断期用
-                    // "单个下界 × 声明上界"派生新关系。若在此配对，`LOWER Int64 <: T` ×
-                    // `UPPER T <: Equatable<T>` 会派生 `Int64 <: Equatable<T>`，其不变实参
-                    // 检查反推 `T <: Int64`，把 T 提前钉死为 Int64（option_with_element_01 根因）。
-                    if (it.position.from is DeclaredUpperBoundConstraintPosition<*>) return@forEachConstraint
+                    // 自引用声明上界（T <: B(T)，T 出现在上界实参中）不参与传递配对：
+                    // 官方正常路径只把声明上界作为 ubs 参与按下界 join 的交叉校验
+                    // （LocalTypeArgumentSynthesis.cpp:377-400），推断期从不做
+                    // "单个下界 × 声明上界"派生。自引用形态下该派生尤其有害：
+                    // `LOWER Int64 <: T` × `UPPER T <: Equatable<T>` 派生
+                    // `Int64 <: Equatable<T>`，其不变实参检查经 equalTypes 反向支推出
+                    // `T <: Int64`，把 T 提前钉死（option_with_element_01 根因）。
+                    // 跨变量声明上界（Y <: Z、Z <: I<Y>）必须照常参与——否则被引用
+                    // 变量（如 Z）失去唯一求解通道，误报 UNABLE_TO_INFER
+                    // （f_bounded_1 等回归，2026-09-21 A/B 对照实测）。
+                    val ownerConstructor = typeVariable.freshTypeConstructor()
+                    if (it.position.from is DeclaredUpperBoundConstraintPosition<*> &&
+                        it.type.contains { nested -> nested.typeConstructor() == ownerConstructor }
+                    ) return@forEachConstraint
                     // 来自声明上界位置（DeclaredUpperBound）且不是类型变量时，标记来源
                     val isFromDeclaredUpperBound =
                         it.position.from is DeclaredUpperBoundConstraintPosition<*> &&
@@ -322,13 +329,16 @@ class ConstraintIncorporator(
     ) {
         if (causeOfIncorporationVariable in otherConstraint.derivedFrom) return
 
-        // 声明上界不作为第二类合并的替换目标：官方在变量解出后只对实例化后的上界做一次
-        // 校验（`T_sol <: B(T_sol)`），从不把声明上界代入等值约束后回流进推导池——否则
-        // `T == Option<Int64>` 会把自引用上界 `T <: Equatable<T>` 替换成
-        // `T <: Equatable<Option<Int64>>`，再与历史下界 `Int64 <: T` 配对，硬检
-        // `Int64 <: Equatable<Option<Int64>>` 失败，产生官方不存在的冲突
-        // （option_with_element_01 的第二断点，2026-09-21 探针实测）。
-        if (otherConstraint.position.from is DeclaredUpperBoundConstraintPosition<*>) return
+        // 自引用声明上界（β <: B(β)）不作为第二类合并的替换目标：官方在变量解出后只对
+        // 实例化后的上界做一次校验（`T_sol <: B(T_sol)`），从不把声明上界代入等值约束后
+        // 回流进推导池——否则 `T == Option<Int64>` 会把自引用上界 `T <: Equatable<T>`
+        // 替换成 `T <: Equatable<Option<Int64>>`，再与历史下界 `Int64 <: T` 配对，
+        // 硬检失败产生官方不存在的冲突（option_with_element_01 的第二断点，
+        // 2026-09-21 探针实测）。跨变量声明上界（Z <: I<Y>）必须照常替换——这是
+        // 被引用变量固定后唯一的信息传播通道（f_bounded_1 等回归教训）。
+        if (otherConstraint.position.from is DeclaredUpperBoundConstraintPosition<*> &&
+            otherConstraint.type.contains { nested -> nested.typeConstructor() == otherVariable.freshTypeConstructor() }
+        ) return
 
         // 生成上界方向的新约束（β <: Inv<Number>）
         if (otherConstraint.kind != ConstraintKind.LOWER) {
