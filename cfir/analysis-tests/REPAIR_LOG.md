@@ -9833,3 +9833,18 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   对 `fails_ledger_20260922-record-fix.txt`（102 条）集合差 **ADDED=0 / REMOVED=12**。
 - 中间回归记录：首版实现引入 2 个回归（`Enum/enum39_coalescing_box`、`Tuple/tuple9` 双路径），
   分别由 completion 重估与元数不匹配锚点修正关闭；无其它新增失败。
+
+## Array 下标快速路径跳过索引类型检查，导致 CANNOT_CONVERT_LITERAL / PARAMETERS_AND_ARGUMENTS_MISMATCH 漏报
+
+- problem type: Resolve / DesugarErrorReport。`b[1.01][0]`（`b: Array<Array<UInt8>>`）CFIR 产出 0 诊断；官方（cjc 1.0.5 与 1.0.0 双 SDK 实测一致）报 2 error：L6 C7 `1` 的 `sema_cannot_convert_literal` + L6 C5 `b` 的 `sema_parameters_and_arguments_mismatch`。fixture 正确，CFIR 少报。
+- root cause: `CfirExpressionsResolveTransformer.transformSubscriptExpression` 的数组元素快速路径用 `arrayElementType` 直接给出结果类型，从不构建 `get` 调用、从不检查索引类型——Float64 字面量索引的实参转换失败与调用级失配均无法产生（`PARAMETERS_AND_ARGUMENTS_MISMATCH` 唯一产生点 `coneDiagnosticToCfirDiagnostic.kt` 的 `parametersAndArgumentsMismatchDiagnostic` 原本只覆盖构造调用窄场景）。
+- official Cangjie evidence: cjc 1.0.5/1.0.0 双 SDK JSON 诊断：`b[1.01]` → `sema_cannot_convert_literal`(C7→C8，即 `1.01` 首字符) + `sema_parameters_and_arguments_mismatch`(C5→C6，`b`)；变量索引探针（Int8/UInt8/UInt16/UInt64/Float64）一律只报 `sema_mismatched_types`，无调用级 mismatch——即调用级失配仅在字面量实参转换失败时出现。官方对位：`TypeCheckExpr/SubscriptExpr.cpp::ChkSubscriptExpr` 把 `a[i]` 脱糖为 `a.[](i)`，索引实参走 `CheckCallCompatible`（实参锚定诊断不被 `DiagSuppressor` 抑制）。
+- Kotlin counterpart files consulted: 无需新对位；修复沿用既有的统一调用诊断映射（`mapInapplicableCandidateError` / `argumentTypeMismatch` / `coalesceArgumentTypeMismatches`）。
+- CFIR owner files changed:
+  - `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt`：数组（非 Range）快速路径仅在全部索引实参为 Int64 兼容（`hasInt64CompatibleIndices`）时短路，否则落回统一的 `resolveSubscriptExpressionType` get 调用解析管线。VArray 分支保持原状——VArray 已有专属内建索引检查器（`BUILTIN_INDEX_IN_BOUND`/`TYPE_MISMATCH`/`VARRAY_SUBSCRIPT_NUM`），快速路径本就与官方一致（回归验证：把 VArray 也赶进管线会使 varray_index01/06 多出 INVALID_SUBSCRIPT_EXPR）。
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt`：①`invalidBinaryOperatorDiagnosticForOperatorCall` 排除 GET/SET 脱糖调用（下标失配不是二元运算符诊断）；②`parametersAndArgumentsMismatchDiagnostic` 扩展到下标 GET 候选：实参为字面量的 ArgumentTypeMismatch 时报告，锚在接收者 source（`b`）；③`mapConeAmbiguityError` 的 `!applicability.isSuccess` 分支新增：全部候选均为下标 GET 脱糖调用时（如 `[](Int64)` 与 `[](Range<Int64>)` 双双失败）不做共享诊断交集（交集会把非共享的实参级 `CANNOT_CONVERT_LITERAL` 丢掉），改为返回首个候选的完整映射结果——对位官方 DiagSuppressor「调用级歧义被抑制、仅保留实参节点诊断」。
+- fixture correction（range-only，依据 Diagnostic Range Policy）：`desugar_error_report/subscribe_in_binary.cj` 的 `CANNOT_CONVERT_LITERAL` 集合标记由 `1` 改为 `1.01`。官方 cjc 实测锚点 C7→C8 只覆盖 `1.01` 的首字符（窄锚），按 Policy 应展开为完整 token；`b` 的 C5→C6 本就是完整 token，不动。
+- repair principle: 诊断的所有权归统一的 get 调用解析管线——数组快速路径只在"索引实参确实能匹配官方 `operator func [](Int64)`"这一与官方等价的前提下短路；调用级/实参级诊断的取舍全部由共享 cone 映射层承担，无任何 fixture 局部判断。
+- fixtures covered: `CfirAnalysisLLTTestGenerated$DesugarErrorReport#testSubscribeInBinary`、`CfirAnalysisLLTPsiTestGenerated$DesugarErrorReport#testSubscribeInBinary`（组内 operator_overload / primary_ctor 不受影响，全组绿）。
+- verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' :cfir:analysis-tests:test --continue --console=plain`（全量）。
+- verification outcome: 全量两次。第一次（含 VArray 管线化尝试）94 失败，其中 4 条为本次修复引入的 `Varray testVarrayIndex01/06`（双入口）回归 → 回退 VArray 部分。第二次全量 90 失败，与修复前基线失败集**完全一致**（diff 仅差 BUILD 行），0 新增回归；`DesugarErrorReport` 双入口 `failures=0`。剩余 90 条为并行会话工作区的既有失败，不在本问题类型内。

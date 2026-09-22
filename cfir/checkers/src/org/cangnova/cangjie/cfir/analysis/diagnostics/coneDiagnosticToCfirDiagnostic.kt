@@ -1395,6 +1395,18 @@ private fun CfirExpression.isBareFunctionReferenceValue(): Boolean {
 private fun AbstractCallCandidate<*>.parametersAndArgumentsMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
+    // 下标读脱糖调用（a[i] → a.get(i)）的索引实参为字面量且不能转换时，官方除实参级
+    // cannot_convert_literal 外还报一次调用级 parameters and arguments mismatch，锚在
+    // 下标接收者（`b[1.01]` 的 `b`）；非字面量的实参类型失配官方只报实参级
+    // mismatched_types，不报调用级（cjc 1.0.0/1.0.5 双探针实测）。
+    if (callInfo.origin == CfirFunctionCallOrigin.Operator && callInfo.name == OperatorNameConventions.GET) {
+        val hasLiteralArgumentMismatch = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
+            diagnostic.argument.unwrapWrappedExpression() is CfirLiteralExpression
+        }
+        if (!hasLiteralArgumentMismatch) return null
+        val receiverSource = callInfo.explicitReceiver?.source ?: return null
+        return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(receiverSource, session)
+    }
     if (symbol.cfir !is CfirConstructor || !hasExplicitTypeArgumentsInCall()) return null
     val hasFunctionReferenceMappingFailure = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
         diagnostic.argument.isBareFunctionReferenceValue() &&
@@ -1451,6 +1463,11 @@ private fun AbstractCallCandidate<*>.invalidBinaryOperatorDiagnosticForOperatorC
     session: CfirSession,
 ): CjDiagnostic? {
     if (callInfo.origin != CfirFunctionCallOrigin.Operator) return null
+    // 下标读/写脱糖调用（a[i] → a.get(i)，operator func []）的实参类型失配不是
+    // 二元运算符诊断：官方 `ChkSubscriptExpr` 让索引实参走 CheckCallCompatible，
+    // 报实参锚定的 cannot_convert_literal/mismatched_types 与调用级 parameters
+    // and arguments mismatch，而不是 sema_invalid_binary_expr。
+    if (callInfo.name == OperatorNameConventions.GET || callInfo.name == OperatorNameConventions.SET) return null
     val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callInfo.name] ?: return null
     val leftType = callInfo.explicitReceiver?.coneTypeOrNull ?: return null
     val rightType = callInfo.arguments.singleOrNull()?.coneTypeOrNull ?: return null
@@ -1512,6 +1529,27 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 
     @OptIn(ApplicabilityDetail::class)
     if (!applicability.isSuccess) {
+        // 下标读脱糖调用（a[i] → a.get(i)，operator func []）多候选皆不可应用时，官方
+        // `ChkSubscriptExpr` 的 DiagSuppressor 抑制调用级歧义，仅保留实参节点上的诊断
+        // （cjc 1.0.0/1.0.5 双 SDK 实测：`b[1.01]` 报 cannot_convert_literal +
+        // parameters_and_arguments_mismatch，不报歧义）。共享交集会把非共享的实参级
+        // 诊断（如 Int64 签名候选的 cannot_convert_literal）全部丢掉，因此对全部为
+        // 下标读脱糖候选的歧义，直接采用首个候选的完整映射结果。
+        val allSubscriptGetCandidates = candidatesWithErrors.keys.all { candidate ->
+            candidate is AbstractCallCandidate<*> &&
+                candidate.callInfo.origin == CfirFunctionCallOrigin.Operator &&
+                candidate.callInfo.name == OperatorNameConventions.GET
+        }
+        if (allSubscriptGetCandidates && candidatesWithErrors.isNotEmpty()) {
+            val firstCandidateDiagnostics = candidatesWithErrors.entries.first().value
+                ?.toCfirDiagnostics(
+                    session = session,
+                    source = source,
+                    callOrAssignmentSource = callOrAssignmentSource,
+                    valueParameter = null,
+                ).orEmpty()
+            if (firstCandidateDiagnostics.isNotEmpty()) return firstCandidateDiagnostics
+        }
         val candidateDiagnostics = candidatesWithErrors.values.map { coneDiagnostic ->
             coneDiagnostic?.toCfirDiagnostics(
                 session = session,
