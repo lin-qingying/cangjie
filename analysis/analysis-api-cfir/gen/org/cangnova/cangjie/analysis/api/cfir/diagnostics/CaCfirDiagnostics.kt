@@ -1720,18 +1720,6 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val expectedArgs: String
     }
 
-    interface AnnotationErrorArgRange : CaCfirDiagnostic<PsiElement> {
-        override val diagnosticClass get() = AnnotationErrorArgRange::class
-        val annotationName: String
-        val supportedArgs: String
-    }
-
-    interface AnnotationErrorObject : CaCfirDiagnostic<PsiElement> {
-        override val diagnosticClass get() = AnnotationErrorObject::class
-        val annotationName: String
-        val validTargets: String
-    }
-
     interface CannotUseAnnotationJffi : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = CannotUseAnnotationJffi::class
     }

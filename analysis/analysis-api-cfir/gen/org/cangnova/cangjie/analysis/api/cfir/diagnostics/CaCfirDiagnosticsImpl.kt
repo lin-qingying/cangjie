@@ -2058,20 +2058,6 @@ internal class AnnotationErrorArgNumImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationErrorArgNum
 
-internal class AnnotationErrorArgRangeImpl(
-    override val annotationName: String,
-    override val supportedArgs: String,
-    cfirDiagnostic: CjPsiDiagnostic,
-    token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationErrorArgRange
-
-internal class AnnotationErrorObjectImpl(
-    override val annotationName: String,
-    override val validTargets: String,
-    cfirDiagnostic: CjPsiDiagnostic,
-    token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AnnotationErrorObject
-
 internal class CannotUseAnnotationJffiImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

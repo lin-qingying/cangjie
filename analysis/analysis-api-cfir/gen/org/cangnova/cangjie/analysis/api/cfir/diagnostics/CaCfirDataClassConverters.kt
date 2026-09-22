@@ -98,7 +98,6 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions77()
     addConversions78()
     addConversions79()
-    addConversions80()
     addConversions81()
     addConversions83()
     addConversions85()
@@ -1989,17 +1988,6 @@ private fun CaDiagnosticConverterBuilder.addConversions79() {
     }
 }
 
-private fun CaDiagnosticConverterBuilder.addConversions80() {
-    add(CfirErrors.ANNOTATION_ERROR_OBJECT) { cfirDiagnostic ->
-        AnnotationErrorObjectImpl(
-            cfirDiagnostic.a,
-            cfirDiagnostic.b,
-            cfirDiagnostic as CjPsiDiagnostic,
-            token,
-        )
-    }
-}
-
 private fun CaDiagnosticConverterBuilder.addConversions81() {
     add(CfirErrors.USE_FUNC_CAPTURE_VAR_ALONE) { cfirDiagnostic ->
         UseFuncCaptureVarAloneImpl(
@@ -3158,14 +3146,6 @@ private fun CaDiagnosticConverterBuilder.addConversions135() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions136() {
-    add(CfirErrors.ANNOTATION_ERROR_ARG_RANGE) { cfirDiagnostic ->
-        AnnotationErrorArgRangeImpl(
-            cfirDiagnostic.a,
-            cfirDiagnostic.b,
-            cfirDiagnostic as CjPsiDiagnostic,
-            token,
-        )
-    }
     add(CfirErrors.TYPEALIAS_CYCLE) { cfirDiagnostic ->
         TypealiasCycleImpl(
             cfirDiagnostic.a,

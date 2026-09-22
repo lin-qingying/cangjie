@@ -1761,18 +1761,6 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("expectedArgs")
         }
 
-        // 注解参数范围错误
-        val ANNOTATION_ERROR_ARG_RANGE by error<PsiElement> {
-            parameter<String>("annotationName")
-            parameter<String>("supportedArgs")
-        }
-
-        // 注解只能修饰特定对象
-        val ANNOTATION_ERROR_OBJECT by error<PsiElement> {
-            parameter<String>("annotationName")
-            parameter<String>("validTargets")
-        }
-
         // 不能在此处使用注解（Java 互操作）
         val CANNOT_USE_ANNOTATION_JFFI by error<PsiElement>()
 
