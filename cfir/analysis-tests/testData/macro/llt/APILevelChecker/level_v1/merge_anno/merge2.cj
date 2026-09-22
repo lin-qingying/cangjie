@@ -84,6 +84,7 @@ public func foo(a: Array<String>): Int64 {
     2
 }
 
+@!APILevel[3]
 public class A {
     public init() {}
     public init(a: Int64) {}
@@ -107,6 +108,7 @@ public class A {
     }
 }
 
+@!APILevel[3]
 public struct B {
     public init() {}
     public init(a: Int64) {}
@@ -129,6 +131,7 @@ public struct B {
     }
 }
 
+@!APILevel[3]
 public enum C {
     A | B(Int64)
 

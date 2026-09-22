@@ -72,14 +72,17 @@ package dep1
 
 import ohos.labels.APILevel
 
+@!APILevel[1]
 public func foo(): Int64 {
     0
 }
 
+@!APILevel[2]
 public func foo(a: Array<Int64>): Int64 {
     1
 }
 
+@!APILevel[3]
 public func foo(a: Array<String>): Int64 {
     2
 }

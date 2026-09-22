@@ -70,6 +70,9 @@ public class APILevel {
 
 package dep
 
+import ohos.labels.APILevel
+
+@!APILevel[12]
 public func foo(a: (Int64, Int64)): (Int64)->Unit {
     return {a: Int64=>}
 }

@@ -82,6 +82,8 @@ public class APILevel {
 
 package dep
 
+import ohos.labels.APILevel
+
 public interface I {
     func foo(): Unit
 }
@@ -89,14 +91,17 @@ public interface I {
 public class A {}
 
 extend A <: I {
+    @!APILevel[since: "12"]
     public func foo() {}
 }
 
 extend ?Int64 <: I {
+    @!APILevel[since: "12"]
     public func foo(): Unit {}
 }
 
 extend Int64 <: I {
+    @!APILevel[since: "12"]
     public func foo(): Unit {}
 }
 
