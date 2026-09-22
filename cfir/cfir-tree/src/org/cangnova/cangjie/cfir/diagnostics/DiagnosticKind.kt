@@ -144,6 +144,11 @@ enum class DiagnosticKind {
     EmptyArrayLiteralTypeUndefined,
 
     /**
+     * 数值类型转换的实参不是数值类型。
+     */
+    NumericConvertMustBeNumeric,
+
+    /**
      * 未归入专门分类的其他诊断。
      */
     Other,

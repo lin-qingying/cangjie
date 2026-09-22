@@ -1643,6 +1643,22 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 不能同时导出两个同名的 private 声明
         val EXPORT_SAME_PRIVATE_DECL by error<PsiElement>()
+
+        // 泛型构造器不支持（官方 sema_forbid_generic_constructor，v1.0.0 原生后端现役）
+        val FORBID_GENERIC_CONSTRUCTOR by error<PsiElement> {
+            parameter<Name>("constructorName")
+        }
+
+        // operator 重载函数不能声明泛型（官方 sema_generic_in_operator_overload）
+        val GENERIC_IN_OPERATOR_OVERLOAD by error<PsiElement>()
+
+        // 抽象类不能实例化（官方 sema_abstract_class_can_not_be_instantiated）
+        val ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED by error<PsiElement> {
+            parameter<Name>("className")
+        }
+
+        // 数值类型转换的实参必须是数值类型（官方 sema_numeric_convert_must_be_numeric）
+        val NUMERIC_CONVERT_MUST_BE_NUMERIC by error<PsiElement>()
     }
 
     /**

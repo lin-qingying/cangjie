@@ -61,6 +61,16 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirNamedFunction) {
         if (!declaration.status.isOperator) return
+
+        // 官方 DeclAttributeChecker（CJNATIVE 分支，:364-369）：operator 重载函数
+        // 不能声明自身类型参数。
+        if (declaration.typeParameters.isNotEmpty()) {
+            reporter.reportOn(
+                source = declaration.functionNameDiagnosticSource() ?: declaration.source,
+                factory = CfirErrors.GENERIC_IN_OPERATOR_OVERLOAD,
+            )
+        }
+
         if (declaration.isSourceDeclaration) {
             checkBuiltinPrimitiveOperatorOverload(declaration)
         }

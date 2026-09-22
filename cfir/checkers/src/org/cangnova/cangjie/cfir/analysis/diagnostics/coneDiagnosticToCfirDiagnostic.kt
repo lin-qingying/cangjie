@@ -2547,6 +2547,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             DiagnosticKind.EmptyArrayLiteralTypeUndefined ->
                 CfirErrors.ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED.on(diagnosticSource, session)
 
+            DiagnosticKind.NumericConvertMustBeNumeric ->
+                CfirErrors.NUMERIC_CONVERT_MUST_BE_NUMERIC.on(source ?: diagnosticSource, session)
+
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 

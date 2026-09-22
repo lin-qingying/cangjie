@@ -410,6 +410,10 @@ object CfirErrors : CjDiagnosticsContainer() {
     val STATIC_VARIABLE_USE_GENERIC_PARAMETER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_STATIC_VARIABLE_USE_GENERIC_PARAMETER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CSTRUCT_CANNOT_IMPL_INTERFACES: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CSTRUCT_CANNOT_IMPL_INTERFACES", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val EXPORT_SAME_PRIVATE_DECL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_EXPORT_SAME_PRIVATE_DECL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val FORBID_GENERIC_CONSTRUCTOR: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_FORBID_GENERIC_CONSTRUCTOR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val GENERIC_IN_OPERATOR_OVERLOAD: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_IN_OPERATOR_OVERLOAD", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val NUMERIC_CONVERT_MUST_BE_NUMERIC: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NUMERIC_CONVERT_MUST_BE_NUMERIC", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // ExtendExtra
     val EXTEND_FUNCTION_CANNOT_OVERRIDDEN: CjDiagnosticFactory2<String, Name> = CjDiagnosticFactory2("CFIR_EXTEND_FUNCTION_CANNOT_OVERRIDDEN", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
