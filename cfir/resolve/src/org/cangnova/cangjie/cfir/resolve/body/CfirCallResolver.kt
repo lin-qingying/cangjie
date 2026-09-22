@@ -57,6 +57,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMappin
 import org.cangnova.cangjie.cfir.resolve.calls.hasUncertainExpectedTypeCompatibilityShape
 import org.cangnova.cangjie.cfir.resolve.calls.prefilterConstructorVisibilityBeforeCreateCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
+import org.cangnova.cangjie.cfir.resolve.calls.CfirMemberAccessFormError
+import org.cangnova.cangjie.cfir.resolve.calls.memberAccessFormError
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
@@ -3069,6 +3071,25 @@ class CfirCallResolver(
             }
         }
 
+        /*
+         * 名字已发现、但所有目标都在候选创建前被访问控制排除时，诊断归属由官方成员发现阶段
+         * 先做的「接收者形态 × 成员 static 属性」过滤决定：形态过滤后目标集为空则报告形态
+         * 专用诊断（官方在 MemberAccess 节点上直接报告并 return，调用重载解析不再运行），
+         * 只有形态过滤后仍有目标时才会退化为调用 no-match。
+         */
+        val dominatingMemberAccessFormError = if (candidates.isEmpty()) {
+            callableLookupOutcomes.dominatingMemberAccessFormError(callInfo, transformer.resolutionContext)
+        } else {
+            null
+        }
+        if (dominatingMemberAccessFormError != null) {
+            return createErrorReferenceForMemberAccessFormError(
+                dominatingMemberAccessFormError,
+                callInfo,
+                source,
+            )
+        }
+
         if (diagnostic != null) {
             return createErrorReferenceForSingleCandidate(
                 candidates.singleOrNull(),
@@ -3961,6 +3982,51 @@ class CfirCallResolver(
                 )
             }
         }
+    }
+
+    /**
+     * 名字已发现但全部目标被访问控制排除时，判定形态过滤是否已经决定了诊断。
+     *
+     * 官方按 `Attribute::STATIC` 逐个擦除目标，只有擦除后目标集为空才报告形态诊断；
+     * 因此这里要求排除结果**全部**携带形态错误——任何一个形态合法的目标存活，都会让诊断
+     * 回落到调用 no-match。
+     */
+    private fun List<CfirCallableLookupOutcome.Excluded>.dominatingMemberAccessFormError(
+        callInfo: CallInfo,
+        context: ResolutionContext,
+    ): CfirMemberAccessFormError? {
+        val formErrors = mapNotNull { outcome ->
+            memberAccessFormError(outcome.symbol, callInfo, callInfo.explicitReceiver, context)
+        }
+        return formErrors.takeIf { it.size == size }?.firstOrNull()
+    }
+
+    /**
+     * 构造成员访问形态错误的错误引用。
+     *
+     * 官方在成员发现阶段报告该诊断，此时没有任何候选能参与 overload 解析；但
+     * [ConeObjectCannotAccessStaticMemberError] / [ConeIllegalAccessNonStaticMemberError]
+     * 以候选作为结构化上下文，因此先用同一 [callInfo] 建立承载候选的错误引用。
+     */
+    private fun createErrorReferenceForMemberAccessFormError(
+        error: CfirMemberAccessFormError,
+        callInfo: CallInfo,
+        source: org.cangnova.cangjie.source.CjSourceElement?,
+    ): CfirNamedReference {
+        val context = transformer.resolutionContext
+        val candidate = components.resolutionStageRunner.createErrorCandidate(
+            callInfo,
+            context,
+            ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("member access form error")),
+        )
+        val diagnostic = when (error) {
+            is CfirMemberAccessFormError.ObjectAccessedStaticMember ->
+                ConeObjectCannotAccessStaticMemberError(error.memberName, candidate)
+
+            is CfirMemberAccessFormError.TypeQualifierAccessedNonStaticMember ->
+                ConeIllegalAccessNonStaticMemberError(error.memberName, candidate)
+        }
+        return CfirErrorReferenceWithCandidate(source, callInfo.name, candidate, diagnostic)
     }
 
     /** 调用候选收集与规约的结果包。 */
