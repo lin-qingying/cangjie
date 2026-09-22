@@ -440,8 +440,6 @@ object CfirErrors : CjDiagnosticsContainer() {
     val ANNOTATION_NON_PUBLIC: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ANNOTATION_NON_PUBLIC", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_CUSTOM_PLACE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ANNOTATION_CUSTOM_PLACE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_ERROR_ARG_NUM: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ANNOTATION_ERROR_ARG_NUM", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
-    val ANNOTATION_ERROR_ARG_RANGE: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ANNOTATION_ERROR_ARG_RANGE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
-    val ANNOTATION_ERROR_OBJECT: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ANNOTATION_ERROR_OBJECT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_USE_ANNOTATION_JFFI: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CANNOT_USE_ANNOTATION_JFFI", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ANNOTATION_NOT_APPLICABLE_JFFI: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_ANNOTATION_NOT_APPLICABLE_JFFI", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 

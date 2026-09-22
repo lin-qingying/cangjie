@@ -1083,8 +1083,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.ANNOTATION_NON_PUBLIC, "'@Annotation' modifying non-'public' class is invisible at runtime")
         map.put(CfirErrors.ANNOTATION_CUSTOM_PLACE, "cannot use custom annotation")
         map.put(CfirErrors.ANNOTATION_ERROR_ARG_NUM, "''{0}'' should have {1} arg", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.ANNOTATION_ERROR_ARG_RANGE, "''{0}'' only supports {1} as arg", RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.ANNOTATION_ERROR_OBJECT, "''{0}'' can only modify {1}", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.CANNOT_USE_ANNOTATION_JFFI, "cannot use annotation here")
         map.put(CfirErrors.ANNOTATION_NOT_APPLICABLE_JFFI, "'@{0}' not applicable to {1}", RENDER_STRING, RENDER_STRING)
 
