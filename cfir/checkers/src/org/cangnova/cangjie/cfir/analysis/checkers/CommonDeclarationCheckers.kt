@@ -149,6 +149,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
         get() = setOf(
             CfirConstructorDelegationChecker,
             CfirConstructorInitializationChecker,
+            CfirGenericConstructorChecker,
         )
 
     /** 对成员声明的通用成员体规则执行的 checker 集合。 */

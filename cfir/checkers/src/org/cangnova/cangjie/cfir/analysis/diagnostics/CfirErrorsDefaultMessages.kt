@@ -1045,6 +1045,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER, "static member cannot depend on generic parameter ''{0}''", RENDER_NAME)
         map.put(CfirErrors.CSTRUCT_CANNOT_IMPL_INTERFACES, "struct with @C cannot implement interfaces")
         map.put(CfirErrors.EXPORT_SAME_PRIVATE_DECL, "currently, it is not possible to export two private declarations with the same name")
+        map.put(CfirErrors.FORBID_GENERIC_CONSTRUCTOR, "generic constructor ''{0}'' is not supported", RENDER_NAME)
+        map.put(CfirErrors.GENERIC_IN_OPERATOR_OVERLOAD, "generic is not allowed in operator overload function")
+        map.put(CfirErrors.ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED, "abstract class ''{0}'' can not be instantiated", RENDER_NAME)
+        map.put(CfirErrors.NUMERIC_CONVERT_MUST_BE_NUMERIC, "the expression for numeric type conversion must have a numeric type")
 
         // ================================================================
         // ExtendExtra

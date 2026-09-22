@@ -112,6 +112,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 //            CfirArgumentTypeMismatchChecker,
             CfirSignedLiteralNumericOverflowChecker,
             CfirConstructorDelegationCallChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAbstractClassInstantiationChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
             CfirImmutableValueCannotAccessMutableFunctionChecker,
             CfirUnsafeFunctionInvokeChecker,

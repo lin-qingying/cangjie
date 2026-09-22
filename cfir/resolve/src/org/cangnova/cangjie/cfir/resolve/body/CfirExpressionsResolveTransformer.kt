@@ -5276,7 +5276,9 @@ open class CfirExpressionsResolveTransformer(
         val synthesizedType = if (targetPrimitiveType.canConvertFrom(normalizedArgumentType)) {
             targetPrimitiveType
         } else {
-            errorType("numeric conversion requires numeric operand")
+            // 官方 SynNumTypeConvExpr（TypeConvExpr.cpp:97-99）：转换失败报
+            // sema_numeric_convert_must_be_numeric，并把表达式类型置为 invalid。
+            ConeErrorType(ConeSimpleDiagnostic("numeric conversion requires numeric operand", DiagnosticKind.NumericConvertMustBeNumeric))
         }
 
         typeConversion.replaceConeTypeOrNull(synthesizedType)
