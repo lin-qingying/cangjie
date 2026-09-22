@@ -941,6 +941,30 @@ data class ConeNotMemberOfError(
 }
 
 /**
+ * 通过 enum 变量（实例）访问 enum 构造器。
+ *
+ * 对齐 C++ `sema_invalid_enum_member_access`
+ * （`NameReferenceExpr.cpp` 成员访问检查：target 带 ENUM_CONSTRUCTOR 属性即非法）。
+ * enum 构造器只能经 enum 类型名限定访问，实例接收者一律非法。
+ *
+ * @property memberName 被访问的 enum 构造器名。
+ * @property typeName 接收者 enum 类型名。
+ */
+data class ConeInvalidEnumMemberAccessError(
+    /**
+     * 被访问的 enum 构造器名。
+     */
+    val memberName: Name,
+    /**
+     * 接收者 enum 类型名。
+     */
+    val typeName: Name,
+) : ConeDiagnostic {
+    /** 面向普通诊断渲染的失败原因。 */
+    override val reason: String get() = "base of member access can not be enum variable"
+}
+
+/**
  * 成员未导入。
  *
  * 对齐 C++ sema_member_not_imported。

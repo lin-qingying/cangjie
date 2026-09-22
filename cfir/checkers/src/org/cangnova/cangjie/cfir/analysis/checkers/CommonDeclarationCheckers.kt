@@ -47,7 +47,11 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
 
     /** 对模式变量声明执行的 checker 集合。 */
     override val patternVariableCheckers: Set<CfirPatternVariableChecker>
-        get() = setOf(CfirPatternVariableInitializerTypeMismatchChecker, CfirTuplePatternDeclarationChecker)
+        get() = setOf(
+            CfirPatternVariableInitializerTypeMismatchChecker,
+            CfirTuplePatternDeclarationChecker,
+            CfirPatternDeclarationIrrefutabilityChecker,
+        )
 
     /** 对 callable 声明通用语义执行的 checker 集合。 */
     override val callableDeclarationCheckers: Set<CfirCallableDeclarationChecker>

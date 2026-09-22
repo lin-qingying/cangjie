@@ -26,30 +26,12 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.isIterableForForIn
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 
 /**
@@ -90,7 +72,7 @@ object CfirForInPatternChecker : CfirBasicExpressionChecker() {
         }
 
         // 不可反驳性检查不依赖元素类型（官方 probe 10：迭代对象无效时仍报告）。
-        if (!forIn.variable.pattern.isIrrefutable(elementType, context)) {
+        if (!forIn.variable.pattern.isIrrefutablePattern(elementType, context)) {
             reporter.reportOn(
                 source = forIn.source,
                 factory = CfirErrors.FORIN_PATTERN_MUST_BE_IRREFUTABLE,
@@ -99,49 +81,3 @@ object CfirForInPatternChecker : CfirBasicExpressionChecker() {
     }
 }
 
-/**
- * 官方 `IsIrrefutablePattern` 的本地等价实现：
- * - wildcard / var（裸名）恒不可反驳；
- * - const / type / expression / or 恒可反驳；
- * - tuple 要求所有元素按各自类型不可反驳；
- * - enum 要求期望类型确为 enum、枚举声明只有唯一构造器且所有实参不可反驳。
- *
- * 期望类型为 null 或错误类型时 enum 一律视为可反驳（官方 probe 10）。
- */
-private fun CfirPattern.isIrrefutable(
-    expectedType: ConeCangJieType?,
-    context: CheckerContext,
-): Boolean = when (this) {
-    is CfirWildcardPattern,
-    is CfirVarOrEnumPattern,
-    -> true
-
-    is CfirBindingPattern -> {
-        val declaredType = (typeRef as? CfirResolvedTypeRef)?.coneType
-        nestedPattern?.isIrrefutable(declaredType ?: expectedType, context) ?: true
-    }
-
-    is CfirTypePattern,
-    is CfirConstPattern,
-    is CfirExpressionPattern,
-    is CfirOrPattern,
-    -> false
-
-    is CfirTuplePattern -> {
-        val tupleType = expectedType as? ConeTupleType
-        elements.withIndex().all { (index, element) ->
-            val elementType = tupleType?.elementTypes?.getOrNull(index) ?: expectedType
-            element.isIrrefutable(elementType, context)
-        }
-    }
-
-    is CfirEnumPattern -> {
-        val enumType = expectedType?.expandedPatternEnumType(context.session)
-        val enumDeclaration = enumType?.classId?.let { classId ->
-            context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir as? CfirEnum
-        }
-        enumDeclaration != null &&
-            enumDeclaration.declarations.filterIsInstance<CfirEnumConstructor>().size == 1 &&
-            arguments.all { argument -> argument.isIrrefutable(expectedType, context) }
-    }
-}

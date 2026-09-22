@@ -3285,9 +3285,8 @@ class CfirCallResolver(
         return if (callInfo.callKind == CallKind.Function && constructor.valueParameters.isEmpty()) {
             ConeNoMatchingInvokeOperatorError(constructorSymbol.name, receiverType)
         } else {
-            ConeNotMemberOfError(
+            ConeInvalidEnumMemberAccessError(
                 memberName = constructorSymbol.name,
-                kind = if (callInfo.callKind == CallKind.Function) "method" else "member",
                 typeName = receiverType.classIdOrPrimitiveClassId?.shortClassName ?: constructorSymbol.name,
             )
         }

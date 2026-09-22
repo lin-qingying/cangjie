@@ -1051,6 +1051,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.NUMERIC_CONVERT_MUST_BE_NUMERIC, "the expression for numeric type conversion must have a numeric type")
         map.put(CfirErrors.INVALID_COALESCING, "type of left operand does not support coalescing operation. coalescing is only valid for 'Option'")
         map.put(CfirErrors.INVALID_TUPLE_FIELD_CTYPE, "tuple member mustn't be struct with @C")
+        map.put(CfirErrors.INVALID_ENUM_MEMBER_ACCESS, "base of member access can not be enum variable")
+        map.put(CfirErrors.PATTERN_CAN_NOT_BE_ASSIGNED, "the pattern isn't irrefutable pattern and it can not be initialized")
 
         // ================================================================
         // ExtendExtra
