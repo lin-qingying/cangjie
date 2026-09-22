@@ -2086,6 +2086,19 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
 /**
  * `[]` / `[]=` 在 resolve 中都会先降成 operator 调用；
  * 这里把针对 `*operator_get` / `*operator_set` 的 unresolved 收束回语法级诊断。
+ *
+ * 官方把两类失败分在两条独立路径上，判定依据是**失败的脱糖调用是哪一个**，而不是源码形状：
+ * - 读路径 `a[i]`（`*operator_get`）由 `TypeCheckExpr/SubscriptExpr.cpp::ChkSubscriptExpr`
+ *   在 `DiagSuppressor` 未捕获到错误时报告 `sema_invalid_subscript_expr`；
+ * - 写路径 `a[i] = v`（`*operator_set`）由 `TypeCheckExpr/AssignExpr.cpp::DiagnoseForSubscriptAssignExpr`
+ *   报告 `sema_cannot_assign_to_subscript`。
+ *
+ * CFIR 用 `ConeUnresolvedNameError` 的 `name` 承载同一事实（`GET` / `SET` 由 desugar
+ * 显式写入），因此这里只按 `name` 分支。曾用于补充判断的
+ * `isAssignmentLeftHandSide()` / `isAssignmentExpression()` 是**仅 PSI 可用**的源码形状
+ * 启发式（light-tree 路径的 source 没有 PSI，两个谓词恒为 false），既让 LLT 与 PSI 两条
+ * 路径对同一构造给出不同诊断，也会把 `arr[0].b = 4` 这类「读形式下标出现在成员赋值左侧」
+ * 误判为写失败。
  */
 private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
     source: CjSourceElement?,
@@ -2096,10 +2109,7 @@ private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
     val diagnosticSource = source ?: callOrAssignmentSource ?: return null
     val receiver = receiverType ?: ConeErrorType(ConeSimpleDiagnostic("unknown subscript receiver type"))
 
-    return if (name == OperatorNameConventions.SET ||
-        diagnosticSource.isAssignmentLeftHandSide() ||
-        callOrAssignmentSource.isAssignmentExpression()
-    ) {
+    return if (name == OperatorNameConventions.SET) {
         CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT.on(diagnosticSource, session)
     } else {
         CfirErrors.INVALID_SUBSCRIPT_EXPR.on(
@@ -3757,28 +3767,6 @@ private fun CjExpression.receiverNameElementOrNull(): PsiElement? = when (this) 
         else -> null
     }
     else -> null
-}
-
-/**
- * 判断 source 是否表示赋值表达式。
- */
-private fun CjSourceElement?.isAssignmentExpression(): Boolean {
-    val psi = this?.psi
-    return psi is CjBinaryExpression && CjPsiUtil.isAssignment(psi)
-}
-
-/**
- * 判断 source 是否位于赋值表达式左侧。
- */
-private fun CjSourceElement?.isAssignmentLeftHandSide(): Boolean {
-    val psiExpression = this?.psi as? CjExpression ?: return false
-    if (psiExpression.getAssignmentByLHS() != null) return true
-
-    val sourceRange = psiExpression.textRange ?: return false
-    val assignment = PsiTreeUtil.getParentOfType(psiExpression, CjBinaryExpression::class.java, true) ?: return false
-    if (!CjPsiUtil.isAssignment(assignment)) return false
-    val lhsRange = assignment.left?.textRange ?: return false
-    return lhsRange.startOffset <= sourceRange.startOffset && sourceRange.endOffset <= lhsRange.endOffset
 }
 
 /**

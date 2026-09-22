@@ -89,6 +89,7 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
+import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -5773,6 +5774,37 @@ open class CfirExpressionsResolveTransformer(
         qualifierScopeOrNull(session, components.scopeSession) != null
 
     /**
+     * 下标脱糖调用的诊断归一化，对应官方 `ChkSubscriptExpr` 的 `DiagSuppressor` 语义。
+     *
+     * 官方把 `a[i]` 脱糖成携带 `sourceExpr` 的 `a.[](i)`（`Desugar/DesugarInTypeCheck.cpp`），
+     * 挂在调用表达式上的诊断因 `Node::ShouldDiagnose()` 为 false 被静默丢弃
+     * （`Diags.cpp` 的 `DiagWrongNumberOfArguments`、`TypeCheckCall.cpp` 的 `DiagnoseForCall`
+     * 都以 `ShouldDiagnose(true)` / `sourceExpr` 为前置）；随后 `ChkSubscriptExpr`
+     * （`TypeCheckExpr/SubscriptExpr.cpp:48-79`）在 `!ds.HasError()` 时报告
+     * `sema_invalid_subscript_expr`。锚在**实参**节点上的诊断（索引类型不匹配由
+     * `CheckCallCompatible` 报在实参上）不被抑制，`HasError()` 成立，下标诊断反而被抑制。
+     *
+     * CFIR 用 `ConeUnresolvedNameError(operator = "[]")` 承载「下标无法解析」这一结构化事实
+     * （`mapSubscriptOperatorDiagnostic` 只认它），因此这里只把**调用级**映射失败
+     * （`INAPPLICABLE_ARGUMENTS_MAPPING_ERROR`：参数个数/参数映射错误）归一化成该载体；
+     * `INAPPLICABLE`（索引类型不匹配）等实参锚定失败保持原诊断。
+     */
+    private fun ConeDiagnostic.normalizedSubscriptGetDiagnostic(
+        receiverType: ConeCangJieType,
+        argumentTypes: List<ConeCangJieType>,
+    ): ConeDiagnostic {
+        val isCallLevelMappingFailure = this is ConeInapplicableCandidateError &&
+            applicability == CandidateApplicability.INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
+        if (!isCallLevelMappingFailure) return this
+        return ConeUnresolvedNameError(
+            name = OperatorNameConventions.GET,
+            operator = "[]",
+            receiverType = receiverType,
+            argumentTypes = argumentTypes,
+        )
+    }
+
+    /**
      * 解析普通下标访问的结果类型。
      *
      * 优先匹配内建 `[]` 操作符；没有内建匹配时构造 `get` 调用并走统一调用解析与调用完成流程。
@@ -5804,12 +5836,12 @@ open class CfirExpressionsResolveTransformer(
 
         val resolvedCall = callResolver.resolveCallAndSelectCandidate(getCall, data)
         (resolvedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.let { diagnostic ->
-            return ConeErrorType(diagnostic)
+            return ConeErrorType(diagnostic.normalizedSubscriptGetDiagnostic(receiverType, argTypes))
         }
 
         val completedCall = components.callCompleter.completeCall(resolvedCall, data)
         (completedCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic?.let { diagnostic ->
-            return ConeErrorType(diagnostic)
+            return ConeErrorType(diagnostic.normalizedSubscriptGetDiagnostic(receiverType, argTypes))
         }
 
         subscriptExpression.replaceResolvedGetCall(completedCall)
