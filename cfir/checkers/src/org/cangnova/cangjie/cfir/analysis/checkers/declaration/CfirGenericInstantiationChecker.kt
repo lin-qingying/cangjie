@@ -29,6 +29,8 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
+import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -339,6 +341,22 @@ private class GenericInstantiationAnalyzer(
 
         override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
             if (resolvedTypeRef is CfirErrorTypeRef || resolvedTypeRef.coneType is ConeErrorType) return
+            // 官方 `StructInheritanceChecker::CheckInstDupFuncsRecursively` 对
+            // `!Ty::IsTyCorrect(node.ty) || HAS_BROKEN` 的节点不做实例化检查：父类型种类
+            // 非法（如 struct 实现非 interface，已由 CfirSupertypesChecker 报告
+            // TYPE_IMPLEMENT_NON_INTERFACE）时不注册为有效继承关系，其上的实例化冲突 /
+            // 无限实例化检查全部不运行（cjc 实测 `struct A<T> <: A<A<T>> & I<T>` 只报
+            // type_implement_non_interface，不报 generic_infinite_instantiation）。
+            val isDeclaredSupertypeRef = genericOwnerStack.lastOrNull()
+                ?.superTypeRefs
+                ?.any { it === resolvedTypeRef } == true
+            if (isDeclaredSupertypeRef &&
+                resolvedTypeRef.classifyDeclaredSupertype(checkerContext.session) is
+                DeclaredSupertypeClassification.InvalidTargetKind
+            ) {
+                super.visitResolvedTypeRef(resolvedTypeRef)
+                return
+            }
             val source = resolvedTypeRef.source ?: resolvedTypeRef.delegatedTypeRef?.source
             val checkInstantiationConflicts = !resolvedTypeRef.isDeclarationSupertypeForwarding()
             val checkStaticCompleteness = genericOwnerStack.lastOrNull()?.isTypeAlias == true

@@ -9848,3 +9848,16 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - fixtures covered: `CfirAnalysisLLTTestGenerated$DesugarErrorReport#testSubscribeInBinary`、`CfirAnalysisLLTPsiTestGenerated$DesugarErrorReport#testSubscribeInBinary`（组内 operator_overload / primary_ctor 不受影响，全组绿）。
 - verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' :cfir:analysis-tests:test --continue --console=plain`（全量）。
 - verification outcome: 全量两次。第一次（含 VArray 管线化尝试）94 失败，其中 4 条为本次修复引入的 `Varray testVarrayIndex01/06`（双入口）回归 → 回退 VArray 部分。第二次全量 90 失败，与修复前基线失败集**完全一致**（diff 仅差 BUILD 行），0 新增回归；`DesugarErrorReport` 双入口 `failures=0`。剩余 90 条为并行会话工作区的既有失败，不在本问题类型内。
+
+## 非法父类型的实例化触发点仍参与无限实例化检查，多报 GENERIC_INFINITE_INSTANTIATION
+
+- problem type: Inheritance / Generics（FuzzInvalidParse#testInvalidStructInheritance，双入口）。`struct A<T> <: A<A<T>> & I<T>` CFIR 多报 `GENERIC_INFINITE_INSTANTIATION`（父类型 `A` 上）；官方不报。
+- official Cangjie evidence（cjc 1.0.5/1.0.0 双 SDK 一致）：原 fixture 只报 `sema_type_implement_non_interface`(L14 C1→C2) + `sema_mismatched_types`(L19 C12→C13)；对照组 probe2（父类型改为合法接口 `I<A<T>> & I<T>`，同样自引用）0 error。官方 `StructInheritanceChecker::CheckInstDupFuncsRecursively`（`InheritanceChecker/InstantiatedChecker.cpp:188`）对 `!Ty::IsTyCorrect(node.ty) || HAS_BROKEN` 的节点不做实例化检查——父类型种类非法（struct 实现非 interface）时不注册为有效继承关系，无限实例化检查不运行。
+- root cause: `CfirGenericInstantiationChecker` 的触发点收集器对声明父类型引用统一收集实例化触发点；`A<A<T>>` 非纯转发（类型实参不是 owner 的类型参数），于是进入冲突检查并命中 `hasCyclicInstantiation`。CFIR 缺少官方的「父类型种类非法 → 该父类型不参与实例化检查」门。
+- Kotlin counterpart files consulted: 无需新对位（沿用既有 `classifyDeclaredSupertype` 结构化分类）。
+- CFIR owner files changed: `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirGenericInstantiationChecker.kt`：`visitResolvedTypeRef` 中，若该 typeRef 是当前 owner 的声明父类型且 `classifyDeclaredSupertype` 判为 `InvalidTargetKind`，跳过触发点收集（仍递归子节点）。
+- fixture correction（用户裁决）：`invalid_struct_inheritance.cj` 的 `a.test(a)` 实参标记按实际输出改为 `ARGUMENT_TYPE_MISMATCH`（官方为 `sema_mismatched_types`/TYPE_MISMATCH；ARGUMENT_TYPE_MISMATCH 与 TYPE_MISMATCH 的取舍是工程既定约定，按用户指示保留 CFIR 现状并修期望）。`TYPE_IMPLEMENT_NON_INTERFACE` 锚 `s`（声明首字符）与官方 cjc JSON 主范围一致，不动。
+- repair principle: 实例化检查只对"实际生效的继承关系"运行——父类型种类非法这一根错误已由 CfirSupertypesChecker 报告，其上的实例化触发点按官方 HAS_BROKEN 门整体跳过，而非逐个抑制诊断。
+- fixtures covered: `CfirAnalysisLLTTestGenerated$FuzzInvalidParse#testInvalidStructInheritance`、`CfirAnalysisLLTPsiTestGenerated$FuzzInvalidParse#testInvalidStructInheritance`（组内 invalid_try_with_resource2 本就绿）。
+- verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' :cfir:analysis-tests:test --continue --console=plain`（全量）。
+- verification outcome: 全量 88 失败，与上一基线（90）相比**净减 2**（恰为本 fixture 双入口），diff 无任何其它差异，0 新增回归。
