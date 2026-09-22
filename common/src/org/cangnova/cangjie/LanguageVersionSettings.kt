@@ -187,6 +187,13 @@ enum class LanguageFeature(
     /** OpenHarmony APILevel `since: String` parameter introduced after the v1.0.0 schema. */
     ApiLevelSinceParameter(LanguageVersion.CANGJIE_1_0_5, ApiVersion.CANGJIE_1_0_5),
 
+    /**
+     * `sema_unused_import` 检查（v1.0.2 起）。官方分界以版本矩阵为准：v1.0.0 双 SDK 实测
+     * 零诊断，v1.0.5 起报 `unused import`；开源快照（external/cangjie_compiler）无该诊断，
+     * 无法从源码进一步收窄边界，故采信官方 v1.0.2 首现记录。
+     */
+    UnusedImportCheck(LanguageVersion.CANGJIE_1_0_2),
+
     /** Official AST/metadata-only `@Java` identity, present in the 1.0.0 baseline. */
     JavaBuiltinAnnotations(LanguageVersion.CANGJIE_1_0_0),
 
