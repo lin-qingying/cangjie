@@ -9543,3 +9543,153 @@ std `extend Option <: Equatable`，名义检查不可用。
   - 提交：`148f4943f`（可访问性范围 + funcdecl fixture）、`bfbd76e5f`（类体作用域遮蔽 + bugfix1/
     macro fixture）。提交态用字节级备份切换后复跑 Lookup+Function：`317 tests completed, 2 failed`
     （编译通过、无新增失败），随后按哈希校验恢复工作区。
+
+## 2026-09-22：Record/AccessControl——成员访问形态先于访问控制（问题族 A）
+
+- problem type: Resolve/Diagnostics——成员访问的**接收者形态**与声明 `static` 属性不一致时，
+  官方专用诊断必须**先于**可见性过滤成立。
+- fixtures: `llt/record/record_access_control.cj`（LLT + LLTPsi）。
+- 差异（改动前）：`A.l()`（private 实例成员，类型名访问）实际报 `NO_MATCH_FUNCTION_DECLARATION_FOR_CALL`、
+  期望 `ILLEGAL_ACCESS_NON_STATIC_MEMBER`；`A().o()`（private static 成员，对象访问）实际报
+  `NO_MATCH_...`、期望 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER`。同一 fixture 内 public 成员形态
+  （`A.a` / `A.m()` / `A().c` / `A().n()`）此前已正确。
+- root cause: 私有成员在 tower 发现阶段以 `CfirLookupDisposition.EXCLUDE_CALLABLE` 被排除，
+  **不创建 Candidate**（`TowerLevelHandler.consumeCallableCandidate`），而形态判定
+  `objectAccessedStaticMember` / `typeQualifierAccessedNonStaticMember` 只存在于候选检查阶段
+  `CfirCheckDispatchReceiver`——发现阶段的排除让该 stage 永不运行，最终落到
+  `callableLookupOutcomes` 驱动的一般 no-match。插桩实证：
+  `PROBE_EXCL name=o kind=Function hasExplicitRecv=true static=true`、`name=l static=false`。
+- official Cangjie evidence:
+  - `external/cangjie_compiler/src/Sema/TypeCheckReference.cpp:456-463`（类型名访问：擦除所有非
+    STATIC/GLOBAL/ENUM_CONSTRUCTOR 目标，空则 `sema_illegal_access_non_static_member`）、
+    `:512-526`（对象访问：擦除 STATIC 目标，空则 `sema_object_cannot_access_static_member`）；
+    访问控制 `GetAccessibleDecls` 在 `:533,:540`，位于形态过滤**之后**。
+  - `src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:674-680` `InferStaticAccess` 诊断后即 return，
+    `ma.ty` 保持 invalid、`ma.target` 为空 ⇒ 调用重载解析不运行；`:947-1016` 对象路径同构。
+  - cjc 1.0.0 与 1.0.5 **双 SDK 一致**实测（4 个最小探针）：
+    `A.l()`→`sema_illegal_access_non_static_member`(7:5)、`A().o()`→
+    `sema_object_cannot_access_static_member`(7:5)、`A().l()`/`A.o()`→
+    `sema_no_match_function_declaration_for_call`(锚成员名)。fixture 20 个标记与 cjc
+    "20 errors generated" 数量一致（控制台只印 8 条，其余被 cjc 同位置去重）。
+- Kotlin counterpart files consulted: `external/kotlin/.../calls/candidate/CallKind.kt:29-76`
+  （`CheckVisibility` 与 `CheckDispatchReceiver` 同为候选 stage，可见性**保留**候选并降级
+  applicability）、`calls/stages/ResolutionStages.kt:864-896`（`VisibilityError` 走
+  `yieldDiagnostic` 而非丢弃）、`candidate/CandidateCollector.kt:62-92`（注释明示保留未成功候选以
+  让后续 stage 继续运行）、`FirCallResolver.kt:351-361`（`fullyProcessCandidate` 对未成功候选仍
+  跑完剩余 stage）。官方 Cangjie 的语义是形态过滤**前置于**访问控制，Kotlin 仅提供「事实应有
+  单一所有者、两处消费者共用」的结构参照。
+- CFIR owner files changed:
+  - 新增 `cfir/resolve/src/.../resolve/calls/CfirMemberAccessForm.kt`：`CfirMemberAccessFormError`
+    （`ObjectAccessedStaticMember` / `TypeQualifierAccessedNonStaticMember`）+
+    `memberAccessFormError(symbol, callInfo, receiverExpression, context)` +
+    `isTypeQualifierReceiver` / `isMemberSyntaxOrSubscriptAccess`——形态规则的**唯一所有者**。
+  - `stages/CfirCheckDispatchReceiver.kt`：删掉两份私有谓词（`objectAccessedStaticMember`、
+    `typeQualifierAccessedNonStaticMember`、`isMemberSyntaxOrSubscriptAccess`）与对应的
+    `CfirFunctionCallOrigin`/`CfirEnumConstructorSymbol`/`Name`/`OperatorNameConventions` 导入，
+    改为读共享判定；`hasTypeQualifierDispatchReceiver` 转调 `isTypeQualifierReceiver`。
+  - `body/CfirCallResolver.kt`：`candidates.isEmpty()` 且全部排除结果都携带形态错误时，产出
+    `ConeObjectCannotAccessStaticMemberError` / `ConeIllegalAccessNonStaticMemberError`
+    （`dominatingMemberAccessFormError` + `createErrorReferenceForMemberAccessFormError`）。
+  - 消费 `callInfo.explicitReceiver`（源码语法形态）而非 receiver atom，与官方 `InferMemberAccess`
+    的 `isStaticAccessByName` 同源。
+- repair principle: 形态判定是**成员发现阶段**的事实，而 CFIR 只把它实现成候选 stage；发现阶段的
+  `EXCLUDE_CALLABLE` 直接抹掉了这条事实。修复方式是把规则抽成单一所有者，并让「名字已发现但无候选」
+  的诊断决策读取同一判定——形态过滤后目标集为空 ⇒ 报告形态专用诊断，否则才退化为调用 no-match；
+  该收束条件（要求排除结果**全部**带形态错误）与官方「擦除后目标集为空才报」逐字对应，不是 fixture 特判。
+- fixtures covered: `llt/record/record_access_control.cj`（LLT + LLTPsi 全绿）。同族扫描：`A().b`
+  /`A().d` 的 `INVALID_ACCESS_CONTROL`、`A().l()`/`A.o()` 的 `NO_MATCH` 均由本改动一并保持在官方口径。
+- verification command(s) and outcome:
+  - 定向：`:cfir:analysis-tests:test --tests '*TestGenerated$Record*record_access_control*'
+    --tests '*TestGenerated$Record.testRecordAccessControl'` → `record_access_control` 家族与
+    `testRecordAccessControl` 由 FAILED 转 BUILD SUCCESSFUL（改动前 4 failed）。
+  - 切片：`--tests '*TestGenerated$Record*'` → **266 tests, 0 failed**（改动前 4 failed）。
+  - 全量：`:cfir:analysis-tests:test --continue` → **8670 tests, 102 failed, 308 skipped**；
+    与 `build/fails_ledger_20260922-linkage-fix.txt`（108 条）逐条 diff：**新增 0 条、消失 6 条**
+    （见下「归因」）。ledger 落 `build/fails_ledger_20260922-record-fix.txt`。
+  - 归因：消失的 6 条中 4 条为本问题族（`Record > testRecordAccessControl` /
+    `testRecordVardeclCheck` × LLT/PSI，已由改动前后的定向切片直接证实）；另 2 条
+    `Lookup > testBugfix1`（LLT/PSI）**不归因于本轮**——该 fixture 属 `ACCESSIBILITY_ERROR`
+   （非公开类型出现在 public 声明面），由并行会话未提交的
+    `checkers/.../declaration/CfirGeneralSemanticsChecker.kt` 改动修掉，与形态规则无关。
+- remaining risks / 遗留: ① 未把形态判定前移到 `TowerLevelHandler`（发现门）——当前实现对
+  `callInfo.explicitReceiver` 求值，当某符号被 `useDispatchReceiverAsExtensionReceiver` 判定为
+  extension receiver 时 receiver atom 为空而语法接收者非空；已核对该分支只可能出现在
+  extend 成员上，而 extend 成员不可能是 static，两条判定都不会改变，故未引入差异。
+  ② `:cfir:resolve:test` 本轮**未能执行**：`compileTestKotlin` 在 HEAD 即失败（
+  `cfir/resolve/test/.../ExtendTestFixtures.kt:226` 缺 `featuresDirective`/`conditionalCompilationFailures`、
+  `calls/CallResolutionTestFixtures.kt:242` 缺 `hasVariableLenArg`；这两个测试文件相对 HEAD 未修改，
+  属既有破损，非本轮引入）。③ `CfirCheckVisibility` 对 `EXCLUDE_CALLABLE` 的
+  `error(...)` 不变量未改动（形态错误不走候选，故仍成立）。
+
+## 2026-09-22：Record/VardeclCheck——下标脱糖诊断归一化（问题族 B）
+
+- problem type: Resolve/Diagnostics——下标 `a[i]` 脱糖成 `get` 调用后失败时，官方把**调用级**
+  诊断抑制掉并改报下标专用诊断。
+- fixtures: `llt/record/record_vardecl_check.cj`（LLT + LLTPsi）。
+- 差异（改动前）：`arr[0]`（`FooArray` 的 `[]` 声明为 2 个显式形参）实际报
+  `WRONG_NUMBER_OF_ARGUMENTS`、期望 `INVALID_SUBSCRIPT_EXPR`；锚点范围两者都是 `arr[0]`（6 列）。
+- root cause（插入探针定案，勿再猜）：`CfirExpressionsResolveTransformer.resolveSubscriptExpressionType`
+  里 `callResolver.resolveCallAndSelectCandidate(getCall, data)` 返回
+  `ConeInapplicableCandidateError(INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, candidate)`，
+  `candidate.diagnostics = [WrongNumberOfArguments]`；该诊断被
+  `coneDiagnosticToCfirDiagnostic` 直接映射成 `WRONG_NUMBER_OF_ARGUMENTS`。即 CFIR 只在
+  `operator == "[]"` 的 `ConeUnresolvedNameError` 上产出下标专用诊断，调用级失败走不到那里。
+  同族第二个缺陷：`mapSubscriptOperatorDiagnostic` 除 `name == SET` 外还叠加了
+  `diagnosticSource.isAssignmentLeftHandSide()` / `callOrAssignmentSource.isAssignmentExpression()`
+  两条**仅 PSI 可用**的源码形状启发式（light-tree 路径 source 无 PSI，恒 false），
+  导致同一个 fixture 在 LLT 报 `INVALID_SUBSCRIPT_EXPR`、PSI 报 `CANNOT_ASSIGN_TO_SUBSCRIPT`。
+- official Cangjie evidence:
+  - 脱糖与抑制：`src/Sema/Desugar/DesugarInTypeCheck.cpp:351-379` 把 `a[i]` 降成携带
+    `sourceExpr = &se` 的 `a.[](i)`；`src/AST/Node.cpp:416-420` `ShouldDiagnose` 对带
+    `sourceExpr` 的 Expr 返回 false；`src/Sema/Diags.cpp:297` `DiagWrongNumberOfArguments`、
+    `src/Sema/TypeCheckCall.cpp:2593-2596` `DiagnoseForCall` 均以此为前置 return。
+  - 专用诊断：`src/Sema/TypeCheckExpr/SubscriptExpr.cpp:21-83` `ChkSubscriptExpr` 用
+    `DiagSuppressor` 包裹脱糖检查，`!ds.HasError()`（`DiagSuppressor.cpp:33-37`）时报告
+    `sema_invalid_subscript_expr`（`:72-79`）。
+  - 写路径独立：`src/Sema/TypeCheckExpr/AssignExpr.cpp:217-250` `DiagnoseForSubscriptAssignExpr`
+    报 `sema_cannot_assign_to_subscript`。
+  - cjc 1.0.0/1.0.5 双 SDK 一致实测（4 个最小探针）：1 形参 `[](index: Int64)` + `arr[0]` → 无错；
+  2 形参 + `arr[arr, 0]`（2 个索引）→ 无错（**arity 计显式形参**）；2 形参 + `arr[0]` →
+  `sema_invalid_subscript_expr`；1 形参 `[](index: String)` + `arr[i]`（`i: Int64`）→
+  `sema_mismatched_types` 锚在**实参**（11:9），说明实参锚定诊断不被抑制。
+- Kotlin counterpart files consulted: `raw-fir/psi2fir/.../PsiRawFirBuilder.kt:3685-3705`
+  （`a[i]` 在 raw-FIR 构建期即 desugar 成 `get`/`set` 调用，callee 带
+  `ArrayAccessNameReference` 假 source）、`FirConventionFunctionCallChecker.kt:74-86`
+  （仅在名字完全未解析时报 `NO_GET_METHOD`/`NO_SET_METHOD`）、
+  `coneDiagnosticToFirDiagnostic.kt:220-227` 与测试
+  `operatorsOverloading/InconsistentGetSet.kt:42-44`（`get` 存在但 arity 不匹配时**回落通用调用诊断**）。
+  Kotlin 与本仓库在「arity 不匹配是否专有化」上**不一致**，故此处不采纳 Kotlin 行为，只采纳其
+  「下标语法标记挂在调用点」的结构结论；语义一律以官方 cjc 为准。
+- CFIR owner files changed:
+  - `resolve/body/CfirExpressionsResolveTransformer.kt`：新增
+    `ConeDiagnostic.normalizedSubscriptGetDiagnostic(receiverType, argumentTypes)`——仅当
+    `ConeInapplicableCandidateError.applicability == INAPPLICABLE_ARGUMENTS_MAPPING_ERROR`
+    （文档定义即「参数无法映射到形参：个数不匹配/缺参/多参」，对应官方被抑制的
+    `DiagWrongNumberOfArguments` 一族）时归一化为
+    `ConeUnresolvedNameError(name = GET, operator = "[]", ...)`；`INAPPLICABLE`（索引类型不匹配）
+    等实参锚定失败原样返回。两处失败分支（resolve 与 complete）各接一次。
+  - `checkers/.../diagnostics/coneDiagnosticToCfirDiagnostic.kt`：`mapSubscriptOperatorDiagnostic`
+    改为**只**按 `name == OperatorNameConventions.SET` 分写/读，删除两条 PSI-only 形状启发式函数
+    `isAssignmentExpression` / `isAssignmentLeftHandSide`（同文件内无其它使用点）。
+- repair principle: 官方把两类下标失败分在**两条独立脱糖路径**上（读 `*operator_get` → 
+  `ChkSubscriptExpr`；写 `*operator_set` → `DiagnoseForSubscriptAssignExpr`），CFIR 的
+  `ConeUnresolvedNameError.name` 已经是同一事实的载体，因此判定只认它；「调用级失败被抑制、
+  实参锚定失败保留」的区分也落在同一所有者（desugar 处归一化，而非散在诊断映射层）。
+  删除的启发式既制造 LLT/PSI 分歧，也把 `arr[0].b = 4` 这类「读形式下标位于成员赋值左侧」
+  误判为写失败——它们与官方结论不一致，保留即为语义降级。
+- fixtures covered: `llt/record/record_vardecl_check.cj`（LLT + LLTPsi 全绿）；同族全量扫描
+  （`CANNOT_ASSIGN_TO_SUBSCRIPT` 7 个 fixture / `INVALID_SUBSCRIPT_EXPR` 5 个 fixture）：
+  `array/array_invalid_index2`、`assign/multipleAssignExpr/case05`、`operator_overload/err_subscript_assign_00`、
+  `index_assign_00`、`index_left_value_error`、`diagnostics{,2}/operator/subscriptSet`、
+  `diagnostics{,2}/operator/subscriptGet`、`ErrMsgs/subscript_02`、`tuple/tuple3`
+  ——7 个 `CANNOT_ASSIGN_*` 均为写形式（`a[1] = 4`、`arr[1..2] += ...`、析构赋值目标），
+  由 set 路径的 `name == SET` 承载，删除启发式后仍成立。
+- verification command(s) and outcome:
+  - 切片：`--tests '*TestGenerated$Record*'` → **266 tests, 0 failed**（改动前 4 failed；
+    首次实现后仅剩 PSI 侧 `CANNOT_ASSIGN_TO_SUBSCRIPT`，归一化判定后双路径一致）。
+  - 全量：`:cfir:analysis-tests:test --continue` → **8670 tests, 102 failed, 308 skipped**，
+    相对基线 108 条 **新增 0 条**（同族 12 个 fixture 无一转红）。
+- remaining risks / 遗留: ① `resolveSubscriptSetAssignment`（写路径）沿用既有「直接合成 SET 载体」
+  策略，未按本次的「实参锚定失败保留」再细分（该策略有既有 fixture 覆盖，本轮不动）。
+  ② 下标 `set` 侧同样存在 `INAPPLICABLE_ARGUMENTS_MAPPING_ERROR` 与
+  `INAPPLICABLE`（索引类型不匹配）的区分问题，但与本次期望无关，未纳入。
