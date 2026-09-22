@@ -3561,18 +3561,31 @@ Flagged while gathering evidence for the extend upper-bound recursion problem ty
 - verification command: `.\gradlew.bat :cfir:analysis-tests:test --continue --tests '...$ExtendsImplementsInterfaceDuplicated' --tests '...$Extend' --tests '...$Class' --tests '...$Interface'`（PSI 与 LightTree 各一份）
 - verification outcome: 重跑 218 个测试类，失败由 190 降至 188；`testExtendInheritanceCircle3()` 两条路径均转绿，**新增回归 0**。基线取自同日全量运行快照 `cfir/analysis-tests/FAILURE_INVENTORY_2026-08-10.txt`。
 
-## OPEN（已取证、未修复）：继承环恢复态下漏报声明处 `SUPER_TYPES_DUPLICATE`
+## 继承环断边仍参与重复父接口闭包（已修复并验证）
 
-- problem type: Diagnostics / Inheritance。存在继承环时，官方会在**声明**里对「代入后重复的父接口」补报一条 `sema_inherit_duplicate_interface`，CFIR 未复刻。
-- official Cangjie evidence（`cjc` 1.0.5）：
-  - 探针 p5（`interface I3<Q> <: I0<Q> & I0<Int32>`，无环）与 p8（`I1`/`I2`/`I3` 链，无环）：官方**均不报**重复。
-  - 探针 p7（同样结构但构成继承环）：官方在 `I3` 声明的第二个 `I2<Int32>` 上补报 `sema_inherit_duplicate_interface`。
-  - 结论：该诊断只在**继承环恢复态**下出现，属官方错误恢复的次生产物，而非独立语言规则。
-- CFIR 当前输出（多报项已于上一条修复后消除，PSI 与 LightTree 一致）：
-  `<!INHERITANCE_CYCLE!>interface I1<T><!> <: I3<T> {}` … `var i3: <!SUPER_TYPES_DUPLICATE!>I3<Int32><!>`。
-  即环诊断 ✅、实例化处重复 ✅、**仅剩**声明处 L8 重复漏报 ❌。
-- 未修复原因：复刻一条只在环恢复态下才出现的次生诊断，是否符合本项目 IDE 诊断取向需要单独决策；在环已被 `INHERITANCE_CYCLE` 明确标记的前提下，再叠加一条声明级重复诊断可能属于噪声。建议与用户确认后再定。
-- fixtures covered（待决策后验证）：`llt/extends_implements_interface_duplicated/interface_duplicated_13.cj`（PSI 与 LightTree 两条路径）。
+- problem type: Diagnostics / Inheritance。存在继承环时，官方会在**声明**的父类型列表里对「需要代入类型实参才与另一条父边重合」的接口补报一条 `sema_inherit_duplicate_interface`，CFIR 漏报。
+- root cause: 共享遍历 `CfirDuplicateSuperInterfaceUtils.findInstantiatedDuplicateSuperInterface` 用 `DeclaredSupertypeClassification.ordinarySupertypeTypeOrNull()` 选边，而该投影的合约是「仅合法声明父边能够提供继承成员」——成员作用域语义。CFIR 把继承环断开的边表示成 `LoopError`，于是该投影在环恢复态下把整支剪掉。本例进入点是 `I2<Int32>`（目标 I2），闭包必须经 `I2 → I1 →（I1 的断环边）I3 → I2` 才能重合，剪掉断环边后无法到达，故漏报；使用点 `var i3: I3<Int32>` 的重合发生在 I3 自身父类型列表内、不经断环边，因此此前能正常报出。
+- official Cangjie evidence:
+  - `cjc --diagnostic-format=json` 四版本一致（1.0.0 / 1.0.5 / 0.53.13 / 0.53.18；1.0.0 需覆盖 `CANGJIE_HOME`）：`interface I1<T> <: I3<T>` / `interface I2<K> <: I1<K>` / `interface I3<Q> <: I2<Q> & I2<Int32>` + `main` 报告 `sema_inheritance_cycle`(2:1) + `sema_inherit_duplicate_interface`(4:28，声明处 `I2<Int32>`) + `sema_inherit_duplicate_interface`(5:25，使用点 `I3<Int32>`)。**四版本均为 `sema_inherit_duplicate_interface`**，不存在历史 `sema_extend_duplicate_interface` 口径——fixture 里的 `EXTEND_DUPLICATE_INTERFACE` 不是旧口径遗留。
+  - 机制（`external/cangjie_compiler`，pinned v1.0.0）：`PreCheck.cpp:1289-1322` 的继承环 DFS **只维护 `checkFlag` 并报诊断，从不改写 `inheritedTypes[*]->ty`**；`TypeChecker.cpp:2558-2661` 的 `GetDupSuperInterface` / `GetDupInterfaceRecursively` 遍历的正是这些已解析声明类型，仅以 `Ty::IsTyCorrect` 过滤（排除未解析、泛型实参个数错误、目标非 interface），环的终止完全由 `passedClassLikeDecls` 承担。据此确认「断环边在重复检查中仍按它声明的 nominal 目标参与遍历」。
+  - 探针矩阵（`cjc` 1.0.5）：`B_cycle_nouse`（同构造、无使用点）仍在声明处报 → 该条不依赖使用点；`J_cycle_nodup`（环存在但无重合）只报环 → 不得无条件对环内声明补报；`G_loopedge_owner_dup` 的重复报在**断环边所在声明**的父类型列表上 → 同一机制双向生效。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirSupertypesChecker.kt`（`SUPERTYPE_APPEARS_TWICE` 同样读**声明的** `superTypeRefs` 并把诊断锚在 `superTypeRef.source`，即重复父类型检查是「声明父边消费者 + 父类型引用定位」；本次 CFIR 的投影选择与锚点结构与之对齐）。Kotlin 侧不提供 Cangjie「代入后才重合」的语义，语义一律以官方 `cjc` / `external/cangjie_compiler` 为准。
+- CFIR owner files changed:
+  - `cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/DeclaredSupertypeClassification.kt`：新增投影 `duplicateSuperInterfaceTraversalTypeOrNull()` = `ValidNominal.type ∪ LoopError.delegatedNominalType`，与官方 `Ty::IsTyCorrect` 过滤集合一致（未解析、泛型实参个数错误、目标非 interface 一律排除）。
+  - `cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDuplicateSuperInterfaceUtils.kt`：`findInstantiatedDuplicateSuperInterface` 改用该投影，并补 KDoc 记录官方遍历语义。
+  - `ordinarySupertypeTypeOrNull()` 的其它消费点（`CfirTypeAwareSupertypeProviderImpl`、`CfirSupertypesResolution`）语义不变。
+- repair principle: 断环边的名义目标在官方侧从未丢失（环只是诊断），所以重复父接口闭包必须用「声明边」投影而不是「成员作用域」投影；把该选择补成 `DeclaredSupertypeClassification` 上的显式投影，让两个调用方（声明级 `CfirSupertypesChecker` 与实例化触发的 `CfirGenericInstantiationChecker`）同时受益，而不是针对某个 fixture 放宽错误类型判定。
+- fixtures covered:
+  - `llt/extends_implements_interface_duplicated/interface_duplicated_13.cj`（PSI + LightTree，修复目标）。
+  - fixture correction（同一文件，两条均有官方证据）：诊断名 `EXTEND_DUPLICATE_INTERFACE` → `SUPER_TYPES_DUPLICATE`（四版本 cjc 均为 `sema_inherit_duplicate_interface`；`EXTEND_DUPLICATE_INTERFACE` 在本项目是 `extend` 声明专用名，同族 `_01/_02/_04/_05/_07/_08` 早已统一为 `SUPER_TYPES_DUPLICATE`）；范围 `I` / `I`（cjc 窄锚单字符）→ `I2<Int32>` / `I3<Int32>`（Diagnostic Range Policy：父类型引用展宽为完整类型 token，与同族 `_01/_02/_05/_08` 写法一致）。
+  - 同族全量扫描：整个 corpus 中同时含 `INHERITANCE_CYCLE` 与 `SUPER_TYPES_DUPLICATE`/`EXTEND_DUPLICATE_INTERFACE` 期望的 fixture 仅此 1 个。
+- verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:\code\intellij\cangjie' :cfir:analysis-tests:test --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$ExtendsImplementsInterfaceDuplicated' --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$ExtendsImplementsInterfaceDuplicated' --continue --console=plain`
+- verification outcome: `BUILD SUCCESSFUL`；该组两条路径各 12 例全部通过（修复前各 1 例失败）。
+- 修复后 CFIR 实际输出（与官方逐条对齐，范围按项目 policy 展宽）：
+  `<!INHERITANCE_CYCLE!>interface I1<T><!> <: I3<T> {}` / `interface I3<Q> <: I2<Q> & <!SUPER_TYPES_DUPLICATE!>I2<Int32><!> {}` / `var i3: <!SUPER_TYPES_DUPLICATE!>I3<Int32><!>`。
+- regression command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:\code\intellij\cangjie' :cfir:analysis-tests:test --continue --console=plain`
+- regression outcome: `8670 tests completed, 100 failed, 308 skipped`；与同日全量基线 `cfir/analysis-tests/build/fails_ledger_20260922-record-fix.txt`（102 条）按控制台 FAILED 行做集合差：**新增 0 条**，消除恰好 2 条（`CfirAnalysisLLTTestGenerated` / `CfirAnalysisLLTPsiTestGenerated` 的 `ExtendsImplementsInterfaceDuplicated > testInterfaceDuplicated13`）。
+- commit: `74eff6398`。
 
 ## BLOCKED（已取证、非前端职责）：`UNREACHABLE_PATTERN` 缺失的 22 例属 CHIR 阶段诊断
 
