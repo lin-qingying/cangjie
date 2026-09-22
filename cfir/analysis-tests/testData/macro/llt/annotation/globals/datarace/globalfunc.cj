@@ -3,6 +3,6 @@
 // datarace testcase, run only under tsan
 
 
-import a.*
+import <!UNUSED_IMPORT!>a.*<!>
 
 main() {}

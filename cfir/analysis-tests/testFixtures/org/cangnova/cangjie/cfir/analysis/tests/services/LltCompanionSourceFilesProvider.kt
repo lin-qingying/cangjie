@@ -239,8 +239,13 @@ class LltCompanionSourceFilesProvider(
                 .filter { candidate ->
                     val dedicatedDependency =
                         candidate.file.name == "${testDataFile.nameWithoutExtension}_dep.cj"
+                    // macro package 是独立编译产物（官方经 --compile-macro 后始终可被
+                    // import 解析），只要包名匹配 import 即装配，不要求名字被正文引用。
+                    val macroPackageDependency =
+                        candidate.isMacroPackage && candidate.packageName in importedPackages
                     candidate.packageName in importedPackages &&
                         (dedicatedDependency ||
+                            macroPackageDependency ||
                             (!candidate.file.name.endsWith("_dep.cj") &&
                                 candidate.file.declaresOneOf(referencedNames)))
                 }
@@ -260,19 +265,33 @@ class LltCompanionSourceFilesProvider(
             directory.walkTopDown()
                 .filter { file ->
                     file.isFile &&
-                            file.isPackageCompanionFile() &&
+                            (file.isPackageCompanionFile() || file.isMacroPackageFile()) &&
                             !FILE_DIRECTIVE.containsMatchIn(file.readText(Charsets.UTF_8))
                 }
                 .mapNotNull { file ->
-                    val packageName = PACKAGE_DIRECTIVE.find(file.readText(Charsets.UTF_8))
-                        ?.groupValues
-                        ?.get(1)
+                    val fileText = file.readText(Charsets.UTF_8)
+                    val packageName = PACKAGE_DIRECTIVE.find(fileText)?.groupValues?.get(1)
+                        ?: MACRO_PACKAGE_DIRECTIVE.find(fileText)?.groupValues?.get(1)
                         ?: return@mapNotNull null
-                    PackageCompanionCandidate(file, packageName)
+                    PackageCompanionCandidate(
+                        file = file,
+                        packageName = packageName,
+                        isMacroPackage = file.isMacroPackageFile(),
+                    )
                 }
                 .toList()
         }
     }
+
+    /**
+     * 判断文件是否声明 `macro package`。
+     *
+     * 官方 LLT 的宏包源（如 `macro package define_10004`）经 --compile-macro 编译后
+     * 始终是可 import 的依赖包，因此宏包源文件按内容识别，不受 pkg.cj/_dep.cj 命名
+     * 约定限制。
+     */
+    private fun File.isMacroPackageFile(): Boolean =
+        MACRO_PACKAGE_DIRECTIVE.containsMatchIn(readText(Charsets.UTF_8))
 
     /**
      * 从 import 声明提取所有可能的包名前缀。
@@ -543,6 +562,8 @@ class LltCompanionSourceFilesProvider(
         val file: File,
         /** 源文件中的真实 package 名。 */
         val packageName: String,
+        /** 是否为 `macro package` 声明文件（独立编译的宏包依赖）。 */
+        val isMacroPackage: Boolean = false,
     )
 
     companion object {
@@ -566,6 +587,9 @@ class LltCompanionSourceFilesProvider(
 
         /** 匹配源文件顶层 package 声明，用于同包源文件的编译单元归并。 */
         private val PACKAGE_DIRECTIVE = Regex("""(?m)^[ \t]*package[ \t]+([A-Za-z_][A-Za-z0-9_.]*)[ \t]*$""")
+
+        /** `macro package X` 声明；宏包源文件按内容识别（官方独立 --compile-macro 编译）。 */
+        private val MACRO_PACKAGE_DIRECTIVE = Regex("""(?m)^[ \t]*macro[ \t]+package[ \t]+([A-Za-z_][A-Za-z0-9_.]*)[ \t]*$""")
 
         /** 匹配源文件中的 import 声明。 */
         private val IMPORT_DIRECTIVE = Regex(
