@@ -9477,3 +9477,69 @@ std `extend Option <: Equatable`，名义检查不可用。
 - 遗留（登记）：① 官方 note（后续声明）不实现——诊断基建无 note 家族；② V1 不含
   `AnalyzeExternalLinkageBySrcExportedDecl`（src-exported 声明体引用传播）——泛型函数体内引用
   private 类的形状语料未覆盖；③ 会话级 memoization 待诊断面外消费方出现时再建独立 component。
+
+## 2026-09-22：Lookup / 类型位置名称遮蔽（not_a_type）与可访问性范围
+
+- problem type: Lookup（类型位置的简单名解析）+ Diagnostics（可访问性范围）。
+- root cause: 三段叠加。
+  ① TYPES 阶段成员签名解析的 scope 链里没有类体作用域（实测只有
+  `CfirBuiltinPrimitiveScope | CfirFileDeclaredTopLevelScope | CfirPackageMemberScope |
+  CfirExplicitStarImportingScope`），"同名非类型成员遮蔽外层类型名"无从被看见；
+  ② 补上类体作用域后遮蔽命中，但 `resolveQualifiedClassLike` 若不在遮蔽时就地短路，
+  `classLikeCandidates` 会按 ClassId 经 provider 把外层同名类型找回来，遮蔽结论被抹掉；
+  ③ `CfirErrorTypeRef` 是 `CfirResolvedTypeRef` 的子类，body 阶段
+  `resolveExplicitTypeRefIfNeeded` 判定"已解析 + coneType 含 ConeErrorType + 有
+  delegatedTypeRef"后用 body 阶段的 scope 链重新解析，而该链同样缺类体作用域，
+  于是解析成功、错误类型与诊断一起被静默替换（插桩：`[PROBE-BUILD]` 4 处都构造了
+  `ConeNotATypeError` 错误类型引用，`[PROBE-ERRREF]` 一次都看不到它们）。
+  另有独立的范围问题：`accessibilityDiagnosticSource()` 对值声明落回 `source`（整条声明）。
+- official Cangjie evidence: cjc 1.0.5 实测 `llt/lookup/bugfix1.cj` → 5 条
+  （4×`sema_not_a_type` + 1×`sema_accessibility`）。规则见
+  `external/cangjie_compiler/src/Sema/PreCheck.cpp:375-406`（`GetTyFromASTType`：统一命名空间取
+  `allTargets`，筛出 type decl 得 `targets`；`targets` 空而 `allTargets` 非空 → `sema_not_a_type`）、
+  `src/Sema/LookUpImpl.cpp:563`（`GetDeclsByName` 不区分值/类型）、`:513-519` 与 `:585-588`
+  （命中 VarDecl 即停止向外查找）、`:500-505` 的 `IsNodeInVarDecl`（跳过声明自身，故
+  `var Foo: Foo` 落回外层类型不报错）。范围依据 `src/Sema/Diags.cpp:512`
+  `MakeRangeForDeclIdentifier`（VarDecl → `decl.identifier`，`Diags.cpp:134`）。
+  对照探针（cjc）：`var Object = 0` + `a: Object` → not_a_type（文件作用域也遮蔽）；
+  形参 `T` 使函数体内 `T` 不再是类型；成员函数同名同样遮蔽；而**继承成员不遮蔽**
+  （`class D <: B { var y: Foo }` 在 `open class B { var Foo }` 存在时官方 0 诊断），
+  因此遮蔽判定不得把继承来源混进来。`funcdecl.cj` 官方 `sema_undeclared_identifier`
+  锚 1 字符（`a`），按项目 Diagnostic Range Policy 应展开为完整 token `a1`。
+- Kotlin counterpart files consulted: 未查阅 Kotlin 对位实现——本轮框架对齐依据是本仓既有的
+  scope 分层（`CfirScope` 按名通道 + `CfirTypeCandidateCollector` 首个可见 scope 胜出）与官方
+  `LookUpImpl` 的作用域链结构；语义一律来自 cjc 与 `external/cangjie_compiler`。
+- CFIR owner files changed: `cfir/cfir-tree/src/.../scopes/CfirScope.kt`（新增
+  `processOwnNonTypeBindingsByName`，声明-only、默认空实现）、
+  `cfir/providers/src/.../scopes/impl/{CfirClassDeclaredMemberScope,CfirClassUseSiteMemberScope,CfirLocalScopeImpl}.kt`、
+  `cfir/resolve/src/.../CfirTypeResolutionConfiguration.kt`（`withEnclosingClassBodyScopes` 唯一 owner）、
+  `cfir/resolve/src/.../CfirTypeCandidateCollector.kt`（`lookupSimpleTypeName` 三态 + `IsNodeInVarDecl` 等价豁免）、
+  `cfir/resolve/src/.../CfirTypeResolver.kt`（遮蔽短路）、
+  `cfir/resolve/src/.../transformers/CfirTypeResolveTransformer.kt`、
+  `cfir/resolve/src/.../body/{CfirDeclarationsResolveTransformer,CfirAbstractBodyResolveTransformer}.kt`；
+  `cfir/checkers/src/.../declaration/CfirGeneralSemanticsChecker.kt`（`accessibilityDiagnosticSource`
+  对 `CfirFieldVariable`/`CfirProperty` 复用既有 name source）。
+- repair principle: 把"类 like 的成员签名在其类体作用域内解析"抽成
+  `withEnclosingClassBodyScopes(...)` 这一个 owner，并在**所有**构造类型解析 scope 链的阶段入口接线
+  （TYPES 的成员声明头 + body 的两处），使遮蔽规则在整条解析链上一致；同时让类型名解析成为
+  遮蔽感知的三态查询、在遮蔽时就地短路，因此覆盖"任何同名非类型成员遮蔽任何外层类型名"这一整类，
+  而不是只修 `Job`/`Schedule` 两个 fixture。范围问题同样收敛到唯一的 source 选择函数。
+- fixtures covered: `llt/lookup/bugfix1.cj`（LLT + PSI）、`llt/lookup/funcdecl.cj`（LLT + PSI）；
+  范围/语义守卫：`llt/function/internal_type_func_return_01.cj`、`llt/assign/assign_007.cj`、
+  `llt/class/class_redef_{19,21}.cj`。未转绿（登记）：`macro/llt/lookup/multi_files_private_01`
+  （Macro + MacroPsi `$Pkg`）——其 fixture 类型位置标记已按 cjc 纠正为 `UNDECLARED_TYPE_NAME`，
+  CFIR 侧剩"值侧候选收集未复用同一可访问性判定、把跨文件 private type 别名当已找到
+  → 退化成 `ConeFunctionCallExpectedError`（`INVALID_CALLED_OBJECT`）"未修。
+- verification command(s) and outcome:
+  - `--tests '*LLTTestGenerated$Lookup.testBugfix1' --tests '*LLTPsiTestGenerated$Lookup.testBugfix1'`
+    → BUILD SUCCESSFUL（提交态复跑）。
+  - 切片 `Lookup + Function/Assign/Class`：`1307 tests completed, 2 failed, 7 skipped`，
+    仅剩 macro `MultiFilesPrivate01$Pkg`。
+  - 全量 `:cfir:analysis-tests:test --continue --console=plain`：`8670 tests completed, 106 failed,
+    308 skipped`（BUILD FAILED，模块整体仍有既有族）；与基线 ledger
+    `build/fails_ledger_20260922-linkage-fix.txt`（108 条）逐条 diff：**新增 0 条、消失 2 条**
+    = `Lookup > testBugfix1`（LLT + PSI）。失败族分布：Macro 两 suite 各 43、ErrMsgs 10、
+    Diagnostics2 6、Record 4、其余单点；Function/Assign/Class/Accessibility 族零出现。
+  - 提交：`148f4943f`（可访问性范围 + funcdecl fixture）、`bfbd76e5f`（类体作用域遮蔽 + bugfix1/
+    macro fixture）。提交态用字节级备份切换后复跑 Lookup+Function：`317 tests completed, 2 failed`
+    （编译通过、无新增失败），随后按哈希校验恢复工作区。
