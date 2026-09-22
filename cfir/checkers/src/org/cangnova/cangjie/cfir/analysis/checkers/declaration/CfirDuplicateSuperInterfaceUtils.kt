@@ -10,7 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubsti
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
-import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.providers.duplicateSuperInterfaceTraversalTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -49,6 +49,10 @@ private const val DUPLICATE_SUPER_INTERFACE_TYPE_KEY_MAX_DEPTH = 64
  *
  * 官方 `GetDupSuperInterface` 在每个声明层维护当前层已见接口集合，同时共享
  * `passedClassLikeDecls`，因此能区分“同一父接口实例内部重复”和“不同父接口分支交叉重复”。
+ *
+ * 遍历走 [duplicateSuperInterfaceTraversalTypeOrNull] 投影：官方在 AST 上用
+ * `decl.inheritedTypes` 的已解析类型遍历，继承环只加诊断注解、不改写这些类型，所以环上被断开的
+ * 边仍沿其声明目标参与闭包；用成员作用域投影会在环恢复态下整支剪掉，漏报官方确实会报的重复。
  */
 context(context: CheckerContext)
 internal fun CfirClassLikeDeclaration.findInstantiatedDuplicateSuperInterface(
@@ -63,7 +67,7 @@ internal fun CfirClassLikeDeclaration.findInstantiatedDuplicateSuperInterface(
     for (superTypeRef in superTypeRefs) {
         val supertype = superTypeRef
             .classifyDeclaredSupertype(context.session)
-            .ordinarySupertypeTypeOrNull()
+            .duplicateSuperInterfaceTraversalTypeOrNull()
             ?: continue
         collectInstantiatedSuperInterfaceInCurrentDeclaration(
             type = substitutor.substituteOrSelf(supertype),

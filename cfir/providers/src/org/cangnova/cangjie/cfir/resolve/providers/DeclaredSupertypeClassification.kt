@@ -186,6 +186,26 @@ fun DeclaredSupertypeClassification.ordinarySupertypeTypeOrNull(): ConeClassLike
     (this as? DeclaredSupertypeClassification.ValidNominal)?.type
 
 /**
+ * 返回官方重复父接口闭包遍历使用的声明父边。
+ *
+ * 官方 `GetDupSuperInterface` / `GetDupInterfaceRecursively` 遍历的是 AST 上已解析的父类型
+ * （仅以 `Ty::IsTyCorrect` 过滤），继承环只产出 `sema_inheritance_cycle` 诊断、**不改写**这些类型
+ * （`PreCheck.cpp` 的 DFS 只维护 `checkFlag`），因此环上被断开的边仍按它声明的 nominal 目标继续参与
+ * 闭包遍历；终止只由 `passedClassLikeDecls` 负责。
+ *
+ * 本项目把断环边表示为 [DeclaredSupertypeClassification.LoopError]，其
+ * [DeclaredSupertypeClassification.LoopError.delegatedNominalType] 即官方在该边看到的目标类型。
+ * 成员作用域、类型关系等消费者必须继续使用 [ordinarySupertypeTypeOrNull]；只有重复父接口闭包遍历
+ * 使用本投影。
+ */
+fun DeclaredSupertypeClassification.duplicateSuperInterfaceTraversalTypeOrNull(): ConeClassLikeType? =
+    when (this) {
+        is DeclaredSupertypeClassification.ValidNominal -> type
+        is DeclaredSupertypeClassification.LoopError -> delegatedNominalType
+        else -> null
+    }
+
+/**
  * 返回继承环 DFS 能够追踪的声明目标。
  *
  * 泛型实参数量错误仍保留官方继承环检查所需的 class owner，但该投影不得被类型系统、
