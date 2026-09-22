@@ -45,7 +45,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirStaticContextThisUsageChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
-            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionImportChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirIfAvailableExpressionChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThisAsExpressionInMutFuncChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThisCaptureInMutFuncChecker,
@@ -125,6 +125,10 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutArgumentChecker,
             CfirInoutSemanticsChecker,
         )
+
+    /** 对 `??` 右操作数在目标类型下的匹配规则执行的 checker 集合。 */
+    override val binaryOpCheckers: Set<CfirBinaryOpChecker>
+        get() = setOf(CfirCoalescingTypeMismatchChecker)
 
     /** 对限定访问、类型实参、可见性相关语义和特殊成员访问执行的 checker 集合。 */
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>

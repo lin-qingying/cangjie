@@ -59,3 +59,20 @@ class ConeUnreportedDuplicateDiagnostic(val original: ConeDiagnostic) :
      */
     override val reason: String get() = original.reason
 }
+
+/**
+ * `??` 的右操作数未满足 `realTgtTy`（官方 `ChkCoalescingExpr` 的 InvalidTy 分支，
+ * `Sema/TypeCheckExpr/BinaryExpr.cpp:1136-1140`）。
+ *
+ * resolve 用它把整个 `??` 表达式置为错误类型并携带 [targetType]（即官方的 `realTgtTy`），
+ * 使外层运算符不再派生诊断；`realTgtTy` 只在 resolve 上下文里可得，因此由 resolve 判定、
+ * checker 依据该标记把诊断锚到右操作数上——cone -> CFIR 映射对它不产出诊断，
+ * 避免在整条 `??` 上重复报告右操作数的失败。
+ *
+ * @property reason 面向调试的原因文本。
+ * @property targetType 官方 `realTgtTy`：右操作数被检查所用的目标类型。
+ */
+class ConeCoalescingRightOperandMismatch(
+    override val reason: String,
+    val targetType: ConeCangJieType,
+) : ConeDiagnostic

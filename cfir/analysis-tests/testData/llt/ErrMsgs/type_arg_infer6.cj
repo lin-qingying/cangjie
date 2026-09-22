@@ -8,5 +8,5 @@ func f<T>(x: T) where T <: Comparable<T> {
 class C {}
 
 main() {
-    <!UNABLE_TO_INFER_GENERIC_FUNC!>f(C())<!>
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(C())
 }

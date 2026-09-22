@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.functionTypeForLambdaShape
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.resolve.tupleLiteralTargetTypeOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -138,8 +140,39 @@ internal fun checkTargetTypedExpression(
             }
         }
         is CfirSynchronizedExpression -> checkTargetTypedBlockTail(unwrapped.body, expectedType)
+        is CfirTupleLiteral -> checkTargetTypedTupleLiteral(unwrapped, expectedType)
         else -> TargetTypedCheckOutcome.NotHandled
     }
+}
+
+/**
+ * 检查元组字面量在其目标类型下的匹配。
+ *
+ * 对齐官方 `ChkTupleLit`（`Sema/TypeCheckExpr/TupleLit.cpp`）：目标可解出元组类型且元数一致时
+ * 逐元素按对应目标元素类型检查，首个报告失败的元素即停（官方在元素检查失败后立即返回），
+ * 元素诊断由元素表达式自身承担：字面量走共享的 `CANNOT_CONVERT_LITERAL` 分类，其余走元素级
+ * `TYPE_MISMATCH`；目标不是元组、或元数不一致时，官方在**整条元组字面量**上报告
+ * `mismatched_types`（`TupleLit.cpp:25/34`），这里同样落在元组字面量自身的叶子检查上。
+ */
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkTargetTypedTupleLiteral(
+    tupleLiteral: CfirTupleLiteral,
+    expectedType: ConeCangJieType,
+): TargetTypedCheckOutcome {
+    val targetTupleType = expectedType.tupleLiteralTargetTypeOrNull(context.session)
+    if (targetTupleType != null && targetTupleType.elementTypes.size == tupleLiteral.elements.size) {
+        var reported = false
+        for ((index, element) in tupleLiteral.elements.withIndex()) {
+            val elementOutcome = checkTargetTypedTailExpression(element, targetTupleType.elementTypes[index])
+            if (elementOutcome is TargetTypedCheckOutcome.Handled) {
+                reported = reported || elementOutcome.reported
+                if (elementOutcome.reported) break
+            }
+        }
+        return TargetTypedCheckOutcome.Handled(reported)
+    }
+
+    return checkTargetTypedLeaf(tupleLiteral, expectedType)
 }
 
 /**
@@ -192,6 +225,7 @@ internal fun checkTargetTypedTailExpression(
             }
         }
         is CfirSynchronizedExpression -> checkTargetTypedBlockTail(unwrapped.body, expectedType)
+        is CfirTupleLiteral -> checkTargetTypedTupleLiteral(unwrapped, expectedType)
         else -> checkTargetTypedLeaf(unwrapped, expectedType)
     }
 }

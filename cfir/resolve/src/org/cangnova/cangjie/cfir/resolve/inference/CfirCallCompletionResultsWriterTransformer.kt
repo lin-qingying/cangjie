@@ -67,6 +67,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.noArgEnumConstructorTargetType
 import org.cangnova.cangjie.cfir.resolve.calls.shouldUseExpectedTypeForEnumConstructor
 import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
+import org.cangnova.cangjie.cfir.resolve.coalescingTargetType
+import org.cangnova.cangjie.cfir.resolve.isDefiniteCoalescingRightMismatch
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
@@ -1275,6 +1277,46 @@ class CfirCallCompletionResultsWriterTransformer(
             rangeExpression.replaceConeTypeOrNull(expectedRangeType)
         }
         return rangeExpression
+    }
+
+    /**
+     * 写回二元表达式，并按 completion 阶段才可得的实参期望类型重估 `??` 的右操作数分支。
+     *
+     * body resolve 阶段调用实参还没有形参期望类型（与 K2 一致：实参期望类型由 call completion
+     * 阶段下发），`ChkCoalescingExpr` 的 `realTgtTy = tgtTy ?: 元素类型` 在那里只能退化为元素类型，
+     * 可能记下 `ConeCoalescingRightOperandMismatch` 标记。completion 拿到 `ExpectedArgumentType`
+     * 后按同一判据（`isDefiniteCoalescingRightMismatch`）重估：仍不匹配则把标记目标更新为当前
+     * 目标类型；匹配则摘除标记、恢复为该目标类型（如 `test(v ?? "fail")`，`v: ?Int64`、形参
+     * `ToString`，官方 0 诊断）。非实参位置没有期望类型可下发，保持 body resolve 的判定。
+     */
+    override fun transformBinaryOp(binaryOp: CfirBinaryOp, data: ExpectedArgumentType?): CfirExpression {
+        data?.argumentReplacements?.get(binaryOp)?.let { replacement ->
+            return replacement.transformSingle(this, data)
+        }
+        if (binaryOp.kind == CfirBinaryOpKind.COALESCING) {
+            reevaluateCoalescingRightOperandMarker(binaryOp, data?.getExpectedType(binaryOp))
+        }
+        binaryOp.transformChildren(this, data)
+        return binaryOp
+    }
+
+    private fun reevaluateCoalescingRightOperandMarker(binaryOp: CfirBinaryOp, expectedType: ConeCangJieType?) {
+        if (expectedType == null) return
+        val leftElementType = binaryOp.left.coneTypeOrNull?.optionElementType ?: return
+        val targetType = coalescingTargetType(leftElementType, expectedType, session)
+        val rightType = binaryOp.right.coneTypeOrNull
+        if (rightType != null && isDefiniteCoalescingRightMismatch(rightType, targetType, session)) {
+            binaryOp.replaceConeTypeOrNull(
+                ConeErrorType(
+                    ConeCoalescingRightOperandMismatch("coalescing right operand type mismatch", targetType),
+                    delegatedType = targetType,
+                ),
+            )
+            return
+        }
+        val currentMarker = (binaryOp.coneTypeOrNull as? ConeErrorType)?.diagnostic
+            as? ConeCoalescingRightOperandMismatch ?: return
+        binaryOp.replaceConeTypeOrNull(targetType)
     }
 
     /**

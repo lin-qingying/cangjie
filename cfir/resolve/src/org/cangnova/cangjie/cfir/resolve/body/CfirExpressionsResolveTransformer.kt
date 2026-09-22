@@ -4204,7 +4204,7 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         tupleLiteral.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
-        val expectedTupleType = data.expectedTypeOrNull?.tupleLiteralTargetTypeOrNull()
+        val expectedTupleType = data.expectedTypeOrNull?.tupleLiteralTargetTypeOrNull(session)
         val expectedElementTypes = expectedTupleType?.elementTypes
         val elements = tupleLiteral.elements as? MutableList<CfirExpression>
             ?: error("CfirTupleLiteral elements must be mutable during body resolve")
@@ -4251,22 +4251,6 @@ open class CfirExpressionsResolveTransformer(
         !outerMode.forceFullCompletion && (this is CfirArrayLiteral || this is CfirTupleLiteral) ->
             ResolutionMode.ContextDependent
         else -> ResolutionMode.ContextIndependent
-    }
-
-    /**
-     * 返回官方 `ChkTupleLit` 使用的 tuple 目标类型。
-     *
-     * `ChkTupleLit` 会先拆掉外层 Option，再把拆出的 tuple 类型逐元素下推给字面量；
-     * 普通已定型 tuple 值的子类型关系则由 [AbstractTypeChecker] 另行按
-     * `implicitBoxed=false` 检查，不能把两条语义混在一起。
-     */
-    private fun ConeCangJieType.tupleLiteralTargetTypeOrNull(): ConeTupleType? {
-        val expanded = fullyExpandedType()
-        if (expanded is ConeTupleType) return expanded
-        if (expanded is ConeClassLikeType && expanded.isOption) {
-            return expanded.typeArguments.singleOrNull()?.type as? ConeTupleType
-        }
-        return null
     }
 
     /**
@@ -5161,8 +5145,18 @@ open class CfirExpressionsResolveTransformer(
             return errorType("coalescing left operand must be Option")
         }
 
-        val resultType = coalescingResultType(leftElementType, data.expectedTypeOrNull)
+        val resultType = coalescingTargetType(leftElementType, data.expectedTypeOrNull, session)
         binaryOp.transformRight(transformer, withExpectedType(resultType))
+        // 官方 `ChkCoalescingExpr`：右操作数检查失败时整个 `??` 为 InvalidTy，外层运算符不再派生诊断
+        // （`DiagnoseForBinaryExpr` 遇到 ill-typed operand 直接下钻返回）；右操作数自身的诊断由
+        // `CfirCoalescingTypeMismatchChecker` 锚在该操作数上报告，这里只承担类型毒化。
+        val rightType = binaryOp.right.coneTypeOrNull
+        if (rightType != null && isDefiniteCoalescingRightMismatch(rightType, resultType, session)) {
+            return ConeErrorType(
+                ConeCoalescingRightOperandMismatch("coalescing right operand type mismatch", resultType),
+                delegatedType = resultType,
+            )
+        }
         return resultType
     }
 
@@ -5209,24 +5203,6 @@ open class CfirExpressionsResolveTransformer(
             typeArguments = listOf(elementType),
         )
         components.context.inferenceSession.addSubtypeConstraintIfCompatible(currentType, optionType)
-    }
-
-    /**
-     * 根据左操作数 Option 元素类型和外层 expected type 选择 `??` 的结果类型。
-     *
-     * 当元素类型可作为 expected type 使用时返回 expected type，以保持上下文驱动的类型收窄；
-     * 否则保留左侧元素类型。
-     */
-    private fun coalescingResultType(
-        leftElementType: ConeCangJieType,
-        expectedType: ConeCangJieType?,
-    ): ConeCangJieType {
-        if (expectedType == null) return leftElementType
-        return if (AbstractTypeChecker.isSubtypeOf(session.typeContext, leftElementType, expectedType) == true) {
-            expectedType
-        } else {
-            leftElementType
-        }
     }
 
     /**
@@ -6244,8 +6220,12 @@ open class CfirExpressionsResolveTransformer(
     private fun checkSynchronizedMonitor(synchronizedExpression: CfirSynchronizedExpression) {
         val monitorType = synchronizedExpression.monitor.coneTypeOrNull ?: return
         if (monitorType is ConeErrorType) return
+        // 官方 `ChkSyncExpr` 取锁声明用的是 `importManager.GetSyncDecl("Lock")`，而该查询只在
+        // `sync` 包被导入（其 CJO 已装载）时才有结果：未导入时官方不校验锁对象，
+        // 只在锁对象上报 `sema_use_expr_without_import`（由 `CfirExpressionImportChecker` 承担）。
+        if (!components.file.importsPackageOrMember(SYNC_PACKAGE_FQ_NAME)) return
         // `std.sync.Lock` 是编译器内建锁接口；无法解析时跳过锁校验，避免 std 缺失场景下引入噪音。
-        val lockClassId = ClassId(FqName("std.sync"), Name.identifier("Lock"))
+        val lockClassId = ClassId(SYNC_PACKAGE_FQ_NAME, Name.identifier("Lock"))
         val lockDeclaration = session.typeResolver.resolveClass(lockClassId)
             ?: return
         if (lockDeclaration !is CfirInterface) return
