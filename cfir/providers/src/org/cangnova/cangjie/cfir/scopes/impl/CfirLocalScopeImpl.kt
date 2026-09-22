@@ -173,6 +173,19 @@ class CfirLocalScope private constructor(
     }
 
     /**
+     * 局部作用域只索引自身声明的变量、属性与函数，直接复用同一集合。
+     *
+     * 局部值声明会遮蔽外层同名类型名（官方 `not_a_type`），例如函数形参 `T` 使函数体内的 `T`
+     * 不再是类型。
+     */
+    override fun processOwnNonTypeBindingsByName(
+        name: Name,
+        processor: (CfirCallableSymbol<*>) -> Unit,
+    ) {
+        processCallablesByName(name, processor)
+    }
+
+    /**
      * 对齐 K2：快速判定当前 scope 是否**可能**包含指定名字。
      * 局部作用域三栏命中任一即返回 true，供 tower resolve 的热路径提前跳过空 scope。
      */

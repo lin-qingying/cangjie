@@ -1123,6 +1123,22 @@ class CfirClassUseSiteMemberScope private constructor(
     }
 
     /**
+     * 只暴露本类（含作用在它上面的 extend）直接声明的绑定。
+     *
+     * 类型位置查找的遮蔽规则必须排除继承来源：官方 `LookUpImpl` 的类型位置查找只收集当前
+     * 作用域链上的声明，父类型成员由 `ProcessStructDeclBody` 在另一条路径处理；实测
+     * `class D <: B { var y: Foo }` 在 `B.Foo` 存在时并不产生 `not_a_type`。
+     * 因此这里刻意不调用 [processCallablesByName]（它会把父 scope 成员一起透出）。
+     */
+    override fun processOwnNonTypeBindingsByName(
+        name: Name,
+        processor: (CfirCallableSymbol<*>) -> Unit,
+    ) {
+        declaredScope.processCallablesByName(name, processor)
+        extendScope?.processCallablesByName(name, processor)
+    }
+
+    /**
      * 判断 callable 是否按值成员规则隐藏后续父 callable。
      */
     private fun CfirCallableSymbol<*>.isValueLikeCallable(): Boolean =

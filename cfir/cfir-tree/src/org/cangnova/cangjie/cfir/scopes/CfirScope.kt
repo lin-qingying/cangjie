@@ -104,4 +104,22 @@ abstract class CfirScope {
      * 按名称处理所有 callable 符号，包括函数、属性和其他 callable 声明。
      */
     open fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {}
+
+    /**
+     * 按名称处理该 scope **自身直接声明**、会遮蔽同名类型名的绑定（值成员与函数）。
+     *
+     * 用于类型位置查找的官方遮蔽规则：官方 `LookUpImpl::FindRealResult` 沿作用域链用统一命名空间
+     * 收集同名声明，命中 `VarDecl`/`PropDecl` 即停止向外层查找，命中函数则继续；因此更内层作用域里
+     * 任何同名绑定都会挡住外层类型名，而 `PreCheck::GetTyFromASTType` 在筛掉非类型声明后报
+     * `not_a_type`。
+     *
+     * 默认空实现表示"该 scope 不参与遮蔽判定"：只有真正持有声明的结构 scope 才需要覆写。
+     * 父类型（继承）成员不在此列——官方由 `ProcessStructDeclBody` 在独立路径处理，实测继承成员
+     * 不产生 `not_a_type`，因此覆写方不得把继承来源混进来。
+     */
+    open fun processOwnNonTypeBindingsByName(
+        name: Name,
+        processor: (CfirCallableSymbol<*>) -> Unit,
+    ) {
+    }
 }

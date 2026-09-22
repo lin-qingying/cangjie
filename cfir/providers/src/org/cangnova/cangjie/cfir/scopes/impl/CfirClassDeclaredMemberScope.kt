@@ -75,6 +75,19 @@ class CfirClassDeclaredMemberScope(
     }
 
     /**
+     * 本 scope 只索引 class-like 自身声明的成员，天然就是"自身声明"集合，可直接复用。
+     *
+     * 成员名与顶层类型名共用统一命名空间：类体里同名非类型成员会遮蔽外层类型名
+     * （官方 `not_a_type`），这正是本入口存在的目的。
+     */
+    override fun processOwnNonTypeBindingsByName(
+        name: Name,
+        processor: (CfirCallableSymbol<*>) -> Unit,
+    ) {
+        processCallablesByName(name, processor)
+    }
+
+    /**
      * 处理声明构造器。
      */
     override fun processDeclaredConstructors(processor: (CfirConstructorSymbol) -> Unit) {
