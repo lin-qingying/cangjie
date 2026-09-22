@@ -9884,3 +9884,12 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 测试基建：LltCompanionSourceFilesProvider 按 import 包名装配宏包源为编译依赖（官方宏包独立编译可 import）；排除 `.mac.cj`（已被宏管线装配，重复并入导致包重复声明 → testIndex 回归，A/B 定位后修复）；globalfunc 补 `globalfunc_dep.cj`。
 - fixture 期望修正（官方证据）：err1/ok_class_07 补 UNUSED_IMPORT（官方确实报）；globalfunc 补 UNUSED_IMPORT（多包探针 `unused import 'a.*'`）；main_err/main_err1 去掉 HEAD 固化的 UNUSED 标记（官方宏包 import 干净）。
 - 验证：QuoteExpr/Annotation/APILevelChecker.index/Typealias/sameProject 切片全绿（除既有）；全量宏 LLT 39→35 且剩余均经 HEAD A/B（字节级备份/恢复）证实为既有失败；typeaslias 推进到宏执行器层（MACRO_EXPAND_FAILED status=4，分类已正确，登记为执行器问题族）。提交 `a46e230a9`。
+
+## 2026-09-22（续 2）：P2 决策两项 + JFFI 双诊断证据否定
+
+- problem type: 缺口报告 §4 建议第 4/5 项（P2）：①UNUSED_IMPORT 是否钉 1.0.2；②APILEVEL_MISSING_ARG 并入 ApiLevelSinceParameter；③CFIR_ANNOTATION_ERROR_ARG_RANGE/OBJECT 实现。
+- ① 已实施：官方 sema_unused_import 在 1.0.0 双 SDK 实测零诊断、1.0.5 起报；开源快照无实现无法收窄，采信版本矩阵 v1.0.2 → 新增 `LanguageFeature.UnusedImportCheck(CANGJIE_1_0_2)`，`CfirImportsChecker.reportUnusedImports` 入口 supportsFeature 短路。默认测试版本 LATEST_STABLE(1.1.3)，现有语料零影响（宏 LLT 全量 37 失败均 HEAD 既有）。提交 `48c0aea0d`（LanguageVersionSettings.kt 以 index 定向 hunk 提交，剥离并行会话遗留重构）。
+- ② 否决：官方 v1.0.0 镜像 `external/cangjie_compiler/src/Sema/CheckAPILevel.cpp:497-501` 对 `@APILevel` 缺参**无条件**报 `sema_wrong_number_of_arguments("missing argument")`，无版本门禁；与 1.0.3 的 `ApiLevelSinceParameter`（since 取值限制）语义不同源。CFIR 现状（missing-arg 全版本报）与官方一致，不改。
+- ③ 证据否定（未实施，待裁决）：官方开源全历史（1359 提交全量 git grep -S）中 `sema_annotation_error_arg_range/object` 仅存在于 DiagnosticSema.def（`'%s' only supports %s as arg` / `'%s' can only modify %s`），src 无任何触发点；cjc 1.0.0/1.0.5/1.1.3 实测 12+ 构造（@C[cname:123]→arg_num、@FastNative class→illegal_use_of_annotation、@Frozen class→illegal_use_of_annotation、@Deprecated[message:123]→parse_deprecated_wrong_argument、自定义注解参数错→mismatched_types 等）均不触发这两个诊断。它们在官方同样是死条目（或闭源专用），报告 §3.1"官方现役"定性不成立。按"不发明语义"纪律停止实现，交用户裁决：删除声明（归入 §3 冗余/废弃清理）或保留现状登记。
+- 修复过程事故记录：`.mac.cj` 排除在 A/B 恢复中被旧备份覆盖并随 a46e230a9 误提交（缺该修复），APILevelChecker testIndex 回归暴露后已修复重提 `510cd9426`。纪律更新：**A/B 每次恢复前必须重新备份当前版本**，不得复用旧备份。
+- verification: `:cfir:analysis-tests:test --tests '*MacroTestGenerated*' --tests '*MacroPsiTestGenerated*' --tests '*LLT{,Psi}TestGenerated$UnusedImport*'` → 37 失败全为 HEAD 既有（对照 a46e230a9 后基线）；APILevelChecker 切片仅剩 MergeStd×6 既有。提交 `510cd9426` + `48c0aea0d`。
