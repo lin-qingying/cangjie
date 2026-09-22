@@ -2653,6 +2653,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource, memberName, kind, typeName, session,
         )
 
+        is ConeInvalidEnumMemberAccessError -> CfirErrors.INVALID_ENUM_MEMBER_ACCESS.on(
+            diagnosticSource, session,
+        )
+
         is ConeMemberNotImportedError -> CfirErrors.MEMBER_NOT_IMPORTED.on(
             diagnosticSource, memberName, session,
         )

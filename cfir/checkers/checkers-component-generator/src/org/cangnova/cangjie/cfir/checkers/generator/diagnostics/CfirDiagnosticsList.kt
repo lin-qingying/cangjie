@@ -1665,6 +1665,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 元组成员不能是 @C struct（官方 sema_invalid_tuple_field_ctype）
         val INVALID_TUPLE_FIELD_CTYPE by error<PsiElement>()
+
+        // enum 变量（实例）不能作为成员访问的 base 去取 enum 构造器（官方 sema_invalid_enum_member_access）
+        val INVALID_ENUM_MEMBER_ACCESS by error<PsiElement>()
+
+        // var-with-pattern 声明的模式必须不可反驳（官方 sema_pattern_can_not_be_assigned）
+        val PATTERN_CAN_NOT_BE_ASSIGNED by error<PsiElement>()
     }
 
     /**
