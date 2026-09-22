@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirHideResolvedTypeRefC
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirDeprecatedTypeRefChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirUpperBoundViolatedTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirVArrayElementTypeChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirTupleCFieldTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.CfirVArraySizeLiteralChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
 
@@ -26,6 +27,7 @@ object CommonTypeCheckers : TypeCheckers() {
             CfirCFuncTypeChecker,
             CfirObjCTypeArgumentChecker,
             CfirVArrayElementTypeChecker,
+            CfirTupleCFieldTypeChecker,
             CfirHideResolvedTypeRefChecker,
             CfirDeprecatedTypeRefChecker,
         )

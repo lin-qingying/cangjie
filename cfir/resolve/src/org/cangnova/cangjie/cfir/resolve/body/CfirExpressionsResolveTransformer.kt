@@ -5142,7 +5142,17 @@ open class CfirExpressionsResolveTransformer(
             ?: binaryOp.inferCoalescingElementTypeFromFreshLeftOperand(data)
         if (leftElementType == null) {
             binaryOp.transformRight(transformer, ResolutionMode.ContextIndependent)
-            return errorType("coalescing left operand must be Option")
+            // 官方 `ChkCoalescingExpr`：左操作数已定型且不是 Option 时报 sema_invalid_coalescing；
+            // 左操作数本身有错或仍是 PCLA placeholder 时只毒化不报（CanSkipDiag 语义）。
+            val leftType = binaryOp.left.coneTypeOrNull
+            val leftDefinitelyNotOption = leftType != null &&
+                leftType !is ConeErrorType &&
+                leftType.freshLambdaTypeVariableConstructorOrNull() == null
+            return if (leftDefinitelyNotOption) {
+                ConeErrorType(ConeCoalescingLeftOperandInvalid("coalescing left operand must be Option"))
+            } else {
+                errorType("coalescing left operand must be Option")
+            }
         }
 
         val resultType = coalescingTargetType(leftElementType, data.expectedTypeOrNull, session)
