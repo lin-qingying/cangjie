@@ -3,7 +3,7 @@
 
 func a() {
     let a = b()
-    let c = <!UNRESOLVED_REFERENCE!>a<!>1()
+    let c = <!UNRESOLVED_REFERENCE!>a1<!>()
 
     func a1() {
     }
