@@ -76,3 +76,17 @@ class ConeCoalescingRightOperandMismatch(
     override val reason: String,
     val targetType: ConeCangJieType,
 ) : ConeDiagnostic
+
+/**
+ * `??` 的左操作数不是 `Option` 类型（官方 `ChkCoalescingExpr` 的
+ * `sema_invalid_coalescing` 分支，`Sema/TypeCheckExpr/BinaryExpr.cpp:1105-1118`）。
+ *
+ * resolve 把整个 `??` 表达式置为错误类型并携带本标记；checker 依据该标记把
+ * 诊断锚到左操作数上（官方锚 `*be.leftExpr`）。左操作数为错误类型或尚未定型
+ * （PCLA placeholder）时不携带本标记，保持纯毒化——对应官方 `CanSkipDiag` 语义。
+ *
+ * @property reason 面向调试的原因文本。
+ */
+class ConeCoalescingLeftOperandInvalid(
+    override val reason: String,
+) : ConeDiagnostic

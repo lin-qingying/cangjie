@@ -414,6 +414,8 @@ object CfirErrors : CjDiagnosticsContainer() {
     val GENERIC_IN_OPERATOR_OVERLOAD: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_GENERIC_IN_OPERATOR_OVERLOAD", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NUMERIC_CONVERT_MUST_BE_NUMERIC: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NUMERIC_CONVERT_MUST_BE_NUMERIC", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INVALID_COALESCING: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_COALESCING", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val INVALID_TUPLE_FIELD_CTYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_TUPLE_FIELD_CTYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // ExtendExtra
     val EXTEND_FUNCTION_CANNOT_OVERRIDDEN: CjDiagnosticFactory2<String, Name> = CjDiagnosticFactory2("CFIR_EXTEND_FUNCTION_CANNOT_OVERRIDDEN", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

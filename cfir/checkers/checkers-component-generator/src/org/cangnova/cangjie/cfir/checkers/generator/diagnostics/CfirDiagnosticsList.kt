@@ -1659,6 +1659,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 数值类型转换的实参必须是数值类型（官方 sema_numeric_convert_must_be_numeric）
         val NUMERIC_CONVERT_MUST_BE_NUMERIC by error<PsiElement>()
+
+        // `??` 左操作数必须是 Option（官方 sema_invalid_coalescing）
+        val INVALID_COALESCING by error<PsiElement>()
+
+        // 元组成员不能是 @C struct（官方 sema_invalid_tuple_field_ctype）
+        val INVALID_TUPLE_FIELD_CTYPE by error<PsiElement>()
     }
 
     /**

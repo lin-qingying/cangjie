@@ -4,9 +4,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.types.ConeCoalescingLeftOperandInvalid
 import org.cangnova.cangjie.cfir.types.ConeCoalescingRightOperandMismatch
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
 
 /**
  * `??` 右操作数的目标类型检查器。
@@ -27,11 +30,21 @@ object CfirCoalescingTypeMismatchChecker : CfirBinaryOpChecker() {
     override fun check(expression: CfirBinaryOp) {
         if (expression.kind != CfirBinaryOpKind.COALESCING) return
 
-        val marker = (expression.coneTypeOrNull as? ConeErrorType)?.diagnostic
-            as? ConeCoalescingRightOperandMismatch ?: return
+        val errorDiagnostic = (expression.coneTypeOrNull as? ConeErrorType)?.diagnostic
+        when (errorDiagnostic) {
+            // 官方 `ChkCoalescingExpr`（BinaryExpr.cpp:1105-1118）：左操作数已定型且不是
+            // Option 时报 sema_invalid_coalescing，锚在左操作数。
+            is ConeCoalescingLeftOperandInvalid -> reporter.reportOn(
+                source = expression.left.source,
+                factory = CfirErrors.INVALID_COALESCING,
+            )
 
-        // 下钻共享 target-typed 检查：叶子按 `checkTypeMismatch` 分类（字面量 -> CANNOT_CONVERT_LITERAL，
-        // 其余 -> TYPE_MISMATCH，均锚在右操作数），复合体（block/if/match/...）继续下钻到真实结果位置。
-        checkTargetTypedTailExpression(expression.right, marker.targetType)
+            is ConeCoalescingRightOperandMismatch -> {
+                // 下钻共享 target-typed 检查：叶子按 `checkTypeMismatch` 分类（字面量 -> CANNOT_CONVERT_LITERAL，
+                // 其余 -> TYPE_MISMATCH，均锚在右操作数），复合体（block/if/match/...）继续下钻到真实结果位置。
+                val marker = errorDiagnostic as ConeCoalescingRightOperandMismatch
+                checkTargetTypedTailExpression(expression.right, marker.targetType)
+            }
+        }
     }
 }

@@ -1049,6 +1049,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.GENERIC_IN_OPERATOR_OVERLOAD, "generic is not allowed in operator overload function")
         map.put(CfirErrors.ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED, "abstract class ''{0}'' can not be instantiated", RENDER_NAME)
         map.put(CfirErrors.NUMERIC_CONVERT_MUST_BE_NUMERIC, "the expression for numeric type conversion must have a numeric type")
+        map.put(CfirErrors.INVALID_COALESCING, "type of left operand does not support coalescing operation. coalescing is only valid for 'Option'")
+        map.put(CfirErrors.INVALID_TUPLE_FIELD_CTYPE, "tuple member mustn't be struct with @C")
 
         // ================================================================
         // ExtendExtra
