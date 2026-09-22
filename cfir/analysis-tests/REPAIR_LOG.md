@@ -9916,3 +9916,17 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 数值转换：DiagnosticKind 新增 `NumericConvertMustBeNumeric`；transformTypeConversion 的 errorType 改为 ConeSimpleDiagnostic 结构化诊断；coneDiagnosticToCfirDiagnostic 增映射。诊断锚定整个转换表达式（错误类型承载于 CfirTypeConversion 结果；官方锚实参，语义相同，range 差异登记）。
 - verification: 新 fixture `testData/diagnostics/constructor/genericShape.cj` + `CfirGenericShape{Psi,LightTree}Test` 双入口全绿（首轮仅 NUMERIC_CONVERT 锚点差异，按承载点修正 fixture 后通过）；全量 `:cfir:analysis-tests:test` 失败集 = P2 基线（17 unique × 2 套件，零新增）。
 - 批次状态：§1.1C 35 项中已处理 7（4 实现 + 4 否定，其中 abstract_generic 为顺带发现的兄弟死条目）；剩余 28 项待后续批次（字面量/数组/range/模式 9、C 互操作/可变性/比较 7、作用域与访问 6、其余 6）。
+
+## 2026-09-23：P3 批次 2——C 互操作/可变性/比较族（2 实现 + 2 已承载 + 2 否定 + 1 延后）
+
+- problem type: 缺口报告 §1.1C「C 互操作/可变性/比较（7）」批次。
+- official evidence（cjc 1.0.5 探针 + 镜像源码）：
+  - **实现 2**：`sema_invalid_coalescing`（BinaryExpr.cpp:1105-1118，`??` 左操作数必须 Option；左操作数为错误类型/PCLA placeholder 时 CanSkipDiag 不报）；`sema_invalid_tuple_field_ctype`（TypeCheckType.cpp:299-310，判定 = `Ty::IsCTypeConstraint` = @C struct，CFIR 对位 `CfirCTypeSemantics.isCStruct`）。
+  - **已承载 2**：`sema_immutable_access_mutable_func` → 既有 `IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION`（三个 mutability checker）；`sema_pointer_unknow_generic_type` → 裸 `CPointer()` 已报 `UNABLE_TO_INFER_GENERIC_FUNC`（语义等价改名，保留项目诊断名）。
+  - **否定 2**：`sema_illegal_ctype_generic_argument` def-only 零发射点（死条目）；`sema_illegal_cpointer_generic_type` 探针不可达——CPointer<T> 泛型约束检查先报（官方 InstantiatedChecker.cpp:362-400 先行）。
+  - **延后 1**：`sema_tuple_element_cmp_not_bool`（官方实测：非 Bool operator == 合法存在，元组比较时报；BinaryExpr.cpp:500-532 经 `GetTupleElements` 合成 tuple-access 元素表达式逐元素全量解析）。CFIR `resolveComparisonExpressionType` 元组分支无条件返回 Bool；补齐需新建逐元素 operator 解析基建，无法在不误报用户定义 `==` 的前提下近似——登记为独立基建任务。
+- CFIR owner files changed（提交 `8c6dd0d35`，11 文件 +172）：
+  - `ConeCoalescingLeftOperandInvalid` marker（ConeDiagnostic.kt，对位既有右操作数 marker 模式）；transformCoalescingExpression 分支区分「定型非 Option→标记」vs「错误类型/PCLA→纯毒化」；CfirCoalescingTypeMismatchChecker 双 marker 消费，锚左操作数。
+  - `CfirTupleCFieldTypeChecker`（resolvedTypeRefCheckers）；锚 typeRef.source ?: delegatedTypeRef?.source（PSI 变量类型 ref source 为 null 的树形差异，沿用 CfirObjCTypeArgumentChecker 兜底模式）。
+- verification: `interopMutabilityProbe.cj` fixture PSI 入口全绿；全量 `:cfir:analysis-tests:test` 34 失败 = 基线（17 unique × 2），零新增。
+- 批次状态：§1.1C 35 项已处理 14（6 实现 + 6 否定 + 2 已承载）；延后 1（tuple 元素比较基建）；剩余 20 项待后续批次。
