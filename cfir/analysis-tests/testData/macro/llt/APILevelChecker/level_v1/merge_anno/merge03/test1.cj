@@ -70,9 +70,13 @@ public class APILevel {
 
 package dep
 
+import ohos.labels.APILevel
+
+@!APILevel[12]
 public class A<T> where T <: ToString {
 }
 
+@!APILevel[12]
 public func foo<T>() where T <: ToString {}
 
 // FILE: test1.cj

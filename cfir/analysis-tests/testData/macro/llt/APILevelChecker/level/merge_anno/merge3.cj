@@ -82,8 +82,12 @@ public class APILevel {
 
 package dep2
 
+import ohos.labels.APILevel
+
+@!APILevel[since: "13"]
 public let cccc: VArray<Int64, $5> = [1, 2, 3, 4, 5]
 
+@!APILevel[since: "13"]
 public let (aaaa, bbbb) = (1, 2)
 
 // FILE: merge3.cj
