@@ -265,6 +265,9 @@ class LltCompanionSourceFilesProvider(
             directory.walkTopDown()
                 .filter { file ->
                     file.isFile &&
+                            // `.mac.cj` 是宏包源命名约定，由宏构造管线单独装配，
+                            // 重复并入普通编译单元会造成包重复声明。
+                            !file.name.endsWith(".mac.cj") &&
                             (file.isPackageCompanionFile() || file.isMacroPackageFile()) &&
                             !FILE_DIRECTIVE.containsMatchIn(file.readText(Charsets.UTF_8))
                 }
