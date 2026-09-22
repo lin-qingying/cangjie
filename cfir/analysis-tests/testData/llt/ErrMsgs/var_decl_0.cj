@@ -8,7 +8,7 @@ main(): Int64 {
 
     let (a1, a2): (<!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T1<!>>, <!UNDECLARED_TYPE_NAME!>C<!><<!UNDECLARED_TYPE_NAME!>T2<!>>) = (false, false)
     let <!TUPLE_PATTERN_NOT_MATCH!>(b1, b2)<!> = false
-    let (c1, c2): (Int64, Bool) = (<!CANNOT_CONVERT_LITERAL!>t<!>rue, false)
+    let (c1, c2): (Int64, Bool) = (<!CANNOT_CONVERT_LITERAL!>true<!>, false)
 
     0
 }
