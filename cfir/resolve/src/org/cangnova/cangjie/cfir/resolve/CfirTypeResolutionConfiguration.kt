@@ -25,11 +25,13 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 
 /**
@@ -145,6 +147,27 @@ data class TypeResolutionConfiguration(
     fun withScopes(scopes: Iterable<CfirScope>): TypeResolutionConfiguration {
         if (this.scopes === scopes) return this
         return copy(scopes = scopes)
+    }
+
+    /**
+     * 在类型解析作用域链最前面加入外围 class-like 自身声明的成员作用域。
+     *
+     * 官方按类体 scope 名解析成员签名：同名非类型成员（值成员、函数）与顶层类型名共用统一
+     * 命名空间，更内层的绑定会停止向外层查找，`PreCheck::GetTyFromASTType` 的 allTargets/targets
+     * 分流据此报 `not_a_type`；声明自身靠 `IsNodeInVarDecl` 跳过。继承成员不参与该层——官方由
+     * `ProcessStructDeclBody` 在独立路径处理，实测继承成员不产生 `not_a_type`。
+     *
+     * TYPES 阶段与 body 阶段各自构造 scope 链，两处都必须应用同一规则：body 阶段对错误类型
+     * 引用的重解析若缺少该层，会把 TYPES 阶段已判定的遮蔽静默改回可解析，诊断随之丢失。
+     *
+     * [containingClasses] 由内到外排列。
+     */
+    fun withEnclosingClassBodyScopes(
+        containingClasses: List<CfirClassLikeDeclaration>,
+    ): TypeResolutionConfiguration {
+        if (containingClasses.isEmpty()) return this
+        val bodyScopes = containingClasses.map { CfirClassDeclaredMemberScope(it.symbol) }
+        return withScopes(bodyScopes + scopes.toList())
     }
 
     /**

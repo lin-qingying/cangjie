@@ -265,7 +265,14 @@ class CfirTypeResolveTransformer(
         declaration.transformTypeParameters(this, configuration)
         declaration.transformSuperTypeRefs(this, configuration)
         declaration.transformAnnotations(this, configuration)
-        declaration.transformDeclarations(this, configuration)
+        // 成员声明头的类型引用在类体作用域内解析：官方按类体 scope 名执行统一查找，同名非类型
+        // 成员会遮蔽外层类型名（`public var WrappedJob: Job` 的 `Job` 报 not_a_type）。父类型
+        // 与父类型成员不参与该层——官方由 `ProcessStructDeclBody` 在独立路径处理。父类型本身
+        // 的 ref 已在上一步用未扩充的 configuration 解析，不受该作用域影响。
+        declaration.transformDeclarations(
+            this,
+            configuration.withEnclosingClassBodyScopes(listOf(declaration)),
+        )
     }
 
     /**

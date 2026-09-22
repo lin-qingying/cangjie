@@ -434,20 +434,6 @@ class CfirTypeResolverImpl(
     }
 
     /**
-     * 按短名解析简单 classId。
-     */
-    private fun resolveSimpleClassLike(
-        shortName: Name,
-        configuration: TypeResolutionConfiguration,
-    ): CfirTypeCandidateCollector.TypeCandidate? {
-        return CfirTypeCandidateCollector(
-            session = session,
-            context = configuration.accessContext(CfirAccessKind.TYPE),
-        ).firstVisibleScopeCandidate(configuration.scopes, shortName)
-            ?.takeIf { it.symbol is CfirClassLikeSymbol<*> }
-    }
-
-    /**
      * 解析限定 class-like 名称。
      */
     private fun resolveQualifiedClassLike(
@@ -457,10 +443,31 @@ class CfirTypeResolverImpl(
         val qualifier = typeRef.qualifier
         val lastQualifier = qualifier.last()
         if (qualifier.size == 1) {
-            val simpleCandidate = resolveSimpleClassLike(
-                lastQualifier.name,
-                configuration,
+            // 简单名必须走官方统一命名空间规则：更内层的同名非类型声明（值成员、函数）会遮蔽
+            // 外层类型名，这类"已声明但不是类型"不能退化成继续向外层查到的类型。
+            val simpleNameLookup = CfirTypeCandidateCollector(
+                session = session,
+                context = configuration.accessContext(CfirAccessKind.TYPE),
+            ).lookupSimpleTypeName(
+                scopes = configuration.scopes,
+                name = lastQualifier.name,
+                exemptDeclarationTypeRef = typeRef,
             )
+            if (simpleNameLookup is CfirTypeCandidateCollector.SimpleTypeNameLookup.ShadowedByNonTypeDeclaration) {
+                // 简单名被更内层的非类型声明遮蔽时，官方按"已声明但不是类型"处理。这里必须就地
+                // 结束：classLikeCandidates 会按 ClassId 经 provider 重新聚合候选，若继续执行会
+                // 把外层同名类型找回来，遮蔽结论被静默抹掉（bugfix1 的 `Job`/`Schedule` 即此）。
+                return QualifiedClassLikeResolution(
+                    classId = null,
+                    declaration = null,
+                    diagnostic = ConeNotATypeError(lastQualifier.name),
+                )
+            }
+            val simpleCandidate = (
+                simpleNameLookup as? CfirTypeCandidateCollector.SimpleTypeNameLookup.Classifiers
+                )
+                ?.candidates
+                ?.firstOrNull { it.symbol is CfirClassLikeSymbol<*> }
             val simpleSymbol = simpleCandidate?.symbol as? CfirClassLikeSymbol<*>
             val classId = simpleSymbol?.classId ?: ClassId(FqName.ROOT, lastQualifier.name)
             val candidates = classLikeCandidates(

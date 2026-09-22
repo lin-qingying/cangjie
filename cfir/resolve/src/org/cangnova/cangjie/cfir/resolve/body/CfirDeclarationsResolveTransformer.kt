@@ -1493,6 +1493,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             useSiteFile = context.file,
             topContainer = context.containerIfAny,
         ).withAdditionalTypeParameters(typeParametersFromContainers + additionalTypeParameters)
+            .withEnclosingClassBodyScopes(context.containingClassDeclarations)
 
         if (typeRef is CfirResolvedTypeRef) {
             val delegated = typeRef.delegatedTypeRef

@@ -335,7 +335,8 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
                     containingClassDeclarations = context.containingClassDeclarations.toList(),
                     useSiteFile = context.file,
                     topContainer = context.containerIfAny,
-                ).withAdditionalTypeParameters(context.containers.flatMap(::extractTypeParameters)),
+                ).withAdditionalTypeParameters(context.containers.flatMap(::extractTypeParameters))
+                    .withEnclosingClassBodyScopes(context.containingClassDeclarations),
             ) as CfirResolvedTypeRef
         }
 

@@ -17,7 +17,7 @@ package example
 
 @Annotation
 public class A {
-    public const init(p0!: <!UNRESOLVED_REFERENCE!>example_XX<!> = <!UNRESOLVED_REFERENCE!>example_XX<!>.ALL) {}
+    public const init(p0!: <!UNDECLARED_TYPE_NAME!>example_XX<!> = <!UNRESOLVED_REFERENCE!>example_XX<!>.ALL) {}
 }
 
 main() {}
