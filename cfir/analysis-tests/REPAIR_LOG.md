@@ -9706,3 +9706,130 @@ std `extend Option <: Equatable`，名义检查不可用。
   策略，未按本次的「实参锚定失败保留」再细分（该策略有既有 fixture 覆盖，本轮不动）。
   ② 下标 `set` 侧同样存在 `INAPPLICABLE_ARGUMENTS_MAPPING_ERROR` 与
   `INAPPLICABLE`（索引类型不匹配）的区分问题，但与本次期望无关，未纳入。
+
+---
+
+## 2026-09-22（下午）ErrMsgs 收官：元组字面量 / coalescing / synchronized 导入 / 诊断锚点
+
+本轮把 `ErrMsgs` 双路径剩余 5 个失败（sync_0、var_decl_0、coalescing_0、type_arg_infer5、type_arg_infer6）
+全部修复；全量 `:cfir:analysis-tests:test --continue` **8670 tests / 90 failed / 308 skipped**，
+对并行会话留下的基线台账 `fails_ledger_20260922-record-fix.txt`（102 条，含其已修的 2 条
+ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本会话 10 + 并行会话 2），零回归。
+
+### T1 元组字面量未按官方 ChkTupleLit 逐元素检查（var_decl_0）
+
+- problem type: Diagnostics / Type Mismatch（元组字面量 vs 目标元组类型）
+- root cause: 共享 target-typed 入口 `checkTargetTypedExpression` 对 `CfirTupleLiteral` 返回
+  NotHandled，调用方退化为整条元组的 TYPE_MISMATCH；官方 `ChkTupleLit`
+  （`external/cangjie_compiler/src/Sema/TypeCheckExpr/TupleLit.cpp`）在目标可解出元组类型且
+  元数一致时**逐元素**检查并在元素上报告（首个失败元素即停）。
+- official evidence: cjc 1.0.0/1.0.5 双版本实测 `let (c1,c2): (Int64,Bool) = (true,false)` 仅报
+  `sema_cannot_convert_literal` 锚在 `true`；`(g(),false)`（g():Bool）仅报 `sema_mismatched_types`
+  锚在 `g()`；元数不匹配报 `sema_mismatched_types` 锚在**整条元组字面量**（`tuple_arity` 探针）。
+- Kotlin counterpart: FirHelpers.kt `checkTypeMismatch` 按位置施加期望类型并在子表达式 source 上
+  报告；复合体下钻范式 = `reportReturnTypeMismatchInLambda` 遍历各 return 逐个报告
+  （Kotlin 2.4.255-SNAPSHOT 镜像）。
+- CFIR owner files changed:
+  - `providers/.../resolve/TupleLiteralTargetTypes.kt`（新）：`tupleLiteralTargetTypeOrNull`
+    从 resolve 私有实现上移，resolve 与 checker 共用同一目标类型判定（官方 UnboxOptionType 语义）。
+  - `checkers/.../expression/CfirTargetTypedTailExpressionUtils.kt`：entry 与 tail 两个 `when`
+    各加 `CfirTupleLiteral` 分支 → `checkTargetTypedTupleLiteral`：元数一致逐元素下钻
+    （复用 `checkTargetTypedTailExpression`，字面量经共享 `CANNOT_CONVERT_LITERAL` 分类），
+    元数不一致/目标非元组走元组字面量自身的叶子检查（对齐官方锚点）。
+- repair principle: 「期望类型施加到复合字面量」是 target-typed 共享入口的职责，逐元素下钻放在
+  entry/tail 两处共用同一 helper，所有 initializer/assignment/return/field/param-default 消费方
+  一次收口，不在各 checker 复制。
+- fixtures covered: `ErrMsgs/var_decl_0.cj`；同族回归 `Tuple/tuple9`（元数不匹配锚点，
+  首版误返回 NotHandled 导致其转红，已改为元组叶子检查后复绿）。
+
+### T2 `??` 右操作数未按 realTgtTy 检查且不毒化外层运算符（coalescing_0）
+
+- problem type: Diagnostics（coalescing 右操作数字面量转换 + 外层运算符级联）
+- root cause: `transformCoalescingExpression` 只把期望类型下传右操作数，既不检查也不把 `??`
+  置为错误类型；官方 `ChkCoalescingExpr`（`Sema/TypeCheckExpr/BinaryExpr.cpp:1135-1140`）在
+  右操作数不满足 `realTgtTy` 时 `be.ty = InvalidTy`，右操作数诊断锚在右操作数，外层
+  `DiagnoseForBinaryExpr` 遇 ill-typed operand 直接下钻返回（`BinaryExpr.cpp:800-844`）。
+- official evidence: cjc 双版本实测 `(Some(true) ?? 1) * false` 仅 1 条
+  `sema_cannot_convert_literal` 锚在 `1`，外层 `*` 无诊断；`Some(true) ?? g()`（g():Int64）报
+  `sema_mismatched_types` 锚在 `g()`；`let v:?Int64=1; test(v ?? "fail")`（形参 ToString）
+  **0 诊断**——实参位置的 `realTgtTy` 是形参类型。
+- Kotlin counterpart: `ArgumentCheckingProcessor` 任一侧为 ConeErrorType 即返回
+  `ErrorTypeInArguments`，且 `coneDiagnosticToFirDiagnostic.kt:161-163` 显式映射为 null
+  （「调用内部已有错误」）；elvis 的 RHS 由 completion 阶段按期望类型重查
+  （FirControlFlowStatementsResolveTransformer / FirSyntheticCallGenerator）。
+- CFIR owner files changed:
+  - `providers/.../resolve/CoalescingTypeChecks.kt`（新）：`coalescingTargetType`（原 resolve 私有
+    `coalescingResultType` 上移，即官方 `realTgtTy` 判定）与
+    `isDefiniteCoalescingRightMismatch`（仅在双侧定型、无类型变量/stub/错误类型时判定）。
+  - `cfir-cones/.../types/ConeDiagnostic.kt`：新增 `ConeCoalescingRightOperandMismatch(reason,
+    targetType)` 标记——resolve 用它把 `??` 毒化为错误类型并携带 realTgtTy，映射层不直接报告。
+  - `resolve/.../body/CfirExpressionsResolveTransformer.kt`：coalescing 分支在右操作数确定不满足
+    时返回标记错误类型（官方 InvalidTy 对位）。
+  - `resolve/.../inference/CfirCallCompletionResultsWriterTransformer.kt`：新增
+    `transformBinaryOp` —— 实参期望类型在 completion 阶段才可得（K2 同构），按同一判据重估：
+    仍不匹配更新标记目标，匹配则摘除标记恢复 realTgtTy（修复 enum39 回归：
+    `test(v ?? "fail")` 官方 0 诊断）。
+  - `checkers/.../expression/CfirCoalescingTypeMismatchChecker.kt`（新，注册于
+    `CommonExpressionCheckers.binaryOpCheckers`）：只消费 resolve 标记，经共享
+    `checkTargetTypedTailExpression` 把诊断锚到右操作数；判定单一来源在 resolve，checker 不持
+    第二套判据。
+- repair principle: 官方把「目标类型 + 毒化」放在 `??` 的检查点；CFIR 的目标类型在 completion
+  才完整，故判定唯一归属 resolve（body resolve 初判 + completion 重估），checker 只渲染，
+  避免两层判据漂移。
+- fixtures covered: `ErrMsgs/coalescing_0.cj`；同族守卫 `ErrMsgs/coalescing_1.cj`（操作数自身
+  错误的传播路径）、`Enum/enum39_coalescing_box`、`PatternMatching/EnumPattern/option_coalescing_00`。
+
+### T3 `synchronized` 未按「是否导入 std.sync」区分语义（sync_0）
+
+- problem type: Diagnostics（内建表达式缺标准库导入）
+- root cause: `checkSynchronizedMonitor` 只要 `std.sync.Lock` 能解析就做锁类型校验；官方
+  `ChkSyncExpr`（`Sema/TypeCheckExpr/SynchronizedExpr.cpp:20-29`）的锁声明来自
+  `importManager.GetSyncDecl("Lock")`，该查询只在 `sync` 包被导入时才有结果；未导入时官方报
+  `sema_use_expr_without_import` 锚在锁对象（`*se.mutex`），且**不**校验锁对象、继续检查同步体。
+- official evidence: cjc 双版本实测 `sync_0`（无 import）= 3 条：`sema_use_expr_without_import`
+  锚 `()` 与 `false` + `sema_cannot_convert_literal` 锚 `1`；`sync_1`（`import std.sync.*`）
+  保留锁对象 TYPE_MISMATCH（该 fixture 现有期望不变、仍绿）。
+- Kotlin counterpart: 无对位（仓颉专属内建表达式）；工程内先例 = `CfirQuoteImportChecker`
+  （官方 QuoteExpr.cpp 同一诊断）。
+- CFIR owner files changed:
+  - `providers/.../resolve/StandardLibraryImportChecks.kt`（新）：`importsPackageOrMember` 判据
+    （原 CfirQuoteImportChecker 内联逻辑上移，单一来源）+ `SYNC_PACKAGE_FQ_NAME`/`AST_PACKAGE_FQ_NAME`
+    （官方 ConstantsUtils.h:86 `SYNC_PACKAGE_NAME = "std.sync"`）。
+  - `resolve/.../body/CfirExpressionsResolveTransformer.kt`：`checkSynchronizedMonitor` 以同一判据
+    作门，未导入时不校验锁对象。
+  - `checkers/.../expression/CfirQuoteImportChecker.kt` → `CfirExpressionImportChecker.kt`（重命名
+    扩展）：quote（std.ast/锚表达式）+ synchronized（std.sync/锚锁对象，文本参数按官方用 `"sync"`），
+    注册项同步更名。
+- repair principle: 「内建形式所需标准库包是否可用」是一个事实，resolve（是否做类型校验）与
+  checker（是否报缺导入）消费同一判据；按官方三处发射点（quote/ifavailable/synchronized）保持
+  各自 checker，只把共享判据与包名常量上移到 providers。
+- fixtures covered: `ErrMsgs/sync_0.cj`（期望由 0 诊断改为官方 3 条）；守卫 `ErrMsgs/sync_1.cj`、
+  `if/if13.cj`、`synchronized/synchronized_test*.cj`、macro `quote_expr/main_err*.cj`（重命名回归面）。
+
+### T4 诊断锚点 fixture 修正（type_arg_infer5 / type_arg_infer6 / var_decl_0 的窄锚）
+
+- problem type: Diagnostics（范围，仅 fixture）
+- root cause: 三个 fixture 的期望与官方锚点/工程约定不符：
+  ① `UNABLE_TO_INFER_GENERIC_FUNC` 官方锚 callee（cjc 双版本实测 `f`、`g` 各 1 字符，即完整
+  token），语料 16+ 处已用 callee 锚，REPAIR_LOG 前序条目（:3930）已登记「约 20 个 fixture 仍写
+  整个调用、按 cjc 属 fixture 错、待重写」；
+  ② `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE` 官方锚泛型参数声明（cjc 实测 `func g<R>` 的 `R`），
+  语料 40+ 处一致，type_arg_infer5 的「上界 T」为孤例；
+  ③ `var_decl_0` 的 `<!CANNOT_CONVERT_LITERAL!>t<!>rue` 为 cjc 窄锚残留，Diagnostic Range Policy
+  规定展宽为完整 token，语料 `true` 全 token 形态 7:1。
+- official evidence: 见上，均为 cjc 1.0.0/1.0.5 双版本 JSON Range 实测。
+- CFIR owner files changed: 无（仅 fixture）；`ErrMsgs/type_arg_infer5.cj`（2 处 marker）、
+  `type_arg_infer6.cj`（1 处）、`var_decl_0.cj`（1 处，随 T1 一并修正）。
+- repair principle: 诊断名与触发条件不动，只按官方锚点 + Diagnostic Range Policy 修正范围，
+  并经同族全量扫描确认工程既定约定。
+- fixtures covered: `ErrMsgs/type_arg_infer5.cj`、`type_arg_infer6.cj`、`var_decl_0.cj`。
+
+### verification command(s) and outcome
+
+- 定向：`--tests '*ErrMsgs*' --tests '*$Enum' --tests '*$Tuple' --tests '*DesugarErrorReport*'
+  --tests '*FuzzInvalidParse*'` → 370 tests / 4 failed（均为基线既有的 SubscribeInBinary、
+  InvalidStructInheritance 双路径），ErrMsgs/Enum/Tuple 全绿。
+- 全量：`:cfir:analysis-tests:test --continue` → **8670 tests / 90 failed / 308 skipped**，
+  对 `fails_ledger_20260922-record-fix.txt`（102 条）集合差 **ADDED=0 / REMOVED=12**。
+- 中间回归记录：首版实现引入 2 个回归（`Enum/enum39_coalescing_box`、`Tuple/tuple9` 双路径），
+  分别由 completion 重估与元数不匹配锚点修正关闭；无其它新增失败。
