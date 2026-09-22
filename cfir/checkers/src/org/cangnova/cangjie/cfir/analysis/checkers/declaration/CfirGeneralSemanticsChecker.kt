@@ -1194,6 +1194,11 @@ private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
 private fun CfirDeclaration.accessibilityDiagnosticSource(): AbstractCjSourceElement? = when (this) {
     is CfirClassLikeDeclaration -> classLikeNameDiagnosticSource()
     is CfirNamedFunction -> functionNameDiagnosticSource()
+    // 官方 `MakeRangeForDeclIdentifier`（Diags.cpp）对 VarDecl/PropDecl 返回 `decl.identifier`，
+    // 即暴露诊断锚在声明名而不是整条声明；这里复用同一份声明名 source 解析，避免 PSI 与
+    // light-tree 两条入口各自回退到整条声明。
+    is CfirFieldVariable -> fieldVariableNameDiagnosticSource()
+    is CfirProperty -> propertyNameDiagnosticSource()
     else -> source
 }
 
