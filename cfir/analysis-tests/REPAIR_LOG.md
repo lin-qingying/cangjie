@@ -9873,3 +9873,14 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - fixtures covered: `Level$MergeAnno{,$Merge01,$Merge02,$Merge03,$Merge04,$Merge05}` 与 `LevelV1$MergeAnno{...}` 全部 merge 用例（LightTree + Psi 双入口）。
 - verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' ':cfir:analysis-tests:test' --tests '*CfirAnalysisMacroTestGenerated$Llt$APILevelChecker*' --tests '*CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker*' --continue --console=plain`。
 - verification outcome: 212 tests, **6 failed（全部为修复前已存在的 MergeStd 用例）**；merge_anno 其余 96 条全绿，Hide/multi_anno/dep 系无回归。残留 MergeStd 6 条属另一问题族：importall 需要 std.argopt 的 `.cjd` sidecar（测试 SDK 无任何 .cjd）才会报 APILEVEL_REF_HIGHER，且实际另有 25 条 `UNUSED_IMPORT`（std.*）+ `DEPRECATED_WARNING` 多报——归入缺口报告 P1「UNUSED_IMPORT 专项/门禁批次」统一裁决，不在本 P0 范围。提交 `226b3a8f9`。
+
+## 2026-09-22（续）：P1 宏域 import/NOT_A_TYPE 过报（框架级修复）
+
+- problem type: UNUSED_IMPORT / UNRESOLVED_IMPORT / NOT_A_TYPE 过报（CfirAnalysisMacro{,Psi}TestGenerated：QuoteExpr、Annotation、Typealias、APILevelChecker.index 等）。
+- root cause（三方，均以官方 cjc 1.0.5 探针取证）：
+  ① **宏包 import 被报 UNUSED**：官方语义 import macro package = 宏注册，永不报 unused（两阶段 --compile-macro 探针 0 诊断）；CFIR 无"宏包身份"事实源。修法：MacroExpansionRegistry 登记 declaredMacroPackages（失败/成功双路径，analyse.kt），CfirImportsChecker unused 报告前核对（import 名与父包）。
+  ② **限定宏调用目标被报 NOT_A_TYPE / UNRESOLVED**：`@TT.QA2`（`import FFF as TT`）官方 0 诊断。两层缺陷：bindMacroImports 不登记宏包包别名（补 packageAliases）；resolveMacroCall 限定查询只查字面 TT.QA2、不消费别名（补 packageAliases 重试）；CfirTypeResolver.resolveQualifiedClassLikeInPackage 对「包存在 + callable 命中且全为宏声明」不再发 ConeNotATypeError（交还 macro demand classification）。
+  ③ **enum 项遮蔽外层 classifier**：`enum E { A }` + `@A` 误报 NOT_A_TYPE；官方探针 enum 项与同名类共存。修法：CfirClassDeclaredMemberScope.processOwnNonTypeBindingsByName 排除非类型成员中的 enum 项对 classifier 的遮蔽……（实际实现：scope 只暴露 callable；enum 项经 enumConstructors 通道，外层类型名不再被遮）。
+- 测试基建：LltCompanionSourceFilesProvider 按 import 包名装配宏包源为编译依赖（官方宏包独立编译可 import）；排除 `.mac.cj`（已被宏管线装配，重复并入导致包重复声明 → testIndex 回归，A/B 定位后修复）；globalfunc 补 `globalfunc_dep.cj`。
+- fixture 期望修正（官方证据）：err1/ok_class_07 补 UNUSED_IMPORT（官方确实报）；globalfunc 补 UNUSED_IMPORT（多包探针 `unused import 'a.*'`）；main_err/main_err1 去掉 HEAD 固化的 UNUSED 标记（官方宏包 import 干净）。
+- 验证：QuoteExpr/Annotation/APILevelChecker.index/Typealias/sameProject 切片全绿（除既有）；全量宏 LLT 39→35 且剩余均经 HEAD A/B（字节级备份/恢复）证实为既有失败；typeaslias 推进到宏执行器层（MACRO_EXPAND_FAILED status=4，分类已正确，登记为执行器问题族）。提交 `a46e230a9`。
