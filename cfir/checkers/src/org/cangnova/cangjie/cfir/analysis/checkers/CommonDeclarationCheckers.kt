@@ -111,6 +111,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirGenericInstantiationChecker,
             CfirFileStaticGlobalInitializationChecker,
             CfirCommonPackageMainChecker,
+            CfirRedefinitionEntryChecker,
         )
 
     /** 对值参数默认值和构造器参数限制执行的 checker 集合。 */

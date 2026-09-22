@@ -1671,6 +1671,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // var-with-pattern 声明的模式必须不可反驳（官方 sema_pattern_can_not_be_assigned）
         val PATTERN_CAN_NOT_BE_ASSIGNED by error<PsiElement>()
+
+        // 包内存在多个 main 入口（官方 sema_redefinition_entry）
+        val REDEFINITION_ENTRY by error<PsiElement>()
     }
 
     /**
