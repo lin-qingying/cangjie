@@ -5,6 +5,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -249,6 +250,9 @@ object CfirImportsChecker : CfirFileChecker() {
     ) {
         val localUsage = declaration.collectImportUsage(context.session)
         val packageUsage by lazy { declaration.collectPackageImportUsage(context.session) }
+        // 官方 sema_unused_import 自 v1.0.2 起才存在（v1.0.0 双 SDK 实测零诊断），
+        // 旧语言版本下整个 unused-import 检查关闭。
+        if (!context.languageVersionSettings.supportsFeature(LanguageFeature.UnusedImportCheck)) return
         val importBindingsByImport = context.session.importBindingStoreOrNull
             ?.getBindings(declaration)
             ?.imports
