@@ -316,6 +316,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _usedMacroNamesByPackageByFileIdentity: MutableMap<String, MutableMap<FqName, MutableSet<Name>>> = linkedMapOf()
     /** `fileIdentity -> construction 阶段已消费的 macro package 集合`。 */
     private val _usedMacroPackagesByFileIdentity: MutableMap<String, MutableSet<FqName>> = linkedMapOf()
+    /** 编译单元内声明的 macro package 身份集合（官方语义：macro package import 是宏注册，永不报 unused）。 */
+    private val _declaredMacroPackages: MutableSet<FqName> = linkedSetOf()
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
     /** 展开产物 source 到原始 surface id 的映射。 */
@@ -493,6 +495,16 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     fun usedMacroPackages(file: CfirFile): Set<FqName> = file.macroExpansionFileIdentities()
         .flatMap { identity -> _usedMacroPackagesByFileIdentity[identity].orEmpty() }
         .toSet()
+
+    /** 注册编译单元内声明的 macro package 身份。 */
+    fun registerDeclaredMacroPackage(fqName: FqName) {
+        if (!fqName.isRoot) {
+            _declaredMacroPackages.add(fqName)
+        }
+    }
+
+    /** 查询给定 FqName 是否为本编译单元声明的 macro package。 */
+    fun isDeclaredMacroPackage(fqName: FqName): Boolean = fqName in _declaredMacroPackages
 
     /** 注册 degraded placeholder 与原始 surface 的对应关系。 */
     fun registerPlaceholder(placeholderId: Long, originSurfaceId: Long) {

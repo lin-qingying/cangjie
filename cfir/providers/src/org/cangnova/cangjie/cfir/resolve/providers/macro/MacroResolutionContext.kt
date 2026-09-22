@@ -177,6 +177,11 @@ class MacroResolutionContext internal constructor(
         // 显式限定只查询写出的完整名称；失败后不能转而命中同名未限定 import 或 builtin。
         if (qualifier != null) {
             val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
+                // 包别名（`import FFF as TT` 的 TT）是 macro construction 事实：
+                // 官方语义下宏包独立编译、始终可 import，`@TT.QA2` 经别名解析到 FFF.QA2。
+                ?: packageAliases[qualifier.shortName()]?.let { aliasPackage ->
+                    symbolIndex.lookupByFqName(aliasPackage.child(name))
+                }
                 ?: return MacroResolution.Unresolved(name)
             return verifyCallShapeOrMismatch(
                 resolved, kind, hasParenthesis, allowsDeclarationInputParenthesisOmission,
@@ -396,12 +401,21 @@ fun bindMacroImports(
 
             // alias 仅在非 wildcard 且实际绑定到 macro definition 时属于 macro construction 语义。
             // 普通 import alias 冲突必须留给 ordinary imports checker 报 IMPORT_ALIAS_CONFLICT。
-            if (!isAllUnder && alias != null && targets.isNotEmpty()) {
-                if (!fqn.isRoot) {
-                    packageAliases[alias] = fqn.parent()
+            //
+            // `import FFF as TT`（alias 直接指向 macro package 本身）也是 macro construction
+            // 事实：官方语义下宏包是独立编译的可 import 包，`@TT.QA2` 的 TT 经包别名解析到
+            // FFF。不登记该别名会让 surface 分类失败，原始注解滞留到 ordinary 类型解析并
+            // 误报 NOT_A_TYPE。
+            if (!isAllUnder && alias != null) {
+                when {
+                    targets.isNotEmpty() && !fqn.isRoot -> packageAliases[alias] = fqn.parent()
+                    targets.isEmpty() && symbolIndex.foreigns.any { it.packageFqName == fqn } ->
+                        packageAliases[alias] = fqn
                 }
-                aliasTargets.getOrPut(alias) { mutableSetOf() } += fqn
-                aliasSources.putIfAbsent(alias, import.aliasSource ?: import.source)
+                if (alias in packageAliases || targets.isNotEmpty()) {
+                    aliasTargets.getOrPut(alias) { mutableSetOf() } += fqn
+                    aliasSources.putIfAbsent(alias, import.aliasSource ?: import.source)
+                }
             }
         }
     }

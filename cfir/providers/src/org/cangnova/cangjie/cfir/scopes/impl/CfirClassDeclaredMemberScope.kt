@@ -79,12 +79,19 @@ class CfirClassDeclaredMemberScope(
      *
      * 成员名与顶层类型名共用统一命名空间：类体里同名非类型成员会遮蔽外层类型名
      * （官方 `not_a_type`），这正是本入口存在的目的。
+     *
+     * enum entry（constructor 形态）不参与遮蔽：官方 `LookUpImpl` 只让 VarDecl/PropDecl
+     * 拦截类型查找，enum entry 是 constructor 形声明；实测 `enum E { A | B }` 与 `class A`
+     * 共存时 `let a: A`、`@A` 都仍解析到类（cjc 0 诊断）。因此这里跳过 enumConstructors，
+     * 只透出 properties/variables/functions。
      */
     override fun processOwnNonTypeBindingsByName(
         name: Name,
         processor: (CfirCallableSymbol<*>) -> Unit,
     ) {
-        processCallablesByName(name, processor)
+        memberIndex.functions[name]?.forEach(processor)
+        memberIndex.properties[name]?.forEach(processor)
+        memberIndex.variables[name]?.forEach(processor)
     }
 
     /**

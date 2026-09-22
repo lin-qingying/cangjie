@@ -262,6 +262,16 @@ object CfirImportsChecker : CfirFileChecker() {
             val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: continue
             if (!hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) continue
 
+            // 官方语义：import macro package 是宏注册（external ImportManager 允许导入宏包且不报 unused）。
+            // 普通成员导入的导入名可能是宏包成员，故同时核对父包身份。
+            val macroExpansionRegistry = context.session.macroExpansionRegistry
+            if (macroExpansionRegistry != null &&
+                (macroExpansionRegistry.isDeclaredMacroPackage(importedFqName) ||
+                    macroExpansionRegistry.isDeclaredMacroPackage(importedFqName.parent()))
+            ) {
+                continue
+            }
+
             val usage = if (import.isPackageVisibleSourceImport()) packageUsage else localUsage
             if (import.isAllUnder) {
                 if (import.referencesAnyStarImportedTarget(usage.targets, usage.names, context.session)) continue

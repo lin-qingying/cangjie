@@ -47,6 +47,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
@@ -560,14 +561,24 @@ class CfirTypeResolverImpl(
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
         if (packageExists(fullPackageFqName)) {
-            val diagnostic = if (
-                session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name).isNotEmpty()
-            ) {
-                ConeNotATypeError(lastQualifier.name)
-            } else {
-                ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+            val topLevelCallables = session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
+            if (topLevelCallables.isNotEmpty()) {
+                // 官方语义：宏名是合法的宏调用/注解目标（`@Pkg.MacroName`），不算 NOT_A_TYPE；
+                // 交给 macro demand classification 按名字裁决。
+                if (topLevelCallables.all { it is CfirMacroDeclarationSymbol }) {
+                    return QualifiedClassLikeResolution(fullClassId, null, null)
+                }
+                return QualifiedClassLikeResolution(
+                    fullClassId,
+                    null,
+                    ConeNotATypeError(lastQualifier.name),
+                )
             }
-            return QualifiedClassLikeResolution(fullClassId, null, diagnostic)
+            return QualifiedClassLikeResolution(
+                fullClassId,
+                null,
+                ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+            )
         }
 
         return QualifiedClassLikeResolution(

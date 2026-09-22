@@ -278,6 +278,9 @@ fun resolveAndCheckCfirAfterConstruction(
         val registry = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry().apply {
             addAll(preConstructionDiagnostics)
             pre.files.forEach { preFile -> registerFileSurfaces(preFile.cfirFile, preFile.surfaces) }
+            pre.files.forEach { preFile ->
+                if (preFile.isMacroPackage) registerDeclaredMacroPackage(preFile.cfirFile.packageDirective.packageFqName)
+            }
         }
         session.register(MacroExpansionRegistry::class, registry)
         session.annotationMetadataRegistryOrNull?.freeze()
@@ -296,6 +299,12 @@ fun resolveAndCheckCfirAfterConstruction(
         is MacroConstructionResult.Failed,
         is MacroConstructionResult.ExecutorUnavailable,
         is MacroConstructionResult.Blocked -> return result to null
+    }
+    // macro package 身份是 ordinary resolve/check 面的公共事实：import 宏包 = 宏注册，永不报 unused。
+    result.registry.let { registry ->
+        pre.files.forEach { preFile ->
+            if (preFile.isMacroPackage) registry.registerDeclaredMacroPackage(preFile.cfirFile.packageDirective.packageFqName)
+        }
     }
     val provider = session.cfirProvider as CfirProviderImpl
     recordExpandedRawFilesOnce(provider, recordable, result.registry)
