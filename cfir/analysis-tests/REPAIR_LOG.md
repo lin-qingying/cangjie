@@ -9893,3 +9893,10 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - ③ 证据否定（未实施，待裁决）：官方开源全历史（1359 提交全量 git grep -S）中 `sema_annotation_error_arg_range/object` 仅存在于 DiagnosticSema.def（`'%s' only supports %s as arg` / `'%s' can only modify %s`），src 无任何触发点；cjc 1.0.0/1.0.5/1.1.3 实测 12+ 构造（@C[cname:123]→arg_num、@FastNative class→illegal_use_of_annotation、@Frozen class→illegal_use_of_annotation、@Deprecated[message:123]→parse_deprecated_wrong_argument、自定义注解参数错→mismatched_types 等）均不触发这两个诊断。它们在官方同样是死条目（或闭源专用），报告 §3.1"官方现役"定性不成立。按"不发明语义"纪律停止实现，交用户裁决：删除声明（归入 §3 冗余/废弃清理）或保留现状登记。
 - 修复过程事故记录：`.mac.cj` 排除在 A/B 恢复中被旧备份覆盖并随 a46e230a9 误提交（缺该修复），APILevelChecker testIndex 回归暴露后已修复重提 `510cd9426`。纪律更新：**A/B 每次恢复前必须重新备份当前版本**，不得复用旧备份。
 - verification: `:cfir:analysis-tests:test --tests '*MacroTestGenerated*' --tests '*MacroPsiTestGenerated*' --tests '*LLT{,Psi}TestGenerated$UnusedImport*'` → 37 失败全为 HEAD 既有（对照 a46e230a9 后基线）；APILevelChecker 切片仅剩 MergeStd×6 既有。提交 `510cd9426` + `48c0aea0d`。
+
+## 2026-09-22（续 3）：JFFI 双诊断删除（用户裁决：选项 a）
+
+- 决策：删除 `CFIR_ANNOTATION_ERROR_ARG_RANGE` / `CFIR_ANNOTATION_ERROR_OBJECT` 声明（提交 `a5040cde5`，7 文件 -64 行）。
+- 范围：生成源 CfirDiagnosticsList.kt、生成 CfirErrors.kt / CfirNonSuppressibleErrorNames.kt、CfirErrorsDefaultMessages.kt 消息、analysis-api-cfir 生成转换器/接口/Impl（CaCfirDataClassConverters.kt / CaCfirDiagnostics.kt / CaCfirDiagnosticsImpl.kt）。
+- 全仓残留检查（分模块窄路径）零命中。验证：:cfir:checkers:assemble + :analysis:analysis-api-cfir:assemble + Annotation/UnusedImport LLT 切片全绿。
+- 备注：analysis-api-cfir 的 addConversions80 因删除后仅剩重复注册项而整体移除（调用点同步删除），无诊断转换丢失。
