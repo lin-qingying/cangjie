@@ -8,4 +8,9 @@ class CfirDeclShapePsiTest : AbstractCfirPsiDiagnosticTest() {
     fun testDeclShapeProbe() {
         runTest("cfir/analysis-tests/testData/diagnostics/general/declShapeProbe.cj")
     }
+
+    @Test
+    fun testMultipleMainProbe() {
+        runTest("cfir/analysis-tests/testData/diagnostics/general/multipleMainProbe.cj")
+    }
 }

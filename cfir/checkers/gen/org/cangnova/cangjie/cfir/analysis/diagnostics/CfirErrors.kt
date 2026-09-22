@@ -418,6 +418,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_TUPLE_FIELD_CTYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_TUPLE_FIELD_CTYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_ENUM_MEMBER_ACCESS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_ENUM_MEMBER_ACCESS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PATTERN_CAN_NOT_BE_ASSIGNED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_PATTERN_CAN_NOT_BE_ASSIGNED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val REDEFINITION_ENTRY: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_REDEFINITION_ENTRY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // ExtendExtra
     val EXTEND_FUNCTION_CANNOT_OVERRIDDEN: CjDiagnosticFactory2<String, Name> = CjDiagnosticFactory2("CFIR_EXTEND_FUNCTION_CANNOT_OVERRIDDEN", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

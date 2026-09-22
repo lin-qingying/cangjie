@@ -2316,7 +2316,7 @@ open class CfirExpressionsResolveTransformer(
         val noArgEnumValueInvocation = resolvedCalleeReference.isNoArgEnumValueInvocation()
         val noConstructorDiagnostic = diagnostic === ConeNoConstructorError
         val noArgEnumValueOnValueReceiver =
-            diagnostic is ConeNotMemberOfError &&
+            diagnostic is ConeInvalidEnumMemberAccessError &&
                 callResolver.isNoArgEnumConstructorOnValueReceiver(
                     originalCall.explicitReceiver,
                     originalCallee.name,
@@ -2335,7 +2335,7 @@ open class CfirExpressionsResolveTransformer(
                 !noArgEnumValueOnValueReceiver
         val canTryImplicitInvoke = noArgEnumValueInvocation || when (diagnostic) {
             is ConeUnresolvedNameError -> true
-            is ConeNotMemberOfError -> noArgEnumValueOnValueReceiver
+            is ConeInvalidEnumMemberAccessError -> noArgEnumValueOnValueReceiver
             is ConeInapplicableCandidateError ->
                 !diagnostic.candidate.isFunctionTypeCallableValueCandidate() &&
                         (diagnostic.candidateSymbol is CfirEnumConstructorSymbol ||

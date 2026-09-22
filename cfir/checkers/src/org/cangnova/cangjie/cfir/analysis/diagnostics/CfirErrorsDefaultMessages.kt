@@ -1053,6 +1053,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INVALID_TUPLE_FIELD_CTYPE, "tuple member mustn't be struct with @C")
         map.put(CfirErrors.INVALID_ENUM_MEMBER_ACCESS, "base of member access can not be enum variable")
         map.put(CfirErrors.PATTERN_CAN_NOT_BE_ASSIGNED, "the pattern isn't irrefutable pattern and it can not be initialized")
+        map.put(CfirErrors.REDEFINITION_ENTRY, "multiple 'main's are found in source files")
 
         // ================================================================
         // ExtendExtra
