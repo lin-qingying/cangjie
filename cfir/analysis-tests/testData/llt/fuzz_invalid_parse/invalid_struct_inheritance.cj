@@ -16,7 +16,7 @@ interface I<T> {
 
 main() {
     var a: A<Int64> = A<Int64>()
-    a.test(<!TYPE_MISMATCH!>a<!>)
+    a.test(<!ARGUMENT_TYPE_MISMATCH!>a<!>)
 }
 
 
