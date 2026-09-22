@@ -9900,3 +9900,19 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 范围：生成源 CfirDiagnosticsList.kt、生成 CfirErrors.kt / CfirNonSuppressibleErrorNames.kt、CfirErrorsDefaultMessages.kt 消息、analysis-api-cfir 生成转换器/接口/Impl（CaCfirDataClassConverters.kt / CaCfirDiagnostics.kt / CaCfirDiagnosticsImpl.kt）。
 - 全仓残留检查（分模块窄路径）零命中。验证：:cfir:checkers:assemble + :analysis:analysis-api-cfir:assemble + Annotation/UnusedImport LLT 切片全绿。
 - 备注：analysis-api-cfir 的 addConversions80 因删除后仅剩重复注册项而整体移除（调用点同步删除），无诊断转换丢失。
+
+## 2026-09-22（续 4）：P3 批次 1——泛型/函数形态/实例化族 4 项实现 + 4 项官方证据否定
+
+- problem type: 缺口报告 §1.1C「泛型/函数形态/实例化（7）」批次的 7 个 v1.0.0 诊断缺口。
+- official evidence（cjc 1.0.5 + 1.0.0 双版本 8+ 探针矩阵，/tmp/cjcprobe_gen；镜像源码）：
+  - **可实施 4**：`sema_forbid_generic_constructor`（TypeChecker.cpp:1381-1392 + 主构造器 :1696-1698；泛型性只看构造器自身 `<T>`，static/@Java 豁免）、`sema_generic_in_operator_overload`（DeclAttributeChecker.cpp CJNATIVE 分支 :364-369）、`sema_abstract_class_can_not_be_instantiated`（TypeCheckCall.cpp:2515-2535；this()/super() 豁免）、`sema_numeric_convert_must_be_numeric`（TypeConvExpr.cpp:78-101；白名单 = 数值互转/Rune→UInt32/整数→Rune/Nothing→数值或 Rune）。
+  - **官方不报 4**：`sema_generic_function_in_interface` / `sema_invalid_generic_function_in_class`（open/override）/ `sema_abstract_generic_function_inside_abstract_class` 在 .def 255-260 行整段标注 "deleted by native, only used by VM"，DeclAttributeChecker 的 `#ifdef CANGJIE_CODEGEN_CJNATIVE_BACKEND` 分支只保留 operator 检查，cjc 实测 0 诊断；`sema_forbid_generic_nonstatic_method` 官方全树零触发点（死条目，与 JFFI 双诊断同类）。CFIR 不实现，登记。
+- Kotlin counterpart: K2 无泛型限制对应检查（Kotlin 允许泛型非静态方法/构造器）；abstract 实例化在 K2 属调用完成期拦截（与 CFIR 采用的表达式 checker 分层对称）；数值转换对应 FirTypeConversion + 溢出 checker（与既有 CfirTypeConversionOverflowChecker 同构）。
+- CFIR owner files changed（提交 `50fcc2d15`，15 文件 +249）：
+  - 诊断注册：CfirDiagnosticsList.kt（4 defs）+ gen CfirErrors.kt / CfirNonSuppressibleErrorNames.kt + CfirErrorsDefaultMessages.kt（官方 .def 文案逐字对齐）。
+  - `CfirGenericConstructorChecker`（新，constructorCheckers）：typeParameters 非空 + 非 static + 非 @Java + owner 为 class/struct；锚 init 名（constructorNameDiagnosticSource）。
+  - `CfirOperatorDeclarationChecker` 补 GENERIC_IN_OPERATOR_OVERLOAD：锚 operator 名。
+  - `CfirAbstractClassInstantiationChecker`（新，functionCallCheckers）：CfirResolvedNamedReference→CfirConstructorSymbol→callableId.classId→owner CfirClass isAbstract；ConstructorDelegationThis/Super origin 豁免；锚 callee 名。
+  - 数值转换：DiagnosticKind 新增 `NumericConvertMustBeNumeric`；transformTypeConversion 的 errorType 改为 ConeSimpleDiagnostic 结构化诊断；coneDiagnosticToCfirDiagnostic 增映射。诊断锚定整个转换表达式（错误类型承载于 CfirTypeConversion 结果；官方锚实参，语义相同，range 差异登记）。
+- verification: 新 fixture `testData/diagnostics/constructor/genericShape.cj` + `CfirGenericShape{Psi,LightTree}Test` 双入口全绿（首轮仅 NUMERIC_CONVERT 锚点差异，按承载点修正 fixture 后通过）；全量 `:cfir:analysis-tests:test` 失败集 = P2 基线（17 unique × 2 套件，零新增）。
+- 批次状态：§1.1C 35 项中已处理 7（4 实现 + 4 否定，其中 abstract_generic 为顺带发现的兄弟死条目）；剩余 28 项待后续批次（字面量/数组/range/模式 9、C 互操作/可变性/比较 7、作用域与访问 6、其余 6）。
