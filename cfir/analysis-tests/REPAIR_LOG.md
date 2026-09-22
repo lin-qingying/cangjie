@@ -9861,3 +9861,15 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - fixtures covered: `CfirAnalysisLLTTestGenerated$FuzzInvalidParse#testInvalidStructInheritance`、`CfirAnalysisLLTPsiTestGenerated$FuzzInvalidParse#testInvalidStructInheritance`（组内 invalid_try_with_resource2 本就绿）。
 - verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' :cfir:analysis-tests:test --continue --console=plain`（全量）。
 - verification outcome: 全量 88 失败，与上一基线（90）相比**净减 2**（恰为本 fixture 双入口），diff 无任何其它差异，0 新增回归。
+
+## 2026-09-22：APILevel merge_anno 家族（宏失败×缺口报告 P0，fixture 路线）
+
+- problem type: `APILEVEL_REF_HIGHER` 漏报（`CfirAnalysisMacro{,Psi}TestGenerated$Llt$APILevelChecker$Level{,V1}$MergeAnno` 全族 12 处漏报、6 个独立 fixture）。
+- root cause: **非"宏展开产物属性保真"缺陷**（该族 fixture 无任何宏参与）。merge_anno 语料移植时 dep 声明上的 `@APILevel` 注解全部丢失（git 全历史核查均无注解），期望却按官方语义要求报 level 超限。官方 APILevel 属性跨包来源是依赖包 `.cjd` sidecar 合并（`external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp`）；source-only LLT 管线没有该环节，因此属性必须写在 dep 声明源上——同目录通过的 `multi_anno.cj`/`test_dep01.cj`/`dep_ok1.cj` 均采用 `@!APILevel[...]` 直写形态。
+- official Cangjie evidence: `external/cangjie_compiler/src/Frontend/MergeAnnoFromCjd.cpp`（依赖包注解合并唯一来源）；CFIR 侧 `CfirDeclarationAvailabilityProvider.ownApiLevelInfo` 只读声明注解（providers/src/.../CfirDeclarationAvailabilityProvider.kt:108）；测试 SDK（cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative）无任何 .cjd。
+- Kotlin counterpart files consulted: 不适用（fixture 完整性问题，非框架语义缺口；诊断触发/范围逻辑未动）。
+- CFIR owner files changed: 无代码改动。fixture 修正（用户裁决路线"补全 fixture 注解"）：18 个 fixture（level 用 `@!APILevel[since: "N"]`、level_v1 用 `@!APILevel[N]`）——merge1/merge01（top-level foo 三重载 1/2/3）、merge2/merge01（class A/struct B/enum C = 3）、merge3/merge02（dep2 补 `import ohos.labels.APILevel`，cccc 与解构 aaaa/bbbb = 13）、merge03/test1（泛型 A/foo = 12）、merge04/test1（三个 extend foo = 12）、merge05/test（foo = 12）。期望标记未改一字；为无注释处选定的 since 值只需 > project API_LEVEL，LLT 标记比对不含诊断参数。
+- repair principle: 注解缺失的语料不能靠给检查器加"推断 level"的机制兜底——属性的权威来源只能是声明/官方 sidecar 合并；补语料即恢复官方语义下的可判定性。
+- fixtures covered: `Level$MergeAnno{,$Merge01,$Merge02,$Merge03,$Merge04,$Merge05}` 与 `LevelV1$MergeAnno{...}` 全部 merge 用例（LightTree + Psi 双入口）。
+- verification command: `java -jar gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir 'D:/code/intellij/cangjie' ':cfir:analysis-tests:test' --tests '*CfirAnalysisMacroTestGenerated$Llt$APILevelChecker*' --tests '*CfirAnalysisMacroPsiTestGenerated$Llt$APILevelChecker*' --continue --console=plain`。
+- verification outcome: 212 tests, **6 failed（全部为修复前已存在的 MergeStd 用例）**；merge_anno 其余 96 条全绿，Hide/multi_anno/dep 系无回归。残留 MergeStd 6 条属另一问题族：importall 需要 std.argopt 的 `.cjd` sidecar（测试 SDK 无任何 .cjd）才会报 APILEVEL_REF_HIGHER，且实际另有 25 条 `UNUSED_IMPORT`（std.*）+ `DEPRECATED_WARNING` 多报——归入缺口报告 P1「UNUSED_IMPORT 专项/门禁批次」统一裁决，不在本 P0 范围。提交 `226b3a8f9`。
