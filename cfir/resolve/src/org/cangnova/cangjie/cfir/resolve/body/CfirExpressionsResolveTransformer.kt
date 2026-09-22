@@ -5728,22 +5728,41 @@ open class CfirExpressionsResolveTransformer(
                     ?: effectiveReceiverType.elementType
                 else -> {
                     val arrayElementType = effectiveReceiverType?.arrayElementType ?: receiverType?.arrayElementType
-                    if (hasRangeIndex && arrayElementType != null) {
-                        constructArrayType(arrayElementType)
-                    } else {
-                        arrayElementType?.propagatedErrorTypeOrNull() ?: arrayElementType
-                    }
-                        ?: if (receiverType != null) {
-                            resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
+                    // Array 的元素快速访问只有在索引实参确实能匹配官方 `operator func [](Int64)`
+                    // 时才与官方等价；索引类型不合法（如 Float64 字面量、Int8/UInt64 变量）时
+                    // 必须落到统一的 get 调用解析管线，由它产出实参级/调用级诊断。
+                    if (arrayElementType != null &&
+                        (hasRangeIndex || subscriptExpression.hasInt64CompatibleIndices())
+                    ) {
+                        if (hasRangeIndex) {
+                            constructArrayType(arrayElementType)
                         } else {
-                            errorType("receiver has no type")
+                            arrayElementType.propagatedErrorTypeOrNull() ?: arrayElementType
                         }
+                    } else if (receiverType != null) {
+                        resolveSubscriptExpressionType(subscriptExpression, receiverType, data)
+                    } else {
+                        errorType("receiver has no type")
+                    }
                 }
             }
         }
         subscriptExpression.replaceConeTypeOrNull(resultType)
         return subscriptExpression
     }
+
+    /**
+     * 官方数组读下标的唯一内建签名是 `operator func [](index: Int64)`（std.core Array/VArray）；
+     * `ChkSubscriptExpr` 把 `a[i]` 脱糖为 `a.[](i)` 后索引实参走 CheckCallCompatible
+     * （官方实测：Float64 字面量索引报 cannot_convert_literal + parameters_and_arguments_mismatch，
+     * Int8/UInt64 等变量索引报 mismatched_types，只有 Int64 及整数字面量合法）。
+     * 数组元素快速路径只有在全部索引实参都是 Int64 兼容时才与官方等价。
+     */
+    private fun CfirSubscriptExpression.hasInt64CompatibleIndices(): Boolean =
+        indices.all { index ->
+            val indexType = index.coneTypeOrNull ?: return@all false
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, indexType, builtinTypes.int64Type) == true
+        }
 
     /** 类型 qualifier 不是运行时数组值，不能走 tuple/VArray/Array 快速元素访问路径。 */
     private fun CfirExpression.isTypeQualifierReceiver(): Boolean =
