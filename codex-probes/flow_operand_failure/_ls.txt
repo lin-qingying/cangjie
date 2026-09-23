@@ -1,0 +1,5 @@
+total 13
+drwxr-xr-x 1 lin17 197609  0 Sep 23 11:53 .
+drwxr-xr-x 1 lin17 197609  0 Sep 23 11:53 ..
+-rw-r--r-- 1 lin17 197609  0 Sep 23 11:53 _ls.txt
+-rw-r--r-- 1 lin17 197609 10 Sep 23 11:53 _test.txt

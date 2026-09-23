@@ -1,0 +1,70 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_invalid_binary_expr",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "invalid binary operator '~>' on type 'Int64' and 'Class-A'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                    "Line": 5,
+                    "Column": 11
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                            "Line": 5,
+                            "Column": 11
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                            "Line": 5,
+                            "Column": 13
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_illegal_super_alone",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "invalid super expression, it can only be used on the left-hand side of a dot",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                    "Line": 5,
+                    "Column": 14
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                            "Line": 5,
+                            "Column": 14
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\e_super_compose.cj",
+                            "Line": 5,
+                            "Column": 15
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 2,
+        "PrintedErrors": 2,
+        "Warnnings": 0,
+        "PrintedWarnnings": 0
+    }
+}

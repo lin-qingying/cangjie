@@ -1,0 +1,115 @@
+### diagnostics/general/flowThisProbe.cj
+    //   即 `~>` 两侧、`|>` 的函数部分都不允许裸 `this`；`this |> f` 合法。
+    1 |> <!FLOW_EXPRESSIONS_USE_THIS_OR_SUPER!>this<!>
+    x ~> <!FLOW_EXPRESSIONS_USE_THIS_OR_SUPER!>this<!>
+    y ~> <!FLOW_EXPRESSIONS_USE_THIS_OR_SUPER!>this<!>
+    1 <!INVALID_BINARY_OPERATOR!>|><!> <!ILLEGAL_SUPER_ALONE!>super<!>
+    x <!INVALID_BINARY_OPERATOR!>~><!> <!ILLEGAL_SUPER_ALONE!>super<!>
+    <!FLOW_EXPRESSIONS_USE_THIS_OR_SUPER!>this<!> ~> f
+    1 |> f
+    1 |> <!FLOW_EXPRESSIONS_USE_THIS_OR_SUPER!>this<!>
+
+### llt/ErrMsgs/composition_0.cj
+    let err = 1 <!INVALID_BINARY_OPERATOR!>&&<!> false
+    err ~> err
+
+### llt/ErrMsgs/pipeline_0.cj
+    let err = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
+    1 |> C()
+    err |> err
+    (err |> err) + false
+
+### llt/Extend/extend_function_conflict.cj
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(a: Int64) {
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(a: Int64) {
+    let i2 = i.<!AMBIGUOUS_USE!>foo<!> ~> i.foo
+
+### llt/box/box_export/src/service/main.cj
+    let descriptorOption = (_descriptors[typeInfo] |> last)
+    return (constructor.apply(args |> collectArray) as Object).getOrThrow()
+    let list = classInfo.constructors |> collectArrayList
+    list.<!DEPRECATED_WARNING!>sortBy<!> {
+    return (list |> first).getOrThrow {Exception("No constructor found")}
+    import std.reflect.{<!UNUSED_IMPORT!>ClassTypeInfo<!>, TypeInfo}
+    import std.collection.{ArrayList, first, filter, collectArray, <!UNUSED_IMPORT!>collectArrayList<!>}
+    let arg = args |> filter {a => pattern.typeInfo.isSubtypeOf(TypeInfo.of(a))} |> first
+    let obj = constructor.apply(parameters |> collectArray) as T
+
+### llt/exception/try_visible_results.cj
+    let value = try { Left() } catch (_) <!MISMATCHING_CATCH_BLOCK!>{ Right() }<!>
+    let value = try { 1 } finally { <!UNRESOLVED_REFERENCE!>missingFinally<!> }
+    let value = try { 1 } catch (e: <!UNDECLARED_TYPE_NAME!>MissingException<!>) { e.foo(); 2 }
+    let value = try { 1 } catch (_: <!CATCH_TYPE_MUST_EXTEND_EXCEPTION!>Nothing<!>) { 2 }
+    let value = try { <!UNRESOLVED_REFERENCE!>missingTry<!>; 1 } catch (_) { 2 }
+    let value = try { 1 } catch (_) { <!UNRESOLVED_REFERENCE!>missingCatch<!>; 2 }
+    let value = try { 1 } finally { <!UNRESOLVED_REFERENCE!>missingFinally<!>; 2 }
+    (try { <!UNRESOLVED_REFERENCE!>missingPipeline<!> } finally {}) |> {value: Unit => true}
+    ({value: Int64 => true})(try { <!UNRESOLVED_REFERENCE!>missingInvoke<!>; 1 } finally {})
+    func nested(): Unit { <!UNRESOLVED_REFERENCE!>missingFunctionBody<!> }
+    acceptBool(<!ARGUMENT_TYPE_MISMATCH!>value<!>)
+    let nested: () -> Unit = { => <!UNRESOLVED_REFERENCE!>missingLambdaBody<!> }
+    func nested(value: <!UNDECLARED_TYPE_NAME!>MissingParameter<!>): Unit {}
+    func nested(): Unit { <!UNRESOLVED_REFERENCE!>missingFunctionBody<!> }
+    acceptBool(<!ARGUMENT_TYPE_MISMATCH!>value<!>)
+    let nested: () -> Unit = { => <!UNRESOLVED_REFERENCE!>missingLambdaBody<!> }
+    func nested(value: <!UNDECLARED_TYPE_NAME!>MissingParameter<!>): Unit {}
+    case <!UNREACHABLE_PATTERN!>(_: Rune, _: Bool)<!> => ()
+    <!UNRESOLVED_REFERENCE!>missingCatch<!>
+    match (try { (1, true) } finally { <!UNRESOLVED_REFERENCE!>missingFinally<!> }) {
+
+### llt/flow_expr/composition9_1.cj
+    let h = <!UNRESOLVED_REFERENCE!>f<!> ~> <!UNRESOLVED_REFERENCE!>g<!>
+
+### llt/flow_expr/composition_reference_context.cj
+    let rightMember = s.mono ~> s.overloaded
+    let rightTopLevel: (Int64) -> Int64 = s.mono ~> plain
+    let bothOverloaded = s.<!AMBIGUOUS_USE!>overloaded<!> ~> s.overloaded
+    let leftOverloaded = s.<!AMBIGUOUS_USE!>overloaded<!> ~> s.mono
+    let typedLeft: (Int64) -> Int64 = s.<!AMBIGUOUS_USE!>overloaded<!> ~> s.overloaded
+    let plainBoth = <!AMBIGUOUS_USE!>plain<!> ~> plain
+    let parenthesizedRight = s.mono ~> (s.<!AMBIGUOUS_USE!>overloaded<!>)
+    let bothMissing = <!UNRESOLVED_REFERENCE!>missingLeft<!> ~> <!UNRESOLVED_REFERENCE!>missingRight<!>
+    let ambiguousAndMissing = s.<!AMBIGUOUS_USE!>overloaded<!> ~> <!UNRESOLVED_REFERENCE!>missingRight<!>
+    let missingAndOverloaded = <!UNRESOLVED_REFERENCE!>missingLeft<!> ~> s.overloaded
+    let missingReceiver = <!UNRESOLVED_REFERENCE!>unknownReceiver<!>.overloaded ~> s.overloaded
+
+### llt/flow_expr/err_pipeline_00.cj
+    <!TYPE_MISMATCH!>0 |> f<!>
+
+### llt/flow_expr/erro_flow_lambda.cj
+    var d: Bool = 0 |> {
+    A<!WRONG_NUMBER_OF_ARGUMENTS!>(name: 1)<!>;
+    var g = f ~> {
+    A<!WRONG_NUMBER_OF_ARGUMENTS!>(name: 1)<!>;
+
+### llt/flow_expr/pipeline10.cj
+    (0.0 / 1.0) - <!UNRESOLVED_REFERENCE!>x<!> |> f
+
+### llt/flow_expr/pipeline6.cj
+    return ArrayList<Int64>([1]) |> f
+    <!UNRESOLVED_REFERENCE!>G<!>
+
+### llt/flow_expr/pipeline9.cj
+    let _ = A<!WRONG_NUMBER_OF_ARGUMENTS!>(1)<!>
+    }) |> g<Unit>
+
+### llt/fuzz_invalid_parse/invalid_try_with_resource2.cj
+    () |> {
+    <!UNRESOLVED_REFERENCE!>xxx<!>
+    } |> {a: Unit => return true}
+    () |> {
+    <!UNRESOLVED_REFERENCE!>yyy<!>
+    } |> {a: Unit => return true}
+
+### llt/generics/function20_unitRetType_test2.cj
+    public static var a = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>{input: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!> => <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>input<!>}<!>
+    public static var b = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>{input: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!> => <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>input<!>}<!>
+    1 |> A<Int64>.a
+    A<Int64>.a ~> A<Int64>.b
+    1 |> (A<Int64>.a ~> A<Int64>.b)
+
+### llt/generics/generic_subst_perf.cj
+    let v1 = {<!LAMBDA_MUST_HAVE_TYPE_ANNOTATION!>x<!> => x.foo("123")}
+    let v2 = [C()] |> any {x => x.foo(2)}
+
+16

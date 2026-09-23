@@ -1,0 +1,47 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "chir_dce_unused_function_main",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused function:'main'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\h1_control_pipe.cj",
+                    "Line": 2,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "unused function",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\h1_control_pipe.cj",
+                            "Line": 2,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\h1_control_pipe.cj",
+                            "Line": 4,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 1,
+        "PrintedWarnings": 1
+    }
+}

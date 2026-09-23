@@ -1,0 +1,13 @@
+total 24
+drwxr-xr-x 1 lin17 197609   0 Sep 23 11:53 .
+drwxr-xr-x 1 lin17 197609   0 Sep 23 11:53 ..
+-rw-r--r-- 1 lin17 197609 200 Sep 23 11:53 _ls.txt
+-rw-r--r-- 1 lin17 197609   0 Sep 23 11:53 _probe_ls.txt
+-rw-r--r-- 1 lin17 197609  10 Sep 23 11:53 _test.txt
+drwxr-xr-x 1 lin17 197609   0 Sep 23 11:53 out105
+-rw-r--r-- 1 lin17 197609  92 Sep 23 11:53 p1_comp_field_nonfunc.cj
+-rw-r--r-- 1 lin17 197609  77 Sep 23 11:53 p2_pipe_this.cj
+-rw-r--r-- 1 lin17 197609  61 Sep 23 11:53 p3_pipe_nonfunc_right.cj
+-rw-r--r-- 1 lin17 197609  70 Sep 23 11:53 p4_control_composition.cj
+-rw-r--r-- 1 lin17 197609  67 Sep 23 11:53 p5_control_pipeline.cj
+-rw-r--r-- 1 lin17 197609  61 Sep 23 11:53 p6_comp_both_nonfunc.cj

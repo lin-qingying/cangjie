@@ -1,0 +1,135 @@
+=== out105 ===
+--- out105/p1_comp_field_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '~>' on type 'Int64' and '(Int64) -> Int64'",
+"Line": 5,
+"Column": 18
+"Line": 5,
+"Column": 18
+"Line": 5,
+"Column": 20
+--- out105/p2_pipe_this.json
+"DiagKind": "chir_dce_unused_variable",
+"Message": "unused variable:'v'",
+"Line": 5,
+"Column": 8
+"Line": 5,
+"Column": 8
+"Line": 5,
+"Column": 9
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 7,
+"Column": 1
+"Line": 7,
+"Column": 1
+"Line": 7,
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out105/p3_pipe_nonfunc_right.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '|>' on type 'Int64' and 'Int64'",
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 20
+--- out105/p4_control_composition.json
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 3,
+"Column": 1
+"Line": 3,
+"Column": 1
+"Line": 6,
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out105/p5_control_pipeline.json
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 3,
+"Column": 1
+"Line": 3,
+"Column": 1
+"Line": 6,
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out105/p6_comp_both_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '~>' on type 'Int64' and 'Int64'",
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 20
+=== out100 ===
+--- out100/p1_comp_field_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '~>' on type 'Int64' and '(Int64) -> Int64'",
+"Line": 5,
+"Column": 18
+"Line": 5,
+"Column": 18
+"Line": 5,
+"Column": 20
+--- out100/p2_pipe_this.json
+"DiagKind": "chir_dce_unused_variable",
+"Message": "unused variable:'v'",
+"Line": 5,
+"Column": 8
+"Line": 5,
+"Column": 8
+"Line": 5,
+"Column": 9
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 7,
+"Column": 1
+"Line": 7,
+"Column": 1
+"Line": 7,
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out100/p3_pipe_nonfunc_right.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '|>' on type 'Int64' and 'Int64'",
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 20
+--- out100/p4_control_composition.json
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 3,
+"Column": 1
+"Line": 3,
+"Column": 1
+"Line": 6,
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out100/p5_control_pipeline.json
+"DiagKind": "chir_dce_unused_function_main",
+"Message": "unused function:'main'",
+"Line": 3,
+"Column": 1
+"Line": 3,
+"Column": 1
+"Line": 6,
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+--- out100/p6_comp_both_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr",
+"Message": "invalid binary operator '~>' on type 'Int64' and 'Int64'",
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 18
+"Line": 3,
+"Column": 20
+134

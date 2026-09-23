@@ -1,0 +1,1 @@
+-rwxr-xr-x 1 lin17 197609 132798408 Dec  4  2025 /c/Users/lin17/.cangjie/sdks/cangjie-1.0.0/bin/cjc.exe
