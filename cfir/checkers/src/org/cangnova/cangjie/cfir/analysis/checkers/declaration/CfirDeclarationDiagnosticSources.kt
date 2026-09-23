@@ -205,6 +205,31 @@ internal fun CfirTypeAlias.typeAliasDeclarationHeaderDiagnosticSource(): Abstrac
 }
 
 /**
+ * typealias 声明名诊断位置。
+ *
+ * 官方 `MakeRangeForDeclIdentifier`（`Sema/Diags.cpp:109`）对普通声明返回 `MakeRange(decl.identifier)`，
+ * 因此 `sema_accessibility` 锚在别名名而不是整条声明；本仓颉前端对其他声明类别（class/interface/
+ * struct/enum/函数/属性/字段）也统一锚在声明名，typealias 需要同一口径。
+ */
+internal fun CfirTypeAlias.typeAliasNameDiagnosticSource(): AbstractCjSourceElement? {
+    source?.psi?.let { psi ->
+        val typeAliasPsi = when (psi) {
+            is CjTypeAlias -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjTypeAlias::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjTypeAlias::class.java)
+        }
+        val nameIdentifier = typeAliasPsi?.nameIdentifier
+        if (nameIdentifier != null) {
+            return CjOffsetsOnlySourceElement(
+                startOffset = nameIdentifier.textRange.startOffset,
+                endOffset = nameIdentifier.textRange.endOffset,
+            )
+        }
+    }
+    return (source as? CjSourceElement)?.findTypeAliasNameSource(name) ?: source
+}
+
+/**
  * 官方 cjc 的部分声明级诊断锚定在声明节点起始位置，JSON 主范围只有首字符。
  * 使用 offsets-only source 避免 PSI 默认范围扩展到整条声明。
  */
@@ -495,30 +520,59 @@ private fun CjSourceElement.findClassLikeDeclarationHeaderSource(): AbstractCjSo
  *
  * 范围从 `type` 关键字开始，到别名名称或类型参数列表结束，排除右侧展开类型。
  */
-private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSourceElement? {
-    val tokens = collectLeafTokens()
-
+/**
+ * 在给定的 light-tree leaf token 流中定位 typealias 名称 token 的下标。
+ *
+ * 必须复用调用方已经取到的 token 列表：`collectLeafTokens()` 每次调用都会重建节点对象，
+ * 跨调用比较 token 身份会得到 -1，从而把范围计算带偏。
+ */
+private fun CjSourceElement.findTypeAliasNameTokenIndex(tokens: List<LighterASTNode>, name: Name): Int? {
     for ((index, token) in tokens.withIndex()) {
         if (token.tokenType != CjTokens.TYPE_KEYWORD) continue
-        val nameToken = tokens.asSequence()
+        val offsetFromKeyword = tokens.asSequence()
             .drop(index + 1)
             .takeWhile { it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
-            .firstOrNull { it.tokenType == CjTokens.IDENTIFIER && treeStructure.toString(it).toString() == name.asString() }
-            ?: continue
-        val endToken = tokens.asSequence()
-            .drop(tokens.indexOf(nameToken) + 1)
-            .takeWhile { it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
-            .filter { treeStructure.toString(it).toString().isNotBlank() }
-            .lastOrNull()
-            ?.takeIf { treeStructure.getEndOffset(it) > treeStructure.getEndOffset(nameToken) }
-            ?: nameToken
-        return CjOffsetsOnlySourceElement(
-            startOffset = treeStructure.getStartOffset(token),
-            endOffset = treeStructure.getEndOffset(endToken),
-        )
+            .indexOfFirst { it.tokenType == CjTokens.IDENTIFIER && treeStructure.toString(it).toString() == name.asString() }
+        if (offsetFromKeyword >= 0) return index + 1 + offsetFromKeyword
     }
 
     return null
+}
+
+/**
+ * 在 light-tree source 中查找 typealias 声明名范围。
+ */
+private fun CjSourceElement.findTypeAliasNameSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+    val nameIndex = findTypeAliasNameTokenIndex(tokens, name) ?: return null
+    val nameToken = tokens[nameIndex]
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(nameToken),
+        endOffset = treeStructure.getEndOffset(nameToken),
+    )
+}
+
+/**
+ * 在 light-tree source 中查找 typealias 声明头部范围。
+ * 范围从 `type` 关键字开始，到别名名称或类型参数列表结束，排除右侧展开类型。
+ */
+private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+    val nameIndex = findTypeAliasNameTokenIndex(tokens, name) ?: return null
+    val nameToken = tokens[nameIndex]
+    val keywordIndex = tokens.take(nameIndex).indexOfLast { it.tokenType == CjTokens.TYPE_KEYWORD }
+    if (keywordIndex < 0) return null
+    val endToken = tokens.asSequence()
+        .drop(nameIndex + 1)
+        .takeWhile { it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
+        .filter { treeStructure.toString(it).toString().isNotBlank() }
+        .lastOrNull()
+        ?.takeIf { treeStructure.getEndOffset(it) > treeStructure.getEndOffset(nameToken) }
+        ?: nameToken
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(tokens[keywordIndex]),
+        endOffset = treeStructure.getEndOffset(endToken),
+    )
 }
 
 /**

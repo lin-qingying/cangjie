@@ -1336,6 +1336,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.UNUSED_FUNCTION, "unused function")
         map.put(CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS, "type arg(s) {0} are not used", RENDER_STRING)
         map.put(CfirErrors.TYPEALIAS_CYCLE, "type cycle detected: ''{0}''", RENDER_STRING)
+        // 对齐 C++ DiagnosticSema.def:39 `"'%s' type '%s' refers to '%s' type '%s'"`
+        map.put(
+            CfirErrors.TYPEALIAS_EXTERNAL_REFER_INTERNAL,
+            "''{0}'' type ''{1}'' refers to ''{2}'' type ''{3}''",
+            VISIBILITY, RENDER_NAME, VISIBILITY, RENDER_NAME,
+        )
 
         // ================================================================
         // Mock

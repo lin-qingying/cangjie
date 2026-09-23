@@ -1157,6 +1157,15 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Visibility>("visibility")
         }
 
+        // 非 private type alias 引用访问级别更低的类型
+        // 对齐 C++ sema_typealias_external_refer_internal
+        val TYPEALIAS_EXTERNAL_REFER_INTERNAL by error<PsiElement> {
+            parameter<Visibility>("aliasAccessLevel")
+            parameter<Name>("typeAlias")
+            parameter<Visibility>("typeAccessLevel")
+            parameter<Name>("typeName")
+        }
+
         // 参数个数不匹配（通用）
         val PARAM_COUNT_MISMATCH by error<PsiElement> {
             parameter<Int>("expected")
