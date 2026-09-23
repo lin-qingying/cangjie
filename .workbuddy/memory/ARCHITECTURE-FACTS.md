@@ -77,6 +77,31 @@
 - **`.cjo` 全部来自外部 `cjc`**，本仓不自产：`CjoPackageWriter` 除定义与单测外无调用点，且**不写 annotations**
   （schema 的 `Decl.annotations` 已支持，反序列化 `CfirDeclDeserializer.deserializeAnnotations:319` 已支持）。
 
+### `DeclaredSupertypeClassification` 投影表（改父类型消费点前必读）
+
+`cfir/providers/src/.../resolve/providers/DeclaredSupertypeClassification.kt` 是父类型的唯一语义边界：
+分类 5 个（`ValidNominal` / `RecoverableNominalError` / `PrimaryResolutionError` / `LoopError` /
+`InvalidTargetKind`），消费者**必须显式选投影**，不要自己判 `ConeErrorType`：
+
+| 投影 | 覆盖 | 用途 |
+| --- | --- | --- |
+| `ordinarySupertypeTypeOrNull()` | `ValidNominal` | 普通类型关系、继承成员作用域 |
+| `scopeTraversalTypeOrNull()` | `ValidNominal` | 继承成员 |
+| `inheritanceCycleDependencyTypeOrNull()` | `ValidNominal` + `RecoverableNominalError` | 继承环 DFS 的直接依赖（**不含** `LoopError`） |
+| `independentNominalCheckTypeOrNull()` | 上述 + `LoopError.delegated` | final、父类型顺序等独立声明规则 |
+| `constructorDependencyTypeOrNull()` | `ValidNominal` + 间接环的 `LoopError.delegated` | 构造器委托依赖 |
+| `duplicateSuperInterfaceTraversalTypeOrNull()` | `ValidNominal` + `LoopError.delegated` | **重复父接口闭包遍历**（2026-09-22 新增） |
+
+- **`LoopError` 是 CFIR 对「断环边」的表示**：`CfirSupertypesResolution.breakLoopsInTypeRef`
+  把环上「目标能回达 owner」的那条 superTypeRef 换成 LoopError typeRef。
+  但**官方从不改写 AST 父类型**（`PreCheck.cpp:1289-1322` 的环 DFS 只维护 `checkFlag` 并报诊断），
+  `TypeChecker.cpp:2558-2661` 的重复检查遍历的就是这些已解析声明边。
+  ⇒ **任何「官方在声明边上遍历」的检查都不能用成员作用域投影**，否则会在环恢复态整支剪掉（漏报）。
+  已知此类消费者：重复父接口闭包（`findInstantiatedDuplicateSuperInterface`）。
+- `LoopError` 只落在环中**第一个被处理到**的边上（`breakLoops` 按声明顺序处理，改写后
+  `directDependencies` 不再返回该目标）⇒ 环内其余边仍是 `ValidNominal`。这就是「同一环里有些
+  诊断照常报出、有些漏报」的原因；排查环恢复态漏报时先确认**断环边落在哪条边上**。
+
 ### checker 框架（要改 checker 行为前必读）
 
 - **没有 `CfirChecker` 这个类型**。真实基类是 4 个独立 `abstract class`：
