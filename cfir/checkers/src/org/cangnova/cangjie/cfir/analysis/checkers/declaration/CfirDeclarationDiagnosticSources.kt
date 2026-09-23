@@ -279,6 +279,41 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
         ?: source
 
 /**
+ * 宏声明名称诊断位置：官方 `redefinition of macro 'm'` 锚定宏名 token（cjc 1.0.5/1.1.3
+ * 实测均为名称位置），而非整条声明。
+ */
+internal fun CfirMacroDeclaration.macroNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val macroPsi = when (psi) {
+            is CjMacroDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjMacroDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjMacroDeclaration::class.java)
+        }
+        macroPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findMacroNameSource(name)
+        ?: source
+
+private fun CjSourceElement.findMacroNameSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectSourceNodes()
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType != CjTokens.MACRO_KEYWORD) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .firstOrNull { node ->
+                node.tokenType == CjTokens.IDENTIFIER &&
+                    treeStructure.toString(node).toString() == name.asString()
+            }
+            ?: continue
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(nameToken),
+            endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+    return null
+}
+
+/**
  * 取得 `operator []` setter 返回类型诊断的源码范围。
  *
  * 有显式返回类型时，诊断归属于完整返回类型；省略返回类型时，归属于 `[]` 操作名。

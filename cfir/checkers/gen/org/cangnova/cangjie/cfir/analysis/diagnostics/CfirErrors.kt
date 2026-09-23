@@ -643,6 +643,7 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // Macro
     val MACRO_NOT_EXPANDED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_MACRO_NOT_EXPANDED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val EXPAND_MACRO_REDEFINITION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_EXPAND_MACRO_REDEFINITION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val MACRO_EXPANSION_FAILED: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_MACRO_EXPANSION_FAILED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val MACRO_DIAG_REPORT_ERROR: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_MACRO_DIAG_REPORT_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val MACRO_DIAG_REPORT_WARNING: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_MACRO_DIAG_REPORT_WARNING", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

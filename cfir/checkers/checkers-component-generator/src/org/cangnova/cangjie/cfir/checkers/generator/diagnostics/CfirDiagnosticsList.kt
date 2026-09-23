@@ -2624,6 +2624,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("macroName")
         }
 
+        // 官方 `sema_expand_macro_redefinition`（PreCheck.cpp:1405）：同名宏声明
+        // 恰好 2 个且参数个数相等时在两个声明上都报；参数个数不等
+        // （attribute + non-attribute 组合）允许；>=3 个时官方双 SDK 实测均不报。
+        val EXPAND_MACRO_REDEFINITION by error<PsiElement> {
+            parameter<String>("macroName")
+        }
+
         // baseline 第 9 节 "MACRO_EXPANSION_FAILED": construction step 中
         // executor 调用或 fragment parse 失败、且未降级。
         val MACRO_EXPANSION_FAILED by error<PsiElement> {
