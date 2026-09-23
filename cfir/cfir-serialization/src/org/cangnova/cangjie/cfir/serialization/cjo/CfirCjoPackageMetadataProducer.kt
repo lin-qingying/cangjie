@@ -8,18 +8,23 @@ import PackageFormat.ExprKind
 import PackageFormat.LitConstKind
 import PackageFormat.StringKind
 import PackageFormat.SemaTyInfo
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
-import org.cangnova.cangjie.cfir.expressions.platformAnnotationKind
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.metadata.model.Attribute as CfirAttribute
 import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.Name
 import java.util.IdentityHashMap
 
 /**
@@ -40,15 +45,20 @@ object CfirCjoPackageMetadataProducer {
         private val declarations = ArrayList<CfirDeclaration>()
         private val declarationIndex = IdentityHashMap<CfirDeclaration, UInt>()
         private val topLevel = IdentityHashMap<CfirDeclaration, Boolean>()
+        private val declarationFiles = IdentityHashMap<CfirDeclaration, CfirFile>()
+        private val fileIndices = IdentityHashMap<CfirFile, UInt>()
         private val classIndex = linkedMapOf<ClassId, UInt>()
+        private val externalImports = linkedSetOf<String>()
         private val types = ArrayList<CjoTypeMetadata>()
         private val typeIndex = HashMap<ConeCangJieType, UInt>()
         private val expressions = ArrayList<CjoExpressionMetadata>()
         private val expressionIndex = IdentityHashMap<Any, UInt>()
+        private val languageVersion = files.first().moduleData.session.languageVersionSettings.languageVersion
 
         fun produce(): CjoPackageMetadata {
             val packageNames = files.map { it.packageDirective.packageFqName.asString() }.distinct()
             require(packageNames.size == 1) { "A CJO package must contain exactly one package" }
+            files.forEachIndexed { index, file -> fileIndices[file] = index.toUInt() + 1u }
             collectDeclarations()
             val declarationMetadata = declarations.mapIndexed { index, declaration ->
                 declarationMetadata(declaration, index + 1, topLevel[declaration] == true)
@@ -57,37 +67,90 @@ object CfirCjoPackageMetadataProducer {
             return CjoPackageMetadata(
                 fullPackageName = packageNames.single(),
                 moduleName = module,
-                schemaProfile = CjoSchemaProfile.REPOSITORY_EXTENDED,
+                schemaProfile = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
+                    CjoSchemaProfile.OFFICIAL_V1_1_3
+                } else {
+                    CjoSchemaProfile.OFFICIAL_V1_0_0
+                },
                 declarations = declarationMetadata,
+                imports = externalImports.toList(),
+                // Match ASTWriter::SaveFileInfo when absolute paths are not
+                // requested: package identity plus the source-owned basename.
+                // Do not serialize an absolute path or derive a name from PSI
+                // text; CfirFile.name is shared by PSI and LightTree lowering.
+                allFiles = files.map { "${packageNames.single()}/${it.name}" },
+                fileInfo = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
+                    files.mapNotNull(::fileInfo)
+                } else {
+                    emptyList()
+                },
                 types = types,
                 expressions = expressions,
             )
         }
 
         private fun collectDeclarations() {
-            files.flatMap { it.declarations }.forEach { collect(it, true) }
+            files.forEach { file -> file.declarations.forEach { collect(it, true, file) } }
             require(declarations.isNotEmpty()) { "CFIR package has no serializable declarations" }
         }
 
-        private fun collect(declaration: CfirDeclaration, isTopLevel: Boolean) {
+        private fun collect(declaration: CfirDeclaration, isTopLevel: Boolean, file: CfirFile) {
             require(declaration.origin == CfirDeclarationOrigin.Source) {
                 "Cannot serialize non-source declaration ${declaration::class.simpleName} from live CFIR"
             }
             if (declarationIndex.putIfAbsent(declaration, declarations.size.toUInt() + 1u) == null) {
                 declarations += declaration
                 topLevel[declaration] = isTopLevel
+                declarationFiles[declaration] = file
                 if (declaration is CfirClassLikeDeclaration) {
                     classIndex[(declaration.symbol as CfirClassLikeSymbol<*>).classId] = declarationIndex[declaration]!!
                 }
-                declarationChildren(declaration).forEach { collect(it, false) }
+                declarationChildren(declaration).forEach { collect(it, false, file) }
             }
+        }
+
+        /** Convert a real CFIR source offset to the official package position. */
+        private fun position(file: CfirFile, offset: Int): CjoPositionMetadata? {
+            val mapping = file.sourceFileLinesMapping ?: return null
+            if (offset < 0) return null
+            val (line, column) = mapping.getLineAndColumnByOffset(offset.coerceAtMost(mapping.lastOffset))
+            if (line < 0 || column < 0) return null
+            return CjoPositionMetadata(
+                file = fileIndices.getValue(file),
+                pkgId = 0u,
+                line = line,
+                column = column,
+            )
+        }
+
+        private fun fileInfo(file: CfirFile): CjoFileInfoMetadata? {
+            val mapping = file.sourceFileLinesMapping ?: return null
+            val begin = position(file, 0) ?: return null
+            val end = position(file, mapping.lastOffset) ?: return null
+            return CjoFileInfoMetadata(fileIndices.getValue(file), begin, end)
+        }
+
+        private fun declarationPositions(declaration: CfirDeclaration): Pair<CjoPositionMetadata?, CjoPositionMetadata?> {
+            val file = declarationFiles[declaration] ?: return null to null
+            val source = declaration.source ?: return null to null
+            return position(file, source.startOffset) to position(file, source.endOffset)
         }
 
         private fun declarationChildren(declaration: CfirDeclaration): List<CfirDeclaration> = buildList {
             when (declaration) {
-                is CfirClassLikeDeclaration -> addAll(declaration.declarations)
-                is CfirExtend -> addAll(declaration.declarations)
-                is CfirFunction -> addAll(declaration.valueParameters)
+                is CfirClassLikeDeclaration -> {
+                    addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
+                    addAll(declaration.declarations)
+                }
+                is CfirExtend -> {
+                    addAll(declaration.typeParameters)
+                    addAll(declaration.declarations)
+                }
+                is CfirFunction -> {
+                    addAll(declaration.typeParameters)
+                    addAll(declaration.valueParameters)
+                }
+                // ASTWriter::SaveGeneric deliberately excludes enum constructors.
                 is CfirEnumConstructor -> addAll(declaration.valueParameters)
                 is CfirProperty -> {
                     declaration.getter?.let(::add)
@@ -95,6 +158,25 @@ object CfirCjoPackageMetadataProducer {
                 }
                 else -> Unit
             }
+        }
+
+        private fun genericMetadata(declaration: CfirDeclaration): CjoGenericMetadata? {
+            val parameters = when (declaration) {
+                is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
+                is CfirFunction -> declaration.typeParameters
+                is CfirExtend -> declaration.typeParameters
+                else -> emptyList()
+            }
+            if (parameters.isEmpty()) return null
+            return CjoGenericMetadata(
+                typeParameters = parameters.map(::ref),
+                constraints = parameters.map { parameter ->
+                    CjoConstraintMetadata(
+                        type = type(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())),
+                        upperBounds = parameter.bounds.map(::typeOf).map(::type),
+                    )
+                },
+            )
         }
 
         private fun declarationMetadata(
@@ -105,11 +187,15 @@ object CfirCjoPackageMetadataProducer {
             val name = declarationName(declaration)
             val kind = declarationKind(declaration)
             val info = declarationInfo(declaration)
+            val (begin, end) = declarationPositions(declaration)
             return CjoPackageDeclaration(
                 identifier = name,
                 kind = kind,
                 isTopLevel = topLevel,
                 type = declarationType(declaration),
+                begin = begin,
+                end = end,
+                generic = genericMetadata(declaration),
                 attributes = attributes(declaration, topLevel),
                 annotations = annotations(declaration),
                 info = info,
@@ -118,7 +204,11 @@ object CfirCjoPackageMetadataProducer {
 
         private fun declarationName(declaration: CfirDeclaration): String = when (declaration) {
             is CfirClassLikeDeclaration -> declaration.name.asString()
+            // Official ASTWriter keeps ExtendDecl.identifier empty; CJD matching
+            // deliberately ignores it and matches Decl.type + ExtendInfo.
+            is CfirExtend -> ""
             is CfirCallableDeclaration -> declaration.symbol.name.asString()
+            is CfirTypeParameter -> declaration.name.asString()
             else -> error("Unsupported CJO declaration ${declaration::class.simpleName}")
         }
 
@@ -129,11 +219,12 @@ object CfirCjoPackageMetadataProducer {
             is CfirEnum -> DeclKind.EnumDecl
             is CfirTypeAlias -> DeclKind.TypeAliasDecl
             is CfirProperty -> DeclKind.PropDecl
-            is CfirFunction -> DeclKind.FuncDecl
             is CfirEnumConstructor -> DeclKind.FuncDecl
+            is CfirFunction -> DeclKind.FuncDecl
             is CfirValueParameter -> DeclKind.FuncParam
+            is CfirTypeParameter -> DeclKind.GenericParamDecl
             is CfirVariable -> DeclKind.VarDecl
-            is CfirExtend -> error("CJO producer does not yet encode ExtendInfo")
+            is CfirExtend -> DeclKind.ExtendDecl
             else -> error("Unsupported CJO declaration ${declaration::class.simpleName}")
         }
 
@@ -142,9 +233,15 @@ object CfirCjoPackageMetadataProducer {
             is CfirInterface -> type(ConeClassLikeType(declaration.symbol.toLookupTag(), isInterface = true))
             is CfirStruct -> type(ConeStructType(declaration.symbol.toLookupTag()))
             is CfirEnum -> type(ConeEnumType(declaration.symbol.toLookupTag()))
-            is CfirTypeAlias -> type(ConeClassLikeType(declaration.symbol.toLookupTag()))
-            is CfirFunction -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, declaration.interopInfo?.resolvedAbi?.isCFunction == true, declaration.hasVariableLenArg))
+            // 对齐 ASTWriter::SaveTypeAliasDecl：Decl.type 来自
+            // typeManager.ObtainsAliasType(typeAliasDecl.type)，必须写展开后的
+            // 语义类型。别名身份由 DeclInfo.AliasInfo 承载；把别名符号编码为
+            // Class 类型会丢失该契约，使二进制类型消费者把别名当普通 class。
+            is CfirTypeAlias -> typeOf(declaration.expandedTypeRef).let(::type)
+            is CfirExtend -> typeOf(declaration.extendedTypeRef).let(::type)
+            is CfirTypeParameter -> type(ConeTypeParameterTypeImpl(declaration.symbol.toLookupTag()))
             is CfirEnumConstructor -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, false, false))
+            is CfirFunction -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, declaration.interopInfo?.resolvedAbi?.isCFunction == true, declaration.hasVariableLenArg))
             is CfirCallableDeclaration -> type(declaration.returnTypeRef.coneTypeOrNull ?: unsupported("unresolved return type"))
             else -> unsupported("missing declaration type")
         }
@@ -165,6 +262,13 @@ object CfirCjoPackageMetadataProducer {
             ref.coneTypeOrNull ?: unsupported("unresolved CFIR type reference")
 
         private fun declarationInfo(declaration: CfirDeclaration): CjoDeclarationInfo? = when (declaration) {
+            is CfirEnumConstructor -> CjoFunctionInfo(
+                body = CjoFunctionBodyInfo(
+                    parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
+                    desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
+                    returnType = typeOf(declaration.returnTypeRef).let(::type),
+                ),
+            )
             is CfirFunction -> CjoFunctionInfo(
                 overflowStrategy = declaration.annotationInfo?.overflowStrategy ?: declaration.interopInfo?.overflowStrategy,
                 body = CjoFunctionBodyInfo(
@@ -175,12 +279,29 @@ object CfirCjoPackageMetadataProducer {
                 isConst = declaration.status.isConst,
                 isFastNative = declaration.interopInfo?.isFastNative == true,
             )
-            is CfirEnumConstructor -> CjoFunctionInfo(
-                body = CjoFunctionBodyInfo(
-                    parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
-                    desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
-                    returnType = typeOf(declaration.returnTypeRef).let(::type),
-                ),
+            is CfirTypeAlias -> CjoAliasInfo(typeOf(declaration.expandedTypeRef).let(::type))
+            is CfirClass -> CjoClassInfo(
+                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
+                body = declaration.declarations.map(::ref),
+                isAnnotation = declaration.annotationInfo?.isAnnotation == true,
+                annotationTargets = declaration.annotationInfo?.annotationTargets.toCjoTargetMask().first,
+                annotationTargets2 = declaration.annotationInfo?.annotationTargets.toCjoTargetMask().second,
+                runtimeVisible = declaration.annotationInfo?.runtimeVisible == true,
+            )
+            is CfirInterface -> CjoInterfaceInfo(
+                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
+                body = declaration.declarations.map(::ref),
+            )
+            is CfirStruct -> CjoStructInfo(
+                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
+                body = declaration.declarations.map(::ref),
+            )
+            is CfirEnum -> CjoEnumInfo(
+                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
+                body = declaration.declarations.map(::ref),
+                hasArguments = declaration.declarations.filterIsInstance<CfirEnumConstructor>()
+                    .any { it.valueParameters.isNotEmpty() },
+                nonExhaustive = declaration.isNonExhaustive,
             )
             is CfirProperty -> CjoPropertyInfo(
                 isConst = declaration.status.isConst,
@@ -189,7 +310,12 @@ object CfirCjoPackageMetadataProducer {
                 setters = listOfNotNull(declaration.setter?.let { ref(it) }),
             )
             is CfirValueParameter -> null
+            is CfirTypeParameter -> null
             is CfirVariable -> CjoVariableInfo(isVar = declaration.isVar, isConst = declaration.status.isConst)
+            is CfirExtend -> CjoExtendInfo(
+                inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
+                body = declaration.declarations.map(::ref),
+            )
             else -> null
         }
 
@@ -199,8 +325,7 @@ object CfirCjoPackageMetadataProducer {
         private fun attributes(declaration: CfirDeclaration, topLevel: Boolean): List<ULong> {
             val values = linkedSetOf<CfirAttribute>()
             if (topLevel) values += CfirAttribute.GLOBAL
-            val status = (declaration as? CfirMemberDeclaration)?.status
-                ?: unsupported("declaration has no status: ${declaration::class.simpleName}")
+            val status = (declaration as? CfirMemberDeclaration)?.status ?: return emptyList()
             if (status.isC || declaration.interopInfo?.resolvedAbi?.kind == CfirAbiKind.C) values += CfirAttribute.C
             if (status.isForeign) values += CfirAttribute.FOREIGN
             if (status.isStatic) values += CfirAttribute.STATIC
@@ -223,44 +348,111 @@ object CfirCjoPackageMetadataProducer {
 
         private fun annotations(declaration: CfirDeclaration): List<CjoAnnotationMetadata> =
             declaration.annotations.filterIsInstance<CfirAnnotationCall>().mapNotNull { annotation ->
-                val descriptor = annotation.builtInDescriptor
-                val sourceName = descriptor?.sourceName ?: annotation.annotationSourceName.orEmpty()
-                val kind = when (sourceName) {
-                    "Deprecated" -> AnnoKind.Deprecated
-                    "Frozen" -> AnnoKind.Frozen
-                    "Annotation" -> AnnoKind.Annotation
-                    "C", "CallingConv", "FastNative", "Intrinsic",
-                    "OverflowThrowing", "OverflowWrapping", "OverflowSaturating",
-                    -> return@mapNotNull null // declaration attributes/FuncInfo carry these facts
-
-                    else -> {
-                        if (annotation.platformAnnotationKind != null) return@mapNotNull null
-                        unsupported("CJO producer cannot encode annotation @$sourceName")
+                val declarationStatus = (declaration as? CfirMemberDeclaration)?.status
+                /*
+                 * Match the official ASTWriter::SaveAnnotations contract.  The
+                 * wire kind is selected from resolved identity, never from the
+                 * spelling of the annotation.  C/FFI and parser-only builtins
+                 * are represented by Decl attributes/FuncInfo and therefore do
+                 * not become Anno records.  Non-visible custom annotations are
+                 * likewise not serialized by the official writer.
+                 */
+                val kind = when (val identity = annotation.annotationIdentity) {
+                    is CangjieAnnotationIdentity.LanguageBuiltIn -> when (identity.kind) {
+                        BuiltInAnnotationKind.DEPRECATED -> AnnoKind.Deprecated
+                        BuiltInAnnotationKind.FROZEN -> AnnoKind.Frozen
+                        BuiltInAnnotationKind.ATTRIBUTE ->
+                            AnnoKind.TestRegistration.takeIf {
+                                declaration.annotationInfo?.attributes?.contains("TEST_REGISTER") == true
+                            }
+                        BuiltInAnnotationKind.ANNOTATION ->
+                            AnnoKind.Annotation.takeIf {
+                                languageVersion >= LanguageVersion.CANGJIE_1_1_0 &&
+                                    annotation.argumentList.arguments.isNotEmpty()
+                            }
+                        else -> null
                     }
-                }
+                    is CangjieAnnotationIdentity.PlatformDerived ->
+                        annotation.platformAnnotationDescriptor?.officialKind?.toCjoAnnoKind(languageVersion)
+                    is CangjieAnnotationIdentity.Custom ->
+                        // 对齐官方 ASTWriter：common/specific 声明上的普通 custom
+                        // annotation 也必须保留，供两侧一致性检查比较；不能只用
+                        // compile-time-visible 作为完整序列化条件。
+                        AnnoKind.Custom.takeIf {
+                            annotation.isCompileTimeVisible == true ||
+                                declarationStatus?.isCommon == true ||
+                                declarationStatus?.isSpecific == true
+                        }
+                    else -> null
+                } ?: return@mapNotNull null
+                val identifier = when (val identity = annotation.annotationIdentity) {
+                    is CangjieAnnotationIdentity.LanguageBuiltIn -> identity.sourceName
+                    is CangjieAnnotationIdentity.Custom ->
+                        annotation.annotationSourceName ?: identity.classFqName?.shortName()?.asString()
+                    else -> annotation.annotationSourceName
+                } ?: unsupported("CJO annotation has no resolved identifier")
                 CjoAnnotationMetadata(
-                    kind = kind,
-                    identifier = sourceName,
-                    arguments = annotation.argumentList.arguments.map { argument ->
-                        val expression = (argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression)?.expression ?: argument
-                        CjoAnnotationArgumentMetadata(
-                            name = (argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression)?.argumentName?.asString(),
-                            expr = expression(expression),
-                        )
-                    },
+                        kind = kind,
+                        identifier = identifier,
+                    arguments = annotationArguments(annotation, kind),
                 )
             }
 
-        private fun expression(expression: org.cangnova.cangjie.cfir.expressions.CfirExpression): UInt {
-            require(expression is CfirLiteralExpression) { "CJO annotation argument is not a literal expression" }
+        private fun annotationArguments(
+            annotation: CfirAnnotationCall,
+            kind: UShort,
+        ): List<CjoAnnotationArgumentMetadata> = annotation.argumentList.arguments.mapNotNull { argument ->
+            val named = argument as? org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
+            val expression = named?.expression ?: argument
+            val index = expressionOrNull(expression)
+            if (index == null && kind == AnnoKind.Annotation) {
+                unsupported("CJO @Annotation argument is not representable by the expression pool")
+            }
+            index?.let { CjoAnnotationArgumentMetadata(named?.argumentName?.asString(), it) }
+        }
+
+        private fun expressionOrNull(expression: org.cangnova.cangjie.cfir.expressions.CfirExpression): UInt? {
             val index = expressions.size.toUInt() + 1u
-            val literal = CjoLiteralExpressionMetadata(
-                value = expression.value?.toString(),
-                constKind = expression.kind.toCjoLiteralKind(),
-                stringKind = StringKind.Normal,
-            )
-            expressions += CjoExpressionMetadata(kind = ExprKind.LitConstExpr, literal = literal)
+            val metadata = when (expression) {
+                is CfirLiteralExpression -> CjoExpressionMetadata(
+                    kind = ExprKind.LitConstExpr,
+                    literal = CjoLiteralExpressionMetadata(
+                        value = expression.value?.toString(),
+                        constKind = expression.kind.toCjoLiteralKind(),
+                        stringKind = StringKind.Normal,
+                    ),
+                )
+                is CfirArrayLiteral -> CjoExpressionMetadata(
+                    kind = ExprKind.ArrayLit,
+                    operands = expression.elements.map {
+                        expressionOrNull(it) ?: unsupported("CJO expression array element is not representable")
+                    },
+                )
+                is org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression -> {
+                    val name = (expression.calleeReference as? CfirNamedReference)?.name?.asString()
+                        ?: return null
+                    CjoExpressionMetadata(
+                        kind = ExprKind.RefExpr,
+                        reference = CjoReferenceExpressionMetadata(reference = name),
+                    )
+                }
+                else -> return null
+            }
+            expressions += metadata
             return index
+        }
+
+        private fun BuiltInAnnotationKind.toCjoAnnoKind(version: LanguageVersion): UShort? {
+            if (version < LanguageVersion.CANGJIE_1_1_0) return null
+            return when (this) {
+                BuiltInAnnotationKind.JAVA_MIRROR -> AnnoKind.JavaMirror
+                BuiltInAnnotationKind.JAVA_IMPL -> AnnoKind.JavaImpl
+                BuiltInAnnotationKind.JAVA_HAS_DEFAULT -> AnnoKind.JavaHasDefault
+                BuiltInAnnotationKind.OBJ_C_MIRROR -> AnnoKind.ObjCMirror
+                BuiltInAnnotationKind.OBJ_C_IMPL -> AnnoKind.ObjCImpl
+                BuiltInAnnotationKind.FOREIGN_NAME -> AnnoKind.ForeignName
+                else -> null // official ASTWriter skips ObjCInit/Optional/getter/setter
+            }
         }
 
         private fun type(type: ConeCangJieType): UInt {
@@ -273,17 +465,17 @@ object CfirCjoPackageMetadataProducer {
                 is ConeClassLikeType -> CjoTypeMetadata(
                     kind = if (type.isInterface) PackageFormat.TypeKind.Interface else PackageFormat.TypeKind.Class,
                     typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = CjoCompositeTypeInfoMetadata(classIndex[type.classId] ?: unsupported("external class type ${type.classId}")),
+                    semanticInfo = compositeInfo(type.classId),
                 )
                 is ConeStructType -> CjoTypeMetadata(
                     kind = PackageFormat.TypeKind.Struct,
                     typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = CjoCompositeTypeInfoMetadata(classIndex[type.classId] ?: unsupported("external struct type ${type.classId}")),
+                    semanticInfo = compositeInfo(type.classId),
                 )
                 is ConeEnumType -> CjoTypeMetadata(
                     kind = PackageFormat.TypeKind.Enum,
                     typeArguments = type.typeArguments.map { projectionType(it) },
-                    semanticInfo = CjoCompositeTypeInfoMetadata(classIndex[type.classId] ?: unsupported("external enum type ${type.classId}")),
+                    semanticInfo = compositeInfo(type.classId),
                 )
                 is ConeTupleType -> CjoTypeMetadata(PackageFormat.TypeKind.Tuple, type.elementTypes.map(::type))
                 is ConeVArrayType -> CjoTypeMetadata(
@@ -305,6 +497,22 @@ object CfirCjoPackageMetadataProducer {
         }
 
         private fun projectionType(projection: ConeTypeProjection): UInt = type(projection.type)
+
+        private fun compositeInfo(classId: ClassId): CjoCompositeTypeInfoMetadata {
+            classIndex[classId]?.let { return CjoCompositeTypeInfoMetadata(it) }
+            val packageName = classId.packageFqName.asString()
+            val packageIndex = externalImports.indexOf(packageName).let { existing ->
+                if (existing >= 0) existing else {
+                    externalImports += packageName
+                    externalImports.size - 1
+                }
+            }
+            return CjoCompositeTypeInfoMetadata(
+                declarationIndex = 0u,
+                packageId = packageIndex,
+                declarationKey = classId.relativeClassName.asString(),
+            )
+        }
 
         private fun CfirLiteralKind.toCjoLiteralKind(): UByte = when (this) {
             CfirLiteralKind.INT, CfirLiteralKind.BYTE -> LitConstKind.Integer
@@ -337,5 +545,11 @@ object CfirCjoPackageMetadataProducer {
         }
 
         private fun unsupported(message: String): Nothing = error(message)
+
+        private fun Set<org.cangnova.cangjie.annotations.CangjieAnnotationTarget>?.toCjoTargetMask(): Pair<UByte, UByte> {
+            if (isNullOrEmpty()) return 0.toUByte() to 0.toUByte()
+            val mask = fold(0) { result, target -> result or (1 shl target.bitPosition) }
+            return mask.toUByte() to (mask ushr 8).toUByte()
+        }
     }
 }

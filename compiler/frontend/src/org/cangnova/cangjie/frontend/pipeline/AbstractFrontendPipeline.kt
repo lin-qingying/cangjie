@@ -2,6 +2,8 @@ package org.cangnova.cangjie.frontend.pipeline
 
 import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
 import org.cangnova.cangjie.config.CompilerConfiguration
+import org.cangnova.cangjie.config.cjoOutputDirectory
+import org.cangnova.cangjie.config.cjoOutputFile
 import org.cangnova.cangjie.config.configureLanguageVersionSettings
 import org.cangnova.cangjie.phaser.CompilerPhase
 import org.cangnova.cangjie.phaser.PhaseConfig
@@ -16,10 +18,15 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
      * 从命令行参数和编译配置启动前端管线。
      */
     fun execute(arguments: A, configuration: CompilerConfiguration): Boolean {
+        // 一个 CompilerConfiguration 可以被多个 frontend invocation 复用；
+        // 输出路径是本次执行的事实，不能继承上一次 .cj.d 编译的状态。
+        configuration.cjoOutputDirectory = null
+        configuration.cjoOutputFile = null
         if (arguments.compileCjd) {
-            configuration.cjoOutputDirectory = arguments.outputDirectory ?: arguments.outputFile
+            configuration.cjoOutputDirectory = arguments.outputDirectory
+            configuration.cjoOutputFile = arguments.outputFile
         }
-        if (!configuration.configureLanguageVersionSettings(arguments.languageVersion, arguments.apiVersion)) return false
+        if (!configuration.configureLanguageVersionSettings(arguments.languageVersion)) return false
         val input = ArgumentsPipelineArtifact(arguments, configuration)
         return runPhasedPipeline(input)
     }

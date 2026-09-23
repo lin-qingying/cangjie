@@ -49,6 +49,7 @@ table Constraint {
   end:Position;
   type:uint32; // type of corresponding typeParameter
   uppers:[uint32]; // UpperBounds
+  isImplicitlyIntroduced:bool = false;
 }
 
 table Generic{

@@ -17,6 +17,7 @@ import PackageFormat.ImportSpec
 import PackageFormat.LitConstInfo
 import PackageFormat.Imports
 import PackageFormat.Package
+import PackageFormat.FileInfo
 import PackageFormat.PackageAccessLevel
 import PackageFormat.PackageKind
 import PackageFormat.ReferenceInfo
@@ -27,6 +28,14 @@ import PackageFormat.PropInfo
 import PackageFormat.OverflowPolicy
 import PackageFormat.FuncBody
 import PackageFormat.FuncParamList
+import PackageFormat.ExtendInfo
+import PackageFormat.ClassInfo
+import PackageFormat.InterfaceInfo
+import PackageFormat.StructInfo
+import PackageFormat.EnumInfo
+import PackageFormat.Generic
+import PackageFormat.Constraint
+import PackageFormat.AliasInfo
 import PackageFormat.SemaTy
 import PackageFormat.SemaTyInfo
 import PackageFormat.ConstValue
@@ -97,6 +106,18 @@ object CjoPackageWriter {
             ?.toIntArray()
             ?.let { Package.createAllFileImportsVector(builder, it) }
             ?: 0
+        val allFileInfoOffset = metadata.fileInfo
+            .takeIf(List<CjoFileInfoMetadata>::isNotEmpty)
+            ?.map { it.write(builder) }
+            ?.toIntArray()
+            ?.let { Package.createAllFileInfoVector(builder, it) }
+            ?: 0
+        val allDependentStdPkgsOffset = metadata.allDependentStdPkgs
+            .takeIf(List<String>::isNotEmpty)
+            ?.map(builder::createString)
+            ?.toIntArray()
+            ?.let { Package.createAllDependentStdPkgsVector(builder, it) }
+            ?: 0
         validateCompositeValueReferences(metadata)
         val allDeclsOffset = metadata.declarations
             .takeIf(List<CjoPackageDeclaration>::isNotEmpty)
@@ -155,6 +176,12 @@ object CjoPackageWriter {
         }
         if (allFileImportsOffset != 0) {
             Package.addAllFileImports(builder, allFileImportsOffset)
+        }
+        if (allFileInfoOffset != 0) {
+            Package.addAllFileInfo(builder, allFileInfoOffset)
+        }
+        if (allDependentStdPkgsOffset != 0) {
+            Package.addAllDependentStdPkgs(builder, allDependentStdPkgsOffset)
         }
         if (allDeclsOffset != 0) {
             Package.addAllDecls(builder, allDeclsOffset)
@@ -222,6 +249,12 @@ object CjoPackageWriter {
         val identifierOffset = builder.createString(identifier)
         val exportIdOffset = exportId?.let(builder::createString) ?: 0
         val mangledNameOffset = mangledName?.let(builder::createString) ?: 0
+        val genericOffset = generic?.write(builder)
+        val genericDeclOffset = genericDecl?.let { value ->
+            val declOffset = value.decl?.let(builder::createString) ?: 0
+            FullId.createFullId(builder, value.pkgId, declOffset, value.index)
+        } ?: 0
+        val mangledBeforeSemaOffset = mangledBeforeSema?.let(builder::createString) ?: 0
         val attributeOffsets = attributes.toULongArray()
             .takeIf { it.isNotEmpty() }
             ?.let { Decl.createAttributesVector(builder, it) }
@@ -248,6 +281,12 @@ object CjoPackageWriter {
         Decl.addIsTopLevel(builder, isTopLevel)
         Decl.addFullPkgName(builder, packageNameOffset)
         Decl.addIdentifier(builder, identifierOffset)
+        if (genericDeclOffset != 0) {
+            Decl.addGenericDecl(builder, genericDeclOffset)
+        }
+        begin?.let { Decl.addBegin(builder, it.write(builder)) }
+        end?.let { Decl.addEnd(builder, it.write(builder)) }
+        identifierPosition?.let { Decl.addIdentifierPos(builder, it.write(builder)) }
         if (type != 0u) {
             Decl.addType(builder, type)
         }
@@ -256,6 +295,13 @@ object CjoPackageWriter {
         }
         if (mangledNameOffset != 0) {
             Decl.addMangledName(builder, mangledNameOffset)
+        }
+        if (mangledBeforeSemaOffset != 0) {
+            Decl.addMangledBeforeSema(builder, mangledBeforeSemaOffset)
+        }
+        declarationHash?.let { Decl.addHash(builder, it.write(builder)) }
+        if (genericOffset != null) {
+            Decl.addGeneric(builder, genericOffset)
         }
         if (attributeOffsets != 0) {
             Decl.addAttributes(builder, attributeOffsets)
@@ -329,25 +375,45 @@ object CjoPackageWriter {
 
     /**
      * Keep the repository's extended ModuleFormat explicit at the writer boundary.
-     * The official v1.0.0 schema has only four AnnoKind values and no Anno.target;
-     * silently emitting the repository extensions as if they were official bytes
-     * would make ABI claims and downstream compatibility unverifiable.
+     * The official v1.0.0 branch has only four AnnoKind values and no Anno.target;
+     * the v1.1.3 branch has the additional official platform kinds and target
+     * fields.  Silently emitting repository extensions as official bytes would
+     * make ABI claims and downstream compatibility unverifiable.
      */
     private fun validateSchemaProfile(metadata: CjoPackageMetadata) {
-        if (metadata.schemaProfile != CjoSchemaProfile.OFFICIAL_V1_0_0) return
-        require(metadata.declarations.none { declaration ->
-            declaration.annotations.any { annotation -> annotation.target != null }
-        }) { "Official v1.0.0 CJO cannot encode repository Anno.target extensions" }
-        require(metadata.declarations.none { declaration -> declaration.dependencies.isNotEmpty() }) {
-            "Official v1.0.0 CJO cannot encode repository declaration dependencies"
+        if (metadata.schemaProfile == CjoSchemaProfile.REPOSITORY_EXTENDED) return
+        if (metadata.schemaProfile == CjoSchemaProfile.OFFICIAL_V1_0_0) {
+            require(metadata.fileInfo.isEmpty()) {
+                "Official v1.0.0 CJO cannot encode Package.allFileInfo"
+            }
+            require(metadata.allDependentStdPkgs.isEmpty()) {
+                "Official v1.0.0 CJO cannot encode Package.allDependentStdPkgs"
+            }
+            require(metadata.declarations.none { declaration ->
+                declaration.annotations.any { annotation -> annotation.target != null }
+            }) { "Official v1.0.0 CJO cannot encode Anno.target" }
+            require(metadata.declarations.none { declaration -> declaration.dependencies.isNotEmpty() }) {
+                "Official v1.0.0 CJO cannot encode declaration dependencies"
+            }
         }
-        require(metadata.annotationsUseOnlyOfficialKinds()) {
-            "Official v1.0.0 CJO cannot encode repository platform annotation kinds"
+        val officialKinds = when (metadata.schemaProfile) {
+            CjoSchemaProfile.OFFICIAL_V1_0_0 -> setOf(
+                AnnoKind.Deprecated, AnnoKind.TestRegistration, AnnoKind.Frozen, AnnoKind.Custom,
+            )
+            CjoSchemaProfile.OFFICIAL_V1_1_3 -> setOf(
+                AnnoKind.Deprecated, AnnoKind.TestRegistration, AnnoKind.Frozen, AnnoKind.Custom,
+                AnnoKind.JavaMirror, AnnoKind.JavaImpl, AnnoKind.ObjCMirror, AnnoKind.ObjCImpl,
+                AnnoKind.ForeignName, AnnoKind.JavaHasDefault, AnnoKind.Annotation,
+            )
+            CjoSchemaProfile.REPOSITORY_EXTENDED -> emptySet()
+        }
+        require(metadata.annotationsUseOnlyOfficialKinds(officialKinds)) {
+            "Official CJO profile cannot encode annotation kind outside its language schema"
         }
     }
 
-    private fun CjoPackageMetadata.annotationsUseOnlyOfficialKinds(): Boolean =
-        declarations.flatMap { it.annotations }.all { it.kind <= AnnoKind.Custom }
+    private fun CjoPackageMetadata.annotationsUseOnlyOfficialKinds(officialKinds: Set<UShort>): Boolean =
+        declarations.flatMap { it.annotations }.all { it.kind in officialKinds }
 
     /** 验证声明和类型引用使用 ModuleFormat 的 1-based 规则。 */
     private fun validateDeclarationAndTypeReferences(metadata: CjoPackageMetadata) {
@@ -357,6 +423,20 @@ object CjoPackageWriter {
         }
         metadata.declarations.forEachIndexed { index, declaration ->
             validate(declaration.type, metadata.types.size, "declarations[$index].type")
+            declaration.generic?.let { generic ->
+                generic.typeParameters.forEachIndexed { parameterIndex, parameter ->
+                    validate(parameter, metadata.declarations.size,
+                        "declarations[$index].generic.typeParameters[$parameterIndex]")
+                }
+                generic.constraints.forEachIndexed { constraintIndex, constraint ->
+                    validate(constraint.type, metadata.types.size,
+                        "declarations[$index].generic.constraints[$constraintIndex].type")
+                    constraint.upperBounds.forEachIndexed { boundIndex, bound ->
+                        validate(bound, metadata.types.size,
+                            "declarations[$index].generic.constraints[$constraintIndex].uppers[$boundIndex]")
+                    }
+                }
+            }
             when (val info = declaration.info) {
                 null -> Unit
                 is CjoFunctionInfo -> {
@@ -396,16 +476,71 @@ object CjoPackageWriter {
                             "declarations[$index].info.propInfo.setters[$setterIndex]")
                     }
                 }
+                is CjoExtendInfo -> {
+                    info.inheritedTypes.forEachIndexed { inheritedIndex, inheritedType ->
+                        validate(inheritedType, metadata.types.size,
+                            "declarations[$index].info.extendInfo.inheritedTypes[$inheritedIndex]")
+                    }
+                    info.body.forEachIndexed { bodyIndex, bodyDeclaration ->
+                        validate(bodyDeclaration, metadata.declarations.size,
+                            "declarations[$index].info.extendInfo.body[$bodyIndex]")
+                    }
+                }
+                is CjoClassInfo -> validateInheritableInfo(info, metadata, index, "classInfo")
+                is CjoInterfaceInfo -> validateInheritableInfo(info, metadata, index, "interfaceInfo")
+                is CjoStructInfo -> validateInheritableInfo(info, metadata, index, "structInfo")
+                is CjoEnumInfo -> validateInheritableInfo(info, metadata, index, "enumInfo")
+                is CjoAliasInfo -> validate(info.aliasedType, metadata.types.size,
+                    "declarations[$index].info.aliasInfo.aliasedTy")
             }
         }
         metadata.types.forEachIndexed { index, type ->
             type.typeArguments.forEachIndexed { argumentIndex, argument ->
                 validate(argument, metadata.types.size, "types[$index].typeArgs[$argumentIndex]")
             }
+            val composite = type.semanticInfo as? CjoCompositeTypeInfoMetadata
+            if (composite != null) {
+                when {
+                    composite.packageId == -2 -> validate(
+                        composite.declarationIndex,
+                        metadata.declarations.size,
+                        "types[$index].compositeDecl",
+                    )
+                    composite.packageId >= 0 -> {
+                        require(composite.packageId < metadata.imports.size) {
+                            "types[$index] references import ${composite.packageId}, but imports has ${metadata.imports.size} entries"
+                        }
+                        require(!composite.declarationKey.isNullOrBlank()) {
+                            "types[$index] imported composite reference is missing its declaration key"
+                        }
+                    }
+                    else -> error("types[$index] uses unsupported composite package id ${composite.packageId}")
+                }
+            }
         }
         metadata.values.forEachIndexed { valueIndex, value ->
             value.fields.forEachIndexed { fieldIndex, field ->
                 validate(field.type, metadata.types.size, "allValues[$valueIndex].fields[$fieldIndex].type")
+            }
+        }
+    }
+
+    private fun validateInheritableInfo(
+        info: CjoInheritableInfo,
+        metadata: CjoPackageMetadata,
+        declarationIndex: Int,
+        infoName: String,
+    ) {
+        info.inheritedTypes.forEachIndexed { inheritedIndex, inheritedType ->
+            require(inheritedType in 1u..metadata.types.size.toUInt()) {
+                "declarations[$declarationIndex].info.$infoName.inheritedTypes[$inheritedIndex] " +
+                    "references $inheritedType, but allTypes has ${metadata.types.size} entries"
+            }
+        }
+        info.body.forEachIndexed { bodyIndex, bodyDeclaration ->
+            require(bodyDeclaration in 1u..metadata.declarations.size.toUInt()) {
+                "declarations[$declarationIndex].info.$infoName.body[$bodyIndex] " +
+                    "references $bodyDeclaration, but allDecls has ${metadata.declarations.size} entries"
             }
         }
     }
@@ -731,6 +866,10 @@ data class CjoPackageMetadata(
     val allFiles: List<String> = emptyList(),
     /** 按源文件组织的结构化 import 列表。 */
     val fileImports: List<CjoPackageFileImports> = emptyList(),
+    /** Official `Package.allFileInfo` entries used by CJMP and source mapping. */
+    val fileInfo: List<CjoFileInfoMetadata> = emptyList(),
+    /** Official `Package.allDependentStdPkgs` package names. */
+    val allDependentStdPkgs: List<String> = emptyList(),
     /** 需要写入 `allDecls` 的声明索引项。 */
     val declarations: List<CjoPackageDeclaration> = emptyList(),
     /** `Package.allTypes` 中的 1-based 类型池。 */
@@ -758,10 +897,38 @@ data class CjoFormatVersion(
     val patch: UByte,
 )
 
-/** Official v1.0.0 wire subset versus the repository's additive ModuleFormat extensions. */
+/** Official ModuleFormat.DeclHash input model. */
+data class CjoDeclHashMetadata(
+    val instVar: ULong,
+    val virt: ULong,
+    val sig: ULong,
+    val srcUse: ULong,
+    val bodyHash: ULong,
+) {
+    fun write(builder: FlatBufferBuilder): Int =
+        PackageFormat.DeclHash.createDeclHash(builder, instVar, virt, sig, srcUse, bodyHash)
+}
+
+/** Official v1.0.0 wire subset versus the verified official v1.1.3 ModuleFormat profile. */
 enum class CjoSchemaProfile {
     OFFICIAL_V1_0_0,
+    OFFICIAL_V1_1_3,
     REPOSITORY_EXTENDED,
+}
+
+/** Official ModuleFormat.FileInfo input model. */
+data class CjoFileInfoMetadata(
+    val fileId: UInt,
+    val begin: CjoPositionMetadata,
+    val end: CjoPositionMetadata,
+) {
+    fun write(builder: FlatBufferBuilder): Int {
+        FileInfo.startFileInfo(builder)
+        FileInfo.addFileID(builder, fileId)
+        FileInfo.addBegin(builder, begin.write(builder))
+        FileInfo.addEnd(builder, end.write(builder))
+        return FileInfo.endFileInfo(builder)
+    }
 }
 
 /** One official `CompositeValue` entry and its recursively encoded members. */
@@ -804,23 +971,39 @@ data class CjoPackageDeclaration(
     val isTopLevel: Boolean = true,
     /** 声明所属完整包名；为空时使用包默认名。 */
     val fullPackageName: String? = null,
+    /** Official Decl.genericDecl FullId. */
+    val genericDecl: CjoAnnotationTargetMetadata? = null,
+    /** Official declaration source begin position. */
+    val begin: CjoPositionMetadata? = null,
+    /** Official declaration source end position. */
+    val end: CjoPositionMetadata? = null,
+    /** Official declaration identifier position. */
+    val identifierPosition: CjoPositionMetadata? = null,
     /** 跨包引用优先使用的 export id。 */
     val exportId: String? = null,
     /** 可选 mangled name。 */
     val mangledName: String? = null,
+    /** Official Decl.mangledBeforeSema (the AST writer raw-mangle field). */
+    val mangledBeforeSema: String? = null,
+    /** Official incremental declaration hash. */
+    val declarationHash: CjoDeclHashMetadata? = null,
     /** `Decl.type` 的 1-based `Package.allTypes` 引用。 */
     val type: UInt = 0u,
     /** 官方 Decl.attributes 位图；顺序和位宽按 ModuleFormat 保留。 */
     val attributes: List<ULong> = emptyList(),
     /** 已解析的声明注解 metadata；writer 不根据源码短名推断 kind。 */
     val annotations: List<CjoAnnotationMetadata> = emptyList(),
+    /** Official Decl.generic table. */
+    val generic: CjoGenericMetadata? = null,
     /** ModuleFormat 声明 info union；由 semantic producer 显式提供。 */
     val info: CjoDeclarationInfo? = null,
     /** Repository-only common/specific dependency references. */
     val dependencies: List<CjoAnnotationTargetMetadata> = emptyList(),
 ) {
     init {
-        require(identifier.isNotBlank()) { "CJO declaration identifier must not be blank." }
+        require(identifier.isNotBlank() || kind == DeclKind.ExtendDecl) {
+            "CJO declaration identifier must not be blank except for official ExtendDecl."
+        }
         require(
             when (info) {
                 null -> true
@@ -828,6 +1011,12 @@ data class CjoPackageDeclaration(
                 is CjoVariableInfo -> kind == DeclKind.VarDecl
                 is CjoPropertyInfo -> kind == DeclKind.PropDecl
                 is CjoVarWithPatternInfo -> kind == DeclKind.VarWithPatternDecl
+                is CjoExtendInfo -> kind == DeclKind.ExtendDecl
+                is CjoClassInfo -> kind == DeclKind.ClassDecl
+                is CjoInterfaceInfo -> kind == DeclKind.InterfaceDecl
+                is CjoStructInfo -> kind == DeclKind.StructDecl
+                is CjoEnumInfo -> kind == DeclKind.EnumDecl
+                is CjoAliasInfo -> kind == DeclKind.TypeAliasDecl
             },
         ) { "CJO declaration '$identifier' has an info table incompatible with kind $kind." }
     }
@@ -837,6 +1026,116 @@ data class CjoPackageDeclaration(
 sealed interface CjoDeclarationInfo {
     /** 返回官方 union 类型与 table offset。 */
     fun write(builder: FlatBufferBuilder): Pair<UByte, Int>
+}
+
+/** ExtendInfo 的官方字段；引用均为当前 Package 的 1-based 索引。 */
+data class CjoExtendInfo(
+    val inheritedTypes: List<UInt> = emptyList(),
+    val body: List<UInt> = emptyList(),
+) : CjoDeclarationInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val inheritedTypesOffset = inheritedTypes.takeIf(List<UInt>::isNotEmpty)
+            ?.toUIntArray()?.let { ExtendInfo.createInheritedTypesVector(builder, it) } ?: 0
+        val bodyOffset = body.takeIf(List<UInt>::isNotEmpty)
+            ?.toUIntArray()?.let { ExtendInfo.createBodyVector(builder, it) } ?: 0
+        return DeclInfo.ExtendInfo to ExtendInfo.createExtendInfo(builder, inheritedTypesOffset, bodyOffset)
+    }
+}
+
+/** AliasInfo is the official declaration-info union for a type alias. */
+data class CjoAliasInfo(val aliasedType: UInt) : CjoDeclarationInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> =
+        DeclInfo.AliasInfo to AliasInfo.createAliasInfo(builder, aliasedType)
+}
+
+/** Shared inheritance/body metadata for class-like declaration tables. */
+sealed interface CjoInheritableInfo {
+    val inheritedTypes: List<UInt>
+    val body: List<UInt>
+}
+
+data class CjoGenericMetadata(
+    val typeParameters: List<UInt>,
+    val constraints: List<CjoConstraintMetadata> = emptyList(),
+) {
+    fun write(builder: FlatBufferBuilder): Int {
+        val parameters = Generic.createTypeParametersVector(builder, typeParameters.toUIntArray())
+        val constraintTables = constraints.map { it.write(builder) }.toIntArray()
+        val constraintVector = Generic.createConstraintsVector(builder, constraintTables)
+        return Generic.createGeneric(builder, parameters, constraintVector)
+    }
+}
+
+data class CjoConstraintMetadata(
+    val type: UInt,
+    val upperBounds: List<UInt> = emptyList(),
+    val isImplicitlyIntroduced: Boolean = false,
+) {
+    fun write(builder: FlatBufferBuilder): Int {
+        val uppers = Constraint.createUppersVector(builder, upperBounds.toUIntArray())
+        Constraint.startConstraint(builder)
+        Constraint.addType(builder, type)
+        Constraint.addUppers(builder, uppers)
+        Constraint.addIsImplicitlyIntroduced(builder, isImplicitlyIntroduced)
+        return Constraint.endConstraint(builder)
+    }
+}
+
+data class CjoClassInfo(
+    override val inheritedTypes: List<UInt> = emptyList(),
+    override val body: List<UInt> = emptyList(),
+    val isAnnotation: Boolean = false,
+    val annotationTargets: UByte = 0u,
+    val runtimeVisible: Boolean = false,
+    val annotationTargets2: UByte = 0u,
+) : CjoDeclarationInfo, CjoInheritableInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val inherited = inheritedTypes.toUIntArray().let { ClassInfo.createInheritedTypesVector(builder, it) }
+        val members = body.toUIntArray().let { ClassInfo.createBodyVector(builder, it) }
+        return DeclInfo.ClassInfo to ClassInfo.createClassInfo(
+            builder, inherited, members, 0, isAnnotation, annotationTargets, runtimeVisible, annotationTargets2,
+        )
+    }
+}
+
+data class CjoInterfaceInfo(
+    override val inheritedTypes: List<UInt> = emptyList(),
+    override val body: List<UInt> = emptyList(),
+) : CjoDeclarationInfo, CjoInheritableInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val inherited = inheritedTypes.toUIntArray().let { InterfaceInfo.createInheritedTypesVector(builder, it) }
+        val members = body.toUIntArray().let { InterfaceInfo.createBodyVector(builder, it) }
+        return DeclInfo.InterfaceInfo to InterfaceInfo.createInterfaceInfo(builder, inherited, members)
+    }
+}
+
+data class CjoStructInfo(
+    override val inheritedTypes: List<UInt> = emptyList(),
+    override val body: List<UInt> = emptyList(),
+) : CjoDeclarationInfo, CjoInheritableInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val inherited = inheritedTypes.toUIntArray().let { StructInfo.createInheritedTypesVector(builder, it) }
+        val members = body.toUIntArray().let { StructInfo.createBodyVector(builder, it) }
+        return DeclInfo.StructInfo to StructInfo.createStructInfo(builder, inherited, members, 0)
+    }
+}
+
+data class CjoEnumInfo(
+    override val inheritedTypes: List<UInt> = emptyList(),
+    override val body: List<UInt> = emptyList(),
+    val hasArguments: Boolean = false,
+    val nonExhaustive: Boolean = false,
+) : CjoDeclarationInfo, CjoInheritableInfo {
+    override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
+        val inherited = inheritedTypes.toUIntArray().let { EnumInfo.createInheritedTypesVector(builder, it) }
+        val members = body.toUIntArray().let { EnumInfo.createBodyVector(builder, it) }
+        EnumInfo.startEnumInfo(builder)
+        EnumInfo.addInheritedTypes(builder, inherited)
+        EnumInfo.addBody(builder, members)
+        EnumInfo.addHasArguments(builder, hasArguments)
+        EnumInfo.addNonExhaustive(builder, nonExhaustive)
+        return DeclInfo.EnumInfo to EnumInfo.endEnumInfo(builder)
+    }
 }
 
 /** FuncInfo 的官方字段；函数体和 AutoDiff body 不在本 writer 范围内。 */
@@ -931,9 +1230,12 @@ data class CjoCompositeTypeInfoMetadata(
     val declarationIndex: UInt,
     val packageId: Int = -2,
     val isThisType: Boolean = false,
+    /** Imported-package FullId reference key; null means current-package index form. */
+    val declarationKey: String? = null,
 ) : CjoTypeInfoMetadata {
     override fun write(builder: FlatBufferBuilder): Pair<UByte, Int> {
-        val fullId = FullId.createFullId(builder, packageId, 0, declarationIndex)
+        val declarationOffset = declarationKey?.let(builder::createString) ?: 0
+        val fullId = FullId.createFullId(builder, packageId, declarationOffset, declarationIndex)
         return SemaTyInfo.CompositeTyInfo to CompositeTyInfo.createCompositeTyInfo(builder, fullId, isThisType)
     }
 }

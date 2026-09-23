@@ -78,6 +78,17 @@ class CompilerConfiguration {
         map[key.ideaKey] = value
     }
 
+    /**
+     * 删除一项配置。
+     *
+     * 配置对象可能被前端 pipeline 复用；可空扩展属性必须能够真正清除
+     * 上一次执行遗留的值，而不能把 `null` 当成“不修改”。
+     */
+    fun <T : Any> remove(key: CompilerConfigurationKey<T>) {
+        checkReadOnly()
+        map.remove(key.ideaKey)
+    }
+
     /** 缺失时写入配置值，返回最终值。 */
     fun <T : Any> putIfAbsent(key: CompilerConfigurationKey<T>, value: T): T {
         getValue(key)?.let { return it }

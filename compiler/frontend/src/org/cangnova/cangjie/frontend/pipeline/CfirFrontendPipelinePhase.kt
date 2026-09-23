@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.pipeline.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.serialization.cjo.CfirCjoPackageMetadataProducer
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
+import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.*
@@ -150,16 +151,22 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         configuration: CompilerConfiguration,
         outputs: List<SingleModuleFrontendOutput>,
     ): Boolean {
-        val outputDirectory = configuration.cjoOutputDirectory?.let(Path::of) ?: return true
+        val outputDirectory = configuration.cjoOutputDirectory?.let(Path::of)
+            ?: configuration.cjoOutputFile?.let { product ->
+                val productPath = Path.of(product)
+                if (Files.isDirectory(productPath)) productPath else productPath.parent ?: Path.of(".")
+            }
+        if (outputDirectory == null) return true
         return try {
             Files.createDirectories(outputDirectory)
-            outputs
+            val packages = outputs
                 .flatMap { it.fir }
                 .groupBy { it.packageDirective.packageFqName.asString() }
-                .forEach { (packageName, files) ->
-                    val metadata = CfirCjoPackageMetadataProducer.produce(files)
-                    val fileName = packageName.replace("::", "@") + ".cjo"
-                    CjoPackageWriter.write(outputDirectory.resolve(fileName), metadata)
+            packages.forEach { (packageName, files) ->
+                val metadata = CfirCjoPackageMetadataProducer.produce(files)
+                val target = outputDirectory.resolve(CjoConstants.packageNameToPath(packageName))
+                    Files.createDirectories(target.parent)
+                    CjoPackageWriter.write(target, metadata)
                 }
             true
         } catch (failure: Throwable) {
