@@ -10185,3 +10185,10 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - fixture 期望修正（字节级 python，保 EOL）：importall（level+level_v1）37 条 `<!UNUSED_IMPORT!>`（除在用的 std.argopt）+ `<!APILEVEL_REF_HIGHER!><!DEPRECATED_WARNING!>ArgOpt<!>()<!>`；importsingle（level）补 `<!UNUSED_IMPORT!>std.time.*<!>`。
 - repair principle: 跨包属性的正向路径不能靠检查器推断兜底——数据面补官方原文 sidecar；框架缺口在"授权事实来源"上修（注册表派生缺省值），不在消费点做特判。
 - verification: APILevelChecker 切片 212 全绿；全量 `:cfir:analysis-tests:test` 8714 tests / **28 failed**，较基线 34 净减 6（恰为 MergeStd ×2 入口 ×3 用例），失败集合逐项核对无新增。
+
+## 2026-09-23（续 2）：fixture 期望批次——DefaultParameterPkg02×10 / sameProject×2 / Interop 占位×3（`cfc7c775f` + `2c497c864` + `c885a5f8d`）
+
+- DefaultParameterPkg02（P2 裁决既有结论执行）：5 fixture 回写 ~440 标记（TYPECAST_OVERFLOW×180、UNREACHABLE_PATTERN×236、REDUNDANT_MODIFIER×16、TYPE_MISMATCH×8 等），零源码改动。回写脚本用 ElementTree 解析 XML failure message（手写 regex 会跨 testcase 错位匹配，已踩坑并恢复），文件映射按 classname 尾段+方法名硬编码。
+- sameProject 宏包 golden：宏包引用解析修复（a46e230a9）后 resolved reference 按 CfirReferenceRenderer 既有规则带 `-> CfirXxxSymbol(...)` 后缀，golden 过期，按实际更新。
+- Interop 占位 3 fixture：ObjCImpl 缺 ObjCMirror 父类（含占位期误标"合法"的 GoodObjCImpl）、方法缺 ForeignName、JavaMirror 子类未标注、ObjCInit 返回类型边界。官方取证限制：harmonyos cjc 对 @ObjCMirror 方法展开前即拦"cannot have body"，返回类型层不可观测；开源镜像无 OBJC 诊断。诊断名均为官方 v1.0.0 词汇表真实条目。
+- verification: 全量 8714 tests / **8 failed**（4 unique ×2：MultiFilesPrivate01、ErrQuoteUnary、ErrBinary00、typeaslias），基线 34→28→8。
