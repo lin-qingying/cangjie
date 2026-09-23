@@ -4897,6 +4897,24 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         binaryOp.transformAnnotations(transformer, data)
+        // 官方 `ChkFlowExpr` 的 flow 操作数判据（`BinaryExpr.cpp:1044-1049`）：
+        // `(op == COMPOSITION && !isThisExpr(left)) || !isThisExpr(right)`。
+        // 命中时官方不再解糖、整个 flow 表达式置 InvalidTy；这里同样短路：解糖会把裸
+        // `this`/`super` 变成合成 invoke 调用或 `operator ()` 访问的接收者，从而产出
+        // 官方不存在的 NOT_MEMBER_OF / UNRESOLVED_REFERENCE。
+        binaryOp.invalidFlowFunctionOperandOrNull()?.let { operand ->
+            binaryOp.transformFlowOperandsForInvalidFunctionOperand(operand)
+            binaryOp.replaceConeTypeOrNull(
+                ConeErrorType(
+                    ConeFlowInvalidFunctionOperand(
+                        reason = "'${operand.keyword.sourceText}' is not allowed to be used in flow expressions",
+                        keyword = operand.keyword,
+                        isLeftOperand = operand.isLeftOperand,
+                    ),
+                ),
+            )
+            return binaryOp
+        }
         if (binaryOp.kind == CfirBinaryOpKind.COMPOSITION) {
             // 官方 ChkFlowExpr 先独立综合左侧，只给直接右操作数后续函数类型上下文。
             // 两侧都必须检查；有根错误时保留原表达式树，不创建 composition 合成调用。
@@ -5063,6 +5081,65 @@ open class CfirExpressionsResolveTransformer(
     /** 判断解糖后的 flow 调用是否已经携带调用层诊断。 */
     private fun CfirExpression.hasReportedCallDiagnostic(): Boolean =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic != null
+
+    /** flow 操作数判据命中的一侧。 */
+    private data class InvalidFlowFunctionOperand(
+        val keyword: FlowInvalidOperandKeyword,
+        val isLeftOperand: Boolean,
+    )
+
+    /**
+     * 官方 `ChkFlowExpr` 的 flow 操作数判据（`BinaryExpr.cpp:1044-1049`）。
+     *
+     * `~>` 的两侧、`|>` 的函数部分（右侧）都不允许是裸 `this`：`this |> f` 合法，
+     * `this ~> f` 与 `f ~> this` 非法。官方同一判据只认 `this`；裸 `super` 由
+     * `InferSuperExpr` 单独处理，这里对 super 做同样的短路，但不产生 flow 专属诊断。
+     * 判定顺序对齐官方的 `||` 短路：`~>` 先看左操作数，命中即不再看右侧。
+     */
+    private fun CfirBinaryOp.invalidFlowFunctionOperandOrNull(): InvalidFlowFunctionOperand? {
+        if (kind != CfirBinaryOpKind.PIPELINE && kind != CfirBinaryOpKind.COMPOSITION) return null
+        if (kind == CfirBinaryOpKind.COMPOSITION) {
+            left.bareThisOrSuperKeywordOrNull()?.let { return InvalidFlowFunctionOperand(it, isLeftOperand = true) }
+        }
+        return right.bareThisOrSuperKeywordOrNull()?.let { InvalidFlowFunctionOperand(it, isLeftOperand = false) }
+    }
+
+    /**
+     * 表达式是否是裸 `this` / `super`（官方 `RefExpr.isAlone`）。
+     *
+     * `this.f` / `super.f` 在 Raw CFIR 里是带 receiver 的访问表达式，操作数本身不是
+     * receiver 节点，因此不会被判为裸引用。
+     */
+    private fun CfirExpression.bareThisOrSuperKeywordOrNull(): FlowInvalidOperandKeyword? = when (this) {
+        is CfirThisReceiverExpression -> FlowInvalidOperandKeyword.THIS
+        is CfirSuperReceiverExpression -> FlowInvalidOperandKeyword.SUPER
+        else -> null
+    }
+
+    /**
+     * 命中判据后按官方语义决定哪些操作数仍要解析。
+     *
+     * 裸 `this` 命中时官方直接以失败收尾，命中侧不再参与后续解析；另一侧仍按常规模式解析，
+     * 保留其自身的诊断。裸 `super` 命中时官方先综合了两侧，且 flow 失败本身要渲染两侧类型
+     * 形成二元运算符诊断，因此两侧都解析。命中的 `super` 不再被包装成合成调用的接收者，
+     * 使既有的 `ILLEGAL_SUPER_ALONE` 规则能在裸操作数上正常生效。
+     */
+    private fun CfirBinaryOp.transformFlowOperandsForInvalidFunctionOperand(
+        operand: InvalidFlowFunctionOperand,
+    ) {
+        val resolvesBothOperands = operand.keyword == FlowInvalidOperandKeyword.SUPER
+        if (resolvesBothOperands || !operand.isLeftOperand) {
+            transformLeft(transformer, ResolutionMode.ContextIndependent)
+        }
+        if (resolvesBothOperands || operand.isLeftOperand) {
+            val rightMode = if (right.isDirectFlowFunctionReference()) {
+                ResolutionMode.ContextDependent.ForCallableReference
+            } else {
+                ResolutionMode.ContextIndependent
+            }
+            transformRight(transformer, rightMode)
+        }
+    }
 
     /**
      * flow 任一操作数内部已有根错误时，外层 flow 结果保持错误类型，避免再派生

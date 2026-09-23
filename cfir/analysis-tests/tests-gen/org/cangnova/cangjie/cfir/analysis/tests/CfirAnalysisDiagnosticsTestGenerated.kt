@@ -130,10 +130,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             runTest("cfir/analysis-tests/testData/diagnostics/constructor/delegationAndConstructorsRich.cj")
         }
 
+        @TestMetadata("genericShape.cj")
+        @Test
+        fun testGenericShape() {
+            runTest("cfir/analysis-tests/testData/diagnostics/constructor/genericShape.cj")
+        }
+
         @TestMetadata("illegalDelegationPlacementRich.cj")
         @Test
         fun testIllegalDelegationPlacementRich() {
             runTest("cfir/analysis-tests/testData/diagnostics/constructor/illegalDelegationPlacementRich.cj")
+        }
+
+        @TestMetadata("interopMutabilityProbe.cj")
+        @Test
+        fun testInteropMutabilityProbe() {
+            runTest("cfir/analysis-tests/testData/diagnostics/constructor/interopMutabilityProbe.cj")
         }
 
         @TestMetadata("noConstructorRich.cj")
@@ -556,6 +568,12 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/general")
         }
 
+        @TestMetadata("declShapeProbe.cj")
+        @Test
+        fun testDeclShapeProbe() {
+            runTest("cfir/analysis-tests/testData/diagnostics/general/declShapeProbe.cj")
+        }
+
         @TestMetadata("extendInterfaceParentAcrossFiles.cj")
         @Test
         fun testExtendInterfaceParentAcrossFiles() {
@@ -568,10 +586,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             runTest("cfir/analysis-tests/testData/diagnostics/general/extendInterfaceParentAndMemberInFile.cj")
         }
 
+        @TestMetadata("flowThisProbe.cj")
+        @Test
+        fun testFlowThisProbe() {
+            runTest("cfir/analysis-tests/testData/diagnostics/general/flowThisProbe.cj")
+        }
+
         @TestMetadata("multipleDiagnostics.cj")
         @Test
         fun testMultipleDiagnostics() {
             runTest("cfir/analysis-tests/testData/diagnostics/general/multipleDiagnostics.cj")
+        }
+
+        @TestMetadata("multipleMainProbe.cj")
+        @Test
+        fun testMultipleMainProbe() {
+            runTest("cfir/analysis-tests/testData/diagnostics/general/multipleMainProbe.cj")
         }
 
         @TestMetadata("noDiagnostics.cj")

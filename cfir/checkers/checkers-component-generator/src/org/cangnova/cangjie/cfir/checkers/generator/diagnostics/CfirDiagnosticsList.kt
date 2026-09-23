@@ -1024,6 +1024,18 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     }
 
     /**
+     * flow 表达式（`|>` / `~>`）操作数规则。
+     */
+    val FLOW_EXPRESSIONS by object : DiagnosticGroup("FlowExpressions") {
+        // flow 表达式的函数部分是裸 `this`。
+        // 对齐 C++ `sema_flow_expressions_use_this_or_super`（`DiagnosticSema.def:149`）；
+        // 官方判据只认 `this`，裸 `super` 由 `sema_illegal_super_alone` 单独负责。
+        val FLOW_EXPRESSIONS_USE_THIS_OR_SUPER by error<PsiElement>(PositioningStrategy.DEFAULT) {
+            parameter<String>("keyword")  // 被拒的关键字文本（官方传 `this`）
+        }
+    }
+
+    /**
      * 常量求值（ConstEval）相关的诊断
      * 处理编译期常量表达式求值时发生的错误
      */

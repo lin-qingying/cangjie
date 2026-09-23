@@ -127,9 +127,12 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirInoutSemanticsChecker,
         )
 
-    /** 对 `??` 右操作数在目标类型下的匹配规则执行的 checker 集合。 */
+    /** 对 `??` 右操作数在目标类型下的匹配规则、以及 flow 操作数规则执行的 checker 集合。 */
     override val binaryOpCheckers: Set<CfirBinaryOpChecker>
-        get() = setOf(CfirCoalescingTypeMismatchChecker)
+        get() = setOf(
+            CfirCoalescingTypeMismatchChecker,
+            CfirFlowInvalidFunctionOperandChecker,
+        )
 
     /** 对限定访问、类型实参、可见性相关语义和特殊成员访问执行的 checker 集合。 */
     override val qualifiedAccessCheckers: Set<CfirQualifiedAccessChecker>

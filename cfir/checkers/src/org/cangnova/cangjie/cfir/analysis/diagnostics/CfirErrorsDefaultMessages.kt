@@ -702,6 +702,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CfirErrors.FLOW_EXPRESSIONS_USE_THIS_OR_SUPER,
+            // 对齐 C++ DiagnosticSema.def:149 `"'%s' is not allowed to be used in flow expressions"`
+            "''{0}'' is not allowed to be used in flow expressions",
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.NO_MATCHING_OPERATOR_INVOKE,
             "no matching function for operator ''()'' on type ''{1}''",
             RENDER_STRING,

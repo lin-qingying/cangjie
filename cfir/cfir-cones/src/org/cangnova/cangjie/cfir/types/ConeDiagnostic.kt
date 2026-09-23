@@ -90,3 +90,39 @@ class ConeCoalescingRightOperandMismatch(
 class ConeCoalescingLeftOperandInvalid(
     override val reason: String,
 ) : ConeDiagnostic
+
+/**
+ * flow 表达式的函数部分是裸 `this` / `super`（官方 `ChkFlowExpr`，
+ * `external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:1044-1049`）。
+ *
+ * 官方在该判据命中时**不再解糖**，直接把整个 flow 表达式置为 InvalidTy 并返回失败。
+ * 本仓解糖会构造合成的 invoke 调用或 `operator ()` 值访问，会把裸 `this`/`super` 变成
+ * 调用接收者，从而产生 `NOT_MEMBER_OF`、`UNRESOLVED_REFERENCE` 一类官方不存在的诊断。
+ *
+ * 因此 resolve 命中判据时携带本标记并返回**未解糖**的二元节点，checker 据此映射诊断：
+ * `this` 报 flow 专属诊断；`super` 报二元运算符诊断，而裸 `super` 自身的诊断由既有的
+ * `ILLEGAL_SUPER_ALONE` 规则在未被包装的操作数上自然产生。
+ *
+ * @property keyword 命中的关键字。
+ * @property isLeftOperand 命中是否位于左操作数。官方 `|>` 只检查函数部分（右侧），
+ *   `~>` 两侧都检查。
+ */
+class ConeFlowInvalidFunctionOperand(
+    override val reason: String,
+    val keyword: FlowInvalidOperandKeyword,
+    val isLeftOperand: Boolean,
+) : ConeDiagnostic
+
+/**
+ * [ConeFlowInvalidFunctionOperand] 命中的关键字分类。
+ */
+enum class FlowInvalidOperandKeyword(
+    /** 关键字在源码中的文本。 */
+    val sourceText: String,
+) {
+    /** 裸 `this`。 */
+    THIS("this"),
+
+    /** 裸 `super`。 */
+    SUPER("super"),
+}
