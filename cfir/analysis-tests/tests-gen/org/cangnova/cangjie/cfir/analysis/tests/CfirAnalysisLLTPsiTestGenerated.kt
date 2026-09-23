@@ -17133,6 +17133,22 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 }
             }
 
+            @TestMetadata("private_dup01_langver100")
+            @TestDataPath("${'$'}PROJECT_ROOT")
+            @Nested
+            inner class PrivateDup01Langver100 : AbstractCfirPsiLlTDiagnosticsTest() {
+                @Test
+                fun testAllFilesPresent() {
+                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup01_langver100")
+                }
+
+                @TestMetadata("testb.cj")
+                @Test
+                fun testTestb() {
+                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup01_langver100/testb.cj")
+                }
+            }
+
             @TestMetadata("private_dup02")
             @TestDataPath("${'$'}PROJECT_ROOT")
             @Nested
@@ -17162,6 +17178,38 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
                 @Test
                 fun testTestb() {
                     runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03/testb.cj")
+                }
+            }
+
+            @TestMetadata("private_dup03_langver100")
+            @TestDataPath("${'$'}PROJECT_ROOT")
+            @Nested
+            inner class PrivateDup03Langver100 : AbstractCfirPsiLlTDiagnosticsTest() {
+                @Test
+                fun testAllFilesPresent() {
+                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03_langver100")
+                }
+
+                @TestMetadata("testb.cj")
+                @Test
+                fun testTestb() {
+                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03_langver100/testb.cj")
+                }
+            }
+
+            @TestMetadata("private_dup_noreference")
+            @TestDataPath("${'$'}PROJECT_ROOT")
+            @Nested
+            inner class PrivateDupNoreference : AbstractCfirPsiLlTDiagnosticsTest() {
+                @Test
+                fun testAllFilesPresent() {
+                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup_noreference")
+                }
+
+                @TestMetadata("testb.cj")
+                @Test
+                fun testTestb() {
+                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup_noreference/testb.cj")
                 }
             }
         }

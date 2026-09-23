@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.interop.CaInteropCallingConvention
 import org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
@@ -185,6 +186,14 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
             assertEquals("native_sum", psiInfo.externalName)
             assertEquals(CaInteropCallingConvention.CDECL, psiInfo.callingConvention)
             assertEquals(listOf("ForeignName", "CallingConv"), psiInfo.ffiAnnotationNames)
+            assertTrue(
+                psiInfo.ffiAnnotations.any {
+                it.builtInKind == BuiltInAnnotationKind.FOREIGN_NAME ||
+                    (it.platformKind == CangjiePlatformAnnotationKind.FOREIGN_NAME &&
+                        it.origin == org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.PLATFORM_DERIVED)
+                },
+                "Analysis API must expose resolved platform FFI annotations, not only language builtins",
+            )
 
             val symbolInfo = function.symbol.getInteropInfo()
             assertNotNull(symbolInfo, "foreign function symbol should expose the same C interop info")

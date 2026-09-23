@@ -1268,6 +1268,12 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
                     fun testGlobalfunc() {
                         runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/datarace/globalfunc.cj")
                     }
+
+                    @TestMetadata("globalfunc_dep.cj")
+                    @Test
+                    fun testGlobalfuncDep() {
+                        runTest("cfir/analysis-tests/testData/macro/llt/annotation/globals/datarace/globalfunc_dep.cj")
+                    }
                 }
 
                 @TestMetadata("multipkgs")

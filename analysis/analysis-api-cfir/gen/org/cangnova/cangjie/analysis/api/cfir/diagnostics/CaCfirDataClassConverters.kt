@@ -583,6 +583,13 @@ private fun CaDiagnosticConverterBuilder.addConversions15() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions16() {
+    add(CfirErrors.FLOW_EXPRESSIONS_USE_THIS_OR_SUPER) { cfirDiagnostic ->
+        FlowExpressionsUseThisOrSuperImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT) { cfirDiagnostic ->
         InheritMemberKindInconsistentImpl(
             cfirDiagnostic.a,
@@ -633,6 +640,12 @@ private fun CaDiagnosticConverterBuilder.addConversions19() {
             token,
         )
     }
+    add(CfirErrors.INVALID_COALESCING) { cfirDiagnostic ->
+        InvalidCoalescingImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions20() {
@@ -645,6 +658,12 @@ private fun CaDiagnosticConverterBuilder.addConversions20() {
     add(CfirErrors.DIFFERENT_OR_PATTERN) { cfirDiagnostic ->
         DifferentOrPatternImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.INVALID_TUPLE_FIELD_CTYPE) { cfirDiagnostic ->
+        InvalidTupleFieldCtypeImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2444,6 +2463,13 @@ private fun CaDiagnosticConverterBuilder.addConversions103() {
             token,
         )
     }
+    add(CfirErrors.FORBID_GENERIC_CONSTRUCTOR) { cfirDiagnostic ->
+        ForbidGenericConstructorImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.VARIABLE_OF_JAVA_TYPE) { cfirDiagnostic ->
         VariableOfJavaTypeImpl(
             cfirDiagnostic.a,
@@ -2903,6 +2929,12 @@ private fun CaDiagnosticConverterBuilder.addConversions124() {
             token,
         )
     }
+    add(CfirErrors.REDEFINITION_ENTRY) { cfirDiagnostic ->
+        RedefinitionEntryImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions125() {
@@ -3242,6 +3274,12 @@ private fun CaDiagnosticConverterBuilder.addConversions141() {
             token,
         )
     }
+    add(CfirErrors.NUMERIC_CONVERT_MUST_BE_NUMERIC) { cfirDiagnostic ->
+        NumericConvertMustBeNumericImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions142() {
@@ -3249,6 +3287,12 @@ private fun CaDiagnosticConverterBuilder.addConversions142() {
         BuilderInferenceMultiLambdaRestrictionImpl(
             cfirDiagnostic.a,
             cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.INVALID_ENUM_MEMBER_ACCESS) { cfirDiagnostic ->
+        InvalidEnumMemberAccessImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -3331,6 +3375,13 @@ private fun CaDiagnosticConverterBuilder.addConversions145() {
 private fun CaDiagnosticConverterBuilder.addConversions146() {
     add(CfirErrors.INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS) { cfirDiagnostic ->
         InvalidTypeParamOfEnumMemberAccessImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED) { cfirDiagnostic ->
+        AbstractClassCanNotBeInstantiatedImpl(
+            cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -3937,6 +3988,12 @@ private fun CaDiagnosticConverterBuilder.addConversions174() {
             token,
         )
     }
+    add(CfirErrors.GENERIC_IN_OPERATOR_OVERLOAD) { cfirDiagnostic ->
+        GenericInOperatorOverloadImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.CJMAPPING_STRUCT_GENERIC_NOT_SUPPORTED) { cfirDiagnostic ->
         CjmappingStructGenericNotSupportedImpl(
             cfirDiagnostic.a,
@@ -4277,11 +4334,27 @@ private fun CaDiagnosticConverterBuilder.addConversions188() {
             token,
         )
     }
+    add(CfirErrors.TYPEALIAS_EXTERNAL_REFER_INTERNAL) { cfirDiagnostic ->
+        TypealiasExternalReferInternalImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic.c,
+            cfirDiagnostic.d,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.NOT_MEMBER_OF) { cfirDiagnostic ->
         NotMemberOfImpl(
             cfirDiagnostic.a,
             cfirDiagnostic.b,
             cfirDiagnostic.c,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.PATTERN_CAN_NOT_BE_ASSIGNED) { cfirDiagnostic ->
+        PatternCanNotBeAssignedImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
