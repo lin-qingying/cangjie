@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -291,6 +292,351 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
+     * 跨文件 static/global 初始化依赖环检查。
+     *
+     * 官方 `GlobalVarChecker`（`external/cangjie_compiler/src/Sema/LegalityOfUsage/GlobalVarChecker.cpp`）
+     * 把同一包内全部 global/static 存储变量建成 def-use 图：`DoCheck`（:643-651）先做
+     * `CheckInSameFile`（:529-561，同文件 `visitOrder` 比较），只有同文件全部合法才进入
+     * `CheckCrossFile`（:575-584）——为同一文件内相邻顶层变量补“后声明依赖先声明”的假边，
+     * 再由 `CheckByToposort`（:601-641）做三色拓扑排序，遇到回边即报
+     * `sema_used_before_initialization`。跨文件允许重排初始化顺序，因此只有真正成环才报，
+     * 且整包至多一条（`CheckByToposort` 遇到第一个环立即返回）。
+     *
+     * 同文件阶段已由 [checkFileStaticGlobalInitialization] 覆盖，这里只补跨文件阶段。节点按官方
+     * `CmpNodeByPos`（`include/cangjie/AST/Node.h:2874-2891`）的 `fileID` 语义排序，而官方 `fileID`
+     * 来自源文件 basename 升序（`CompileStrategy.cpp:233-246` 显式排序后按序 `AddSource`），
+     * 因此这里同样按 basename 升序、完整路径兜底。
+     *
+     * 诊断归属沿用仓库既有的逐文件模型：包内每个文件都重放同一张图，但只上报引用点位于
+     * 当前文件的回边。官方 `ToposortDFS` 对同一张图总是命中同一条回边，因此整包恰好上报一次，
+     * 且落在引用真正所在的文件里。该「文件 checker 扫描同包文件」的形态与
+     * `CfirImportsChecker.collectPackageImportUsage` 一致。
+     */
+    fun checkCrossFileStaticGlobalInitializationCycle(file: CfirFile) {
+        val packageFiles = file.staticGlobalInitializationPackageFiles()
+        if (packageFiles.size < 2) return
+        val currentFileIdentity = file.staticGlobalInitializationFileIdentity()
+
+        val nodes = linkedMapOf<CfirBasedSymbol<*>, StaticGlobalDependencyNode>()
+        val declarationsByFile = packageFiles.map { packageFile ->
+            packageFile.staticGlobalInitializationFileIdentity() to
+                packageFile.staticGlobalInitializerDeclarations()
+        }
+        for ((fileIdentity, declarations) in declarationsByFile) {
+            for (declaration in declarations) {
+                for (variable in declaration.variables) {
+                    nodes.getOrPut(variable.symbol.initializationSymbol()) {
+                        StaticGlobalDependencyNode(variable, fileIdentity)
+                    }
+                }
+            }
+        }
+        if (nodes.isEmpty()) return
+
+        var visitOrder = 0
+        for ((fileIdentity, declarations) in declarationsByFile) {
+            for (declaration in declarations) {
+                when (declaration.kind) {
+                    StaticGlobalInitializerKind.VARIABLE -> {
+                        declaration.variables.forEach { variable ->
+                            nodes[variable.symbol.initializationSymbol()]?.visitOrder = visitOrder++
+                        }
+                        declaration.initializer?.let { initializer ->
+                            declaration.variables.forEach { variable ->
+                                val node = nodes[variable.symbol.initializationSymbol()] ?: return@forEach
+                                collectStaticGlobalDependencyReads(initializer, node, nodes)
+                            }
+                        }
+                    }
+
+                    StaticGlobalInitializerKind.STATIC_INIT -> {
+                        visitOrder = collectStaticInitDependencyReads(
+                            declaration = declaration,
+                            nodes = nodes,
+                            nextVisitOrder = visitOrder,
+                        )
+                    }
+                }
+            }
+            // 官方 `AddInitializationOrderEdge`：同一文件内相邻顶层变量之间补假边，
+            // 保证跨文件拓扑排序仍遵守同文件定义顺序。
+            addStaticGlobalInitializationOrderEdges(
+                declarations = declarations,
+                fileIdentity = fileIdentity,
+                nodes = nodes,
+            )
+        }
+
+        // 官方 `DoCheck`：同文件检查发现顺序问题就不再进入跨文件检查。
+        for (node in nodes.values) {
+            for (edge in node.usage) {
+                if (edge.source == null) continue
+                if (edge.node.fileIdentity != node.fileIdentity) continue
+                if (edge.node.visitOrder >= node.visitOrder) return
+            }
+        }
+
+        for (node in nodes.values) {
+            if (node.color == StaticGlobalDependencyColor.WHITE) {
+                if (!toposortStaticGlobalDependency(node, currentFileIdentity)) return
+            }
+        }
+    }
+
+    /**
+     * 收集 `static init` 体中直接初始化当前 class-like static 字段的读取边。
+     *
+     * 官方 `CollectForStaticInit`（`GlobalVarChecker.cpp:320-342`）在 `field = rhs` 处把当前
+     * `DefNode` 切换为字段并只从 rhs 收集依赖；这里保持同一根选择，但把收集范围扩到
+     * 直接读取（官方 `CollectVarUsageBFS` 不区分直接读取与函数可达读取）。
+     */
+    private fun collectStaticInitDependencyReads(
+        declaration: StaticGlobalInitializerDeclaration,
+        nodes: Map<CfirBasedSymbol<*>, StaticGlobalDependencyNode>,
+        nextVisitOrder: Int,
+    ): Int {
+        val body = declaration.body ?: return nextVisitOrder
+        var order = nextVisitOrder
+        val assigned = linkedSetOf<CfirBasedSymbol<*>>()
+
+        body.accept(object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            // 声明 callable 不表示执行；只有立即调用的 lambda 才进入当前 static init 路径。
+            override fun visitFunction(function: CfirFunction) = Unit
+
+            override fun visitProperty(property: CfirProperty) = Unit
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                val receiver = functionCall.explicitReceiver
+                if (receiver is CfirAnonymousFunctionExpression) {
+                    receiver.anonymousFunction.body?.accept(this, null)
+                } else {
+                    receiver?.accept(this, null)
+                }
+                functionCall.argumentList.arguments.forEach { argument -> argument.accept(this, null) }
+            }
+
+            override fun visitAssignment(assignment: CfirAssignment) {
+                val targetSymbol = (assignment.lValue as? CfirQualifiedAccessExpression)
+                    ?.resolvedAccessSymbolOrNull()
+                    ?.initializationSymbol()
+                val targetNode = targetSymbol?.let { symbol -> nodes[symbol] }
+                if (
+                    targetSymbol != null && targetNode != null &&
+                    targetNode.variable.field?.status?.isStatic == true &&
+                    targetNode.variable.nominalOwnerClassId == declaration.nominalOwnerClassId &&
+                    assigned.add(targetSymbol)
+                ) {
+                    targetNode.visitOrder = order++
+                    collectStaticGlobalDependencyReads(assignment.rValue, targetNode, nodes)
+                    return
+                }
+
+                assignment.rValue.accept(this, null)
+                assignment.lValue.accept(this, null)
+            }
+        }, null)
+
+        return order
+    }
+
+    /**
+     * 为同一文件内相邻顶层变量补“后声明依赖先声明”的假边。
+     *
+     * 官方只处理 `file.decls` 中的 `VAR_DECL`；class-like static 字段不参与假边构造。
+     */
+    private fun addStaticGlobalInitializationOrderEdges(
+        declarations: List<StaticGlobalInitializerDeclaration>,
+        fileIdentity: String,
+        nodes: Map<CfirBasedSymbol<*>, StaticGlobalDependencyNode>,
+    ) {
+        var previous: StaticGlobalDependencyNode? = null
+        for (declaration in declarations) {
+            if (declaration.kind != StaticGlobalInitializerKind.VARIABLE) continue
+            if (declaration.nominalOwnerClassId != null) continue
+            for (variable in declaration.variables) {
+                val node = nodes[variable.symbol.initializationSymbol()] ?: continue
+                if (node.fileIdentity != fileIdentity) continue
+                previous?.let { earlier ->
+                    node.usage += StaticGlobalDependencyEdge(
+                        node = earlier,
+                        source = null,
+                        diagnosticName = earlier.variable.diagnosticName,
+                        fileIdentity = fileIdentity,
+                    )
+                }
+                previous = node
+            }
+        }
+    }
+
+    /**
+     * 官方 `CheckByToposort`/`ToposortDFS` 的三色拓扑排序。
+     *
+     * @return 拓扑排序是否成功；返回 false 表示检测到环。
+     */
+    private fun toposortStaticGlobalDependency(
+        node: StaticGlobalDependencyNode,
+        currentFileIdentity: String,
+    ): Boolean {
+        if (node.color == StaticGlobalDependencyColor.BLACK) return true
+        if (node.color == StaticGlobalDependencyColor.GRAY) return false
+        node.color = StaticGlobalDependencyColor.GRAY
+        for (edge in node.usage) {
+            if (!toposortStaticGlobalDependency(edge.node, currentFileIdentity)) {
+                if (edge.node.color == StaticGlobalDependencyColor.GRAY) {
+                    reportStaticGlobalInitializationCycle(edge, currentFileIdentity)
+                }
+                node.color = StaticGlobalDependencyColor.BLACK
+                return false
+            }
+        }
+        node.color = StaticGlobalDependencyColor.BLACK
+        return true
+    }
+
+    /**
+     * 上报闭合初始化依赖环的读取边。
+     *
+     * 假边没有源码位置；引用点不在当前文件时也跳过，保证诊断归属与仓库逐文件模型一致。
+     */
+    private fun reportStaticGlobalInitializationCycle(
+        edge: StaticGlobalDependencyEdge,
+        currentFileIdentity: String,
+    ) {
+        val source = edge.source ?: return
+        if (edge.fileIdentity != currentFileIdentity) return
+        with(context) {
+            reporter.reportOn(
+                source = source,
+                factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                a = edge.diagnosticName,
+            )
+        }
+    }
+
+    /**
+     * 收集一个初始化根表达式内对 static/global 存储变量的全部读取。
+     *
+     * 与 [collectRecursiveStaticFunctionReads] 的区别是包含根表达式自身的直接读取：官方
+     * `CollectVarUsageBFS`（`GlobalVarChecker.cpp:395-491`）不区分直接读取与经 callable
+     * 可达的读取，两者都进入 def-use 图。
+     */
+    private fun collectStaticGlobalDependencyReads(
+        root: CfirElement,
+        userNode: StaticGlobalDependencyNode,
+        nodes: Map<CfirBasedSymbol<*>, StaticGlobalDependencyNode>,
+    ) {
+        val visitedFunctions = linkedSetOf<CfirFunction>()
+        lateinit var visitor: org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+
+        fun collectFromFunction(function: CfirFunction) {
+            if (!visitedFunctions.add(function)) return
+            val functionBody = function.body ?: return
+            functionBody.accept(visitor, null)
+        }
+
+        visitor = object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitFunction(function: CfirFunction) = Unit
+
+            override fun visitProperty(property: CfirProperty) = Unit
+
+            override fun visitAnonymousFunctionExpression(anonymousFunctionExpression: CfirAnonymousFunctionExpression) = Unit
+
+            override fun visitAssignment(assignment: CfirAssignment) {
+                assignment.rValue.accept(this, null)
+                visitWriteTarget(assignment.lValue)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                functionCall.resolvedInitializationCallableOrNull(InitializationAccessMode.READ)
+                    ?.let(::collectFromFunction)
+                val receiver = functionCall.explicitReceiver
+                if (receiver is CfirAnonymousFunctionExpression) {
+                    collectFromFunction(receiver.anonymousFunction)
+                } else {
+                    receiver?.accept(this, null)
+                }
+                functionCall.argumentList.arguments.forEach { argument -> argument.accept(this, null) }
+            }
+
+            override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression) {
+                visitAccess(qualifiedAccessExpression, InitializationAccessMode.READ)
+            }
+
+            override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression) {
+                visitAccess(namedAccessExpression, InitializationAccessMode.READ)
+            }
+
+            private fun visitWriteTarget(target: CfirExpression) {
+                when (target) {
+                    is CfirQualifiedAccessExpression -> visitAccess(target, InitializationAccessMode.WRITE_TARGET)
+                    is CfirTupleLiteral -> target.elements.forEach(::visitWriteTarget)
+                    else -> target.accept(this, null)
+                }
+            }
+
+            /** 读 property 进入 getter，写目标进入 setter；变量读目标形成 use edge。 */
+            private fun visitAccess(
+                access: CfirQualifiedAccessExpression,
+                accessMode: InitializationAccessMode,
+                visitReceiver: Boolean = true,
+            ) {
+                if (visitReceiver) {
+                    access.explicitReceiver?.accept(this, null)
+                }
+                if (accessMode == InitializationAccessMode.READ) {
+                    collectUseEdge(access)
+                }
+                access.resolvedInitializationCallableOrNull(accessMode)?.let(::collectFromFunction)
+            }
+
+            private fun collectUseEdge(access: CfirQualifiedAccessExpression) {
+                val symbol = access.resolvedAccessSymbolOrNull()?.initializationSymbol() ?: return
+                val usedNode = nodes[symbol] ?: return
+                userNode.usage += StaticGlobalDependencyEdge(
+                    node = usedNode,
+                    source = access.calleeReference.source ?: access.source,
+                    diagnosticName = access.calleeReference.referenceNameOrNull() ?: usedNode.variable.diagnosticName,
+                    fileIdentity = userNode.fileIdentity,
+                )
+            }
+        }
+
+        root.accept(visitor, null)
+    }
+
+    /**
+     * 当前文件所属包内参与 static/global 初始化分析的源文件，按官方 fileID 语义排序。
+     */
+    private fun CfirFile.staticGlobalInitializationPackageFiles(): List<CfirFile> {
+        val packageFqName = packageDirective.packageFqName
+        return context.session.cfirProvider
+            .getCfirFilesByPackage(packageFqName)
+            .sortedWith(
+                compareBy(
+                    { packageFile -> packageFile.sourceFile?.name ?: packageFile.name },
+                    { packageFile -> packageFile.sourceFile?.path ?: packageFile.name },
+                ),
+            )
+    }
+
+    /**
+     * 源文件身份，用于跨文件比较与「规范序第一个文件」触发判定。
+     */
+    private fun CfirFile.staticGlobalInitializationFileIdentity(): String =
+        sourceFile?.path ?: sourceFile?.name ?: name
+
+    /**
      * 检查 static 字段初始化器。
      *
      * 官方 `CollectToDeclsInfo` 会在遍历类成员时立即检查 static 非函数声明；
@@ -464,11 +810,58 @@ private class CfirInitializationFlowAnalyzer(
         initialState: InitializationState,
     ): InitializationState {
         var currentState = initialState
+        var unreachable = false
         for (statement in statements) {
-            if (currentState.terminated) return currentState
+            if (unreachable || currentState.terminated) {
+                /*
+                 * 中断之后的语句不可达：官方不再做定值检查（不报 UBI、不做重复赋值判定；
+                 * cjc 实测 terminated_04_2：中断赋值之后的 `a = 2`、`println(a)` 均零诊断）。
+                 * 但赋值合法性检查器读的是本分析登记的分类，漏登记会被当作 NOT_TRACKED
+                 * 而误报 CANNOT_ASSIGN_TO_IMMUTABLE，因此这里只补登记 INITIALIZATION
+                 * （“官方放弃检查”语义），不推进状态、不上报。
+                 */
+                unreachable = true
+                recordUnreachableAssignmentClassifications(statement)
+                continue
+            }
             currentState = analyzeStatement(statement, currentState)
         }
         return currentState
+    }
+
+    /**
+     * 为不可达语句区域内的赋值补登记 `INITIALIZATION` 分类。
+     *
+     * 诊断模式下分类表为 `null`，本方法整体退化为无操作，因此不会给不可达代码带来任何诊断。
+     */
+    private fun recordUnreachableAssignmentClassifications(element: CfirElement) {
+        if (assignmentClassifications == null) return
+        element.forEachExpressionElement { child ->
+            if (child is CfirAssignment) {
+                recordAssignmentClassification(child, CfirInitializationAssignmentKind.INITIALIZATION)
+            }
+        }
+    }
+
+    /**
+     * 递归访问表达式子树内的元素，不进入嵌套函数 / lambda 体（它们由各自的分析独立处理）。
+     */
+    private fun CfirElement.forEachExpressionElement(action: (CfirElement) -> Unit) {
+        action(this)
+        acceptChildren(
+            object : org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid() {
+                override fun visitElement(element: CfirElement) {
+                    element.forEachExpressionElement(action)
+                }
+
+                override fun visitFunction(function: CfirFunction) = Unit
+
+                override fun visitAnonymousFunctionExpression(
+                    anonymousFunctionExpression: CfirAnonymousFunctionExpression,
+                ) = Unit
+            },
+            null,
+        )
     }
 
     /**
@@ -654,22 +1047,20 @@ private class CfirInitializationFlowAnalyzer(
         }
         val rightValueHasPriorityDiagnostic =
             reportedInitializationDiagnosticCount != diagnosticCountBeforeRightValue
-        if (afterRightValue.terminated) {
-            /*
-             * 官方 `InitializationChecker`：赋值右值若中断（如 `c = throw Exception()`、
-             * `a = Some(1) ?? throw Exception()`），该赋值不会完成，目标不进入定值集合
-             * （cjc 实测 terminated_01/04：try-catch 之后 use 报
-             * `sema_used_before_initialization`）。顺序流在右值处终止，后续语句不可达；
-             * catch 路径由 `analyzeTryExpression` 以清除终止标记的体结束状态进入，
-             * 因此这里不能把目标标记进已初始化集合。
-             */
-            return afterRightValue
-        }
+        /*
+         * 官方 `InitializationChecker`：赋值右值若中断（`c = throw Exception()`、
+         * `a = Some(1) ?? throw Exception()`），该赋值不会完成，目标不进入定值集合
+         * （cjc 实测 terminated_01/04：try-catch 之后 use 报 sema_used_before_initialization）。
+         * 但**目标分析本身必须照常执行**：赋值合法性检查器读的是本分析登记的分类，
+         * 漏登记会被当作 NOT_TRACKED 而误报 CANNOT_ASSIGN_TO_IMMUTABLE
+         * （terminated_02/03/05 实测），因此中断只影响"是否推进定值状态"。
+         */
         return analyzeAssignmentTarget(
             assignment = assignment,
             lValue = assignment.lValue,
             state = afterRightValue,
             priorityDiagnostic = rightValueHasPriorityDiagnostic,
+            assignmentCompletes = !afterRightValue.terminated,
         )
     }
 
@@ -698,16 +1089,18 @@ private class CfirInitializationFlowAnalyzer(
         lValue: CfirExpression,
         state: InitializationState,
         priorityDiagnostic: Boolean = false,
+        assignmentCompletes: Boolean = true,
     ): InitializationState = when (lValue) {
         is CfirQualifiedAccessExpression -> analyzeAssignmentTargetAccess(
             assignment = assignment,
             access = lValue,
             state = state,
             priorityDiagnostic = priorityDiagnostic,
+            assignmentCompletes = assignmentCompletes,
         )
 
         is CfirTupleLiteral -> lValue.elements.fold(state) { currentState, element ->
-            analyzeAssignmentTarget(assignment, element, currentState, priorityDiagnostic)
+            analyzeAssignmentTarget(assignment, element, currentState, priorityDiagnostic, assignmentCompletes)
         }
 
         else -> analyzeExpression(lValue, state)
@@ -731,6 +1124,17 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     /**
+     * 按“赋值是否真正完成”推进定值状态。
+     *
+     * 右值中断（`c = throw ...`、`a = x ?? throw ...`）时赋值不会完成，目标不得进入定值集合；
+     * 分类登记已由调用方完成，因此这里只在完成时标记。
+     */
+    private fun InitializationState.markAssignedIfCompletes(
+        symbol: CfirBasedSymbol<*>,
+        assignmentCompletes: Boolean,
+    ): InitializationState = if (assignmentCompletes) markInitialized(symbol) else this
+
+    /**
      * 赋值左值要沿官方 `InitializationChecker::CheckInitInAssignExpr` 语义区分：
      * 变量左值可以推进初始化状态；成员 `prop`/accessor 不是存储槽，未完成初始化时
      * 需要回到同一套成员访问检查。Kotlin FIR 对应路径是在 `FirDataFlowAnalyzer.exitVariableAssignment`
@@ -741,6 +1145,7 @@ private class CfirInitializationFlowAnalyzer(
         access: CfirQualifiedAccessExpression,
         state: InitializationState,
         priorityDiagnostic: Boolean,
+        assignmentCompletes: Boolean = true,
     ): InitializationState {
         val diagnosticCountBeforeReceiver = reportedInitializationDiagnosticCount
         val afterReceiver = access.explicitReceiver?.let { receiver ->
@@ -798,7 +1203,7 @@ private class CfirInitializationFlowAnalyzer(
                         }
                         recordAssignmentClassification(assignment, classification)
                     }
-                    return afterReceiver.markInitialized(symbol)
+                    return afterReceiver.markAssignedIfCompletes(symbol, assignmentCompletes)
                 }
 
                 val nestedInitializerAccessKind =
@@ -846,7 +1251,7 @@ private class CfirInitializationFlowAnalyzer(
                     }
                     recordAssignmentClassification(assignment, classification)
                 }
-                afterReceiver.markInitialized(symbol)
+                afterReceiver.markAssignedIfCompletes(symbol, assignmentCompletes)
             }
 
             access.shouldSkipIllegalMemberAccessInMemberInitializer(afterReceiver) -> afterReceiver
@@ -990,11 +1395,13 @@ private class CfirInitializationFlowAnalyzer(
         // 官方 `CheckInitInTryExpr` 先分析 try 块再分析 catch 块：try 块中已全路径初始化的
         // `let` 变量在 catch 块中再次赋值属于重复赋值（CANNOT_ASSIGN_TO_IMMUTABLE），
         // 因此 catch 块的入口状态必须是 try 块分析后的状态，而不是 try 之前的状态。
-        // 但 try 体以 throw/中断收尾时（如 `c = throw Exception()`），结束状态是 terminated，
-        // 若原样进入 catch 体会让 catch 体被当成不可达而整体跳过；异常路径本身是可达的，
-        // 故进入前清除终止标记（cjc 实测 terminated_01：catch 之后的 use 报 UBI）。
+        // try 体以 throw/中断收尾时结束状态是 terminated，但异常路径本身可达：
+        // 若原样进入 catch，catch 体会被当成不可达整体跳过，catch 之后的语句也会被当成
+        // 不可达而漏报（cjc 实测 terminated_01：`try { c = throw Exception() } catch {}`
+        // 之后 use(c) 报 sema_used_before_initialization）。
+        val catchEntryState = tryState.withoutTermination()
         val catchStates = expression.catches.map { catchClause ->
-            analyzeScopedBlock(catchClause.body, tryState.withoutTermination())
+            analyzeScopedBlock(catchClause.body, catchEntryState)
         }
 
         val mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)
@@ -1215,12 +1622,30 @@ private class CfirInitializationFlowAnalyzer(
 
         if (expression.argumentList.arguments.any { it is CfirNamedArgumentExpression }) {
             /*
-             * 官方对含命名实参的调用放弃定值分析：实参求值顺序未规定，
-             * 读与写都不产生初始化诊断（cjc 实测：
-             * `fseq(b: println(y), a: (y = 10))` 中 `let y: Int64` 未初始化却零诊断，
+             * 官方对含命名实参的调用放弃定值分析：实参求值顺序未规定，读与写都不产生初始化诊断
+             * （cjc 实测：`fseq(b: println(y), a: (y = 10))` 中未初始化的 `let y` 零诊断，
              * 而位置实参 `fs2(println(y), (y = 10))` 照常报 y 的 UBI）。
-             * 调用自身的 receiver/callee 检查不受影响。
+             * 但放弃分析不等于放弃登记：实参内赋值的分类必须按调用点状态写入，
+             * 否则合法性检查器会因 NOT_TRACKED 误报 CANNOT_ASSIGN_TO_IMMUTABLE。
              */
+            expression.argumentList.arguments.forEach { argument ->
+                argument.forEachExpressionElement { child ->
+                    if (child is CfirAssignment) {
+                        val target = child.lValue as? CfirQualifiedAccessExpression
+                        val symbol = target?.resolvedAccessSymbolOrNull()?.initializationSymbol()
+                        if (symbol != null) {
+                            recordAssignmentClassification(
+                                child,
+                                if (currentState.isInitialized(symbol)) {
+                                    CfirInitializationAssignmentKind.REASSIGNMENT
+                                } else {
+                                    CfirInitializationAssignmentKind.INITIALIZATION
+                                },
+                            )
+                        }
+                    }
+                }
+            }
             if (expression.origin == CfirFunctionCallOrigin.ConstructorDelegationThis) {
                 currentState = currentState.markAllInstanceFieldsInitialized()
             }
@@ -1824,6 +2249,7 @@ private class CfirInitializationFlowAnalyzer(
     private fun reportRecursiveStaticFunctionReadsBeforeInitialization(edges: List<StaticGlobalUseEdge>) {
         for (edge in edges) {
             if (edge.usedVariable.visitOrder < edge.ownerVisitOrder) continue
+            if (reportGlobalReferenceBeforeItsDefinition(edge.source, edge.usedVariable)) continue
             with(context) {
                 reporter.reportOn(
                     source = edge.source,
@@ -1833,6 +2259,54 @@ private class CfirInitializationFlowAnalyzer(
             }
         }
     }
+
+    /**
+     * 上报同一文件内早于声明点的顶层存储变量引用。
+     *
+     * 官方 `InitializationChecker::CheckInitInRefExpr`（`InitializationChecker.cpp:732-736`）与
+     * `CheckInitInMemberAccess`（:783-788）规定：目标带 `Attribute::GLOBAL`（包级存储变量）、
+     * 引用与目标在同一文件且引用位置早于目标声明位置时，报 `sema_undefined_variable`
+     * （"used before being defined"），而不是初始化顺序诊断。名字查找本身照常绑定该目标
+     * （`LookUpImpl.cpp:479-482` 把 `scopeLevel == 0` 的顶层声明排除在顺序过滤之外），
+     * 因此该分支属于初始化检查器职责，与 `UNRESOLVED_REFERENCE` 的解析失败语义不同。
+     *
+     * class-like static 成员不走该分支：官方对它们的同类前向引用由 `GlobalVarChecker` 的
+     * 同文件 `visitOrder` 规则报 `sema_global_var_used_before_initialization`。
+     * 调用点都位于单文件初始化顺序分析内，同文件条件天然成立。
+     *
+     * @return 是否已经上报前向引用诊断；为 true 时调用方不得再报初始化顺序诊断。
+     */
+    private fun reportGlobalReferenceBeforeItsDefinition(
+        referenceSource: org.cangnova.cangjie.source.CjSourceElement?,
+        targetVariable: StaticGlobalInitializerVariable,
+    ): Boolean {
+        if (targetVariable.nominalOwnerClassId != null) return false
+        // 没有源码位置的声明无法比较声明点，不能仅凭偏移量判定为前向引用。
+        if (targetVariable.sourceOffset == UNKNOWN_SOURCE_OFFSET) return false
+        val referenceOffset = referenceSource?.startOffset ?: return false
+        if (referenceOffset >= targetVariable.sourceOffset) return false
+
+        with(context) {
+            reporter.reportOn(
+                source = referenceSource,
+                factory = CfirErrors.UNRESOLVED_REFERENCE,
+                a = targetVariable.diagnosticName.asString(),
+                b = null,
+            )
+        }
+        return true
+    }
+
+    /**
+     * 以访问表达式的引用名为位置上报顶层存储变量的前向引用。
+     */
+    private fun reportGlobalReferenceBeforeItsDefinition(
+        access: CfirQualifiedAccessExpression,
+        targetVariable: StaticGlobalInitializerVariable,
+    ): Boolean = reportGlobalReferenceBeforeItsDefinition(
+        referenceSource = access.calleeReference.source ?: access.source,
+        targetVariable = targetVariable,
+    )
 
     /**
      * 报告最终仍未初始化的 static 字段。
@@ -1855,8 +2329,11 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 实例字段初始化器也不能读取同文件中后声明的顶层 global 变量。
      *
-     * 官方 `IsVarUsedBeforeDefinition` 对这种普通作用域前向引用报错，但访问另一个
-     * class-like 的 static 成员由 global/static 初始化图处理，不能按实例字段的源码偏移误判。
+     * 官方 `IsVarUsedBeforeDefinition` 对这种普通作用域前向引用报错，且具体诊断由
+     * `InitializationChecker::CheckInitInRefExpr`（`InitializationChecker.cpp:732-736`）给出：
+     * 目标带 `GLOBAL`、同文件、引用点早于声明点时是 `sema_undefined_variable`
+     * （项目名 [CfirErrors.UNRESOLVED_REFERENCE]）。访问另一个 class-like 的 static 成员
+     * 由 global/static 初始化图处理，不能按实例字段的源码偏移误判。
      */
     private fun reportInstanceMemberInitializerStaticGlobalReadsBeforeInitialization(
         initializer: CfirExpression,
@@ -1897,6 +2374,7 @@ private class CfirInitializationFlowAnalyzer(
                 val targetVariable = trackedBySymbol[symbol] ?: return
                 val accessOffset = access.calleeReference.source?.startOffset ?: access.source?.startOffset ?: return
                 if (accessOffset >= targetVariable.sourceOffset) return
+                if (reportGlobalReferenceBeforeItsDefinition(access, targetVariable)) return
 
                 with(context) {
                     reporter.reportOn(
@@ -2004,6 +2482,7 @@ private class CfirInitializationFlowAnalyzer(
                 if (symbol in initialized) return
                 val targetVariable = trackedBySymbol[symbol] ?: return
                 if (currentDeclaration.hasSameNominalOwnerAs(targetVariable)) return
+                if (reportGlobalReferenceBeforeItsDefinition(access, targetVariable)) return
 
                 with(context) {
                     reporter.reportOn(
@@ -2755,7 +3234,9 @@ object CfirFileStaticGlobalInitializationChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
-        CfirInitializationFlowAnalyzer(context, reporter).checkFileStaticGlobalInitialization(declaration)
+        val analyzer = CfirInitializationFlowAnalyzer(context, reporter)
+        analyzer.checkFileStaticGlobalInitialization(declaration)
+        analyzer.checkCrossFileStaticGlobalInitializationCycle(declaration)
     }
 }
 
@@ -2946,6 +3427,79 @@ private data class StaticGlobalUseEdge(
 )
 
 /**
+ * 跨文件初始化依赖图的节点。
+ *
+ * 对位官方 `DefNode`（`GlobalVarChecker.cpp:142-152`）：`usage` 是当前变量初始化期间
+ * 可能读取到的其他 static/global 变量，`visitOrder` 反映声明/初始化点顺序。
+ */
+private class StaticGlobalDependencyNode(
+    /**
+     * 该节点对应的 static/global 存储变量。
+     */
+    val variable: StaticGlobalInitializerVariable,
+    /**
+     * 变量所在源文件身份，用于复刻官方 `IsInSameFile`。
+     */
+    val fileIdentity: String,
+) {
+    /**
+     * 当前变量初始化期间读取到的其他 static/global 存储变量。
+     */
+    val usage = mutableListOf<StaticGlobalDependencyEdge>()
+
+    /**
+     * 官方 `DefNode::visitOrder`。
+     */
+    var visitOrder: Int = -1
+
+    /**
+     * 官方三色标记。
+     */
+    var color: StaticGlobalDependencyColor = StaticGlobalDependencyColor.WHITE
+}
+
+/**
+ * 跨文件初始化依赖图的读取边。
+ *
+ * 对位官方 `UseEdge`（`GlobalVarChecker.cpp:108-119`）：假边没有 `refNode`，因此
+ * [source] 为空，不参与诊断上报。
+ */
+private class StaticGlobalDependencyEdge(
+    /**
+     * 被读取的变量节点。
+     */
+    val node: StaticGlobalDependencyNode,
+    /**
+     * 触发读取的源码位置；假边为空。
+     */
+    val source: org.cangnova.cangjie.source.CjSourceElement?,
+    /**
+     * 报告诊断时展示的被读取变量名称。
+     */
+    val diagnosticName: Name,
+    /**
+     * 触发读取的初始化所在源文件身份；诊断只归属该文件。
+     */
+    val fileIdentity: String,
+)
+
+/**
+ * 官方 `GlobalVarChecker` 三色标记（`GlobalVarChecker.cpp:130-134`）。
+ */
+private enum class StaticGlobalDependencyColor {
+    WHITE,
+    BLACK,
+    GRAY,
+}
+
+/**
+ * 缺失源码位置时使用的哨兵偏移量。
+ *
+ * 该值大于任何真实偏移量，因此不能直接参与“引用点是否早于声明点”的比较。
+ */
+private const val UNKNOWN_SOURCE_OFFSET: Int = Int.MAX_VALUE
+
+/**
  * 收集同一文件内参与 static/global 初始化顺序检查的声明。
  */
 private fun CfirFile.staticGlobalInitializerDeclarations(): List<StaticGlobalInitializerDeclaration> {
@@ -3019,12 +3573,12 @@ private fun CfirFieldVariable.toStaticGlobalInitializerDeclaration(): StaticGlob
                 diagnosticName = name,
                 nominalOwnerClassId = symbol.callableId.classId,
                 field = this,
-                sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+                sourceOffset = source?.startOffset ?: UNKNOWN_SOURCE_OFFSET,
             )
         ),
         initializer = initializer,
         body = null,
-        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        sourceOffset = source?.startOffset ?: UNKNOWN_SOURCE_OFFSET,
         nominalOwnerClassId = symbol.callableId.classId,
         kind = StaticGlobalInitializerKind.VARIABLE,
     )
@@ -3043,7 +3597,7 @@ private fun CfirPatternVariable.toStaticGlobalInitializerDeclaration(): StaticGl
             diagnosticName = bindingVariable.name,
             nominalOwnerClassId = bindingVariable.symbol.callableId.classId,
             field = null,
-            sourceOffset = bindingVariable.source?.startOffset ?: source?.startOffset ?: Int.MAX_VALUE,
+            sourceOffset = bindingVariable.source?.startOffset ?: source?.startOffset ?: UNKNOWN_SOURCE_OFFSET,
         )
     }
 
@@ -3051,7 +3605,7 @@ private fun CfirPatternVariable.toStaticGlobalInitializerDeclaration(): StaticGl
         variables = variables,
         initializer = initializer,
         body = null,
-        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        sourceOffset = source?.startOffset ?: UNKNOWN_SOURCE_OFFSET,
         nominalOwnerClassId = symbol.callableId.classId,
         kind = StaticGlobalInitializerKind.VARIABLE,
     )
@@ -3067,7 +3621,7 @@ private fun CfirConstructor.toStaticGlobalInitializerDeclaration(
         variables = emptyList(),
         initializer = null,
         body = body,
-        sourceOffset = source?.startOffset ?: Int.MAX_VALUE,
+        sourceOffset = source?.startOffset ?: UNKNOWN_SOURCE_OFFSET,
         nominalOwnerClassId = owner.symbol.classId,
         kind = StaticGlobalInitializerKind.STATIC_INIT,
     )
