@@ -1,6 +1,7 @@
 
 
 
+
 import default.define.*
 
 @echo
@@ -52,7 +53,7 @@ internal const var_1731854046694_697: Unit = ()
 public let var_1731854046694_716: UInt16 = UInt16(UInt8(83))
 
 @echo
-internal var var_1731854046694_734: Int = Int64(UInt64(UInt64(Int8(-82))))
+internal var var_1731854046694_734: Int = Int64(UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int8(-82))<!>))
 
 @Deprecated
 @echo
@@ -86,7 +87,7 @@ public var var_1731854046694_1245: (Enum_1731854046694_451, (Array<Unit>, String
             ()], ";9${var_1731854046694_598}g|M:1i${var_1731854046694_598}xg", Class_1731854046694_853(), ((UInt32(UInt32(179)) &
             127)..(UInt32(UInt32(59)) & 127) : (Int64(49) | 1)), ((UInt64(UInt64(102)) & 127)..(UInt64(UInt64(111)) & 127) : (Int64(17) |
             1)), [UInt64(Int16(57)), UInt64(UInt8(221)), UInt64(UInt64(104)), UInt64(155), UInt64(240),
-            UInt64(Int16(-120)), UInt64(UInt64(233)), UInt64(240), UInt64(249), UInt64(UInt64(139))], (((Int16(Int16(74)) &
+            <!TYPECAST_OVERFLOW!>UInt64(Int16(-120))<!>, UInt64(UInt64(233)), UInt64(240), UInt64(249), UInt64(UInt64(139))], (((Int16(Int16(74)) &
                 127)..(Int16(Int16(30)) & 127) : (Int64(-127) | 1)), UInt16(62), UInt32(Int32(101)), ((Int8(Int8(-62)) &
                 127)..=(Int8(Int8(102)) & 127) : (Int64(-33) | 1)), ((UInt16(UInt16(70)) & 127)..(UInt16(UInt16(168)) &
                 127) : (Int64(-93) | 1))), Enum_1731854046694_451.enumValue_1731854046694_456), UInt64(204),
@@ -112,11 +113,11 @@ internal var var_1731854046694_1376: (Range<UInt8>, Range<UInt16>, Array<UInt64>
             (), (), (), (), (), (), ()],
         ".${var_1731854046694_598}%+${var_1731854046694_598}ya{v~z$${var_1731854046694_598}u", Class_1731854046694_853(),
         ((UInt32(UInt32(123)) & 127)..(UInt32(UInt32(220)) & 127) : (Int64(-27) | 1)), ((UInt64(UInt64(210)) & 127)..=(UInt64(UInt64(88)) &
-            127) : (Int64(-80) | 1)), [UInt64(Int32(-73)), UInt64(118), UInt64(16), UInt64(209), UInt64(68),
+            127) : (Int64(-80) | 1)), [<!TYPECAST_OVERFLOW!>UInt64(Int32(-73))<!>, UInt64(118), UInt64(16), UInt64(209), UInt64(68),
             UInt64(UInt64(27)), UInt64(124), UInt64(UInt16(9)), UInt64(36), UInt64(UInt32(43))], (((Int16(Int16(41)) &
                 127)..=(Int16(Int16(118)) & 127) : (Int64(59) | 1)), UInt16(160), UInt32(205), ((Int8(Int8(-9)) & 127)..(Int8(Int8(-123)) &
                 127) : (Int64(-3) | 1)), ((UInt16(UInt16(168)) & 127)..(UInt16(UInt16(31)) & 127) : (Int64(120) | 1))), Enum_1731854046694_451
-            .enumValue_1731854046694_456), UInt32(Int32(Int16(-6))), ((UInt8(UInt8(157)) & 127)..(UInt8(UInt8(212)) & 127) : (Int64(-34) |
+            .enumValue_1731854046694_456), <!TYPECAST_OVERFLOW!>UInt32(Int32(Int16(-6)))<!>, ((UInt8(UInt8(157)) & 127)..(UInt8(UInt8(212)) & 127) : (Int64(-34) |
         1)))
 
 @echo
@@ -126,7 +127,7 @@ let var_1731854046694_1490: Bool = ("xVy=f;D0RQ" is (Range<Int8>) -> UInt16)
 internal var var_1731854046694_1496: (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, 
     (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451) = ([(), (), (), (), (), (), (),
         (), (), ()], "5oh 8U${var_1731854046694_598}dS8C", Class_1731854046694_853(), ((UInt32(UInt32(244)) & 127)..=(UInt32(UInt32(190)) &
-        127) : (Int64(Int16(Int8(62))) | 1)), ((UInt64(UInt64(222)) & 127)..=(UInt64(UInt64(Int8(UInt8(106)))) & 127) : (Int64(UInt8(Int8(-28))) |
+        127) : (Int64(Int16(Int8(62))) | 1)), ((UInt64(UInt64(222)) & 127)..=(UInt64(UInt64(Int8(UInt8(106)))) & 127) : (Int64(<!TYPECAST_OVERFLOW!>UInt8(Int8(-28))<!>) |
         1)), [UInt64(220), UInt64(212), UInt64(5), UInt64(230), UInt64(1), UInt64(213), UInt64(18), UInt64(34),
         UInt64(149), UInt64(31)], (((Int16(Int16(-7)) & 127)..(Int16(Int16(58)) & 127) : (Int64(UInt64(127)) | 1)),
         UInt16(UInt8(130)), UInt32(59), ((Int8(Int8(Int8(-86))) & 127)..=(Int8(Int8(UInt8(85))) & 127) : (Int64(UInt8(33)) |
@@ -143,7 +144,7 @@ internal var var_1731854046694_1663: ?Bool = (((UInt32(UInt32(217)) & 127)..=(UI
 
 @Deprecated
 @echo
-public var var_1731854046694_1827: Int = Int64(Int16(Int16(UInt8(Int8(-89)))))
+public var var_1731854046694_1827: Int = Int64(Int16(Int16(<!TYPECAST_OVERFLOW!>UInt8(Int8(-89))<!>)))
 
 @Deprecated
 @echo
@@ -155,7 +156,7 @@ public var var_1731854046694_1858: Array<Range<Int8>> = [((Int8(Int8(-70)) & 127
     ((Int8(Int8(-117)) & 127)..=(Int8(Int8(74)) & 127) : (Int64(-33) | 1)),
     ((Int8(Int8(Int8(Int8(-92)))) & 127)..(Int8(Int8(Int8(-90))) & 127) : (Int64(60) | 1)),
     ((Int8(Int8(118)) & 127)..=(Int8(Int8(125)) & 127) : (Int64(-55) | 1)),
-    ((Int8(Int8(Int8(UInt8(137)))) & 127)..=(Int8(Int8(-71)) & 127) : (Int64(-52) | 1)),
+    ((Int8(Int8(<!TYPECAST_OVERFLOW!>Int8(UInt8(137))<!>)) & 127)..=(Int8(Int8(-71)) & 127) : (Int64(-52) | 1)),
     ((Int8(Int8(97)) & 127)..(Int8(Int8(Int8(Int8(-94)))) & 127) : (Int64(Int16(51)) | 1)),
     ((Int8(Int8(51)) & 127)..=(Int8(Int8(-65)) & 127) : (Int64(106) | 1)),
     ((Int8(Int8(-122)) & 127)..(Int8(Int8(75)) & 127) : (Int64(-90) | 1)),
@@ -198,7 +199,7 @@ let var_1731854046694_2305: Option<Range<Int32>> = ([Float64(56.0), Float64(52.0
     Float64(50.0), Float64(-27.0), Float64(-48.0), Float64(-17.0), Float64(-1.0), Float64(11.0)] as Range<Int32>)
 
 @echo
-public var var_1731854046694_2332: Range<UInt64> = ((UInt64(UInt64(117)) & 127)..=(UInt64(UInt64(UInt32(UInt32(Int16(-13))))) &
+public var var_1731854046694_2332: Range<UInt64> = ((UInt64(UInt64(117)) & 127)..=(UInt64(UInt64(UInt32(<!TYPECAST_OVERFLOW!>UInt32(Int16(-13))<!>))) &
     127) : (Int64(-33) | 1))
 
 @echo
@@ -217,10 +218,10 @@ public var var_1731854046694_2509: (Array<Unit>, String, Class_1731854046694_853
 #${var_1731854046694_2360}c7${var_1731854046694_598}<:
 CyfuY${var_1731854046694_2360}
 """,
-    Class_1731854046694_853(), ((UInt32(UInt32(53)) & 127)..=(UInt32(UInt32(99)) & 127) : (Int64(103) | 1)), ((UInt64(UInt64(Int32(-60))) &
+    Class_1731854046694_853(), ((UInt32(UInt32(53)) & 127)..=(UInt32(UInt32(99)) & 127) : (Int64(103) | 1)), ((UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int32(-60))<!>) &
         127)..(UInt64(UInt64(166)) & 127) : (Int64(UInt64(UInt16(4))) | 1)), [UInt64(98), UInt64(Int32(UInt32(50))),
-        UInt64(Int64(-65)), UInt64(176), UInt64(173), UInt64(Int16(-15)), UInt64(189), UInt64(151),
-        UInt64(UInt32(UInt16(5))), UInt64(UInt32(Int32(-36)))], (((Int16(Int16(-71)) & 127)..(Int16(Int16(-47)) & 127) : (Int64(119) |
+        <!TYPECAST_OVERFLOW!>UInt64(Int64(-65))<!>, UInt64(176), UInt64(173), <!TYPECAST_OVERFLOW!>UInt64(Int16(-15))<!>, UInt64(189), UInt64(151),
+        UInt64(UInt32(UInt16(5))), UInt64(<!TYPECAST_OVERFLOW!>UInt32(Int32(-36))<!>)], (((Int16(Int16(-71)) & 127)..(Int16(Int16(-47)) & 127) : (Int64(119) |
             1)), UInt16(UInt16(UInt16(94))), UInt32(Int16(UInt16(106))), ((Int8(Int8(-126)) & 127)..=(Int8(Int8(85)) &
             127) : (Int64(-46) | 1)), ((UInt16(UInt16(142)) & 127)..(UInt16(UInt16(50)) & 127) : (Int64(8) | 1))), Enum_1731854046694_451
         .enumValue_1731854046694_456)
@@ -241,16 +242,16 @@ public var var_1731854046694_2719: (Range<UInt8>, Range<UInt16>, Array<UInt64>, 
         Class_1731854046694_853(), ((UInt32(UInt32(216)) & 127)..=(UInt32(UInt32(66)) & 127) : (Int64(-35) | 1)), ((UInt64(UInt64(UInt16(224))) &
             127)..=(UInt64(UInt64(151)) & 127) : (Int64(Int8(50)) | 1)), [UInt64(Int32(53)), UInt64(33), UInt64(48),
             UInt64(UInt16(82)), UInt64(102), UInt64(Int8(20)), UInt64(Int8(119)), UInt64(177), UInt64(242),
-            UInt64(Int8(3))], (((Int16(Int16(-45)) & 127)..=(Int16(Int16(74)) & 127) : (Int64(-46) | 1)), UInt16(Int8(-26)),
+            UInt64(Int8(3))], (((Int16(Int16(-45)) & 127)..=(Int16(Int16(74)) & 127) : (Int64(-46) | 1)), <!TYPECAST_OVERFLOW!>UInt16(Int8(-26))<!>,
             UInt32(67), ((Int8(Int8(41)) & 127)..(Int8(Int8(78)) & 127) : (Int64(101) | 1)), ((UInt16(UInt16(224)) & 127)..(UInt16(UInt16(106)) &
-                127) : (Int64(-72) | 1))), Enum_1731854046694_451.enumValue_1731854046694_456), UInt32(Int8(UInt8(UInt8(227)))),
+                127) : (Int64(-72) | 1))), Enum_1731854046694_451.enumValue_1731854046694_456), UInt32(<!TYPECAST_OVERFLOW!>Int8(UInt8(UInt8(227)))<!>),
     ((UInt8(UInt8(10)) & 127)..(UInt8(UInt8(95)) & 127) : (Int64(104) | 1)))
 
 @echo
 public var var_1731854046694_2831: Class_1731854046694_853 = Class_1731854046694_853()
 
 @echo
-public let var_1731854046694_2836: Range<UInt8> = ((UInt8(UInt8(UInt8(Int8(Int8(-5))))) & 127)..(UInt8(UInt8(235)) & 127) : (Int64(Int8(UInt8(107))) |
+public let var_1731854046694_2836: Range<UInt8> = ((UInt8(UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(Int8(-5)))<!>)) & 127)..(UInt8(UInt8(235)) & 127) : (Int64(Int8(UInt8(107))) |
     1))
 
 @echo
@@ -281,7 +282,7 @@ public var var_1731854046694_3394: Array<UInt64> = [UInt64(111), UInt64(102), UI
     UInt64(154), UInt64(228), UInt64(120), UInt64(16), UInt64(142)]
 
 @echo
-public let var_1731854046694_3460: Range<UInt16> = ((UInt16(UInt16(Int8(UInt8(206)))) & 127)..(UInt16(UInt16(240)) & 127) : (Int64(Int64(Int64(-74))) |
+public let var_1731854046694_3460: Range<UInt16> = ((UInt16(UInt16(<!TYPECAST_OVERFLOW!>Int8(UInt8(206))<!>)) & 127)..(UInt16(UInt16(240)) & 127) : (Int64(Int64(Int64(-74))) |
     1))
 
 @echo
@@ -351,7 +352,7 @@ let var_1731854046694_4527: ?Unit = Option<Unit>.None
 public let var_1731854046694_4538: Bool = (() is Int16)
 
 @echo
-public sealed interface Interface_1731854046694_127 {
+<!REDUNDANT_MODIFIER!>public<!> sealed interface Interface_1731854046694_127 {
     @Frozen
     @echo
     static func func_1731854046694_196(param_1731854046694_197: Range<UInt32>, param_1731854046694_198: Float64,
@@ -367,20 +368,20 @@ public sealed interface Interface_1731854046694_127 {
                     ();
                     UInt32(44) / ((var_1731854046694_1073) | 1)
 
-                case (_, caseVar_1731854046694_1212: Class_1731854046694_853, _, caseVar_1731854046694_1213, caseVar_1731854046694_1214: Float64, _) =>
+                case <!UNREACHABLE_PATTERN!>(_, caseVar_1731854046694_1212: Class_1731854046694_853, _, caseVar_1731854046694_1213, caseVar_1731854046694_1214: Float64, _)<!> =>
                     var_1731854046694_848 += Int8(95)
                     UInt32(214) % ((var_1731854046694_1073) | 1)
 
-                case _: Bool => UInt32(199)
+                case <!UNREACHABLE_PATTERN!>_: Bool<!> => UInt32(199)
 
-                case (_, caseVar_1731854046694_1228, _, _, caseVar_1731854046694_1229: (Enum_1731854046694_451, (Array<Unit>, 
+                case <!UNREACHABLE_PATTERN!>(_, caseVar_1731854046694_1228, _, _, caseVar_1731854046694_1229: (Enum_1731854046694_451, (Array<Unit>, 
                             String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, 
                             UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt64, String, 
-                            Float64), _) =>
+                            Float64), _)<!> =>
                     var_1731854046694_1049;
                     var_1731854046694_1073 % ((UInt32(195)) | 1)
 
-                case _ =>
+                case <!UNREACHABLE_PATTERN!>_<!> =>
                     var_1731854046694_716;
                     (((UInt16(var_1731854046694_716) & 127)..(UInt16(UInt16(164)) & 127) : (var_1731854046694_533 | 1)),
                         var_1731854046694_1245, ((Int16(Int16(-61)) & 127)..(Int16(Int16(100)) & 127) : (Int64(63) | 1)),
@@ -405,16 +406,16 @@ public sealed interface Interface_1731854046694_127 {
                 ();
                 var_1731854046694_797
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 var_1731854046694_168;
                 false
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 ();
                 UInt64(204) - var_1731854046694_624;
                 false
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 ();
                 var_1731854046694_797
         }) {
@@ -448,10 +449,10 @@ m_g\\U
                 Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, 
                 Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>)>.None ??
             var_1731854046694_1376)[3][5];
-        @echo var var_1731854046694_1551: UInt8 = UInt8(Int8(-88));
+        @echo var var_1731854046694_1551: UInt8 = <!TYPECAST_OVERFLOW!>UInt8(Int8(-88))<!>;
         @echo let var_1731854046694_1559: (Range<UInt16>, (Enum_1731854046694_451, (Array<Unit>, String, 
             Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, 
-            Range<UInt16>), Enum_1731854046694_451), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(UInt16(Int16(-1))) &
+            Range<UInt16>), Enum_1731854046694_451), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(<!TYPECAST_OVERFLOW!>UInt16(Int16(-1))<!>) &
                 127)..(UInt16(UInt16(218)) & 127) : (Int64(112) | 1)), (Enum_1731854046694_451
                     .enumValue_1731854046694_1024(Float64(Float64(-115.0)),
                         ((Int8(Int8(13)) & 127)..(Int8(Int8(120)) & 127) : (Int64(-25) | 1))), ([(), (), (), (), (), (),
@@ -513,7 +514,7 @@ ZJC+B
 public interface Interface_1731854046694_128 {}
 
 @echo
-public sealed interface Interface_1731854046694_126 <: Interface_1731854046694_127 & Interface_1731854046694_128 {
+<!REDUNDANT_MODIFIER!>public<!> sealed interface Interface_1731854046694_126 <: Interface_1731854046694_127 & Interface_1731854046694_128 {
     @echo
     static func func_1731854046694_196(param_1731854046694_197: Range<UInt32>, param_1731854046694_198: Float64,
         namedParam_1731854046694_199!: Int8, namedParam_1731854046694_200!: Int64): Range<UInt64> { // block id: 2291
@@ -532,7 +533,7 @@ public sealed interface Interface_1731854046694_126 <: Interface_1731854046694_1
 }
 
 @echo
-public sealed interface Interface_1731854046694_129 <: Interface_1731854046694_128 {}
+<!REDUNDANT_MODIFIER!>public<!> sealed interface Interface_1731854046694_129 <: Interface_1731854046694_128 {}
 
 @echo
 public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_126 & Interface_1731854046694_129 {
@@ -587,7 +588,7 @@ public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_
                 ()
             };
             match (((UInt16(UInt16(21)) & 127)..=(UInt16(UInt16(98)) & 127) : (Int64(-47) | 1))) {
-                case _: Option<Bool> =>
+                case <!UNREACHABLE_PATTERN!>_: Option<Bool><!> =>
                     var_1731854046694_2854;
                     @echo let var_1731854046694_2858: Range<Int16> = ((Int16(Int16(89)) & 127)..(Int16(Int16(Int8(95))) &
                         127) : (Int64(93) | 1));
@@ -598,10 +599,10 @@ public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_
 
                 case caseVar_1731854046694_2876 => var_1731854046694_2332
 
-                case _: Range<Int8> => ((UInt64(var_1731854046694_2818) & 127)..=(UInt64(UInt64(199)) & 127) : (Int64(68) |
+                case <!UNREACHABLE_PATTERN!>_: Range<Int8><!> => ((UInt64(var_1731854046694_2818) & 127)..=(UInt64(UInt64(199)) & 127) : (Int64(68) |
                     1))
 
-                case _ =>
+                case <!UNREACHABLE_PATTERN!>_<!> =>
                     @echo var var_1731854046694_2891: UInt16 = UInt16(74);
                     var_1731854046694_2891 >>= ((var_1731854046694_2891) & 7)
                     ();
@@ -612,7 +613,7 @@ public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_
 }
 
 @echo
-public sealed interface Interface_1731854046694_124 <: Interface_1731854046694_125<UInt64, Range<UInt32>> {
+<!REDUNDANT_MODIFIER!>public<!> sealed interface Interface_1731854046694_124 <: Interface_1731854046694_125<UInt64, Range<UInt32>> {
     @echo
     static func func_1731854046694_196(param_1731854046694_197: Range<UInt32>, param_1731854046694_198: Float64,
         namedParam_1731854046694_199!: Int8, namedParam_1731854046694_200!: Int64): Range<UInt64> { // block id: 3009
@@ -631,7 +632,7 @@ public sealed interface Interface_1731854046694_124 <: Interface_1731854046694_1
             for (i in loopTimeVar_1731854046694_3033 where var_1731854046694_1346) {
                 var_1731854046694_3031
             };
-            @echo var var_1731854046694_3050: Array<UInt64> = [UInt64(UInt8(135)), UInt64(Int8(-107)), UInt64(144),
+            @echo var var_1731854046694_3050: Array<UInt64> = [UInt64(UInt8(135)), <!TYPECAST_OVERFLOW!>UInt64(Int8(-107))<!>, UInt64(144),
                 UInt64(88), UInt64(154), UInt64(192), UInt64(60), UInt64(104), UInt64(169), UInt64(87)];
             var_1731854046694_3050;
             if (false) {
@@ -649,7 +650,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
     static func func_1731854046694_359(): UInt16 { // block id: 360
         @echo var var_1731854046694_720: (Range<Int8>) -> UInt16 = func_1731854046694_364;
         @echo const var_1731854046694_724: Int8 = 114;
-        @echo var var_1731854046694_746: UInt16 = UInt16(Int16(-106));
+        @echo var var_1731854046694_746: UInt16 = <!TYPECAST_OVERFLOW!>UInt16(Int16(-106))<!>;
         @echo var var_1731854046694_755: (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>) = (((Int16(Int16(32)) &
                 127)..(Int16(Int16(-83)) & 127) : (Int64(-121) | 1)), UInt16(Int16(UInt16(176))), UInt32(41), ((Int8(Int8(-12)) &
                 127)..(Int8(Int8(-114)) & 127) : (Int64(-44) | 1)), ((UInt16(UInt16(229)) & 127)..(UInt16(UInt16(94)) &
@@ -720,7 +721,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                 case caseVar_1731854046694_3155 => ((Int64(Int64(-44)) & 127)..(Int64(Int64(89)) & 127) : (var_1731854046694_1827 |
                     1))
 
-                case _ =>
+                case <!UNREACHABLE_PATTERN!>_<!> =>
                     Option<Option<Range<Int64>>>.Some(var_1731854046694_3138);
                     var_1731854046694_3167
             })
@@ -750,8 +751,8 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
             })
         };
         @echo let var_1731854046694_3241: (Float64, Float64, Range<Int32>, UInt32, UInt8) = (Float64(Float64(Float32(80.0))),
-            Float64(Float64(99.0)), ((Int32(Int32(-33)) & 127)..=(Int32(Int32(Int16(-108))) & 127) : (Int64(UInt32(Int8(-80))) |
-                1)), UInt32(UInt32(UInt32(Int8(-109)))), UInt8(Int8(UInt8(Int8(-60)))));
+            Float64(Float64(99.0)), ((Int32(Int32(-33)) & 127)..=(Int32(Int32(Int16(-108))) & 127) : (Int64(<!TYPECAST_OVERFLOW!>UInt32(Int8(-80))<!>) |
+                1)), UInt32(UInt32(<!TYPECAST_OVERFLOW!>UInt32(Int8(-109))<!>)), UInt8(Int8(<!TYPECAST_OVERFLOW!>UInt8(Int8(-60))<!>)));
         (Option<(Float64, Float64, Range<Int32>, UInt32, UInt8)>.None ?? try { // block id: 3225
             var_1731854046694_3198--;
             ();
@@ -796,7 +797,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                 UInt64(77), UInt64(170), UInt64(219), UInt64(189), UInt64(56), UInt64(253)];
             @echo let var_1731854046694_3397: (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>) = (((Int16(Int16(5)) &
                     127)..(Int16(Int16(Int8(89))) & 127) : (Int64(-102) | 1)), UInt16(Int8(75)), UInt32(UInt16(UInt8(15))),
-                ((Int8(Int8(UInt8(Int8(26)))) & 127)..(Int8(Int8(UInt8(UInt8(151)))) & 127) : (Int64(2) | 1)), ((UInt16(UInt16(224)) &
+                ((Int8(Int8(UInt8(Int8(26)))) & 127)..(Int8(<!TYPECAST_OVERFLOW!>Int8(UInt8(UInt8(151)))<!>) & 127) : (Int64(2) | 1)), ((UInt16(UInt16(224)) &
                     127)..=(UInt16(UInt16(57)) & 127) : (Int64(117) | 1)));
             match (((Int8(Int8(-125)) & 127)..(Int8(Int8(55)) & 127) : (var_1731854046694_1827 | 1))) {
                 case caseVar_1731854046694_3330 =>
@@ -804,7 +805,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                     ();
                     ((UInt64(UInt64(95)) & 127)..=(UInt64(UInt64(56)) & 127) : (Int64(-20) | 1))
 
-                case caseVar_1731854046694_3342: Option<(Float64, Float64, Range<Int32>, UInt32, UInt8)> =>
+                case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3342: Option<(Float64, Float64, Range<Int32>, UInt32, UInt8)><!> =>
                     @echo let var_1731854046694_3369: Float64 = Float64(-102.0);
                     (((UInt8(var_1731854046694_1555) & 127)..=(UInt8(UInt8(246)) & 127) : (var_1731854046694_1827 | 1)),
                         ((UInt16(UInt16(95)) & 127)..=(UInt16(UInt16(151)) & 127) : (Int64(6) | 1)),
@@ -826,7 +827,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                         var_1731854046694_2332
                     }
 
-                case _ => ((UInt64(UInt64(203)) & 127)..=(UInt64(UInt64(249)) & 127) : (Int64(-65) | 1))
+                case <!UNREACHABLE_PATTERN!>_<!> => ((UInt64(UInt64(203)) & 127)..=(UInt64(UInt64(249)) & 127) : (Int64(-65) | 1))
             }
         } else { // block id: 3430
             @echo var var_1731854046694_3472: (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>) = (((Int16(Int16(-119)) &
@@ -892,7 +893,7 @@ c5*ee
                 Class_1731854046694_853(), ((UInt32(UInt32(240)) & 127)..=(UInt32(UInt32(11)) & 127) : (Int64(68) | 1)),
                 ((UInt64(UInt64(251)) & 127)..(UInt64(UInt64(86)) & 127) : (Int64(50) | 1)), [UInt64(34), UInt64(191),
                     UInt64(87), UInt64(165), UInt64(128), UInt64(254), UInt64(46), UInt64(5), UInt64(233), UInt64(108)],
-                (((Int16(Int16(34)) & 127)..=(Int16(Int16(62)) & 127) : (Int64(65) | 1)), UInt16(Int16(-1)), UInt32(31),
+                (((Int16(Int16(34)) & 127)..=(Int16(Int16(62)) & 127) : (Int64(65) | 1)), <!TYPECAST_OVERFLOW!>UInt16(Int16(-1))<!>, UInt32(31),
                     ((Int8(Int8(-87)) & 127)..=(Int8(Int8(-25)) & 127) : (Int64(2) | 1)), ((UInt16(UInt16(36)) & 127)..=(UInt16(UInt16(136)) &
                         127) : (Int64(-100) | 1))), Enum_1731854046694_451.enumValue_1731854046694_1024(
                     Float64(Float32(-27.0)), ((Int8(Int8(105)) & 127)..(Int8(Int8(-111)) & 127) : (Int64(-27) | 1)))),
@@ -913,13 +914,13 @@ c5*ee
                     var_1731854046694_2492
                 }
 
-            case (_: Range<UInt8>, _: Array<Range<Int16>>, caseVar_1731854046694_2498, caseVar_1731854046694_2499, caseVar_1731854046694_2500, _, _: Int64, _) =>
+            case <!UNREACHABLE_PATTERN!>(_: Range<UInt8>, _: Array<Range<Int16>>, caseVar_1731854046694_2498, caseVar_1731854046694_2499, caseVar_1731854046694_2500, _, _: Int64, _)<!> =>
                 @echo const var_1731854046694_2505: Float64 = -112.0;
                 (Enum_1731854046694_451.enumValue_1731854046694_1024(var_1731854046694_2505, var_1731854046694_491),
                     var_1731854046694_2509, var_1731854046694_2372, "j%4pua{[3T#", var_1731854046694_2505);
                 var_1731854046694_2492
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 if (var_1731854046694_797) {
                     Option<UInt32>.None
                 } else {
@@ -932,7 +933,7 @@ c5*ee
             } else {
                 Option<Unit>.None
             };
-            @echo let var_1731854046694_2615: UInt64 = UInt64(UInt64(Int64(Int16(-54))));
+            @echo let var_1731854046694_2615: UInt64 = UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int64(Int16(-54)))<!>);
             ([var_1731854046694_168, var_1731854046694_2591, var_1731854046694_168, var_1731854046694_168, (), (),
                     var_1731854046694_2591, var_1731854046694_168, var_1731854046694_168, ()], var_1731854046694_2360,
                 Class_1731854046694_853(), ((UInt32(UInt32(32)) & 127)..=(UInt32(UInt32(35)) & 127) : (Int64(-93) | 1)),
@@ -991,8 +992,8 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
                 Float64(65.0)
             }, namedParam_1731854046694_199: (Option<Int8>.Some(Int8(69)) ?? var_1731854046694_1699),
             namedParam_1731854046694_200: var_1731854046694_533);
-        @echo let var_1731854046694_1747: ?Bool = ([((UInt64(UInt64(Int64(-92))) & 127)..=(UInt64(UInt64(210)) & 127) : (Int64(Int64(23)) |
-            1)), ((UInt64(UInt64(172)) & 127)..=(UInt64(UInt64(Int32(-24))) & 127) : (Int64(16) | 1)),
+        @echo let var_1731854046694_1747: ?Bool = ([((UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int64(-92))<!>) & 127)..=(UInt64(UInt64(210)) & 127) : (Int64(Int64(23)) |
+            1)), ((UInt64(UInt64(172)) & 127)..=(UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int32(-24))<!>) & 127) : (Int64(16) | 1)),
             ((UInt64(UInt64(217)) & 127)..=(UInt64(UInt64(21)) & 127) : (Int64(54) | 1)),
             ((UInt64(UInt64(51)) & 127)..=(UInt64(UInt64(92)) & 127) : (Int64(-93) | 1)),
             ((UInt64(UInt64(165)) & 127)..=(UInt64(UInt64(190)) & 127) : (Int64(120) | 1)),
@@ -1066,14 +1067,14 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             UInt32(191);
             var_1731854046694_864
         }) {
-            case _: Float64 => ((UInt64(var_1731854046694_2972) & 127)..(UInt64(var_1731854046694_2972) & 127) : (var_1731854046694_1827 |
+            case <!UNREACHABLE_PATTERN!>_: Float64<!> => ((UInt64(var_1731854046694_2972) & 127)..(UInt64(var_1731854046694_2972) & 127) : (var_1731854046694_1827 |
                 1))
 
             case caseVar_1731854046694_2978 =>
                 UInt32(14);
                 var_1731854046694_2332
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 @echo var var_1731854046694_2987: Int16 = Int16(Int16(13));
                 var_1731854046694_2987 >>= ((Int16(44)) & 7)
                 var_1731854046694_2332
@@ -1210,12 +1211,12 @@ public open class Class_1731854046694_118<T0, T1> <: Interface_1731854046694_121
             ((UInt64(UInt64(247)) & 127)..(UInt64(UInt64(145)) & 127) : (Int64(45) | 1))]) {
             case _ => ()
 
-            case caseVar_1731854046694_3078: Range<Int8> =>
+            case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3078: Range<Int8><!> =>
                 @echo var var_1731854046694_3081: Unit = ();
                 var_1731854046694_3081;
                 ()
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 ();
                 var_1731854046694_51
         };
@@ -1277,7 +1278,7 @@ pSxlz
                 var_1731854046694_4180;
                 var_1731854046694_51
 
-            case _ => var_1731854046694_4280 += UInt32(122)
+            case <!UNREACHABLE_PATTERN!>_<!> => var_1731854046694_4280 += UInt32(122)
         };
         var_1731854046694_111;
         @echo const var_1731854046694_4304: UInt8 = 168;
@@ -1469,7 +1470,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
         @echo var var_1731854046694_472: Rune = r'K';
         @echo var var_1731854046694_476: Array<Bool> = [false, false, true, true, true, true, false, true, false, true];
         @echo const var_1731854046694_506: String = "O_[.#~8jDZ";
-        @echo let var_1731854046694_524: Range<UInt32> = ((UInt32(UInt32(Int16(Int16(-70)))) & 127)..=(UInt32(UInt32(48)) &
+        @echo let var_1731854046694_524: Range<UInt32> = ((UInt32(<!TYPECAST_OVERFLOW!>UInt32(Int16(Int16(-70)))<!>) & 127)..=(UInt32(UInt32(48)) &
             127) : (Int64(93) | 1));
         @echo var var_1731854046694_547: Float32 = Float32(Float32(Float32(Float32(-20.0))));
         if (if (UInt16(191) == UInt16(189)) { // block id: 387
@@ -1499,7 +1500,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
                 case _ => UInt16(197)
             }
         } else if (match (UInt64(147)) {
-            case caseVar_1731854046694_467: Float64 =>
+            case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_467: Float64<!> =>
                 ();
                 var_1731854046694_472 = r'd'
                 var_1731854046694_476
@@ -1561,7 +1562,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
                 ((Int16(Int16(-75)) & 127)..=(Int16(Int16(55)) & 127) : (Int64(-69) | 1)),
                 ((Int16(Int16(63)) & 127)..=(Int16(Int16(-32)) & 127) : (Int64(70) | 1)),
                 ((Int16(Int16(-65)) & 127)..(Int16(Int16(-49)) & 127) : (Int64(16) | 1)),
-                ((Int16(Int16(UInt8(Int8(-30)))) & 127)..(Int16(Int16(UInt16(Int8(-111)))) & 127) : (Int64(-61) | 1))];
+                ((Int16(Int16(<!TYPECAST_OVERFLOW!>UInt8(Int8(-30))<!>)) & 127)..(Int16(Int16(<!TYPECAST_OVERFLOW!>UInt16(Int8(-111))<!>)) & 127) : (Int64(-61) | 1))];
             try { // block id: 234
                 @echo const var_1731854046694_245: UInt16 = 204;
                 (((Int16(Int16(56)) & 127)..(Int16(var_1731854046694_241) & 127) : (Int64(117) | 1)),
@@ -1663,7 +1664,7 @@ Q_COy
                     127)..(UInt32(UInt32(223)) & 127) : (Int64(Int16(-110)) | 1)), ((UInt64(UInt64(119)) & 127)..=(UInt64(UInt64(61)) &
                     127) : (Int64(Int64(-75)) | 1)), [UInt64(UInt64(162)), UInt64(UInt16(248)),
                     UInt64(UInt64(UInt64(170))), UInt64(Int16(UInt16(144))), UInt64(150), UInt64(220),
-                    UInt64(Int32(-119)), UInt64(UInt32(127)), UInt64(UInt32(226)), UInt64(188)], (((Int16(Int16(-67)) &
+                    <!TYPECAST_OVERFLOW!>UInt64(Int32(-119))<!>, UInt64(UInt32(127)), UInt64(UInt32(226)), UInt64(188)], (((Int16(Int16(-67)) &
                         127)..=(Int16(Int16(-17)) & 127) : (Int64(-37) | 1)), UInt16(Int8(17)), UInt32(UInt32(UInt32(254))),
                     ((Int8(Int8(48)) & 127)..=(Int8(Int8(Int8(-74))) & 127) : (Int64(-16) | 1)), ((UInt16(UInt16(53)) &
                         127)..=(UInt16(UInt16(145)) & 127) : (Int64(-74) | 1))), Enum_1731854046694_451
@@ -1687,13 +1688,13 @@ Q_COy
                     var_1731854046694_624;
                     var_1731854046694_168
 
-                case caseVar_1731854046694_1068: Range<UInt16> =>
+                case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_1068: Range<UInt16><!> =>
                     var_1731854046694_1049;
                     var_1731854046694_1073 |= UInt32(66)
 
-                case _: UInt64 => var_1731854046694_168
+                case <!UNREACHABLE_PATTERN!>_: UInt64<!> => var_1731854046694_168
 
-                case _ =>
+                case <!UNREACHABLE_PATTERN!>_<!> =>
                     var_1731854046694_1085++;
                     var_1731854046694_797 ||= true
                     ()
@@ -1742,13 +1743,13 @@ Q_COy
         var_1731854046694_3495 ^= match (((UInt8(UInt8(189)) & 127)..(UInt8(UInt8(156)) & 127) : (Int64(50) | 1))) {
             case _ => Int64(-36)
 
-            case _ => Int64(20) | var_1731854046694_3495
+            case <!UNREACHABLE_PATTERN!>_<!> => Int64(20) | var_1731854046694_3495
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 var_1731854046694_3517 = UInt8(241)
                 var_1731854046694_3495
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 [((UInt64(UInt64(5)) & 127)..(UInt64(UInt64(251)) & 127) : (Int64(108) | 1)),
                     ((UInt64(UInt64(84)) & 127)..=(UInt64(UInt64(96)) & 127) : (Int64(32) | 1)),
                     ((UInt64(UInt64(248)) & 127)..=(UInt64(UInt64(44)) & 127) : (Int64(-75) | 1)),
@@ -1831,8 +1832,8 @@ public open class Class_1731854046694_441 <: Class_1731854046694_204 & Interface
     @echo
     private static prop var_1731854046694_4092: UInt16 { // block id: 4093
         get() { // block id: 4095
-            (((Int16(Int16(-95)) & 127)..=(Int16(Int16(-46)) & 127) : (Int64(-69) | 1)), UInt16(UInt8(Int8(-119))),
-                UInt32(UInt16(Int16(-121))), ((Int8(Int8(-118)) & 127)..(Int8(Int8(Int8(-19))) & 127) : (Int64(UInt64(229)) |
+            (((Int16(Int16(-95)) & 127)..=(Int16(Int16(-46)) & 127) : (Int64(-69) | 1)), UInt16(<!TYPECAST_OVERFLOW!>UInt8(Int8(-119))<!>),
+                UInt32(<!TYPECAST_OVERFLOW!>UInt16(Int16(-121))<!>), ((Int8(Int8(-118)) & 127)..(Int8(Int8(Int8(-19))) & 127) : (Int64(UInt64(229)) |
                     1)), ((UInt16(UInt16(UInt8(144))) & 127)..(UInt16(UInt16(46)) & 127) : (Int64(57) | 1)));
             ();
             UInt16(206)
@@ -1844,7 +1845,7 @@ public open class Class_1731854046694_441 <: Class_1731854046694_204 & Interface
             ((UInt8(UInt8(104)) & 127)..(UInt8(UInt8(252)) & 127) : (Int64(-49) | 1))
         } catch (e: Exception) { // block id: 3752
             match (var_1731854046694_1858) {
-                case caseVar_1731854046694_3757: Option<Range<Int64>> =>
+                case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3757: Option<Range<Int64>><!> =>
                     ();
                     var_1731854046694_716;
                     ((UInt8(UInt8(193)) & 127)..(UInt8(UInt8(80)) & 127) : (Int64(-21) | 1))
@@ -1852,12 +1853,12 @@ public open class Class_1731854046694_441 <: Class_1731854046694_204 & Interface
                 case caseVar_1731854046694_3764 => ((UInt8(UInt8(166)) & 127)..(UInt8(UInt8(203)) & 127) : (Int64(-112) |
                     1))
 
-                case caseVar_1731854046694_3769 =>
+                case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3769<!> =>
                     var_1731854046694_3772;
                     ();
                     ((UInt8(UInt8(41)) & 127)..=(UInt8(UInt8(167)) & 127) : (Int64(118) | 1))
 
-                case _ =>
+                case <!UNREACHABLE_PATTERN!>_<!> =>
                     var_1731854046694_422;
                     var_1731854046694_2836
             }
@@ -1872,7 +1873,7 @@ public open class Class_1731854046694_441 <: Class_1731854046694_204 & Interface
                 @echo let var_1731854046694_3786: (Range<UInt16>, (Enum_1731854046694_451, (Array<Unit>, String, 
                     Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, 
                     Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(UInt16(165)) &
-                        127)..=(UInt16(UInt16(Int8(UInt8(233)))) & 127) : (Int64(Int16(Int8(-16))) | 1)), (Enum_1731854046694_451
+                        127)..=(UInt16(UInt16(<!TYPECAST_OVERFLOW!>Int8(UInt8(233))<!>)) & 127) : (Int64(Int16(Int8(-16))) | 1)), (Enum_1731854046694_451
                             .enumValue_1731854046694_1024(Float64(-22.0),
                                 ((Int8(Int8(-53)) & 127)..(Int8(Int8(-80)) & 127) : (Int64(124) | 1))), ([(), (), (), (),
                                 (), (), (), (), (), ()], ###"+-`$]p]j\"k"###, Class_1731854046694_853(), ((UInt32(UInt32(64)) &
@@ -2154,8 +2155,8 @@ internal func func_1731854046694_212(param_1731854046694_213: UInt32): Class_173
 @Deprecated
 @echo
 public func func_1731854046694_137(param_1731854046694_138: Range<Int32>, namedParam_1731854046694_139!: Range<UInt64>,
-    optionalParam_1731854046694_140!: Array<UInt64> = [UInt64(Int8(Int8(-37))), UInt64(Int64(Int16(123))),
-        UInt64(UInt32(Int8(84))), UInt64(Int8(-119)), UInt64(UInt32(34)), UInt64(251), UInt64(Int16(UInt16(Int16(58)))),
+    optionalParam_1731854046694_140!: Array<UInt64> = [<!TYPECAST_OVERFLOW!>UInt64(Int8(Int8(-37)))<!>, UInt64(Int64(Int16(123))),
+        UInt64(UInt32(Int8(84))), <!TYPECAST_OVERFLOW!>UInt64(Int8(-119))<!>, UInt64(UInt32(34)), UInt64(251), UInt64(Int16(UInt16(Int16(58)))),
         UInt64(127), UInt64(247), UInt64(Int64(UInt32(Int8(58))))]): Range<Int8> { // block id: 166
     var_1731854046694_168;
     @echo const var_1731854046694_1839: UInt = 94;
@@ -2176,9 +2177,9 @@ public func func_1731854046694_137(param_1731854046694_138: Range<Int32>, namedP
         ((UInt64(UInt64(155)) & 127)..=(UInt64(UInt64(19)) & 127) : (Int64(20) | 1)),
         ((UInt64(UInt64(26)) & 127)..(UInt64(UInt64(219)) & 127) : (Int64(14) | 1)),
         ((UInt64(UInt64(173)) & 127)..=(UInt64(UInt64(177)) & 127) : (Int64(24) | 1)),
-        ((UInt64(UInt64(Int16(-46))) & 127)..(UInt64(UInt64(Int8(6))) & 127) : (Int64(4) | 1)),
+        ((UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int16(-46))<!>) & 127)..(UInt64(UInt64(Int8(6))) & 127) : (Int64(4) | 1)),
         ((UInt64(UInt64(246)) & 127)..=(UInt64(UInt64(94)) & 127) : (Int64(-54) | 1)),
-        ((UInt64(UInt64(229)) & 127)..(UInt64(UInt64(Int8(-80))) & 127) : (Int64(22) | 1)),
+        ((UInt64(UInt64(229)) & 127)..(UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int8(-80))<!>) & 127) : (Int64(22) | 1)),
         ((UInt64(UInt64(UInt64(167))) & 127)..=(UInt64(UInt64(51)) & 127) : (Int64(85) | 1))] as Array<Range<Int8>>);
     (try { // block id: 1849
         var_1731854046694_168;
@@ -2211,7 +2212,7 @@ public func func_1731854046694_137(param_1731854046694_138: Range<Int32>, namedP
 
 main(): Int64 {
     try {
-        @echo var var_1731854046694_22: Range<UInt8> = ((UInt8(UInt8(80)) & 127)..=(UInt8(UInt8(UInt8(UInt8(Int8(-26))))) &
+        @echo var var_1731854046694_22: Range<UInt8> = ((UInt8(UInt8(80)) & 127)..=(UInt8(UInt8(UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(-26))<!>))) &
             127) : (Int64(-33) | 1));
         match (if (false) {
             ((UInt8(UInt8(38)) & 127)..(UInt8(UInt8(44)) & 127) : (Int64(-63) | 1))
@@ -2224,7 +2225,7 @@ main(): Int64 {
                 [var_1731854046694_34, var_1731854046694_34, var_1731854046694_34, (), var_1731854046694_34, (), (),
                     var_1731854046694_34, (), ()]
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 var_1731854046694_51;
                 @echo let var_1731854046694_55: Bool = false;
                 if (var_1731854046694_55) {
@@ -2261,8 +2262,8 @@ main(): Int64 {
             (String, Unit, Unit, Array<Unit>, Range<UInt32>, Range<Int64>), UInt8, ((String, Unit, Unit, Array<Unit>, 
             Range<UInt32>, Range<Int64>), Range<UInt64>, Option<Unit>), Array<Range<Int16>>, Range<Int64>, UInt8, 
             Float64) = ((UInt64(49) as Array<Range<Int8>>), (Float64(Float64(Float64(114.0))), Float64(16.0), ((Int32(Int32(UInt32(26))) &
-                    127)..=(Int32(Int32(-32)) & 127) : (Int64(81) | 1)), UInt32(Int8(Int8(-80))), UInt8(68)), (###"x1-&koREM!"###,
-                (), (), [(), (), (), (), (), (), (), (), (), ()], ((UInt32(UInt32(249)) & 127)..(UInt32(UInt32(Int16(-112))) &
+                    127)..=(Int32(Int32(-32)) & 127) : (Int64(81) | 1)), <!TYPECAST_OVERFLOW!>UInt32(Int8(Int8(-80)))<!>, UInt8(68)), (###"x1-&koREM!"###,
+                (), (), [(), (), (), (), (), (), (), (), (), ()], ((UInt32(UInt32(249)) & 127)..(UInt32(<!TYPECAST_OVERFLOW!>UInt32(Int16(-112))<!>) &
                     127) : (Int64(Int8(-50)) | 1)), ((Int64(Int64(44)) & 127)..(Int64(Int64(46)) & 127) : (Int64(UInt32(135)) |
                     1))), UInt8(77), ((###" W*cNnUS38"###, (), (), [(), (), (), (), (), (), (), (), (), ()], ((UInt32(UInt32(187)) &
                         127)..=(UInt32(UInt32(220)) & 127) : (Int64(60) | 1)), ((Int64(Int64(-117)) & 127)..=(Int64(Int64(11)) &
@@ -2304,8 +2305,8 @@ main(): Int64 {
                     }
                 },
                 namedParam_1731854046694_139: match (UInt32(33)) {
-                    case caseVar_1731854046694_2006: Range<UInt8> =>
-                        @echo var var_1731854046694_2010: UInt8 = UInt8(UInt8(Int8(-75)));
+                    case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_2006: Range<UInt8><!> =>
+                        @echo var var_1731854046694_2010: UInt8 = UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(-75))<!>);
                         var_1731854046694_2010++;
                         var_1731854046694_2015;
                         @echo let var_1731854046694_2018: Range<UInt64> = ((UInt64(UInt64(149)) & 127)..=(UInt64(UInt64(33)) &
@@ -2313,7 +2314,7 @@ main(): Int64 {
                         var_1731854046694_2018
 
                     case 34 =>
-                        ((Int64(Int64(-61)) & 127)..(Int64(var_1731854046694_1994) & 127) : (var_1731854046694_1994 | 1));
+                        ((<!TYPE_MISMATCH!>Int64(Int64(-61)) & 127<!>)..(<!TYPE_MISMATCH!>Int64(var_1731854046694_1994) & 127<!>) : (var_1731854046694_1994 | 1));
                         var_1731854046694_51;
                         ((UInt64(var_1731854046694_2030) & 127)..=(UInt64(UInt64(13)) & 127) : (Int64(-98) | 1))
 
