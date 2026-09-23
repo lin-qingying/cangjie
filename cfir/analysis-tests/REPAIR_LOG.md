@@ -9970,3 +9970,28 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 全量：`:cfir:analysis-tests:test --continue` → **8691 tests completed, 34 failed, 312 skipped**。34 = 17 unique × 2（`CfirAnalysisMacroTestGenerated` / `CfirAnalysisMacroPsiTestGenerated` 两个宏入口各一份），与批次 3 基线逐项相同（含 `Llt > Typealias > ImportMacroAlias > testTypeaslias`——该用例卡在 `runTest(...)` 的宏基建 `IllegalStateException`，与诊断无关），**零新增、零消失**。
   - 归因链上的两次红灯均已定位并修掉（17 个 typealias 用例的 token 身份异常；1 个别名穿透过报）。
 - 批次状态：§1.1C 35 项已处理 34（11 实现 + 20 负证据 + 2 已承载 + 1 否定），延后 2（`sema_tuple_element_cmp_not_bool`、`sema_flow_expressions_use_this_or_super`），**剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
+
+## 2026-09-23：P3 批次 5——flow 操作数裸 this/super（1 实现，§1.1C 延后项收敛为 1）
+
+- problem type: 批次 3 登记的延后项 `sema_flow_expressions_use_this_or_super`（官方 `DiagnosticSema.def:149`）。
+- official evidence（cjc 1.0.5 与 1.0.0 双版本逐项一致；探针 `codex-probes/flow_this/*` + 镜像 `Sema/TypeCheckExpr/BinaryExpr.cpp:1008-1075`）：
+  - **判据**（`BinaryExpr.cpp:1045`）：`(be.op == COMPOSITION && !isThisExpr(left)) || !isThisExpr(right)`，其中 `isThisExpr` = `RefExpr && isAlone && isThis`（:1035-1041）。即 **`~>` 两侧都查、`|>` 只查函数部分（右）**，`this |> f` **合法**。
+  - **诊断名不可当作实现范围**：def 名含 `super`，但源码注释（:1033-1034）自述 `'super' is not allowed to be used alone and is checked in 'InferSuperExpr'`——该判据**只认 `this`**；裸 super 由 `sema_illegal_super_alone`（`TypeCheckReference.cpp:233`）单独负责。
+  - 探针矩阵（8 例）：`1 |> this` / `x ~> this`（字段或局部同结果）/ `this ~> f` / **top-level `1 |> this`** → 各 1 条 flow 诊断，锚 `this`；`1 |> super` / `x ~> super` → **2 条**：`sema_invalid_binary_expr`（锚操作符）+ `sema_illegal_super_alone`（锚 `super`）；`1 |> f` → 0 条；`this |> 1` → 仅 `sema_invalid_binary_expr`。
+  - 官方机制解释：命中判据时不继续解糖、直接 `be.ty = InvalidTy; return false`；裸 super 未被包装成接收者，故 `InferSuperExpr` 的 isAlone 判据成立。
+- CFIR 修复前实测（fixture `flowThisProbe.cj` 无标记探针，`CfirFlowThisPsiTest`）：
+  - `1 |> this` → `NOT_MEMBER_OF` 锚 `|>`；`x ~> this` / `y ~> this` → `UNRESOLVED_REFERENCE(x/y)` + `NOT_MEMBER_OF(this)`；`1 |> super` / `x ~> super` → `NOT_MEMBER_OF`（`ILLEGAL_SUPER_ALONE` 被解糖包装屏蔽）；`this ~> f` → `NOT_MEMBER_OF(this)`；top-level `1 |> this` → **0 条**（漏报）。
+- CFIR owner files changed（提交 `06d0070bf`，14 文件 +387/-2）：
+  - `ConeFlowInvalidFunctionOperand(reason, keyword, isLeftOperand)`（cfir-cones `ConeDiagnostic.kt`）+ `FlowInvalidOperandKeyword{THIS,SUPER}`。
+  - `CfirExpressionsResolveTransformer.transformFlowExpression`：在 `transformAnnotations` 之后、解糖之前按官方判据短路——命中即 `replaceConeTypeOrNull(ConeErrorType(marker))` 并 `return binaryOp`（**不解糖**）；`transformFlowOperandsForInvalidFunctionOperand` 决定哪些操作数仍需解析（`this` 命中侧与官方一致不再解析；`super` 命中时两侧都解析，因为 flow 失败要渲染两侧类型）。
+  - 新增 `CfirFlowInvalidFunctionOperandChecker : CfirBinaryOpChecker`（注册进 `CommonExpressionCheckers.binaryOpCheckers`）：`this` → `FLOW_EXPRESSIONS_USE_THIS_OR_SUPER`（锚命中操作数）；`super` → `INVALID_BINARY_OPERATOR`（锚操作符，`INVALID_BINARY_OPERATOR` 用 `renderInvalidBinaryOperatorType` 渲染两侧类型，并沿用既有「任一侧含错误类型则不报」守卫）。
+  - 新增诊断组 `FLOW_EXPRESSIONS`；文案逐字对位 `"'%s' is not allowed to be used in flow expressions"`。
+- repair principle（本批两条）：
+  - ①**判据命中后必须短路掉整条解糖路径**。官方在命中时不建任何合成节点；CFIR 若继续解糖，合成 invoke 调用/`operator ()` 访问会把裸 `this`/`super` **重新解释成调用接收者**，产出一族官方不存在的诊断（NOT_MEMBER_OF / UNRESOLVED_REFERENCE），并顺带屏蔽掉本该生效的 `ILLEGAL_SUPER_ALONE`。语法事实一旦被合成结构覆盖，就再也回不到原判据。
+  - ②**官方诊断名 ≠ 实现范围**。`sema_flow_expressions_use_this_or_super` 只认 `this`；按名实现会把 super 也纳入并造成误报。裁决依据只能是源码判据本体。
+- fixtures covered: 新增 `testData/diagnostics/general/flowThisProbe.cj`（7 例 + `1 |> f` 正控），经 **4 个入口**验证：手写 `CfirFlowThisPsiTest`（PSI）+ 生成入口 `CfirAnalysisDiagnostics{,Psi}TestGenerated` 与 `…WithoutAliasExpansionTestGenerated`。
+- verification command(s) and outcome:
+  - 定向：`--tests '*CfirFlowThisPsiTest*'` → BUILD SUCCESSFUL（首轮即全绿，含范围）。
+  - 全量：`:cfir:analysis-tests:test --continue` → **8695 tests completed, 34 failed, 313 skipped**；34 = 17 unique × 2 全在两个宏入口，与批次 4 基线逐项相同，**零新增**。
+- **登记为独立待办（本批未修，属相邻缺陷）**：composition 的**按值**左操作数在解糖调用的参数字段被重解析为 `UNRESOLVED_REFERENCE`。证据（修复前探针原样）：`x ~> f`（`x` 为 Int64 字段、`f` 为 `(Int64)->Int64` 成员函数）→ `UNRESOLVED_REFERENCE(x)`，官方为 `sema_invalid_binary_expr`；`x ~> this` 中 `x` 的假 UNRESOLVED 同源。机制：`asFlowFunctionValue` 对非函数值左操作数包装成 `x.operator()` 命名访问后作为 `composition(f,g)` 的实参，参数字段重新解析该引用。作用域在 `CfirCallResolver` 的组合调用候选/参数映射路径，与本批判据无关，故未纳入。`this |> f`（合法形态）的 CFIR 实报**未探针确认**，一并留待该待办处理时实测。
+- 批次状态：§1.1C 35 项——本批消化最后一个延后项，**延后收敛为 1**（`sema_tuple_element_cmp_not_bool`，逐元素 operator 解析基建），**剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
