@@ -10152,3 +10152,21 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 全量门禁：`:cfir:analysis-tests:test --continue` → **34 failed，与改动前基线逐项一致**（17 个宏用例 × 2 入口；LLT 双套件全绿）——**零回归**。
 - repair principle：门禁的粒度取「该语言表面是否存在」这一事实的粒度（= 整个声明族），而不是「哪些诊断该报」的粒度；前者的证据来自官方语法/解析器，后者在事实缺失时只能靠逐个枚举，恰好是框架扭曲的来源。
 - 批次状态：缺口报告 §4 事项 2 **过渡收口**（版本维度）；事项 1/5/7/9/8 维持原有进度；宏失败残余 12 个真缺陷不变。
+
+## 2026-09-23：P0 item 8——sema_expand_macro_redefinition（宏重定义检查，`e37da6b9f`）
+
+- **官方语义**（`PreCheck.cpp:1405-1430` PreCheckMacroRedefinition）：同作用域同名宏分组，
+  恰好 2 个且参数个数相等 → 两个都报 `sema_expand_macro_redefinition`；
+  任一缺函数体/缺参数列表 → 整组跳过；**3 个及以上实测不报**（cjc 1.0.5/1.1.3 双 SDK
+  探针：b_pair→2 报、c_same→2 报、d_three→0 报、e_mixed→0 报）。attribute + non-attribute
+  配对参数个数不等即放行。
+- **实现**：`CfirMacroRedefinitionChecker`（fileCheckers——宏只能出现在 macro package 顶层，
+  declaration 级 checker 看不到兄弟声明；用 `cfirProvider.getCfirFilesByPackage` 跨文件收集）；
+  `EXPAND_MACRO_REDEFINITION` 工厂 + `redefinition of macro '{0}'` 消息。
+- **锚点**：cjc 锚定**宏名 token**（非整条声明）。新增 `macroNameDiagnosticSource()`
+  （`CfirDeclarationDiagnosticSources.kt`）：PSI 路径走 `CjMacroDeclaration.nameIdentifier`，
+  light-tree 回退找 `MACRO_KEYWORD` 后匹配名字的 `IDENTIFIER`（offsets-only）。
+- **fixture**：diagnostics2/macro 三个（同 arity 双报 / attribute 配对放行 / 三声明不报）。
+  裸 `Tokens` 在测试环境触发 `UNDECLARED_TYPE_NAME`（需 std.compiler），如实标进期望。
+- **验证**：Macro 切片 6/6 绿；全量 `:cfir:analysis-tests:test` 8714 tests / 34 failed，
+  失败集合与基线完全一致（既有 17 macro 项 ×2），零回归。
