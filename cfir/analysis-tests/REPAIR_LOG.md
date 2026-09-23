@@ -10049,3 +10049,38 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - **裁定结论**：批次 6 的"已知缺口 1（flow 实参失配类）"与批次 6 登记的"不可重入缺陷"**合并为同一个待办**：闭合它 = 为 CFIR 建**对位官方阶段 1 的投机综合**（flow 操作数专用解析语境 + 回滚），而非"加一个抑制开关"。在获得该基建前，`this |> g` 保持**漏报**状态——这是最安全的一类偏差（不产出官方不存在的诊断），继续在 fixture 中以注释明示。
 - verification：全程只读（**未修改任何源文件**；本批仅追加本日志）。**未跑门禁**：工作树当时含 **64 个与本主题无关的已改文件**（LanguageVersionSettings / ApiVersion 重构：`common/src/.../config/ApiVersion.kt` 已删除、`flatbuffers/ModuleFormat.fbs`、`CompilerConfiguration.kt`、`CfirInteropSettings.kt`、4 个 `tests-gen/*Generated.kt` 等），门禁结果会被外部 WIP 污染，不具裁定价值。目标文件 `CfirExpressionsResolveTransformer.kt` / `CfirFlowBinaryOpChecker.kt` 已确认干净于 HEAD（`git diff HEAD` 无内容）。
 - 批次状态：§1.1C 35 项不变；延后 1（`sema_tuple_element_cmp_not_bool`）+ 已知缺口 1（flow 实参失配类，**可行性已裁定为"需投机综合基建"**）+ 未处理 1（`sema_expand_macro_redefinition`）。
+
+## 2026-09-23：P3 批次 8——flow 实参失配缺口的闭合尝试（**失败，已全部回退**；首次取得该缺陷精确栈帧）
+
+- problem type: 批次 6 登记的已知缺口 `this |> g`（实参失配类）。批次 7 只做可行性裁定，本批**实际动手实现**并验证。
+- attempt（本轮实现，已回退）：
+  - 新增 `ResolutionMode.FlowOperandSynthesis`（`ResolutionMode.kt`）：语义对位官方阶段 1 的 `target = nullptr`——**不携带期望类型**（`expectedType` 扩展对非 `WithExpectedType` 返回 null）且 `forceFullCompletion = false`，期望借此让"未定型 lambda 形参的占位类型变量"存活（原假设：旧失败来自 `ContextIndependent` 的强制 FULL completion，见 `CompletionModeCalculator.kt:30`）。
+  - `transformFlowExpression`：`|>` 分支改用该模式预综合**左**操作数；解糖前 `CfirResolutionSnapshot.capture(binaryOp.left)`，调用失败时 `restore()` 回滚，使"操作数根错误"检查只看到操作数自身的问题。
+  - `BodyResolveContext.kt:2470` 的穷尽 `when` 补该模式分支（与 `ContextIndependent` 同组：无期望类型，故无需 `WithExpectedType` 那条"期望类型含未定变量即拒绝"的判定）。**注意：给 `ResolutionMode` 加子类型会打破该处穷尽性**（全仓 `src` 仅此一处穷尽 `when`）。
+- **观测结果（定向切片 160 completed / 7 failed）**：
+  - 目标未达成：`this |> g` **仍不报**——`leftOperandType` 与回滚后的节点类型都取不到可用于渲染的类型，checker 在 `CfirFlowBinaryOpChecker.kt:101-102` 直接 `return`。
+  - 新增回归：`testLambdaParam05` ×2、`testErroFlowLambda` ×2（该 fixture 期望整份内容，实际输出为**空**——分析期异常导致完全无诊断）、`testFlowOperandFailure` ×3。
+- **首次取得该缺陷的精确栈帧**（批次 7 曾明确标注"未取得"，本轮捕获）：
+  ```
+  org.cangnova.cangjie.utils.exceptions.CangJieIllegalArgumentExceptionWithAttachments:
+      Expected expression 'CfirFunctionCallImpl' to be resolved
+    at CfirExpressionsResolveTransformer.transformFunctionCallInternal$resolve (CfirExpressionsResolveTransformer.kt:6980)
+    at CfirExpressionsResolveTransformer.transformFlowExpression (CfirExpressionsResolveTransformer.kt:4968)
+    at CfirExpressionsResolveTransformer.transformBinaryOp (CfirExpressionsResolveTransformer.kt:4815)
+    at CfirExpressionsResolveTransformer.transformBlock (CfirExpressionsResolveTransformer.kt:2796)
+    at CfirDeclarationNameImpl.transformBody (CfirAnonymousFunctionImpl.kt:105)
+    at CfirDeclarationsResolveTransformer.doTransformAnonymousFunctionBodyFromCallCompletion$resolve (CfirDeclarationsResolveTransformer.kt:388)
+    at CfirSyntheticCallGenerator.runLambdaBodyReinferPass (CfirSyntheticCallGenerator.kt:249)
+    at CfirSyntheticCallGenerator.reanalyzeTopLevelLambdaBodyIfPossible (CfirSyntheticCallGenerator.kt:216)
+    at CfirSyntheticCallGenerator.resolveAnonymousFunctionExpressionWithSyntheticOuterCall (CfirSyntheticCallGenerator.kt:162)
+    at CfirExpressionsResolveTransformer.transformAnonymousFunctionExpression (CfirExpressionsResolveTransformer.kt:6219)
+  ```
+- **失败机制（本批最重要的结论，且否证了原假设）**：
+  - 异常**不在**阶段 1 预综合里抛出，而在**解糖调用内部**（`:4968`，即 `transformFunctionCallInternal`）。⇒ 失败机制不是"某模式强制完整完成"，而是**同一个操作数节点被解析两次**：阶段 1 一次，解糖调用把它当实参又一次；第二次读到第一次留下的**中间态**节点（未完成的 `CfirFunctionCallImpl`）时违反 `resolvedType` 阶段不变量。
+  - **"解糖前快照 + 失败回滚"是事后回滚，结构上来不及**：不变量是在第二次解析**进行中**被读取的，异常在回滚点之前就已抛出。⇒ 印证批次 7 的裁定（修复层级必须在信息被生产**之前**），并**额外否证**"只要完成强度够弱就能安全二次解析"这一假设。
+  - 触发路径是 `CfirSyntheticCallGenerator` 的 **lambda body 重推 pass**（`runLambdaBodyReinferPass`），说明 flow 解糖调用会与外层 lambda 推断的**重推过程相乘**——这解释了为何该形态只在 lambda 形参场景炸。
+- repository note（新登记，值得独立处理）：**`CfirExpressionsResolveTransformer` 的 `transform` 对同一节点不具幂等/可重入性**，其判据是"该节点是否已处于解析中间态"，而非模式。任何"先综合一次、再作为实参综合第二次"的设计都会踩到它。
+- 处置：**4 个文件全部回退**（`ResolutionMode.kt`、`CfirExpressionsResolveTransformer.kt`、`BodyResolveContext.kt`、`flowOperandFailure.cj`），工作树回到已验证基线（`8699 / 34 / 314`）。回退后 `git diff --numstat` 为空、新符号零残留。
+- verification：定向切片 `--tests '*FlowOperandFailure*' '*FlowThis*' '*LambdaParam05*' '*LambdaParamInfer04*' '*GenericSubstPerf*' '*CallInference04*' '*BoxExport*' '*FlowExpr*' '*ErrMsgs*'` → **160 completed / 7 failed**（即上述回归；回退后不再复跑，因工作树已字节级回到已验证基线的对应状态）。
+- **下一步的正确形态（结论性）**：闭合该缺口需要的不是"新的 `ResolutionMode`"，而是**对位官方 `PData::Reset` 的节点级投机解析**——在解析**之前**把节点状态冻结或克隆，使第二次解析从干净状态起步（而非解析之后再回滚）。这是一项独立基建，且应该**只服务于 flow 操作数**这一处需求，避免泛化到全局 transform。
+- 批次状态：§1.1C 35 项不变；延后 1 + 已知缺口 1（**闭合路径已收敛为"节点级投机解析"**）+ 未处理 1。
