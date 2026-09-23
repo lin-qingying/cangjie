@@ -1156,7 +1156,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 /**
  * 取得声明用于访问级别检查的可见性。
  */
-private fun CfirDeclaration.accessLevelVisibility(): Visibility? =
+internal fun CfirDeclaration.accessLevelVisibility(): Visibility? =
     (this as? CfirMemberDeclaration)?.status?.visibility
 
 /**
@@ -1171,7 +1171,7 @@ private fun Visibility.effectiveInside(containingAccessLevel: Visibility?): Visi
 /**
  * 判断当前声明可见性是否允许暴露给定类型可见性。
  */
-private fun Visibility.canExpose(typeVisibility: Visibility): Boolean {
+internal fun Visibility.canExpose(typeVisibility: Visibility): Boolean {
     val declarationRank = cangjieAccessLevelRank() ?: return true
     val typeRank = typeVisibility.cangjieAccessLevelRank() ?: return true
     return declarationRank <= typeRank
@@ -1180,7 +1180,7 @@ private fun Visibility.canExpose(typeVisibility: Visibility): Boolean {
 /**
  * 将仓颉访问级别映射为可比较的访问等级。
  */
-private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
+internal fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
     Visibilities.Private, Visibilities.PrivateToThis -> 0
     Visibilities.Internal -> 1
     Visibilities.Protected -> 2
@@ -1192,6 +1192,10 @@ private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
  * 取得访问级别诊断应使用的声明 source。
  */
 private fun CfirDeclaration.accessibilityDiagnosticSource(): AbstractCjSourceElement? = when (this) {
+    // 官方 `MakeRangeForDeclIdentifier`（Diags.cpp:109）对普通声明返回 `decl.identifier`，
+    // 即暴露诊断锚在声明名而不是整条声明。typealias 同属 `CfirClassLikeDeclaration`，但名称来源
+    // 不同，必须排在 class-like 分支之前，否则会退化成整条声明。
+    is CfirTypeAlias -> typeAliasNameDiagnosticSource()
     is CfirClassLikeDeclaration -> classLikeNameDiagnosticSource()
     is CfirNamedFunction -> functionNameDiagnosticSource()
     // 官方 `MakeRangeForDeclIdentifier`（Diags.cpp）对 VarDecl/PropDecl 返回 `decl.identifier`，
@@ -1292,7 +1296,7 @@ private fun ConeCangJieType.findFirstExposure(
 /**
  * 取得声明的语义名称。
  */
-private fun CfirDeclaration.declarationName(): Name? = when (this) {
+internal fun CfirDeclaration.declarationName(): Name? = when (this) {
     is CfirClass -> name
     is CfirInterface -> name
     is CfirStruct -> name
@@ -1319,7 +1323,7 @@ private fun ConeCangJieType.containsTypeParameter(symbol: CfirTypeParameterSymbo
 /**
  * 从 cone 类型中提取 class-like 或 typealias 的 classId。
  */
-private fun ConeCangJieType.classIdOrNull(): org.cangnova.cangjie.name.ClassId? {
+internal fun ConeCangJieType.classIdOrNull(): org.cangnova.cangjie.name.ClassId? {
     return when (this) {
         is ConeClassLikeType -> classId
         is ConeStructType -> classId

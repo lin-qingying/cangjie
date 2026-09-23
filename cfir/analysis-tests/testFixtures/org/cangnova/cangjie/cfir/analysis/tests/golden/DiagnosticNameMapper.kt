@@ -277,6 +277,7 @@ object DiagnosticNameMapper {
         "CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE" to "sema_core_object_not_found_when_no_prelude",
         "TYPEALIAS_UNUSED_TYPE_PARAMETERS" to "typealias_unused_type_parameters",
         "TYPEALIAS_CYCLE" to "sema_typealias_cycle",
+        "TYPEALIAS_EXTERNAL_REFER_INTERNAL" to "sema_typealias_external_refer_internal",
     )
 
     /** cjc DiagKind → 项目诊断名集合（一对多） */

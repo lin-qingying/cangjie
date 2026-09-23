@@ -166,6 +166,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     /** 对类型别名循环、展开类型和类型参数使用执行的 checker 集合。 */
     override val typeAliasCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeAliasChecker>
         get() = setOf(
+            CfirTypeAliasAccessChecker,
             CfirTypeAliasCycleChecker,
             CfirTypeAliasExpandedTypeChecker,
             CfirTypeAliasUnusedTypeParameterChecker,

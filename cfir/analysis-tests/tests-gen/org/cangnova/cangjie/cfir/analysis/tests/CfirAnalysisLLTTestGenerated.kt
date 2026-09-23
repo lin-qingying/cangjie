@@ -21086,6 +21086,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/typealias/typealias9.cj")
         }
 
+        @TestMetadata("typealias_access01.cj")
+        @Test
+        fun testTypealiasAccess01() {
+            runTest("cfir/analysis-tests/testData/llt/typealias/typealias_access01.cj")
+        }
+
         @TestMetadata("typealias_partial_infer_01.cj")
         @Test
         fun testTypealiasPartialInfer01() {

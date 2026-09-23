@@ -302,6 +302,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ACCESSIBILITY_WITH_MAIN_HINT: CjDiagnosticFactory3<String, Name, Visibility> = CjDiagnosticFactory3("CFIR_ACCESSIBILITY_WITH_MAIN_HINT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ACCESSIBILITY_ERROR: CjDiagnosticFactory2<String, Visibility> = CjDiagnosticFactory2("CFIR_ACCESSIBILITY_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val TYPEALIAS_EXTERNAL_REFER_INTERNAL: CjDiagnosticFactory4<Visibility, Name, Visibility, Name> = CjDiagnosticFactory4("CFIR_TYPEALIAS_EXTERNAL_REFER_INTERNAL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PARAM_COUNT_MISMATCH: CjDiagnosticFactory2<Int, Int> = CjDiagnosticFactory2("CFIR_PARAM_COUNT_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Function
