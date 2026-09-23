@@ -9948,3 +9948,25 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 定向：`--tests '*CfirDeclShapePsiTest*'` → BUILD SUCCESSFUL；`--tests '*Enum.testEnum2*'` → BUILD SUCCESSFUL（判据修正后）。
   - 全量：`:cfir:analysis-tests:test --continue` → 失败集 **34 unique = 批次 2 基线逐项相同**（comm 双向为空：零新增、零消失）。
 - 批次状态：§1.1C 35 项已处理 32（P3 批次 1/2/3 合计 10 实现 + 20 负证据 + 2 已承载），延后 2（`sema_tuple_element_cmp_not_bool` 逐元素 operator 解析基建、`sema_flow_expressions_use_this_or_super` 的 flow 操作数 this/super 路径），**剩余 3 项未处理**：`sema_typealias_external_refer_internal`（需 src/package 层级可见性传播）、`sema_invalid_constructor_in_enum`（镜像条件为「ENUM_CONSTRUCTOR 属性 + 类型错误 + ASTKind 非 VAR/FUNC_DECL」，源码层难触达，需先探针）、`sema_expand_macro_redefinition`（宏声明重定义，属 macro 子系统）。
+
+## 2026-09-23：P3 批次 4——typealias 外部引用内部（1 实现 + 1 否定）
+
+- problem type: §1.1C 余下 3 项中的 `sema_typealias_external_refer_internal`、`sema_invalid_constructor_in_enum`。
+- official evidence（cjc 1.0.5 探针 `codex-probes/typealias_access/ta1..ta6` + 镜像源码）：
+  - **实现 1 —— `sema_typealias_external_refer_internal`**（`DiagnosticSema.def:39`，报错文案 `'%s' type '%s' refers to '%s' type '%s'`）。判定 = 非 private 的 `type` 别名，其右侧类型树引用了访问级别更低的声明（`IsCompatibleAccessLevel`：src ≤ ref，private < internal < protected < public）；每个别名至多报一次。
+    - 探针实测的关键边界：**不穿透别名展开**——`public type A6 = B6`（B6 自身展开到 internal）不报 A6；`public type D6 = C6`（C6 本身 internal）报 **C6**。即"暴露目标"取的是**句法上的**被引用实体，不是展开后的最终类型。
+    - 同一批探针确认 `sema_accessibility`（既有 `ACCESSIBILITY_ERROR`）锚在**声明名**：镜像 `MakeRangeForDeclIdentifier`（`Sema/Diags.cpp:109`）对普通声明返回 `decl.identifier`。
+  - **否定 1 —— `sema_invalid_constructor_in_enum`**：镜像唯一发射点位于 `SetEnumEleTy`，条件是「声明带 ENUM_CONSTRUCTOR 属性 + 类型错误 + `ASTKind` 非 VAR/FUNC_DECL」——属于**恢复分支**（前置构造器识别已失败后才走到），普通源码无法触达；探针矩阵亦零命中。登记为不可达，不做实现。
+- CFIR owner files changed（提交 `8b1262300`，12 文件 +271/-22）：
+  - `CfirDiagnosticsList.kt` 新增 `TYPEALIAS_EXTERNAL_REFER_INTERNAL: (Visibility, Name, Visibility, Name)`（重新生成 `CfirErrors.kt` / `CfirNonSuppressibleErrorNames.kt`，各 1 行）；`CfirErrorsDefaultMessages.kt` 文案逐字对位 `DiagnosticSema.def:39`，渲染器用 `VISIBILITY + RENDER_NAME` 对位 cjc 的 `'public'`/`'internal'` 输出。
+  - **新建 `CfirTypeAliasAccessChecker`**（`typeAliasCheckers`）：沿类型树**前序**找首个暴露目标（`typeArguments` / `ConeFunctionType` / `ConeTupleType` / `ConeVArrayType` / `ConePointerType`），命中后报一次即返回。
+  - `CfirDeclarationDiagnosticSources.kt` 新增 `typeAliasNameDiagnosticSource()`：`ACCESSIBILITY_ERROR` 此前在 typealias 上退化为整条声明，现锚到别名名 token。
+- repair principle（本批两条）：
+  - ①**别名身份必须在展开后可恢复**。`expandedTypeRef` 的 coneType 已被 `expandTypeAliasesInTypeResolution` 就地展开，`classIdOrNull()` 只能拿到最终类；必须改走 `abbreviatedType`（`AbbreviatedTypeAttribute`，展开时用来保留别名身份）才能取到句法目标。这是"不穿透展开"这一官方语义唯一的落点——拿展开结果做判据就会在 `public type PublicAliasUser = PublicAlias`（PublicAlias 指向 internal）上多报。
+  - ②**跨调用比较节点对象 == 没有判据**。`CfirDeclarationDiagnosticSources.kt` 的 light-tree 路径原先把 `collectLeafTokens()` 调两次，再用 `tokens.indexOf(nameToken)` 定位（第二次调用返回的是**新造的节点对象**，`indexOf` 恒为 -1），经 `take(-1)` 触发 `CangJieIllegalArgumentExceptionWithAttachments`，导致**全部** typealias fixture 报 `Exception in declaration checkers`（17 个用例）。改为单次取 token 列表 + `findTypeAliasNameTokenIndex(tokens, name)` 按下标复用。教训：树形 API 的"相同节点"只在同一次遍历产物内成立。
+- fixtures covered: 新增 `testData/llt/typealias/typealias_access01.cj`（11 例：public→internal、`Option<internal>`、`(internal, internal)` 元组、默认/internal 别名引用 internal、public 引用 public 别名、链式 `PublicAlias`→internal 不报、`public type X = InternalAlias` 报、private 别名不报、`public type C = Int64` 不报）。`DiagnosticNameMapper` 增加 `TYPEALIAS_EXTERNAL_REFER_INTERNAL → sema_typealias_external_refer_internal` 映射。
+- verification command(s) and outcome:
+  - 定向：`--tests '*LLTTestGenerated$Typealias*' '*LLTPsiTestGenerated$Typealias*' '*LLTTestGenerated$Varray*' '*LLTPsiTestGenerated$Varray*' '*LLTTestGenerated$ClassAccessControl*' '*LLTPsiTestGenerated$ClassAccessControl*' --continue` → BUILD SUCCESSFUL（142 用例全绿）。
+  - 全量：`:cfir:analysis-tests:test --continue` → **8691 tests completed, 34 failed, 312 skipped**。34 = 17 unique × 2（`CfirAnalysisMacroTestGenerated` / `CfirAnalysisMacroPsiTestGenerated` 两个宏入口各一份），与批次 3 基线逐项相同（含 `Llt > Typealias > ImportMacroAlias > testTypeaslias`——该用例卡在 `runTest(...)` 的宏基建 `IllegalStateException`，与诊断无关），**零新增、零消失**。
+  - 归因链上的两次红灯均已定位并修掉（17 个 typealias 用例的 token 身份异常；1 个别名穿透过报）。
+- 批次状态：§1.1C 35 项已处理 34（11 实现 + 20 负证据 + 2 已承载 + 1 否定），延后 2（`sema_tuple_element_cmp_not_bool`、`sema_flow_expressions_use_this_or_super`），**剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
