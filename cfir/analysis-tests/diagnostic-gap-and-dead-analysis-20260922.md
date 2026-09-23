@@ -80,7 +80,7 @@
 
 | 优先级 | 诊断 | 官方首现 | 报告位置 | 说明 |
 |---|---|---|---|---|
-| **P0** | COMMON/CJMP 全家族 16 个 | v1.1.0+ | CfirCommonSpecificChecker.kt、CfirCommonCtorImmutableAssignChecker.kt | 仅 `status.isCommon/isSpecific` 触发；语言中无对应 `LanguageFeature` 条目，v1.0.0 下源码含 common/specific 修饰符即报错，与官方不符 |
+| **P0** | COMMON/CJMP 全家族 16 个 | v1.1.0+ | CfirCommonSpecificChecker.kt、CfirCommonCtorImmutableAssignChecker.kt | 仅 `status.isCommon/isSpecific` 触发；语言中无对应 `LanguageFeature` 条目，v1.0.0 下源码含 common/specific 修饰符即报错，与官方不符。**【2026-09-23 处置】**已按 `CommonSpecificDeclarations(CANGJIE_1_1_0)` 过渡门禁收口（1.0.5 实测 `parse_expected_decl`，语法不存在）。**登记为已知限制**：官方真门禁是**包结构门**（1.1.3 实测 `parse_common_in_non_common_file`："common declaration must be defined in common package part"），而 CFIR 无 cjpm/包布局事实来源（`cjpm` 在源码 0 引用），故正向路径（合法 common/specific 包的识别）整族缺失，需按包布局事实来源另行立项 |
 | P1 | `CFIR_OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE`、`CFIR_OBJC_FUNC_ARGUMENT_MUST_BE_OBJC_COMPATIBLE` | v1.1.0 | CfirObjCTypeArgumentChecker.kt:51/63 | type-use 全局触发 |
 | P1 | `CFIR_OBJC_FUNC_CALL_PROPERTY_CAN_ONLY_BE_CALLED` | v1.1.0 | CfirObjCCallPropertyChecker.kt:84 | 表达式级触发 |
 | P1 | `CFIR_OBJC_CJMAPPING_GENERIC_NOT_SUPPORTED`、`CFIR_OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED` | v1.1.0 | CfirCJMappingCheckers.kt:129/143 | 仅 CJMapping 配置门禁；同文件 `checkCJMappingConfigValid` 已有 `supportsFeature` 先例可复用 |
@@ -158,7 +158,7 @@
 **总量**：官方 1072 vs CFIR 527。CFIR 职责内真缺失 **37 个**（v1.0.0 语义 35 + v1.1.0 语义 2，另 packages_* 2 个视配置层归属）；多余死声明 **24 个**（未实现 2 / 冗余 17 / 废弃 5）；门禁缺口 **27 个**（COMMON/CJMP 16 + OBJC 5 + JAVA 1 + effect checker 2 + v1.0.2/1.0.3 增量 2 + 平台正交 1）。
 
 **建议优先级**：
-1. **P0 门禁**：新增 `CommonSpecificDeclarations(1.1.0)` 之类 `LanguageFeature`，对 COMMON/CJMP 16 个统一门禁（唯一整族超前报错）。
+1. **P0 门禁**：新增 `CommonSpecificDeclarations(1.1.0)` 之类 `LanguageFeature`，对 COMMON/CJMP 16 个统一门禁（唯一整族超前报错）。**【2026-09-23】已落地过渡门禁**；注意这只是版本维度的下界——官方真门禁在 cjpm 包布局（见上表 P0 行的已知限制登记），后续需按包布局事实来源重新立项。
 2. **P1 清理**：删除 17 个冗余死声明（其中 3 个 extend 系命名错位可顺手把承载者改名为官方对齐名）；5 个废弃项一并删除。
 3. **P1 门禁**：OBJC 5 个 + `JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED` 收窄触发条件；effect checker 侧补 `supportsFeature(EffectHandlers)`。
 4. **P2 补齐**：实现 `CFIR_ANNOTATION_ERROR_ARG_RANGE/OBJECT` 两个 JFFI 检查（官方现役）；按 §1.1C 清单分批补 35 个 v1.0.0 细则检查。
