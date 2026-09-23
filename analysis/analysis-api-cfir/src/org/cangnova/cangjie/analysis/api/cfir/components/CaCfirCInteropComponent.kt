@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.builtInDescriptor
 import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
+import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -107,7 +108,9 @@ private fun CaCfirSession.buildInteropInfo(symbol: CfirBasedSymbol<*>): CaIntero
     }
     val annotationCalls = declaration.annotations.filterIsInstance<CfirAnnotationCall>().filter {
         val descriptor = it.builtInDescriptor
-        descriptor?.category == BuiltInAnnotationCategory.FFI || descriptor?.semanticHandler == AnnotationSemanticHandler.C_FFI
+        descriptor?.category == BuiltInAnnotationCategory.FFI ||
+            descriptor?.semanticHandler == AnnotationSemanticHandler.C_FFI ||
+            it.platformAnnotationDescriptor != null
     }.filter {
         it.annotationVersionSupport(cfirSession.languageVersionSettings) ==
             org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED

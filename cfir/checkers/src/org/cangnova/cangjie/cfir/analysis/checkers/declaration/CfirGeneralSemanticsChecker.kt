@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.patterns.visibleBindingVariables
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import org.cangnova.cangjie.cfir.session.requiredLanguageFeature
 import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -245,7 +246,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkJavaImplRedefinition(file: CfirFile) {
-        if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.JavaInteropAnnotations)) return
         val byName = mutableMapOf<Name, Int>()
         for (decl in file.declarations) {
             if (!decl.hasSupportedPlatformAnnotation(
@@ -280,11 +280,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     private fun checkCJMappingConfigValid(file: CfirFile) {
         val settings = context.session.interopSettings
         if (!settings.enableInteropCJMapping || settings.targetInteropLanguage == CfirInteropTarget.NONE) return
-        val targetFeature = when (settings.targetInteropLanguage) {
-            CfirInteropTarget.JAVA -> org.cangnova.cangjie.LanguageFeature.JavaInteropAnnotations
-            CfirInteropTarget.OBJC -> org.cangnova.cangjie.LanguageFeature.ObjCInteropAnnotations
-            CfirInteropTarget.NONE -> return
-        }
+        val targetFeature = settings.targetInteropLanguage.requiredLanguageFeature ?: return
         if (!context.languageVersionSettings.supportsFeature(targetFeature)) return
         val provider = context.session.cjMappingConfigProvider
         val path = provider.configPath ?: return

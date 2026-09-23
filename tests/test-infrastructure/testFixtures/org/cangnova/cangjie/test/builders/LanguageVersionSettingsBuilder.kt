@@ -7,7 +7,6 @@ import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.WarningLevel
-import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
@@ -23,7 +22,6 @@ class LanguageVersionSettingsBuilder {
         fun fromExistingSettings(builder: LanguageVersionSettingsBuilder): LanguageVersionSettingsBuilder {
             return LanguageVersionSettingsBuilder().apply {
                 languageVersion = builder.languageVersion
-                apiVersion = builder.apiVersion
                 specificFeatures += builder.specificFeatures
                 analysisFlags += builder.analysisFlags
             }
@@ -34,9 +32,6 @@ class LanguageVersionSettingsBuilder {
      * 维护 `languageVersion`，供测试配置构建在测试执行期间读取或传递。
      */
     var languageVersion: LanguageVersion = LanguageVersion.LATEST_STABLE
-
-    /** 显式 API 版本；未设置时按语言版本推导。 */
-    private var apiVersion: ApiVersion? = null
 
     /** 保存 feature 的显式状态，必须同时保留 ENABLED 和 DISABLED。 */
     private val specificFeatures: MutableMap<LanguageFeature, LanguageFeature.State> = mutableMapOf()
@@ -83,11 +78,6 @@ class LanguageVersionSettingsBuilder {
                 ?: error("Invalid LANGUAGE_VERSION '$value'. Expected format: major.minor.patch")
         }
 
-        directives.singleOrZeroValue(LanguageSettingsDirectives.API_VERSION)?.let { value ->
-            apiVersion = ApiVersion.parse(value)
-                ?: error("Invalid API_VERSION '$value'. Expected format: major.minor.patch")
-        }
-
         directives[LanguageSettingsDirectives.SUPPRESS_WARNINGS]
             .takeIf { it.isNotEmpty() }
             ?.let { warningNames ->
@@ -129,14 +119,8 @@ class LanguageVersionSettingsBuilder {
      * 执行 `build` 对应的测试配置构建流程，维持测试框架的阶段契约。
      */
     fun build(): LanguageVersionSettings {
-        val effectiveApiVersion = apiVersion ?: ApiVersion.createByLanguageVersion(languageVersion)
-        require(effectiveApiVersion <= ApiVersion.createByLanguageVersion(languageVersion)) {
-            "API_VERSION ${effectiveApiVersion.versionString} cannot be greater than " +
-                "LANGUAGE_VERSION ${languageVersion.versionString}"
-        }
         return LanguageVersionSettingsImpl(
             languageVersion = languageVersion,
-            apiVersion = effectiveApiVersion,
             analysisFlags = analysisFlags.toMap(),
             specificFeatures = specificFeatures.toMap(),
         )

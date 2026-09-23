@@ -1,17 +1,17 @@
 // RUN_PIPELINE_TILL: FRONTEND
-@<!UNRESOLVED_REFERENCE!>ObjCMirror<!>
+@ObjCMirror
 open class NativeMirror {
-    @<!UNRESOLVED_REFERENCE!>ForeignName<!>["ok:"]
+    @ForeignName["ok:"]
     public open func ok(value: Int64): Unit {}
 }
 
-@<!UNRESOLVED_REFERENCE!>ObjCImpl<!>
+@ObjCImpl
 class NativeImpl <: NativeMirror {
-    @<!UNRESOLVED_REFERENCE!>ForeignName<!>["ok:"]
+    @ForeignName["ok:"]
     public override func ok(value: Int64): Unit {}
 }
 
-@<!UNRESOLVED_REFERENCE!>ObjCImpl<!>
+@ObjCImpl
 class MissingMirrorInheritance {
     public func ok(value: Int64): Unit {}
 }

@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.expressions
 
-import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.annotations.BuiltInAnnotationDescriptor
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
@@ -9,6 +8,8 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.annotations.PlatformAnnotationDescriptor
 import org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus
+import org.cangnova.cangjie.annotations.requiredLanguageFeature
+import org.cangnova.cangjie.annotations.supportsBuiltinAnnotationKind
 import org.cangnova.cangjie.annotations.versionSupport
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -63,30 +64,35 @@ public fun CfirAnnotationCall.annotationVersionSupport(
             ?.classFqName
             ?.let(BuiltInAnnotationRegistry::findSystemAnnotation)
             ?.versionSupport(settings)
-        ?: when (annotationKind) {
-            // JAVA is an official AST/metadata identity, not a source builtin
-            // descriptor.  It still belongs to the Java interop feature gate.
-            org.cangnova.cangjie.annotations.BuiltInAnnotationKind.JAVA ->
-                LanguageFeature.JavaBuiltinAnnotations.versionSupport(settings)
-            else -> null
-        }
+        ?: annotationKind?.requiredLanguageFeature?.versionSupport(settings)
 
 /**
  * 判断一个已解析 builtin identity 是否允许被当前 semantic owner 消费。
  *
- * Core C FFI kinds have no newer feature gate and therefore remain supported;
- * metadata-only kinds such as JAVA are routed through [annotationVersionSupport].
+ * The common kind gate is authoritative for both the generic builtin catalog
+ * and kind-specific version policy; annotation resolve status is then checked
+ * for the diagnostic reason and resolved identity.
  */
 public fun CfirAnnotationCall.isSupportedBuiltinAnnotation(
     kind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind,
     settings: LanguageVersionSettings,
 ): Boolean = annotationKind == kind &&
+    settings.supportsBuiltinAnnotationKind(kind) &&
     (annotationVersionSupport(settings) ?: AnnotationVersionSupportStatus.SUPPORTED) ==
     AnnotationVersionSupportStatus.SUPPORTED
 
 /** 完成注解解析后按真实参数名取得值。 */
 public fun CfirAnnotation.argumentValue(name: String): CfirExpression? =
     argumentMapping.mapping[Name.identifier(name)]
+        ?: (this as? CfirAnnotationCall)?.argumentView?.entries
+            ?.firstOrNull {
+                !it.isDefaultOrigin &&
+                    it.status == CfirAnnotationArgumentStatus.RESOLVED &&
+                    it.resolvedParameter?.name == Name.identifier(name) &&
+                    it.argument != null
+            }
+            ?.argument
+            ?.let { (it as? CfirNamedArgumentExpression)?.expression ?: it }
 
 /** 按参数名读取字符串字面量实参；参数不存在或值不是字符串时返回 `null`。 */
 public fun CfirAnnotation.stringArgument(name: String): String? =

@@ -523,8 +523,8 @@ private fun CfirNamedFunctionSymbol.directOverriddenFunctions(): List<CfirNamedF
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
-    val hasJavaMirror = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
-    val hasJavaImpl = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_IMPL)
+    val hasJavaMirror = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
+    val hasJavaImpl = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_IMPL)
     val superDeclarations = declaration.superDeclarations()
 
     // JavaHasDefault 的位置约束独立于 enclosing declaration 是否已被
@@ -533,7 +533,7 @@ private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
     checkJavaHasDefaultSemantics(declaration)
 
     if (!hasJavaMirror && !hasJavaImpl) {
-        if (superDeclarations.any { it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR) }) {
+        if (superDeclarations.any { it.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR) }) {
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.JAVA_MIRROR_SUBTYPE_MUST_BE_ANNOTATED,
@@ -551,7 +551,7 @@ private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
             )
         }
         if (superDeclarations.any {
-                !it.hasAnyPlatformAnnotation(
+                !it.hasAnyInteropAnnotation(
                     CangjiePlatformAnnotationKind.JAVA_MIRROR,
                     CangjiePlatformAnnotationKind.JAVA_IMPL,
                 )
@@ -588,14 +588,14 @@ private fun checkJavaInteropSemantics(declaration: CfirClassLikeDeclaration) {
                 factory = CfirErrors.JAVA_IMPL_CANNOT_BE_EXTENDED_WITH_INTERFACE,
             )
         }
-        if (superDeclarations.none { it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR) }) {
+        if (superDeclarations.none { it.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR) }) {
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.JAVA_MIRROR_SUBTYPE_ANNO_MUST_INHERIT_MIRROR,
             )
         }
         if (superDeclarations.any {
-                !it.hasAnyPlatformAnnotation(
+                !it.hasAnyInteropAnnotation(
                     CangjiePlatformAnnotationKind.JAVA_MIRROR,
                     CangjiePlatformAnnotationKind.JAVA_IMPL,
                 )
@@ -692,9 +692,9 @@ context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkJavaHasDefaultSemantics(declaration: CfirClassLikeDeclaration) {
     for (member in declaration.declarations) {
         if (member !is CfirNamedFunction) continue
-        if (!member.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT)) continue
+        if (!member.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT)) continue
 
-        val hasDefaultEntry = member.findPlatformAnnotations(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT)
+        val hasDefaultEntry = member.findInteropAnnotations(CangjiePlatformAnnotationKind.JAVA_HAS_DEFAULT)
             .filterIsInstance<CfirAnnotationCall>()
             .firstOrNull()
         if (hasDefaultEntry != null && hasDefaultEntry.hasArguments()) {
@@ -705,7 +705,7 @@ private fun checkJavaHasDefaultSemantics(declaration: CfirClassLikeDeclaration) 
         }
 
         if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirInterface ||
-            !declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
+            !declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
         ) {
             reporter.reportOn(
                 source = member.source ?: declaration.source,
@@ -852,7 +852,7 @@ private fun isJTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJieT
         context.languageVersionSettings,
         BuiltInAnnotationKind.JAVA,
     ) ||
-        targetDecl.hasAnyPlatformAnnotation(
+        targetDecl.hasAnyInteropAnnotation(
             CangjiePlatformAnnotationKind.JAVA_MIRROR,
             CangjiePlatformAnnotationKind.JAVA_IMPL,
         )
@@ -866,12 +866,12 @@ private fun isJTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJieT
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
-    val hasObjCMirror = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
-    val hasObjCImpl = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_IMPL)
+    val hasObjCMirror = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+    val hasObjCImpl = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_IMPL)
     val superDeclarations = declaration.superDeclarations()
 
     if (!hasObjCMirror && !hasObjCImpl) {
-        if (superDeclarations.any { it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) }) {
+        if (superDeclarations.any { it.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) }) {
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.OBJC_MIRROR_SUBTYPE_MUST_BE_ANNOTATED,
@@ -891,7 +891,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
     }
 
     if (hasObjCMirror && superDeclarations.any {
-            !it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+            !it.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
         }) {
         reporter.reportOn(
             source = declaration.source,
@@ -917,7 +917,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
 
     // @ObjCImpl 必须继承 @ObjCMirror
     if (hasObjCImpl) {
-        if (superDeclarations.none { it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) }) {
+        if (superDeclarations.none { it.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR) }) {
             reporter.reportOn(
                 source = declaration.classLikeNameDiagnosticSource(),
                 factory = CfirErrors.OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR,
@@ -926,7 +926,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
     }
 
     if (hasObjCImpl && superDeclarations.none {
-            it.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+            it.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
         }) {
         reporter.reportOn(
             source = declaration.classLikeNameDiagnosticSource(),
@@ -939,7 +939,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
             is CfirNamedFunction -> {
                 checkObjCInitMethodReturnType(declaration, member)
                 if (member.valueParameters.size > 1 &&
-                    !member.hasPlatformAnnotation(CangjiePlatformAnnotationKind.FOREIGN_NAME)
+                    !member.hasInteropAnnotation(CangjiePlatformAnnotationKind.FOREIGN_NAME)
                 ) {
                     reporter.reportOn(
                         source = member.functionNameDiagnosticSource() ?: declaration.source,
@@ -975,7 +975,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
 
             is CfirConstructor -> {
                 if (member.valueParameters.size > 1 &&
-                    !member.hasPlatformAnnotation(CangjiePlatformAnnotationKind.FOREIGN_NAME)
+                    !member.hasInteropAnnotation(CangjiePlatformAnnotationKind.FOREIGN_NAME)
                 ) {
                     reporter.reportOn(
                         source = member.source ?: declaration.source,
@@ -1010,7 +1010,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
                 }
                 // @ForeignSetterName 不能用在不可变属性上（没有 setter 的属性）
                 if (member.setter == null &&
-                    member.hasPlatformAnnotation(CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME)
+                    member.hasInteropAnnotation(CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME)
                 ) {
                     reporter.reportOn(
                         source = member.source ?: declaration.source,
@@ -1110,9 +1110,9 @@ private fun checkObjCInitMethodReturnType(
     declaration: CfirClassLikeDeclaration,
     member: CfirNamedFunction,
 ) {
-    if (!member.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_INIT)) return
+    if (!member.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_INIT)) return
     if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirClass ||
-        !declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+        !declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
     ) {
         reporter.reportOn(
             source = member.source ?: declaration.source,
@@ -1156,7 +1156,7 @@ context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkForeignNameRules(
     declaration: CfirDeclaration,
 ) {
-    val foreignNameEntries = declaration.findPlatformAnnotations(CangjiePlatformAnnotationKind.FOREIGN_NAME)
+    val foreignNameEntries = declaration.findInteropAnnotations(CangjiePlatformAnnotationKind.FOREIGN_NAME)
         .filterIsInstance<CfirAnnotationCall>()
     if (foreignNameEntries.isEmpty()) return
     val javaForeignNameEntries = foreignNameEntries.filter { it.isJavaInteropForeignName() }
@@ -1201,8 +1201,8 @@ private fun checkForeignNameRules(
     }
 
     // 派生注解冲突：@ForeignName 与其衍生出的 @ForeignSetterName/@ForeignGetterName 不能同时出现
-    val foreignGetterEntries = declaration.findPlatformAnnotations(CangjiePlatformAnnotationKind.FOREIGN_GETTER_NAME)
-    val foreignSetterEntries = declaration.findPlatformAnnotations(CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME)
+    val foreignGetterEntries = declaration.findInteropAnnotations(CangjiePlatformAnnotationKind.FOREIGN_GETTER_NAME)
+    val foreignSetterEntries = declaration.findInteropAnnotations(CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME)
     if (objcForeignNameEntries.isNotEmpty() && (foreignGetterEntries.isNotEmpty() || foreignSetterEntries.isNotEmpty())) {
         val declName = when (declaration) {
             is CfirNamedFunction -> declaration.name
@@ -1243,8 +1243,8 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
         context.languageVersionSettings,
         BuiltInAnnotationKind.JAVA,
     )
-    val hasJavaMirror = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
-    val hasJavaImpl = declaration.hasPlatformAnnotation(CangjiePlatformAnnotationKind.JAVA_IMPL)
+    val hasJavaMirror = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_MIRROR)
+    val hasJavaImpl = declaration.hasInteropAnnotation(CangjiePlatformAnnotationKind.JAVA_IMPL)
     val isJavaRelated = hasJava || hasJavaMirror || hasJavaImpl
 
     // MISSING_JAVA_INTEROP_ANNOTATION: 继承 Java 类型必须标注对应注解
@@ -1254,7 +1254,7 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
                 context.languageVersionSettings,
                 BuiltInAnnotationKind.JAVA,
             ) ||
-                it.hasAnyPlatformAnnotation(
+                it.hasAnyInteropAnnotation(
                     CangjiePlatformAnnotationKind.JAVA_MIRROR,
                     CangjiePlatformAnnotationKind.JAVA_IMPL,
                 )
@@ -1397,7 +1397,7 @@ private fun checkObjCTopLevelFunction(function: CfirNamedFunction) {
     if (hasUnsupportedPlatformAnnotationVersion(function)) return
     // 官方 ObjC 互操作只把 @ObjCMirror 用于映射 ObjC 全局函数；
     // ObjCImpl/ObjCName 不是该声明形态的语义入口。
-    val hasObjCAnnotation = function.hasPlatformAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
+    val hasObjCAnnotation = function.hasInteropAnnotation(CangjiePlatformAnnotationKind.OBJ_C_MIRROR)
     if (!hasObjCAnnotation) return
 
     for (param in function.valueParameters) {

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.session
 
+import org.cangnova.cangjie.LanguageFeature
+
 /**
  * 当前源码编译目标使用的互操作语言。
  *
@@ -17,6 +19,14 @@ public enum class CfirInteropTarget {
     /** Objective-C 互操作目标。 */
     OBJC,
 }
+
+/** 互操作目标到公共语言能力的唯一映射。 */
+public val CfirInteropTarget.requiredLanguageFeature: LanguageFeature?
+    get() = when (this) {
+        CfirInteropTarget.JAVA -> LanguageFeature.JavaInteropAnnotations
+        CfirInteropTarget.OBJC -> LanguageFeature.ObjCInteropAnnotations
+        CfirInteropTarget.NONE -> null
+    }
 
 /**
  * 源码 session 的互操作配置。

@@ -9,7 +9,6 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
-import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -118,7 +117,6 @@ class CfirTypeResolverTypeAliasExpansionTest {
             aliasClassId,
             languageVersionSettings = LanguageVersionSettingsImpl(
                 languageVersion = LanguageVersion.LATEST_STABLE,
-                apiVersion = ApiVersion.LATEST_STABLE,
                 analysisFlags = mapOf(AnalysisFlags.expandTypeAliasesInTypeResolution to false),
             ),
         )

@@ -113,6 +113,6 @@ val levelToClassNameMap = listOf(
         levelName = CompilerArgumentsLevelNames.commonCompilerArguments,
         className = "CommonCompilerArguments",
         levelIsFinal = false,
-        additionalSyntheticArguments = listOf("autoAdvanceLanguageVersion", "autoAdvanceApiVersion"),
+        additionalSyntheticArguments = listOf("autoAdvanceLanguageVersion"),
     ),
 ).associateBy { it.levelName }

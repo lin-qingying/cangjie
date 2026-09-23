@@ -6,7 +6,7 @@ import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.featureSupportStatus
 
 /**
- * Result of applying the language/API version gate to an annotation contract.
+ * Result of applying the language version gate to an annotation contract.
  *
  * The parser must retain newer syntax for IDE and cross-version analysis.  The
  * semantic owner consumes this result and turns [UNSUPPORTED_LANGUAGE_VERSION]
@@ -16,7 +16,6 @@ import org.cangnova.cangjie.featureSupportStatus
 public enum class AnnotationVersionSupportStatus {
     SUPPORTED,
     UNSUPPORTED_LANGUAGE_VERSION,
-    UNSUPPORTED_API_VERSION,
     DISABLED,
     EXPERIMENTAL,
 }
@@ -45,7 +44,7 @@ public fun LanguageFeature.versionSupport(
 ): AnnotationVersionSupportStatus = versionSupportNullable(settings)
 
 /**
- * Apply both the language and API introduced-version constraints.
+ * Apply the language introduced-version constraint.
  *
  * This helper delegates to the common [LanguageVersionSettings.featureSupportStatus]
  * owner so explicit feature overrides remain authoritative and no caller can
@@ -59,8 +58,6 @@ private fun LanguageFeature?.versionSupportNullable(
         LanguageFeatureSupportStatus.SUPPORTED -> AnnotationVersionSupportStatus.SUPPORTED
         LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION ->
             AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION
-        LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION ->
-            AnnotationVersionSupportStatus.UNSUPPORTED_API_VERSION
         LanguageFeatureSupportStatus.DISABLED -> AnnotationVersionSupportStatus.DISABLED
         LanguageFeatureSupportStatus.EXPERIMENTAL -> AnnotationVersionSupportStatus.EXPERIMENTAL
     }
