@@ -1,3 +1,4 @@
+
 // FILE: macros.cj
 // MACRO_PACKAGE: true
 FILE: macros.cj
@@ -17,7 +18,7 @@ FILE: main.cj
             initializer:
                 INT(41)
         RETURN {
-            NAMED_ACCESS(value)
+            NAMED_ACCESS(value -> CfirPatternBindingSymbol(value))
         }
     }
     internal? func useSameProjectMacroPackageInput(): R|kotlin.Unit| {
@@ -25,6 +26,6 @@ FILE: main.cj
             initializer:
                 INT(42)
         RETURN {
-            NAMED_ACCESS(value)
+            NAMED_ACCESS(value -> CfirPatternBindingSymbol(value))
         }
     }

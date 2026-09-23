@@ -1,3 +1,4 @@
+
 // FILE: macros.cj
 // MACRO_PACKAGE: true
 FILE: macros.cj
@@ -17,7 +18,7 @@ FILE: main.cj
     }
     internal? func useGeneratedDeclaration(): R|kotlin.Unit| {
         RETURN {
-            FUNCTION_CALL(generatedValue) {
+            FUNCTION_CALL(generatedValue -> CfirNamedFunctionSymbol(generatedValue)) {
             }
         }
     }
