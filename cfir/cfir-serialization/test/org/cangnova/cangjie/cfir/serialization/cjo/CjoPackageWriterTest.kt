@@ -61,6 +61,104 @@ class CjoPackageWriterTest {
     }
 
     @Test
+    fun `writes official package file info and std dependencies`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                schemaProfile = CjoSchemaProfile.OFFICIAL_V1_1_3,
+                fileInfo = listOf(
+                    CjoFileInfoMetadata(
+                        fileId = 1u,
+                        begin = CjoPositionMetadata(file = 1u, line = 1, column = 0),
+                        end = CjoPositionMetadata(file = 1u, line = 3, column = 1),
+                    ),
+                ),
+                allDependentStdPkgs = listOf("std.core", "std.collection"),
+            ),
+        )
+
+        val packageTable = Package.getRootAsPackage(ByteBuffer.wrap(bytes))
+        assertEquals(1, packageTable.allFileInfoLength)
+        assertEquals(1u, packageTable.allFileInfo(0)!!.fileId)
+        assertEquals(2, packageTable.allDependentStdPkgsLength)
+        assertEquals("std.core", packageTable.allDependentStdPkgs(0))
+    }
+
+    @Test
+    fun `writes official generic declaration metadata`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "T",
+                        kind = DeclKind.GenericParamDecl,
+                        type = 1u,
+                    ),
+                    CjoPackageDeclaration(
+                        identifier = "Box",
+                        kind = DeclKind.ClassDecl,
+                        type = 1u,
+                        genericDecl = CjoAnnotationTargetMetadata(pkgId = 0, index = 2u),
+                        begin = CjoPositionMetadata(file = 1u, line = 1, column = 0),
+                        end = CjoPositionMetadata(file = 1u, line = 4, column = 1),
+                        identifierPosition = CjoPositionMetadata(file = 1u, line = 1, column = 7),
+                        mangledBeforeSema = "raw_Box",
+                        declarationHash = CjoDeclHashMetadata(1u, 2u, 3u, 4u, 5u),
+                        generic = CjoGenericMetadata(
+                            typeParameters = listOf(1u),
+                            constraints = listOf(CjoConstraintMetadata(type = 1u, upperBounds = listOf(1u))),
+                        ),
+                        info = CjoClassInfo(),
+                    ),
+                ),
+                types = listOf(CjoTypeMetadata(kind = PackageFormat.TypeKind.Unit)),
+            ),
+        )
+
+        val declaration = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allDecls(1))
+        assertEquals("raw_Box", declaration.mangledBeforeSema)
+        assertEquals(1uL, declaration.hash!!.instVar)
+        assertEquals(2u, declaration.genericDecl!!.index)
+        assertEquals(1, declaration.begin!!.line)
+        assertEquals(7, declaration.identifierPos!!.column)
+        val generic = requireNotNull(declaration.generic)
+        assertEquals(1, generic.typeParametersLength)
+        assertEquals(1u, generic.typeParameters(0))
+        assertEquals(1, generic.constraintsLength)
+        assertEquals(1u, generic.constraints(0)!!.type)
+        assertEquals(1u, generic.constraints(0)!!.uppers(0))
+    }
+
+    @Test
+    fun `writes imported composite type full id`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                imports = listOf("std.core"),
+                declarations = listOf(CjoPackageDeclaration(identifier = "f", type = 1u)),
+                types = listOf(
+                    CjoTypeMetadata(
+                        kind = PackageFormat.TypeKind.Class,
+                        semanticInfo = CjoCompositeTypeInfoMetadata(
+                            declarationIndex = 0u,
+                            packageId = 0,
+                            declarationKey = "Option",
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val type = requireNotNull(Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allTypes(0))
+        val info = requireNotNull(type.info(PackageFormat.CompositeTyInfo()) as? PackageFormat.CompositeTyInfo)
+        assertEquals(0, info.declPtr!!.pkgId)
+        assertEquals("Option", info.declPtr!!.decl)
+    }
+
+    @Test
     fun `writes VarWithPatternDecl with official VarWithPatternInfo union`() {
         val bytes = CjoPackageWriter.toByteArray(
             CjoPackageMetadata(
@@ -138,6 +236,46 @@ class CjoPackageWriterTest {
                 ),
             )
         }
+    }
+
+    @Test
+    fun `official one point zero schema rejects one point one package fields`() {
+        assertFailsWith<IllegalArgumentException> {
+            CjoPackageWriter.toByteArray(
+                CjoPackageMetadata(
+                    fullPackageName = "sample.pkg",
+                    moduleName = "sample",
+                    schemaProfile = CjoSchemaProfile.OFFICIAL_V1_0_0,
+                    fileInfo = listOf(
+                        CjoFileInfoMetadata(
+                            fileId = 1u,
+                            begin = CjoPositionMetadata(),
+                            end = CjoPositionMetadata(),
+                        ),
+                    ),
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `official one point one schema accepts platform annotation kinds`() {
+        val bytes = CjoPackageWriter.toByteArray(
+            CjoPackageMetadata(
+                fullPackageName = "sample.pkg",
+                moduleName = "sample",
+                schemaProfile = CjoSchemaProfile.OFFICIAL_V1_1_3,
+                declarations = listOf(
+                    CjoPackageDeclaration(
+                        identifier = "Mirror",
+                        annotations = listOf(
+                            CjoAnnotationMetadata(kind = AnnoKind.JavaMirror, identifier = "JavaMirror"),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        assertEquals(AnnoKind.JavaMirror, Package.getRootAsPackage(ByteBuffer.wrap(bytes)).allDecls(0)?.annotations(0)?.kind)
     }
 
     @Test

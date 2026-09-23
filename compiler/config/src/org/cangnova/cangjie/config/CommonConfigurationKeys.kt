@@ -95,6 +95,10 @@ object CommonConfigurationKeys {
     @JvmField
     val CJO_OUTPUT_DIRECTORY = CompilerConfigurationKey.create<String>("CJO_OUTPUT_DIRECTORY")
 
+    /** Live CFIR CJO producer's explicit output file (`-o` in declaration mode). */
+    @JvmField
+    val CJO_OUTPUT_FILE = CompilerConfigurationKey.create<String>("CJO_OUTPUT_FILE")
+
     /** 是否以官方 `--test` 方式编译当前包。 */
     @JvmField
     val ENABLE_COMPILE_TEST = CompilerConfigurationKey.create<Boolean>("ENABLE_COMPILE_TEST")
@@ -297,9 +301,21 @@ var CompilerConfiguration.cjoOutputDirectory: String?
     get() = get(CommonConfigurationKeys.CJO_OUTPUT_DIRECTORY)
     set(value) {
         if (value == null) {
+            remove(CommonConfigurationKeys.CJO_OUTPUT_DIRECTORY)
             return
         }
         put(CommonConfigurationKeys.CJO_OUTPUT_DIRECTORY, value)
+    }
+
+/** Frontend product path from `-o`; CJO emission derives a package-named file in its parent directory. */
+var CompilerConfiguration.cjoOutputFile: String?
+    get() = get(CommonConfigurationKeys.CJO_OUTPUT_FILE)
+    set(value) {
+        if (value == null) {
+            remove(CommonConfigurationKeys.CJO_OUTPUT_FILE)
+            return
+        }
+        put(CommonConfigurationKeys.CJO_OUTPUT_FILE, value)
     }
 
 /** 是否以官方 test compilation 模式编译当前包。 */

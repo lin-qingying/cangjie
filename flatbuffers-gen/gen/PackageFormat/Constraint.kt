@@ -83,6 +83,20 @@ class Constraint : Table() {
             false
         }
     }
+    val isImplicitlyIntroduced : Boolean
+        get() {
+            val o = __offset(12)
+            return if(o != 0) 0.toByte() != bb.get(o + bb_pos) else false
+        }
+    fun mutateIsImplicitlyIntroduced(isImplicitlyIntroduced: Boolean) : Boolean {
+        val o = __offset(12)
+        return if (o != 0) {
+            bb.put(o + bb_pos, (if(isImplicitlyIntroduced) 1 else 0).toByte())
+            true
+        } else {
+            false
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsConstraint(_bb: ByteBuffer): Constraint = getRootAsConstraint(_bb, Constraint())
@@ -90,7 +104,7 @@ class Constraint : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun startConstraint(builder: FlatBufferBuilder) = builder.startTable(4)
+        fun startConstraint(builder: FlatBufferBuilder) = builder.startTable(5)
         fun addBegin(builder: FlatBufferBuilder, begin: Int) = builder.addStruct(0, begin, 0)
         fun addEnd(builder: FlatBufferBuilder, end: Int) = builder.addStruct(1, end, 0)
         fun addType(builder: FlatBufferBuilder, type: UInt) = builder.addInt(2, type.toInt(), 0)
@@ -104,6 +118,7 @@ class Constraint : Table() {
             return builder.endVector()
         }
         fun startUppersVector(builder: FlatBufferBuilder, numElems: Int) = builder.startVector(4, numElems, 4)
+        fun addIsImplicitlyIntroduced(builder: FlatBufferBuilder, isImplicitlyIntroduced: Boolean) = builder.addBoolean(4, isImplicitlyIntroduced, false)
         fun endConstraint(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o
