@@ -10114,3 +10114,21 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - ②**判定顺序即语义**。同一组信号（`callFailed` 与"操作数含错误"）按不同顺序检查会得到相反结论；官方源码里 `:792 → :795-826 → :838-843` 的顺序本身就是判据的一部分，不能只搬条件不搬顺序。
   - ③**只改失败分支可把回归面压缩到近乎为零**。成功路径逐字不动，则一切"前置综合会破坏推断"的既有风险（本仓 `:4938-4947` 注释已明示）在结构上无法被触发——这是本批相对批次 8 的 6 处回归的关键差别。
 - 批次状态：§1.1C 35 项不变；延后 1（`sema_tuple_element_cmp_not_bool`）+ **已知缺口 1 项已闭合（flow 实参失配类）** + 未处理 1（`sema_expand_macro_redefinition`）。
+
+## 2026-09-23：宏失败报告 §4 事项 6 取证裁决——`TYPECAST_OVERFLOW`/`UNREACHABLE_PATTERN` **方向反转**（0 源码改动）
+
+- problem type: `macro-failures-x-diagnostic-gap-20260922.md` §2.5 / §4 事项 6（P2）——`DefaultParameterPkg02` 4 个 fuzz 用例上 `TYPECAST_OVERFLOW`×125、`UNREACHABLE_PATTERN`×143 等"展开产物多报"。报告给出两个待裁方向：(1) cjc 对宏展开产物内的整型转换溢出根本不报；(2) CFIR 对非字面量实参常量折叠过度。报告明确要求"**先跑 cjc 对照一条样例即可裁决，不要先改检查器**"。
+- 做法：本批只做 cjc 双 SDK 实测 + 从 CFIR 实际标记行反推被标构造，**未改任何源码、未改任何 fixture**。
+- 关键步骤：先从 `DefaultParameterPkg02::testTestMacro` 的失败 XML 提取"得到"侧全部标记行（`grep TYPECAST_OVERFLOW`），据此确认被标构造的**真实形态**——不是报告假设的良性窄化，而是**负值 → 无符号类型**的转换，例如 `UInt64(Int8(-82))`、`UInt64(Int16(-120))`、`UInt32(Int32(Int16(-6)))`、`UInt64(Int64(-65))`、`UInt16(Int8(-26))`、`Int8(UInt8(137))`。
+- official evidence（cjc 1.0.5 与 1.0.0 **逐项一致**）：
+  - 探针 `codex-probes/flow_operand_failure/p27_fuzz_typecast_negative_to_unsigned.cj`（上述 7 种构造逐个复现）→ **7/7 报 `chir_typecast_overflow`**，消息 `integer type conversion overflow` + note `range of UInt64 is 0 ~ 18446744073709551615`。⇒ 官方**确实报**，且判据是**常量值是否落在目标类型范围内**（负值不在无符号范围内 → 报）。
+  - 反证探针对照 `p26_fuzz_typecast_overflow.cj`（同形但取值合法：`Int16(UInt16(47))`、`Int64(UInt8(254))`、`UInt64(190)`、`Float32(Float32(-120.0))`、`Int8(Int8(-113)) & 127`、`Int64(-91) | 1`）→ 两版 SDK **零诊断（EXIT=0）**。⇒ 官方只报"值放不下"的，不报"值放得下"的；CFIR 的标记集合与之一致。
+  - 探针 `p28_unreachable_catchall.cj`（穷尽枚举匹配后跟 `case _`）→ 两版 SDK 均报 `sema_unreachable_pattern`（`unreachable pattern`，属 `unused` 警告组，EXIT=0）。⇒ CFIR 的 `UNREACHABLE_PATTERN` 亦有官方对应。
+  - 附带：对 fixture 实际文件 `g1/test2.cj` + `f2/test3.cj` 跑 cjc 时，解析期即报 `parse_redundant_modifier`×4 —— 与 CFIR 的 `REDUNDANT_MODIFIER`×4 数目一致（该次调用因两文件包名不同而被 cjc 以 `package_multiple_package_declarations` 提前终止，故只作 REDUNDANT_MODIFIER 的旁证，不作 typecast/pattern 的正证）。
+- 裁决：**方向反转**。报告的两条假设**均被否证**——不是"官方不报"，也不是"CFIR 折叠过度"，而是 **CFIR 报得对**。真正过期的是 **fixture 期望**：`cfir/analysis-tests/testData/macro/llt/function/defaultParameter_pkg_02/**` 的 5 个 `.cj` **没有任何标记**，而其中含大量官方必报的负值转无符号构造与不可达分支。⇒ 事项 6 的正确处置是**按 cjc 逐构造核验后补齐 fixture 标记**（机械但量大，约 240 处），**不是**改检查器。
+- 方法论（本批两条）：
+  - ①**"多报"的判断必须落到被标构造的真实形态上再取证**。报告从统计量（"多报 43 处"）直接推断"宏观展开豁免 / 折叠过度"，而真实形态（负值转无符号）恰是官方必报的。**统计方向 ≠ 语义方向**；先提取标记行、再构造最小对照探针，成本极低而结论可以完全相反。
+  - ②**同形不同值要成对探针**。`p26`（取值合法）与 `p27`（取值越界）同形不同值，两探针合起来才能证明官方判据是"值是否落在目标范围内"，只跑任一单个都会得出片面结论。
+- 影响面（对残余 17 个宏失败用例的重新归类）：`DefaultParameterPkg02` 的 5 个用例（`testTest`/`testTestMacro`/`testTestMutation`/`testTest2`/`testTest3`）**不是 CFIR 缺陷**，而是**fixture 期望过期**——这批应从"待修缺陷"移出，改列为"fixture 补齐"类机械工作。
+- verification：全程只读（未改源码/fixture）；探针与 JSON 证据落在 `codex-probes/flow_operand_failure/p2{6,7,8}_*.cj` 与 `out100`/`out105`。
+- 批次状态：§1.1C 35 项不变；延后 1 + 未处理 1（`sema_expand_macro_redefinition`）；宏失败报告 §4 事项 6 **方向已裁决（反转为 fixture 侧）**。
