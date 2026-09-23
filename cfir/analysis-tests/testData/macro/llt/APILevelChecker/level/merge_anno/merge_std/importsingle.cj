@@ -81,7 +81,7 @@ public class APILevel {
 
 
 
-import std.time.*
+import <!UNUSED_IMPORT!>std.time.*<!>
 
 main() {
     0

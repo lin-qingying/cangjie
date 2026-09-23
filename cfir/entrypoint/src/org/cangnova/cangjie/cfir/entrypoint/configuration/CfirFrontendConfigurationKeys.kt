@@ -211,7 +211,11 @@ var CompilerConfiguration.conditionalCompilationSettings: CfirConditionalCompila
  * 平台入口注入的隐式系统注解授权。
  *
  * 该配置只表达编译调用方已经确认的能力；解析器和 CJO loader 不得根据路径或包名猜测。
+ * 未被调用方显式覆盖时，缺省授权取语言注册表的系统注解集合
+ * （[org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.defaultImplicitSystemAnnotations]），
+ * 对齐官方 cjc 对 `.cj.d` 裸 `@APILevel` / `@Hide` 的初始作用域事实。
  */
 var CompilerConfiguration.implicitSystemAnnotations: Set<FqName>
-    get() = get(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, emptySet())
+    get() = get(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS)
+        ?: org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.defaultImplicitSystemAnnotations
     set(value) = put(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, value.toSet())

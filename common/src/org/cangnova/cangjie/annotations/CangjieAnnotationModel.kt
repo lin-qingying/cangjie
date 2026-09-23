@@ -300,6 +300,18 @@ object BuiltInAnnotationRegistry {
             origin = CangjieAnnotationOrigin.SPECIAL_EXPRESSION),
     )
 
+    /**
+     * 语言级预导入的系统注解授权（官方 cjc 初始作用域事实）。
+     *
+     * 官方编译器对 `.cj.d` 声明文件等 SDK 元数据中的裸 `@APILevel` / `@Hide`
+     * 无需 import 即可解析身份；该集合是编译配置层 `implicitSystemAnnotations`
+     * 未被调用方显式覆盖时的缺省授权，单一事实来源在本注册表，
+     * 解析器与 CJO loader 自身仍不得凭路径或包名猜测。
+     */
+    public val defaultImplicitSystemAnnotations: Set<FqName> = systemAndSpecial
+        .filter { it.origin == CangjieAnnotationOrigin.SYSTEM_MACRO && it.classFqName != null }
+        .mapTo(mutableSetOf()) { it.classFqName!! }
+
     public val bySourceName: Map<String, AnnotationDescriptor> =
         (languageBuiltIns + packageDirectives + systemAndSpecial).associateBy { it.sourceName }
     private val builtInsByName = languageBuiltIns.associateBy { it.sourceName }
