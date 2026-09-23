@@ -10021,3 +10021,31 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 全量：`:cfir:analysis-tests:test --continue` → **8699 tests completed, 34 failed, 314 skipped**；34 = 17 unique × 2 全在两个宏入口，与批次 4/5 基线逐项相同，**零新增**（+4 = 新 fixture 的 4 个入口）。
 - **已知缺口（登记为后续批次，本批未闭合）1 项**：`this |> g`（实参失配类）。cjc 报操作符 `sema_invalid_binary_expr`，CFIR 当前**不报**（同时也不会再报官方不存在的 `ARGUMENT_TYPE_MISMATCH`，即该形态从"多报假诊断"变为"少报真诊断"）。根因：解糖调用的实参检查把失配的错误类型**写回左操作数**（实参节点与操作数节点是同一对象），操作数根错误检查据此提前返回；渲染正确类型也要求"解糖前的左操作数类型快照"，而左操作数预综合对 lambda 形参不可重入（见 ③）。官方靠投机综合（`DiagSuppressor` + `PData::Reset`，:1021-1027）避免污染——闭合需要与本仓对位的投机综合/回滚基建，属独立批次。
 - 批次状态：§1.1C 35 项不变（本批属相邻缺陷收敛）；延后 1（`sema_tuple_element_cmp_not_bool`）+ 新增已知缺口 1（flow 实参失配类）+ **剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
+
+## 2026-09-23：P3 批次 7——flow 实参失配缺口的可行性裁定（0 实现；否证 4 条便宜路线；两项待办合并为 1）
+
+- problem type: 批次 6 登记的已知缺口 `this |> g`（实参失配类）——裁定"能否在不建投机综合基建的前提下闭合"。**本批不改任何源码**，只做证据保全与路线否证。
+- **决定性证据（缺口不可独立闭合的等价性证明）**：
+  - 提前返回点 `flowOperandRootErrorOrNull`（`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirExpressionsResolveTransformer.kt:5189-5202`）委托 `rootErrorDiagnosticOrNull`（同文件 `:5219-5242`），后者是**递归** visitor，返回操作数子树内**任意位置**的第一个 `ConeErrorType`。
+  - 该信号必须同时承载两种语义相反的事实，且二者**可观测特征完全相同**：
+    - (i) 操作数**自身**的名字解析失败 —— 官方保留为唯一诊断（实测 `missing |> f` 只报 `sema_undeclared_identifier`，无 `invalid_binary_expr`），CFIR 今日行为**正确**；
+    - (ii) 解糖调用实参检查**写回**的错误类型 —— 官方丢弃并改报操作符诊断（`this |> g`），CFIR 今日**漏报**。
+  - 官方区分二者的唯一判据是**时间先后**：阶段 1 独立综合出的根错误 vs 阶段 2 调用检查失败。CFIR 的 `|>` **跳过阶段 1**（`:4938-4947` 只预综合右操作数；左操作数保持未定型，故 `:4952` 快照取到 null）→ **本仓不存在该判据**。
+  - 推论：任何"让 `:4965` 忽略调用写回错误"的改法都会同时放走 (i) → **打断 `missing |> f` 的唯一诊断**。缺口与"左操作数阶段 1 综合"是**同一个问题**，不是两个。
+- **否证的便宜路线（4 条，逐条给出反证）**：
+  - (a) **快照/回滚包裹合成调用**：原语已存在——`cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirResolutionSnapshot.kt:61`（`capture` `:199-241`，含类型捕获 `:240`；`restore` `:105-173`，含类型还原 `:170-172`），且已在本 transformer 的 `:1453/:1533/:1576/:6063` 及 `calls/stages/ArgumentCheckingProcessor.kt:489,549,555`、`CfirSyntheticCallGenerator.kt:136` 使用。**但**回滚后左操作数恢复到**未定型（null）**（`|>` 下它从未被综合），`leftOperandType` 仍为 null → `cfir/checkers/src/.../expression/CfirFlowBinaryOpChecker.kt:101-102` 的 `?: return` 直接退出 → **仍不报诊断**。收益为零、回归风险非零 → 否。
+  - (b) **按 `origin` 抑制参数写回**：判别符已存在且在既有代码中用作判据（`cfir/checkers/src/.../CfirHelpers.kt:78` 的 `origin == CfirFunctionCallOrigin.Pipeline ||`；写入侧 `cfir/resolve/src/.../transformers/CfirUnanalyzedCallArgumentTransformer.kt:27-29` 只对 `coneTypeOrNull == null` 的子节点写入）。**但**它无法区分 (i)/(ii)，抑制即打断 `missing |> f` → 否。**注意**：此路线的"判别符存在"是事实，但它解决的是"哪些调用是合成调用"，**不是**本缺口真正缺的"错误来自哪个阶段"。
+  - (c) **checker 侧补报**：左操作数类型此时已是失配的错误类型，不回滚就拿不到解糖前的 `This`，回滚则回到 (a) 的 null → 否。
+  - (d) **按节点形态枚举白名单做左操作数预综合**：命中用户明令的反面信号——"同类实体要逐个人工枚举判断"；且"安全形态集合"在无实测前不可刻画 → 按框架纪律否。
+- **不可重入缺陷的落点（批次 6 遗留的相邻缺陷，本轮定位完成）**：
+  - 异常类：`util/src/org/cangnova/cangjie/utils/exceptions/ICangJieExceptionWithAttachments.kt:121`（`requireWithAttachment:140`，抛 `:149-151`；改造助手 `ExceptionAttachmentBuilderExtensions.kt:31-41`）。
+  - 抛点：`cfir/cfir-tree/src/org/cangnova/cangjie/cfir/types/CfirTypeUtils.kt:52-56` —— `CfirExpression.resolvedType` 取值器 `errorWithAttachment`（同族 `CfirTypeRef.coneType` `:28-32`）。
+  - 根因**不是**幂等性：`replaceConeTypeOrNull` 只是纯赋值、无断言（`cfir/cfir-tree/gen/.../impl/CfirNamedAccessExpressionImpl.kt:79-81`）。违规的是**阶段不变量** `resolvedType`——调用解析链会读未完成节点的 `resolvedType`：`calls/tower/TowerLevelHandler.kt:641,680`、`body/CfirCallResolver.kt:3913`、`calls/VisibilityUtils.kt:56`；transformer 自证注释在同文件 `:2435-2438`（"函数类型 tower 会对未完成的 CfirFunctionCall 读取 resolvedType"）。全仓**无** in-progress/visited 全局守卫（`IdentityHashMap` 仅见于 `CfirResolutionSnapshot.kt`、`OverloadByLambdaBodyResolver.kt`、`BodyResolveContext.kt`、`CallResolver.kt`）。
+  - **诚实标注**：flow + lambda 形状的**精确中间栈帧未取得**（批次 6 的本地实验日志未保留）；上述归因由"抛点 + 已文档化的阶段不变量"推出，另有同抛点的历史栈旁证（`cfir/analysis-tests/build/test-results/test-stale-20260901/TEST-...OperatorOverload.xml:83-99`，非 flow 形状）。
+- **诊断通道的结构性事实（解释为何官方 `DiagSuppressor` 没有便宜对位）**：resolve 表达式期**不往 reporter/collector 直报**，而是把诊断当数据立即挂到节点——节点类型 `ConeErrorType(ConeDiagnostic)`（经 `replaceConeTypeOrNull`）或 callee 引用上的 `CfirDiagnosticHolder.diagnostic`（`cfir/cfir-tree/gen/.../diagnostics/CfirDiagnosticHolder.kt:17-19`）。真正的 `DiagnosticReporter`/collector（`cfir/resolve/src/.../CfirDiagnostics.kt:32-64` 的 `storage: MutableList`、`PendingDiagnosticsReporterImpl`、`DiagnosticsCollectorImpl`）只服务 checker 与 imports。⇒ **"丢弃已发诊断"在 resolve 侧没有通道**；而"回滚节点"虽可复用快照，却因上述 (a) 的 null 问题无收益。抑制只有**静态注解式**（`AbstractCangJieSuppressCache.kt:21-33`、`CheckerContext.kt:129-155`，共 ≈6 处 `isDiagnosticSuppressed` 实现），**无动态作用域原语**。
+- repair principle（本批两条，均属方法论）：
+  - ①**"某条便宜路线存在原语"不等于"该路线可行"**。判断标准是"回滚/抑制之后，诊断渲染所需的**信息是否仍然存在**"。快照原语齐全（`CfirResolutionSnapshot` 就绪且已在本文件复用 4 处）但目标类型从未被生产过——原语齐备度与方案可行性必须分开评估。
+  - ②**"信息在何处被生产又销毁"决定修复层级**。`this |> g` 所需的 `This` 由解糖调用自身的实参综合产出、随即被失配写回覆盖；在调用之外任何位置都无法取回。⇒ 修复必须发生在**生产该信息之前**（阶段 1 独立综合），这解释了为何四条调用外路线全部否证。
+- **裁定结论**：批次 6 的"已知缺口 1（flow 实参失配类）"与批次 6 登记的"不可重入缺陷"**合并为同一个待办**：闭合它 = 为 CFIR 建**对位官方阶段 1 的投机综合**（flow 操作数专用解析语境 + 回滚），而非"加一个抑制开关"。在获得该基建前，`this |> g` 保持**漏报**状态——这是最安全的一类偏差（不产出官方不存在的诊断），继续在 fixture 中以注释明示。
+- verification：全程只读（**未修改任何源文件**；本批仅追加本日志）。**未跑门禁**：工作树当时含 **64 个与本主题无关的已改文件**（LanguageVersionSettings / ApiVersion 重构：`common/src/.../config/ApiVersion.kt` 已删除、`flatbuffers/ModuleFormat.fbs`、`CompilerConfiguration.kt`、`CfirInteropSettings.kt`、4 个 `tests-gen/*Generated.kt` 等），门禁结果会被外部 WIP 污染，不具裁定价值。目标文件 `CfirExpressionsResolveTransformer.kt` / `CfirFlowBinaryOpChecker.kt` 已确认干净于 HEAD（`git diff HEAD` 无内容）。
+- 批次状态：§1.1C 35 项不变；延后 1（`sema_tuple_element_cmp_not_bool`）+ 已知缺口 1（flow 实参失配类，**可行性已裁定为"需投机综合基建"**）+ 未处理 1（`sema_expand_macro_redefinition`）。
