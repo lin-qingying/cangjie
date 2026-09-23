@@ -10132,3 +10132,23 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 影响面（对残余 17 个宏失败用例的重新归类）：`DefaultParameterPkg02` 的 5 个用例（`testTest`/`testTestMacro`/`testTestMutation`/`testTest2`/`testTest3`）**不是 CFIR 缺陷**，而是**fixture 期望过期**——这批应从"待修缺陷"移出，改列为"fixture 补齐"类机械工作。
 - verification：全程只读（未改源码/fixture）；探针与 JSON 证据落在 `codex-probes/flow_operand_failure/p2{6,7,8}_*.cj` 与 `out100`/`out105`。
 - 批次状态：§1.1C 35 项不变；延后 1 + 未处理 1（`sema_expand_macro_redefinition`）；宏失败报告 §4 事项 6 **方向已裁决（反转为 fixture 侧）**。
+
+## 2026-09-23（晚）：缺口报告 P0 事项 2——COMMON/CJMP 16 族统一门禁（过渡方案）+ cjpm 包布局缺口登记
+
+- problem type: `diagnostic-gap-and-dead-analysis-20260922.md` §2.1 P0 —— COMMON/CJMP 全家族仅凭 `status.isCommon/isSpecific` 触发，无 `LanguageFeature` 门禁，1.0.x 下源码含 `common`/`specific` 修饰符即报 CJMP 语义诊断，与官方不符（唯一整族超前报错）。
+- root cause: CFIR 缺少「该语言表面是否存在」的版本事实，检查器把"修饰符出现"直接当作"CJMP 语义成立"。
+- official evidence（cjc 双 SDK 实测，1.0.5 + 1.1.3）：
+  - **1.0.5**：`common class` → `parse_expected_decl`（解析期即失败，语法不存在）⇒ 1.0.x 下 CJMP 语义检查**根本不存在**。
+  - **1.1.3**：`common class`/`specific class` 被解析，但报 `parse_common_in_non_common_file`（"common declaration must be defined in common package part"）⇒ 官方真门禁是**包结构门**（cjpm 的 common/specific package part 布局），不是语言版本。
+  - 镜像（v1.0.0）全文无 `common`/`specific` 声明修饰符（仅 CodeGen 的 `IsCommonEnum` 等无关同名）⇒ 与 1.1.0 起引入一致。
+- CFIR owner files changed:
+  - `common/src/.../LanguageVersionSettings.kt`：新增 `LanguageFeature.CommonSpecificDeclarations(CANGJIE_1_1_0)`（对齐 `JavaInteropAnnotations`/`ObjCInteropAnnotations` 的 1.1.0 形态）。
+  - `cfir/checkers/.../CfirCommonSpecificChecker.kt`：`check()` 入口整族跳过（**整族单一门禁**，不做 29 个诊断逐个开关——同类实体逐个枚举判断是反面信号）。
+  - `cfir/checkers/.../CfirCommonCtorImmutableAssignChecker.kt`：同一门禁。
+  - 新语料 `testData/diagnostics2/common-specific/commonSpecificSuppressedLangver105.cj`（`// LANGUAGE_VERSION: 1.0.5`）：期望仅剩通用 `CLASSIFIER_REDECLARATION`（非 CJMP 族，与 1.1.3 下占位语料口径一致），**零 CJMP/SPECIFIC 诊断**；3 个 generated 套件已由生成器同步登记。
+- **已知限制（框架级缺口登记，非本批可闭合）**：官方正向路径依赖 cjpm 包布局事实（common/specific package part），而 CFIR 无 cjpm/包组织概念（`cjpm` 在 `common/ cfir/ compiler/ analysis/` 源码 **0 引用**）⇒ CFIR 无法识别"合法的 common/specific 包"，本族正向语义整族缺失。已登记进缺口报告 P0 行；后续需按包布局事实来源另行立项（与 `.cj.d` v3 的 sourceKind 机制同构）。
+- verification commands and outcome:
+  - 定向切片：`--tests '*Diagnostics2{,Psi,WithoutAliasExpansion}TestGenerated$CommonSpecific*'` → **BUILD SUCCESSFUL / 0 failed**（含新 1.0.5 抑制语料；首轮该语料差异仅剩 CLASSIFIER_REDECLARATION 一处，证实门禁后 1.0.5 下零 CJMP 诊断）。
+  - 全量门禁：`:cfir:analysis-tests:test --continue` → **34 failed，与改动前基线逐项一致**（17 个宏用例 × 2 入口；LLT 双套件全绿）——**零回归**。
+- repair principle：门禁的粒度取「该语言表面是否存在」这一事实的粒度（= 整个声明族），而不是「哪些诊断该报」的粒度；前者的证据来自官方语法/解析器，后者在事实缺失时只能靠逐个枚举，恰好是框架扭曲的来源。
+- 批次状态：缺口报告 §4 事项 2 **过渡收口**（版本维度）；事项 1/5/7/9/8 维持原有进度；宏失败残余 12 个真缺陷不变。

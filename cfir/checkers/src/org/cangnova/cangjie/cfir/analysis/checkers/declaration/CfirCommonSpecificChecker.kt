@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
 import org.cangnova.cangjie.annotations.supportsBuiltinAnnotationKind
@@ -44,6 +45,10 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass) return
+
+        // common/specific 声明族是官方 v1.1.0 才引入的语言表面（v1.0.x cjc 解析期
+        // 即报 parse_expected_decl，CJMP 语义检查根本不存在），1.0.x 下整族跳过。
+        if (!context.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) return
 
         // 只对 specific 声明执行匹配检查
         if (declaration.status.isSpecific) {

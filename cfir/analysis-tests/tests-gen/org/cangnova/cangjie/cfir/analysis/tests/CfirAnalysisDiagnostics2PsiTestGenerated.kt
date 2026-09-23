@@ -119,6 +119,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         fun testCommonSpecificPairMismatchPlaceholder() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificPairMismatchPlaceholder.cj")
         }
+
+        @TestMetadata("commonSpecificSuppressedLangver105.cj")
+        @Test
+        fun testCommonSpecificSuppressedLangver105() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificSuppressedLangver105.cj")
+        }
     }
 
     @TestMetadata("const-eval")

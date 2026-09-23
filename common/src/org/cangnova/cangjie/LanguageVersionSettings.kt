@@ -199,6 +199,18 @@ enum class LanguageFeature(
         behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
     ),
 
+    /**
+     * `common`/`specific` 跨平台声明族（CJMP 检查器 + `EXPLICITLY_ABSTRACT_*` 等）。
+     *
+     * 官方取证：v1.0.x cjc 对 `common class` 报 `parse_expected_decl`（语法不存在），
+     * v1.1.3 起解析为独立形态并受包级门控（`parse_common_in_non_common_file`）。
+     * 因此该语言表面 1.1.0 起才存在，1.0.x 下不得运行任何 CJMP 语义检查。
+     */
+    CommonSpecificDeclarations(
+        LanguageVersion.CANGJIE_1_1_0,
+        behaviorAfterSinceVersion = LanguageFeatureBehaviorAfterSinceVersion.CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED),
+    ),
+
     /** `features { @NonProduct ... }` package/product metadata introduced in 1.1.0. */
     PackageProductMetadata(
         LanguageVersion.CANGJIE_1_1_0,
