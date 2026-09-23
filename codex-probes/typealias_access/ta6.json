@@ -1,0 +1,283 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' type 'B6' refers to 'internal' type 'H6'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                    "Line": 3,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 3,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 3,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' type 'D6' refers to 'internal' type 'C6'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                    "Line": 9,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 9,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 9,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                    "Line": 3,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 3,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 3,
+                            "Column": 15
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Class-H6' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 3,
+                                    "Column": 18
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 3,
+                                    "Column": 20
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-H6'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 18
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                    "Line": 5,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 5,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 5,
+                            "Column": 15
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Class-H6' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 5,
+                                    "Column": 18
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 5,
+                                    "Column": 20
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-H6'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 18
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                    "Line": 9,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 9,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                            "Line": 9,
+                            "Column": 15
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Class-H6' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 9,
+                                    "Column": 18
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 9,
+                                    "Column": 20
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-H6'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta6.cj",
+                                    "Line": 1,
+                                    "Column": 18
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 5,
+        "PrintedErrors": 5,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

@@ -1,0 +1,212 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' type 'H' refers to 'internal' type 'Hidden3'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                    "Line": 5,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 5,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 5,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' type 'I' refers to 'internal' type 'Hidden3'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                    "Line": 7,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 7,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 7,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                    "Line": 5,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 5,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 5,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Struct-Array<Class-Hidden3>' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 5,
+                                    "Column": 17
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 5,
+                                    "Column": 31
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-Hidden3'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 1,
+                                    "Column": 23
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                    "Line": 7,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 7,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                            "Line": 7,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Tuple<Class-Hidden3, Int64>' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 7,
+                                    "Column": 17
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 7,
+                                    "Column": 33
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-Hidden3'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta3.cj",
+                                    "Line": 1,
+                                    "Column": 23
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 4,
+        "PrintedErrors": 4,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

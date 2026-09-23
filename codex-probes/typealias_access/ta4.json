@@ -1,0 +1,242 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_undeclared_type_name",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared type name 'Unknown9'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                    "Line": 11,
+                    "Column": 17
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 11,
+                            "Column": 17
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 11,
+                            "Column": 18
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' type 'L' refers to 'internal' type 'Hidden4'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                    "Line": 5,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 5,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 5,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_typealias_external_refer_internal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'internal' type 'K' refers to 'private' type 'P4'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                    "Line": 7,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 7,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 7,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'public' declaration uses 'internal' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                    "Line": 5,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 5,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 5,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Tuple<Class-Hidden4, Class-Hidden4>' contains 'internal' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 5,
+                                    "Column": 17
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 5,
+                                    "Column": 35
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'internal' type is 'Class-Hidden4'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 1,
+                                    "Column": 16
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 1,
+                                    "Column": 23
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_accessibility",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'internal' declaration uses 'private' types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                    "Line": 7,
+                    "Column": 6
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 7,
+                            "Column": 6
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                            "Line": 7,
+                            "Column": 7
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "type 'Class-P4' contains 'private' type",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 7,
+                                    "Column": 10
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 7,
+                                    "Column": 12
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "the 'private' type is 'Class-P4'",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 3,
+                                    "Column": 15
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta4.cj",
+                                    "Line": 3,
+                                    "Column": 17
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 5,
+        "PrintedErrors": 5,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

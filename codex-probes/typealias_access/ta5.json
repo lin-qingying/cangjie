@@ -1,0 +1,47 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "typealias_unused_type_parameters",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "sema",
+                "Message": "type arg(s) Generics-T are not used",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta5.cj",
+                    "Line": 1,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta5.cj",
+                            "Line": 1,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\typealias_access\\ta5.cj",
+                            "Line": 1,
+                            "Column": 2
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 1,
+        "PrintedWarnings": 1
+    }
+}

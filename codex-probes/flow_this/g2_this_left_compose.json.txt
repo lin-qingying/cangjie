@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_flow_expressions_use_this_or_super",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'this' is not allowed to be used in flow expressions",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\g2_this_left_compose.cj",
+                    "Line": 4,
+                    "Column": 9
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\g2_this_left_compose.cj",
+                            "Line": 4,
+                            "Column": 9
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_this\\g2_this_left_compose.cj",
+                            "Line": 4,
+                            "Column": 10
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

@@ -1,0 +1,2 @@
+Cangjie Compiler: 1.0.5 (cjnative)
+Target: x86_64-w64-mingw32
