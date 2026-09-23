@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferGenericFunctionTypePa
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
@@ -161,7 +162,11 @@ class CfirCallCompletionResultsWriterTransformer(
             ConeErrorType(
                 when (declaration) {
                     is CfirTypeParameter -> ConeTypeParameterInQualifiedAccess(declaration.symbol)
-                    else -> ConeSimpleDiagnostic("Callee reference to candidate without return type: ${declaration.render()}")
+                    // 官方口径（cjc 1.0.5 探针）：receiver 类型名未声明等根错误已另行报告时，
+                    // 该成员访问报 undeclared identifier（UNRESOLVED_REFERENCE），而非
+                    // "called object is not a function or constructor"——后者仅适用于
+                    // 类型别名等真实不可调用对象的调用（call_err_alias 场景）。
+                    else -> ConeUnresolvedNameError(calleeReference.name)
                 }
             )
         }

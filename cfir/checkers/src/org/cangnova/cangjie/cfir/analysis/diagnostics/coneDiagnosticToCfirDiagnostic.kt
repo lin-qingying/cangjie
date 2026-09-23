@@ -2386,7 +2386,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
     return when (this) {
         is ConeFunctionExpectedError,
         is ConeFunctionCallExpectedError,
-        -> CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
+        -> {
+            CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
+        }
 
         is ConeCannotInferGenericFunctionTypeParameterType ->
             CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
@@ -2757,9 +2759,13 @@ private fun mapSimpleDiagnosticByReason(
             reason == "No expected type" ->
             CfirErrors.UNABLE_TO_INFER_EXPR.on(diagnosticSource, session)
 
-        reason.startsWith("Callee reference to candidate without return type:") ||
-            reason == "non-name reference" ->
+        // "Callee reference to candidate without return type" 已在
+        // CfirCallCompletionResultsWriterTransformer 源头改为 ConeUnresolvedNameError
+        // （官方口径：成员访问报 undeclared identifier；INVALID_CALLED_OBJECT 仅保留
+        // 给类型别名等真实不可调用对象，见 call_err_alias），经 mapConeUnresolvedNameError 映射。
+        reason == "non-name reference" -> {
             CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
+        }
 
         else -> null
     }
