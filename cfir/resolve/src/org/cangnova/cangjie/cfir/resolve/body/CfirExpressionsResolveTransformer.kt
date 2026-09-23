@@ -4915,21 +4915,41 @@ open class CfirExpressionsResolveTransformer(
             )
             return binaryOp
         }
-        if (binaryOp.kind == CfirBinaryOpKind.COMPOSITION) {
-            // 官方 ChkFlowExpr 先独立综合左侧，只给直接右操作数后续函数类型上下文。
-            // 两侧都必须检查；有根错误时保留原表达式树，不创建 composition 合成调用。
-            binaryOp.transformLeft(transformer, ResolutionMode.ContextIndependent)
-            val rightMode = if (binaryOp.right.isDirectFlowFunctionReference()) {
-                ResolutionMode.ContextDependent.ForCallableReference
-            } else {
-                ResolutionMode.ContextIndependent
+        // 官方 `ChkFlowExpr` 在解糖**之前**独立综合两侧操作数（`BinaryExpr.cpp:1021-1022`），
+        // `DiagnoseForBinaryExpr` 渲染的正是这一阶段得到的类型。两个操作数都必须检查；
+        // 直接函数引用一律按 callable reference 综合（官方 `isInFlowExpr` 语境的对位）。
+        // 有根错误时保留原表达式树，不创建解糖调用。
+        when (binaryOp.kind) {
+            CfirBinaryOpKind.COMPOSITION -> {
+                binaryOp.transformLeft(transformer, ResolutionMode.ContextIndependent)
+                val rightMode = if (binaryOp.right.isDirectFlowFunctionReference()) {
+                    ResolutionMode.ContextDependent.ForCallableReference
+                } else {
+                    ResolutionMode.ContextIndependent
+                }
+                binaryOp.transformRight(transformer, rightMode)
+                // 有根错误时保留原表达式树，不创建 composition 合成调用。
+                binaryOp.flowOperandRootErrorOrNull(delegatedType = null)?.let { errorType ->
+                    binaryOp.replaceConeTypeOrNull(errorType)
+                    return binaryOp
+                }
             }
-            binaryOp.transformRight(transformer, rightMode)
-            binaryOp.flowOperandRootErrorOrNull(delegatedType = null)?.let { errorType ->
-                binaryOp.replaceConeTypeOrNull(errorType)
-                return binaryOp
+
+            else -> {
+                // `|>` 的右操作数随后以**引用副本**充当解糖调用的 callee，原节点不会再被综合，
+                // 因此其类型只能在这里取。只综合直接函数引用（与 `~>` 同一模式）；调用表达式
+                // 与 lambda 形态留给解糖调用自然综合——提前综合会破坏其参数与泛型实参推断
+                // （`|> map {x => …}`、`|> any {x => …}` 会报出官方不存在的诊断，
+                // `x |> …` 一类以未定型 lambda 形参作左操作数时还会触发内部异常）。
+                if (binaryOp.right.isDirectFlowFunctionReference()) {
+                    binaryOp.transformRight(transformer, ResolutionMode.ContextDependent.ForCallableReference)
+                }
             }
         }
+        // 解糖前快照左操作数类型：解糖调用失败会把实参写成错误类型，而操作符诊断渲染的是
+        // 综合阶段的类型。`|>` 的左操作数此刻尚未综合（它由解糖调用自身综合），取到空值时
+        // 由 checker 回退到节点上的实际类型。
+        val leftOperandType = binaryOp.left.coneTypeOrNull
         val desugaredCall = when (binaryOp.kind) {
             CfirBinaryOpKind.PIPELINE -> buildPipelineCall(binaryOp)
             CfirBinaryOpKind.COMPOSITION -> buildCompositionCall(binaryOp)
@@ -4942,11 +4962,32 @@ open class CfirExpressionsResolveTransformer(
             CallResolutionMode.REGULAR,
         )
         val resultType = resolvedCall.coneTypeOrNull
-        val flowResultType = binaryOp.flowOperandRootErrorOrNull(resultType)
-            ?: resultType.takeUnless { resolvedCall.hasReportedCallDiagnostic() }
-            ?: ConeErrorType(ConeUnreportedDuplicateDiagnostic(ConeSimpleDiagnostic("invalid flow expression")))
-        resolvedCall.replaceConeTypeOrNull(flowResultType)
-        binaryOp.replaceConeTypeOrNull(flowResultType)
+        binaryOp.flowOperandRootErrorOrNull(resultType)?.let { errorType ->
+            // 操作数内部已有根错误（名字解析失败等）：诊断归属于操作数自身，flow 只做
+            // 错误类型传播，不派生操作符诊断。官方同一分支(`BinaryExpr.cpp:1022-1032`)。
+            resolvedCall.replaceConeTypeOrNull(errorType)
+            binaryOp.replaceConeTypeOrNull(errorType)
+            return resolvedCall
+        }
+        // 官方 `ChkFlowExpr` 第二阶段(`BinaryExpr.cpp:1057-1070`)：解糖调用失败时丢弃调用
+        // 自身的全部诊断，`RecoverToBinaryExpr` 恢复成二元节点后在操作符上报
+        // `sema_invalid_binary_expr`。这里同样**整棵丢弃合成调用**并回退到二元节点：
+        // 合成调用的 `operator ()` 包装会把「类型可解析但操作符无重载」重述成操作数上的
+        // UNRESOLVED_REFERENCE / NO_MATCHING_OPERATOR_INVOKE / ARGUMENT_TYPE_MISMATCH，
+        // 这些都是官方不存在的诊断。诊断由 `CfirFlowBinaryOpChecker` 消费标记后报告。
+        if (resolvedCall.hasReportedCallDiagnostic() || resultType == null || resultType.containsErrorType()) {
+            binaryOp.replaceConeTypeOrNull(
+                ConeErrorType(
+                    ConeInvalidFlowBinaryExpr(
+                        reason = "flow expression desugared call failed",
+                        leftOperandType = leftOperandType,
+                        rightOperandType = binaryOp.right.coneTypeOrNull,
+                    ),
+                ),
+            )
+            return binaryOp
+        }
+        binaryOp.replaceConeTypeOrNull(resultType)
         return resolvedCall
     }
 
@@ -5078,7 +5119,7 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
-    /** 判断解糖后的 flow 调用是否已经携带调用层诊断。 */
+    /** 判断解糖后的 flow 调用是否已经携带调用层诊断（官方 `!ChkCallExpr(...)` 的一半）。 */
     private fun CfirExpression.hasReportedCallDiagnostic(): Boolean =
         ((this as? CfirResolvable)?.calleeReference as? CfirDiagnosticHolder)?.diagnostic != null
 

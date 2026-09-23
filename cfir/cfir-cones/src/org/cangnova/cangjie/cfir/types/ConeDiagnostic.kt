@@ -126,3 +126,34 @@ enum class FlowInvalidOperandKeyword(
     /** 裸 `super`。 */
     SUPER("super"),
 }
+
+/**
+ * flow 表达式的解糖调用失败。
+ *
+ * 官方 `ChkFlowExpr` 分两阶段：先综合操作数，再解糖成普通调用并检查。第二阶段的调用检查
+ * 在抑制器内进行（`external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:1057-1070`）：
+ * 调用失败时**丢弃调用自身的全部诊断**，用 `RecoverToBinaryExpr` 把表达式恢复成二元节点，
+ * 再经 `DiagnoseForBinaryExpr` 在操作符上报 `sema_invalid_binary_expr`。
+ *
+ * 本仓合成调用失败时若被留在树里，其内部的 `operator ()` 包装会把「两侧类型可解析但操作符
+ * 无重载」这一事实重述成操作数上的 `UNRESOLVED_REFERENCE` / `NO_MATCHING_OPERATOR_INVOKE` /
+ * `ARGUMENT_TYPE_MISMATCH`，这些都是官方不存在的诊断（例如 `x ~> g` 中 `x: Int64`、
+ * `g: (Int64) -> Int64`）。因此 resolve 失败时同样**丢弃整棵合成调用**，把本标记挂在二元
+ * 节点上并由 checker 在操作符上报二元运算符诊断——合成的 `this |> g` 实参失配也就不会被
+ * 单独报出（官方实测只报 `sema_invalid_binary_expr`）。
+ *
+ * 操作数自身的名字解析失败不走本路径：官方在综合操作数阶段就已把诊断报出（`~>` 直接返回
+ * 失败、`|>` 清空操作数继续），实测 `missing |> f` / `1 |> undeclared` 只报
+ * `sema_undeclared_identifier`。因此本标记只在**两侧操作数均无根错误**时产生。
+ *
+ * @property reason 解糖调用失败的原因，仅用于标记自述；最终文案由二元运算符诊断渲染。
+ * @property leftOperandType 解糖**前**综合得到的左操作数类型。官方 `DiagnoseForBinaryExpr`
+ *   渲染的是综合阶段的类型；`|>` 的左操作数随后会作为解糖调用的实参被重新检查，失败时可能
+ *   被写成错误类型，因此必须在解糖前取快照。
+ * @property rightOperandType 解糖前综合得到的右操作数类型。
+ */
+class ConeInvalidFlowBinaryExpr(
+    override val reason: String,
+    val leftOperandType: ConeCangJieType?,
+    val rightOperandType: ConeCangJieType?,
+) : ConeDiagnostic

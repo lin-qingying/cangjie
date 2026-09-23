@@ -586,6 +586,12 @@ class CfirAnalysisDiagnosticsPsiTestGenerated : AbstractCfirPsiDiagnosticTest() 
             runTest("cfir/analysis-tests/testData/diagnostics/general/extendInterfaceParentAndMemberInFile.cj")
         }
 
+        @TestMetadata("flowOperandFailure.cj")
+        @Test
+        fun testFlowOperandFailure() {
+            runTest("cfir/analysis-tests/testData/diagnostics/general/flowOperandFailure.cj")
+        }
+
         @TestMetadata("flowThisProbe.cj")
         @Test
         fun testFlowThisProbe() {

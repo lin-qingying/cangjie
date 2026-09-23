@@ -131,7 +131,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val binaryOpCheckers: Set<CfirBinaryOpChecker>
         get() = setOf(
             CfirCoalescingTypeMismatchChecker,
-            CfirFlowInvalidFunctionOperandChecker,
+            CfirFlowBinaryOpChecker,
         )
 
     /** 对限定访问、类型实参、可见性相关语义和特殊成员访问执行的 checker 集合。 */
