@@ -8,7 +8,7 @@ open class WidgetMirror {
     }
 
     @ObjCInit
-    public static func buildBad(): Int64 {
+    public static func buildBad(): <!TYPE_MISMATCH!>Int64<!> {
         return 0
     }
 }

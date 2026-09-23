@@ -12,6 +12,6 @@ class NativeImpl <: NativeMirror {
 }
 
 @ObjCImpl
-class MissingMirrorInheritance {
+class <!OBJC_IMPL_MUST_HAVE_OBJC_MIRROR_SUPER_CLASS, OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR!>MissingMirrorInheritance<!> {
     public func ok(value: Int64): Unit {}
 }
