@@ -274,6 +274,9 @@ object CfirErrors : CjDiagnosticsContainer() {
     val CANNOT_OVERRIDE_INVISIBLE_MEMBER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CANNOT_OVERRIDE_INVISIBLE_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.OVERRIDE_MODIFIER, CjNamedDeclaration::class, getRendererFactory())
     val ABSTRACT_MEMBER_NOT_IMPLEMENTED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ABSTRACT_MEMBER_NOT_IMPLEMENTED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjNamedDeclaration::class, getRendererFactory())
 
+    // FlowExpressions
+    val FLOW_EXPRESSIONS_USE_THIS_OR_SUPER: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_FLOW_EXPRESSIONS_USE_THIS_OR_SUPER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
     // ConstEval
     val LITERAL_NUMERIC_OVERFLOW: CjDiagnosticFactory2<String, ConeCangJieType> = CjDiagnosticFactory2("CFIR_LITERAL_NUMERIC_OVERFLOW", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val TYPECAST_OVERFLOW: CjDiagnosticFactory2<ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory2("CFIR_TYPECAST_OVERFLOW", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

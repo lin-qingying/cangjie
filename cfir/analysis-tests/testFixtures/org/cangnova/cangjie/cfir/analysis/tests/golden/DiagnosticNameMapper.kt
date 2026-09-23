@@ -218,6 +218,9 @@ object DiagnosticNameMapper {
         // ── Operator ──
         "INVALID_BINARY_OPERATOR" to "sema_invalid_binary_expr",
 
+        // ── FlowExpressions ──
+        "FLOW_EXPRESSIONS_USE_THIS_OR_SUPER" to "sema_flow_expressions_use_this_or_super",
+
         // ── Inout ──
         "INOUT_MUST_BE_VAR_VARIABLE" to "sema_inout_must_be_var_variable",
         "DUPLICATE_INOUT_ARGUMENT" to "sema_duplicate_inout_argument",
