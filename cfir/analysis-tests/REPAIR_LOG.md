@@ -10084,3 +10084,33 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - verification：定向切片 `--tests '*FlowOperandFailure*' '*FlowThis*' '*LambdaParam05*' '*LambdaParamInfer04*' '*GenericSubstPerf*' '*CallInference04*' '*BoxExport*' '*FlowExpr*' '*ErrMsgs*'` → **160 completed / 7 failed**（即上述回归；回退后不再复跑，因工作树已字节级回到已验证基线的对应状态）。
 - **下一步的正确形态（结论性）**：闭合该缺口需要的不是"新的 `ResolutionMode`"，而是**对位官方 `PData::Reset` 的节点级投机解析**——在解析**之前**把节点状态冻结或克隆，使第二次解析从干净状态起步（而非解析之后再回滚）。这是一项独立基建，且应该**只服务于 flow 操作数**这一处需求，避免泛化到全局 transform。
 - 批次状态：§1.1C 35 项不变；延后 1 + 已知缺口 1（**闭合路径已收敛为"节点级投机解析"**）+ 未处理 1。
+
+## 2026-09-23：P3 批次 9——flow 实参失配缺口**闭合**（官方 `DiagnoseForBinaryExpr` 判据；零回归）
+
+- problem type: 批次 6/7/8 登记的已知缺口 `this |> g`（flow 实参失配类）。批次 8 的"阶段 1 预综合 + 事后回滚"路线失败，并给出结论"需要节点级投机解析基建"。本批**否证该结论的必要性**：正确对位点是官方 `DiagnoseForBinaryExpr` 的**判据**，而不是阶段 1 的综合基建。
+- official evidence（本轮实测 + 源码取证）：
+  - **判据不在时间，而在"操作数自身综合后的类型是否成立"**。`external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:785-844` 的 `DiagnoseForBinaryExpr`：
+    - `:792` 枢轴类型已正确即返回；
+    - `:795-811` 左操作数：未定型则**在抑制器内**补一次综合（`:796-798`），仍不正确则在抑制器**之外**重新综合（`:805`）——注释自述"the `Synthesize` should have diagnosed errors in `leftExpr`"——随后综合右操作数取诊断并 `return`，**不报** `invalid_binary_expr`；
+    - `:813-826` 右侧同构；
+    - `:838-843` **只有两侧操作数都正确**时才 `DiagnoseForBinaryExpr` 落到 `DiagInvalidBinaryExpr`。
+    - ⇒ 操作数自身综合失败 ⇒ 报操作数自身诊断；操作数自身正确而调用实参映射失败 ⇒ 报操作符诊断。
+  - `DiagInvalidBinaryExpr`（`src/Sema/TypeCheckExpr/Diags.cpp:24-38`）：锚 `be.operatorPos`，渲染 `leftExpr->ty` / `rightExpr->ty` 两个实参。
+  - `ChkFlowExpr`（`BinaryExpr.cpp:1008-1075`）阶段 1 失败时对 PIPELINE 执行 `leftExpr.Clear(); rightExpr.Clear(); PData::Reset(constraints)`（`:1021-1031`）后**继续解糖**；`PData::Reset` 重置的是**类型变量约束库**（`src/Sema/Utils.cpp:566-574`），**不是** AST 节点；对位 AST 的原语是 `Node::Clear()`（`include/cangjie/AST/Node.h:243-250`：`ty = Ty::GetInitialTy()` 并关闭 `IS_CHECK_VISITED`）。⇒ 批次 8 "对位 `PData::Reset` 的节点级投机解析"这一表述**所指认的原语错了**。
+  - 本轮 cjc 双 SDK 实测（新增探针 `codex-probes/flow_operand_failure/p25_fixture_this_pipe_mismatch.cj`）：1.0.5 与 1.0.0 **逐项一致** —— `sema_invalid_binary_expr` / `invalid binary operator '|>' on type 'This' and '(Int64) -> Int64'` / 锚 `|>`（Line 7, Column 14-16）。
+- root cause（CFIR 侧）：`|>` 的左操作数从不被独立综合（`CfirExpressionsResolveTransformer.kt:4938-4947` 只预综合右操作数），而 `buildPipelineCall`（`:5020-5033`）把 `binaryOp.left` **按同一对象**塞进解糖调用的实参列表；调用的实参检查把失配的错误类型写回该节点。原判定顺序先跑 `flowOperandRootErrorOrNull`（`:4965-4971`），于是把**调用侧**写回的错误当成了**操作数自身**的根错误并提前返回，操作符诊断分支（`:4978-4989`）永不可达。
+- repair（1 文件 +57/-15，`cfir/resolve/src/.../body/CfirExpressionsResolveTransformer.kt`）：
+  - 判定顺序对齐官方：先判 `callFailed`（调用层诊断 / 返回类型为空或含错误），**在失败分支内**取操作数**自身**的综合结果作为归属类型；两侧自身都成立才落 `ConeInvalidFlowBinaryExpr`，否则维持操作数自身错误传播。成功分支的既有语义**逐字保留**（不做任何前置综合，故批次 8 记录的 `|> map {x => …}` 类前置综合回归在结构上不可能发生）。
+  - 新增 `CfirExpression.flowOperandOwnErrorOrNull()`：已有正确类型时保持不动（对位官方 `IsChecked` 缓存命中原语 `TypeChecker.cpp:837-846`；本仓同类先例是 `transformOptionalExpression` 的 `hasResolvedType` 短路），仅在为空或含错误时以无期望类型重新综合一次，再取其根错误。
+  - fixture `cfir/analysis-tests/testData/diagnostics/general/flowOperandFailure.cj`：`this |> g` 由"已知缺口（不报）"改为标注 `<!INVALID_BINARY_OPERATOR!>|><!>`，并重写顶部与行内注释中的缺口说明。
+- verification commands and outcome：
+  - 仅编译：`:cfir:resolve:compileKotlin` → BUILD SUCCESSFUL。
+  - 定向切片（FlowOperandFailure / FlowThis / FlowExpr / Composition / LambdaParam05 / LambdaParamInfer04 / GenericSubstPerf / CallInference04 / BoxExport / ErrMsgs / TypeInfer）：
+    - 改代码后、未改 fixture 前 → **239 completed / 1 failed**，唯一失败即 `CfirFlowOperandFailurePsiTest::testFlowOperandFailure`，差异**只有一行**：`this |> g` → `this <!INVALID_BINARY_OPERATOR!>|><!> g`（即目标诊断如预期出现，且无任何其它差异）；
+    - 同步 fixture 后 → **BUILD SUCCESSFUL / 0 failed**（239 通过）。对照批次 8 同一切片为 **160 / 7**（6 处回归）——本批**零回归**。
+  - 全量门禁：`:cfir:analysis-tests:test --continue` → **8699 tests completed / 34 failed / 314 skipped**，与改动前基线**逐项相同**；34 个失败仍是那 17 个宏用例 × 2 入口，**无一与 flow 相关**。
+- repair principle（本批三条，均属方法论）：
+  - ①**"需要新基建"的结论在采信前必须回到官方判据本身**。批次 7/8 把"官方靠投机综合避免污染"当成前提，于是把问题定性为"缺基建"；实际官方真正依赖的是**失败后重新取操作数自身类型**这一判据（`DiagnoseForBinaryExpr`），污染本身**不需要被避免**，只需要**不被采信**。⇒ 定性错误会把一个单点判定问题放大成基建项目。
+  - ②**判定顺序即语义**。同一组信号（`callFailed` 与"操作数含错误"）按不同顺序检查会得到相反结论；官方源码里 `:792 → :795-826 → :838-843` 的顺序本身就是判据的一部分，不能只搬条件不搬顺序。
+  - ③**只改失败分支可把回归面压缩到近乎为零**。成功路径逐字不动，则一切"前置综合会破坏推断"的既有风险（本仓 `:4938-4947` 注释已明示）在结构上无法被触发——这是本批相对批次 8 的 6 处回归的关键差别。
+- 批次状态：§1.1C 35 项不变；延后 1（`sema_tuple_element_cmp_not_bool`）+ **已知缺口 1 项已闭合（flow 实参失配类）** + 未处理 1（`sema_expand_macro_redefinition`）。
