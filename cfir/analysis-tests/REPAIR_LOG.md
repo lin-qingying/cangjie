@@ -10192,3 +10192,11 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - sameProject 宏包 golden：宏包引用解析修复（a46e230a9）后 resolved reference 按 CfirReferenceRenderer 既有规则带 `-> CfirXxxSymbol(...)` 后缀，golden 过期，按实际更新。
 - Interop 占位 3 fixture：ObjCImpl 缺 ObjCMirror 父类（含占位期误标"合法"的 GoodObjCImpl）、方法缺 ForeignName、JavaMirror 子类未标注、ObjCInit 返回类型边界。官方取证限制：harmonyos cjc 对 @ObjCMirror 方法展开前即拦"cannot have body"，返回类型层不可观测；开源镜像无 OBJC 诊断。诊断名均为官方 v1.0.0 词汇表真实条目。
 - verification: 全量 8714 tests / **8 failed**（4 unique ×2：MultiFilesPrivate01、ErrQuoteUnary、ErrBinary00、typeaslias），基线 34→28→8。
+
+## 2026-09-23（续 3）：MultiFilesPrivate01 框架修复——classifier 可见性门控（`4193a130c`）
+
+- 根因：`TowerLevelHandler.processConstructorsByName` 对 `CfirTypeAliasSymbol` 直接展开 `getTypealiasConstructorScope`，**无 accessibility 检查**。同包跨文件 private typealias `example_XX`：类型位置正确报 UNDECLARED_TYPE_NAME（`ConeUnresolvedTypeQualifierError`），值/调用位置却给出 OK 构造器候选 → `ConeFunctionCallExpectedError` → 误报 INVALID_CALLED_OBJECT（官方 cjc 1.0.5 口径 undeclared identifier）。
+- 归因方法：System.err 探针（checkers 映射两分支）确认命中 `ConeFunctionCallExpectedError(name=example_XX, candidates=[OK: CfirConstructorSymbol])`；两处源码先验假设（writer transformer / expectedCallKind receiverType）均未命中，探针前不猜。
+- 修法（框架级）：① TowerLevelHandler classifier 展开前 `checkClassLike` 门控，不可发现静默跳过；② CfirCallResolver expectedCallKind 分支 receiverType 为错误类型时改 `ConeUnreportedDuplicateDiagnostic` 抑制（与 declarationErrorType 分支对称）；③ writer transformer "Callee reference..." 改 `ConeUnresolvedNameError`；④ 映射层删死串分支。
+- verification：MultiFilesPrivate01 单测转绿；Lookup+Call 六入口切片全绿。全量回归被并行会话挤死（队列 94 条、3 个全量并发）未跑完；定向复跑中 DeclarationStatus 2 失败（PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS）经 fixture 归属（staticCannotBeOpenAbstractOverride.cj 在并行会话未提交清单中）确认属并行会话解析诊断工作，非本修复回归。
+- 剩余 unique：ErrQuoteUnary（quote 内容类型检查漏报）、ErrBinary00（`| return` 形态 let 绑定/二元口径）、typeaslias。
