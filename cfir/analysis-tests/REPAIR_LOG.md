@@ -9995,3 +9995,29 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   - 全量：`:cfir:analysis-tests:test --continue` → **8695 tests completed, 34 failed, 313 skipped**；34 = 17 unique × 2 全在两个宏入口，与批次 4 基线逐项相同，**零新增**。
 - **登记为独立待办（本批未修，属相邻缺陷）**：composition 的**按值**左操作数在解糖调用的参数字段被重解析为 `UNRESOLVED_REFERENCE`。证据（修复前探针原样）：`x ~> f`（`x` 为 Int64 字段、`f` 为 `(Int64)->Int64` 成员函数）→ `UNRESOLVED_REFERENCE(x)`，官方为 `sema_invalid_binary_expr`；`x ~> this` 中 `x` 的假 UNRESOLVED 同源。机制：`asFlowFunctionValue` 对非函数值左操作数包装成 `x.operator()` 命名访问后作为 `composition(f,g)` 的实参，参数字段重新解析该引用。作用域在 `CfirCallResolver` 的组合调用候选/参数映射路径，与本批判据无关，故未纳入。`this |> f`（合法形态）的 CFIR 实报**未探针确认**，一并留待该待办处理时实测。
 - 批次状态：§1.1C 35 项——本批消化最后一个延后项，**延后收敛为 1**（`sema_tuple_element_cmp_not_bool`，逐元素 operator 解析基建），**剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
+
+## 2026-09-23：P3 批次 6——flow 解糖调用失败的诊断归属（批次 5 登记的独立待办）
+
+- problem type: 批次 5 登记的相邻缺陷——`~>` / `|>` 解糖调用失败时 CFIR 泄漏**合成调用内部**的诊断，且不报官方要求的操作符诊断。
+- official evidence（镜像 `Sema/TypeCheckExpr/BinaryExpr.cpp:1008-1080` + cjc 1.0.5/1.0.0 双版本实测，探针 `codex-probes/flow_operand_failure/`）：
+  - **阶段 1**（:1013-1049）：`rightExpr.isInFlowExpr = true`；在 `DiagSuppressor` 内独立综合两侧操作数。`~>` 有根错误即 `be.ty = InvalidTy; ds.ReportDiag()` 返回失败（操作数诊断保留）；`|>` 清空两侧并 `PData::Reset` 后继续。
+  - **阶段 2**（:1053-1070）：解糖调用的检查也在抑制器内；失败时 `ds.GetSuppressedDiag()` **丢弃调用自身的全部诊断**，`RecoverToBinaryExpr(be)` 恢复成二元节点，`DiagnoseForBinaryExpr(ctx, be)` 在**操作符**上报 `sema_invalid_binary_expr`（本仓 `INVALID_BINARY_OPERATOR`，锚操作符、渲染两侧操作数类型）。
+  - 实测矩阵：`x ~> g`（x:Int64 字段、g:(Int64)->Int64）→ 只报 `invalid binary operator '~>' on type 'Int64' and '(Int64) -> Int64'`；`1 |> x` → `'Int64' and 'Int64'`；`g |> 1` → `'(Int64) -> Int64' and 'Int64'`；`x ~> x` → `'Int64' and 'Int64'`；**`this |> g`（g 取 Int64）→ `'This' and '(Int64) -> Int64'`，即实参失配也被丢弃、不单独报**；正控 `g ~> g` / `1 |> g` 零诊断。
+  - **边界（本轮新取证）**：操作数自身的名字解析失败**不走**阶段 2。实测 `missing |> f`、`undeclared ~> f`、`1 |> undeclared`、`undeclared |> f` 各只报 `sema_undeclared_identifier`，无 `invalid_binary_expr`；`(x ~> g) ~> g` 只报**内层**；`(1 |> g) ~> g` 只报**外层**；`func k(): Bool { 1 |> g }` 报整表达式的 `sema_mismatched_types`；`0 |> s.ov`（重载成员）**零诊断**。
+- CFIR 修复前实测：`x ~> g` → `UNRESOLVED_REFERENCE(x)`（假诊断）；`1 |> x` → `NO_MATCHING_OPERATOR_INVOKE(x)`；`this |> g` → `ARGUMENT_TYPE_MISMATCH(this)`。机制：`asFlowFunctionValue` 把非函数左操作数包成 `x.operator()` 命名值访问，调用解析把诊断写在**合成引用**上，锚点取操作数 source。
+- CFIR owner files changed：
+  - `ConeInvalidFlowBinaryExpr(reason, leftOperandType, rightOperandType)`（cfir-cones `ConeDiagnostic.kt`）。
+  - `transformFlowExpression`（resolve）：`|>` 也先综合操作数——**只综合直接函数引用**（与 `~>` 同一 `ForCallableReference` 模式，官方 `isInFlowExpr` 语境的对位）；解糖调用失败（callee 有诊断 **或** 类型为错误类型）时**整棵丢弃合成调用**、返回携带标记的二元节点。
+  - `CfirFlowBinaryOpChecker`（由 `CfirFlowInvalidFunctionOperandChecker` 改名，统一承担 flow 二元节点的失败诊断）；`CommonExpressionCheckers` 注册同步。
+- repair principle（本批四条）：
+  - ①**合成节点必须整棵丢弃，不能"抑制其中某条诊断"**。官方用 `RecoverToBinaryExpr` 把表达式恢复成二元节点；保留合成调用则操作数上的假诊断（`UNRESOLVED_REFERENCE` / `NO_MATCHING_OPERATOR_INVOKE` / `ARGUMENT_TYPE_MISMATCH`）继续泄漏，且没有任何抑制点能区分"合成包装写出的错误"与"操作数自身的真实错误"。
+  - ②**"调用失败"在 CFIR 是两处来源**：callee 引用上的诊断 **或** 节点类型为错误类型。只用后者会漏掉"候选解析失败但类型未置错"的一类（`1 |> x`）。这与既有 `hasReportedCallDiagnostic` 的判据合并为析取。
+  - ③**预综合必须遵守官方的语境，且不能超出必要范围**。对 `|>` 右侧的**非直接函数引用**（`|> map {x => …}`、`|> any {x => …}`）做无上下文预综合会破坏 lambda 参数与泛型实参推断，实测产生 5 个新失败（`Lambda/LambdaParamInfer04`、`TypeInfer/LambdaParam05`、`Generics/GenericSubstPerf`、`Call/CallInference04`、`Box/BoxExport` 各 ×2）；对 `|>` **左**操作数的预综合还会在"左操作数是未定型 lambda 形参"时抛内部异常（`CangJieIllegalArgumentExceptionWithAttachments`）。裁定：只对直接函数引用施加 `ForCallableReference` 语境，其余形态一律留给解糖调用自然综合。
+  - ④**官方诊断名/文案不是实现范围的判据**（沿用批次 5）：`sema_invalid_binary_expr` 的触发面由 `ChkCallExpr` 失败决定，包含实参失配（`this |> g`），不能按"操作符无重载"的字面理解实现。
+- fixtures covered：新增 `testData/diagnostics/general/flowOperandFailure.cj`（4 个已对齐形态 + 2 个正控 + 操作数级名字失败边界 + `this |> g` 合法形态正控；标记逐例经 cjc 双版本实测）+ 手写 `CfirFlowOperandFailurePsiTest`；经 4 个入口验证（手写 PSI + 3 个生成入口）。
+- verification command(s) and outcome：
+  - 定向：`--tests '*CfirFlowOperandFailurePsiTest*' --tests '*CfirFlowThisPsiTest*'` → 首轮暴露两处偏差（`|>` 操作数未综合、失败判据漏 callee 诊断）；
+  - 定向回归：`--tests '*LambdaParam05*' '*LambdaParamInfer04*' '*GenericSubstPerf*' '*CallInference04*' '*BoxExport*' '*FlowExpr*' '*ErrMsgs*' '*TypeInfer*' '*Composition*'` → **239 completed / 1 failed**（仅本 fixture 的已知缺口形态）；
+  - 全量：`:cfir:analysis-tests:test --continue` → **8699 tests completed, 34 failed, 314 skipped**；34 = 17 unique × 2 全在两个宏入口，与批次 4/5 基线逐项相同，**零新增**（+4 = 新 fixture 的 4 个入口）。
+- **已知缺口（登记为后续批次，本批未闭合）1 项**：`this |> g`（实参失配类）。cjc 报操作符 `sema_invalid_binary_expr`，CFIR 当前**不报**（同时也不会再报官方不存在的 `ARGUMENT_TYPE_MISMATCH`，即该形态从"多报假诊断"变为"少报真诊断"）。根因：解糖调用的实参检查把失配的错误类型**写回左操作数**（实参节点与操作数节点是同一对象），操作数根错误检查据此提前返回；渲染正确类型也要求"解糖前的左操作数类型快照"，而左操作数预综合对 lambda 形参不可重入（见 ③）。官方靠投机综合（`DiagSuppressor` + `PData::Reset`，:1021-1027）避免污染——闭合需要与本仓对位的投机综合/回滚基建，属独立批次。
+- 批次状态：§1.1C 35 项不变（本批属相邻缺陷收敛）；延后 1（`sema_tuple_element_cmp_not_bool`）+ 新增已知缺口 1（flow 实参失配类）+ **剩余 1 项未处理**：`sema_expand_macro_redefinition`（macro 子系统）。
