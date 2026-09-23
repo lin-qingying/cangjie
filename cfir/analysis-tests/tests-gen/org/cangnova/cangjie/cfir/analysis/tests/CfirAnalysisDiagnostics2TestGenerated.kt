@@ -803,6 +803,34 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
         }
     }
 
+    @TestMetadata("macro")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Macro : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/macro")
+        }
+
+        @TestMetadata("macroRedefinitionAttributePair.cj")
+        @Test
+        fun testMacroRedefinitionAttributePair() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/macro/macroRedefinitionAttributePair.cj")
+        }
+
+        @TestMetadata("macroRedefinitionSameArity.cj")
+        @Test
+        fun testMacroRedefinitionSameArity() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/macro/macroRedefinitionSameArity.cj")
+        }
+
+        @TestMetadata("macroRedefinitionThreeDeclarations.cj")
+        @Test
+        fun testMacroRedefinitionThreeDeclarations() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/macro/macroRedefinitionThreeDeclarations.cj")
+        }
+    }
+
     @TestMetadata("match")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested

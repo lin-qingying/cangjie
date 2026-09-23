@@ -2535,6 +2535,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val macroName: String
     }
 
+    interface ExpandMacroRedefinition : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ExpandMacroRedefinition::class
+        val macroName: String
+    }
+
     interface MacroExpansionFailed : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = MacroExpansionFailed::class
         val macroName: String

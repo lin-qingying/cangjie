@@ -111,6 +111,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirGenericInstantiationChecker,
             CfirFileStaticGlobalInitializationChecker,
             CfirCommonPackageMainChecker,
+            CfirMacroRedefinitionChecker,
             CfirRedefinitionEntryChecker,
         )
 

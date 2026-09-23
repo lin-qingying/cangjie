@@ -1272,6 +1272,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // Macro
         // ================================================================
         map.put(CfirErrors.MACRO_NOT_EXPANDED, "macro ''{0}'' was not expanded", RENDER_STRING)
+        map.put(CfirErrors.EXPAND_MACRO_REDEFINITION, "redefinition of macro ''{0}''", RENDER_STRING)
         map.put(CfirErrors.MACRO_EXPANSION_FAILED, "macro ''{0}'' expansion failed: {1}", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.MACRO_DIAG_REPORT_ERROR, "{0}{1}", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.MACRO_DIAG_REPORT_WARNING, "{0}{1}", RENDER_STRING, RENDER_STRING)

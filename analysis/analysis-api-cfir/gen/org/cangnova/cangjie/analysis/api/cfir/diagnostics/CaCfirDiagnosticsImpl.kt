@@ -3040,6 +3040,12 @@ internal class MacroNotExpandedImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroNotExpanded
 
+internal class ExpandMacroRedefinitionImpl(
+    override val macroName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ExpandMacroRedefinition
+
 internal class MacroExpansionFailedImpl(
     override val macroName: String,
     override val reason: String,

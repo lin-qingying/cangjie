@@ -2351,6 +2351,13 @@ private fun CaDiagnosticConverterBuilder.addConversions96() {
             token,
         )
     }
+    add(CfirErrors.EXPAND_MACRO_REDEFINITION) { cfirDiagnostic ->
+        ExpandMacroRedefinitionImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions97() {
