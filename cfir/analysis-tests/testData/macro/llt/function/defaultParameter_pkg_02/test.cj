@@ -1,7 +1,8 @@
 
 
 
-public import default.g1.*
+
+public import <!UNRESOLVED_IMPORT!>default<!>.g1.*
 
 const var_1731854046694_51: Unit = ()
 const var_1731854046694_91: UInt16 = 62
@@ -45,12 +46,12 @@ public open class Class_1731854046694_118<T0, T1> <: Interface_1731854046694_121
             ((UInt64(UInt64(247)) & 127)..(UInt64(UInt64(145)) & 127) : (Int64(45) | 1))]) {
             case _ => ()
 
-            case caseVar_1731854046694_3078: Range<Int8> =>
+            case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3078: Range<Int8><!> =>
                 var var_1731854046694_3081: Unit = ();
                 var_1731854046694_3081;
                 ()
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 ();
                 var_1731854046694_51
         };
@@ -206,7 +207,7 @@ pSxlz
             ()
         }
     }
-    public open override func func_1731854046694_2275(param_1731854046694_2276: Array<Range<UInt64>>): Int64 { // block id: 4500
+    public open <!NOTHING_TO_OVERRIDE!>override<!> func func_1731854046694_2275(param_1731854046694_2276: Array<Range<UInt64>>): Int64 { // block id: 4500
         Option<Bool>.None;
         if (var_1731854046694_4504) { // block id: 4517
             (Option<Unit>.None ?? ());
@@ -276,7 +277,7 @@ Wl8\"r
 
 main(): Int64 {
     try {
-        var var_1731854046694_22: Range<UInt8> = ((UInt8(UInt8(80)) & 127)..=(UInt8(UInt8(UInt8(UInt8(Int8(-26))))) & 127) : (Int64(-33) |
+        var var_1731854046694_22: Range<UInt8> = ((UInt8(UInt8(80)) & 127)..=(UInt8(UInt8(UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(-26))<!>))) & 127) : (Int64(-33) |
             1));
         match (if (false) {
             ((UInt8(UInt8(38)) & 127)..(UInt8(UInt8(44)) & 127) : (Int64(-63) | 1))
@@ -289,7 +290,7 @@ main(): Int64 {
                 [var_1731854046694_34, var_1731854046694_34, var_1731854046694_34, (), var_1731854046694_34, (), (),
                     var_1731854046694_34, (), ()]
 
-            case _ =>
+            case <!UNREACHABLE_PATTERN!>_<!> =>
                 var_1731854046694_51;
                 let var_1731854046694_55: Bool = false;
                 if (var_1731854046694_55) {
@@ -326,8 +327,8 @@ main(): Int64 {
             Unit, Unit, Array<Unit>, Range<UInt32>, Range<Int64>), UInt8, ((String, Unit, Unit, Array<Unit>, Range<UInt32>, 
             Range<Int64>), Range<UInt64>, Option<Unit>), Array<Range<Int16>>, Range<Int64>, UInt8, Float64) = ((UInt64(49) as Array<Range<Int8>>),
             (Float64(Float64(Float64(114.0))), Float64(16.0), ((Int32(Int32(UInt32(26))) & 127)..=(Int32(Int32(-32)) &
-                    127) : (Int64(81) | 1)), UInt32(Int8(Int8(-80))), UInt8(68)), (###"x1-&koREM!"###, (), (), [(), (),
-                    (), (), (), (), (), (), (), ()], ((UInt32(UInt32(249)) & 127)..(UInt32(UInt32(Int16(-112))) & 127) : (Int64(Int8(-50)) |
+                    127) : (Int64(81) | 1)), <!TYPECAST_OVERFLOW!>UInt32(Int8(Int8(-80)))<!>, UInt8(68)), (###"x1-&koREM!"###, (), (), [(), (),
+                    (), (), (), (), (), (), (), ()], ((UInt32(UInt32(249)) & 127)..(UInt32(<!TYPECAST_OVERFLOW!>UInt32(Int16(-112))<!>) & 127) : (Int64(Int8(-50)) |
                     1)), ((Int64(Int64(44)) & 127)..(Int64(Int64(46)) & 127) : (Int64(UInt32(135)) | 1))), UInt8(77), ((###" W*cNnUS38"###,
                     (), (), [(), (), (), (), (), (), (), (), (), ()], ((UInt32(UInt32(187)) & 127)..=(UInt32(UInt32(220)) &
                         127) : (Int64(60) | 1)), ((Int64(Int64(-117)) & 127)..=(Int64(Int64(11)) & 127) : (Int64(39) | 1))),
@@ -370,7 +371,7 @@ main(): Int64 {
                 },
                 namedParam_1731854046694_139: match (UInt32(33)) {
                     case caseVar_1731854046694_2006: Range<UInt8> =>
-                        var var_1731854046694_2010: UInt8 = UInt8(UInt8(Int8(-75)));
+                        var var_1731854046694_2010: UInt8 = UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(-75))<!>);
                         var_1731854046694_2010++;
                         var_1731854046694_2015;
                         let var_1731854046694_2018: Range<UInt64> = ((UInt64(UInt64(149)) & 127)..=(UInt64(UInt64(33)) &

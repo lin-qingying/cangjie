@@ -1,9 +1,10 @@
 
 
 
+
 package default.g1
 
-public import default.f2.*
+public import <!UNRESOLVED_IMPORT!>default<!>.f2.*
 
 public let var_1731854046694_111: Int16 = Int16(UInt16(47))
 @Deprecated
@@ -88,8 +89,8 @@ public interface Interface_1731854046694_131 {}
 
 @Deprecated
 public func func_1731854046694_137(param_1731854046694_138: Range<Int32>, namedParam_1731854046694_139!: Range<UInt64>,
-    optionalParam_1731854046694_140!: Array<UInt64> = [UInt64(Int8(Int8(-37))), UInt64(Int64(Int16(123))),
-        UInt64(UInt32(Int8(84))), UInt64(Int8(-119)), UInt64(UInt32(34)), UInt64(251), UInt64(Int16(UInt16(Int16(58)))),
+    optionalParam_1731854046694_140!: Array<UInt64> = [<!TYPECAST_OVERFLOW!>UInt64(Int8(Int8(-37)))<!>, UInt64(Int64(Int16(123))),
+        UInt64(UInt32(Int8(84))), <!TYPECAST_OVERFLOW!>UInt64(Int8(-119))<!>, UInt64(UInt32(34)), UInt64(251), UInt64(Int16(UInt16(Int16(58)))),
         UInt64(127), UInt64(247), UInt64(Int64(UInt32(Int8(58))))]): Range<Int8> { // block id: 166
     var_1731854046694_168;
     const var_1731854046694_1839: UInt = 94;
@@ -110,9 +111,9 @@ public func func_1731854046694_137(param_1731854046694_138: Range<Int32>, namedP
         ((UInt64(UInt64(155)) & 127)..=(UInt64(UInt64(19)) & 127) : (Int64(20) | 1)),
         ((UInt64(UInt64(26)) & 127)..(UInt64(UInt64(219)) & 127) : (Int64(14) | 1)),
         ((UInt64(UInt64(173)) & 127)..=(UInt64(UInt64(177)) & 127) : (Int64(24) | 1)),
-        ((UInt64(UInt64(Int16(-46))) & 127)..(UInt64(UInt64(Int8(6))) & 127) : (Int64(4) | 1)),
+        ((UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int16(-46))<!>) & 127)..(UInt64(UInt64(Int8(6))) & 127) : (Int64(4) | 1)),
         ((UInt64(UInt64(246)) & 127)..=(UInt64(UInt64(94)) & 127) : (Int64(-54) | 1)),
-        ((UInt64(UInt64(229)) & 127)..(UInt64(UInt64(Int8(-80))) & 127) : (Int64(22) | 1)),
+        ((UInt64(UInt64(229)) & 127)..(UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int8(-80))<!>) & 127) : (Int64(22) | 1)),
         ((UInt64(UInt64(UInt64(167))) & 127)..=(UInt64(UInt64(51)) & 127) : (Int64(85) | 1))] as Array<Range<Int8>>);
     (try { // block id: 1849
         var_1731854046694_168;
