@@ -10170,3 +10170,18 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   裸 `Tokens` 在测试环境触发 `UNDECLARED_TYPE_NAME`（需 std.compiler），如实标进期望。
 - **验证**：Macro 切片 6/6 绿；全量 `:cfir:analysis-tests:test` 8714 tests / 34 failed，
   失败集合与基线完全一致（既有 17 macro 项 ×2），零回归。
+
+## 2026-09-23（续）：MergeStd×6——.cj.d sidecar 数据面 + 隐式系统注解缺省授权（用户裁决：路线 2「补测试数据」）
+
+- problem type: `APILEVEL_REF_HIGHER` 漏报（MergeStd importall ×4）+ UNUSED_IMPORT 期望缺失（importsingle ×2）。此前 REPAIR_LOG 2026-09-22 登记为「.cjd sidecar 数据缺口，归 P1 统一裁决」。
+- root cause（两层）：
+  ① **数据面**：官方跨包 APILevel 属性唯一来源是依赖包 `.cj.d` sidecar 合并（`MergeAnnoFromCjd.cpp` 对位）；本仓实现链路完整（CjdSidecarLocator 同目录同名定位 → CjdSidecarParser → CjdBinaryDeclarationMatcher → CjdAnnotationConverter → publication 前追加），但测试 SDK（cjo-sdk）一个 `.cj.d` 都没有。
+  ② **框架缺口（本次修复主因）**：`CompilerConfiguration.implicitSystemAnnotations` 全链路（测试基建、compiler:frontend、生产 driver）**无任何注入点，恒为空集**。官方 `.cj.d` 中的裸 `@!APILevel`（不 import ohos.labels）按 converter 的解析顺序落到 `implicitSystemAnnotations` → `BuiltInAnnotationRegistry.findSystemAnnotation` 兜底；空集使身份解析失败 → 注解被静默丢弃 → ownApiLevelInfo 取不到。CjdBinaryAnnotationIntegrationTest 一直传 `setOf(FqName("ohos.labels.APILevel"))` 构造 context，掩盖了该缺口。
+- official Cangjie evidence（cjc 1.0.5 + 1.1.3 双 SDK 探针）：①`import std.time.*` 未使用 → `unused import 'std.time.*'`（两版本一致，与 1.0.2 门禁矩阵相符）；②`ArgOpt()` → 仅 `deprecated` 警告（默认配置无 apilevel 上限故不报 ref_higher）；③官方 harmonyos build-tools `std.argopt.cj.d`：ArgOpt 带 `@!APILevel[since: "22"]`（API_LEVEL: 11 项目 → 报 ref_higher），且该 `.cj.d` 无 @Deprecated——deprecated 来自 1.0.5 std 源（cjo 承载），CFIR 现状一致。
+- CFIR owner files changed（提交 `698a8e7ea`）：
+  - `common/src/.../annotations/CangjieAnnotationModel.kt`：新增 `BuiltInAnnotationRegistry.defaultImplicitSystemAnnotations`——注册表内 `SYSTEM_MACRO` 且 `classFqName` 非空的集合（`ohos.labels.APILevel`/`ohos.labels.Hide`），单一事实来源。
+  - `cfir/entrypoint/src/.../CfirFrontendConfigurationKeys.kt`：`implicitSystemAnnotations` getter 缺省取上述集合（`get(key) ?: default`；调用方显式 put 空集仍被尊重）；KDoc 注明解析器/CJO loader 仍不得自行猜测。
+  - 测试数据：`cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative/std/std.argopt.cj.d`（官方 harmonyos build-tools linux_ohos_aarch64 原文拷贝；`.cj.d` 为源文本，架构无关；与 std.argopt.cjo 同目录同名即被生产定位器拾取，零代码接线）。
+  - fixture 期望修正（字节级 python，保 EOL）：importall（level+level_v1）37 条 `<!UNUSED_IMPORT!>`（除在用的 std.argopt）+ `<!APILEVEL_REF_HIGHER!><!DEPRECATED_WARNING!>ArgOpt<!>()<!>`；importsingle（level）补 `<!UNUSED_IMPORT!>std.time.*<!>`。
+- repair principle: 跨包属性的正向路径不能靠检查器推断兜底——数据面补官方原文 sidecar；框架缺口在"授权事实来源"上修（注册表派生缺省值），不在消费点做特判。
+- verification: APILevelChecker 切片 212 全绿；全量 `:cfir:analysis-tests:test` 8714 tests / **28 failed**，较基线 34 净减 6（恰为 MergeStd ×2 入口 ×3 用例），失败集合逐项核对无新增。
