@@ -4,7 +4,6 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
-import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -18,7 +17,6 @@ class LanguageVersionUtilsTest {
         val session = session(
             LanguageVersionSettingsImpl(
                 languageVersion = LanguageVersion.CANGJIE_1_0_0,
-                apiVersion = ApiVersion.CANGJIE_1_0_0,
                 specificFeatures = mapOf(
                     LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.ENABLED,
                 ),
@@ -45,7 +43,6 @@ class LanguageVersionUtilsTest {
         val configured = session(
             LanguageVersionSettingsImpl(
                 languageVersion = LanguageVersion.LATEST_STABLE,
-                apiVersion = ApiVersion.LATEST_STABLE,
                 analysisFlags = mapOf(AnalysisFlags.noPrelude to true),
             ),
         )

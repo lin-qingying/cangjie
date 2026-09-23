@@ -19,14 +19,6 @@ val cangjieCompilerArguments = compilerArguments {
             }
 
             compilerArgument {
-                name = "api-version"
-                description = "API version".asReleaseDependent()
-                argumentType = StringType(defaultValue = ReleaseDependent(null))
-                valueType = StringType(defaultValue = ReleaseDependent(null))
-                lifecycle(CangJieReleaseVersion.V_1_0_0)
-            }
-
-            compilerArgument {
                 name = "verbose"
                 description = "Enable verbose logging".asReleaseDependent()
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))

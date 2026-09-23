@@ -11,19 +11,7 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = value
         }
 
-    var autoAdvanceApiVersion: Boolean = true
-        set(value) {
-            checkFrozen()
-            field = value
-        }
-
     var languageVersion: String? = null
-        set(value) {
-            checkFrozen()
-            field = if (value.isNullOrEmpty()) null else value
-        }
-
-    var apiVersion: String? = null
         set(value) {
             checkFrozen()
             field = if (value.isNullOrEmpty()) null else value

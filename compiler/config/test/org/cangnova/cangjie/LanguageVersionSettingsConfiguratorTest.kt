@@ -1,6 +1,5 @@
 package org.cangnova.cangjie
 
-import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.configureLanguageVersionSettings
 import org.cangnova.cangjie.config.create
@@ -13,22 +12,21 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Verifies that language/API version arguments are owned by compiler config. */
+/** Verifies that the language version argument is owned by compiler config. */
 class LanguageVersionSettingsConfiguratorTest {
     @Test
-    fun explicitApiVersionIsAppliedWithoutRebuildingFeatures() {
+    fun explicitLanguageVersionIsAppliedWithoutRebuildingFeatures() {
         val messages = RecordingMessageCollector()
         val configuration = CompilerConfiguration.create(messageCollector = messages)
         configuration.languageVersionSettings = LanguageVersionSettingsImpl(
-            languageVersion = LanguageVersion.CANGJIE_1_1_3,
-            apiVersion = ApiVersion.CANGJIE_1_1_3,
+            languageVersion = LanguageVersion.CANGJIE_1_0_0,
             specificFeatures = mapOf(
                 LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.DISABLED,
             ),
         )
 
-        assertTrue(configuration.configureLanguageVersionSettings("1.1.3", "1.1.0"))
-        assertEquals(ApiVersion.CANGJIE_1_1_0, configuration.languageVersionSettings.apiVersion)
+        assertTrue(configuration.configureLanguageVersionSettings("1.1.3"))
+        assertEquals(LanguageVersion.CANGJIE_1_1_3, configuration.languageVersionSettings.languageVersion)
         assertEquals(
             LanguageFeature.State.DISABLED,
             configuration.languageVersionSettings.getFeatureSupport(LanguageFeature.ObjCInteropAnnotations),
@@ -37,11 +35,11 @@ class LanguageVersionSettingsConfiguratorTest {
     }
 
     @Test
-    fun apiVersionCannotExceedLanguageVersion() {
+    fun unknownLanguageVersionIsReportedAsError() {
         val messages = RecordingMessageCollector()
         val configuration = CompilerConfiguration.create(messageCollector = messages)
 
-        assertFalse(configuration.configureLanguageVersionSettings("1.0.5", "1.1.0"))
+        assertFalse(configuration.configureLanguageVersionSettings("9.9.9"))
         assertTrue(messages.hasErrors())
     }
 

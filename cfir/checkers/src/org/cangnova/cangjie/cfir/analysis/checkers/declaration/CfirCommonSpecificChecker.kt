@@ -2,7 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
-import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.annotations.supportsBuiltinAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -759,8 +759,7 @@ private fun CfirDeclaration.annotationKeys(
             annotation.annotationKind != null &&
                 ((annotation as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall)
                     ?.isSupportedBuiltinAnnotation(annotation.annotationKind!!, settings)
-                    ?: (annotation.annotationKind != BuiltInAnnotationKind.JAVA ||
-                        settings.supportsFeature(LanguageFeature.JavaBuiltinAnnotations))) ->
+                    ?: settings.supportsBuiltinAnnotationKind(annotation.annotationKind!!)) ->
                 AnnotationMatchKey.BuiltIn(annotation.annotationKind!!)
             annotation is org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall &&
                 annotation.platformAnnotationKind != null &&

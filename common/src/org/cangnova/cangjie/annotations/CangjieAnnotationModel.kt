@@ -17,6 +17,7 @@
 package org.cangnova.cangjie.annotations
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -30,6 +31,19 @@ import org.cangnova.cangjie.name.Name
 public enum class BuiltInAnnotationKind {
     /** 官方 AST/二进制互操作节点使用的 Java kind；v1.0.0 源码 parser 不注册 @Java。 */
     JAVA,
+    /** v1.1.x parser/AST identities; kept distinct from resolved platform class identity. */
+    JAVA_MIRROR,
+    JAVA_IMPL,
+    JAVA_HAS_DEFAULT,
+    OBJ_C_MIRROR,
+    OBJ_C_IMPL,
+    OBJ_C_INIT,
+    OBJ_C_OPTIONAL,
+    FOREIGN_NAME,
+    FOREIGN_GETTER_NAME,
+    FOREIGN_SETTER_NAME,
+    /** Official v1.1 package/features directive identity; not a declaration target. */
+    NON_PRODUCT,
     CALLING_CONV,
     C,
     ATTRIBUTE,
@@ -43,6 +57,40 @@ public enum class BuiltInAnnotationKind {
     FROZEN,
     ENSURE_PREPARED_TO_MOCK,
 }
+
+/**
+ * AST annotation kind 到语言版本能力的唯一映射。
+ *
+ * 核心 C FFI kind 在 v1.0.0 已存在，不携带 1.0.5/1.1.x 门禁；Java/ObjC
+ * 互操作 kind 则由官方 parser/AST 的引入版本承载。provider、checker 和
+ * serializer 只能消费这个映射，不能在各自模块重新按枚举名判断版本。
+ */
+public val BuiltInAnnotationKind.requiredLanguageFeature: LanguageFeature?
+    get() = when (this) {
+        BuiltInAnnotationKind.JAVA -> LanguageFeature.JavaBuiltinAnnotations
+        BuiltInAnnotationKind.JAVA_MIRROR,
+        BuiltInAnnotationKind.JAVA_IMPL,
+        BuiltInAnnotationKind.JAVA_HAS_DEFAULT,
+        -> LanguageFeature.JavaInteropAnnotations
+
+        BuiltInAnnotationKind.OBJ_C_MIRROR,
+        BuiltInAnnotationKind.OBJ_C_IMPL,
+        BuiltInAnnotationKind.OBJ_C_INIT,
+        BuiltInAnnotationKind.OBJ_C_OPTIONAL,
+        -> LanguageFeature.ObjCInteropAnnotations
+
+        BuiltInAnnotationKind.FOREIGN_NAME,
+        BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
+        BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
+        -> LanguageFeature.InteropForeignNameAnnotations
+
+        else -> null
+    }
+
+/** 消费 builtin identity 的统一版本门禁；核心 v1.0.0 kind 没有额外 gate。 */
+public fun LanguageVersionSettings.supportsBuiltinAnnotationKind(kind: BuiltInAnnotationKind): Boolean =
+    supportsFeature(LanguageFeature.BuiltInAnnotations) &&
+        (kind.requiredLanguageFeature?.let { supportsFeature(it) } ?: true)
 
 /** features/package 元数据的独立身份域，不属于官方声明 AnnotationKind。 */
 public enum class CangjiePackageDirectiveKind {
@@ -131,6 +179,47 @@ object BuiltInAnnotationRegistry {
             AnnotationArgumentSchema(listOf(AnnotationParameterSchema("convention", AnnotationParameterKind.REFERENCE, required = true, acceptsPositional = true)), acceptsArbitrarySingleName = true),
             setOf(CangjieAnnotationTarget.GLOBAL_FUNCTION)),
         ffi("C", BuiltInAnnotationKind.C, targets = types + CangjieAnnotationTarget.GLOBAL_FUNCTION),
+        // v1.1 parser/AST identities.  Their platform class identities remain
+        // separately described below; an unqualified source spelling uses the
+        // official language builtin identity first.
+        ffi("JavaMirror", BuiltInAnnotationKind.JAVA_MIRROR,
+            CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
+            AnnotationSemanticHandler.JAVA_FFI, LanguageFeature.JavaInteropAnnotations),
+        ffi("JavaImpl", BuiltInAnnotationKind.JAVA_IMPL,
+            CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
+            AnnotationSemanticHandler.JAVA_FFI, LanguageFeature.JavaInteropAnnotations),
+        ffi("JavaHasDefault", BuiltInAnnotationKind.JAVA_HAS_DEFAULT,
+            CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE,
+            setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), AnnotationSemanticHandler.JAVA_FFI,
+            LanguageFeature.JavaInteropAnnotations),
+        ffi("ObjCMirror", BuiltInAnnotationKind.OBJ_C_MIRROR,
+            CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema,
+            types + CangjieAnnotationTarget.GLOBAL_FUNCTION, AnnotationSemanticHandler.OBJC_FFI,
+            LanguageFeature.ObjCInteropAnnotations),
+        ffi("ObjCImpl", BuiltInAnnotationKind.OBJ_C_IMPL,
+            CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema, types,
+            AnnotationSemanticHandler.OBJC_FFI, LanguageFeature.ObjCInteropAnnotations),
+        ffi("ObjCInit", BuiltInAnnotationKind.OBJ_C_INIT,
+            CangjieAnnotationArgumentSyntax.OPTIONAL_SINGLE_STRING_LITERAL, nameSchema,
+            setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), AnnotationSemanticHandler.OBJC_FFI,
+            LanguageFeature.ObjCInteropAnnotations),
+        ffi("ObjCOptional", BuiltInAnnotationKind.OBJ_C_OPTIONAL,
+            CangjieAnnotationArgumentSyntax.NONE, AnnotationArgumentSchema.NONE,
+            setOf(CangjieAnnotationTarget.MEMBER_FUNCTION), AnnotationSemanticHandler.OBJC_FFI,
+            LanguageFeature.ObjCInteropAnnotations),
+        ffi("ForeignName", BuiltInAnnotationKind.FOREIGN_NAME,
+            CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, requiredNameSchema,
+            setOf(CangjieAnnotationTarget.INIT, CangjieAnnotationTarget.MEMBER_PROPERTY,
+                CangjieAnnotationTarget.MEMBER_FUNCTION), AnnotationSemanticHandler.FOREIGN_NAME,
+            LanguageFeature.InteropForeignNameAnnotations),
+        ffi("ForeignGetterName", BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
+            CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, accessorNameSchema,
+            setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), AnnotationSemanticHandler.FOREIGN_NAME,
+            LanguageFeature.InteropForeignNameAnnotations),
+        ffi("ForeignSetterName", BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
+            CangjieAnnotationArgumentSyntax.SINGLE_STRING_LITERAL, accessorNameSchema,
+            setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), AnnotationSemanticHandler.FOREIGN_NAME,
+            LanguageFeature.InteropForeignNameAnnotations),
         directive("Attribute", BuiltInAnnotationKind.ATTRIBUTE, CangjieAnnotationArgumentSyntax.ATTRIBUTE_TOKENS, unrestricted, all, AnnotationSemanticHandler.ATTRIBUTES),
         // 官方 parser 只在被标注声明为函数时执行 intrinsic 专用检查；其它
         // 声明种类不经过通用 AnnotationTarget 机制。因此这里的空集合表示
@@ -168,7 +257,7 @@ object BuiltInAnnotationRegistry {
 
     /** Package/features metadata is deliberately outside the declaration builtin catalog. */
     public val packageDirectives: List<BuiltInAnnotationDescriptor> = listOf(
-        directive("NonProduct", null, CangjieAnnotationArgumentSyntax.NONE,
+        directive("NonProduct", BuiltInAnnotationKind.NON_PRODUCT, CangjieAnnotationArgumentSyntax.NONE,
             AnnotationArgumentSchema.NONE, emptySet(), AnnotationSemanticHandler.PACKAGE_PRODUCT,
             requiredLanguageFeature = LanguageFeature.PackageProductMetadata)
             .copy(descriptorOrigin = CangjieAnnotationOrigin.PACKAGE_DIRECTIVE),
@@ -177,9 +266,10 @@ object BuiltInAnnotationRegistry {
     /**
      * 互操作库注解的源码契约。
      *
-     * 这些名称由 `interoplib.interop`/`interoplib.objc` 提供的真实注解类解析，
-     * 不是 v1.0.0 Parser.h::NAME_TO_ANNO_KIND 的语言 builtin。这里仅描述其
-     * source surface 和后续语义 owner，不把它们伪造成 [BuiltInAnnotationKind]。
+     * 这些名称由 `interoplib.interop`/`objc.lang` 提供的真实注解类解析。
+     * v1.0.0 只把它们作为平台派生身份；v1.1.x 对其中的源码 spelling 增加了
+     * 正式 parser/AST kind，descriptor 同时保留两种事实，避免把版本差异压成
+     * 一个无版本的短名判断。
      */
     public val platformAnnotations: List<PlatformAnnotationDescriptor> by lazy {
         buildList {
@@ -235,6 +325,16 @@ object BuiltInAnnotationRegistry {
         val expectedLanguageBuiltIns = setOf(
             "CallingConv",
             "C",
+            "JavaMirror",
+            "JavaImpl",
+            "JavaHasDefault",
+            "ObjCMirror",
+            "ObjCImpl",
+            "ObjCInit",
+            "ObjCOptional",
+            "ForeignName",
+            "ForeignGetterName",
+            "ForeignSetterName",
             "Attribute",
             "Intrinsic",
             "OverflowThrowing",
@@ -351,6 +451,7 @@ private val platformJavaAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.TYPE),
         semanticHandler = AnnotationSemanticHandler.JAVA_FFI,
+        officialKind = BuiltInAnnotationKind.JAVA_MIRROR,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "JavaImpl",
@@ -362,6 +463,7 @@ private val platformJavaAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.TYPE),
         semanticHandler = AnnotationSemanticHandler.JAVA_FFI,
+        officialKind = BuiltInAnnotationKind.JAVA_IMPL,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "JavaHasDefault",
@@ -371,6 +473,7 @@ private val platformJavaAnnotations = listOf(
         argumentSchema = AnnotationArgumentSchema.NONE,
         declarationTargets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION),
         semanticHandler = AnnotationSemanticHandler.JAVA_FFI,
+        officialKind = BuiltInAnnotationKind.JAVA_HAS_DEFAULT,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ForeignName",
@@ -384,6 +487,7 @@ private val platformJavaAnnotations = listOf(
             CangjieAnnotationTarget.MEMBER_FUNCTION,
         ),
         semanticHandler = AnnotationSemanticHandler.FOREIGN_NAME,
+        officialKind = BuiltInAnnotationKind.FOREIGN_NAME,
     ),
 )
 
@@ -405,6 +509,7 @@ private val platformObjCAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.TYPE, CangjieAnnotationTarget.GLOBAL_FUNCTION),
         semanticHandler = AnnotationSemanticHandler.OBJC_FFI,
+        officialKind = BuiltInAnnotationKind.OBJ_C_MIRROR,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ObjCImpl",
@@ -416,6 +521,7 @@ private val platformObjCAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.TYPE),
         semanticHandler = AnnotationSemanticHandler.OBJC_FFI,
+        officialKind = BuiltInAnnotationKind.OBJ_C_IMPL,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ObjCInit",
@@ -429,6 +535,7 @@ private val platformObjCAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION),
         semanticHandler = AnnotationSemanticHandler.OBJC_FFI,
+        officialKind = BuiltInAnnotationKind.OBJ_C_INIT,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ObjCOptional",
@@ -438,6 +545,7 @@ private val platformObjCAnnotations = listOf(
         argumentSchema = AnnotationArgumentSchema.NONE,
         declarationTargets = setOf(CangjieAnnotationTarget.MEMBER_FUNCTION),
         semanticHandler = AnnotationSemanticHandler.OBJC_FFI,
+        officialKind = BuiltInAnnotationKind.OBJ_C_OPTIONAL,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ForeignName",
@@ -453,6 +561,7 @@ private val platformObjCAnnotations = listOf(
             CangjieAnnotationTarget.MEMBER_FUNCTION,
         ),
         semanticHandler = AnnotationSemanticHandler.FOREIGN_NAME,
+        officialKind = BuiltInAnnotationKind.FOREIGN_NAME,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ForeignGetterName",
@@ -464,6 +573,7 @@ private val platformObjCAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.MEMBER_PROPERTY),
         semanticHandler = AnnotationSemanticHandler.FOREIGN_NAME,
+        officialKind = BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
     ),
     PlatformAnnotationDescriptor(
         sourceName = "ForeignSetterName",
@@ -475,6 +585,7 @@ private val platformObjCAnnotations = listOf(
         ),
         declarationTargets = setOf(CangjieAnnotationTarget.MEMBER_PROPERTY),
         semanticHandler = AnnotationSemanticHandler.FOREIGN_NAME,
+        officialKind = BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
     ),
 )
 

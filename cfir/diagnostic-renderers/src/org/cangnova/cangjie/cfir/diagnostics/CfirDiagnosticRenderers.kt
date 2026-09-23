@@ -19,21 +19,18 @@ object CfirDiagnosticRenderers {
     /**
      * 按 Kotlin `LanguageFeatureMessageRenderer` 的职责渲染完整版本原因。
      *
-     * 诊断载荷必须保留 settings：仅渲染 feature 名称会把“语言版本过低、API
-     * 版本过低、显式关闭、实验特性未开启”全部错误地压成同一条消息。
+     * 诊断载荷必须保留 settings：仅渲染 feature 名称会把"语言版本过低、
+     * 显式关闭、实验特性未开启"全部错误地压成同一条消息。
     */
     val LANGUAGE_FEATURE_SUPPORT = Renderer<Pair<LanguageFeature, LanguageVersionSettings>> { (feature, settings) ->
         val sinceVersion = feature.sinceVersion
         val supportStatus = settings.featureSupportStatus(feature)
-        val featureFlag = "-XXLanguage:+${feature.name}"
         val reason = when {
             feature.testOnly -> "unsupported."
             sinceVersion == null ->
-                "experimental and should be enabled explicitly. This can be done by supplying the compiler argument '$featureFlag', but note that no stability guarantees are provided."
+                "experimental and is not enabled by the current language settings; no stability guarantees are provided."
             supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_LANGUAGE_VERSION ->
                 "only available since language version ${sinceVersion.versionString}"
-            supportStatus == LanguageFeatureSupportStatus.UNSUPPORTED_API_VERSION ->
-                "only available since API version ${feature.sinceApiVersion.versionString}"
             supportStatus == LanguageFeatureSupportStatus.DISABLED -> "disabled."
             else -> "not supported by the current language settings"
         }

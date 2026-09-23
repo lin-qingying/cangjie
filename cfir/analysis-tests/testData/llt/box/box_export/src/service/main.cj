@@ -321,7 +321,7 @@ class ReflectUtilities {
     public static func getServiceConstructor(typeInfo: TypeInfo) {
         if (let Some(classInfo) <- (typeInfo as ClassTypeInfo)) {
             let list = classInfo.constructors |> collectArrayList
-            list.sortBy {
+            list.<!DEPRECATED_WARNING!>sortBy<!> {
                 a, b => if (a.parameters.size > b.parameters.size) {
                     Ordering.LT
                 } else if (a.parameters.size < b.parameters.size) {

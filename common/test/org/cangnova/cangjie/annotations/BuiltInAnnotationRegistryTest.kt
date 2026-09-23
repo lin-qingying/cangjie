@@ -3,7 +3,6 @@ package org.cangnova.cangjie.annotations
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
-import org.cangnova.cangjie.config.ApiVersion
 import org.cangnova.cangjie.name.FqName
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -26,7 +25,9 @@ class BuiltInAnnotationRegistryTest {
         val expectedSourceNames = setOf(
             "CallingConv", "C", "Attribute", "Intrinsic", "OverflowThrowing", "OverflowWrapping",
             "OverflowSaturating", "When", "FastNative", "ConstSafe", "Annotation", "Deprecated",
-            "Frozen", "EnsurePreparedToMock",
+            "Frozen", "EnsurePreparedToMock", "JavaMirror", "JavaImpl", "JavaHasDefault",
+            "ObjCMirror", "ObjCImpl", "ObjCInit", "ObjCOptional", "ForeignName",
+            "ForeignGetterName", "ForeignSetterName",
         )
         val descriptors = BuiltInAnnotationRegistry.languageBuiltIns
 
@@ -40,7 +41,13 @@ class BuiltInAnnotationRegistryTest {
             assertSame(descriptor, BuiltInAnnotationRegistry.find(descriptor.sourceName))
             assertEquals(CangjieAnnotationOrigin.LANGUAGE_BUILT_IN, descriptor.origin)
             assertFalse(descriptor.supportsCompileTimeVisibleForm, descriptor.sourceName)
-            assertEquals(LanguageFeature.BuiltInAnnotations, descriptor.requiredLanguageFeature, descriptor.sourceName)
+            val expectedFeature = when (descriptor.sourceName) {
+                "JavaMirror", "JavaImpl", "JavaHasDefault" -> LanguageFeature.JavaInteropAnnotations
+                "ObjCMirror", "ObjCImpl", "ObjCInit", "ObjCOptional" -> LanguageFeature.ObjCInteropAnnotations
+                "ForeignName", "ForeignGetterName", "ForeignSetterName" -> LanguageFeature.InteropForeignNameAnnotations
+                else -> LanguageFeature.BuiltInAnnotations
+            }
+            assertEquals(expectedFeature, descriptor.requiredLanguageFeature, descriptor.sourceName)
         }
     }
 
@@ -48,11 +55,13 @@ class BuiltInAnnotationRegistryTest {
     fun officialCatalogValidationIsExecutableAtRuntime() {
         // Accessing the registry runs its invariant checks; this assertion
         // keeps the test explicit for callers that use the catalog lazily.
-        assertEquals(14, BuiltInAnnotationRegistry.languageBuiltIns.size)
+        assertEquals(24, BuiltInAnnotationRegistry.languageBuiltIns.size)
         assertEquals(
             setOf("CallingConv", "C", "Attribute", "Intrinsic", "OverflowThrowing", "OverflowWrapping",
                 "OverflowSaturating", "When", "FastNative", "Annotation", "ConstSafe", "Deprecated",
-                "Frozen", "EnsurePreparedToMock"),
+             "Frozen", "EnsurePreparedToMock", "JavaMirror", "JavaImpl", "JavaHasDefault",
+             "ObjCMirror", "ObjCImpl", "ObjCInit", "ObjCOptional", "ForeignName",
+             "ForeignGetterName", "ForeignSetterName"),
             BuiltInAnnotationRegistry.languageBuiltIns.mapTo(linkedSetOf()) { it.sourceName },
         )
     }
@@ -91,11 +100,11 @@ class BuiltInAnnotationRegistryTest {
         assertNull(BuiltInAnnotationRegistry.resolveLanguageBuiltIn("sample.C", false, "application"))
     }
 
-    /** 平台 source-surface descriptor 不会污染语言 builtin lookup。 */
+    /** v1.1 official source kinds and FqName-derived platform identities coexist. */
     @Test
     fun platformDescriptorsRequireTheirOwnIdentityDomain() {
-        assertNull(BuiltInAnnotationRegistry.findLanguageBuiltIn("ObjCMirror"))
-        assertNull(BuiltInAnnotationRegistry.find("ObjCMirror"))
+        assertNotNull(BuiltInAnnotationRegistry.findLanguageBuiltIn("ObjCMirror"))
+        assertNotNull(BuiltInAnnotationRegistry.find("ObjCMirror"))
         assertNotNull(
             BuiltInAnnotationRegistry.findPlatformAnnotation(FqName("objc.lang.ObjCMirror")),
         )
@@ -111,11 +120,9 @@ class BuiltInAnnotationRegistryTest {
         )
         val legacy = LanguageVersionSettingsImpl(
             languageVersion = LanguageVersion.CANGJIE_1_0_5,
-            apiVersion = ApiVersion.CANGJIE_1_0_5,
         )
         val modern = LanguageVersionSettingsImpl(
             languageVersion = LanguageVersion.CANGJIE_1_1_0,
-            apiVersion = ApiVersion.CANGJIE_1_1_0,
         )
 
         assertEquals(AnnotationVersionSupportStatus.UNSUPPORTED_LANGUAGE_VERSION, descriptor.versionSupport(legacy))
@@ -137,7 +144,6 @@ class BuiltInAnnotationRegistryTest {
         expected.forEach { (languageVersion, supported) ->
             val settings = LanguageVersionSettingsImpl(
                 languageVersion = languageVersion,
-                apiVersion = ApiVersion.createByLanguageVersion(languageVersion),
             )
             assertEquals(
                 supported,
@@ -155,7 +161,6 @@ class BuiltInAnnotationRegistryTest {
         )
         val overridden = LanguageVersionSettingsImpl(
             languageVersion = LanguageVersion.CANGJIE_1_0_0,
-            apiVersion = ApiVersion.CANGJIE_1_0_0,
             specificFeatures = mapOf(LanguageFeature.ObjCInteropAnnotations to LanguageFeature.State.ENABLED),
         )
 
@@ -167,7 +172,6 @@ class BuiltInAnnotationRegistryTest {
     fun coreCffiBuiltinsRemainAvailableInTheInitialLanguageVersion() {
         val legacy = LanguageVersionSettingsImpl(
             languageVersion = LanguageVersion.CANGJIE_1_0_0,
-            apiVersion = ApiVersion.CANGJIE_1_0_0,
         )
         listOf("C", "CallingConv", "FastNative", "Frozen").forEach { sourceName ->
             assertEquals(
@@ -182,7 +186,6 @@ class BuiltInAnnotationRegistryTest {
     fun packageMetadataGateStartsInOneOneWhileCoreAndAvailabilityStartInOneZero() {
         val legacy = LanguageVersionSettingsImpl(
             languageVersion = LanguageVersion.CANGJIE_1_0_5,
-            apiVersion = ApiVersion.CANGJIE_1_0_5,
         )
         assertEquals(AnnotationVersionSupportStatus.SUPPORTED, builtIn("C").versionSupport(legacy))
         assertEquals(
@@ -253,6 +256,14 @@ class BuiltInAnnotationRegistryTest {
             assertEquals(setOf(CangjieAnnotationTarget.MEMBER_PROPERTY), descriptor.declarationTargets)
             assertEquals(AnnotationSemanticHandler.FOREIGN_NAME, descriptor.semanticHandler)
         }
+        assertEquals(
+            BuiltInAnnotationKind.FOREIGN_NAME,
+            descriptors.single { it.packageFqName == FqName("interoplib.interop") }.officialKind,
+        )
+        assertEquals(BuiltInAnnotationKind.FOREIGN_GETTER_NAME,
+            BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ForeignGetterName").single().officialKind)
+        assertEquals(BuiltInAnnotationKind.FOREIGN_SETTER_NAME,
+            BuiltInAnnotationRegistry.findPlatformAnnotationsBySourceName("ForeignSetterName").single().officialKind)
     }
 
     /** ObjCInit 的 selector 参数是可选的单个字符串，而不是无参 builtin。 */
@@ -351,7 +362,7 @@ class BuiltInAnnotationRegistryTest {
         assertTrue(mock.allowsExpression)
         assertTrue(mock.declarationTargets.isEmpty())
         val nonProduct = assertNotNull(BuiltInAnnotationRegistry.findPackageDirective("NonProduct"))
-        assertNull(nonProduct.kind)
+        assertEquals(BuiltInAnnotationKind.NON_PRODUCT, nonProduct.kind)
         assertEquals(CangjieAnnotationOrigin.PACKAGE_DIRECTIVE, nonProduct.origin)
         assertEquals(AnnotationSemanticHandler.PACKAGE_PRODUCT, nonProduct.semanticHandler)
         assertEquals(LanguageFeature.PackageProductMetadata, nonProduct.requiredLanguageFeature)

@@ -2,9 +2,9 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind
-import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.annotations.officialKind
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.requireFeatureSupport
+import org.cangnova.cangjie.annotations.supportsBuiltinAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -37,25 +37,15 @@ internal fun CfirDeclaration.findAnnotations(annotationClassId: ClassId): List<C
  */
 internal fun CfirDeclaration.hasBuiltinAnnotation(kind: BuiltInAnnotationKind): Boolean =
     annotations.any { annotation ->
-        val call = annotation as? CfirAnnotationCall
-        if (call != null) {
-            call.isSupportedBuiltinAnnotation(kind, moduleData.session.languageVersionSettings)
-        } else {
-            annotation.annotationKind == kind &&
-                moduleData.session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
-        }
+        annotation.annotationKind == kind &&
+            moduleData.session.languageVersionSettings.supportsBuiltinAnnotationKind(kind)
     }
 
 /** 按 resolver 已发布的官方 kind 返回全部内置注解，不做源码拼写匹配。 */
 internal fun CfirDeclaration.findBuiltinAnnotations(kind: BuiltInAnnotationKind): List<CfirAnnotation> =
     annotations.filter { annotation ->
-        val call = annotation as? CfirAnnotationCall
-        if (call != null) {
-            call.isSupportedBuiltinAnnotation(kind, moduleData.session.languageVersionSettings)
-        } else {
-            annotation.annotationKind == kind &&
-                moduleData.session.languageVersionSettings.supportsFeature(LanguageFeature.BuiltInAnnotations)
-        }
+        annotation.annotationKind == kind &&
+            moduleData.session.languageVersionSettings.supportsBuiltinAnnotationKind(kind)
     }
 
 /**
@@ -68,12 +58,7 @@ internal fun CfirDeclaration.hasSupportedBuiltinAnnotation(
     settings: LanguageVersionSettings,
     kind: BuiltInAnnotationKind,
 ): Boolean = annotations.any {
-    val call = it as? CfirAnnotationCall
-    if (call == null) {
-        return@any it.annotationKind == kind &&
-            (kind != BuiltInAnnotationKind.JAVA || settings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations))
-    }
-    call.isSupportedBuiltinAnnotation(kind, settings)
+    it.annotationKind == kind && settings.supportsBuiltinAnnotationKind(kind)
 }
 
 /** 只返回当前版本允许 semantic owner 消费的 builtin calls。 */
@@ -81,12 +66,7 @@ internal fun CfirDeclaration.findSupportedBuiltinAnnotations(
     settings: LanguageVersionSettings,
     kind: BuiltInAnnotationKind,
 ): List<CfirAnnotation> = annotations.filter {
-    val call = it as? CfirAnnotationCall
-    if (call == null) {
-        return@filter it.annotationKind == kind &&
-            (kind != BuiltInAnnotationKind.JAVA || settings.requireFeatureSupport(LanguageFeature.JavaBuiltinAnnotations))
-    }
-    call.isSupportedBuiltinAnnotation(kind, settings)
+    it.annotationKind == kind && settings.supportsBuiltinAnnotationKind(kind)
 }
 
 /** 判断声明是否携带任一给定官方 kind 的内置注解。 */
@@ -103,6 +83,20 @@ context(context: CheckerContext)
 internal fun CfirDeclaration.hasPlatformAnnotation(kind: CangjiePlatformAnnotationKind): Boolean =
     hasSupportedPlatformAnnotation(context.languageVersionSettings, kind)
 
+/**
+ * 查询互操作注解的统一入口：同时接受官方 v1.1.x kind 与 v1.0.x
+ * 精确 ClassId 派生身份；两者都必须通过同一语言版本 gate。
+ */
+context(context: CheckerContext)
+internal fun CfirDeclaration.hasInteropAnnotation(kind: CangjiePlatformAnnotationKind): Boolean =
+    hasSupportedPlatformAnnotation(context.languageVersionSettings, kind) ||
+        hasSupportedBuiltinAnnotation(context.languageVersionSettings, kind.officialKind)
+
+/** 查询任一互操作注解 kind，保留官方 identity 与平台 identity 的分离。 */
+context(context: CheckerContext)
+internal fun CfirDeclaration.hasAnyInteropAnnotation(vararg kinds: CangjiePlatformAnnotationKind): Boolean =
+    kinds.any { hasInteropAnnotation(it) }
+
 /** 返回全部匹配给定平台注解身份的注解调用。 */
 context(context: CheckerContext)
 internal fun CfirDeclaration.findPlatformAnnotations(kind: CangjiePlatformAnnotationKind): List<CfirAnnotation> =
@@ -111,6 +105,19 @@ internal fun CfirDeclaration.findPlatformAnnotations(kind: CangjiePlatformAnnota
         call.platformAnnotationKind == kind &&
             call.annotationVersionSupport(context.languageVersionSettings) ==
             org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+    }
+
+/** 返回两种官方来源中匹配的互操作注解，保持源码顺序。 */
+context(context: CheckerContext)
+internal fun CfirDeclaration.findInteropAnnotations(kind: CangjiePlatformAnnotationKind): List<CfirAnnotation> =
+    annotations.filter { annotation ->
+        val call = annotation as? CfirAnnotationCall ?: return@filter false
+        val platformMatch = call.platformAnnotationKind == kind
+        val builtinMatch = call.annotationKind == kind.officialKind
+        (platformMatch || builtinMatch) &&
+            (call.annotationVersionSupport(context.languageVersionSettings) ==
+                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED ||
+                context.languageVersionSettings.supportsBuiltinAnnotationKind(kind.officialKind))
     }
 
 /** 判断声明是否携带任一给定身份的平台注解。 */
