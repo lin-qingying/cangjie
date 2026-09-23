@@ -2908,6 +2908,11 @@ class CfirCallResolver(
                                 ?.coneTypeOrNull as? ConeErrorType
                             when {
                                 declarationErrorType != null -> ConeUnreportedDuplicateDiagnostic(declarationErrorType.diagnostic)
+                                // receiver 本身是错误类型（如类型名未声明）时，根诊断已在
+                                // receiver 上报告（官方口径 undeclared identifier），
+                                // 成员访问不应再叠加 called object is not a function。
+                                receiverType is ConeErrorType ->
+                                    ConeUnreportedDuplicateDiagnostic(receiverType.diagnostic.unwrapUnreportedDuplicateDiagnostic())
                                 receiverType != null && !receiverType.isUnit -> {
                                     val declarationType = (symbol as? CfirCallableSymbol<*>)?.let {
                                         components.returnTypeCalculator.tryCalculateReturnType(it.cfir).coneType

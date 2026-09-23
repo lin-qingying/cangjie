@@ -347,6 +347,21 @@ internal class ScopeBasedTowerLevel(
             if (!seen.add(classifier)) return@processClassifiersByName
 
             classifier.lazyResolveToPhase(CfirResolvePhase.TYPES)
+            // 分类器级可见性门控：跨文件 private 类/typealias 在值/调用位置不可发现
+            // （与类型位置 ConeUnresolvedTypeQualifierError 同一口径），否则别名会被
+            // 无可见性检查地展开成构造器候选，把"undeclared identifier"误报成
+            // called object is not a function。
+            val classifierAccessible = components.session.accessibilityChecker.checkClassLike(
+                classifier,
+                CfirAccessContext(
+                    useSiteFile = info.containingFile,
+                    containingDeclarations = info.containingDeclarations,
+                    lookupOrigin = scope.lookupOriginForAccessibility(),
+                    kind = CfirAccessKind.CALLABLE,
+                ),
+            ) is CfirAccessibilityResult.Accessible
+            if (!classifierAccessible) return@processClassifiersByName
+
             if (classifier is org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol) {
                 classifier.cfir.scopeProvider
                     .getTypealiasConstructorScope(
