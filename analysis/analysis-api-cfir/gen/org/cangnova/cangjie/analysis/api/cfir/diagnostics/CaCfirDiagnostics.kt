@@ -1022,6 +1022,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val className: Name
     }
 
+    interface FlowExpressionsUseThisOrSuper : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = FlowExpressionsUseThisOrSuper::class
+        val keyword: String
+    }
+
     interface LiteralNumericOverflow : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = LiteralNumericOverflow::class
         val literalText: String
@@ -1139,6 +1144,14 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = AccessibilityError::class
         val declarationKind: String
         val visibility: Visibility
+    }
+
+    interface TypealiasExternalReferInternal : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TypealiasExternalReferInternal::class
+        val aliasAccessLevel: Visibility
+        val typeAlias: Name
+        val typeAccessLevel: Visibility
+        val typeName: Name
     }
 
     interface ParamCountMismatch : CaCfirDiagnostic<PsiElement> {
@@ -1617,6 +1630,44 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface ExportSamePrivateDecl : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ExportSamePrivateDecl::class
+    }
+
+    interface ForbidGenericConstructor : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ForbidGenericConstructor::class
+        val constructorName: Name
+    }
+
+    interface GenericInOperatorOverload : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = GenericInOperatorOverload::class
+    }
+
+    interface AbstractClassCanNotBeInstantiated : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = AbstractClassCanNotBeInstantiated::class
+        val className: Name
+    }
+
+    interface NumericConvertMustBeNumeric : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = NumericConvertMustBeNumeric::class
+    }
+
+    interface InvalidCoalescing : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InvalidCoalescing::class
+    }
+
+    interface InvalidTupleFieldCtype : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InvalidTupleFieldCtype::class
+    }
+
+    interface InvalidEnumMemberAccess : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = InvalidEnumMemberAccess::class
+    }
+
+    interface PatternCanNotBeAssigned : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = PatternCanNotBeAssigned::class
+    }
+
+    interface RedefinitionEntry : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = RedefinitionEntry::class
     }
 
     interface ExtendFunctionCannotOverridden : CaCfirDiagnostic<PsiElement> {
