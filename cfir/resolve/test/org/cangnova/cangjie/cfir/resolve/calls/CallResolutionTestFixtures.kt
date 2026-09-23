@@ -236,6 +236,7 @@ object CallResolutionTestFixtures {
             typeParameters = typeParameters.toMutableList(),
             returnTypeRef = resolvedTypeRef(returnType),
             valueParameters = parameters.toMutableList(),
+            hasVariableLenArg = false,
             body = null,
             symbol = symbol,
             name = Name.identifier(name),

@@ -220,9 +220,11 @@ internal object ExtendTestFixtures {
             attributes = CfirDeclarationAttributes.EMPTY,
             name = fileName ?: "test_${packageFqName.asString().replace('.', '_')}.cj",
             sourceFile = null,
+            featuresDirective = null,
             packageDirective = CfirPackageDirectiveImpl(null, packageFqName, null, false),
             imports = mutableListOf(),
             sourceFileLinesMapping = null,
+            conditionalCompilationFailures = mutableListOf(),
             declarations = declarations.toMutableList(),
         )
         file.initDefaultResolveState()
