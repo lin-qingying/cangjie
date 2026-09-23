@@ -4962,6 +4962,45 @@ open class CfirExpressionsResolveTransformer(
             CallResolutionMode.REGULAR,
         )
         val resultType = resolvedCall.coneTypeOrNull
+        val callFailed = resolvedCall.hasReportedCallDiagnostic() ||
+            resultType == null ||
+            resultType.containsErrorType()
+        // 官方 `ChkFlowExpr` 第二阶段(`BinaryExpr.cpp:1054-1066`)：解糖调用失败时丢弃调用
+        // 自身的全部诊断，`RecoverToBinaryExpr` 恢复成二元节点后再由 `DiagnoseForBinaryExpr`
+        // 裁决。这里同样**整棵丢弃合成调用**并回退到二元节点：合成调用的 `operator ()` 包装
+        // 会把「类型可解析但操作符无重载」重述成操作数上的 UNRESOLVED_REFERENCE /
+        // NO_MATCHING_OPERATOR_INVOKE / ARGUMENT_TYPE_MISMATCH，这些都是官方不存在的诊断。
+        // 诊断由 `CfirFlowBinaryOpChecker` 消费标记后报告。
+        if (callFailed) {
+            // 官方 `DiagnoseForBinaryExpr`（`BinaryExpr.cpp:795-826`）先判定两侧操作数的
+            // **自身**综合是否成立，只有两侧都正确时才在操作符上报 `sema_invalid_binary_expr`
+            // （`BinaryExpr.cpp:838-843`）。解糖调用的实参检查会把失配的错误类型写回操作数
+            // （`|>` 的实参节点与左操作数是同一对象，见 `buildPipelineCall`），因此归属类型
+            // 必须在此重新取操作数自身的综合结果，否则会把调用侧错误误判成操作数根错误。
+            val ownError = binaryOp.left.flowOperandOwnErrorOrNull()
+                ?: binaryOp.right.flowOperandOwnErrorOrNull()
+            if (ownError != null) {
+                // 操作数自身的根错误（名字解析失败等）：诊断归属于操作数自身，flow 只做
+                // 错误类型传播，不派生操作符诊断。官方同一分支(`BinaryExpr.cpp:805-810`)。
+                val errorType = ConeErrorType(
+                    ConeUnreportedDuplicateDiagnostic(ownError),
+                    delegatedType = binaryOp.flowDelegatedResultType(resultType),
+                )
+                resolvedCall.replaceConeTypeOrNull(errorType)
+                binaryOp.replaceConeTypeOrNull(errorType)
+                return resolvedCall
+            }
+            binaryOp.replaceConeTypeOrNull(
+                ConeErrorType(
+                    ConeInvalidFlowBinaryExpr(
+                        reason = "flow expression desugared call failed",
+                        leftOperandType = binaryOp.left.coneTypeOrNull ?: leftOperandType,
+                        rightOperandType = binaryOp.right.coneTypeOrNull,
+                    ),
+                ),
+            )
+            return binaryOp
+        }
         binaryOp.flowOperandRootErrorOrNull(resultType)?.let { errorType ->
             // 操作数内部已有根错误（名字解析失败等）：诊断归属于操作数自身，flow 只做
             // 错误类型传播，不派生操作符诊断。官方同一分支(`BinaryExpr.cpp:1022-1032`)。
@@ -4969,26 +5008,29 @@ open class CfirExpressionsResolveTransformer(
             binaryOp.replaceConeTypeOrNull(errorType)
             return resolvedCall
         }
-        // 官方 `ChkFlowExpr` 第二阶段(`BinaryExpr.cpp:1057-1070`)：解糖调用失败时丢弃调用
-        // 自身的全部诊断，`RecoverToBinaryExpr` 恢复成二元节点后在操作符上报
-        // `sema_invalid_binary_expr`。这里同样**整棵丢弃合成调用**并回退到二元节点：
-        // 合成调用的 `operator ()` 包装会把「类型可解析但操作符无重载」重述成操作数上的
-        // UNRESOLVED_REFERENCE / NO_MATCHING_OPERATOR_INVOKE / ARGUMENT_TYPE_MISMATCH，
-        // 这些都是官方不存在的诊断。诊断由 `CfirFlowBinaryOpChecker` 消费标记后报告。
-        if (resolvedCall.hasReportedCallDiagnostic() || resultType == null || resultType.containsErrorType()) {
-            binaryOp.replaceConeTypeOrNull(
-                ConeErrorType(
-                    ConeInvalidFlowBinaryExpr(
-                        reason = "flow expression desugared call failed",
-                        leftOperandType = leftOperandType,
-                        rightOperandType = binaryOp.right.coneTypeOrNull,
-                    ),
-                ),
-            )
-            return binaryOp
-        }
         binaryOp.replaceConeTypeOrNull(resultType)
         return resolvedCall
+    }
+
+    /**
+     * 解糖调用失败后取操作数**自身**综合的根错误，对位官方 `DiagnoseForBinaryExpr`
+     * （`external/cangjie_compiler/src/Sema/TypeCheckExpr/BinaryExpr.cpp:795-826`）。
+     *
+     * 官方在该处先看操作数是否已定型（`Ty::IsInitialTy`，:795/:813），未定型则在抑制器内
+     * 补一次综合；仍不正确时于抑制器之外重新综合一次，使其**自身**的诊断成为根诊断
+     * （:805、:823）。只有两侧都正确时才继续到 `DiagInvalidBinaryExpr`（:838-843）。
+     *
+     * 这里的对位是：调用失败后操作数上残留的类型可能来自实参映射的写回而非其自身综合，
+     * 因此重新综合一次取回自身结果。已有正确类型时保持不动（对位官方 `IsChecked` 的
+     * 缓存命中原语，见 `TypeChecker.cpp:837-846`；本仓同类先例见
+     * `transformOptionalExpression` 的 `hasResolvedType` 短路）。
+     */
+    private fun CfirExpression.flowOperandOwnErrorOrNull(): ConeDiagnostic? {
+        val current = coneTypeOrNull
+        if (current == null || current.containsErrorType()) {
+            transform<CfirExpression, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+        }
+        return rootErrorDiagnosticOrNull()
     }
 
     /**

@@ -9,11 +9,11 @@
 // 操作数自身的名字解析失败**不走**该路径：官方在综合操作数阶段就已报出
 // `sema_undeclared_identifier`（本仓 `UNRESOLVED_REFERENCE`），不再派生操作符诊断。
 //
-// 已知缺口 1 项（`this |> g`，见下方注释）：解糖调用的**实参检查**把失配的错误类型写回左
-// 操作数（实参节点与操作数节点是同一对象），操作数的根错误检查据此提前返回，操作符诊断
-// 无从产生。官方用投机综合（`DiagSuppressor` + `PData::Reset`，`BinaryExpr.cpp:1021-1027`）
-// 避免该污染；本仓 transform 对 lambda 形参左操作数不具可重入性（预综合抛内部异常），
-// 故需要与官方对位的投机综合/回滚基建后才能闭合。
+// 操作数归属类型的裁决对位官方 `DiagnoseForBinaryExpr`（`BinaryExpr.cpp:795-826`）：解糖调用
+// 失败后操作数上残留的类型可能来自实参映射的**写回**而非其自身综合（`|>` 的实参节点与左操作
+// 数是同一对象，见 `buildPipelineCall`），故在失败分支重新取一次操作数自身的综合结果；只有
+// 两侧自身都成立时才在操作符上报诊断（`:838-843`）。`this |> g`（左操作数自身正确、调用实参
+// 失配）由此收敛，不再需要阶段 1 式的投机综合基建。
 func g(v: Int64): Int64 { v }
 
 func takesC(v: FlowOperandFailure): Int64 { 1 }
@@ -26,10 +26,11 @@ class FlowOperandFailure {
         x <!INVALID_BINARY_OPERATOR!>~><!> g
     }
 
-    // 已知缺口：cjc 报 `invalid binary operator '|>' on type 'This' and '(Int64) -> Int64'`，
-    // CFIR 当前不报（也不会再报出官方不存在的 ARGUMENT_TYPE_MISMATCH）。
+    // cjc 1.0.5 与 1.0.0 实测一致：`invalid binary operator '|>' on type 'This' and
+    // '(Int64) -> Int64'`，锚 `|>` 两个字符（列 14-16）。证据：`codex-probes/
+    // flow_operand_failure/p25_fixture_this_pipe_mismatch.cj` 的 out105/out100。
     func thisLeftPipe(): Unit {
-        this |> g
+        this <!INVALID_BINARY_OPERATOR!>|><!> g
     }
 
     // 正控：`this |> f` 在形参类型匹配时合法（cjc 零诊断）。
