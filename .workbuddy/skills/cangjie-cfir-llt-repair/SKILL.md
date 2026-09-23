@@ -293,3 +293,80 @@ Report only evidence-backed facts, using both Repair Report Fields groups for ea
 16. **多个 `Edit` 打在同一文件时，只有最后一次落盘**（已在 8 条记录）。补充实操：
     需要改同一文件的"导入段 + 函数体"两处时，**分两条消息**各自 Edit，并在两次之间用
     `grep -n <新符号> <file>` 核验，再启动测试。
+
+## Session-Proven Tooling & Pitfalls (2026-09-21)
+
+17. **【流程教训·代价 10 轮测试】必须先用 cjc 拿到官方行为，再动 CFIR 代码。**
+    本轮把 fixture 期望当权威、直接从第 ④ 层（CFIR 现状）插桩，跑了十轮才回头做第 ① 步。
+    正确顺序的开销极小：单构造探针一次只花十几秒。**cjc 实测结论**（`option_with_element_01.cj`）：
+    `Errors: 0` —— 比任何 CFIR 侧推理都更快地锁定了"错在 CFIR 而非 fixture"。
+18. **cjc 是原生 Windows 程序，喂给它的路径必须是 Windows 形式。**
+    直接用 `/tmp/xxx/probe.cj` 会报 `error: source file '...' doesn't exist`（不是"文件不存在"，
+    是路径没被识别）。用 `cygpath -w /tmp/xxx` 转换后再拼 `"$WD\\probe.cj"`。
+    可用的最小单构造探针（含 JSON 诊断与精确锚点）：
+    ```
+    export PATH="/usr/bin:/bin:$PATH"
+    CJC=/c/Users/lin17/.cangjie/sdks/cangjie-1.0.5/bin/cjc.exe
+    WD=$(cygpath -w /tmp/cjcprobe)
+    "$CJC" --diagnostic-format=json --output-type=staticlib "$WD\\probe.cj" -o "$WD\\out"
+    ```
+    读 JSON 的 `Num: { Errors, Warnings }` 判结论；`MainHint.Range` 拿锚点（End 列 = 末字符列 + 1）。
+    注意 chir 阶段的 `chir_dce_unused_function_main` 之类**不是 sema 诊断**，不要算进"官方报错"。
+19. **【插桩技巧·大幅省轮次】查"某条约束是谁派生的"，打印 `Constraint.position` 而不是 kind/type。**
+    `ConstraintPosition` 的 `toString()` 自带完整派生链，例如：
+    `Incorporate Int64 <: TypeVariable(T) from Argument <字面量节点>`。
+    这一条直接定位了 owner，比只打 `kind`/`type` 再回头猜调用栈高效得多。
+    位置：`ConstraintInjector.processGivenConstraints` 里 `constraints.addConstraint(...)` 之前。
+20. **`ConstraintSystemImpl` 里做行内探针的两个编译坑**：`typeVariable.typeConstructor()`
+    需要 `TypeSystemContext` receiver（写成 `with(c) { ... }`）；`position.from` 在该作用域不可用
+    （会报 `Unresolved reference ... receiver type mismatch`）。取变量身份用
+    `System.identityHashCode(typeVariable)`。
+21. **不要用 `io.open(p,'w')` 脚本改写仓库内的 Kotlin 文件**：Windows 上会把 LF 转成 CRLF，
+    结果 `git status` 显示 ` M`，但 `git diff` / `git diff --numstat` 全为空，极易误判成
+    "改坏了"或"没改成功"。要脚本改写就传 `newline=''`；能用 Edit 就别用脚本。
+    同理：对**非自己本轮新建**的文件不要用 `git checkout --` 清探针（并行会话会改同一棵树），
+    应改用 Edit 精确删除自己加的行。
+22. **`option_with_element_01` 的已知结论（避免重挖）**：官方 `T = Option<Int64>` 靠 Option auto-boxing
+    （`external/cangjie_compiler/src/Sema/TypeManager.cpp:836-839`）；官方先由下界 join 解出 `T`
+    再实例化声明上界，见 `LocalTypeArgumentSynthesis.cpp:32-60`（注释里就有本用例的形状）与 `:329`
+    （正常推断只写 lbs/ubs，等价约束仅在 `deterministic` 诊断重跑路径）。
+    CFIR 偏离点：incorporation 把 `A <: α <: B ⇒ A <: B` 用在"下界 × 声明上界"上，
+    检查 `Int64 <: Equatable<T>` 时反手给 `T` 加了 `T <: Int64`，与 `Int64 <: T` 合并成
+    `EQUALITY:Int64` 把 `T` 钉死。**剩余未知**：`T <: Int64` 在子类型检查器内的具体发出点。
+    详见 `cfir/analysis-tests/REPAIR_LOG.md` 2026-09-21 两节。
+
+## Session-Proven Tooling & Pitfalls (2026-09-23)
+
+23. **【方案评估】"原语已存在" ≠ "该路线可行"。** 评估"用既有快照/回滚/抑制原语绕过某个框架缺陷"时，
+    结论必须落在**"回滚或抑制之后，后续判定与渲染所需的信息是否仍然存在"**，而不是"原语齐备度"。
+    典型失效形态：原语齐全、且已在同一文件复用多处，但目标信息从未被生产过 → 回滚后仍是空值，
+    消费点直接 `return`，**收益为零而回归风险非零**。原语齐备度与方案可行性是两件独立的事，必须分开评估。
+24. **【方案评估】"信息在何处被生产、又被何处销毁"决定修复层级。** 若修复所需的事实由阶段 A 产出、
+    随即被阶段 B 的写回覆盖，则任何发生在 A 之外的补救（调用外部、消费点、checker 侧）都取不回该事实，
+    应直接否决；正确层级是在**该事实被生产之前**建立独立求值（对位官方"解糖前独立综合"那一层）。
+    实操：先定位"产生点 + 销毁点"，再选层级——一次即可否掉整族错误方案，远快于逐个试。
+25. **【缺陷可闭合性】提前返回/提前失效的判据若是"递归取子树内任一错误"的实现，会同时吞掉两类语义相反的事实。**
+    此时"实体自身的根错误"（应保留、应单独报）与"下游阶段写回的错误"（应丢弃、应改报外层）
+    在该判据处**可观测特征完全相同**；任何"让判据忽略后者"的改动都会同时放走前者 →
+    缺陷**不可独立闭合**。判定法：列全该判据在期望行为上必须区分的语义，逐个检查本仓是否可区分；
+    全不可区分就登记为"需配套基建"，**不要写局部补丁**，也不要用形态枚举去绕（那属于反面信号）。
+26. **【归因纪律】"不可重入"类缺陷的根因要落在不变量的名字上，不要落在"写得不够幂等"上。**
+    实测形态：写入 API 是纯赋值、无任何断言（所以"幂等性"这条线本来就是死路），真正被违反的是某个
+    **阶段不变量**（如"已解析的表达式才有 resolvedType"），由调用链读取未完成节点触发；修法方向随之不同
+    （不是加去重表/守卫，而是让该调用发生在阶段边界允许的位置）。
+    另：若某形状的**精确中间栈帧没有留证**，日志必须写成"由抛点 + 已文档化不变量推出"，不能写成已观测——
+    归因的证据等级要显式标注。
+27. **【提交纪律】在含他人未提交改动的脏树上提交**：`git add <file>` 会把该文件里**他人在途的改动一起带走**。
+    先 `git diff --numstat <file>` 确认改动只属于自己；混改时按 hunk 归属分离再 `git apply --cached`。
+    提交后立刻 `git diff --cached --name-only` 核验暂存区**恰好等于**预期文件集。
+28. **【核验纪律】改动 CRLF 文件后要单独验证行尾。** git 会归一化行尾，`git diff` 对"整文件行尾被翻转"
+    可能完全沉默（见第 21 条）。核验式：`total=$(wc -l < f)`、`crlf=$(grep -c $'\r$' f)`，
+    要求 `lf_only = total - crlf = 0`。反面用法：`git status` 显示 ` M` 而 `git diff --numstat` 为空时，
+    **先怀疑行尾，不要怀疑 Edit 没落盘**（真要查落盘用 `grep -n <新符号> <file>`）。
+29. **【回归前置】改完源码要跑的全量测试，前提是工作树能编译。** 若工作树同时存在他人未完成的重构，
+    先做一次**仅编译**的全仓扫描再谈测试：`classes testClasses testFixturesClasses --continue`
+    （根项目聚合调用会覆盖所有子项目；`--continue` 保证前一个模块失败不影响后续模块继续编译）。
+    这样能一次性拿到"哪个模块、哪一行、缺什么"的完整清单，避免逐模块迭代编译。
+    注意本仓库的生成式构造器（`cfir-tree/gen/**/*Impl.kt` 由 `CfirTree.kt` 规格生成）**没有默认参数**，
+    连可空参数也是必填；所以**给树规格加字段 = 所有手写构造点一起破**，修复一律落在调用点，
+    不要去手改 `gen/` 目录。
