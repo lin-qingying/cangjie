@@ -1687,6 +1687,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 元组成员不能是 @C struct（官方 sema_invalid_tuple_field_ctype）
         val INVALID_TUPLE_FIELD_CTYPE by error<PsiElement>()
 
+        // 裸 CPointer() 泛型无法推导（官方 sema_pointer_unknow_generic_type）
+        val POINTER_UNKNOW_GENERIC_TYPE by error<PsiElement>()
+
         // enum 变量（实例）不能作为成员访问的 base 去取 enum 构造器（官方 sema_invalid_enum_member_access）
         val INVALID_ENUM_MEMBER_ACCESS by error<PsiElement>()
 
@@ -2012,9 +2015,10 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // specific 找不到匹配的 common 声明
         val NOT_MATCHED by error<PsiElement> {
-            parameter<Name>("declarationName")
-            parameter<String>("kind")
-            parameter<String>("matchKind")
+            // 官方参数形（CheckCJMP.cpp:156）：(side, "Kind 'name'", counterpartSide)
+            parameter<String>("side")
+            parameter<String>("declarationInfo")
+            parameter<String>("counterpartKind")
         }
 
         // specific var 不能匹配 common let
@@ -2132,13 +2136,82 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("kind")
         }
 
-        // common/specific 泛型重命名暂不支持
-        val COMMON_GENERIC_RENAME_NOT_SUPPORTED by error<PsiElement>()
-
         // 某些注解不允许在 common/specific 声明上使用
         val COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED by error<PsiElement> {
             parameter<Name>("annotationName")
         }
+
+        // ================================================================
+        // CJMP 解析族（官方 DiagnosticParser.def:266-277，parse_* 命名空间，1.1.0 起）
+        // 报告点 = CfirCjmpParseRulesChecker（D13：parser 配置无关，族诊断统一在 CFIR
+        // 声明形状上判定；版本门经 CjmpGate——1.0.x 只报 UNSUPPORTED_FEATURE 并整族短路）。
+        // cjc 1.1.3 探针实测：生效 9 条 + 2 条 file-part（模式门，Phase 4 接线）；
+        // 无触发点 3 条（登记保留、不激活）——参数默认值（specific 单侧合法）、
+        // var 类型（隐式类型合法）、泛型声明（泛型限制走 COMMON_GENERIC_FROZEN_NOT_SUPPORTED）。
+        // ================================================================
+
+        // common/specific 函数缺返回类型（官方 ParseDecl.cpp:1974-1980：无函数体且无返回类型）
+        val PARSE_COMMON_FUNCTION_MUST_HAVE_RETURN_TYPE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
+        val PARSE_SPECIFIC_FUNCTION_MUST_HAVE_RETURN_TYPE by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
+
+        // specific 函数参数带默认值（官方无触发点；登记保留）
+        val PARSE_SPECIFIC_FUNCTION_PARAMETER_CANNOT_HAVE_DEFAULT_VALUE by error<PsiElement> {
+            parameter<String>("declKind")
+        }
+
+        // specific 接口成员必须有实现（官方 ParseCJMPDecl.cpp:278-290 CheckSpecificInterface）
+        val PARSE_SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION by error<PsiElement> {
+            parameter<Name>("memberName")
+            parameter<Name>("containerName")
+        }
+
+        // common/specific var 必须带类型（官方无触发点；登记保留）
+        val PARSE_EXPECTED_TYPE_WITH_CJMP_VAR by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+            parameter<String>("kind")
+            parameter<String>("declKind")
+        }
+
+        // 成员的 common/specific 与外层容器不一致（官方 ParseCJMPDecl.cpp:264-276）
+        val PARSE_CJMP_OUTDECL_MISS_MATCH by error<PsiElement> {
+            parameter<String>("memberDescription")
+            parameter<String>("memberKindText")
+            parameter<String>("containerKindText")
+            parameter<String>("expectedKindText")
+        }
+
+        // static init 不能带 common/specific（官方 ParseCJMPDecl.cpp:242-246）
+        val PARSE_CJMP_STATIC_INIT by error<PsiElement> {
+            parameter<String>("kind")
+        }
+
+        // 非 common/specific 编译模式下使用修饰符（官方 ParseCJMPDecl.cpp:107-131，模式门；Phase 4 接线）
+        val PARSE_UNEXPECTED_CJMP_DECL by error<PsiElement>()
+
+        // 泛型声明不能带 common/specific（官方无触发点；登记保留）
+        val PARSE_CJMP_GENERIC_DECL by error<PsiElement> {
+            parameter<String>("kind")
+        }
+
+        // 模式声明不能带 common（官方 ParseCJMPDecl.cpp:235-241）
+        val PARSE_CJMP_PATTERN_DECL by error<PsiElement> {
+            parameter<String>("patternKind")
+            parameter<String>("kind")
+        }
+
+        // common 类/结构体至少需要一个显式构造器（官方 ParseCJMPDecl.cpp:201-223）
+        val PARSE_CJMP_IN_COMMON_CTOR_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+            parameter<String>("declType")
+            parameter<Name>("name")
+        }
+
+        // explicitly abstract 只能用于 common/specific 抽象类（官方 ParseDecl.cpp:2085-2096、Parser.cpp:455-470）
+        val PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS by error<PsiElement> {
+            parameter<String>("declKind")
+        }
+
+        // 文件 part 与声明修饰符不一致（cjc 1.1.3 实测：消息与 package 行锚点；模式门，Phase 4 接线）
+        val PARSE_COMMON_IN_NON_COMMON_FILE by error<PsiElement>()
+        val PARSE_SPECIFIC_IN_NON_SPECIFIC_FILE by error<PsiElement>()
     }
 
     /**

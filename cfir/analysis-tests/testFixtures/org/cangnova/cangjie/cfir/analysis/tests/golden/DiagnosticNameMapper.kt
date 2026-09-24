@@ -244,6 +244,9 @@ object DiagnosticNameMapper {
         // ── Interop / Foreign ──
         "INVALID_CFUNC_RETURN_TYPE" to "sema_invalid_cfunc_return_type",
         "INVALID_CFUNC_PARAMETER_TYPE" to "sema_invalid_cfunc_parameter_type",
+        "INVALID_COALESCING" to "sema_invalid_coalescing",
+        "INVALID_TUPLE_FIELD_CTYPE" to "sema_invalid_tuple_field_ctype",
+        "POINTER_UNKNOW_GENERIC_TYPE" to "sema_pointer_unknow_generic_type",
         "UNSAFE_FUNCTION_INVOKE_FAILED" to "sema_unsafe_function_invoke_failed",
         "CFUNC_VAR_CANNOT_HAVE_VAR_PARAM" to "sema_cfunc_var_cannot_have_var_param",
         "INVALID_CALLING_CONVENTION_TARGET" to "sema_invalid_calling_convention_target",

@@ -4,8 +4,8 @@
 //   - sema_invalid_coalescing: `??` 左操作数必须是 Option（BinaryExpr.cpp:1105-1118）
 //   - sema_invalid_tuple_field_ctype: 元组成员不能是 @C struct（TypeCheckType.cpp:299-310）
 //   - sema_immutable_access_mutable_func: let 接收者访问 mut 成员（既有 checker 承载）
-//   - 裸 CPointer() 泛型无法推导：CFIR 以 UNABLE_TO_INFER_GENERIC_FUNC 承载
-//     （官方 sema_pointer_unknow_generic_type 的语义等价改名，保留项目诊断名）
+//   - 裸 CPointer() 泛型无法推导：CFIR 报 POINTER_UNKNOW_GENERIC_TYPE
+//     （官方 sema_pointer_unknow_generic_type，消息 "'CPointer' generic type cannot be inferred"）
 //   - 正常路径零诊断：Option ?? 字面量、普通元组类型、CPointer<Int64>()、pure() 调用
 @C
 struct CPoint {
@@ -31,7 +31,7 @@ func probeTupleCTypeField(): Unit {
 }
 
 func probePointer(): Unit {
-    let bare = <!UNABLE_TO_INFER_GENERIC_FUNC!>CPointer<!>()
+    let bare = <!POINTER_UNKNOW_GENERIC_TYPE!>CPointer<!>()
     let typed = CPointer<Int64>()
     println(<!ARGUMENT_TYPE_MISMATCH!>bare<!>)
     println(<!ARGUMENT_TYPE_MISMATCH!>typed<!>)

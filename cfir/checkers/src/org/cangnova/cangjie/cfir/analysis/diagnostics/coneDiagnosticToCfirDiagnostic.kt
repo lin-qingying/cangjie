@@ -2685,6 +2685,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             genericInferenceAnchorSource, session,
         )
 
+        is ConePointerUnknowGenericTypeError -> CfirErrors.POINTER_UNKNOW_GENERIC_TYPE.on(
+            genericInferenceAnchorSource, session,
+        )
+
         is ConeGenericFunctionReferenceWithoutTypeArgumentsError ->
             CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
                 source ?: diagnosticSource,

@@ -1058,6 +1058,17 @@ class ConeUnableToInferGenericFuncError : ConeDiagnostic {
 }
 
 /**
+ * 裸 `CPointer()` 且 pointee 类型既不能从目标类型也不能从显式实参推断。
+ *
+ * 对齐 C++ `sema_pointer_unknow_generic_type`（TypeCheckBuiltinExpr.cpp:492/:540）。
+ * 与 [ConeUnableToInferGenericFuncError] 不同，这是 `CPointer` 专属诊断，消息固定为
+ * "'CPointer' generic type cannot be inferred"。
+ */
+class ConePointerUnknowGenericTypeError : ConeDiagnostic {
+    override val reason: String get() = "'CPointer' generic type cannot be inferred"
+}
+
+/**
  * 独立泛型函数值引用缺少显式类型实参且没有目标函数类型。
  *
  * 函数值引用缺失的是函数自身的类型实参，而不是一次调用的推断结果；诊断映射据此复用
