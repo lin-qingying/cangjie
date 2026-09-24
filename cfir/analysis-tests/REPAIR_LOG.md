@@ -10224,3 +10224,10 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 
 - 真相：上轮 fixture 修正把标记内容误写为单引号（源码字符串未闭合），探针显示分析文本 `quote($(-"))` 才误导出"light tree span 偏移"假结论；CodeMetaInfoParser 剥离行为正常。
 - 修正标记内容为 `-""` 后双入口全绿——quote1 轮 CFIR got 本已是官方口径。此前"light tree span 系统性偏移"结论作废。
+
+### 2026-09-24 补充 3：ErrBinary00 探针结论（未修，已定性）
+
+- 修正 fixture 后 ErrQuoteUnary 双入口全绿（见补充 2）。
+- ErrBinary00 剩余差异：`quote($x)` 的 UNRESOLVED_REFERENCE@x 缺失。探针发现 **transformQuoteExpression 对宏定义（macro package）文件完全未调用**（全测试 XML 无 PROBE-QX 输出）——宏定义体走 FrontendMacroConstructionService / MacroExpandPhase 宏构造专用管线，其内 quote 插值解析（含 x 的作用域判定）发生在独立路径，且此时 x 已入作用域（官方 cjc 对该构造报 undeclared identifier，官方语义 = let 初始化器作用域不含自身绑定；普通路径 initializer_binding_scope 机制正确）。
+- 下一步：定位宏构造管线内 quote 插值引用的解析入口（MacroExpandPhase.kt / MacroStableSplicer / fragment parser），对齐官方 own-binding 作用域口径。
+- 环境注：CfirDeserializedSymbolProvider.kt（并行会话）本轮再次处于编译错误中间态，终验被阻塞；以 qu10 轮结果为准。
