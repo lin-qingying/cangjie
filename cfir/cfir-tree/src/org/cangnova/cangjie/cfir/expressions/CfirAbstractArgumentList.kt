@@ -132,12 +132,34 @@ internal class CfirResolvedArgumentListImpl(
 
     /**
      * 转换映射 key 中的实参表达式，并保持原有形参映射关系。
+     *
+     * 每个实参表达式实例只 transform 一次：[mapping] 与
+     * [mappingIncludingContextArguments] 默认构造为同一实例（或持有相同 key 实例），
+     * 若各做一遍 mapKeys，同一实参子树会被重复变换——嵌套调用深度 d 时子树遍历
+     * 次数按 2^d 增长（llt/function/nest_function_call.cj 的 40 层 `F(F(...))`
+     * 即触发指数爆炸，全量回归挂死在该 fixture 上）。
      */
     override fun <D> transformArguments(transformer: CfirTransformer<D>, data: D): CfirArgumentList {
-        mappingIncludingContextArguments =
-            mappingIncludingContextArguments.mapKeys { (k, _) -> k.transformSingle(transformer, data) } as LinkedHashMap<CfirExpression, CfirValueParameter>
-        mapping =
-            mapping.mapKeys { (k, _) -> k.transformSingle(transformer, data) } as LinkedHashMap<CfirExpression, CfirValueParameter>
+        val transformedKeys = HashMap<CfirExpression, CfirExpression>()
+        fun transformKeyOnce(key: CfirExpression): CfirExpression =
+            transformedKeys.getOrPut(key) { key.transformSingle(transformer, data) }
+
+        val aliased = mappingIncludingContextArguments === mapping
+        val newMapping = LinkedHashMap<CfirExpression, CfirValueParameter>(mapping.size)
+        for ((key, parameter) in mapping) {
+            newMapping[transformKeyOnce(key)] = parameter
+        }
+        mapping = newMapping
+        if (aliased) {
+            mappingIncludingContextArguments = newMapping
+        } else {
+            val newMappingIncludingContext =
+                LinkedHashMap<CfirExpression, CfirValueParameter>(mappingIncludingContextArguments.size)
+            for ((key, parameter) in mappingIncludingContextArguments) {
+                newMappingIncludingContext[transformKeyOnce(key)] = parameter
+            }
+            mappingIncludingContextArguments = newMappingIncludingContext
+        }
         return this
     }
 }
