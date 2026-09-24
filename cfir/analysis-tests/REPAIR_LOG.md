@@ -10219,3 +10219,8 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - quote 节点 asText 重建文本（`$(-"))`）与自身 start..end 跨度（6 字符）自相矛盾——`getNodeText` 子节点重建与节点 offset 存在系统性 +1/-1 偏移，疑似 light tree mark 起点或 QUOTE 内字符串 token（OPEN_QUOTE/CLOSING_QUOTE 对 `""`）的 offset 记录问题。
 - cjc 四版本实测 range = `-"`（fixture 已按此更新）；普通位置（非 quote 内）的 `-a` range 正常（unaryMinus.cj 通过），问题仅限 QUOTE_PARAMETERS 内的表达式 span。
 - 下一步：对照 light tree mark 机制（mark() 起点取"下一 token"还是"当前 token"）与 quote 字符串 token 的 endOffset 计算。
+
+### 2026-09-24 补充 2：ErrQuoteUnary 全绿（`fixture 修正`）
+
+- 真相：上轮 fixture 修正把标记内容误写为单引号（源码字符串未闭合），探针显示分析文本 `quote($(-"))` 才误导出"light tree span 偏移"假结论；CodeMetaInfoParser 剥离行为正常。
+- 修正标记内容为 `-""` 后双入口全绿——quote1 轮 CFIR got 本已是官方口径。此前"light tree span 系统性偏移"结论作废。
