@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.CfirLambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.resolve.calls.lambdaParameterTypingFailure
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
+import org.cangnova.cangjie.cfir.diagnostic.ConePointerUnknowGenericTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferExpressionTypeError
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -209,7 +210,7 @@ class CfirCallCompleter(
         if (!transformer.context.isInsideCallArgumentResolution &&
             candidate.shouldReportBuiltinPointerInferenceFailure(resolutionMode)
         ) {
-            call.replaceCalleeReference(reference.toErrorReference(ConeUnableToInferGenericFuncError()))
+            call.replaceCalleeReference(reference.toErrorReference(ConePointerUnknowGenericTypeError()))
         }
         candidate.addSameClassifierArgumentTypeConstraints()
         if (skipEvenPartialCompletion) return call
