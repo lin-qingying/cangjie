@@ -283,7 +283,7 @@ private fun MacroSurface.toPreArtifactSnapshot(
         ?.takeIf { !isQualifiedName && samePackage == null && it in context.builtinMacroRegistry }
         ?.let { context.symbolIndex.lookupByFqName(FqName.topLevel(it)) }
         ?.takeIf { it.source == MacroDefinitionEntry.Source.BUILTIN_MACRO }
-    val importCandidates = collectImportCandidatePackages(preFile)
+    val importCandidates = collectImportCandidatePackages(preFile, context.packageAliases)
     val demand = externalDemandPackage(
         preFile = preFile,
         samePackage = samePackage,
@@ -291,6 +291,7 @@ private fun MacroSurface.toPreArtifactSnapshot(
         builtinMacro = builtinMacro,
         importCandidates = importCandidates,
         sourceMacroPackages = sourceMacroPackages,
+        packageAliases = context.packageAliases,
     )
     return PreArtifactSurfaceSnapshot(
         surface = this,
@@ -383,10 +384,18 @@ private fun MacroSurface.slotType(): MacroReplacementSlotType = when (this) {
 }
 
 /** 从显式限定名和 import 列表中收集可能需要 artifact preparation 的 macro package。 */
-private fun MacroSurface.collectImportCandidatePackages(preFile: PreMacroCfirFile): List<FqName> {
+private fun MacroSurface.collectImportCandidatePackages(
+    preFile: PreMacroCfirFile,
+    packageAliases: Map<Name, FqName>,
+): List<FqName> {
     val name = qualifiedName?.shortName() ?: return emptyList()
     if (isQualifiedName) {
-        return listOfNotNull(qualifiedName?.parent()?.takeUnless { it.isRoot || it == scopeContext.packageFqName })
+        val qualifier = qualifiedName?.parent()
+            ?.takeUnless { it.isRoot || it == scopeContext.packageFqName }
+            ?: return emptyList()
+        // 写出的 qualifier 可能是包别名（`import FFF as TT` 的 `@TT.M`）：
+        // demand 必须指向真实宏包 FFF，否则 artifact preparation 找不到编译源根。
+        return listOfNotNull(packageAliases[qualifier.shortName()] ?: qualifier)
     }
     val result = linkedSetOf<FqName>()
     qualifiedName
@@ -413,10 +422,11 @@ private fun MacroSurface.externalDemandPackage(
     builtinMacro: MacroDefinitionEntry?,
     importCandidates: List<FqName>,
     sourceMacroPackages: Set<FqName>,
+    packageAliases: Map<Name, FqName>,
 ): FqName? {
     if (preFile.isMacroPackage || isMacroDefinitionSignatureSurfaceForClassification()) return null
     if (samePackage != null || builtinNonMacro != null || builtinMacro != null) return null
-    val qualifiedPackage = qualifiedName
+    val rawQualifiedPackage = qualifiedName
         ?.parent()
         ?.takeIf { isQualifiedName }
         ?.takeUnless {
@@ -424,6 +434,9 @@ private fun MacroSurface.externalDemandPackage(
                 it == scopeContext.packageFqName ||
                 it == preFile.cfirFile.packageDirective.packageFqName
         }
+    // 包别名还原与 [collectImportCandidatePackages] 保持同一口径：
+    // `@TT.M` 的 TT 经 `import FFF as TT` 解析到真实宏包 FFF。
+    val qualifiedPackage = rawQualifiedPackage?.let { packageAliases[it.shortName()] ?: it }
     if (replaceHandle.annotationCarrier != null) {
         if (kind == MacroSurface.Kind.FORCED) return null
         return listOfNotNull(qualifiedPackage)
