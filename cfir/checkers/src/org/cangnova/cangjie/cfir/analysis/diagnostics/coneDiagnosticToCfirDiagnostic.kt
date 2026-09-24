@@ -2283,6 +2283,10 @@ private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
     val leftType = receiverType ?: return null
     val rightType = argumentTypes.singleOrNull() ?: return null
     if (leftType.containsErrorType() || rightType.containsErrorType()) return null
+    // Nothing operand（return/break/continue 等必然终止表达式）不参与二元运算检查：
+    // 官方语义按 join 处理，join(非 Nothing, Nothing) = 非 Nothing 一侧，不做运算符适用性检查
+    // （cjc 1.0.5/1.1.3 探针：`let x = parseExpr(input) | return quote($x)` 只报 x 未声明，不报 |）。
+    if (leftType.isNothing || rightType.isNothing) return null
 
     return CfirErrors.INVALID_BINARY_OPERATOR.on(
         diagnosticSource,
@@ -2300,7 +2304,9 @@ private fun ConeUnresolvedNameError.isBinaryOperatorCascadeFromErrorOperand(): B
     if (operator == null) return false
     val leftType = receiverType ?: return false
     val rightType = argumentTypes.singleOrNull() ?: return false
-    return leftType.containsErrorType() || rightType.containsErrorType()
+    return leftType.containsErrorType() || rightType.containsErrorType() ||
+            // Nothing operand 级联：二元检查跳过（见 buildInvalidBinaryOperatorDiagnostic）。
+            leftType.isNothing || rightType.isNothing
 }
 
 /**
