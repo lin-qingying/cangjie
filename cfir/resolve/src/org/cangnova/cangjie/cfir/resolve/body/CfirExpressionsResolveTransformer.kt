@@ -88,6 +88,9 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.cfir.resolve.body.CfirBuiltinOperatorResolver
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
@@ -4745,6 +4748,20 @@ open class CfirExpressionsResolveTransformer(
             rightType is ConeTupleType &&
             leftType.elementTypes.size == rightType.elementTypes.size
         ) {
+            // 官方 `sema_tuple_element_cmp_not_bool`：仅在具有期望类型的 Check 路径下逐元素校验
+            // `==` 运算符返回类型是否为 Bool；无期望类型的 synthesize 路径保持现有行为（不报本诊断）。
+            if (data.expectedTypeOrNull != null) {
+                for (i in leftType.elementTypes.indices) {
+                    val elementLeft = leftType.elementTypes[i]
+                    val elementRight = rightType.elementTypes[i]
+                    if (!isTupleElementEqualityBool(elementLeft, elementRight)) {
+                        return ConeErrorType(
+                            ConeTupleElementCmpNotBoolError(elementLeft.toString(), elementRight.toString()),
+                            delegatedType = builtinTypes.boolType,
+                        )
+                    }
+                }
+            }
             return builtinTypes.boolType
         }
         CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
@@ -4788,6 +4805,49 @@ open class CfirExpressionsResolveTransformer(
         }
 
         return completedCall.coneTypeOrNull ?: builtinTypes.boolType
+    }
+
+    /**
+     * 判断两个元素的 `==` 运算符（官方 `operator func ==`）返回类型是否为 `Bool`。
+     *
+     * 对齐官方 `sema_tuple_element_cmp_not_bool`：tuple `==`/`!=` 元素逐一比较，等元数下若某元素
+     * 的 `==` 运算符返回类型非 `Bool` 即报错。内建基础类型运算符直接判定；用户类型则在类成员作用域
+     * 中查找 `equals` 运算符并校验其返回类型。
+     */
+    private fun isTupleElementEqualityBool(leftElement: ConeCangJieType, rightElement: ConeCangJieType): Boolean {
+        val builtin = CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
+            OperatorNameConventions.EQUALS, leftElement, listOf(rightElement),
+        )
+        if (builtin != null) {
+            return builtin.returnType is ConePrimitiveType && builtin.returnType.kind == PrimitiveTypeKind.BOOLEAN
+        }
+
+        val classId = leftElement.classIdOrPrimitiveClassId ?: return true
+        val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return true
+        val scope = CfirClassUseSiteMemberScope(
+            session = session,
+            classSymbol = classSymbol,
+            symbolProvider = session.symbolProvider,
+            ownerType = leftElement,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        )
+        var foundBoolReturning = false
+        var foundNonBoolReturning = false
+        scope.processFunctionsByName(OperatorNameConventions.EQUALS) { symbol ->
+            if (!symbol.isBound) return@processFunctionsByName
+            val declaration = symbol.cfir as? CfirFunction ?: return@processFunctionsByName
+            if (declaration.valueParameters.size != 1) return@processFunctionsByName
+            val parameterType = declaration.valueParameters.single().returnTypeRef.coneTypeOrNull ?: return@processFunctionsByName
+            if (!AbstractTypeChecker.isSubtypeOf(session.typeContext, rightElement, parameterType)) return@processFunctionsByName
+            val returnType = declaration.returnTypeRef.coneTypeOrNull ?: return@processFunctionsByName
+            if (returnType is ConePrimitiveType && returnType.kind == PrimitiveTypeKind.BOOLEAN) {
+                foundBoolReturning = true
+            } else {
+                foundNonBoolReturning = true
+            }
+        }
+        // 仅当存在返回非 Bool 的 `==` 且不存在返回 Bool 的 `==` 时才判不合格。
+        return foundBoolReturning || !foundNonBoolReturning
     }
 
     /**

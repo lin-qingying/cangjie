@@ -42,3 +42,16 @@ func probeMutAccess(m: M): Unit {
     let _ = <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>frozen<!>.bump()
     let _ = frozen.read()
 }
+
+struct BadEq {
+    public operator func ==(that: BadEq): Int64 { 0 }
+}
+
+func probeTupleCmp(): Unit {
+    let a = (1, BadEq())
+    let b = (1, BadEq())
+    // 官方 sema_tuple_element_cmp_not_bool：带期望类型（Check 路径）逐元素校验 == 返回 Bool
+    let c: Bool = <!TUPLE_ELEMENT_CMP_NOT_BOOL!>a == b<!>
+    // 无注解（synthesize 路径）不报本诊断
+    let d = a == b
+}

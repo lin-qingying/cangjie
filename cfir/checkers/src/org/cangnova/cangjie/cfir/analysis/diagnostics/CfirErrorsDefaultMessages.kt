@@ -1058,6 +1058,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INVALID_COALESCING, "type of left operand does not support coalescing operation. coalescing is only valid for 'Option'")
         map.put(CfirErrors.INVALID_TUPLE_FIELD_CTYPE, "tuple member mustn't be struct with @C")
         map.put(CfirErrors.POINTER_UNKNOW_GENERIC_TYPE, "'CPointer' generic type cannot be inferred")
+        map.put(
+            CfirErrors.TUPLE_ELEMENT_CMP_NOT_BOOL,
+            "the '==' operation between type '{0}' and type '{1}' is not evaluated to a Bool",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
         map.put(CfirErrors.INVALID_ENUM_MEMBER_ACCESS, "base of member access can not be enum variable")
         map.put(CfirErrors.PATTERN_CAN_NOT_BE_ASSIGNED, "the pattern isn't irrefutable pattern and it can not be initialized")
         map.put(CfirErrors.REDEFINITION_ENTRY, "multiple 'main's are found in source files")

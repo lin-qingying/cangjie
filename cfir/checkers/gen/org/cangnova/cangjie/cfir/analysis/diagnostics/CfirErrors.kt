@@ -421,6 +421,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_COALESCING: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_COALESCING", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_TUPLE_FIELD_CTYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_TUPLE_FIELD_CTYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val POINTER_UNKNOW_GENERIC_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_POINTER_UNKNOW_GENERIC_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val TUPLE_ELEMENT_CMP_NOT_BOOL: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_TUPLE_ELEMENT_CMP_NOT_BOOL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_ENUM_MEMBER_ACCESS: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_ENUM_MEMBER_ACCESS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val PATTERN_CAN_NOT_BE_ASSIGNED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_PATTERN_CAN_NOT_BE_ASSIGNED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val REDEFINITION_ENTRY: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_REDEFINITION_ENTRY", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
