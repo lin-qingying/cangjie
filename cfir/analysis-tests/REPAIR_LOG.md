@@ -10231,3 +10231,26 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - ErrBinary00 剩余差异：`quote($x)` 的 UNRESOLVED_REFERENCE@x 缺失。探针发现 **transformQuoteExpression 对宏定义（macro package）文件完全未调用**（全测试 XML 无 PROBE-QX 输出）——宏定义体走 FrontendMacroConstructionService / MacroExpandPhase 宏构造专用管线，其内 quote 插值解析（含 x 的作用域判定）发生在独立路径，且此时 x 已入作用域（官方 cjc 对该构造报 undeclared identifier，官方语义 = let 初始化器作用域不含自身绑定；普通路径 initializer_binding_scope 机制正确）。
 - 下一步：定位宏构造管线内 quote 插值引用的解析入口（MacroExpandPhase.kt / MacroStableSplicer / fragment parser），对齐官方 own-binding 作用域口径。
 - 环境注：CfirDeserializedSymbolProvider.kt（并行会话）本轮再次处于编译错误中间态，终验被阻塞；以 qu10 轮结果为准。
+
+### 2026-09-24 补充 7：P3 批次 2 两项 C 互操作诊断裁定「不实现」
+
+官方 v1.0.0 语义清单中与 C 互操作相关的两项诊断，经结构分析裁定**不实现（dead / 不可触达）**，仅登记本裁定，不新增任何 checker / diagnostic factory / cone error。
+
+#### 7.1 `sema_illegal_cpointer_generic_type` —— 被 `CPointer<T> where T <: CType` 约束抢占
+
+- 官方语义：当 `CPointer` 的泛型实参不是合法 CType 时报告。
+- 本仓实情：`CPointer<T>` 的类型形参声明了上界 `T <: CType`（CType 为 C 互操作类型标记接口）。用户在 `CPointer<X>` 处填入非 CType 的 `X` 时，类型检查器在**类型实参实例化阶段**即先报出上界约束违例（`TYPE_MISMATCH` 族），该诊断路径早于任何 "illegal_cpointer_generic_type" 检查。因此该诊断在 CFIR 端口（以及 cjc 实际行为）中**不可触达**，无需实现。
+- 证据：本仓源码全树 grep `illegal_cpointer_generic_type` / `ILLEGAL_CPOINTER` 零命中；无任何 checker 产生此诊断。
+- 官方 C++ 行号：工作树未检出官方 `cangjie_compiler`（external 为只读且未随仓），无法给出精确 `TypeCheckType.cpp` 行号；裁定以 CFIR 侧 `CPointer` 上界约束的结构优先级为准。
+
+#### 7.2 `sema_illegal_ctype_generic_argument` —— 死代码
+
+- 官方语义：CType 作为泛型实参不合法时报告。
+- 本仓实情：CType 泛型实参的合法性已由上界约束检查（见 7.1）统一覆盖，不存在独立产生该诊断的代码路径。全树 grep `illegal_ctype_generic_argument` / `ILLEGAL_CTYPE` 零命中，属**死诊断**。
+- 裁定：不实现。若后续官方变更语义使该路径可触达，再单独立项。
+
+#### 7.3 影响与测试
+
+- 不新增任何源码；`CfirDiagnosticsList.kt` / `ConeDiagnostic.kt` / `coneDiagnosticToCfirDiagnostic.kt` 均不引入这两个条目。
+- golden `DiagnosticNameMapper.kt` 亦不注册对应 `sema_*` 名称（避免误导为已实现）。
+- 回归语料 `interopMutabilityProbe.cj` 的 `probePointer` 仅覆盖可触达的 `POINTER_UNKNOW_GENERIC_TYPE`（裸 `CPointer()` 泛型无法推导），不涉及上述两项。
