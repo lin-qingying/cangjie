@@ -2276,14 +2276,21 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertQuote(node: LighterASTNode): CfirExpression {
         val rawText = node.asText()
         val interpolations = mutableListOf<CfirExpression>()
-        tree.forEachChildren(node) { child ->
-            if (child.tokenType == CjNodeTypes.QUOTE_INTERPOLATE) {
-                val expr = findFirstExpression(child)
-                if (expr != null) {
-                    interpolations.add(convertExpression(expr))
+        // QUOTE_INTERPOLATE 位于 QUOTE_PARAMETERS 之下（quote → LPAR, QUOTE_PARAMETERS(...), RPAR），
+        // 必须递归下钻，只查直接子节点会把全部插值丢成空列表（quote($(-"")) 实测 interpolations=0）。
+        fun collectInterpolations(node: LighterASTNode) {
+            tree.forEachChildren(node) { child ->
+                if (child.tokenType == CjNodeTypes.QUOTE_INTERPOLATE) {
+                    val expr = findFirstExpression(child)
+                    if (expr != null) {
+                        interpolations.add(convertExpression(expr))
+                    }
+                } else if (child.tokenType == CjNodeTypes.QUOTE_PARAMETERS) {
+                    collectInterpolations(child)
                 }
             }
         }
+        collectInterpolations(node)
         return buildQuoteExpression {
             source = node.toSource()
             this.rawText = rawText

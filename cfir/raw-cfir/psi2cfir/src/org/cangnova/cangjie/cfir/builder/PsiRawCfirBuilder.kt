@@ -3424,10 +3424,15 @@ class PsiRawCfirBuilder(
             return buildQuoteExpression {
                 source = psi.toCjPsiSourceElement()
                 rawText = psi.text
+                // QUOTE_INTERPOLATE 位于 QUOTE_PARAMETERS 之下，findChildrenByClass 只查直接
+                // 子节点会把全部插值丢成空列表（quote($(-"")) 实测 interpolations=0），
+                // 需用 collectElements 递归收集（先序遍历，顺序与源码一致）。
                 interpolations.addAll(
-                    psi.quoteInterpolates.mapNotNull { interpolate ->
-                        interpolate.expression?.let { convertExpression(it) }
-                    }
+                    PsiTreeUtil.collectElements(psi) { it is CjQuoteInterpolate }
+                        .filterIsInstance<CjQuoteInterpolate>()
+                        .mapNotNull { interpolate ->
+                            interpolate.expression?.let { convertExpression(it) }
+                        }
                 )
             }
         }
@@ -3630,6 +3635,7 @@ class PsiRawCfirBuilder(
                 copied.isC = status.isC
                 copied.isCommon = status.isCommon
                 copied.isSpecific = status.isSpecific
+                copied.isCommonWithDefault = status.isCommonWithDefault
                 copied.isRedef = status.isRedef
                 copied.isDefault = status.isDefault
                 copied.isAbstract = status.isAbstract
@@ -3955,6 +3961,8 @@ class PsiRawCfirBuilder(
                 isUnsafe = hasModifier(CjTokens.UNSAFE_KEYWORD),
                 isForeign = hasModifier(CjTokens.FOREIGN_KEYWORD) || declaration.parent is CjForeignBody,
                 isDefault = isDefaultInterfaceMember(declaration),
+                isCommon = hasModifier(CjTokens.COMMON_KEYWORD),
+                isSpecific = hasModifier(CjTokens.SPECIFIC_KEYWORD),
             )
         }
 

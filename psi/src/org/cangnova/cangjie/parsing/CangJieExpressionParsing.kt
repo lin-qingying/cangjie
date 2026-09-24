@@ -3347,6 +3347,10 @@ open class CangJieExpressionParsing(
         do {
             if (at(DOLLAR) && lookahead(1) == LPAR) {
                 parseQuoteInterpolate()
+            } else if (at(DOLLAR) && lookahead(1) == IDENTIFIER) {
+                // `$identifier` 简单插值（官方语义：按名字引用外部变量/标识符，
+                // cjc 对未声明的 `$x` 报 undeclared identifier 而非把它当裸 token）。
+                parseQuoteIdentifierInterpolate()
             } else if (at(AT) && lookahead(1) == IDENTIFIER) {
                 parseMacroExpressionByQuoteParameters()
             } else if (atSet(QUOTE_TOKENS)) {
@@ -3392,6 +3396,28 @@ open class CangJieExpressionParsing(
         } else {
             error("expected ')' after '$'")
         }
+
+        mark.done(QUOTE_INTERPOLATE)
+    }
+
+    /**
+     * 解析 quote 的 `$identifier` 简单插值。
+     *
+     * Grammar:
+     * ```
+     * quoteInterpolate
+     *   : "$" "(" expression ")"
+     *   | "$" identifier
+     *   ;
+     * ```
+     */
+    context(context: ParsingContext)
+    private fun parseQuoteIdentifierInterpolate() {
+        assert(_at(DOLLAR) && lookahead(1) == IDENTIFIER)
+        val mark = mark()
+
+        advance()
+        parseReferenceExpression()
 
         mark.done(QUOTE_INTERPOLATE)
     }
