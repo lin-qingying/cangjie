@@ -1690,6 +1690,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 裸 CPointer() 泛型无法推导（官方 sema_pointer_unknow_generic_type）
         val POINTER_UNKNOW_GENERIC_TYPE by error<PsiElement>()
 
+        // tuple `==`/`!=` 元素逐一比较，等元数下某元素 == 返回类型非 Bool（官方 sema_tuple_element_cmp_not_bool）
+        val TUPLE_ELEMENT_CMP_NOT_BOOL by error<PsiElement> {
+            parameter<String>("leftType")
+            parameter<String>("rightType")
+        }
+
         // enum 变量（实例）不能作为成员访问的 base 去取 enum 构造器（官方 sema_invalid_enum_member_access）
         val INVALID_ENUM_MEMBER_ACCESS by error<PsiElement>()
 

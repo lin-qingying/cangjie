@@ -2689,6 +2689,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             genericInferenceAnchorSource, session,
         )
 
+        is ConeTupleElementCmpNotBoolError -> CfirErrors.TUPLE_ELEMENT_CMP_NOT_BOOL.on(
+            source ?: diagnosticSource, leftType, rightType, session,
+        )
+
         is ConeGenericFunctionReferenceWithoutTypeArgumentsError ->
             CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
                 source ?: diagnosticSource,

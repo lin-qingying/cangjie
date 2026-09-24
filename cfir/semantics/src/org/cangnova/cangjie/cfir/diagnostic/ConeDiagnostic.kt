@@ -1069,6 +1069,19 @@ class ConePointerUnknowGenericTypeError : ConeDiagnostic {
 }
 
 /**
+ * tuple `==`/`!=` 元素逐一比较时，等元数下某对元素的 `==` 运算符返回类型不是 `Bool`。
+ *
+ * 对齐 C++ `sema_tuple_element_cmp_not_bool`。
+ */
+class ConeTupleElementCmpNotBoolError(
+    val leftType: String,
+    val rightType: String,
+) : ConeDiagnostic {
+    override val reason: String
+        get() = "the '==' operation between type '$leftType' and type '$rightType' is not evaluated to a Bool"
+}
+
+/**
  * 独立泛型函数值引用缺少显式类型实参且没有目标函数类型。
  *
  * 函数值引用缺失的是函数自身的类型实参，而不是一次调用的推断结果；诊断映射据此复用
