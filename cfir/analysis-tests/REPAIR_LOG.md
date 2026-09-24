@@ -10200,3 +10200,15 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 修法（框架级）：① TowerLevelHandler classifier 展开前 `checkClassLike` 门控，不可发现静默跳过；② CfirCallResolver expectedCallKind 分支 receiverType 为错误类型时改 `ConeUnreportedDuplicateDiagnostic` 抑制（与 declarationErrorType 分支对称）；③ writer transformer "Callee reference..." 改 `ConeUnresolvedNameError`；④ 映射层删死串分支。
 - verification：MultiFilesPrivate01 单测转绿；Lookup+Call 六入口切片全绿。全量回归被并行会话挤死（队列 94 条、3 个全量并发）未跑完；定向复跑中 DeclarationStatus 2 失败（PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS）经 fixture 归属（staticCannotBeOpenAbstractOverride.cj 在并行会话未提交清单中）确认属并行会话解析诊断工作，非本修复回归。
 - 剩余 unique：ErrQuoteUnary（quote 内容类型检查漏报）、ErrBinary00（`| return` 形态 let 绑定/二元口径）、typeaslias。
+
+## 2026-09-24：quote 插值框架修复批（`e105b5281`）+ 剩余精度项登记
+
+- **插值丢失（框架根因）**：QUOTE_INTERPOLATE 嵌在 QUOTE_PARAMETERS 下（quote → LPAR, QUOTE_PARAMETERS, RPAR），light-tree convertQuote 与 PSI convertQuote（findChildrenByClass）都只查直接子节点——quote($(-"")) 实测 interpolations=0，插值内诊断全静默。探针：transformQuoteExpression 入口打印 interpolations.size。修法：两 builder 递归下钻（先序保序）。
+- **$identifier 插值**：官方语法支持 `$x` 简单形式（cjc 对未声明报 undeclared identifier）；解析器原先 errorAndAdvance 落裸 token。新增 parseQuoteIdentifierInterpolate（DOLLAR+IDENTIFIER → QUOTE_INTERPOLATE + REFERENCE_EXPRESSION）。CjReferenceExpression : CjExpression，PSI/轻树两条提取链均可命中。
+- **INVALID_BINARY_OPERATOR Nothing operand 豁免**：return 表达式类型 = ConePrimitiveType.NOTHING；官方 join 语义 join(非Nothing, Nothing)=另一侧，不做适用性检查。映射层 buildInvalidBinaryOperatorDiagnostic + isBinaryOperatorCascadeFromErrorOperand 加 isNothing。
+- **ErrQuoteUnary range 取证**：cjc 0.53.13/1.0.0/1.0.5/1.1.3 四版本一致 `^^^`@4:13-15 = `-"`（不含右括号）；CFIR 修复插值提取后已报出 INVALID_UNARY_EXPR 且 range 与官方一致。fixture 期望 `-"")` 过期（含右括号）。
+- **剩余精度项（未完成，已定性）**：
+  1. ErrQuoteUnary：最新一轮 got range 又变为 `-"))`（LT/Psi 两入口 range 不一致）——插值表达式 source 跨度受 quote token 边界影响，需按 Range Policy（锚点展开为完整 token）逐入口核实锚点元素。
+  2. ErrBinary00：UNRESOLVED_REFERENCE@x 仍缺——插值已存在但 x 解析成功。怀疑宏构造期（MacroExpandPhase / MacroConstructionService）对宏定义体二次解析时 x 已入作用域（transformVariableContent 是 storeVariable-after-initializer，普通 let x = x 用例机制正确且 fixture initializer_binding_scope 通过）。需查宏构造模式下的重解析路径。
+  3. typeaslias：MACRO_EXPAND_FAILED [EXECUTOR] status=4（MacroExpandPhase.kt），宏执行器问题族，未动。
+- verification：Operator+Annotation+UnusedImport 三切片 218 tests，仅剩上述既有失败，无新增。
