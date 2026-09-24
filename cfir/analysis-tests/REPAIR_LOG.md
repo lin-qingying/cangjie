@@ -10212,3 +10212,10 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
   2. ErrBinary00：UNRESOLVED_REFERENCE@x 仍缺——插值已存在但 x 解析成功。怀疑宏构造期（MacroExpandPhase / MacroConstructionService）对宏定义体二次解析时 x 已入作用域（transformVariableContent 是 storeVariable-after-initializer，普通 let x = x 用例机制正确且 fixture initializer_binding_scope 通过）。需查宏构造模式下的重解析路径。
   3. typeaslias：MACRO_EXPAND_FAILED [EXECUTOR] status=4（MacroExpandPhase.kt），宏执行器问题族，未动。
 - verification：Operator+Annotation+UnusedImport 三切片 218 tests，仅剩上述既有失败，无新增。
+
+### 2026-09-24 补充：ErrQuoteUnary range 探针结论（未修）
+
+- 探针链：transformQuoteExpression 插值 span = light-tree convertQuote PREFIX_EXPRESSION span = **start=41 end=45（4 字符，文本渲染 `-"))`）**，即 span 在 builder 输入端已错，非 resolve/checker 层问题。
+- quote 节点 asText 重建文本（`$(-"))`）与自身 start..end 跨度（6 字符）自相矛盾——`getNodeText` 子节点重建与节点 offset 存在系统性 +1/-1 偏移，疑似 light tree mark 起点或 QUOTE 内字符串 token（OPEN_QUOTE/CLOSING_QUOTE 对 `""`）的 offset 记录问题。
+- cjc 四版本实测 range = `-"`（fixture 已按此更新）；普通位置（非 quote 内）的 `-a` range 正常（unaryMinus.cj 通过），问题仅限 QUOTE_PARAMETERS 内的表达式 span。
+- 下一步：对照 light tree mark 机制（mark() 起点取"下一 token"还是"当前 token"）与 quote 字符串 token 的 endOffset 计算。
