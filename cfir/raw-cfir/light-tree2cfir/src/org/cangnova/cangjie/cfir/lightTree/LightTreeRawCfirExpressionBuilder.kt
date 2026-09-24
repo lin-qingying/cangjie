@@ -2283,7 +2283,7 @@ class LightTreeRawCfirExpressionBuilder(
                 if (child.tokenType == CjNodeTypes.QUOTE_INTERPOLATE) {
                     val expr = findFirstExpression(child)
                     if (expr != null) {
-                        interpolations.add(convertExpression(expr))
+                        interpolations.add(convertQuoteInterpolation(expr))
                     }
                 } else if (child.tokenType == CjNodeTypes.QUOTE_PARAMETERS) {
                     collectInterpolations(child)
@@ -2296,6 +2296,36 @@ class LightTreeRawCfirExpressionBuilder(
             this.rawText = rawText
             this.interpolations.addAll(interpolations)
         }
+    }
+
+    /**
+     * 转换 quote 插值表达式。
+     *
+     * `$x` 简单插值在词法层是 FIELD_IDENTIFIER 词元（`$` 与名字一体，
+     * CangJieLexer.flex: FIELD_IDENTIFIER = \${IDENTIFIER}），解析器把它包成
+     * REFERENCE_EXPRESSION 后节点文本仍带 `$` 前缀。官方语义（DesugarMacro 的
+     * desugarExpr / ChkQuoteExpr 对解糖结果做普通 Sema check）是引用去掉 `$`
+     * 之后的标识符，所以这里剥掉前缀再按普通具名引用转换。
+     */
+    private fun convertQuoteInterpolation(exprNode: LighterASTNode): CfirExpression {
+        if (exprNode.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+            val text = exprNode.asText()
+            if (text.startsWith("$")) {
+                val nodeSource = exprNode.toSource()
+                // 诊断 range 锚在去掉 `$` 之后的标识符本身（cjc undeclared identifier 的
+                // 锚点是名字，`$` 只是插值 sigil）。
+                val nameSource = nodeSource.fakeElement(
+                    CjFakeSourceElementKind.QuoteIdentifierInterpolation,
+                    CjSourceElementOffsetStrategy.Custom.Initialized(nodeSource.startOffset + 1, nodeSource.endOffset),
+                )
+                return buildNamedAccessExpression {
+                    source = nodeSource
+                    calleeReference =
+                        buildNamedReference(referenceNameFromText(text.removePrefix("$")), nameSource)
+                }
+            }
+        }
+        return convertExpression(exprNode)
     }
 
     /** 转换表达式位置的 macro call，并收集 [MacroSurfaceExpr]。 */

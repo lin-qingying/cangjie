@@ -3431,7 +3431,32 @@ class PsiRawCfirBuilder(
                     PsiTreeUtil.collectElements(psi) { it is CjQuoteInterpolate }
                         .filterIsInstance<CjQuoteInterpolate>()
                         .mapNotNull { interpolate ->
-                            interpolate.expression?.let { convertExpression(it) }
+                            val exprPsi = interpolate.expression ?: return@mapNotNull null
+                            // `$x` 简单插值：词法层是 FIELD_IDENTIFIER 词元（`$` 与名字一体，
+                            // CangJieLexer.flex），包成 REFERENCE_EXPRESSION 后文本仍带 `$` 前缀。
+                            // 官方语义（DesugarMacro desugarExpr）是引用去掉 `$` 之后的标识符。
+                            val text = (exprPsi as? CjSimpleNameExpression)?.text
+                            if (text != null && text.startsWith("$")) {
+                                val exprSource = exprPsi.toCjPsiSourceElement()
+                                // 诊断 range 锚在去掉 `$` 之后的标识符本身（cjc undeclared
+                                // identifier 的锚点是名字，`$` 只是插值 sigil）。
+                                val nameSource = exprSource.fakeElement(
+                                    CjFakeSourceElementKind.QuoteIdentifierInterpolation,
+                                    CjSourceElementOffsetStrategy.Custom.Initialized(
+                                        exprSource.startOffset + 1,
+                                        exprSource.endOffset,
+                                    ),
+                                )
+                                buildNamedAccessExpression {
+                                    source = exprSource
+                                    calleeReference = buildNamedReference(
+                                        Name.identifier(text.removePrefix("$")),
+                                        nameSource,
+                                    )
+                                }
+                            } else {
+                                convertExpression(exprPsi)
+                            }
                         }
                 )
             }

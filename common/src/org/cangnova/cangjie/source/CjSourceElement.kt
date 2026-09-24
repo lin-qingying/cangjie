@@ -227,6 +227,14 @@ sealed class CjFakeSourceElementKind(
     object ReferenceInAtomicQualifiedAccess : CjFakeSourceElementKind()
 
     /**
+     * quote `$x` 简单插值的引用锚。语法词元是 `$` 与标识符一体（FIELD_IDENTIFIER），
+     * 语义引用名是去掉 `$` 之后的标识符；该 fake kind 配合 Custom offset 策略
+     * 把诊断 range 锚在标识符本身（cjc 对未声明的 `$x` 报 undeclared identifier，
+     * 锚点在名字上）。
+     */
+    object QuoteIdentifierInterpolation : CjFakeSourceElementKind()
+
+    /**
      * for enum classes we have valueOf & values functions generated
      * with a fake sources which refers to this the enum class
      */
