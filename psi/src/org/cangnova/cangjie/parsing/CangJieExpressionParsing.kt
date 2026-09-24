@@ -3347,9 +3347,11 @@ open class CangJieExpressionParsing(
         do {
             if (at(DOLLAR) && lookahead(1) == LPAR) {
                 parseQuoteInterpolate()
-            } else if (at(DOLLAR) && lookahead(1) == IDENTIFIER) {
-                // `$identifier` 简单插值（官方语义：按名字引用外部变量/标识符，
-                // cjc 对未声明的 `$x` 报 undeclared identifier 而非把它当裸 token）。
+            } else if (at(FIELD_IDENTIFIER)) {
+                // `$identifier` 简单插值。词法层 `$x` 整体是 FIELD_IDENTIFIER 词元
+                // （CangJieLexer.flex: FIELD_IDENTIFIER = \${IDENTIFIER}），按 DOLLAR+IDENTIFIER
+                // 预判永远不命中。官方语义：按名字引用外部变量/标识符，
+                // cjc 对未声明的 `$x` 报 undeclared identifier 而非把它当裸 token。
                 parseQuoteIdentifierInterpolate()
             } else if (at(AT) && lookahead(1) == IDENTIFIER) {
                 parseMacroExpressionByQuoteParameters()
@@ -3413,13 +3415,12 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     private fun parseQuoteIdentifierInterpolate() {
-        assert(_at(DOLLAR) && lookahead(1) == IDENTIFIER)
-        val mark = mark()
-
+        assert(_at(FIELD_IDENTIFIER))
+        val interpolate = mark()
+        val reference = mark()
         advance()
-        parseReferenceExpression()
-
-        mark.done(QUOTE_INTERPOLATE)
+        reference.done(REFERENCE_EXPRESSION)
+        interpolate.done(QUOTE_INTERPOLATE)
     }
 
     // ==================== 宏表达式 ====================
