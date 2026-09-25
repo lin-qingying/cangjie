@@ -113,6 +113,12 @@ public interface CjStubElementTypes {
     CjOperationReferenceElementType OPERATION_REFERENCE = new CjOperationReferenceElementType("OPERATION_REFERENCE");
     CjArgumentExpressionElementType<CjBinaryExpression> BINARY_EXPRESSION =
             new CjArgumentExpressionElementType<>("BINARY_EXPRESSION", CjBinaryExpression.class);
+    CjArgumentExpressionElementType<CjCallExpression> CALL_EXPRESSION =
+            new CjArgumentExpressionElementType<>("CALL_EXPRESSION", CjCallExpression.class);
+    CjArgumentExpressionElementType<CjPrefixExpression> PREFIX_EXPRESSION =
+            new CjArgumentExpressionElementType<>("PREFIX_EXPRESSION", CjPrefixExpression.class);
+    CjArgumentExpressionElementType<CjPostfixExpression> POSTFIX_EXPRESSION =
+            new CjArgumentExpressionElementType<>("POSTFIX_EXPRESSION", CjPostfixExpression.class);
     CjNameReferenceExpressionElementType REFERENCE_EXPRESSION = new CjNameReferenceExpressionElementType("REFERENCE_EXPRESSION");
     CjDotQualifiedExpressionElementType DOT_QUALIFIED_EXPRESSION = new CjDotQualifiedExpressionElementType("DOT_QUALIFIED_EXPRESSION");
     CjPlaceHolderStubElementType<CjTypeArgumentList> TYPE_ARGUMENT_LIST =

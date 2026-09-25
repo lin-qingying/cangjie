@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.entrypoint.configuration
 
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
@@ -91,6 +92,41 @@ object CfirFrontendConfigurationKeys {
     @JvmField
     val IMPLICIT_SYSTEM_ANNOTATIONS =
         CompilerConfigurationKey.create<Set<FqName>>("IMPLICIT_SYSTEM_ANNOTATIONS")
+
+    /** CJMP common-part `.cjo` 输入路径列表（官方 `--common-part-cjo` 对位）。 */
+    @JvmField
+    val CJMP_COMMON_PART_CJO_PATHS =
+        CompilerConfigurationKey.create<List<String>>("CJMP_COMMON_PART_CJO_PATHS")
+
+    /** CJMP common-part `.chir` 输入路径列表（官方 `--common-part-chir` 对位）。 */
+    @JvmField
+    val CJMP_COMMON_PART_CHIR_PATHS =
+        CompilerConfigurationKey.create<List<String>>("CJMP_COMMON_PART_CHIR_PATHS")
+
+    /** 当前调用是否为 CHIR 输出模式（官方 `outputMode == CHIR` 对位，即编译 common part）。 */
+    @JvmField
+    val CJMP_CHIR_OUTPUT =
+        CompilerConfigurationKey.create<Boolean>("CJMP_CHIR_OUTPUT")
+
+    /** 显式注入的 CJMP 编译模式（测试 `// CJMP_MODE` 与 IDE 模块 kind 用；不设则由选项推导）。 */
+    @JvmField
+    val CJMP_MODE =
+        CompilerConfigurationKey.create<CfirCjmpMode>("CJMP_MODE")
+
+    /** 当前编译包的 features 集合（官方 `features { ... }` 指令的包级并集）。 */
+    @JvmField
+    val CJMP_PACKAGE_FEATURES =
+        CompilerConfigurationKey.create<Set<String>>("CJMP_PACKAGE_FEATURES")
+
+    /** 写出 common part cjo 时内嵌的 debug 选项（官方 `Option::debug` 对位）。 */
+    @JvmField
+    val CJMP_MODULE_DEBUG =
+        CompilerConfigurationKey.create<Boolean>("CJMP_MODULE_DEBUG")
+
+    /** 写出 common part cjo 时内嵌的优化级别（官方 `Option` 优化级别对位）。 */
+    @JvmField
+    val CJMP_MODULE_OPT_LEVEL =
+        CompilerConfigurationKey.create<String>("CJMP_MODULE_OPT_LEVEL")
 }
 
 /**
@@ -219,3 +255,42 @@ var CompilerConfiguration.implicitSystemAnnotations: Set<FqName>
     get() = get(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS)
         ?: org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry.defaultImplicitSystemAnnotations
     set(value) = put(CfirFrontendConfigurationKeys.IMPLICIT_SYSTEM_ANNOTATIONS, value.toSet())
+
+/** CJMP common-part `.cjo` 输入路径列表。 */
+var CompilerConfiguration.cjmpCommonPartCjoPaths: List<String>
+    get() = getList(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CJO_PATHS)
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CJO_PATHS, value.toList())
+
+/** CJMP common-part `.chir` 输入路径列表。 */
+var CompilerConfiguration.cjmpCommonPartChirPaths: List<String>
+    get() = getList(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CHIR_PATHS)
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_COMMON_PART_CHIR_PATHS, value.toList())
+
+/** 当前调用是否为 CHIR 输出模式（编译 common part）。 */
+var CompilerConfiguration.cjmpChirOutput: Boolean
+    get() = getBoolean(CfirFrontendConfigurationKeys.CJMP_CHIR_OUTPUT)
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_CHIR_OUTPUT, value)
+
+/** 显式注入的 CJMP 编译模式；未设置时由 common-part 选项与输出模式推导。 */
+var CompilerConfiguration.cjmpMode: CfirCjmpMode?
+    get() = get(CfirFrontendConfigurationKeys.CJMP_MODE)
+    set(value) {
+        if (value == null) return
+        put(CfirFrontendConfigurationKeys.CJMP_MODE, value)
+    }
+
+/** 写出 common part cjo 时内嵌的 debug 选项。 */
+var CompilerConfiguration.cjmpModuleDebug: Boolean
+    get() = getBoolean(CfirFrontendConfigurationKeys.CJMP_MODULE_DEBUG)
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_MODULE_DEBUG, value)
+
+/** 写出 common part cjo 时内嵌的优化级别。 */
+var CompilerConfiguration.cjmpModuleOptLevel: String
+    get() = get(CfirFrontendConfigurationKeys.CJMP_MODULE_OPT_LEVEL)
+        ?: org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent.DEFAULT_OPT_LEVEL
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_MODULE_OPT_LEVEL, value)
+
+/** 当前编译包的 features 集合（features 子集门的 specific 侧输入）。 */
+var CompilerConfiguration.cjmpPackageFeatures: Set<String>
+    get() = get(CfirFrontendConfigurationKeys.CJMP_PACKAGE_FEATURES) ?: emptySet()
+    set(value) = put(CfirFrontendConfigurationKeys.CJMP_PACKAGE_FEATURES, value.toSet())

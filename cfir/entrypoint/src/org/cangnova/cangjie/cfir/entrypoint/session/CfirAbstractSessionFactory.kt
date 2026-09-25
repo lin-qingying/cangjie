@@ -331,7 +331,8 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
                 CfirExtendProvider::class,
                 CfirExtendProviderComposer.combine(
                     ownProvider = sourceExtendProvider,
-                    dependencyProviders = moduleData.dependencies
+                    // dependencies + depends-on（refinement）：CJMP specific 模块经 refinement 边看到 common extend
+                    dependencyProviders = (moduleData.dependencies + moduleData.allRefinementDependencies)
                         .distinctBy { it.session }
                         .mapNotNull { it.session.extendProviderOrNull },
                 ),
@@ -409,7 +410,9 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         session: CfirSession,
         moduleData: CfirModuleData,
     ): StructuredProviders {
-        val providersFromDependencies = moduleData.dependencies
+        // 对位 Kotlin `computeDependencyProviderList`：dependencies + depends-on（refinement）依赖。
+        // CJMP specific 模块经 refinement 边看到 common 模块声明（计划 D1），缺此边则配对查找无候选。
+        val providersFromDependencies = (moduleData.dependencies + moduleData.allRefinementDependencies)
             .distinctBy { it.session }
             .sortedBy { it.session.kind }
             .map { it to it.session.structuredProviders }

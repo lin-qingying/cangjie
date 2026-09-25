@@ -40,7 +40,9 @@ class CjDotQualifiedExpressionElementType(debugName: String) :
         val treeParent = node.treeParent ?: return false
 
         val parentElementType = treeParent.elementType
-        if (parentElementType === CjStubElementTypes.PACKAGE_DIRECTIVE || parentElementType === CjStubElementTypes.VALUE_ARGUMENT || parentElementType === CjStubElementTypes.DOT_QUALIFIED_EXPRESSION
+        if (parentElementType === CjStubElementTypes.PACKAGE_DIRECTIVE ||
+            parentElementType === CjStubElementTypes.DOT_QUALIFIED_EXPRESSION ||
+            isValueArgumentExpression(node)
         ) {
             return checkNodeTypesTraversal(node) && super.shouldCreateStub(node)
         }

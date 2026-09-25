@@ -769,6 +769,8 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "synchronized" { return CjTokens.SYNCHRONIZED_KEYWORD; }
 "unsafe"     { return CjTokens.UNSAFE_KEYWORD; }
 "mut"        { return CjTokens.MUT_KEYWORD; }
+"common"     { return CjTokens.COMMON_KEYWORD; }
+"specific"   { return CjTokens.SPECIFIC_KEYWORD; }
 
 // 基本类型关键字
 "Int8"       { return CjTokens.INT8_KEYWORD; }

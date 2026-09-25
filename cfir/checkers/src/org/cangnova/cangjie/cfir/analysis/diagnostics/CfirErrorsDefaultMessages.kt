@@ -1163,7 +1163,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS, "declaration 'common' extend ''{0}'' has a conflicting private {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS, "'common' and 'private' modifier conflict on {0} ''{1}'' declaration", RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.NOT_MATCHED, "''{0}'' {1} can not find ''{2}'' match", RENDER_STRING, RENDER_STRING, RENDER_STRING)
-        map.put(CfirErrors.SPECIFIC_VAR_NOT_MATCH_LET, "'specific' ''{0}'' can not match 'common' ''{1}''", RENDER_NAME, RENDER_NAME)
+        map.put(CfirErrors.SPECIFIC_VAR_NOT_MATCH_LET, "'specific' ''{0}'' can not match 'common' ''{1}''", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR, "'specific' init can not be used to implement primary 'common' constructor")
         map.put(CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND, "'specific' decl kind({0}) is not equal to 'common'({1})", RENDER_STRING, RENDER_STRING)
         map.put(CfirErrors.SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL, "parameter in 'specific' primary constructor must also be a member variable declaration if it's a member variable declaration in 'common' primary constructor")

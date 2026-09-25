@@ -37,6 +37,9 @@ class CjValueArgumentListElementType(debugName: String) :
      */
     override fun shouldCreateStub(node: ASTNode): Boolean {
         val treeParent = node.treeParent ?: return false
+        if (treeParent.elementType == CjStubElementTypes.CALL_EXPRESSION) {
+            return super.shouldCreateStub(node)
+        }
 
         val psi = node.getPsi(CjValueArgumentList::class.java)
         if (psi.arguments.isEmpty()) return false

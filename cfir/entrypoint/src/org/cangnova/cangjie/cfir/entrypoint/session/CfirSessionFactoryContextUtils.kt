@@ -4,10 +4,18 @@ import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.enableInteropCJMapping
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartCjoPaths
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartChirPaths
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpMode
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleDebug
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpPackageFeatures
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleOptLevel
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirMockSettingsComponent
 import org.cangnova.cangjie.cfir.entrypoint.configuration.targetInteropLanguage
 import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
@@ -32,10 +40,16 @@ fun createDefaultCfirSessionFactoryContext(
     configuration: CompilerConfiguration,
 ): CfirDefaultSessionFactory.Context {
     val classpath = configuration.classpathRoots.map { it.path }.filter { it.isNotBlank() }
+    // CJMP specific 编译：common part cjo 所在目录并入库搜索路径（按包头索引即可定位与当前包同名的
+    // common part）；其模块归属由 depends-on 依赖的精确路径过滤决定（见 CLI buildSessions）
+    val commonPartRoots = configuration.cjmpCommonPartCjoPaths
+        .mapNotNull { File(it).absoluteFile.parentFile?.path }
+        .distinct()
+    val librarySearchRoots = (classpath + commonPartRoots).distinct()
     val cjoManager = CjoManager(
         CjoSearchPath { key ->
             when (key) {
-                "CANGJIE_LIBRARY" -> classpath.takeIf { it.isNotEmpty() }?.joinToString(File.pathSeparator)
+                "CANGJIE_LIBRARY" -> librarySearchRoots.takeIf { it.isNotEmpty() }?.joinToString(File.pathSeparator)
                 else -> System.getenv(key)
             }
         }
@@ -47,6 +61,7 @@ fun createDefaultCfirSessionFactoryContext(
             enableInteropCJMapping = configuration.enableInteropCJMapping,
             targetInteropLanguage = configuration.targetInteropLanguage,
         ),
+        cjmpSettings = createCfirCjmpSettingsComponent(configuration),
         mockSettings = CfirMockSettingsComponent(
             enableCompileTest = configuration.enableCompileTest,
             mockSupportKind = configuration.mockSupportKind,
@@ -58,6 +73,30 @@ fun createDefaultCfirSessionFactoryContext(
                 register(CfirApiLevelProvider::class, apiLevelProvider)
             }
         },
+    )
+}
+
+/**
+ * 从 frontend 配置构造 CJMP 编译模式组件（D14 四段式样板：配置键 → session 组件 → 门禁消费）。
+ *
+ * 判定与校验都收敛在这一处，保证生产 pipeline 与测试 facade 使用同一份模式事实：
+ * - 两个 common-part 选项数量必须一一配对（官方
+ *   `driver_require_common_chir_for_each_common_cjo` 对位）；
+ * - 模式判据对齐官方：Specific ⇔ chir 输入非空，Common ⇔ CHIR 输出模式；
+ * - 测试/IDE 可通过 `cjmpMode` 显式覆盖（`// CJMP_MODE` 指令 / 模块 kind）。
+ */
+fun createCfirCjmpSettingsComponent(configuration: CompilerConfiguration): CfirCjmpSettingsComponent {
+    val commonPartCjoPaths = configuration.cjmpCommonPartCjoPaths
+    val commonPartChirPaths = configuration.cjmpCommonPartChirPaths
+    CfirCjmpSettingsComponent.validateCommonPartInputs(commonPartCjoPaths, commonPartChirPaths)
+    return CfirCjmpSettingsComponent(
+        commonPartCjoPaths = commonPartCjoPaths,
+        commonPartChirPaths = commonPartChirPaths,
+        isChirOutput = configuration.cjmpChirOutput,
+        explicitMode = configuration.cjmpMode,
+        packageFeatures = configuration.cjmpPackageFeatures,
+        moduleDebug = configuration.cjmpModuleDebug,
+        moduleOptLevel = configuration.cjmpModuleOptLevel,
     )
 }
 

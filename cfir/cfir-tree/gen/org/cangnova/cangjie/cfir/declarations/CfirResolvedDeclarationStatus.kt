@@ -31,6 +31,7 @@ interface CfirResolvedDeclarationStatus : CfirDeclarationStatus {
     override val isC: Boolean
     override val isCommon: Boolean
     override val isSpecific: Boolean
+    override val isCommonWithDefault: Boolean
     override val isRedef: Boolean
     override val isDefault: Boolean
     override val isAbstract: Boolean

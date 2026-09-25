@@ -4015,6 +4015,20 @@ class PsiRawCfirBuilder(
         ): Boolean {
             if (containerSymbolIfAny !is CfirClassSymbol && containerSymbolIfAny !is CfirInterfaceSymbol) return false
             if (owner.hasModifier(CjTokens.FOREIGN_KEYWORD)) return false
+            if (containerSymbolIfAny is CfirClassSymbol) {
+                // cjc 1.1.3 `ParserImpl::CanBeAbstract`：class 体内 common 成员不隐式 abstract
+                //（无体的 common 成员由 specific 提供实现，不是抽象成员）
+                if (owner.hasModifier(CjTokens.COMMON_KEYWORD)) return false
+                // cjc 1.1.3 `CheckClassLikeFuncBodyAbstractness`：common/specific abstract class 中
+                // 未显式写 abstract 的函数不是抽象成员
+                if (declaration is CjNamedFunction &&
+                    !owner.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
+                    PsiTreeUtil.getParentOfType(declaration, CjTypeStatement::class.java)?.let { outer ->
+                        outer.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
+                                (outer.hasModifier(CjTokens.COMMON_KEYWORD) || outer.hasModifier(CjTokens.SPECIFIC_KEYWORD))
+                    } == true
+                ) return false
+            }
 
             return when (declaration) {
                 is CjNamedFunction ->

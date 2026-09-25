@@ -206,6 +206,23 @@ enum class CfirResolvePhase(
     IMPLICIT_TYPES,
 
     /**
+     * CJMP（common/specific）配对阶段。
+     *
+     * 输入：
+     * - [STATUS] 完成（声明 status 已装填 isCommon/isSpecific）。
+     * - [IMPLICIT_TYPES] 完成（成员签名可用）。
+     *
+     * 输出：
+     * - specific 声明的配对结果写入 `CfirCjmpMappingStorage`（specific session 组件，单侧写）。
+     *
+     * 说明：
+     * - 对齐 Kotlin `FirResolvePhase.EXPECT_ACTUAL_MATCHING`（docs/fir/k2_kmp.md）；
+     * - 必须早于 [BODY_RESOLVE]：默认值读穿与类型精化消费配对结果（D7 次序硬约束）；
+     * - 版本/模式门关闭时 transformer 早退（门禁管行为，D16/§8.5）。
+     */
+    CJMP_MATCHING,
+
+    /**
      * 函数体语义解析阶段。
      *
      * 输入：

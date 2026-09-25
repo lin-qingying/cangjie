@@ -14,6 +14,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationSettings
 import org.cangnova.cangjie.cfir.session.CfirAbiPolicy
 import org.cangnova.cangjie.cfir.session.CfirInteropSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnosticsComponent
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirMockSettingsComponent
 import org.cangnova.cangjie.cfir.session.ConfiguredCfirImplicitSystemAnnotationsProvider
 import org.cangnova.cangjie.cfir.session.CfirImplicitSystemAnnotationsProvider
@@ -90,6 +92,10 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
         val abiPolicy: CfirAbiPolicy = org.cangnova.cangjie.cfir.session.CfirLanguageAbiPolicy,
         /** 当前 session 使用的互操作/CJMapping 配置。 */
          val interopSettings: CfirInteropSettingsComponent = CfirInteropSettingsComponent(),
+        /** 当前 session 使用的 CJMP 编译模式（D14：模式 = session 组件）。 */
+        val cjmpSettings: CfirCjmpSettingsComponent = CfirCjmpSettingsComponent(),
+        /** 本次编译调用的 CJMP 加载门诊断收集器（库会话记录、源码会话外显，G17）。 */
+        val cjmpLoadDiagnostics: CfirCjmpLoadDiagnosticsComponent = CfirCjmpLoadDiagnosticsComponent(),
         /** 当前编译调用的 mock/test capability；不能从 source path 推断。 */
         val mockSettings: CfirMockSettingsComponent = CfirMockSettingsComponent(),
         /** compiler invocation 显式注入的 `@When` 环境；缺失时不合成默认环境。 */
@@ -147,6 +153,7 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
                                 cjoManager = manager,
                                 cangjieScopeProvider = cangjieScopeProvider,
                                 libraryModuleData = moduleDataProvider.regularDependenciesModuleData,
+                                moduleDataProvider = moduleDataProvider,
                             )
                         )
                     }
@@ -226,6 +233,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerLibrarySessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        register(CfirCjmpSettingsComponent::class, c.cjmpSettings)
+        register(CfirCjmpLoadDiagnosticsComponent::class, c.cjmpLoadDiagnostics)
         register(CfirMockSettingsComponent::class, c.mockSettings)
         if (c.implicitSystemAnnotations.isNotEmpty()) {
             register(
@@ -273,6 +282,8 @@ open class CfirDefaultSessionFactory : CfirAbstractSessionFactory<CfirDefaultSes
     override fun CfirSession.registerSourceSessionComponents(c: Context) {
         register(CfirAbiPolicy::class, c.abiPolicy)
         register(CfirInteropSettingsComponent::class, c.interopSettings)
+        register(CfirCjmpSettingsComponent::class, c.cjmpSettings)
+        register(CfirCjmpLoadDiagnosticsComponent::class, c.cjmpLoadDiagnostics)
         register(CfirMockSettingsComponent::class, c.mockSettings)
         if (c.implicitSystemAnnotations.isNotEmpty()) {
             register(

@@ -419,7 +419,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            extractClassMembers(node, name).toMutableList().also { declarations ->
+                            withEnclosingClassModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList().also { declarations ->
                                 addPrimaryConstructorParameterProperties(node, declarations)
                                 if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(node))
@@ -3328,6 +3328,7 @@ class LightTreeRawCfirDeclarationBuilder(
             copied.isC = status.isC
             copied.isCommon = status.isCommon
             copied.isSpecific = status.isSpecific
+            copied.isCommonWithDefault = status.isCommonWithDefault
             copied.isRedef = status.isRedef
             copied.isDefault = status.isDefault
             copied.isAbstract = status.isAbstract
@@ -3407,7 +3408,36 @@ class LightTreeRawCfirDeclarationBuilder(
                 !modifiers.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) &&
                 !modifiers.isForeign &&
                 !sourceKind.isDeclaration &&
-                !hasSyntaxBody(node)
+                !hasSyntaxBody(node) &&
+                !isCjmpNonAbstractClassMember(modifiers, isFunction = true)
+
+    /**
+     * 当前 class 体的修饰符（供 CJMP 隐式 abstract 例外判定；interface/struct/enum 体为 null）。
+     */
+    private var enclosingClassModifiers: LightTreeModifierList? = null
+
+    /** 在 class 成员提取期间记录外层 class 修饰符。 */
+    private inline fun <T> withEnclosingClassModifiers(modifiers: LightTreeModifierList, block: () -> T): T {
+        val previous = enclosingClassModifiers
+        enclosingClassModifiers = modifiers
+        try {
+            return block()
+        } finally {
+            enclosingClassModifiers = previous
+        }
+    }
+
+    /**
+     * cjc 1.1.3 的 CJMP 隐式 abstract 例外（仅 class 体）：
+     * - `ParserImpl::CanBeAbstract`：common 成员不隐式 abstract；
+     * - `CheckClassLikeFuncBodyAbstractness`：common/specific abstract class 中未显式 abstract 的函数不是抽象成员。
+     */
+    private fun isCjmpNonAbstractClassMember(modifiers: LightTreeModifierList, isFunction: Boolean): Boolean {
+        if (containerSymbolIfAny !is CfirClassSymbol) return false
+        if (modifiers.isCommon) return true
+        val outer = enclosingClassModifiers ?: return false
+        return isFunction && !modifiers.isAbstract && outer.isAbstract && (outer.isCommon || outer.isSpecific)
+    }
 
     /**
      * 查询 LightTree modifier 中的语言内置注解身份。
@@ -3438,7 +3468,8 @@ class LightTreeRawCfirDeclarationBuilder(
         isInClassOrInterfaceMemberContext() &&
                 !modifiers.isForeign &&
                 !hasPropertyBody(node) &&
-                accessors.isEmpty()
+                accessors.isEmpty() &&
+                !isCjmpNonAbstractClassMember(modifiers, isFunction = false)
 
     /**
      * 判断当前声明转换是否处在 class 或 interface 成员上下文。

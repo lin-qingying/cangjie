@@ -49,6 +49,7 @@ import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
 import org.cangnova.cangjie.incremental.components.LookupTracker
+import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
 
 // ==================================== 通用组件 ====================================
 
@@ -70,6 +71,9 @@ fun CfirSession.registerCommonComponents(languageVersionSettings: LanguageVersio
     register(CfirBuiltinTypes::class, CfirBuiltinTypes())
     // 注册扩展服务组件，管理编译器插件注册的扩展点（checker、生成器等）
     register(CfirExtensionService::class, CfirExtensionService())
+    // 注册 CJMP（common/specific）配对结果存储：每个 session 独立实例（可变组件，不能共享默认单例；
+    // 覆盖 CLI/LL/库/内置全部会话种类——specific 会话写入配对结果，common/库会话保持空存储）
+    register(CfirCjmpMappingStorage::class, CfirCjmpMappingStorage())
 }
 
 /**

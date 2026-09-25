@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.LanguageFeature
 
 /**
  * 修饰符目标推导与允许表。
@@ -206,7 +207,99 @@ internal val possibleTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = m
     ),
 
     UNSAFE_KEYWORD to ModifierTargetPredicate.anySiteOf(DeclarationKind.FUNCTION),
+
+    // common/specific（CJMP，1.1.0）：官方 ParserModifierRules.cpp 各作用域表收口。
+    COMMON_KEYWORD to cjmpModifierTargetPredicate(),
+    SPECIFIC_KEYWORD to cjmpModifierTargetPredicate(),
 )
+
+
+/**
+ * 最近作用域内 cjmp 修饰符合法的声明头种类
+ * （官方各 `XXX_MODIFIERS` 表中列 COMMON/SPECIFIC 的 DefKind）。
+ */
+private val CJMP_HEAD_KINDS: Set<DeclarationKind> = setOf(
+    DeclarationKind.CLASS,
+    DeclarationKind.STRUCT,
+    DeclarationKind.ENUM,
+    DeclarationKind.INTERFACE,
+    DeclarationKind.EXTEND,
+    DeclarationKind.FUNCTION,
+    DeclarationKind.VARIABLE,
+    // 次级 init（官方 AGGREGATE_BODY_INIT_MODIFIERS 列 COMMON/SPECIFIC）。
+    // 主构造与次级 init 在修饰符目标二维模型中都推导为 head(CONSTRUCTOR)——模型不区分二者，
+    // 主构造的 cjmp 非法（官方 AGGREGATE_BODY_INSTANCE_INIT_MODIFIERS 无条目）留待 Phase 3
+    // checker 改造收口；此处放行避免在合法次级 init 上误报。
+    DeclarationKind.CONSTRUCTOR,
+    // `common static init` 在官方 1.1.3 实测只报 `static init can not be 'common'`（不报目标非法），
+    // 故放行，交由 CfirCjmpParseRulesChecker 的 PARSE_CJMP_STATIC_INIT 报告。
+    DeclarationKind.STATIC_INITIALIZER,
+)
+
+/**
+ * cjmp 修饰符允许的成员函数/属性容器（官方各 `*_BODY_FUNCDECL_MODIFIERS` /
+ * `*_BODY_PROP_MODIFIERS` 中列 COMMON/SPECIFIC 的表）。
+ */
+private val CJMP_MEMBER_FUNCTION_CONTAINERS: Set<DeclarationKind> = setOf(
+    DeclarationKind.CLASS,
+    DeclarationKind.INTERFACE,
+    DeclarationKind.STRUCT,
+    DeclarationKind.EXTEND,
+    DeclarationKind.ENUM,
+)
+
+/**
+ * cjmp 修饰符允许的成员 var / 次级 init 容器（官方 `CLASS_BODY_VARIABLE_MODIFIERS` /
+ * `STRUCT_BODY_VARIABLE_MODIFIERS` / `AGGREGATE_BODY_INIT_MODIFIERS` 中列 COMMON/SPECIFIC 的表）。
+ */
+private val CJMP_MEMBER_VARIABLE_CONTAINERS: Set<DeclarationKind> = setOf(
+    DeclarationKind.CLASS,
+    DeclarationKind.STRUCT,
+)
+
+/**
+ * common/specific 的目标合法性谓词（官方 ParserModifierRules.cpp 作用域表）。
+ *
+ * - 版本门（[LanguageFeature.CommonSpecificDeclarations]）关闭时放行一切：1.0.x 下这两个
+ *   token 不具备修饰符地位，族级诊断由 `CjmpGate` 在专用检查器统一报告；此处若拒绝会额外
+ *   产出 WRONG_MODIFIER_TARGET，破坏"整族短路"。
+ * - 开启时收口：局部声明、值参数、类型参数、类型别名、property 访问器、macro 一律非法
+ *   （官方 `parse_illegal_modifier_in_scope` / `parse_expected_no_modifier` 对位，映射为
+ *   WRONG_MODIFIER_TARGET）；声明头限官方各表列 cjmp 的种类；成员面限
+ *   class/interface/struct/extend/enum 成员 func 与 prop、class/struct 成员 var 与次级 init。
+ * - `common static init` 在官方 1.1.3 实测只报 `static init can not be 'common'`（不报
+ *   目标非法），故 STATIC_INITIALIZER 在此放行，由 `CfirCjmpParseRulesChecker` 报告。
+ * - 类型别名拒绝（`unexpected modifier 'common' on type alias declaration`）、值参数拒绝
+ *   （`expected no modifier before non-member variable parameter`）均为 1.1.3 实测。
+ * - enum 构造器放行：官方豁免（随外层），模型不区分其携带面，避免臆造诊断。
+ */
+private fun cjmpModifierTargetPredicate(): ModifierTargetPredicate =
+    ModifierTargetPredicate { target, languageVersionSettings ->
+        if (!languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) {
+            return@ModifierTargetPredicate true
+        }
+        when {
+            target.isLocal -> false
+            target.kind == DeclarationKind.VALUE_PARAMETER -> false
+            target.kind == DeclarationKind.TYPE_PARAMETER -> false
+            target.kind == DeclarationKind.TYPEALIAS -> false
+            target.kind == DeclarationKind.MACRO -> false
+            target.kind == DeclarationKind.PROPERTY_GETTER -> false
+            target.kind == DeclarationKind.PROPERTY_SETTER -> false
+            target.isHead -> target.kind in CJMP_HEAD_KINDS
+            target.isMember -> when (target.kind) {
+                DeclarationKind.FUNCTION, DeclarationKind.PROPERTY ->
+                    target.container == null || target.container in CJMP_MEMBER_FUNCTION_CONTAINERS
+
+                DeclarationKind.VARIABLE, DeclarationKind.CONSTRUCTOR ->
+                    target.container == null || target.container in CJMP_MEMBER_VARIABLE_CONTAINERS
+
+                else -> true
+            }
+
+            else -> true
+        }
+    }
 
 /** 在允许目标内仍然属于冗余的修饰符目标谓词表。 */
 internal val redundantTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = mapOf(

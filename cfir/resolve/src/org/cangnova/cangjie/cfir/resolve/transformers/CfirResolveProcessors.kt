@@ -43,5 +43,9 @@ fun registerResolveProcessors(
         CfirResolvePhase.IMPLICIT_TYPES,
         CfirImplicitTypesResolveProcessor(session, scopeSession),
     )
+    registry.registerProcessor(
+        CfirResolvePhase.CJMP_MATCHING,
+        CfirCjmpMatchingProcessor(session, scopeSession),
+    )
     registry.registerProcessor(CfirResolvePhase.BODY_RESOLVE, CfirBodyResolveProcessor(session, scopeSession))
 }

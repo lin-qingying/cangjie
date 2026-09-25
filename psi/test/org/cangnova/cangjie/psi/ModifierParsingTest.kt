@@ -129,13 +129,142 @@ class ModifierParsingTest : CjParsingTestCase(
         assertTrue(PsiTreeUtil.findChildrenOfType(file, CjFieldVariable::class.java).isEmpty())
     }
 
+    /**
+     * `common`/`specific` 上下文关键字（官方 Lexer.cpp `GetContextualKeyword`）：修饰符位置以修饰符身份进
+     * MODIFIER_LIST；解析与语言版本无关（1.0.5 与 1.1 语义下 PSI 树结构相同）。
+     */
+    @Test
+    fun testCommonSpecificModifiersParseWithoutErrors() {
+        val file = createPsiFile(
+            "commonSpecificModifiers",
+            """
+            common class CommonThing {
+                common func f(): Unit {}
+            }
+
+            specific interface SpecificThing {
+                func g(): Unit
+            }
+
+            common extend CommonThing <: Object {}
+            """.trimIndent(),
+        ) as CjFile
+
+        assertNoParseErrors(file)
+
+        val cls = PsiTreeUtil.findChildrenOfType(file, CjClass::class.java).single()
+        assertTrue(cls.hasModifier(CjTokens.COMMON_KEYWORD))
+        val iface = PsiTreeUtil.findChildrenOfType(file, CjInterface::class.java).single()
+        assertTrue(iface.hasModifier(CjTokens.SPECIFIC_KEYWORD))
+        val extend = PsiTreeUtil.findChildrenOfType(file, CjExtend::class.java).single()
+        assertTrue(extend.hasModifier(CjTokens.COMMON_KEYWORD))
+        // 文件内有两个命名函数（class 成员 f 与 interface 成员 g），按名选取断言
+        val classMember = PsiTreeUtil.findChildrenOfType(file, CjNamedFunction::class.java)
+            .single { it.name == "f" }
+        assertTrue(classMember.hasModifier(CjTokens.COMMON_KEYWORD))
+        val interfaceMember = PsiTreeUtil.findChildrenOfType(file, CjNamedFunction::class.java)
+            .single { it.name == "g" }
+        assertTrue(!interfaceMember.hasModifier(CjTokens.COMMON_KEYWORD))
+    }
+
+    /**
+     * `common`/`specific` 作 import 包名段（官方 `ExpectPackageIdentWithPos` 接受上下文关键字；
+     * 标准库 `std.unittest.common` 即此形态）：导入全名须完整，后续 import 不受影响。
+     */
+    @Test
+    fun testCjmpKeywordAsImportPackageSegment() {
+        val file = createPsiFile(
+            "cjmpKeywordImport",
+            """
+            import std.unittest.common.*
+            import std.unittest.diff.*
+            import a.specific.B
+            import std.unittest.{common.*, diff.*}
+            """.trimIndent(),
+        ) as CjFile
+
+        assertNoParseErrors(file)
+        val imported = PsiTreeUtil.findChildrenOfType(file, CjImportItem::class.java)
+            .mapNotNull { it.importedFqName?.asString() }
+        assertTrue("std.unittest.common" in imported, "keyword segment kept in import path: $imported")
+        assertTrue("std.unittest.diff" in imported, "following import unaffected: $imported")
+        assertTrue("a.specific.B" in imported, "specific segment kept in import path: $imported")
+        assertEquals(5, imported.size, "multi-import items keep keyword segments: $imported")
+    }
+
+    /**
+     * 非修饰符位置的 `common`/`specific` 是普通标识符：cjc 1.0.5 与 1.1.3（含 `--experimental`）
+     * 均接受包名、变量、函数、形参、成员、类型名、枚举构造器与泛型形参取这两个名字。
+     */
+    @Test
+    fun testCommonSpecificRemainIdentifiersOutsideModifierPosition() {
+        val file = createPsiFile(
+            "cjmpKeywordIdentifiers",
+            """
+            package a.common.specific
+
+            let common: Int64 = 1
+            var specific: Int64 = 2
+
+            func common(specific: Int64): Int64 { specific }
+
+            class Holder {
+                var common: Int64 = 1
+                func specific(): Int64 { common }
+            }
+
+            struct specific {}
+
+            enum E {
+                | common | specific
+            }
+
+            func g<common>(x: common): common { x }
+
+            main(): Int64 {
+                let common = 3
+                var specific = 4
+                specific = common + specific
+                let h = Holder()
+                h.common = h.specific()
+                match (E.common) {
+                    case common => 1
+                    case specific => 2
+                }
+            }
+            """.trimIndent(),
+        ) as CjFile
+
+        assertNoParseErrors(file)
+        assertEquals("a.common.specific", file.packageFqName.asString())
+
+        val functionNames = PsiTreeUtil.findChildrenOfType(file, CjNamedFunction::class.java).map { it.name }
+        assertTrue(functionNames.containsAll(listOf("common", "specific", "g")), "function names: $functionNames")
+        val fields = PsiTreeUtil.findChildrenOfType(file, CjFieldVariable::class.java).map { it.name }
+        assertEquals(listOf("common"), fields)
+        val structName = PsiTreeUtil.findChildrenOfType(file, CjStruct::class.java).single().name
+        assertEquals("specific", structName)
+        val enumEntries = PsiTreeUtil.findChildrenOfType(file, CjEnumConstructor::class.java).map { it.name }
+        assertEquals(listOf("common", "specific"), enumEntries)
+        val typeParameter = PsiTreeUtil.findChildrenOfType(file, CjTypeParameter::class.java).single()
+        assertEquals("common", typeParameter.name)
+        // 标识符位置的 common/specific 不得被误收为修饰符
+        val cjmpModifiers = PsiTreeUtil.findChildrenOfType(file, CjModifierListOwner::class.java)
+            .filter { it.hasModifier(CjTokens.COMMON_KEYWORD) || it.hasModifier(CjTokens.SPECIFIC_KEYWORD) }
+        assertTrue(cjmpModifiers.isEmpty(), "unexpected cjmp modifiers on: ${cjmpModifiers.map { it.text }}")
+    }
+
     /** 断言源码不包含 parser 错误节点。 */
     private fun assertNoParseErrors(file: CjFile) {
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
         assertTrue(
             errors.isEmpty(),
             "source should parse without PsiErrorElement, but got: ${
-                errors.joinToString { it.errorDescription }
+                errors.joinToString { error ->
+                    val offset = error.textRange.startOffset
+                    val context = file.text.substring(maxOf(0, offset - 20), minOf(file.text.length, offset + 20))
+                    "${error.errorDescription} @$offset[${context.replace('\n', '⏎')}]"
+                }
             }",
         )
     }

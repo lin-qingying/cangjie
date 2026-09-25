@@ -71,6 +71,11 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
     result += compatibilityForClassesRegister(PRIVATE_KEYWORD, OPEN_KEYWORD)
     result += compatibilityForClassesRegister(PRIVATE_KEYWORD, ABSTRACT_KEYWORD)
 
+    // common/specific（CJMP，1.1.0）：官方 ParserModifierRules.cpp 各作用域表均含
+    // CR(COMMON, PRIVATE, SPECIFIC)——三者两两互斥。版本门关闭时由
+    // checkCompatibilityType 按 CJMP token 短路（见 ModifiersCompatibilityUtils）。
+    result += incompatibilityRegister(COMMON_KEYWORD, SPECIFIC_KEYWORD, PRIVATE_KEYWORD)
+
     return result
 }
 

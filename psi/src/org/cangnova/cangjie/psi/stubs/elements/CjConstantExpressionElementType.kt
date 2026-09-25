@@ -48,12 +48,8 @@ class CjConstantExpressionElementType(debugName: String) :
     /**
      * 实现 `shouldCreateStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun shouldCreateStub(node: ASTNode): Boolean {
-        val parent = node.treeParent ?: return false
-        if (parent.elementType != CjStubElementTypes.VALUE_ARGUMENT) return false
-
-        return super.shouldCreateStub(node)
-    }
+    override fun shouldCreateStub(node: ASTNode): Boolean =
+        isValueArgumentExpression(node) && super.shouldCreateStub(node)
 
     /**
      * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。

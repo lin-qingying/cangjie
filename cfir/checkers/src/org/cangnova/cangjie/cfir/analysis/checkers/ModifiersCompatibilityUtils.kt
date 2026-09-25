@@ -21,6 +21,8 @@ import org.cangnova.cangjie.source.CjRealSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.toCjLightSourceElement
 import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.lexer.CjTokens
 
 /** 从真实源码中提取出的单个修饰符 token 及其 source。 */
 internal data class SourceModifier(
@@ -45,6 +47,14 @@ internal fun checkCompatibilityType(
 ) {
     val firstModifierToken = firstModifier.token
     val secondModifierToken = secondModifier.token
+
+    // CJMP 版本门：1.0.x 下 common/specific 不具备修饰符地位，组合诊断整族短路（D16 门禁纪律）。
+    if ((firstModifierToken.isCjmpModifierToken || secondModifierToken.isCjmpModifierToken) &&
+        !context.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)
+    ) {
+        return
+    }
+
     when (val compatibilityType = compatibility(firstModifierToken, secondModifierToken)) {
         Compatibility.COMPATIBLE -> Unit
         Compatibility.REPEATED -> {
@@ -224,3 +234,7 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.findChildByType(
 ): LighterASTNode? {
     return getChildrenArray(node).firstOrNull { it?.tokenType == type }
 }
+
+/** 是否为 CJMP（common/specific）修饰符 token。 */
+private val CjKeywordToken.isCjmpModifierToken: Boolean
+    get() = this == CjTokens.COMMON_KEYWORD || this == CjTokens.SPECIFIC_KEYWORD
