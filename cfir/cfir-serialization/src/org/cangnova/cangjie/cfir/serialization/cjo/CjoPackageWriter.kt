@@ -18,6 +18,10 @@ import PackageFormat.LitConstInfo
 import PackageFormat.Imports
 import PackageFormat.Package
 import PackageFormat.FileInfo
+import PackageFormat.FeatureId
+import PackageFormat.FeaturesDirective
+import PackageFormat.FeaturesSet
+import PackageFormat.CompilationOptions
 import PackageFormat.PackageAccessLevel
 import PackageFormat.PackageKind
 import PackageFormat.ReferenceInfo
@@ -118,6 +122,7 @@ object CjoPackageWriter {
             ?.toIntArray()
             ?.let { Package.createAllDependentStdPkgsVector(builder, it) }
             ?: 0
+        val optionsOffset = metadata.options?.write(builder) ?: 0
         validateCompositeValueReferences(metadata)
         val allDeclsOffset = metadata.declarations
             .takeIf(List<CjoPackageDeclaration>::isNotEmpty)
@@ -182,6 +187,9 @@ object CjoPackageWriter {
         }
         if (allDependentStdPkgsOffset != 0) {
             Package.addAllDependentStdPkgs(builder, allDependentStdPkgsOffset)
+        }
+        if (optionsOffset != 0) {
+            Package.addOptions(builder, optionsOffset)
         }
         if (allDeclsOffset != 0) {
             Package.addAllDecls(builder, allDeclsOffset)
@@ -396,11 +404,21 @@ object CjoPackageWriter {
                 "Official v1.0.0 CJO cannot encode declaration dependencies"
             }
         }
+        if (metadata.schemaProfile != CjoSchemaProfile.OFFICIAL_CJMP &&
+            metadata.schemaProfile != CjoSchemaProfile.REPOSITORY_EXTENDED
+        ) {
+            require(metadata.options == null) {
+                "Only the CJMP schema profile can encode Package.options"
+            }
+            require(metadata.fileInfo.none { it.feature != null }) {
+                "Only the CJMP schema profile can encode FileInfo.feature"
+            }
+        }
         val officialKinds = when (metadata.schemaProfile) {
             CjoSchemaProfile.OFFICIAL_V1_0_0 -> setOf(
                 AnnoKind.Deprecated, AnnoKind.TestRegistration, AnnoKind.Frozen, AnnoKind.Custom,
             )
-            CjoSchemaProfile.OFFICIAL_V1_1_3 -> setOf(
+            CjoSchemaProfile.OFFICIAL_V1_1_3, CjoSchemaProfile.OFFICIAL_CJMP -> setOf(
                 AnnoKind.Deprecated, AnnoKind.TestRegistration, AnnoKind.Frozen, AnnoKind.Custom,
                 AnnoKind.JavaMirror, AnnoKind.JavaImpl, AnnoKind.ObjCMirror, AnnoKind.ObjCImpl,
                 AnnoKind.ForeignName, AnnoKind.JavaHasDefault, AnnoKind.Annotation,
@@ -870,6 +888,12 @@ data class CjoPackageMetadata(
     val fileInfo: List<CjoFileInfoMetadata> = emptyList(),
     /** Official `Package.allDependentStdPkgs` package names. */
     val allDependentStdPkgs: List<String> = emptyList(),
+    /**
+     * CJMP：内嵌的编译选项（官方 `Package.options`）。
+     *
+     * 仅 [CjoSchemaProfile.OFFICIAL_CJMP] / [CjoSchemaProfile.REPOSITORY_EXTENDED] 允许写出。
+     */
+    val options: CjoModuleOptionMetadata? = null,
     /** 需要写入 `allDecls` 的声明索引项。 */
     val declarations: List<CjoPackageDeclaration> = emptyList(),
     /** `Package.allTypes` 中的 1-based 类型池。 */
@@ -913,6 +937,15 @@ data class CjoDeclHashMetadata(
 enum class CjoSchemaProfile {
     OFFICIAL_V1_0_0,
     OFFICIAL_V1_1_3,
+
+    /**
+     * 官方 CJMP common-part 扩展（官方 origin/main 的 `FileInfo.feature` 与 `Package.options`）。
+     *
+     * v1.1.3 的 cjo 不含这两个字段（实测 `.workbuddy/tmp/cjmp_probe113/full／*.cjo` 的
+     * Package 只有 16 个 vtable slot）；把它们写成官方 v1.1.3 字节会夸大 ABI 声明，
+     * 因此单独成档，仅 CJMP 写出路径选用。
+     */
+    OFFICIAL_CJMP,
     REPOSITORY_EXTENDED,
 }
 
@@ -921,14 +954,69 @@ data class CjoFileInfoMetadata(
     val fileId: UInt,
     val begin: CjoPositionMetadata,
     val end: CjoPositionMetadata,
+    /**
+     * CJMP：该文件的 `features` 指令（官方 `FileInfo.feature`）。
+     *
+     * 仅 CJMP 写出路径（[CjoSchemaProfile.OFFICIAL_CJMP]）填充；其余 profile 为 null，
+     * 由 `validateSchemaProfile` 兜底拒绝。
+     */
+    val feature: CjoFeaturesDirectiveMetadata? = null,
 ) {
     fun write(builder: FlatBufferBuilder): Int {
+        // 子表必须在 FileInfo 表开始之前写完（FlatBuffers 禁止嵌套构造）
+        val featureOffset = feature?.write(builder) ?: 0
         FileInfo.startFileInfo(builder)
         FileInfo.addFileID(builder, fileId)
         FileInfo.addBegin(builder, begin.write(builder))
         FileInfo.addEnd(builder, end.write(builder))
+        if (featureOffset != 0) FileInfo.addFeature(builder, featureOffset)
         return FileInfo.endFileInfo(builder)
     }
+}
+
+/**
+ * CJMP：单个源文件的 `features` 指令元数据（官方 `FileInfo.feature`）。
+ *
+ * 结构与官方一致：`FeaturesDirective -> featuresSet -> features[FeatureId] ->
+ * identifiers[string]`（与官方 origin/main `CjoFormat.fbs` 字节布局一致）。每个 [features] 元素是一个 feature 的分段标识列表
+ *（官方 `SrcIdentifier` 列表）。
+ */
+data class CjoFeaturesDirectiveMetadata(
+    /** 每个 feature 的 identifier 分段列表；顺序与官方 `FeaturesSet.features` 一致。 */
+    val features: List<List<String>> = emptyList(),
+) {
+    fun write(builder: FlatBufferBuilder): Int {
+        val featureOffsets = features.map { identifiers ->
+            val identifierOffsets = identifiers
+                .map(builder::createString)
+                .toIntArray()
+            FeatureId.createFeatureId(
+                builder,
+                FeatureId.createIdentifiersVector(builder, identifierOffsets),
+            )
+        }.toIntArray()
+        val featuresSetOffset = FeaturesSet.createFeaturesSet(
+            builder,
+            FeaturesSet.createFeaturesVector(builder, featureOffsets),
+        )
+        return FeaturesDirective.createFeaturesDirective(builder, featuresSetOffset)
+    }
+}
+
+/**
+ * CJMP：common part cjo 内嵌的编译选项（官方 `Package.options`）。
+ *
+ * 官方 `ASTLoader::ValidateOptions` 用它比对 debug 与优化级别；不一致会导致后续
+ * desugar/CHIR 差异，因此加载期必须拒绝。
+ */
+data class CjoModuleOptionMetadata(
+    /** 官方 `Option::debug`。 */
+    val debug: Boolean = false,
+    /** 官方优化级别序号（O0=0, O1=1, O2=2, O3=3, Os=4, Oz=5）。 */
+    val optLevel: UByte = 0u,
+) {
+    fun write(builder: FlatBufferBuilder): Int =
+        CompilationOptions.createCompilationOptions(builder, optLevel, debug)
 }
 
 /** One official `CompositeValue` entry and its recursively encoded members. */

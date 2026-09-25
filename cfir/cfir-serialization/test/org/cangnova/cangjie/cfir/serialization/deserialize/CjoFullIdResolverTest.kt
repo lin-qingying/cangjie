@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.ClassInfo
+import PackageFormat.CjoVersion
 import PackageFormat.CompositeTyInfo
 import PackageFormat.Decl
 import PackageFormat.DeclInfo
@@ -14,6 +15,7 @@ import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -351,6 +353,16 @@ class CjoFullIdResolverTest {
             }
 
             Package.startPackage(builder)
+            // 官方加载管线对缺失 cjoVersion 的 cjo 一律拒绝（ASTLoader::CheckCjoVersion）
+            Package.addCjoVersion(
+                builder,
+                CjoVersion.createCjoVersion(
+                    builder,
+                    CjoConstants.VERSION_MAJOR.toUByte(),
+                    CjoConstants.VERSION_MINOR.toUByte(),
+                    CjoConstants.VERSION_PATCH.toUByte(),
+                ),
+            )
             Package.addFullPkgName(builder, fullPackageNameOffset)
             Package.addModuleName(builder, moduleNameOffset)
             if (importsOffset != 0) {

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.Package
+import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.name.FqName
 import java.nio.ByteBuffer
 import java.nio.file.Path
@@ -24,6 +25,19 @@ class CjoManager(
     private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
     private val missingPackages = ConcurrentHashMap.newKeySet<String>()
 
+    /**
+     * 加载门诊断（版本 / 包名）按包名记录，供 session 层的收集器取走。
+     *
+     * 通道（计划 G17）：加载期没有 `DiagnosticReporter`，诊断随加载结果上浮，
+     * 由 [org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider]
+     * 转入 `CfirCjmpLoadDiagnosticsComponent`。
+     */
+    private val loadDiagnostics = ConcurrentHashMap<String, List<CfirCjmpLoadDiagnostic>>()
+
+    /** 读取指定包的加载门诊断（无诊断时为空列表）。 */
+    fun loadDiagnostics(fullPkgName: String): List<CfirCjmpLoadDiagnostic> =
+        loadDiagnostics[fullPkgName].orEmpty()
+
     fun hasPackage(fqName: FqName): Boolean =
         snapshots.containsKey(fqName.asString()) || searchPath.findCjoFile(fqName.asString()) != null
 
@@ -37,7 +51,22 @@ class CjoManager(
             missingPackages += fullPkgName
             return null
         }
-        return Snapshot(ByteBuffer.wrap(file.readBytes()), file.toPath().toAbsolutePath().normalize()).also {
+        val snapshot = Snapshot(
+            ByteBuffer.wrap(file.readBytes()),
+            file.toPath().toAbsolutePath().normalize(),
+        )
+        // 加载门①版本 / ②包名：违反即拒绝装载（官方 PreloadCommonPartOfPackage 的 return false 对位），
+        // 但诊断仍记录，供装配层外显——静默地把包当"不存在"会让调用方难以定位问题。
+        val diagnostics = buildList {
+            CjmpCommonPartLoadGate.checkFormatVersion(fullPkgName, snapshot.header.cjoVersion)?.let(::add)
+            CjmpCommonPartLoadGate.checkPackageName(fullPkgName, snapshot.header.fullPkgName)?.let(::add)
+        }
+        if (diagnostics.isNotEmpty()) {
+            loadDiagnostics[fullPkgName] = diagnostics
+            missingPackages += fullPkgName
+            return null
+        }
+        return snapshot.also {
             snapshots[fullPkgName] = it
         }
     }

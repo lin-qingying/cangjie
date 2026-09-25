@@ -96,10 +96,17 @@ class MultipleModuleDataProvider(
     override val allModuleData: Collection<CfirModuleData>
         get() = moduleDataWithFilters.keys
 
-    /** 先标准化路径，再按过滤器顺序匹配。 */
+    /**
+     * 先标准化路径，再按过滤器顺序匹配。
+     *
+     * 精确路径过滤器（[LibraryPathFilter.LibraryList]）先于兜底过滤器（[LibraryPathFilter.TakeAll]）判定：
+     * CLI 在只有一个普通依赖模块时会给它补 `TakeAll`，若按插入序匹配，它会吞掉 depends-on 模块
+     *（CJMP common part cjo）的专属路径。
+     */
     override fun getModuleData(path: Path?): CfirModuleData? {
         val normalizedPath = path?.normalize()
-        for ((moduleData, filter) in moduleDataWithFilters) {
+        val (fallbacks, exact) = moduleDataWithFilters.entries.partition { it.value is LibraryPathFilter.TakeAll }
+        for ((moduleData, filter) in exact + fallbacks) {
             if (filter.accepts(normalizedPath)) {
                 return moduleData
             }

@@ -69,6 +69,7 @@ import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
+import org.cangnova.cangjie.cfir.session.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -137,6 +138,24 @@ class CfirDeclDeserializer(
      * 反序列化指定索引的声明。
      * @param declIndex allDecls 中的索引（0-based）
      */
+    /**
+     * 记录声明的 cjo 源码位置（计划 G20：common 方向 CJMP 诊断锚点）。
+     *
+     * 只对 CJMP 相关声明（COMMON / FROM_COMMON_PART）记录；`begin.file` 为 `allFiles` 的 1 基下标。
+     */
+    private fun recordCjoDeclarationPosition(decl: PackageFormat.Decl, result: CfirDeclaration) {
+        if (!testAttr(decl, AttrBit.COMMON) && !testAttr(decl, AttrBit.FROM_COMMON_PART)) return
+        val begin = decl.begin ?: return
+        val fileIndex = begin.file.toInt() - 1
+        if (fileIndex !in 0 until context.pkg.allFilesLength) return
+        val filePath = context.pkg.allFiles(fileIndex) ?: return
+        result.cjoDeclarationPosition = org.cangnova.cangjie.cfir.session.CfirCjoDeclarationPosition(
+            filePath = filePath,
+            line = begin.line,
+            column = begin.column,
+        )
+    }
+
     fun deserializeDecl(declIndex: Int): CfirDeclaration? {
         context.declCache[declIndex]?.let { return it }
         if (declIndex !in 0 until context.pkg.allDeclsLength) return null
@@ -159,6 +178,7 @@ class CfirDeclDeserializer(
                 // before publishing the canonical declaration snapshot so
                 // binary consumers follow the same producer as source CFIR.
                 publishDeclarationMetadata(declIndex, decl, result)
+                recordCjoDeclarationPosition(decl, result)
                 context.declCache.putIfAbsent(declIndex, result)
                 context.declCache[declIndex] ?: result
             } finally {
@@ -768,8 +788,10 @@ class CfirDeclDeserializer(
             status.isForeign
         status.isCommon = testAttr(decl, AttrBit.COMMON) || testAttr(decl, AttrBit.FROM_COMMON_PART)
         status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
-        status.isCommon = testAttr(decl, AttrBit.COMMON) || testAttr(decl, AttrBit.FROM_COMMON_PART)
-        status.isSpecific = testAttr(decl, AttrBit.SPECIFIC)
+        // 官方 ASTLoader 原样恢复 AttributePack；COMMON_WITH_DEFAULT 决定跨模块验证豁免
+        //（CheckCJMP.cpp MustMatchWithPlatform），必须随位恢复而不是从函数体推导——
+        // 反序列化声明没有函数体。
+        status.isCommonWithDefault = testAttr(decl, AttrBit.COMMON_WITH_DEFAULT)
         status.isUnsafe = testAttr(decl, AttrBit.UNSAFE)
         status.isMut = testAttr(decl, AttrBit.MUT)
         status.isRedef = testAttr(decl, AttrBit.REDEF)
@@ -2077,6 +2099,7 @@ class CfirDeclDeserializer(
             copied.isC = status.isC
             copied.isCommon = status.isCommon
             copied.isSpecific = status.isSpecific
+            copied.isCommonWithDefault = status.isCommonWithDefault
             copied.isRedef = status.isRedef
             copied.isDefault = status.isDefault
             copied.isAbstract = status.isAbstract

@@ -19,6 +19,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.types.*
@@ -54,6 +56,14 @@ object CfirCjoPackageMetadataProducer {
         private val expressions = ArrayList<CjoExpressionMetadata>()
         private val expressionIndex = IdentityHashMap<Any, UInt>()
         private val languageVersion = files.first().moduleData.session.languageVersionSettings.languageVersion
+        private val cjmpSettings = files.first().moduleData.session.cjmpSettings
+
+        /**
+         * 本次写出的是否为 CJMP common part cjo（官方 common part 编译 = CHIR 输出模式，
+         * `ASTWriter` 此时写 `Package.options` 与 `FileInfo.feature`）。
+         */
+        private val writesCjmpCommonPart =
+            languageVersion >= LanguageVersion.CANGJIE_1_1_0 && cjmpSettings.mode == CfirCjmpMode.COMMON
 
         fun produce(): CjoPackageMetadata {
             val packageNames = files.map { it.packageDirective.packageFqName.asString() }.distinct()
@@ -67,10 +77,20 @@ object CfirCjoPackageMetadataProducer {
             return CjoPackageMetadata(
                 fullPackageName = packageNames.single(),
                 moduleName = module,
-                schemaProfile = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
-                    CjoSchemaProfile.OFFICIAL_V1_1_3
+                schemaProfile = when {
+                    writesCjmpCommonPart -> CjoSchemaProfile.OFFICIAL_CJMP
+                    languageVersion >= LanguageVersion.CANGJIE_1_1_0 -> CjoSchemaProfile.OFFICIAL_V1_1_3
+                    else -> CjoSchemaProfile.OFFICIAL_V1_0_0
+                },
+                // 官方 `ASTWriter::SaveOptions`：common part cjo 内嵌 debug 与优化级别，供 specific
+                // 编译的加载门比对（`ASTLoader::ValidateOptions`）
+                options = if (writesCjmpCommonPart) {
+                    CjoModuleOptionMetadata(
+                        debug = cjmpSettings.moduleDebug,
+                        optLevel = CjmpCommonPartLoadGate.optLevelOrdinal(cjmpSettings.moduleOptLevel),
+                    )
                 } else {
-                    CjoSchemaProfile.OFFICIAL_V1_0_0
+                    null
                 },
                 declarations = declarationMetadata,
                 imports = externalImports.toList(),
@@ -78,7 +98,12 @@ object CfirCjoPackageMetadataProducer {
                 // requested: package identity plus the source-owned basename.
                 // Do not serialize an absolute path or derive a name from PSI
                 // text; CfirFile.name is shared by PSI and LightTree lowering.
-                allFiles = files.map { "${packageNames.single()}/${it.name}" },
+                // 官方 `SaveFileInfo`：common part（serializingCommon）写源文件完整路径，specific 编译据此定位
+                // common 方向诊断（G20）；其余情形写 package/basename
+                allFiles = files.map { file ->
+                    file.sourceFile?.path?.takeIf { writesCjmpCommonPart }
+                        ?: "${packageNames.single()}/${file.name}"
+                },
                 fileInfo = if (languageVersion >= LanguageVersion.CANGJIE_1_1_0) {
                     files.mapNotNull(::fileInfo)
                 } else {
@@ -115,11 +140,12 @@ object CfirCjoPackageMetadataProducer {
             if (offset < 0) return null
             val (line, column) = mapping.getLineAndColumnByOffset(offset.coerceAtMost(mapping.lastOffset))
             if (line < 0 || column < 0) return null
+            // 官方 `Position` 行列均 1 基（cjc 1.1.3 cjo 实测 `func f` 位于 3:1）；行映射为 0 基
             return CjoPositionMetadata(
                 file = fileIndices.getValue(file),
                 pkgId = 0u,
-                line = line,
-                column = column,
+                line = line + 1,
+                column = column + 1,
             )
         }
 
@@ -127,7 +153,13 @@ object CfirCjoPackageMetadataProducer {
             val mapping = file.sourceFileLinesMapping ?: return null
             val begin = position(file, 0) ?: return null
             val end = position(file, mapping.lastOffset) ?: return null
-            return CjoFileInfoMetadata(fileIndices.getValue(file), begin, end)
+            // 官方 `SaveFileInfo`：文件带 features 指令时一并写出（仅 CJMP common part 档位可编码）
+            val feature = file.featuresDirective
+                ?.takeIf { writesCjmpCommonPart }
+                ?.let { directive ->
+                    CjoFeaturesDirectiveMetadata(directive.featureIds.map { it.split('.') })
+                }
+            return CjoFileInfoMetadata(fileIndices.getValue(file), begin, end, feature)
         }
 
         private fun declarationPositions(declaration: CfirDeclaration): Pair<CjoPositionMetadata?, CjoPositionMetadata?> {
@@ -322,6 +354,45 @@ object CfirCjoPackageMetadataProducer {
         private fun ref(declaration: CfirDeclaration): UInt = declarationIndex[declaration]
             ?: error("CJO declaration reference was not indexed: ${declarationName(declaration)}")
 
+        /**
+         * 写出 CJMP 属性位（官方 `Attribute::COMMON / SPECIFIC / FROM_COMMON_PART /
+         * COMMON_WITH_DEFAULT`）。
+         *
+         * 证据（cjc 1.1.3 产出的 cjo 实测，`.workbuddy/tmp/cjmp_probe113/full` 目录下的 cjo）：
+         * - `specific func` → 只带 `SPECIFIC`；
+         * - `common func`（有体）→ `COMMON + FROM_COMMON_PART + COMMON_WITH_DEFAULT`。
+         *
+         * `COMMON_WITH_DEFAULT` 按官方 `SetCJMPAttrs`（ParseCJMPDecl.cpp:57-65 + :141-161）
+         * 在**写侧派生**：common 声明自带默认实现（函数有体 / property 有访问器 / var 有初始值）
+         * 即置位。`FROM_COMMON_PART` 标记"该声明来自 common part 的 cjo"——本仓库当前只写出
+         * 源声明（[collect] 要求 `origin == Source`），故该位仅对反序列化来源的声明防御性保留。
+         */
+        private fun addCjmpAttributes(
+            values: MutableSet<CfirAttribute>,
+            declaration: CfirDeclaration,
+            status: org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus,
+        ) {
+            if (status.isSpecific) values += CfirAttribute.SPECIFIC
+            if (!status.isCommon) return
+            values += CfirAttribute.COMMON
+            if (declaration.origin != org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source) {
+                values += CfirAttribute.FROM_COMMON_PART
+            }
+            if (status.isCommonWithDefault || hasCjmpDefault(declaration)) {
+                values += CfirAttribute.COMMON_WITH_DEFAULT
+            }
+        }
+
+        /** 官方 `HasDefault` 对位：声明自身是否自带默认实现/初始化。 */
+        private fun hasCjmpDefault(declaration: CfirDeclaration): Boolean = when (declaration) {
+            is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> declaration.body != null
+            is org.cangnova.cangjie.cfir.declarations.CfirProperty ->
+                declaration.getter != null || declaration.setter != null
+
+            is org.cangnova.cangjie.cfir.declarations.CfirVariable -> declaration.initializer != null
+            else -> false
+        }
+
         private fun attributes(declaration: CfirDeclaration, topLevel: Boolean): List<ULong> {
             val values = linkedSetOf<CfirAttribute>()
             if (topLevel) values += CfirAttribute.GLOBAL
@@ -336,6 +407,7 @@ object CfirCjoPackageMetadataProducer {
             if (status.isRedef) values += CfirAttribute.REDEF
             if (status.isUnsafe) values += CfirAttribute.UNSAFE
             if (status.isMut) values += CfirAttribute.MUT
+            addCjmpAttributes(values, declaration, status)
             if (declaration is CfirFunction && declaration.typeParameters.isNotEmpty()) values += CfirAttribute.GENERIC
             if (declaration.annotationInfo?.isIntrinsic == true) values += CfirAttribute.INTRINSIC
             if (declaration.annotationInfo?.isMockSupported == true) values += CfirAttribute.MOCK_SUPPORTED

@@ -1658,6 +1658,16 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = InvalidTupleFieldCtype::class
     }
 
+    interface PointerUnknowGenericType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = PointerUnknowGenericType::class
+    }
+
+    interface TupleElementCmpNotBool : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = TupleElementCmpNotBool::class
+        val leftType: String
+        val rightType: String
+    }
+
     interface InvalidEnumMemberAccess : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = InvalidEnumMemberAccess::class
     }
@@ -1960,15 +1970,15 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface NotMatched : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = NotMatched::class
-        val declarationName: Name
-        val kind: String
-        val matchKind: String
+        val side: String
+        val declarationInfo: String
+        val counterpartKind: String
     }
 
     interface SpecificVarNotMatchLet : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = SpecificVarNotMatchLet::class
-        val specificName: Name
-        val commonName: Name
+        val specificKind: String
+        val commonKind: String
     }
 
     interface SpecificInitCommonPrimaryConstructor : CaCfirDiagnostic<PsiElement> {
@@ -1998,8 +2008,8 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
 
     interface SpecificMemberMustHaveImplementation : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = SpecificMemberMustHaveImplementation::class
-        val memberKind: String
-        val containerKind: String
+        val memberName: String
+        val containerName: String
     }
 
     interface SpecificHasDifferentModifier : CaCfirDiagnostic<PsiElement> {
@@ -2085,13 +2095,81 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val kind: String
     }
 
-    interface CommonGenericRenameNotSupported : CaCfirDiagnostic<PsiElement> {
-        override val diagnosticClass get() = CommonGenericRenameNotSupported::class
-    }
-
     interface CommonSpecificAnnotationNotAllowed : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = CommonSpecificAnnotationNotAllowed::class
         val annotationName: Name
+    }
+
+    interface ParseCommonFunctionMustHaveReturnType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCommonFunctionMustHaveReturnType::class
+    }
+
+    interface ParseSpecificFunctionMustHaveReturnType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseSpecificFunctionMustHaveReturnType::class
+    }
+
+    interface ParseSpecificFunctionParameterCannotHaveDefaultValue : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseSpecificFunctionParameterCannotHaveDefaultValue::class
+        val declKind: String
+    }
+
+    interface ParseSpecificMemberMustHaveImplementation : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseSpecificMemberMustHaveImplementation::class
+        val memberName: Name
+        val containerName: Name
+    }
+
+    interface ParseExpectedTypeWithCjmpVar : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseExpectedTypeWithCjmpVar::class
+        val kind: String
+        val declKind: String
+    }
+
+    interface ParseCjmpOutdeclMissMatch : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCjmpOutdeclMissMatch::class
+        val memberDescription: String
+        val memberKindText: String
+        val containerKindText: String
+        val expectedKindText: String
+    }
+
+    interface ParseCjmpStaticInit : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCjmpStaticInit::class
+        val kind: String
+    }
+
+    interface ParseUnexpectedCjmpDecl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseUnexpectedCjmpDecl::class
+    }
+
+    interface ParseCjmpGenericDecl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCjmpGenericDecl::class
+        val kind: String
+    }
+
+    interface ParseCjmpPatternDecl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCjmpPatternDecl::class
+        val patternKind: String
+        val kind: String
+    }
+
+    interface ParseCjmpInCommonCtorRequired : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCjmpInCommonCtorRequired::class
+        val declType: String
+        val name: Name
+    }
+
+    interface ParseExplicitlyAbstractOnlyForCjmpAbstractClass : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseExplicitlyAbstractOnlyForCjmpAbstractClass::class
+        val declKind: String
+    }
+
+    interface ParseCommonInNonCommonFile : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseCommonInNonCommonFile::class
+    }
+
+    interface ParseSpecificInNonSpecificFile : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ParseSpecificInNonSpecificFile::class
     }
 
     interface JavaIncorrectUseBetweenTypes : CaCfirDiagnostic<PsiElement> {

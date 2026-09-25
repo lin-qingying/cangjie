@@ -154,6 +154,16 @@ internal class CjdBinaryFixture {
         val decls = Package.createAllDeclsVector(builder, declarations.toIntArray())
         val tys = Package.createAllTypesVector(builder, types.toIntArray())
         Package.startPackage(builder)
+        // 官方加载管线拒绝缺失 cjoVersion 的 cjo（ASTLoader::CheckCjoVersion）
+        Package.addCjoVersion(
+            builder,
+            PackageFormat.CjoVersion.createCjoVersion(
+                builder,
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MAJOR.toUByte(),
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MINOR.toUByte(),
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_PATCH.toUByte(),
+            ),
+        )
         Package.addFullPkgName(builder, name)
         Package.addAllDecls(builder, decls)
         Package.addAllTypes(builder, tys)

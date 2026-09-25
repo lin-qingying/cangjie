@@ -48,6 +48,16 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         val declarations = Package.createAllDeclsVector(builder, intArrayOf(declaration))
         val packageName = builder.createString("test.pkg")
         Package.startPackage(builder)
+        // 官方加载管线拒绝缺失 cjoVersion 的 cjo（ASTLoader::CheckCjoVersion）
+        Package.addCjoVersion(
+            builder,
+            PackageFormat.CjoVersion.createCjoVersion(
+                builder,
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MAJOR.toUByte(),
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_MINOR.toUByte(),
+                org.cangnova.cangjie.cfir.serialization.CjoConstants.VERSION_PATCH.toUByte(),
+            ),
+        )
         Package.addFullPkgName(builder, packageName)
         Package.addAllDecls(builder, declarations)
         Package.finishPackageBuffer(builder, Package.endPackage(builder))
@@ -112,6 +122,13 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         override val isCommon = false
         override val stableModuleName = "cjd-decompiler-test"
         override val session = object : CfirSession(Kind.Library) {}.also {
+            // 反序列化发布互操作/注解元数据时读取会话语言设置（与生产会话公共组件一致）
+            it.register(
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
+            )
             it.register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }
         init { bindSession(session) }
