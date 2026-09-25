@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExperimentalChecker
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExtraCommonCheckers
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
+import org.cangnova.cangjie.cfir.entrypoint.session.createCfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -294,7 +296,11 @@ open class CfirFrontendFacade(
             configuration = configuration,
             context = sessionFactoryContext,
             init = sessionConfigurator,
-        )
+        ).also { session ->
+            // CJMP 模式是 per-session 事实（计划 D14/G19）：多模块 fixture 中 common 模块与
+            // specific 模块由各自的 `// CJMP_MODE` 指令决定，不能共用主模块派生的上下文值
+            session.register(CfirCjmpSettingsComponent::class, createCfirCjmpSettingsComponent(configuration))
+        }
     }
 
     companion object {

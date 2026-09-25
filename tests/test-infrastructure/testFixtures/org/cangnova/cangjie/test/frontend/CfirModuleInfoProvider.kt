@@ -45,10 +45,13 @@ class CfirModuleInfoProvider(private val testServices: TestServices) : TestServi
     }
 
     /**
-     * 执行 `getDependentDependsOnSourceModules` 对应的CFIR 前端测试流程，维持测试框架的阶段契约。
+     * 当前模块经 `// MODULE: name()()(dependsOn)` 声明的 refinement（depends-on）源模块。
+     *
+     * 对位 Kotlin `FirModuleInfoProvider.getDependentDependsOnSourceModules`：CJMP 多模块 fixture
+     * 中 specific 模块经此边指向 common 模块（计划 D1/G19），配对查找依赖它识别 common 声明。
      */
-    fun getDependentDependsOnSourceModules(@Suppress("UNUSED_PARAMETER") module: TestModule): List<CfirModuleData> {
-        return emptyList()
+    fun getDependentDependsOnSourceModules(module: TestModule): List<CfirModuleData> {
+        return getDependentModulesImpl(module.dependsOnDependencies)
     }
 
     /**

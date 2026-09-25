@@ -10232,6 +10232,29 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 下一步：定位宏构造管线内 quote 插值引用的解析入口（MacroExpandPhase.kt / MacroStableSplicer / fragment parser），对齐官方 own-binding 作用域口径。
 - 环境注：CfirDeserializedSymbolProvider.kt（并行会话）本轮再次处于编译错误中间态，终验被阻塞；以 qu10 轮结果为准。
 
+### 2026-09-24 补充 4：ErrBinary00 全绿（`d4945d7c0`）——补充 3 的"宏构造管线绕过"定性被否证
+
+- **归因订正**：重插三处探针（convertMacroDeclaration / convertQuote / transformQuoteExpression）实测：宏定义体走的就是普通 body resolve（transformMacroDeclaration 复用 transformFunctionLikeDeclaration，IMPLICIT_TYPES 阶段 withFullBodyResolve 完整 resolve 宏体），transformQuoteExpression 正常被调用。补充 3 的"宏构造专用管线绕过"结论作废（此前探针失效原因：测错阶段/注入未进编译 sourceSet）。
+- **真正根因（词法/解析层）**：`$x` 整体被词法成 FIELD_IDENTIFIER 词元（CangJieLexer.flex: `FIELD_IDENTIFIER = \${IDENTIFIER}`），parseQuoteParameters 的 `at(DOLLAR) && lookahead(1)==IDENTIFIER` 预判**永不命中**，parseQuoteIdentifierInterpolate 是死代码；插值落成 QUOTE_PARAMETERS 下的裸 FIELD_IDENTIFIER token（QSHAPE 探针 + QSIZE=0 实证），interpolations 为空 → x 无引用节点 → 无诊断。
+- **修法（3 文件 + 1 基建）**：① parser 按 `at(FIELD_IDENTIFIER)` 分派，包成 QUOTE_INTERPOLATE→REFERENCE_EXPRESSION（删死分支）；② 两 builder 的插值转换剥 `$` 前缀（官方 DesugarMacro.cpp:690-701 + ChkQuoteExpr.cpp:30-48：解糖为对标识符 x 的普通引用 + 普通 Sema check）；③ 新增 `CjFakeSourceElementKind.QuoteIdentifierInterpolation` + `CjSourceElementOffsetStrategy.Custom.Initialized(start+1, end)` 把诊断 range 锚在 `x` 本身（cjc undeclared identifier 锚点是名字；`$` 是插值 sigil 非 token 的一部分——本仓 lexer 把 sigil 并进词元是内部实现细节，range 不应外溢）。
+- **框架判定**：宏定义体与普通函数体同构（官方 DesugarMacroDecl 就是转 FuncDecl），共享 resolve 框架正确；"宏定义体专用解析管线"属过度设计，未引入。
+- verification：`CfirAnalysisMacroTestGenerated$Llt$OperatorOverload` + Psi 对应切片双入口全绿（修复后 got = `<!UNRESOLVED_REFERENCE!>x<!>`，与 fixture 完全一致）。全量回归两次尝试均被并行会话在途的 `CjoPackageHeader.kt`（cfir-serialization，+99 行未提交）编译错误阻塞，非本次文件；待其空闲后补跑。
+- 残留：typeaslias（MACRO_EXPAND_FAILED [EXECUTOR] status=4）未动。
+
+### 2026-09-24 补充 5：全量挂死根因修复（`0e9c37128`）+ 首次完整全量回归
+
+- **全量挂死根因**：`CfirResolvedArgumentListImpl.transformArguments`（cfir-tree 共享 owner）对 `mapping` 与 `mappingIncludingContextArguments` 各做一遍 mapKeys，两者默认为同一实例（或相同 key）→ 同一实参子树被重复变换，嵌套调用深度 d 的子树遍历按 2^d 增长。全量回归稳定挂死于 `CfirAnalysisLLTPsiTestGenerated$Function.testNestFunctionCall`（40 层 `F(F(...))`）；jstack 实证 Test worker RUNNABLE 于 transformArguments 的 map 重建（HashMap.putVal），CPU 持续燃烧 500s+。定位手段：in-progress-results bin 字节数停滞（两次挂死精确停在 974827）→ jstack 抓 runTest 帧。
+- **修法**：identity cache 每个实参表达式实例只 transform 一次；alias 时两 map 复用同一结果，非 alias 各自重建共享 key 变换。Function 组双入口切片 BUILD SUCCESSFUL（原挂死点通过）。
+- **verification（首次完整全量）**：`:cfir:analysis-tests:test` BUILD 完成 17m19s，**8720 tests / 19 failed / 320 skipped**。失败分布：14 × CfirDeclarationModeCheckersTest（并行会话 DeclarationStatus 在途特性）、2 × testTypeaslias（双入口，宏执行器族）、4 × APILevelChecker testImportall（双入口两 Level，宏展开 APILevel 漏报族）。**主线原 4 unique：MultiFilesPrivate01 / ErrQuoteUnary / ErrBinary00 全部全绿**。
+- 附注：并行会话环境中曾编译出行号不一致的实验版 CfirAbstractArgumentList（jstack 行号 230 > src 219 行），其 Function 切片运行 51 分钟挂死；与本修复无关的陈旧构建产物现象。
+
+### 2026-09-24 补充 6：typeaslias 定性（未修）
+
+- fixture：`macro/llt/typealias/import_macro_alias/typeaslias.cj`——`macro package FFF` 定义 `QA2`；使用侧 `import FFF as TT` + `@TT.QA2`（**带别名的宏包 import**）。
+- 失败形态：宏构造阶段抛 `Macro construction failed`，诊断 `MACRO_EXPAND_FAILED [EXECUTOR]: 宏展开失败（status=4）`。
+- 定性：`status=4` = `MacroMsgCodec.STATUS_FAIL`（macro-common/protocol/MacroMsgCodec.kt:61，:249-261 判定）——**宏执行器（runtime）执行期对该宏调用返回 FAIL**，非宏库加载失败。唯一显著变量是别名：怀疑发给 executor 的宏调用标识未把 `TT` 通过 import alias 还原为 `FFF`，宏库侧按全限定名匹配不到 `QA2` 而失败。下一刀：追宏调用名解析→executor 协议字段（macro-process 的 MacroCallNode/surface 宏名解析）对 import alias 的处理，并对 cjc 取证 `import X as Y; @Y.Macro` 的官方行为。
+- 同族残留：APILevelChecker `testImportall` ×4（双入口两 Level）——宏展开声明的 APILevel 漏报（macro-apilevel-research 已有研究底稿）。
+
 ### 2026-09-24 补充 7：P3 批次 2 两项 C 互操作诊断裁定「不实现」
 
 官方 v1.0.0 语义清单中与 C 互操作相关的两项诊断，经结构分析裁定**不实现（dead / 不可触达）**，仅登记本裁定，不新增任何 checker / diagnostic factory / cone error。

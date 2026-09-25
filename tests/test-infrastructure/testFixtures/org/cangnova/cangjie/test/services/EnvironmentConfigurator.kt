@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapBasePath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpPackageFeatures
 import org.cangnova.cangjie.cfir.entrypoint.configuration.conditionalCompilationSettings
 import org.cangnova.cangjie.cfir.session.ExplicitCfirConditionalCompilationSettings
 import org.cangnova.cangjie.config.*
@@ -158,6 +159,10 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             CfirDiagnosticsDirectives.TARGET_INTEROP_LANGUAGE,
             CfirFrontendConfigurationKeys.TARGET_INTEROP_LANGUAGE,
         )
+        register(
+            CfirDiagnosticsDirectives.CJMP_MODE,
+            CfirFrontendConfigurationKeys.CJMP_MODE,
+        )
     }
 
     /**
@@ -180,6 +185,12 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             ?.let { resolveTestDataPath(module, it) }
             ?.path
         configuration.apiLevelSyscapBasePath = testDataAnchor?.path
+        configuration.cjmpPackageFeatures = module.directives[CfirDiagnosticsDirectives.CJMP_FEATURES]
+            .flatMap { raw -> raw.split(',', ' ') }
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .toSet()
+        // CJMP features 子集门的 specific 侧输入（官方 `CollectFeaturesFromPackage` 的测试对位）。
         module.directives[WHEN_ENV].lastOrNull()?.let { raw ->
             val values = raw.split(',').map { entry ->
                 val separator = entry.indexOf('=')
