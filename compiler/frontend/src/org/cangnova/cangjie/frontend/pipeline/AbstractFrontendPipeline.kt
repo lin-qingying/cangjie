@@ -1,10 +1,14 @@
 package org.cangnova.cangjie.frontend.pipeline
 
 import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartChirPaths
+import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpCommonPartCjoPaths
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cjoOutputDirectory
 import org.cangnova.cangjie.config.cjoOutputFile
 import org.cangnova.cangjie.config.configureLanguageVersionSettings
+import org.cangnova.cangjie.config.messageCollector
+import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.phaser.CompilerPhase
 import org.cangnova.cangjie.phaser.PhaseConfig
 import org.cangnova.cangjie.phaser.invokeToplevel
@@ -27,8 +31,33 @@ abstract class AbstractFrontendPipeline<A : CommonCompilerArguments> {
             configuration.cjoOutputFile = arguments.outputFile
         }
         if (!configuration.configureLanguageVersionSettings(arguments.languageVersion)) return false
+        if (!configureCjmpCommonPartInputs(arguments, configuration)) return false
         val input = ArgumentsPipelineArtifact(arguments, configuration)
         return runPhasedPipeline(input)
+    }
+
+    /**
+     * 把 CJMP common-part 输入（`-Xcjmp-common-part` / `-Xcjmp-common-part-chir`，官方
+     * `--common-part-cjo` / `--common-part-chir` 对位）落到配置上，供 session 工厂推导编译模式。
+     *
+     * 两个列表必须一一配对（官方 `driver_require_common_chir_for_each_common_cjo`）；
+     * 违反时按 driver 错误报告并终止，而不是留到 session 构造期以异常形式暴露。
+     * CHIR 输出模式（官方 Common 判据）在本仓库 driver 尚无对位选项，Common 模式目前
+     * 只经测试指令 / IDE 模块 kind 显式注入。
+     */
+    private fun configureCjmpCommonPartInputs(arguments: A, configuration: CompilerConfiguration): Boolean {
+        val cjoPaths = arguments.cjmpCommonPart.toList()
+        val chirPaths = arguments.cjmpCommonPartChir.toList()
+        if (cjoPaths.size != chirPaths.size) {
+            configuration.messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                "common .chir files count should be equal to common .cjo files count",
+            )
+            return false
+        }
+        configuration.cjmpCommonPartCjoPaths = cjoPaths
+        configuration.cjmpCommonPartChirPaths = chirPaths
+        return true
     }
 
     /**

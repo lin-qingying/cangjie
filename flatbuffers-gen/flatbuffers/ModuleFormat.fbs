@@ -654,6 +654,35 @@ table FileInfo {
   fileID:  uint32;
   begin:   Position;
   end:     Position;
+  // CJMP: file-level `features { ... }` directive of the common part source file
+  // (official `File::GetFeatures()`; loader `ASTLoaderCJMP::LoadFeaturesDirective`).
+  feature: FeaturesDirective;
+}
+
+// CJMP: file-level features directive. Layout is byte-identical to official
+// origin/main `schema/CjoFormat.fbs` (FeatureId / FeaturesSet / FeaturesDirective).
+table FeatureId {
+  identifiers: [string]; // ["os", "linux"]
+}
+
+table FeaturesSet {
+  features: [FeatureId];
+}
+
+table FeaturesDirective {
+  featuresSet: FeaturesSet;
+}
+
+// CJMP: compile options embedded in the common part cjo (official
+// `ASTLoader::ValidateOptions`). Layout is byte-identical to official
+// `CompilationOptions` (slot 0 = optimization_level, slot 1 = debug).
+enum OptimizationLevel : uint8 {
+  O0, O1, O2, O3, Os, Oz
+}
+
+table CompilationOptions {
+  optimization_level: OptimizationLevel;
+  debug: bool;
 }
 
 // all SemaTys, decls are saved here, and indexed by other nodes.
@@ -676,6 +705,8 @@ table Package {
   allFileInfo: [FileInfo];
   // record all std full package name dependencies.
   allDependentStdPkgs:[string];
+  // compile options embedded in the common part cjo for CJMP validation.
+  options: CompilationOptions;
 }
 
 root_type Package;

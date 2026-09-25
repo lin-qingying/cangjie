@@ -53,4 +53,16 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = if (value.isNullOrEmpty()) null else value
         }
 
+    var cjmpCommonPart: Array<String> = emptyArray()
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
+    var cjmpCommonPartChir: Array<String> = emptyArray()
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
 }

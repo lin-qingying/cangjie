@@ -718,6 +718,7 @@ class FrontendMacroConstructionService(
             }
         }
         val callInfo = surface.toMacroCallInfo(entry, node.parentNames, refreshedTokens, preFile)
+        System.err.println("PROBE-EXE: surface=${surface.surfaceId} qn=${surface.qualifiedName} kind=${surface::class.simpleName} id=${callInfo.idName} method=${callInfo.methodName} pkg=${callInfo.packageName} lib=${callInfo.libPath}")
         val result = executor.execute(listOf(callInfo)).singleOrNull()
             ?: MacroExpansionResult.Failure(
                 message = "Macro executor returned no result for `${entry.name.asString()}`.",

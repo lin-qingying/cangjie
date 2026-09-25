@@ -71,6 +71,28 @@ val cangjieCompilerArguments = compilerArguments {
                 valueType = StringType(defaultValue = ReleaseDependent(null))
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
+
+            compilerArgument {
+                // 官方 `--common-part-cjo`：CJMP specific 编译加载的 common part cjo 列表。
+                name = "Xcjmp-common-part"
+                description = "Path list of common part .cjo inputs for CJMP specific compilation"
+                    .asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.PathSeparator
+                lifecycle(CangJieReleaseVersion.V_1_1_0)
+            }
+
+            compilerArgument {
+                // 官方 `--common-part-chir`：与 common cjo 一一配对的 chir 输入列表。
+                name = "Xcjmp-common-part-chir"
+                description = "Path list of common part .chir inputs for CJMP specific compilation"
+                    .asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.PathSeparator
+                lifecycle(CangJieReleaseVersion.V_1_1_0)
+            }
         }
     }
 }
