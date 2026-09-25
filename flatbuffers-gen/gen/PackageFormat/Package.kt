@@ -223,6 +223,15 @@ class Package : Table() {
         get() {
             val o = __offset(34); return if (o != 0) __vector_len(o) else 0
         }
+    val options : PackageFormat.CompilationOptions? get() = options(PackageFormat.CompilationOptions())
+    fun options(obj: PackageFormat.CompilationOptions) : PackageFormat.CompilationOptions? {
+        val o = __offset(36)
+        return if (o != 0) {
+            obj.__assign(__indirect(o + bb_pos), bb)
+        } else {
+            null
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsPackage(_bb: ByteBuffer): Package = getRootAsPackage(_bb, Package())
@@ -231,7 +240,7 @@ class Package : Table() {
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
         fun PackageBufferHasIdentifier(_bb: ByteBuffer) : Boolean = __has_identifier(_bb, "CJOF")
-        fun startPackage(builder: FlatBufferBuilder) = builder.startTable(16)
+        fun startPackage(builder: FlatBufferBuilder) = builder.startTable(17)
         fun addVersion(builder: FlatBufferBuilder, version: Int) = builder.addOffset(0, version, 0)
         fun addCjoVersion(builder: FlatBufferBuilder, cjoVersion: Int) = builder.addStruct(1, cjoVersion, 0)
         fun addFullPkgName(builder: FlatBufferBuilder, fullPkgName: Int) = builder.addOffset(2, fullPkgName, 0)
@@ -320,6 +329,7 @@ class Package : Table() {
             return builder.endVector()
         }
         fun startAllDependentStdPkgsVector(builder: FlatBufferBuilder, numElems: Int) = builder.startVector(4, numElems, 4)
+        fun addOptions(builder: FlatBufferBuilder, options: Int) = builder.addOffset(16, options, 0)
         fun endPackage(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o

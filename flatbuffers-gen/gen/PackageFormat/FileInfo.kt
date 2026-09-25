@@ -60,6 +60,15 @@ class FileInfo : Table() {
             null
         }
     }
+    val feature : PackageFormat.FeaturesDirective? get() = feature(PackageFormat.FeaturesDirective())
+    fun feature(obj: PackageFormat.FeaturesDirective) : PackageFormat.FeaturesDirective? {
+        val o = __offset(10)
+        return if (o != 0) {
+            obj.__assign(__indirect(o + bb_pos), bb)
+        } else {
+            null
+        }
+    }
     companion object {
         fun validateVersion() = Constants.FLATBUFFERS_25_2_10()
         fun getRootAsFileInfo(_bb: ByteBuffer): FileInfo = getRootAsFileInfo(_bb, FileInfo())
@@ -67,10 +76,11 @@ class FileInfo : Table() {
             _bb.order(ByteOrder.LITTLE_ENDIAN)
             return (obj.__assign(_bb.getInt(_bb.position()) + _bb.position(), _bb))
         }
-        fun startFileInfo(builder: FlatBufferBuilder) = builder.startTable(3)
+        fun startFileInfo(builder: FlatBufferBuilder) = builder.startTable(4)
         fun addFileID(builder: FlatBufferBuilder, fileId: UInt) = builder.addInt(0, fileId.toInt(), 0)
         fun addBegin(builder: FlatBufferBuilder, begin: Int) = builder.addStruct(1, begin, 0)
         fun addEnd(builder: FlatBufferBuilder, end: Int) = builder.addStruct(2, end, 0)
+        fun addFeature(builder: FlatBufferBuilder, feature: Int) = builder.addOffset(3, feature, 0)
         fun endFileInfo(builder: FlatBufferBuilder) : Int {
             val o = builder.endTable()
             return o
