@@ -1982,6 +1982,18 @@ internal class InvalidTupleFieldCtypeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidTupleFieldCtype
 
+internal class PointerUnknowGenericTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.PointerUnknowGenericType
+
+internal class TupleElementCmpNotBoolImpl(
+    override val leftType: String,
+    override val rightType: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TupleElementCmpNotBool
+
 internal class InvalidEnumMemberAccessImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
@@ -2345,16 +2357,16 @@ internal class CommonDirectExtensionHasCommonPrivateMembersImpl(
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CommonDirectExtensionHasCommonPrivateMembers
 
 internal class NotMatchedImpl(
-    override val declarationName: Name,
-    override val kind: String,
-    override val matchKind: String,
+    override val side: String,
+    override val declarationInfo: String,
+    override val counterpartKind: String,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NotMatched
 
 internal class SpecificVarNotMatchLetImpl(
-    override val specificName: Name,
-    override val commonName: Name,
+    override val specificKind: String,
+    override val commonKind: String,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.SpecificVarNotMatchLet
@@ -2390,8 +2402,8 @@ internal class SpecificHasDifferentTypeImpl(
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.SpecificHasDifferentType
 
 internal class SpecificMemberMustHaveImplementationImpl(
-    override val memberKind: String,
-    override val containerKind: String,
+    override val memberName: String,
+    override val containerName: String,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.SpecificMemberMustHaveImplementation
@@ -2495,16 +2507,97 @@ internal class CommonGenericFrozenNotSupportedImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CommonGenericFrozenNotSupported
 
-internal class CommonGenericRenameNotSupportedImpl(
-    cfirDiagnostic: CjPsiDiagnostic,
-    token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CommonGenericRenameNotSupported
-
 internal class CommonSpecificAnnotationNotAllowedImpl(
     override val annotationName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CommonSpecificAnnotationNotAllowed
+
+internal class ParseCommonFunctionMustHaveReturnTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCommonFunctionMustHaveReturnType
+
+internal class ParseSpecificFunctionMustHaveReturnTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseSpecificFunctionMustHaveReturnType
+
+internal class ParseSpecificFunctionParameterCannotHaveDefaultValueImpl(
+    override val declKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseSpecificFunctionParameterCannotHaveDefaultValue
+
+internal class ParseSpecificMemberMustHaveImplementationImpl(
+    override val memberName: Name,
+    override val containerName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseSpecificMemberMustHaveImplementation
+
+internal class ParseExpectedTypeWithCjmpVarImpl(
+    override val kind: String,
+    override val declKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseExpectedTypeWithCjmpVar
+
+internal class ParseCjmpOutdeclMissMatchImpl(
+    override val memberDescription: String,
+    override val memberKindText: String,
+    override val containerKindText: String,
+    override val expectedKindText: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCjmpOutdeclMissMatch
+
+internal class ParseCjmpStaticInitImpl(
+    override val kind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCjmpStaticInit
+
+internal class ParseUnexpectedCjmpDeclImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseUnexpectedCjmpDecl
+
+internal class ParseCjmpGenericDeclImpl(
+    override val kind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCjmpGenericDecl
+
+internal class ParseCjmpPatternDeclImpl(
+    override val patternKind: String,
+    override val kind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCjmpPatternDecl
+
+internal class ParseCjmpInCommonCtorRequiredImpl(
+    override val declType: String,
+    override val name: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCjmpInCommonCtorRequired
+
+internal class ParseExplicitlyAbstractOnlyForCjmpAbstractClassImpl(
+    override val declKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseExplicitlyAbstractOnlyForCjmpAbstractClass
+
+internal class ParseCommonInNonCommonFileImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseCommonInNonCommonFile
+
+internal class ParseSpecificInNonSpecificFileImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ParseSpecificInNonSpecificFile
 
 internal class JavaIncorrectUseBetweenTypesImpl(
     cfirDiagnostic: CjPsiDiagnostic,

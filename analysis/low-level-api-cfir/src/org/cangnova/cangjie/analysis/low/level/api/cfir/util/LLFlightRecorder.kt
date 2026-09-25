@@ -317,6 +317,8 @@ private val PHASE_COMPACT_NAMES = run {
             // pre-resolve construction step (baseline 第 1 节). Do not reuse 14.
             CfirResolvePhase.EXTENSIONS -> 15
             CfirResolvePhase.IMPLICIT_TYPES -> 16
+            // 17 = CJMP_MATCHING（1.1.0 起；不得复用已废弃编号）
+            CfirResolvePhase.CJMP_MATCHING -> 17
         }
     }
 }

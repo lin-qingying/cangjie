@@ -4,6 +4,8 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.lexer.CjSingleValueToken
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.stubs.ConstantValueKind
 import org.cangnova.cangjie.psi.stubs.elements.CjConstantExpressionElementType.Companion.kindToConstantElementType
@@ -38,12 +40,24 @@ internal fun createAnnotationChildrenStubs(parent: StubElement<*>, annotation: C
 /**
  * 为注解实参表达式创建对应 stub 子树。
  *
- * 支持字面量、命名引用和 collection literal；命名引用缺名或出现尚未有
+ * 支持字面量、二元/比较表达式、命名引用和 collection literal；命名引用缺名或出现尚未有
  * 对等 PSI stub 结构的表达式均视为二进制损坏，直接 error，不生成伪节点。
  */
 private fun createAnnotationExpressionStub(parent: StubElement<*>, expression: CfirExpression) {
     when (expression) {
         is CfirLiteralExpression -> createAnnotationLiteralStub(parent, expression)
+        is CfirBinaryOp -> createAnnotationBinaryExpressionStub(
+            parent,
+            expression.left,
+            expression.kind.toCjToken(),
+            expression.right,
+        )
+        is CfirComparisonExpression -> createAnnotationBinaryExpressionStub(
+            parent,
+            expression.left,
+            expression.operation.toCjToken(),
+            expression.right,
+        )
         is CfirArrayLiteral -> {
             val collection = CangJiePlaceHolderStubImpl<CjCollectionLiteralExpression>(
                 parent,
@@ -56,10 +70,51 @@ private fun createAnnotationExpressionStub(parent: StubElement<*>, expression: C
         is CfirNamedAccessExpression -> {
             val reference = expression.calleeReference as? CfirNamedReference
                 ?: error("Annotation reference has no name: ${expression.calleeReference::class.simpleName}")
-            CangJieNameReferenceExpressionStubImpl(parent, StringRef.fromString(reference.name.asString()))
+            val name = StringRef.fromString(reference.name.asString())
+            val explicitReceiver = expression.explicitReceiver
+            if (explicitReceiver == null) {
+                CangJieNameReferenceExpressionStubImpl(parent, name)
+            } else {
+                val qualified = CangJiePlaceHolderStubImpl<CjDotQualifiedExpression>(
+                    parent,
+                    CjStubElementTypes.DOT_QUALIFIED_EXPRESSION,
+                )
+                createAnnotationExpressionStub(qualified, explicitReceiver)
+                CangJieNameReferenceExpressionStubImpl(qualified, name)
+            }
         }
         else -> error("Unsupported compiled annotation expression: ${expression::class.simpleName}")
     }
+}
+
+/** 二元和比较注解实参与源码 PSI 共用“左操作数、运算符、右操作数”的 Stub 结构。 */
+private fun createAnnotationBinaryExpressionStub(
+    parent: StubElement<*>,
+    left: CfirExpression,
+    operation: CjSingleValueToken,
+    right: CfirExpression,
+) {
+    val binary = CangJiePlaceHolderStubImpl<CjBinaryExpression>(parent, CjStubElementTypes.BINARY_EXPRESSION)
+    createAnnotationExpressionStub(binary, left)
+    CangJieOperationReferenceStubImpl(binary, operation)
+    createAnnotationExpressionStub(binary, right)
+}
+
+private fun CfirBinaryOpKind.toCjToken(): CjSingleValueToken = when (this) {
+    CfirBinaryOpKind.AND -> CjTokens.ANDAND
+    CfirBinaryOpKind.OR -> CjTokens.OROR
+    CfirBinaryOpKind.COALESCING -> CjTokens.COALESCING
+    CfirBinaryOpKind.PIPELINE -> CjTokens.PIPELINE
+    CfirBinaryOpKind.COMPOSITION -> CjTokens.COMPOSITION
+}
+
+private fun CfirComparisonOp.toCjToken(): CjSingleValueToken = when (this) {
+    CfirComparisonOp.LT -> CjTokens.LT
+    CfirComparisonOp.GT -> CjTokens.GT
+    CfirComparisonOp.LE -> CjTokens.LTEQ
+    CfirComparisonOp.GE -> CjTokens.GTEQ
+    CfirComparisonOp.EQ -> CjTokens.EQEQ
+    CfirComparisonOp.NE -> CjTokens.EXCLEQ
 }
 
 /** 为字面量实参创建 stub 子树；字符串按字面片段与转义片段逐段重建。 */

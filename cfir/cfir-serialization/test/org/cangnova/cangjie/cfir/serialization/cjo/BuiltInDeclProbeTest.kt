@@ -157,6 +157,13 @@ class BuiltInDeclProbeTest {
     /** 内建声明测试使用的库 session。 */
     private object BuiltInTestSession : CfirSession(CfirSession.Kind.Library) {
         init {
+            // 反序列化发布互操作/注解元数据时读取会话语言设置（与生产会话公共组件一致）
+            register(
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
+            )
             register(CfirCangJieScopeProvider::class, CfirCangJieScopeProvider())
         }
     }

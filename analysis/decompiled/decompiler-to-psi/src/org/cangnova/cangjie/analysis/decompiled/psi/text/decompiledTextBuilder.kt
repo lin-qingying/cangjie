@@ -3,12 +3,24 @@ package org.cangnova.cangjie.analysis.decompiled.psi.text
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.lexer.CjKeywordToken
+import org.cangnova.cangjie.lexer.CjSingleValueToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjAnnotated
+import org.cangnova.cangjie.psi.CjBinaryExpression
+import org.cangnova.cangjie.psi.CjCallExpression
+import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
+import org.cangnova.cangjie.psi.CjConstantExpression
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjEnum
 import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjLiteralStringTemplateEntry
+import org.cangnova.cangjie.psi.CjNameBasicReferenceExpression
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
+import org.cangnova.cangjie.psi.CjPrefixExpression
+import org.cangnova.cangjie.psi.CjPostfixExpression
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFinalizer
@@ -29,7 +41,10 @@ import org.cangnova.cangjie.psi.CjTypeConstraintList
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeParameterList
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.CjValueArgumentList
 import org.cangnova.cangjie.psi.CjVisitorUnit
+import org.cangnova.cangjie.psi.CjStringTemplateExpression
+import org.cangnova.cangjie.psi.stubs.CangJieConstantExpressionStub
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -43,6 +58,126 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
  * 反编译文本中用于替代真实函数体、初始化器或访问器实现的固定占位注释。
  */
 private const val DECOMPILED_CODE_COMMENT = "/* compiled code */"
+
+/** 从脱离源文件 AST 的注解参数 Stub 子树重建仓颉实参文本。 */
+private fun renderAnnotationArguments(argumentList: CjValueArgumentList): String =
+    renderValueArguments(argumentList, "[", "]")
+
+/** 按 Cangjie 调用语法渲染已持久化的值实参。 */
+private fun renderValueArguments(argumentList: CjValueArgumentList, open: String, close: String): String =
+    argumentList.arguments.joinToString(prefix = open, postfix = close, separator = ", ") { argument ->
+        buildString {
+            argument.getArgumentName()?.let { name ->
+                append(name.asName.asString())
+                append(": ")
+            }
+            val expression = requireNotNull(argument.getArgumentExpression()) {
+                "Compiled annotation argument has no expression stub"
+            }
+            append(renderAnnotationExpression(expression))
+        }
+    }
+
+/** 从持久化表达式节点读取注解常量，不通过 PSI.text 触发 file AST 构建。 */
+private fun renderAnnotationExpression(expression: CjExpression): String = when (expression) {
+    is CjStringTemplateExpression -> buildString {
+        append('"')
+        expression.entries.forEach { entry ->
+            val entryText = requireNotNull(entry.stub) {
+                "Compiled annotation string entry has no text stub: ${entry::class.simpleName}"
+            }.text()
+            if (entry is CjLiteralStringTemplateEntry) {
+                appendEscapedStringLiteral(entryText)
+            } else {
+                append(entryText)
+            }
+        }
+        append('"')
+    }
+    is CjBinaryExpression -> {
+        val left = requireNotNull(expression.left) { "Compiled binary annotation has no left operand stub" }
+        val right = requireNotNull(expression.right) { "Compiled binary annotation has no right operand stub" }
+        val operation = requireNotNull(expression.operationReference.operationSignTokenType) {
+            "Compiled binary annotation has no operation token stub"
+        }
+        "${renderBinaryOperand(left)} ${operation.value} ${renderBinaryOperand(right)}"
+    }
+    is CjPrefixExpression -> {
+        val operand = requireNotNull(expression.baseExpression) { "Compiled prefix expression has no operand stub" }
+        val operation = requireNotNull(expression.operationReference.referencedNameElementType as? CjSingleValueToken) {
+            "Compiled prefix expression has no operation token stub"
+        }
+        val operandText = renderAnnotationExpression(operand)
+        val groupedOperand = if (operand is CjBinaryExpression) "($operandText)" else operandText
+        "${operation.value}$groupedOperand"
+    }
+    is CjPostfixExpression -> {
+        val operand = requireNotNull(expression.baseExpression) { "Compiled postfix expression has no operand stub" }
+        val operation = requireNotNull(expression.operationReference.referencedNameElementType as? CjSingleValueToken) {
+            "Compiled postfix expression has no operation token stub"
+        }
+        val operandText = renderAnnotationExpression(operand)
+        val groupedOperand = if (operand is CjBinaryExpression) "($operandText)" else operandText
+        "$groupedOperand${operation.value}"
+    }
+    is CjCallExpression -> buildString {
+        val callee = requireNotNull(expression.calleeExpression) { "Compiled call has no callee stub" }
+        append(renderAnnotationExpression(callee))
+        val typeArguments = expression.typeArgumentList?.arguments.orEmpty()
+        if (typeArguments.isNotEmpty()) {
+            append(typeArguments.joinToString(prefix = "<", postfix = ">", separator = ", ") { projection ->
+                requireNotNull(projection.typeReference) { "Compiled call type argument has no type stub" }.getTypeText()
+            })
+        }
+        val argumentList = expression.valueArgumentList
+        append(if (argumentList == null) "()" else renderValueArguments(argumentList, "(", ")"))
+    }
+    is CjCollectionLiteralExpression -> expression.innerExpressions.joinToString(
+        prefix = "[",
+        postfix = "]",
+        separator = ", ",
+        transform = ::renderAnnotationExpression,
+    )
+    is CjConstantExpression -> requireNotNull(expression.stub as? CangJieConstantExpressionStub) {
+        "Compiled annotation constant has no value stub"
+    }.value()
+    is CjDotQualifiedExpression -> {
+        val selector = requireNotNull(expression.selectorExpression) {
+            "Compiled qualified annotation reference has no selector stub"
+        }
+        "${renderAnnotationExpression(expression.receiverExpression)}.${renderAnnotationExpression(selector)}"
+    }
+    is CjNameReferenceExpression -> expression.referencedName
+    is CjNameBasicReferenceExpression -> expression.referencedName
+    else -> error("Unsupported compiled annotation expression stub: ${expression::class.qualifiedName}")
+}
+
+/** 嵌套二元 Stub 会编码括号分组；反编译文本显式恢复该分组。 */
+private fun renderBinaryOperand(expression: CjExpression): String {
+    val rendered = renderAnnotationExpression(expression)
+    return if (expression is CjBinaryExpression) "($rendered)" else rendered
+}
+
+/** 将字符串字面片段转义为双引号仓颉字符串的规范写法。 */
+private fun StringBuilder.appendEscapedStringLiteral(text: String) {
+    text.forEach { char ->
+        when (char) {
+            '\\' -> append('\\').append('\\')
+            '"' -> append('\\').append('"')
+            '$' -> append('\\').append('$')
+            '\n' -> append('\\').append('n')
+            '\r' -> append('\\').append('r')
+            '\t' -> append('\\').append('t')
+            else -> if (char.code < 32) {
+                append("\\u{")
+                append(char.code.toString(16))
+                append('}')
+            } else {
+                append(char)
+            }
+        }
+    }
+}
 
 /**
  * 对齐 Kotlin `decompiledTextBuilder.kt`：
@@ -153,7 +288,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             declaration.annotationEntries.forEach { annotation ->
                 append(if (annotation.isCompileTimeVisible) "@!" else "@")
                 append(annotation.shortName?.asString().orEmpty())
-                annotation.valueArgumentList?.let { append(it.text) }
+                annotation.valueArgumentList?.let { append(renderAnnotationArguments(it)) }
                 appendLine()
             }
         }
@@ -419,7 +554,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitTypeConstraint(constraint: CjTypeConstraint) {
             // 类型参数名走 renderIdentifier：与 hard 关键字重名时（如 where func : Base）必须转义，
             // 否则 parser 重新解析会把 func 当关键字，where 子句语法错。
-            append(constraint.subjectTypeParameterName?.text?.let(::renderIdentifier).orEmpty())
+            append(constraint.subjectTypeParameterName?.referencedName?.let(::renderIdentifier).orEmpty())
             append(" : ")
             constraint.boundTypeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append)
         }

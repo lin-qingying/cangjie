@@ -241,7 +241,17 @@ class CjoSdkDeserializationIntegrationTest {
     /**
      * 诊断测试使用的库 session mock。
      */
-    private object DiagSession : org.cangnova.cangjie.cfir.session.CfirSession(org.cangnova.cangjie.cfir.session.CfirSession.Kind.Library)
+    private object DiagSession : org.cangnova.cangjie.cfir.session.CfirSession(org.cangnova.cangjie.cfir.session.CfirSession.Kind.Library) {
+        init {
+            // 反序列化发布互操作/注解元数据时读取会话语言设置（与生产会话公共组件一致）
+            register(
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent::class,
+                org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent(
+                    org.cangnova.cangjie.LanguageVersionSettingsImpl.DEFAULT,
+                ),
+            )
+        }
+    }
 
     /**
      * 诊断：验证 LLT 同构场景——deserialized provider + deserialized extend provider 查询 Int64。

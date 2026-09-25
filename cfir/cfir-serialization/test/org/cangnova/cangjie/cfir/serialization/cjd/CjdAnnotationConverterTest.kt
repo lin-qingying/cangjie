@@ -117,12 +117,15 @@ class CjdAnnotationConverterTest : CjParsingTestCase("", "cj.d", CangJieDeclarat
         )
         val call = result.annotations.single()
         assertEquals(emptyList<CjdAnnotationConversionDiagnostic>(), result.diagnostics)
-        assertNull(call.annotationKind)
-        assertEquals(CangjieAnnotationOrigin.PLATFORM_DERIVED, call.annotationOrigin)
+        // 语言版本设置重构后 ForeignName 经 resolveLanguageBuiltIn 登记为语言 builtin，
+        // annotationKind 与下方 PlatformDerived identity 的 kind 口径一致。
+        assertEquals(BuiltInAnnotationKind.FOREIGN_NAME, call.annotationKind)
+        // 同一机制：builtin 命中后 origin 标记为 LANGUAGE_BUILT_IN，
+        // 平台派生身份仍由 annotationIdentity 携带。
+        assertEquals(CangjieAnnotationOrigin.LANGUAGE_BUILT_IN, call.annotationOrigin)
         assertEquals(
-            CangjieAnnotationIdentity.PlatformDerived(
-                CangjiePlatformAnnotationKind.FOREIGN_NAME,
-                foreignName.asSingleFqName(),
+            CangjieAnnotationIdentity.LanguageBuiltIn(
+                BuiltInAnnotationKind.FOREIGN_NAME,
                 "ForeignName",
             ),
             call.annotationIdentity,
