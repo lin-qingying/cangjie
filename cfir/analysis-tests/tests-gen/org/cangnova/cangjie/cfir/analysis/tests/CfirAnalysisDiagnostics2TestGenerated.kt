@@ -78,52 +78,228 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific")
         }
 
-        @TestMetadata("commonSpecificClassBoundaryPlaceholder.cj")
-        @Test
-        fun testCommonSpecificClassBoundaryPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificClassBoundaryPlaceholder.cj")
-        }
-
-        @TestMetadata("commonSpecificClassKindMismatchPlaceholder.cj")
-        @Test
-        fun testCommonSpecificClassKindMismatchPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificClassKindMismatchPlaceholder.cj")
-        }
-
-        @TestMetadata("commonSpecificInterfaceKindMismatchPlaceholder.cj")
-        @Test
-        fun testCommonSpecificInterfaceKindMismatchPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificInterfaceKindMismatchPlaceholder.cj")
-        }
-
-        @TestMetadata("commonSpecificNotMatchedPlaceholder.cj")
-        @Test
-        fun testCommonSpecificNotMatchedPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificNotMatchedPlaceholder.cj")
-        }
-
         @TestMetadata("commonSpecificOpenClassNoInitPlaceholder.cj")
         @Test
         fun testCommonSpecificOpenClassNoInitPlaceholder() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificOpenClassNoInitPlaceholder.cj")
         }
 
-        @TestMetadata("commonSpecificOpenTypeMismatchPlaceholder.cj")
+        @TestMetadata("commonSpecificParseRulesCommon01.cj")
         @Test
-        fun testCommonSpecificOpenTypeMismatchPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificOpenTypeMismatchPlaceholder.cj")
+        fun testCommonSpecificParseRulesCommon01() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificParseRulesCommon01.cj")
         }
 
-        @TestMetadata("commonSpecificPairMismatchPlaceholder.cj")
+        @TestMetadata("commonSpecificParseRulesSpecific01.cj")
         @Test
-        fun testCommonSpecificPairMismatchPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificPairMismatchPlaceholder.cj")
+        fun testCommonSpecificParseRulesSpecific01() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificParseRulesSpecific01.cj")
         }
 
         @TestMetadata("commonSpecificSuppressedLangver105.cj")
         @Test
         fun testCommonSpecificSuppressedLangver105() {
             runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/commonSpecificSuppressedLangver105.cj")
+        }
+
+        @TestMetadata("e2e")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class E2e : AbstractCfirLightTreeDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e")
+            }
+
+            @TestMetadata("cjmpCommonDefaultOmitted.cj")
+            @Test
+            fun testCjmpCommonDefaultOmitted() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonDefaultOmitted.cj")
+            }
+
+            @TestMetadata("cjmpDefaultBothSides.cj")
+            @Test
+            fun testCjmpDefaultBothSides() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDefaultBothSides.cj")
+            }
+
+            @TestMetadata("cjmpDefaultReadThrough.cj")
+            @Test
+            fun testCjmpDefaultReadThrough() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDefaultReadThrough.cj")
+            }
+
+            @TestMetadata("cjmpDuplicateSpecific.cj")
+            @Test
+            fun testCjmpDuplicateSpecific() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDuplicateSpecific.cj")
+            }
+
+            @TestMetadata("cjmpEnumConstructorExtra.cj")
+            @Test
+            fun testCjmpEnumConstructorExtra() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEnumConstructorExtra.cj")
+            }
+
+            @TestMetadata("cjmpEnumConstructorMissing.cj")
+            @Test
+            fun testCjmpEnumConstructorMissing() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEnumConstructorMissing.cj")
+            }
+
+            @TestMetadata("cjmpEnumConstructorNonExhaustiveExtra.cj")
+            @Test
+            fun testCjmpEnumConstructorNonExhaustiveExtra() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEnumConstructorNonExhaustiveExtra.cj")
+            }
+
+            @TestMetadata("cjmpEnumNonExhaustive.cj")
+            @Test
+            fun testCjmpEnumNonExhaustive() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEnumNonExhaustive.cj")
+            }
+
+            @TestMetadata("cjmpExtendMissingMember.cj")
+            @Test
+            fun testCjmpExtendMissingMember() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpExtendMissingMember.cj")
+            }
+
+            @TestMetadata("cjmpExtendOk.cj")
+            @Test
+            fun testCjmpExtendOk() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpExtendOk.cj")
+            }
+
+            @TestMetadata("cjmpGenericBoundStricter.cj")
+            @Test
+            fun testCjmpGenericBoundStricter() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericBoundStricter.cj")
+            }
+
+            @TestMetadata("cjmpInterfaceMemberExempt.cj")
+            @Test
+            fun testCjmpInterfaceMemberExempt() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpInterfaceMemberExempt.cj")
+            }
+
+            @TestMetadata("cjmpKindMismatch.cj")
+            @Test
+            fun testCjmpKindMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpKindMismatch.cj")
+            }
+
+            @TestMetadata("cjmpKindMismatchClassInterface.cj")
+            @Test
+            fun testCjmpKindMismatchClassInterface() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpKindMismatchClassInterface.cj")
+            }
+
+            @TestMetadata("cjmpKindMismatchInterfaceClass.cj")
+            @Test
+            fun testCjmpKindMismatchInterfaceClass() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpKindMismatchInterfaceClass.cj")
+            }
+
+            @TestMetadata("cjmpKindMismatchInterfaceStruct.cj")
+            @Test
+            fun testCjmpKindMismatchInterfaceStruct() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpKindMismatchInterfaceStruct.cj")
+            }
+
+            @TestMetadata("cjmpKindMismatchOpenClassInterface.cj")
+            @Test
+            fun testCjmpKindMismatchOpenClassInterface() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpKindMismatchOpenClassInterface.cj")
+            }
+
+            @TestMetadata("cjmpLetTypeMismatch.cj")
+            @Test
+            fun testCjmpLetTypeMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpLetTypeMismatch.cj")
+            }
+
+            @TestMetadata("cjmpMemberMissing.cj")
+            @Test
+            fun testCjmpMemberMissing() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpMemberMissing.cj")
+            }
+
+            @TestMetadata("cjmpMissingSpecific.cj")
+            @Test
+            fun testCjmpMissingSpecific() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpMissingSpecific.cj")
+            }
+
+            @TestMetadata("cjmpNamedParamName.cj")
+            @Test
+            fun testCjmpNamedParamName() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpNamedParamName.cj")
+            }
+
+            @TestMetadata("cjmpOkBasic.cj")
+            @Test
+            fun testCjmpOkBasic() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpOkBasic.cj")
+            }
+
+            @TestMetadata("cjmpOrphanSpecific.cj")
+            @Test
+            fun testCjmpOrphanSpecific() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpOrphanSpecific.cj")
+            }
+
+            @TestMetadata("cjmpParamTypeMismatch.cj")
+            @Test
+            fun testCjmpParamTypeMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpParamTypeMismatch.cj")
+            }
+
+            @TestMetadata("cjmpReturnCovariant.cj")
+            @Test
+            fun testCjmpReturnCovariant() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpReturnCovariant.cj")
+            }
+
+            @TestMetadata("cjmpReturnTypeMismatch.cj")
+            @Test
+            fun testCjmpReturnTypeMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpReturnTypeMismatch.cj")
+            }
+
+            @TestMetadata("cjmpVisibilityMismatch.cj")
+            @Test
+            fun testCjmpVisibilityMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpVisibilityMismatch.cj")
+            }
+        }
+
+        @TestMetadata("gate")
+        @TestDataPath("${'$'}PROJECT_ROOT")
+        @Nested
+        inner class Gate : AbstractCfirLightTreeDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/common-specific/gate")
+            }
+
+            @TestMetadata("cjmpFeatureDisabledOverride.cj")
+            @Test
+            fun testCjmpFeatureDisabledOverride() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/gate/cjmpFeatureDisabledOverride.cj")
+            }
+
+            @TestMetadata("cjmpModeNoneCommonFirst.cj")
+            @Test
+            fun testCjmpModeNoneCommonFirst() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/gate/cjmpModeNoneCommonFirst.cj")
+            }
+
+            @TestMetadata("cjmpModeNoneSpecificFirst.cj")
+            @Test
+            fun testCjmpModeNoneSpecificFirst() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/gate/cjmpModeNoneSpecificFirst.cj")
+            }
         }
     }
 

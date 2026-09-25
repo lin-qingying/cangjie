@@ -91,6 +91,15 @@ open class CfirDiagnosticCollectorService(
                     diagnosticsCollector = diagnosticsCollector,
                 )
                 appendComputedDiagnostics(diagnostics, diagnosticsByFile)
+                // 平台（specific）会话对 depends-on 模块文件报告的诊断（对位 Kotlin MppCheckerKind.Platform：
+                // CJMP common 方向 NOT_MATCHED 锚在 common 声明上，由 specific 会话产出）
+                val ownFiles = part.firFilesByTestFile.values.toSet()
+                for (file in allFiles) {
+                    if (file in ownFiles) continue
+                    val path = file.sourceFile?.path ?: continue
+                    val foreign = diagnosticsCollector.diagnosticsByFilePath[path].orEmpty()
+                    if (foreign.isNotEmpty()) diagnosticsByFile.getOrPut(file) { mutableListOf() }.addAll(foreign)
+                }
             }
         }
 

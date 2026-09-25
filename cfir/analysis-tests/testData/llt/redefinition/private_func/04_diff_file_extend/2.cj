@@ -1,3 +1,4 @@
+// CJMP_MODE: COMMON
 
 
 package pkg
