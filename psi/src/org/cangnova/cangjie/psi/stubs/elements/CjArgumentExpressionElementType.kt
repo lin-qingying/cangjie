@@ -1,14 +1,13 @@
 package org.cangnova.cangjie.psi.stubs.elements
 
 import com.intellij.lang.ASTNode
-import org.cangnova.cangjie.psi.CjExpression
 
-/** 参数表达式的嵌套节点必须一起建桩，不能把叶子提升到参数下而丢失运算结构。 */
+/** 在声明边界内保留参数表达式的完整嵌套 Stub 结构。 */
 internal fun isValueArgumentExpression(node: ASTNode): Boolean {
     var parent = node.treeParent
     while (parent != null) {
         if (parent.elementType == CjStubElementTypes.VALUE_ARGUMENT) return true
-        if (parent.psi !is CjExpression) return false
+        if (CjTokenSets.DECLARATION_TYPES.contains(parent.elementType)) return false
         parent = parent.treeParent
     }
     return false

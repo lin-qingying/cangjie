@@ -76,6 +76,22 @@ class CangJieParsing private constructor(
 
     companion object {
         val PARAMETER_NAME_RECOVERY_SET = TokenSet.create(COLON, EQ, COMMA, RPAR)
+
+        /**
+         * 上下文关键字（本仓库软关键字修饰符）后随这些 token 时按标识符处理，不作修饰符。
+         *
+         * 对齐官方 `SeeingKeywordAndOperater`（ParserUtils.cpp）：后随 token 落在官方 Tokens.inc 的
+         * `DOT..EQUAL` 区间即判为标识符；区间内的 `~`（析构函数）与 `@`（宏调用）除外，故不入此集合。
+         */
+        private val CONTEXTUAL_KEYWORD_AS_IDENTIFIER_FOLLOW = TokenSet.create(
+            DOT, COMMA, LPAR, RPAR, LBRACKET, RBRACKET, LBRACE, RBRACE,
+            MULMUL, MUL, PERC, DIV, PLUS, MINUS, PLUSPLUS, MINUSMINUS,
+            ANDAND, OROR, COALESCING, PIPELINE, COMPOSITION, EXCL, AND, OR, XOR, LTLT, GTGT,
+            COLON, SEMICOLON, EQ, PLUSEQ, MINUSEQ, MULTEQ, MULMULEQ, DIVEQ, PERCEQ,
+            ANDANDEQ, OROREQ, ANDEQ, OREQ, XOREQ, LTLTEQ, GTGTEQ,
+            ARROW, LEFT_ARROW, DOUBLE_ARROW, RANGE, RANGEEQ, ELLIPSIS, HASH, QUEST,
+            LT, GT, LTEQ, GTEQ, IS_KEYWORD, AS_KEYWORD, EXCLEQ, EQEQ,
+        )
         private val GT_COMMA_COLON_SET = TokenSet.create(GT, COMMA, COLON)
         private val LOG = Logger.getInstance(CangJieParsing::class.java)
         private val TOP_LEVEL_DECLARATION_FIRST = TokenSet.create(
@@ -209,7 +225,8 @@ class CangJieParsing private constructor(
      * 表示 `ModifierKind`，承载仓颉语法解析中的语法节点、索引桩或辅助模型。
      */
     enum class ModifierKind {
-        ABSTRACT, MUT, PUBLIC, PRIVATE, PROTECTED, OPERATOR, FOREIGN, CONST, UNSAFE, SEALED, REDEF, OPEN, STATIC
+        ABSTRACT, MUT, PUBLIC, PRIVATE, PROTECTED, OPERATOR, FOREIGN, CONST, UNSAFE, SEALED, REDEF, OPEN, STATIC,
+        COMMON, SPECIFIC
     }
 
     /**
@@ -283,6 +300,14 @@ class CangJieParsing private constructor(
          * 保存 `isStaticDetected`，供仓颉语法解析流程读取节点结构或语义信息。
          */
         val isStaticDetected: Boolean get() = has(ModifierKind.STATIC)
+        /**
+         * 保存 `isCommonDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
+        val isCommonDetected: Boolean get() = has(ModifierKind.COMMON)
+        /**
+         * 保存 `isSpecificDetected`，供仓颉语法解析流程读取节点结构或语义信息。
+         */
+        val isSpecificDetected: Boolean get() = has(ModifierKind.SPECIFIC)
 
         /**
          * 提供 `getSize` 操作，封装仓颉语法解析节点的访问、构造或判断逻辑。
@@ -308,6 +333,8 @@ class CangJieParsing private constructor(
                 STATIC_KEYWORD -> modifiers.add(ModifierKind.STATIC)
                 SEALED_KEYWORD -> modifiers.add(ModifierKind.SEALED)
                 REDEF_KEYWORD -> modifiers.add(ModifierKind.REDEF)
+                COMMON_KEYWORD -> modifiers.add(ModifierKind.COMMON)
+                SPECIFIC_KEYWORD -> modifiers.add(ModifierKind.SPECIFIC)
             }
         }
     }
@@ -1502,6 +1529,11 @@ class CangJieParsing private constructor(
                 return false
             }
 
+            if (isContextualKeywordUsedAsIdentifier(lookahead)) {
+                marker.rollbackTo()
+                return false
+            }
+
             if (lookahead != null && !noModifiersBefore.contains(lookahead)) {
                 val tt = tt() ?: return false
                 tokenConsumer?.invoke(tt)
@@ -1529,6 +1561,17 @@ class CangJieParsing private constructor(
 
         marker.rollbackTo()
         return false
+    }
+
+    /**
+     * 当前软关键字修饰符（官方上下文关键字，如 `public`/`open`/`common`）在 [next] 之前是否实为标识符。
+     *
+     * 例：`enum E { | common | specific }` 中的 `common` 后随 `|`，是构造器名而非修饰符。
+     */
+    private fun isContextualKeywordUsedAsIdentifier(next: IElementType?): Boolean {
+        val current = tt()
+        return current is CjKeywordToken && current.isSoft &&
+                next != null && CONTEXTUAL_KEYWORD_AS_IDENTIFIER_FOLLOW.contains(next)
     }
 
     /**

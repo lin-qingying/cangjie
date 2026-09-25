@@ -25,14 +25,38 @@
 package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.psi.stubs.IStubElementType
 
 /**
  * 表示 `CjUnaryExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-abstract class CjUnaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOperationExpression {
+abstract class CjUnaryExpression :
+    CjExpressionImplStub<CangJiePlaceHolderStub<out CjUnaryExpression>>,
+    CjOperationExpression {
+
+    constructor(node: ASTNode) : super(node)
+
+    protected constructor(
+        stub: CangJiePlaceHolderStub<out CjUnaryExpression>,
+        elementType: IStubElementType<*, *>,
+    ) : super(stub, elementType)
+
+    protected fun baseExpressionFromStub(isPrefix: Boolean): CjExpression? {
+        val stub = stub ?: return null
+        val operationIndex = stub.childrenStubs.indexOfFirst { it.stubType == CjStubElementTypes.OPERATION_REFERENCE }
+        if (operationIndex < 0) return null
+        val expressionStub = if (isPrefix) {
+            stub.childrenStubs.drop(operationIndex + 1).firstOrNull()
+        } else {
+            stub.childrenStubs.take(operationIndex).lastOrNull()
+        }
+        return expressionStub?.psi as? CjExpression
+    }
 
     /**
      * 保存 `baseExpression`，供仓颉 PSI流程读取节点结构或语义信息。
@@ -44,7 +68,8 @@ abstract class CjUnaryExpression(node: ASTNode) : CjExpressionImpl(node), CjOper
      * 暴露 `operationReference`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val operationReference: CjSimpleNameExpression
-        get() = findChildByType(CjNodeTypes.OPERATION_REFERENCE)!!
+        get() = getStubOrPsiChild(CjStubElementTypes.OPERATION_REFERENCE)
+            ?: findChildByType(CjNodeTypes.OPERATION_REFERENCE)!!
     /**
      * 保存 `operationToken`，供仓颉 PSI流程读取节点结构或语义信息。
      */

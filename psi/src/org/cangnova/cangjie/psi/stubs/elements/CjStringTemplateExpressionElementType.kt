@@ -36,8 +36,6 @@ class CjStringTemplateExpressionElementType(debugName: String) :
     /**
      * 实现 `shouldCreateStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun shouldCreateStub(node: ASTNode): Boolean {
-        if (node.treeParent?.elementType != CjStubElementTypes.VALUE_ARGUMENT) return false
-        return super.shouldCreateStub(node)
-    }
+    override fun shouldCreateStub(node: ASTNode): Boolean =
+        isValueArgumentExpression(node) && super.shouldCreateStub(node)
 }

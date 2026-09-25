@@ -50,6 +50,7 @@ val DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS: CfirResolvedDeclarationStatus =
         isC = false
         isCommon = false
         isSpecific = false
+        isCommonWithDefault = false
         isRedef = false
         isDefault = false
         isAbstract = false
@@ -83,6 +84,7 @@ fun CfirDeclarationStatus.resolvedForStatuslessDeclaration(): CfirResolvedDeclar
         isC = this@resolvedForStatuslessDeclaration.isC
         isCommon = this@resolvedForStatuslessDeclaration.isCommon
         isSpecific = this@resolvedForStatuslessDeclaration.isSpecific
+        isCommonWithDefault = this@resolvedForStatuslessDeclaration.isCommonWithDefault
         isRedef = this@resolvedForStatuslessDeclaration.isRedef
         isDefault = this@resolvedForStatuslessDeclaration.isDefault
         isAbstract = this@resolvedForStatuslessDeclaration.isAbstract

@@ -808,6 +808,7 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             isC = currentStatus.isC
             isCommon = currentStatus.isCommon
             isSpecific = currentStatus.isSpecific
+            isCommonWithDefault = currentStatus.isCommonWithDefault
             isRedef = currentStatus.isRedef
             isDefault = currentStatus.isDefault
             isAbstract = currentStatus.isAbstract
@@ -1140,6 +1141,7 @@ class CfirStatusResolver(
             isC = declaration.interopInfo?.isC == true
             isCommon = status.isCommon
             isSpecific = status.isSpecific
+            isCommonWithDefault = status.isCommonWithDefault
             isRedef = status.isRedef
             isDefault = status.isDefault
             isAbstract = resolvedIsAbstract

@@ -2029,8 +2029,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // specific var 不能匹配 common let
         val SPECIFIC_VAR_NOT_MATCH_LET by error<PsiElement> {
-            parameter<Name>("specificName")
-            parameter<Name>("commonName")
+            // 官方参数（CheckCJMP.cpp MatchCJMPVar）：specific 与 common 的 "var"/"let"
+            parameter<String>("specificKind")
+            parameter<String>("commonKind")
         }
 
         // specific init 不能实现 primary common constructor
@@ -2058,8 +2059,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // specific 成员必须有函数体
         val SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION by error<PsiElement> {
-            parameter<String>("memberKind")
-            parameter<String>("containerKind")
+            // 官方参数（CheckCJMP.cpp TrySetSpecificImpl）：成员名与外层声明名
+            parameter<String>("memberName")
+            parameter<String>("containerName")
         }
 
         // specific 修饰符与 common 不匹配

@@ -26,11 +26,20 @@ package org.cangnova.cangjie.psi
 
 import com.google.common.collect.Lists
 import com.intellij.lang.ASTNode
+import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 表示 `CjCallExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallElement, CjReferenceExpression {
+open class CjCallExpression :
+    CjExpressionImplStub<CangJiePlaceHolderStub<CjCallExpression>>,
+    CjCallElement,
+    CjReferenceExpression {
+    constructor(node: ASTNode) : super(node)
+
+    constructor(stub: CangJiePlaceHolderStub<CjCallExpression>) : super(stub, CjStubElementTypes.CALL_EXPRESSION)
+
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -42,9 +51,7 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
      * 暴露 `lambdaArguments`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val lambdaArguments: List<CjLambdaArgument>
-        get() {
-            return findChildrenByType<CjLambdaArgument>(CjNodeTypes.LAMBDA_ARGUMENT)
-        }
+        get() = getStubOrPsiChildrenAsList(CjStubElementTypes.LAMBDA_ARGUMENT)
     /**
      * 保存 `referenceExpression`，供仓颉 PSI流程读取节点结构或语义信息。
      */
@@ -63,7 +70,7 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
      */
     override val typeArgumentList: CjTypeArgumentList?
         get() {
-            val directTypeArgumentList = findChildByType<CjTypeArgumentList>(CjNodeTypes.TYPE_ARGUMENT_LIST)
+            val directTypeArgumentList = getStubOrPsiChild(CjStubElementTypes.TYPE_ARGUMENT_LIST)
             return directTypeArgumentList
                 ?: calleeExpression?.calleeOwnTypeArgumentList()
         }
@@ -86,6 +93,10 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
      */
     override val calleeExpression: CjExpression?
         get() {
+            val stub = stub
+            if (stub != null) {
+                return stub.childrenStubs.firstNotNullOfOrNull { child -> child.psi as? CjExpression }
+            }
             return findChildByClass(CjExpression::class.java)
         }
 
@@ -93,10 +104,7 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
      * 暴露 `valueArgumentList`，实现仓颉 PSI节点对上层接口的属性契约。
      */
     override val valueArgumentList: CjValueArgumentList?
-        get() {
-
-            return findChildByType(CjNodeTypes.VALUE_ARGUMENT_LIST) as CjValueArgumentList?
-        }
+        get() = getStubOrPsiChild(CjStubElementTypes.VALUE_ARGUMENT_LIST)
 
     /**
      * 暴露 `valueArguments`，实现仓颉 PSI节点对上层接口的属性契约。
@@ -122,6 +130,6 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
      * 实现 `toString` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun toString(): String {
-        return node.elementType.toString()
+        return stub?.stubType?.toString() ?: node.elementType.toString()
     }
 }

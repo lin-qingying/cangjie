@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.analysis.checkers.CjmpGate
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -30,8 +31,8 @@ object CfirCommonCtorImmutableAssignChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
-        // 与 CfirCommonSpecificChecker 同一门禁：common/specific 语言表面 1.1.0 起才存在。
-        if (!context.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) return
+        // 与 CfirCommonSpecificChecker 同一门禁：common/specific 语言表面 1.1.0 起才存在（D16 单入口）。
+        if (!CjmpGate.isEnabled(context)) return
         if (!declaration.status.isCommon) return
 
         for (member in declaration.declarations) {

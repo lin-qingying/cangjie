@@ -976,6 +976,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             "c",
             "common",
             "specific",
+            "commonWithDefault",
             "redef",
             "default",
             "abstract",

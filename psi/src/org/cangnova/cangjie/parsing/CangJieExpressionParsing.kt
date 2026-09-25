@@ -908,7 +908,9 @@ open class CangJieExpressionParsing(
             RUNE_LITERAL_Id -> parseOneTokenExpression(RUNE_CONSTANT)
             CHARACTER_BYTE_LITERAL_Id -> parseOneTokenExpression(CHARACTER_BYTE_CONSTANT)
             FLOAT_LITERAL_Id -> parseOneTokenExpression(FLOAT_CONSTANT)
-            else -> ok = false
+            // 上下文关键字（软关键字 token，如 common/specific/public）在原子位置按标识符解析，
+            // 对齐官方 ParseAtom.cpp `Seeing(IDENTIFIER) || SeeingContextualKeyword()`；at(IDENTIFIER) 负责重映射
+            else -> if (at(IDENTIFIER)) parseSimpleNameExpression() else ok = false
         }
         if (!ok) {
             errorWithRecovery(

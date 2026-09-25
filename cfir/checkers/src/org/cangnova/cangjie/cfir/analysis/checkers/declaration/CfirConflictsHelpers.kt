@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
@@ -525,6 +526,7 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
 ) {
     if (conflictingSymbol == declaration) return
     if (declaration is CfirFunctionSymbol<*> && conflictingSymbol is CfirConstructorSymbol) return
+    if (isCommonAndSpecific(declaration, conflictingSymbol)) return
 
     if (declaration.isBound && conflictingSymbol.isBound) {
         val declarationModule = declaration.cfir.moduleData
@@ -561,6 +563,20 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
     ) {
         declarationConflictingSymbols.getOrPut(declaration) { SmartSet.create() }.add(conflictingSymbol)
     }
+}
+
+/**
+ * common 与 specific 同名声明互为 CJMP 对应物，不构成重复声明（对位 Kotlin `isExpectAndActual`；
+ * cjc 1.1.3 实测：配对与否都不报 overload conflict，配对结论由 CJMP 检查器报告；两个 specific 之间仍冲突）。
+ */
+private fun isCommonAndSpecific(first: CfirBasedSymbol<*>, second: CfirBasedSymbol<*>): Boolean {
+    if (!first.isBound || !second.isBound) return false
+    // 门禁管行为（§8.5.5）：1.0.x 下 common/specific 无语义，同名声明照常冲突
+    val settings = runCatching { first.cfir.moduleData.session.languageVersionSettings }.getOrNull() ?: return false
+    if (!settings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)) return false
+    val firstStatus = (first.cfir as? CfirMemberDeclaration)?.status ?: return false
+    val secondStatus = (second.cfir as? CfirMemberDeclaration)?.status ?: return false
+    return firstStatus.isCommon && secondStatus.isSpecific || firstStatus.isSpecific && secondStatus.isCommon
 }
 
 /**

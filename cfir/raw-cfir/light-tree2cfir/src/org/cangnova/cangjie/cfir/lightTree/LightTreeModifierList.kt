@@ -119,6 +119,10 @@ class LightTreeModifierList(
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
     /** 是否包含 foreign modifier。 */
     val isForeign: Boolean get() = inForeignBlock || hasModifier(CjTokens.FOREIGN_KEYWORD)
+    /** 是否包含 common modifier（CJMP，1.1.0）。 */
+    val isCommon: Boolean get() = hasModifier(CjTokens.COMMON_KEYWORD)
+    /** 是否包含 specific modifier（CJMP，1.1.0）。 */
+    val isSpecific: Boolean get() = hasModifier(CjTokens.SPECIFIC_KEYWORD)
 
     /** 按源码顺序暴露声明/参数修饰符文本，供 construction-only surface 携带。 */
     val modifierTexts: List<String> by lazy {
@@ -168,6 +172,10 @@ class LightTreeModifierList(
         status.isUnsafe = isUnsafe
         status.isForeign = isForeign
         status.isDefault = isDefault
+        // CJMP（common/specific，1.1.0）：与 AbstractRawCfirBuilder.buildDeclarationStatus 对齐，
+        // 仅装填状态；语义合法性由 checker 侧负责。
+        status.isCommon = isCommon
+        status.isSpecific = isSpecific
         return status
     }
 

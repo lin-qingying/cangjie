@@ -70,12 +70,12 @@ public interface CjNodeTypes {
     IElementType RANGE_EXPRESSION = new CjNodeType("RANGE_EXPRESSION", CjRangeExpression.class);
 
     IElementType SLICE_EXPRESSION = new CjNodeType("SLICE_EXPRESSION", CjSliceExpression.class);
-    IElementType POSTFIX_EXPRESSION = new CjNodeType("POSTFIX_EXPRESSION", CjPostfixExpression.class);
+    IElementType POSTFIX_EXPRESSION = CjStubElementTypes.POSTFIX_EXPRESSION;
     //CjUnsafeExpression
     IElementType UNSAFE_EXPRESSION = new CjNodeType("UNSAFE_EXPRESSION", CjUnsafeExpression.class);
     IElementType SPAWN_EXPRESSION = new CjNodeType("SPAWN_EXPRESSION", CjSpawnExpression.class);
     IElementType SYNCHRONIZED_EXPRESSION = new CjNodeType("SYNCHRONIZED_EXPRESSION", CjSynchronizedExpression.class);
-    IElementType CALL_EXPRESSION = new CjNodeType("CALL_EXPRESSION", CjCallExpression.class);
+    IElementType CALL_EXPRESSION = CjStubElementTypes.CALL_EXPRESSION;
     IElementType QUOTE_EXPRESSION = new CjNodeType("QUOTE_EXPRESSION", CjQuoteExpression.class);
 
     IElementType INDICES = new CjNodeType("INDICES", CjContainerNode.class);
@@ -83,7 +83,7 @@ public interface CjNodeTypes {
     IElementType IS_EXPRESSION = new CjNodeType("IS_EXPRESSION", CjIsExpression.class);
     IElementType BINARY_WITH_TYPE = new CjNodeType("BINARY_WITH_TYPE", CjBinaryExpressionWithTypeRHS.class);
     IElementType BINARY_EXPRESSION = CjStubElementTypes.BINARY_EXPRESSION;
-    IElementType PREFIX_EXPRESSION = new CjNodeType("PREFIX_EXPRESSION", CjPrefixExpression.class);
+    IElementType PREFIX_EXPRESSION = CjStubElementTypes.PREFIX_EXPRESSION;
     IElementType OPERATION_REFERENCE = CjStubElementTypes.OPERATION_REFERENCE;
 
     IElementType OPERATION_NAME = new CjNodeType("OPERATION_NAME", CjOperationName.class);
@@ -279,9 +279,15 @@ public interface CjNodeTypes {
             FLOAT_CONSTANT,
             RUNE_CONSTANT,
             INTEGER_CONSTANT,
+            CHARACTER_BYTE_CONSTANT,
+            UNIT_CONSTANT,
 
             REFERENCE_EXPRESSION,
             DOT_QUALIFIED_EXPRESSION,
+            BINARY_EXPRESSION,
+            CALL_EXPRESSION,
+            PREFIX_EXPRESSION,
+            POSTFIX_EXPRESSION,
 
             STRING_TEMPLATE,
 

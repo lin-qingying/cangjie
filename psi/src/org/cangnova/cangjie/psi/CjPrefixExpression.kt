@@ -26,11 +26,16 @@ package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 表示 `CjPrefixExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjPrefixExpression(node: ASTNode) : CjUnaryExpression(node) {
+class CjPrefixExpression : CjUnaryExpression {
+    constructor(node: ASTNode) : super(node)
+
+    constructor(stub: CangJiePlaceHolderStub<CjPrefixExpression>) : super(stub, CjStubElementTypes.PREFIX_EXPRESSION)
     /**
      * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
@@ -43,8 +48,9 @@ class CjPrefixExpression(node: ASTNode) : CjUnaryExpression(node) {
      */
     @get:IfNotParsed
     override val baseExpression: CjExpression?
-        get() = PsiTreeUtil.getNextSiblingOfType(
-            operationReference,
-            CjExpression::class.java,
-        )
+        get() = if (stub != null) {
+            baseExpressionFromStub(isPrefix = true)
+        } else {
+            PsiTreeUtil.getNextSiblingOfType(operationReference, CjExpression::class.java)
+        }
 }

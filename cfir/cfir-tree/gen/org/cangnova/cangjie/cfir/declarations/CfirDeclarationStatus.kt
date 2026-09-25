@@ -32,6 +32,7 @@ interface CfirDeclarationStatus : CfirElement {
     val isC: Boolean
     val isCommon: Boolean
     val isSpecific: Boolean
+    val isCommonWithDefault: Boolean
     val isRedef: Boolean
     val isDefault: Boolean
     val isAbstract: Boolean

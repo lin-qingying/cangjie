@@ -393,7 +393,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
      * 最多报告一次。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkGenericConstraintCompatibility(
+    internal fun checkGenericConstraintCompatibility(
         declaration: CfirCallableDeclaration,
         overriddenSymbols: List<CfirCallableSymbol<*>>,
     ) {

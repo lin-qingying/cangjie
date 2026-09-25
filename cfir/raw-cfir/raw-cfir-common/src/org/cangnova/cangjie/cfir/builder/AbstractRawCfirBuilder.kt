@@ -262,6 +262,8 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         isUnsafe: Boolean = false,
         isForeign: Boolean = false,
         isDefault: Boolean = false,
+        isCommon: Boolean = false,
+        isSpecific: Boolean = false,
     ): CfirDeclarationStatus {
         val status = CfirDeclarationStatusImpl(
             visibility = visibility,
@@ -282,6 +284,10 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         status.isUnsafe = isUnsafe
         status.isForeign = isForeign
         status.isDefault = isDefault
+        // CJMP（common/specific，1.1.0）：仅作状态装填，不做语义合法性检查
+        // （冲突/作用域规则由 checker 侧 ModifierCheckerTargets 与 CjmpGate 负责）
+        status.isCommon = isCommon
+        status.isSpecific = isSpecific
         return status
     }
 

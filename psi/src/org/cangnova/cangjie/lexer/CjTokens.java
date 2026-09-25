@@ -269,6 +269,11 @@ public interface CjTokens {
     int DOUBLE_COLON_Id = 219;
     int FEATURES_KEYWORD_Id = 220;
 
+    // common/specific 跨平台声明修饰符（CJMP，1.1.0）：官方词法无条件产出 COMMON/SPECIFIC token，
+    // 但二者属于上下文关键字（官方 Lexer.cpp GetContextualKeyword），在标识符位置仍可作名字。
+    int COMMON_KEYWORD_Id = 221;
+    int SPECIFIC_KEYWORD_Id = 222;
+
 
     IElementType DOC_COMMENT = CDocTokens.CDOC;
     IElementType WHITE_SPACE = TokenType.WHITE_SPACE;
@@ -521,6 +526,11 @@ public interface CjTokens {
     CjKeywordToken INOUT_KEYWORD = CjKeywordToken.keyword("inout", INOUT_KEYWORD_Id);
     CjKeywordToken FEATURES_KEYWORD = CjKeywordToken.softKeyword("features", FEATURES_KEYWORD_Id);
     CjModifierKeywordToken REDEF_KEYWORD = CjModifierKeywordToken.softKeywordModifier("redef", REDEF_KEYWORD_Id);
+
+    // common/specific：软关键字修饰符，对齐官方上下文关键字表（Lexer.cpp GetContextualKeyword，
+    // 与 public/open/abstract/redef 同族）；修饰符冲突表见官方 ParserModifierRules.cpp
+    CjModifierKeywordToken COMMON_KEYWORD = CjModifierKeywordToken.softKeywordModifier("common", COMMON_KEYWORD_Id);
+    CjModifierKeywordToken SPECIFIC_KEYWORD = CjModifierKeywordToken.softKeywordModifier("specific", SPECIFIC_KEYWORD_Id);
     CjKeywordToken QUOTE_KEYWORD = CjKeywordToken.keyword("quote", QUOTE_KEYWORD_Id);
     //    特殊修饰符
     CjKeywordToken FOREIGN_KEYWORD = CjKeywordToken.keyword("foreign", FOREIGN_KEYWORD_Id);
@@ -560,7 +570,10 @@ public interface CjTokens {
                     ABSTRACT_KEYWORD, OPEN_KEYWORD, SEALED_KEYWORD, OVERRIDE_KEYWORD, REDEF_KEYWORD,
 
                     // 其他修饰符
-                    STATIC_KEYWORD, MUT_KEYWORD, OPERATOR_KEYWORD
+                    STATIC_KEYWORD, MUT_KEYWORD, OPERATOR_KEYWORD,
+
+                    // common/specific（CJMP）：尾部追加保持既有位序；掩码位宽 +2，随存根版本 210 生效
+                    COMMON_KEYWORD, SPECIFIC_KEYWORD
 //                    CONST_KEYWORD,
 //                    FOREIGN_KEYWORD,
 //                    UNSAFE_KEYWORD,
@@ -648,7 +661,9 @@ public interface CjTokens {
             OVERRIDE_KEYWORD,
             REDEF_KEYWORD,
             HANDLE_KEYWORD,
-            FEATURES_KEYWORD
+            FEATURES_KEYWORD,
+            COMMON_KEYWORD,
+            SPECIFIC_KEYWORD
 
     );
     TokenSet MODALITY_MODIFIERS = TokenSet.create(ABSTRACT_KEYWORD, SEALED_KEYWORD, OPEN_KEYWORD);

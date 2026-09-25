@@ -207,6 +207,20 @@ open class CfirDeclarationStatusImpl(
         }
 
     /**
+     * common 声明是否自带默认实现/初始化（官方 `Attribute::COMMON_WITH_DEFAULT`）。
+     *
+     * 官方在解析期由 `SetCJMPAttrs` 派生（函数有体 / property 有访问器 / var 有初始值；
+     * 类样式声明在全部 common 成员都有默认实现时同样置位）。本仓库在写侧序列化时派生、
+     * 读侧原样恢复：跨模块（common cjo → specific 编译）验证豁免必须依赖该位，
+     * 因为反序列化声明的函数体不随 cjo 落盘。
+     */
+    override var isCommonWithDefault: Boolean
+        get() = this[Modifier.COMMON_WITH_DEFAULT]
+        set(value) {
+            this[Modifier.COMMON_WITH_DEFAULT] = value
+        }
+
+    /**
      * 声明是否带有 redef 修饰。
      */
     override var isRedef: Boolean
@@ -327,6 +341,8 @@ open class CfirDeclarationStatusImpl(
         ABSTRACT_EXPLICIT(0x10000),
         /** 解析后的 C ABI 标记。 */
         C(0x20000),
+        /** 官方 `Attribute::COMMON_WITH_DEFAULT` 位（写侧派生、读侧恢复）。 */
+        COMMON_WITH_DEFAULT(0x40000),
     }
 
     /**

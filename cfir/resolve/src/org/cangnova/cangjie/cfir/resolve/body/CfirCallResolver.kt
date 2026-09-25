@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.resolve.body
 
+import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
+
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
@@ -31,6 +33,8 @@ import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.session.cjmpMappingStorageOrNull
 import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostic.*
@@ -92,6 +96,7 @@ import org.cangnova.cangjie.cfir.semantics.InvalidCallableReturnTypeInOverloadSe
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -768,7 +773,7 @@ class CfirCallResolver(
     private fun Candidate.requiredAcceptedArity(): Int {
         val variadicParameter = cangjieVariadicParameterForCall
         return declaredParametersForMapping().count { parameter ->
-            parameter != variadicParameter && parameter.defaultValue == null
+            parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
         }
     }
 
@@ -1650,6 +1655,27 @@ class CfirCallResolver(
     }
 
     /**
+     * CJMP 消费侧遮蔽（D1 的 `FilterOutCommonCandidatesIfSpecificExist` 对位）。
+     *
+     * specific 模式下，若候选指向的 common 声明已在当前模块完成配对（存储中存在 specific 绑定），
+     * 该 common 候选从解析候选中剔除——specific 声明遮蔽依赖模块的 common 同名声明。
+     *
+     * 门禁纪律（§8.5.5）：版本门关闭或存储为空时不激活，1.0.x 行为零变化。
+     */
+    private fun reduceCjmpShadowedCommonCandidates(candidates: Set<Candidate>): Set<Candidate> {
+        if (candidates.isEmpty()) return candidates
+        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) return candidates
+        val storage = session.cjmpMappingStorageOrNull ?: return candidates
+        if (storage.isEmpty) return candidates
+        return candidates.filterTo(linkedSetOf()) { candidate ->
+            val declaration = candidate.symbol.takeIf { it.isBound }?.cfir ?: return@filterTo true
+            val isCommon = (declaration as? CfirMemberDeclaration)?.status?.isCommon == true
+            if (!isCommon) return@filterTo true
+            storage.specificBindingsFor(declaration).isEmpty()
+        }
+    }
+
+    /**
      * 运行 tower resolver 并规约候选集合。
      *
      * 规约顺序为 tower 收集、适用性分组、函数值 expected type 过滤、
@@ -1663,6 +1689,7 @@ class CfirCallResolver(
         val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
         var (reducedCandidates, applicability) = reduceCandidates(resultCollector, info = info)
         reducedCandidates = reduceFunctionValueCandidatesByExpectedType(info, reducedCandidates)
+        reducedCandidates = reduceCjmpShadowedCommonCandidates(reducedCandidates)
         val callSite = info.callSite
         var result = ResolutionResult(
             info = info,
@@ -2369,7 +2396,7 @@ class CfirCallResolver(
 
             val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
             val requiredCount = parameters.count { parameter ->
-                parameter != variadicParameter && parameter.defaultValue == null
+                parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
             }
             argumentCount >= requiredCount &&
                     (variadicParameter != null || argumentCount <= parameters.size)

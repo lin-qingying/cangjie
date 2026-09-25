@@ -269,6 +269,11 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             if (importedContext?.accepts(candidate.provenance.sourceExtend) == false) {
                 return@processCallablesByNameWithLookupProvenance
             }
+            // CJMP：specific extend 成员与其 common extend 对应成员互为实现关系，不构成遮蔽
+            //（官方合并期 `MergeCJMPExtensions` 把 common extend 并入 specific extend）
+            if (isCjmpCounterpartOf(candidate.symbol, context)) {
+                return@processCallablesByNameWithLookupProvenance
+            }
             val accessible = context.session.accessibilityChecker.checkCallable(
                 symbol = candidate.symbol,
                 context = accessContext,
@@ -481,4 +486,19 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         is CfirProperty -> name
         else -> null
     }
+}
+
+/**
+ * [candidate] 是否为本声明的 CJMP 对应物（一侧 specific、一侧 common；版本门开启时才成立）。
+ */
+private fun CfirDeclaration.isCjmpCounterpartOf(
+    candidate: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
+    context: CheckerContext,
+): Boolean {
+    if (!context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)) {
+        return false
+    }
+    val own = (this as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration)?.status ?: return false
+    val other = (candidate.cfir as? org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration)?.status ?: return false
+    return own.isSpecific && other.isCommon || own.isCommon && other.isSpecific
 }

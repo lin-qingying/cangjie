@@ -38,6 +38,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirDeprecatedAnnotationChecker,
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
+            CfirCjmpParseRulesChecker,
+            CfirCjmpMatchingChecker,
             CfirTypeConstraintsChecker,
         )
 
@@ -111,6 +113,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirGenericInstantiationChecker,
             CfirFileStaticGlobalInitializationChecker,
             CfirCommonPackageMainChecker,
+            CfirCjmpFilePartChecker,
+            CfirCjmpCommonSideChecker,
             CfirMacroRedefinitionChecker,
             CfirRedefinitionEntryChecker,
         )

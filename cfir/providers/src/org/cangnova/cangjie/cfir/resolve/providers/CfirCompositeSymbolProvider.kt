@@ -2,6 +2,9 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirBuiltInDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -44,7 +47,22 @@ class CfirCompositeSymbolProvider(
         providers
             .flatMap { provider -> provider.getClassLikeSymbolsByClassId(classId) }
             .withoutBuiltinFallbackDuplicates()
+            .withoutCjmpShadowedCommon()
             .distinct()
+
+    /**
+     * CJMP 类型精化（计划 G15/D1，cjc 1.1.3 `FilterOutCommonCandidatesIfSpecificExist` 与合并期
+     * `GetInheritedTypesWithSpecificImpl` 对位；Kotlin `FirActualizingScope`）：同一 ClassId 同时可见
+     * common 与 specific 声明时，specific 遮蔽 common——specific 模块内对该类型的引用落到 specific 声明。
+     *
+     * 门禁管行为（§8.5.5）：版本门关闭时不激活，1.0.x 下同名声明保持各自独立。
+     */
+    private fun List<CfirClassLikeSymbol<*>>.withoutCjmpShadowedCommon(): List<CfirClassLikeSymbol<*>> {
+        if (size < 2) return this
+        if (!session.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)) return this
+        if (none { (it.cfir as? CfirMemberDeclaration)?.status?.isSpecific == true }) return this
+        return filterNot { (it.cfir as? CfirMemberDeclaration)?.status?.isCommon == true }
+    }
 
     /**
      * 合并同一 ClassId 的 provider 结果时消除 builtin fallback 的伪重声明。

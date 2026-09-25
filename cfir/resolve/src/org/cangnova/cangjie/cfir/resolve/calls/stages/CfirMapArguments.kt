@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.session.cjmpHasDefaultValue
+
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -568,7 +570,7 @@ object CfirMapArguments : ResolutionStage() {
             val hasMissingRequiredParameter = parameters
                 .filterNot { it in usedParameters }
                 .filter { it != variadicParameter }
-                .any { it.defaultValue == null }
+                .any { !it.cjmpHasDefaultValue() }
             if (hasMissingRequiredParameter) {
                 diagnostics.addWrongNumberOfArguments(callShape, parameters.size)
             }
@@ -579,7 +581,7 @@ object CfirMapArguments : ResolutionStage() {
             diagnostics = diagnostics,
             nonBlockingDiagnostics = nonBlockingDiagnostics,
             matchedNamedArgumentCount = matchedNamedArgumentCount,
-            numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.defaultValue != null },
+            numDefaults = parameters.count { it != variadicParameter && it !in usedParameters && it.cjmpHasDefaultValue() },
             variadicEligibleArguments = variadicEligibleArguments,
             isEmptyVariadicCall = isEmptyVariadicCall,
         )
@@ -603,7 +605,7 @@ object CfirMapArguments : ResolutionStage() {
 
         val trailingNamedParameters = parameters
             .drop(variadicParameterIndex + 1)
-            .filter { it.isNamed && it.defaultValue == null && it !in usedParameters }
+            .filter { it.isNamed && !it.cjmpHasDefaultValue() && it !in usedParameters }
         if (trailingNamedParameters.isEmpty()) return null
 
         val remainingPositionalArguments = nonTrailingArguments
@@ -749,7 +751,7 @@ private fun createArgumentMappingOutcome(
     callShape = callShape,
     expectedParameterCount = parameters.size,
     requiredParameterCount = parameters.count { parameter ->
-        parameter != variadicParameter && parameter.defaultValue == null
+        parameter != variadicParameter && !parameter.cjmpHasDefaultValue()
     },
     maximumAcceptedArgumentCount = parameters.size.takeIf { variadicParameter == null },
     mappedArgumentCount = mappedArgumentCount,
