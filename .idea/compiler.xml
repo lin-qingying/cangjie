@@ -2216,6 +2216,9 @@
       <module name="cangjie.compiler.cli-arguments-generator" options="-proc:none" />
       <module name="cangjie.compiler.cli-arguments-generator.main" options="-proc:none" />
       <module name="cangjie.compiler.cli-arguments-generator.test" options="-proc:none" />
+      <module name="cangjie.compiler.cli.cli-base" options="-proc:none" />
+      <module name="cangjie.compiler.cli.cli-base.main" options="-proc:none" />
+      <module name="cangjie.compiler.cli.cli-base.test" options="-proc:none" />
       <module name="cangjie.compiler.cli.main" options="-proc:none" />
       <module name="cangjie.compiler.cli.test" options="-proc:none" />
       <module name="cangjie.compiler.codegen" options="-proc:none" />
@@ -4632,6 +4635,9 @@
       <module name="org.cangnova.cangjie.cangjie.compiler.chir" options="-proc:none" />
       <module name="org.cangnova.cangjie.cangjie.compiler.chir.main" options="-proc:none" />
       <module name="org.cangnova.cangjie.cangjie.compiler.chir.test" options="-proc:none" />
+      <module name="org.cangnova.cangjie.cangjie.compiler.cli" options="-proc:none" />
+      <module name="org.cangnova.cangjie.cangjie.compiler.cli.main" options="-proc:none" />
+      <module name="org.cangnova.cangjie.cangjie.compiler.cli.test" options="-proc:none" />
       <module name="org.cangnova.cangjie.cangjie.compiler.codegen" options="-proc:none" />
       <module name="org.cangnova.cangjie.cangjie.compiler.codegen.main" options="-proc:none" />
       <module name="org.cangnova.cangjie.cangjie.compiler.codegen.test" options="-proc:none" />

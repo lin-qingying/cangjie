@@ -85,6 +85,8 @@
             <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/arguments" />
+            <option value="$PROJECT_DIR$/compiler/cli" />
+            <option value="$PROJECT_DIR$/compiler/cli/cli-base" />
             <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />
@@ -246,6 +248,8 @@
                   <project path="$PROJECT_DIR$/common/diagnostics" />
                   <project path="$PROJECT_DIR$/compiler" />
                   <project path="$PROJECT_DIR$/compiler/arguments" />
+                  <project path="$PROJECT_DIR$/compiler/cli" />
+                  <project path="$PROJECT_DIR$/compiler/cli/cli-base" />
                   <project path="$PROJECT_DIR$/compiler/codegen" />
                   <project path="$PROJECT_DIR$/compiler/config" />
                   <project path="$PROJECT_DIR$/compiler/frontend" />
@@ -380,6 +384,8 @@
             <option value="$PROJECT_DIR$/common/diagnostics" />
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/compiler/arguments" />
+            <option value="$PROJECT_DIR$/compiler/cli" />
+            <option value="$PROJECT_DIR$/compiler/cli/cli-base" />
             <option value="$PROJECT_DIR$/compiler/codegen" />
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />

@@ -93,6 +93,17 @@ val cangjieCompilerArguments = compilerArguments {
                 delimiter = CangJieCompilerArgument.Delimiter.PathSeparator
                 lifecycle(CangJieReleaseVersion.V_1_1_0)
             }
+
+            compilerArgument {
+                // 官方 `--output-type=chir`（`IsCompilingCJMP()` 的 Common 判据）：把输入源码按 CJMP common part 编译。
+                // 本仓库前端没有输出类型选项，故以独立开关表达该模式事实。
+                name = "Xcjmp-compile-common"
+                description = "Compile the sources as a CJMP common part (official --output-type=chir)"
+                    .asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_1_0)
+            }
         }
     }
 }

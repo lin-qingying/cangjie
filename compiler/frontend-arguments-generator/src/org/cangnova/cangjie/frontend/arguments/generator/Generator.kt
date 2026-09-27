@@ -3,6 +3,7 @@ package org.cangnova.cangjie.frontend.arguments.generator
 import org.cangnova.cangjie.arguments.dsl.base.CangJieCompilerArgument
 import org.cangnova.cangjie.arguments.dsl.base.CangJieCompilerArgumentsLevel
 import org.cangnova.cangjie.arguments.dsl.base.ExperimentalArgumentApi
+import org.cangnova.cangjie.arguments.dsl.base.generatedPropertyName
 import org.cangnova.cangjie.arguments.dsl.types.*
 import java.io.File
 
@@ -127,10 +128,7 @@ private fun StringBuilder.generateProperty(argument: CangJieCompilerArgument) {
 /**
  * 计算参数在生成类中的 Kotlin 属性名。
  */
-fun CangJieCompilerArgument.calculateName(): String = compilerName ?: name
-    .removePrefix("X").removePrefix("X")
-    .split("-").joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
-    .replaceFirstChar(Char::lowercaseChar)
+fun CangJieCompilerArgument.calculateName(): String = generatedPropertyName
 
 @OptIn(ExperimentalArgumentApi::class)
 /**
