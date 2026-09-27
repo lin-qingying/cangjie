@@ -85,7 +85,7 @@ class DecompiledPackageDataFinder(
             .map(::normalizeRoot)
             .distinctBy(File::getAbsolutePath)
         return repositoryFor(module.stableModuleName ?: module.moduleDescription, roots)
-            .loadPackageData(packageFqName, binaryFile, roots)
+            .loadPackageData(packageFqName, binaryFile)
     }
 
     /**
@@ -121,7 +121,7 @@ class DecompiledPackageDataFinder(
             .map(::toRootFile)
             .map(::normalizeRoot)
             .distinctBy(File::getAbsolutePath)
-        return repositoryFor(moduleKey, roots).loadPackageData(packageFqName, binaryFile, roots)
+        return repositoryFor(moduleKey, roots).loadPackageData(packageFqName, binaryFile)
     }
 
     /**

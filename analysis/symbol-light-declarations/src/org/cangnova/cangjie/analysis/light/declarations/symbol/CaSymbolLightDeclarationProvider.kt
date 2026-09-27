@@ -72,7 +72,7 @@ class CaSymbolLightDeclarationProvider(
     override fun getLightDeclarations(file: CjFile, useSiteModule: CaModule?): List<CaLightDeclaration> {
         val module = useSiteModule ?: projectStructure.getModule(file, useSiteModule = null)
         return analyze(module) {
-            LightDeclarationBuilder(token, module).buildFile(file)
+            LightDeclarationBuilder(token, module).buildFile(this, file)
         }
     }
 
@@ -88,19 +88,19 @@ class CaSymbolLightDeclarationProvider(
     ) {
         private val cache = CaLightDeclarationCache()
 
-        fun buildFile(file: CjFile): List<CaLightDeclaration> {
+        fun buildFile(session: CaSession, file: CjFile): List<CaLightDeclaration> {
             /**
              * 对齐 Kotlin 的 declaration-first 入口：
              * 无论源码还是 decompiled file，都先沿 PSI 声明树建立 light declaration，
-             * 需要语义信息时再按 use-site module 进入 analysis。
+             * class members 则从对应 symbol 的声明作用域读取，以包含语言模型提供的合成成员。
              */
-            return file.declarations.mapNotNull(::buildDeclaration)
+            return file.declarations.mapNotNull { declaration -> buildDeclaration(session, declaration) }
         }
 
-        fun buildDeclaration(declaration: CjDeclaration): CaLightDeclaration? {
+        private fun buildDeclaration(session: CaSession, declaration: CjDeclaration): CaLightDeclaration? {
             return when (declaration) {
-                is CjExtend -> buildExtend(declaration)
-                is CjTypeStatement -> buildClassLike(declaration)
+                is CjExtend -> buildExtend(session, declaration)
+                is CjTypeStatement -> buildClassLike(session, declaration)
                 is CjTypeAlias -> buildTypeAlias(declaration)
                 is CjNamedDeclaration -> buildCallable(declaration)
                 else -> null
@@ -147,6 +147,10 @@ class CaSymbolLightDeclarationProvider(
             }
         }
 
+        /**
+         * extend 符号没有独立声明名；light declaration 保留对应 PSI 的 receiver 文本名，
+         * 与 file view 使用的 `CjExtend.nameAsSafeName` 保持一致。
+         */
         private fun buildExtend(session: CaSession, symbol: CaExtendSymbol): CaLightDeclaration {
             val key = CaLightDeclarationCacheKey("extend:${symbol.extendId}")
             return cache.getOrPut(key) {
@@ -160,7 +164,7 @@ class CaSymbolLightDeclarationProvider(
                     .mapNotNull { member -> build(session, member) }
                     .toList()
                 CaLightExtendDeclarationImpl(
-                    name = symbol.name?.asString(),
+                    name = (symbol.psi as? CjExtend)?.nameAsSafeName?.asString(),
                     module = symbol.containingModule,
                     annotationsFactory = { annotations },
                     origin = symbol.origin("extend"),
@@ -193,22 +197,8 @@ class CaSymbolLightDeclarationProvider(
             }
         }
 
-        private fun buildClassLike(declaration: CjTypeStatement): CaLightDeclaration {
-            val key = CaLightDeclarationCacheKey("classLike:${declaration.getClassId()?.asString() ?: declaration.name ?: declaration.hashCode()}")
-            return cache.getOrPut(key) {
-                CaLightClassLikeDeclarationImpl(
-                    name = declaration.name,
-                    module = useSiteModule,
-                    annotationsFactory = { analyze(useSiteModule) { declaration.classSymbol.annotations } },
-                    origin = declaration.origin("class-like"),
-                    token = token,
-                    classIdFactory = { declaration.getClassId() },
-                    typeParametersFactory = { declaration.typeParameters.map { typeParameter -> typeParameter.nameAsSafeName } },
-                    superTypesFactory = { analyze(useSiteModule) { declaration.classSymbol.superTypes } },
-                    membersFactory = { declaration.declarations.mapNotNull(::buildDeclaration) },
-                )
-            }
-        }
+        private fun buildClassLike(session: CaSession, declaration: CjTypeStatement): CaLightDeclaration =
+            buildClassLike(session, with(session) { declaration.classSymbol })
 
         private fun buildTypeAlias(declaration: CjTypeAlias): CaLightDeclaration {
             val key = CaLightDeclarationCacheKey("classLike:${declaration.getClassId()?.asString() ?: declaration.name ?: declaration.hashCode()}")
@@ -227,24 +217,8 @@ class CaSymbolLightDeclarationProvider(
             }
         }
 
-        private fun buildExtend(declaration: CjExtend): CaLightDeclaration {
-            val key = CaLightDeclarationCacheKey("extend:${declaration.getExtendId()}")
-            return cache.getOrPut(key) {
-                CaLightExtendDeclarationImpl(
-                    name = declaration.nameAsSafeName.asString(),
-                    module = useSiteModule,
-                    annotationsFactory = { analyze(useSiteModule) { declaration.symbol.annotations } },
-                    origin = declaration.origin("extend"),
-                    token = token,
-                    extendId = declaration.getExtendId(),
-                    targetClassIdFactory = { analyze(useSiteModule) { declaration.symbol.targetClassId } },
-                    extendedTypeFactory = { analyze(useSiteModule) { declaration.symbol.extendedType } },
-                    typeParametersFactory = { declaration.typeParameters.map { typeParameter -> typeParameter.nameAsSafeName } },
-                    superTypesFactory = { analyze(useSiteModule) { declaration.symbol.superTypes } },
-                    membersFactory = { declaration.declarations.mapNotNull(::buildDeclaration) },
-                )
-            }
-        }
+        private fun buildExtend(session: CaSession, declaration: CjExtend): CaLightDeclaration =
+            buildExtend(session, with(session) { declaration.symbol })
 
         private fun buildCallable(declaration: CjNamedDeclaration): CaLightDeclaration {
             /**

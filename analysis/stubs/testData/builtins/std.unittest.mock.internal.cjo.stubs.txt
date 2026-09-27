@@ -21,10 +21,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
       CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -45,10 +51,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -73,10 +78,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
             CangJieStub$REFERENCE_EXPRESSION[referencedName=OnCall]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
@@ -88,7 +94,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -134,10 +139,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CallHandler]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -150,14 +161,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
               CangJieStub$REFERENCE_EXPRESSION[referencedName=internal]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CallHandler]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=true, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=true, isVar=true, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.unittest.mock.internal.staticCallHandlers, name=staticCallHandlers]
@@ -297,7 +307,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -316,7 +325,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Object]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -335,7 +343,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=ToString]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -354,7 +361,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -369,10 +375,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncInfo]
   CangJieStub$ENUM[classId=std/unittest/mock/internal/OnCall, fqName=std.unittest.mock.internal.OnCall, isNonExhaustive=false, name=OnCall, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.OnCall, name=ReturnZero, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.OnCall, name=Return, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -382,6 +397,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.OnCall, name=Throw, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -391,13 +408,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=Exception]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.OnCall, name=CallBase, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.OnCall, name=ReturnDefault, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
@@ -547,7 +569,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -561,7 +582,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=internal]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DeclId]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -584,7 +604,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=internal]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=ParameterInfo]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -603,7 +622,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$TUPLE_TYPE
@@ -619,12 +637,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -647,12 +663,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=internal]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=DeclId]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -662,12 +676,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -719,7 +731,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -738,7 +749,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -783,7 +793,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -793,7 +802,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -836,7 +844,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -846,25 +853,29 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$ENUM[classId=std/unittest/mock/internal/DeclKind, fqName=std.unittest.mock.internal.DeclKind, isNonExhaustive=false, name=DeclKind, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=Method, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -874,6 +885,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=FieldGetter, typeCount=2]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -885,6 +898,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
           CangJieStub$TYPE_REFERENCE
             CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=FieldSetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -894,6 +909,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=PropertyGetter, typeCount=2]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -905,6 +922,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
           CangJieStub$TYPE_REFERENCE
             CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=PropertySetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -914,6 +933,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=TopLevelFunction, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -923,6 +944,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=StaticMethod, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -932,6 +955,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=StaticPropertyGetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -941,6 +966,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=StaticPropertySetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -950,6 +977,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=StaticFieldGetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -959,6 +988,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=StaticFieldSetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -968,6 +999,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=TopLevelVariableGetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -977,6 +1010,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.unittest.mock.internal.DeclKind, name=TopLevelVariableSetter, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
@@ -988,6 +1023,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
   CangJieStub$INTERFACE[classId=std/unittest/mock/internal/HasDefaultValueForStub, fqName=std.unittest.mock.internal.HasDefaultValueForStub, name=HasDefaultValueForStub, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -996,12 +1033,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=Unit, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1014,12 +1050,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Int8, extendId=std.unittest.mock.internal:Int8<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Int8, name=Int8, receiverTypeName=Int8, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1032,12 +1067,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Int16, extendId=std.unittest.mock.internal:Int16<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Int16, name=Int16, receiverTypeName=Int16, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1050,12 +1084,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Int32, extendId=std.unittest.mock.internal:Int32<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Int32, name=Int32, receiverTypeName=Int32, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1068,12 +1101,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Int64, extendId=std.unittest.mock.internal:Int64<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Int64, name=Int64, receiverTypeName=Int64, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1086,12 +1118,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Float16, extendId=std.unittest.mock.internal:Float16<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Float16, name=Float16, receiverTypeName=Float16, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1104,12 +1135,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Float32, extendId=std.unittest.mock.internal:Float32<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Float32, name=Float32, receiverTypeName=Float32, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1122,12 +1152,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Float64, extendId=std.unittest.mock.internal:Float64<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Float64, name=Float64, receiverTypeName=Float64, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1140,12 +1169,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Unit, extendId=std.unittest.mock.internal:kotlin.Unit<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[HasDefaultValueForStub]]
+  CangJieStub$EXTEND[classId=std/unittest/mock/internal/Bool, extendId=std.unittest.mock.internal:Bool<:HasDefaultValueForStub, fqName=std.unittest.mock.internal.Bool, name=Bool, receiverTypeName=Bool, superNames=[HasDefaultValueForStub]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1163,6 +1191,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
@@ -1186,7 +1218,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1214,7 +1255,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1242,7 +1292,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1270,7 +1329,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=HashSet]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1298,7 +1366,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=HashMap]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1360,7 +1441,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1369,7 +1449,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1395,7 +1474,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1409,7 +1487,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.internal, fac
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE

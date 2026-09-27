@@ -83,16 +83,15 @@ internal class TypeCjoStubBuilder {
     /**
      * 根据参数名列表创建简单参数列表 stub。
      *
-     * 该入口用于 setter 等反编译合成参数，不携带类型引用。
+     * 该入口用于 setter 等反编译合成参数，不携带类型引用；其子节点必须与反编译文本中的参数语法一致。
      */
     fun createSimpleParameterListStub(
         parent: StubElement<*>,
         parameterNames: List<String>,
-        includeAnnotations: Boolean = true,
     ) {
         val parameterListStub = CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
         parameterNames.forEach { parameterName ->
-            createParameterStub(parent = parameterListStub, name = parameterName, includeAnnotations = includeAnnotations)
+            createParameterStub(parent = parameterListStub, name = parameterName)
         }
     }
 
@@ -352,12 +351,11 @@ internal class TypeCjoStubBuilder {
     }
 
     /**
-     * 创建单个值参数 stub，并按需补齐注解列表和修饰符列表占位。
+     * 创建单个值参数 stub，并按需补齐修饰符列表占位。
      */
     private fun createParameterStub(
         parent: StubElement<*>,
         name: String?,
-        includeAnnotations: Boolean = true,
         includeModifiers: Boolean = false,
     ): CangJieParameterStubImpl {
         val parameterStub = CangJieParameterStubImpl(
@@ -370,9 +368,6 @@ internal class TypeCjoStubBuilder {
             isNamed = false,
             functionTypeParameterName = null,
         )
-        if (includeAnnotations) {
-            CangJiePlaceHolderStubImpl<CjAnnotations>(parameterStub, CjStubElementTypes.ANNOTATIONS)
-        }
         if (includeModifiers) {
             CangJieModifierListStubImpl(parameterStub, 0, CjStubElementTypes.MODIFIER_LIST)
         }

@@ -8,23 +8,27 @@ import std.io.OutputStream
 import std.core.*
 
 interface Digest {
-    abstract prop size: Int64
+    @Annotation
+    abstract open prop size: Int64
 
-    abstract prop blockSize: Int64
+    @Annotation
+    abstract open prop blockSize: Int64
 
-    abstract prop algorithm: std.core.String
+    @Annotation
+    abstract open prop algorithm: std.core.String
 
-    abstract func write(buffer: std.core.Array<UInt8>): Unit
+    abstract open func write(buffer: std.core.Array<UInt8>): Unit
 
-    abstract func finish(to: std.core.Array<UInt8>): Unit
+    abstract open func finish(to: std.core.Array<UInt8>): Unit
 
-    func finish(): std.core.Array<UInt8> { /* compiled code */ }
+    open func finish(): std.core.Array<UInt8> { /* compiled code */ }
 
-    abstract func reset(): Unit
+    abstract open func reset(): Unit
 }
 
-func digest(algorithm: T, data: std.core.String): std.core.Array<UInt8> { /* compiled code */ }
+@Deprecated[message: "Use global function `public func digest<T>(algorithm: T, input: InputStream): Array<Byte> where T <: Digest` instead."]
+func digest<T>(algorithm: T, data: std.core.String): std.core.Array<UInt8> { /* compiled code */ }
 
-func digest(algorithm: T, input: std.io.InputStream): std.core.Array<UInt8> { /* compiled code */ }
+func digest<T>(algorithm: T, input: std.io.InputStream): std.core.Array<UInt8> { /* compiled code */ }
 
-func digest(algorithm: T, data: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
+func digest<T>(algorithm: T, data: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }

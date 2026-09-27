@@ -5,16 +5,19 @@ package std.io
 
 import std.core.*
 
-let HIGH_1_UInt8: UInt8
+@Annotation
+let HIGH_1_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-class BufferedInputStream <: std.core.Object & std.io.InputStream {
+class BufferedInputStream<T> <: std.core.Object & std.io.InputStream {
     var inputStream: T
 
     let inBuf: std.core.Array<UInt8>
 
-    var curPos: Int64
+    @Annotation
+    var curPos: Int64 = COMPILED_CODE /* compiled code */
 
-    var availLen: Int64
+    @Annotation
+    var availLen: Int64 = COMPILED_CODE /* compiled code */
 
     init(input: T) { /* compiled code */ }
 
@@ -30,7 +33,7 @@ class BufferedInputStream <: std.core.Object & std.io.InputStream {
 }
 
 interface InputStream {
-    abstract func read(buffer: std.core.Array<UInt8>): Int64
+    abstract open func read(buffer: std.core.Array<UInt8>): Int64
 }
 
 class ByteBuffer <: std.core.Object & std.io.IOStream & std.io.Seekable {
@@ -46,6 +49,7 @@ class ByteBuffer <: std.core.Object & std.io.IOStream & std.io.Seekable {
 
     init(source: std.core.Array<UInt8>) { /* compiled code */ }
 
+    @Annotation
     prop capacity: Int64 {
         get() { /* compiled code */ }
     }
@@ -79,6 +83,7 @@ class ContentFormatException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
+@Annotation
 enum SeekPosition {
     | Current(Int64)
 
@@ -88,44 +93,50 @@ enum SeekPosition {
 }
 
 interface Seekable {
-    abstract func seek(sp: std.io.SeekPosition): Int64
+    abstract open func seek(sp: std.io.SeekPosition): Int64
 
-    prop position: Int64 {
+    @Annotation
+    open prop position: Int64 {
         get() { /* compiled code */ }
     }
 
-    prop remainLength: Int64 {
+    @Annotation
+    open prop remainLength: Int64 {
         get() { /* compiled code */ }
     }
 
-    prop length: Int64 {
+    @Annotation
+    open prop length: Int64 {
         get() { /* compiled code */ }
     }
 }
 
-extend BufferedInputStream <: Resource {
+extend std.io.BufferedInputStream<T> <: Resource {
     func close(): Unit { /* compiled code */ }
 
     func isClosed(): Bool { /* compiled code */ }
 }
 
-extend BufferedInputStream <: Seekable {
+extend std.io.BufferedInputStream<T> <: Seekable {
     func seek(sp: std.io.SeekPosition): Int64 { /* compiled code */ }
 
+    @Annotation
     prop position: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop remainLength: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop length: Int64 {
         get() { /* compiled code */ }
     }
 }
 
-class BufferedOutputStream <: std.core.Object & std.io.OutputStream {
+class BufferedOutputStream<T> <: std.core.Object & std.io.OutputStream {
     var outputStream: T
 
     var outBuf: std.core.Array<UInt8>
@@ -148,28 +159,31 @@ class BufferedOutputStream <: std.core.Object & std.io.OutputStream {
 }
 
 interface OutputStream {
-    abstract func write(buffer: std.core.Array<UInt8>): Unit
+    abstract open func write(buffer: std.core.Array<UInt8>): Unit
 
-    func flush(): Unit { /* compiled code */ }
+    open func flush(): Unit { /* compiled code */ }
 }
 
-extend BufferedOutputStream <: Resource {
+extend std.io.BufferedOutputStream<T> <: Resource {
     func close(): Unit { /* compiled code */ }
 
     func isClosed(): Bool { /* compiled code */ }
 }
 
-extend BufferedOutputStream <: Seekable {
+extend std.io.BufferedOutputStream<T> <: Seekable {
     func seek(sp: std.io.SeekPosition): Int64 { /* compiled code */ }
 
+    @Annotation
     prop position: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop remainLength: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop length: Int64 {
         get() { /* compiled code */ }
     }
@@ -178,7 +192,7 @@ extend BufferedOutputStream <: Seekable {
 interface IOStream <: std.io.InputStream & std.io.OutputStream {
 }
 
-class ChainedInputStream <: std.core.Object & std.io.InputStream {
+class ChainedInputStream<T> <: std.core.Object & std.io.InputStream {
     let inputArr: std.core.Array<T>
 
     var curIndex: Int64
@@ -188,23 +202,23 @@ class ChainedInputStream <: std.core.Object & std.io.InputStream {
     func read(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 }
 
-class IOException <: std.core.Exception {
+open class IOException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    open override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func readString(from: T): std.core.String { /* compiled code */ }
+func readString<T>(from: T): std.core.String { /* compiled code */ }
 
-func readStringUnchecked(from: T): std.core.String { /* compiled code */ }
+func readStringUnchecked<T>(from: T): std.core.String { /* compiled code */ }
 
-func readToEnd(from: T): std.core.Array<UInt8> { /* compiled code */ }
+func readToEnd<T>(from: T): std.core.Array<UInt8> { /* compiled code */ }
 
 func copy(from: std.io.InputStream, to: std.io.OutputStream): Int64 { /* compiled code */ }
 
-class MultiOutputStream <: std.core.Object & std.io.OutputStream {
+class MultiOutputStream<T> <: std.core.Object & std.io.OutputStream {
     var outputArr: std.core.Array<T>
 
     init(output: std.core.Array<T>) { /* compiled code */ }
@@ -214,21 +228,24 @@ class MultiOutputStream <: std.core.Object & std.io.OutputStream {
     func flush(): Unit { /* compiled code */ }
 }
 
-class StringReader {
+class StringReader<T> {
     let inputBIS: std.io.BufferedInputStream<T>
 
     init(input: T) { /* compiled code */ }
 
+    @Frozen
     func read(): std.core.Option<Rune> { /* compiled code */ }
 
     func runes(): std.core.Iterator<Rune> { /* compiled code */ }
 
     func readlnFromBuf(bas: std.io.ByteBuffer, haveCR_: Bool): (Bool, Bool) { /* compiled code */ }
 
+    @Frozen
     func readln(): std.core.Option<std.core.String> { /* compiled code */ }
 
     func lines(): std.core.Iterator<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func readToEnd(): std.core.String { /* compiled code */ }
 
     func readUntil(v: Rune): std.core.Option<std.core.String> { /* compiled code */ }
@@ -242,21 +259,22 @@ class StringReader {
     func readCharFromInbuf(): (Rune, Int64) { /* compiled code */ }
 }
 
-extend StringReader <: Resource {
+extend std.io.StringReader<T> <: Resource {
     func close(): Unit { /* compiled code */ }
 
     func isClosed(): Bool { /* compiled code */ }
 }
 
-extend StringReader <: Seekable {
+extend std.io.StringReader<T> <: Seekable {
     func seek(sp: std.io.SeekPosition): Int64 { /* compiled code */ }
 
+    @Annotation
     prop position: Int64 {
         get() { /* compiled code */ }
     }
 }
 
-class StringWriter {
+class StringWriter<T> {
     var outputBOS: std.io.BufferedOutputStream<T>
 
     init(output: T) { /* compiled code */ }
@@ -265,7 +283,7 @@ class StringWriter {
 
     func write(v: std.core.String): Unit { /* compiled code */ }
 
-    func write(v: T): Unit { /* compiled code */ }
+    func write<T>(v: T): Unit { /* compiled code */ }
 
     func write(v: Bool): Unit { /* compiled code */ }
 
@@ -297,7 +315,7 @@ class StringWriter {
 
     func writeln(v: std.core.String): Unit { /* compiled code */ }
 
-    func writeln(v: T): Unit { /* compiled code */ }
+    func writeln<T>(v: T): Unit { /* compiled code */ }
 
     func writeln(v: Bool): Unit { /* compiled code */ }
 
@@ -326,12 +344,12 @@ class StringWriter {
     func writeln(v: Rune): Unit { /* compiled code */ }
 }
 
-extend StringWriter <: Resource {
+extend std.io.StringWriter<T> <: Resource {
     func close(): Unit { /* compiled code */ }
 
     func isClosed(): Bool { /* compiled code */ }
 }
 
-extend StringWriter <: Seekable {
+extend std.io.StringWriter<T> <: Seekable {
     func seek(sp: std.io.SeekPosition): Int64 { /* compiled code */ }
 }

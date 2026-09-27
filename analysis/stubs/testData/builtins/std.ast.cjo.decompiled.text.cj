@@ -6,7 +6,8 @@ package std.ast
 import std.core.*
 import std.collection.ArrayList
 
-let NUM_SPACES: UInt16
+@Annotation
+let NUM_SPACES: UInt16 = COMPILED_CODE /* compiled code */
 
 enum NodeFormat_AnyExpr {
     | AnyExpr_NONE
@@ -458,7 +459,7 @@ class NodeFormat_Block <: std.ast.FlatBufferObject {
     func GetUnsafePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
-class FlatBufferObject {
+open class FlatBufferObject {
     let table: std.ast.Table
 
     init(buf: std.core.Array<UInt8>, root: UInt32) { /* compiled code */ }
@@ -2998,7 +2999,7 @@ func getNodeBeginPos(nodeBase: std.core.Option<std.ast.NodeFormat_NodeBase>): st
 
 func getOperaterKindOrIdentTokens(opKind: Int32, pos: std.ast.NodeFormat_Position, ident: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.Token> & std.ast.ToBytes {
+open class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.Token> & std.ast.ToBytes {
     var tokens: std.collection.ArrayList<std.ast.Token>
 
     func refreshPosition(): std.ast.Tokens { /* compiled code */ }
@@ -3011,11 +3012,12 @@ class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.
 
     init(tokArrayList: std.collection.ArrayList<std.ast.Token>) { /* compiled code */ }
 
-    prop size: Int64 {
+    @Annotation
+    open prop size: Int64 {
         get() { /* compiled code */ }
     }
 
-    func `get`(index: Int64): std.ast.Token { /* compiled code */ }
+    open func get(index: Int64): std.ast.Token { /* compiled code */ }
 
     func iterator(): std.ast.TokensIterator { /* compiled code */ }
 
@@ -3023,15 +3025,15 @@ class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.
 
     operator func [](index: Int64): std.ast.Token { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>): std.ast.Tokens { /* compiled code */ }
+    open operator func [](range: std.core.Range<Int64>): std.ast.Tokens { /* compiled code */ }
 
     operator func +(r: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
     operator func +(r: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 
-    func append(tokens: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
+    open func append(tokens: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    func append(token: std.ast.Token): std.ast.Tokens { /* compiled code */ }
+    open func append(token: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 
     func append(node: std.ast.Node): std.ast.Tokens { /* compiled code */ }
 
@@ -3052,9 +3054,9 @@ func getIndent(indent: UInt16): std.core.String { /* compiled code */ }
 
 func getTokenIndent(name: std.core.String, tk: std.ast.Token, indent: UInt16, noNameIndent: Bool, index: std.core.Option<Int64>): std.core.String { /* compiled code */ }
 
-func dumpNodes(name: std.core.String, contents: std.collection.ArrayList<N>, indent: UInt16): std.core.String { /* compiled code */ }
+func dumpNodes<N>(name: std.core.String, contents: std.collection.ArrayList<N>, indent: UInt16): std.core.String { /* compiled code */ }
 
-class Node <: std.core.Object & std.ast.ToTokens {
+abstract open class Node <: std.core.Object & std.ast.ToTokens {
     init() { /* compiled code */ }
 
     var begin_: std.ast.Position
@@ -3067,11 +3069,13 @@ class Node <: std.core.Object & std.ast.ToTokens {
 
     var beginNode: Bool
 
+    @Annotation
     mut prop beginPos: std.ast.Position {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop endPos: std.ast.Position {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3435,16 +3439,19 @@ class ImportList <: std.ast.Node {
 
     let innerToken_: std.ast.Tokens
 
+    @Annotation
     mut prop modifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordI: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop content: std.ast.ImportContent {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3461,7 +3468,7 @@ class ImportList <: std.ast.Node {
 
 func dumpCommonContent(currentIndent: UInt16, upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, body: std.ast.Body): std.core.String { /* compiled code */ }
 
-class TypeNode <: std.ast.Node {
+open class TypeNode <: std.ast.Node {
     init(typeParameterName: std.ast.Token, colon: std.ast.Token) { /* compiled code */ }
 
     init() { /* compiled code */ }
@@ -3470,21 +3477,23 @@ class TypeNode <: std.ast.Node {
 
     var colon_: std.ast.Token
 
+    @Annotation
     mut prop typeParameterName: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    open func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    open func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String { /* compiled code */ }
+    open func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class GenericConstraint <: std.ast.Node {
@@ -3502,26 +3511,31 @@ class GenericConstraint <: std.ast.Node {
 
     var bitAnds_: std.ast.Tokens
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArgument: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop upperBounds: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop bitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3547,16 +3561,19 @@ class Body <: std.ast.Node {
 
     var rBrace_: std.ast.Token
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop decls: std.collection.ArrayList<std.ast.Decl> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3571,11 +3588,11 @@ class Body <: std.ast.Node {
 
 func referenceType2Tokens(upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, superTypeBitAnds: std.ast.Tokens, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, constraintCommas: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-extend Tokens {
+extend std.ast.Tokens {
     func tryGet(index: Int64): std.core.Option<std.ast.Token> { /* compiled code */ }
 }
 
-extend Token {
+extend std.ast.Token {
     func tryGet(): std.core.Option<std.ast.Token> { /* compiled code */ }
 }
 
@@ -3589,7 +3606,7 @@ func checkPrimitiveType(tk: std.ast.Token): Unit { /* compiled code */ }
 
 func checkValid(input: std.ast.Token): std.ast.Token { /* compiled code */ }
 
-class Decl <: std.ast.Node {
+open class Decl <: std.ast.Node {
     init(annotations: std.collection.ArrayList<std.ast.Annotation>, modifiers: std.collection.ArrayList<std.ast.Modifier>, keyword: std.ast.Token, identifier: std.ast.Token, genericParam: std.core.Option<std.ast.GenericParam>, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, constraintCommas: std.ast.Tokens, isGenericDecl: Bool) { /* compiled code */ }
 
     init(keyword: std.ast.Token, identifier: std.ast.Token) { /* compiled code */ }
@@ -3618,36 +3635,43 @@ class Decl <: std.ast.Node {
 
     var node: std.ast.Node
 
-    mut prop identifier: std.ast.Token {
+    @Annotation
+    open mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop annotations: std.collection.ArrayList<std.ast.Annotation> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop modifiers: std.collection.ArrayList<std.ast.Modifier> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop genericParam: std.ast.GenericParam {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop genericConstraint: std.collection.ArrayList<std.ast.GenericConstraint> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop constraintCommas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3657,16 +3681,17 @@ class Decl <: std.ast.Node {
 
     func getAttrs(): std.ast.Tokens { /* compiled code */ }
 
+    @Annotation
     mut prop isGenericDecl: Bool {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    open func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    open func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String { /* compiled code */ }
+    open func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Annotation <: std.ast.Node {
@@ -3692,26 +3717,31 @@ class Annotation <: std.ast.Node {
 
     var cond_: std.core.Option<std.ast.Expr>
 
+    @Annotation
     mut prop at: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop attributes: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop condition: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3731,6 +3761,7 @@ class Modifier <: std.ast.Node {
 
     var kind_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3758,16 +3789,19 @@ class GenericParam <: std.ast.Node {
 
     var commas_: std.ast.Tokens
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop parameters: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -3780,182 +3814,182 @@ class GenericParam <: std.ast.Node {
     func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-class Visitor {
+abstract class Visitor {
     var breakTraverseFlag: Bool
 
     func needBreakTraverse(): Bool { /* compiled code */ }
 
     func breakTraverse(): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Node): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Node): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Expr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Expr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IsExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.IsExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.AsExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.AsExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LitConstExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.LitConstExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.UnaryExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.UnaryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.BinaryExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.BinaryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ParenExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ParenExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.CallExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.CallExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RefExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.RefExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ReturnExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ReturnExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.AssignExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.AssignExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MemberAccess): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MemberAccess): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IfExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.IfExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LetPatternExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.LetPatternExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MatchExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MatchExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WhileExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.WhileExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LambdaExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.LambdaExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SpawnExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.SpawnExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SynchronizedExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.SynchronizedExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TrailingClosureExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TrailingClosureExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeConvExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TypeConvExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ForInExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ForInExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimitiveTypeExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PrimitiveTypeExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ArrayLiteral): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ArrayLiteral): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TupleLiteral): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TupleLiteral): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SubscriptExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.SubscriptExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RangeExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.RangeExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Block): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Block): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.DoWhileExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.DoWhileExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.JumpExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.JumpExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IncOrDecExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.IncOrDecExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TryExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ThrowExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ThrowExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.OptionalExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.OptionalExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.QuoteExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.QuoteExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroExpandExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MacroExpandExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WildcardExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.WildcardExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VArrayExpr): Unit { /* compiled code */ }
+    open func visit(_: std.ast.VArrayExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Decl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Decl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ClassDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ClassDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.FuncDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MainDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MainDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MacroDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.StructDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.StructDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.InterfaceDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.InterfaceDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PropDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PropDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.VarDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimaryCtorDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PrimaryCtorDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.EnumDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.EnumDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncParam): Unit { /* compiled code */ }
+    open func visit(_: std.ast.FuncParam): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeAliasDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TypeAliasDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ExtendDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ExtendDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroExpandDecl): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MacroExpandDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeNode): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TypeNode): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RefType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.RefType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimitiveType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PrimitiveType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.FuncType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ThisType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ThisType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ParenType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ParenType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.QualifiedType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.QualifiedType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrefixType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PrefixType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TupleType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TupleType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VArrayType): Unit { /* compiled code */ }
+    open func visit(_: std.ast.VArrayType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Pattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Pattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ConstPattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ConstPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WildcardPattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.WildcardPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarPattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.VarPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarOrEnumPattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.VarOrEnumPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ExceptTypePattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ExceptTypePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypePattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TypePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.EnumPattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.EnumPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TuplePattern): Unit { /* compiled code */ }
+    open func visit(_: std.ast.TuplePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.GenericParam): Unit { /* compiled code */ }
+    open func visit(_: std.ast.GenericParam): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.GenericConstraint): Unit { /* compiled code */ }
+    open func visit(_: std.ast.GenericConstraint): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MatchCase): Unit { /* compiled code */ }
+    open func visit(_: std.ast.MatchCase): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Program): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Program): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PackageHeader): Unit { /* compiled code */ }
+    open func visit(_: std.ast.PackageHeader): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ImportList): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ImportList): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ImportContent): Unit { /* compiled code */ }
+    open func visit(_: std.ast.ImportContent): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Constructor): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Constructor): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Argument): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Argument): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Annotation): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Annotation): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Modifier): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Modifier): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Body): Unit { /* compiled code */ }
+    open func visit(_: std.ast.Body): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -3975,21 +4009,25 @@ class ClassDecl <: std.ast.Decl {
 
     var classbody_: std.ast.Body
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypeBitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop body: std.ast.Body {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4017,21 +4055,25 @@ class StructDecl <: std.ast.Decl {
 
     var structbody_: std.ast.Body
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypeBitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop body: std.ast.Body {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4059,21 +4101,25 @@ class InterfaceDecl <: std.ast.Decl {
 
     var interfacetbody_: std.ast.Body
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypeBitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop body: std.ast.Body {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4111,41 +4157,49 @@ class EnumDecl <: std.ast.Decl {
 
     var ellipsis_: std.ast.Token
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypeBitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop constructors: std.collection.ArrayList<std.ast.Constructor> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop decls: std.collection.ArrayList<std.ast.Decl> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop ellipsis: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4177,26 +4231,31 @@ class Constructor <: std.ast.Node {
 
     var annotations_: std.collection.ArrayList<std.ast.Annotation>
 
+    @Annotation
     mut prop annotations: std.collection.ArrayList<std.ast.Annotation> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4226,31 +4285,37 @@ class ExtendDecl <: std.ast.Decl {
 
     var body_: std.ast.Body
 
+    @Annotation
     override mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop extendType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop upperBound: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop superTypeBitAnds: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop body: std.ast.Body {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4286,36 +4351,43 @@ class FuncDecl <: std.ast.Decl {
 
     var isEnumConstruct: Bool
 
+    @Annotation
     mut prop overloadOp: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop declType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4330,7 +4402,7 @@ class FuncDecl <: std.ast.Decl {
     func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-class FuncParam <: std.ast.Decl {
+open class FuncParam <: std.ast.Decl {
     init(decl: std.ast.Decl, notMark: std.ast.Token, colon: std.ast.Token, paramType: std.ast.TypeNode, assign: std.ast.Token, expr: std.core.Option<std.ast.Expr>, comma: std.ast.Token, isMemberParam: Bool) { /* compiled code */ }
 
     init(inputs: std.ast.Tokens) { /* compiled code */ }
@@ -4353,26 +4425,31 @@ class FuncParam <: std.ast.Decl {
 
     var isMemberParam_: Bool
 
+    @Annotation
     mut prop not: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop paramType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop assign: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4380,11 +4457,11 @@ class FuncParam <: std.ast.Decl {
 
     func isMemberParam(): Bool { /* compiled code */ }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    open func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    open func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String { /* compiled code */ }
+    open func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Block <: std.ast.Expr {
@@ -4400,16 +4477,19 @@ class Block <: std.ast.Expr {
 
     var unsafe_: std.ast.Token
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop nodes: std.collection.ArrayList<std.ast.Node> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4441,31 +4521,37 @@ class MainDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop declType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4497,31 +4583,37 @@ class MacroDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop declType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4549,21 +4641,25 @@ class PrimaryCtorDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4599,26 +4695,31 @@ class VarDecl <: std.ast.Decl {
 
     var isEnumConstruct: Bool
 
+    @Annotation
     mut prop pattern: std.ast.Pattern {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop declType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop assign: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4633,26 +4734,26 @@ class VarDecl <: std.ast.Decl {
     func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-class Expr <: std.ast.Node {
+open class Expr <: std.ast.Node {
     init() { /* compiled code */ }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    open func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    open func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(_: UInt16): std.core.String { /* compiled code */ }
+    open func dump(_: UInt16): std.core.String { /* compiled code */ }
 
-    func precedence(): Int64 { /* compiled code */ }
+    open func precedence(): Int64 { /* compiled code */ }
 }
 
-class Pattern <: std.ast.Node {
+open class Pattern <: std.ast.Node {
     init() { /* compiled code */ }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    open func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    open func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(_: UInt16): std.core.String { /* compiled code */ }
+    open func dump(_: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PropDecl <: std.ast.Decl {
@@ -4674,31 +4775,37 @@ class PropDecl <: std.ast.Decl {
 
     var rCurl_: std.ast.Token
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop declType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop getter: std.ast.FuncDecl {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop setter: std.ast.FuncDecl {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4722,11 +4829,13 @@ class TypeAliasDecl <: std.ast.Decl {
 
     var aliasType_: std.ast.TypeNode
 
+    @Annotation
     mut prop assign: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop aliasType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4766,41 +4875,49 @@ class MacroExpandDecl <: std.ast.Decl {
 
     var isCompileTimeVisible_: Bool
 
+    @Annotation
     mut prop fullIdentifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroAttrs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroInputs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroInputDecl: std.ast.Decl {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4838,41 +4955,49 @@ class MacroExpandParam <: std.ast.FuncParam {
 
     var isCompileTimeVisible_: Bool
 
+    @Annotation
     mut prop fullIdentifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroAttrs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroInputs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroInputDecl: std.ast.Decl {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4940,16 +5065,19 @@ class BinaryExpr <: std.ast.Expr {
 
     var op_: std.ast.Token
 
+    @Annotation
     mut prop leftExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop op: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rightExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -4975,11 +5103,13 @@ class UnaryExpr <: std.ast.Expr {
 
     var op_: std.ast.Token
 
+    @Annotation
     mut prop op: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5007,16 +5137,19 @@ class IsExpr <: std.ast.Expr {
 
     var shiftType_: std.ast.TypeNode
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop shiftType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5044,16 +5177,19 @@ class AsExpr <: std.ast.Expr {
 
     var shiftType_: std.ast.TypeNode
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop shiftType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5081,16 +5217,19 @@ class ParenExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop parenthesizedExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5112,6 +5251,7 @@ class LitConstExpr <: std.ast.Expr {
 
     var literal_: std.ast.Token
 
+    @Annotation
     mut prop literal: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5141,26 +5281,31 @@ class RefExpr <: std.ast.Expr {
 
     var rAngle_: std.ast.Token
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5184,11 +5329,13 @@ class ReturnExpr <: std.ast.Expr {
 
     var expr_: std.core.Option<std.ast.Expr>
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5212,11 +5359,13 @@ class ThrowExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5242,16 +5391,19 @@ class AssignExpr <: std.ast.Expr {
 
     var rexpr_: std.ast.Expr
 
+    @Annotation
     mut prop assign: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop leftExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rightExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5281,21 +5433,25 @@ class CallExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop callFunc: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5325,21 +5481,25 @@ class Argument <: std.ast.Node {
 
     var comma_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5373,36 +5533,43 @@ class MemberAccess <: std.ast.Expr {
 
     var rAngle_: std.ast.Token
 
+    @Annotation
     mut prop baseExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop dot: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop field: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5438,36 +5605,43 @@ class IfExpr <: std.ast.Expr {
 
     var elseExpr_: std.core.Option<std.ast.Expr>
 
+    @Annotation
     mut prop keywordI: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop condition: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop ifBlock: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordE: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop elseExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5495,21 +5669,25 @@ class LetPatternExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop pattern: std.ast.Pattern {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop backArrow: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5543,36 +5721,43 @@ class MatchExpr <: std.ast.Expr {
 
     var rCurl_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop selector: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop matchCases: std.collection.ArrayList<std.ast.MatchCase> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5608,41 +5793,49 @@ class MatchCase <: std.ast.Node {
 
     var exprOrDecl_: std.ast.Block
 
+    @Annotation
     mut prop keywordC: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop bitOrs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordW: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patternGuard: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop arrow: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5672,26 +5865,31 @@ class WhileExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop condition: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5723,31 +5921,37 @@ class DoWhileExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop keywordD: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordW: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop condition: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5779,26 +5983,31 @@ class LambdaExpr <: std.ast.Expr {
 
     var mockSupported_: Bool
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop doubleArrow: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop nodes: std.collection.ArrayList<std.ast.Node> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5828,26 +6037,31 @@ class SpawnExpr <: std.ast.Expr {
 
     var task_: std.ast.LambdaExpr
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop threadContext: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lambdaExpr: std.ast.LambdaExpr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5877,26 +6091,31 @@ class SynchronizedExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop structuredMutex: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5920,11 +6139,13 @@ class TrailingClosureExpr <: std.ast.Expr {
 
     var lambda_: std.ast.LambdaExpr
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lambdaExpr: std.ast.LambdaExpr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5952,21 +6173,25 @@ class TypeConvExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop targetType: std.ast.PrimitiveType {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -5988,6 +6213,7 @@ class PrimitiveType <: std.ast.TypeNode {
 
     var keyword_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6025,46 +6251,55 @@ class ForInExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
+    @Annotation
     mut prop keywordF: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop pattern: std.ast.Pattern {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordI: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordW: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patternGuard: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop block: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6086,6 +6321,7 @@ class PrimitiveTypeExpr <: std.ast.Expr {
 
     var keyword_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6113,16 +6349,19 @@ class ArrayLiteral <: std.ast.Expr {
 
     var rSquare_: std.ast.Token
 
+    @Annotation
     mut prop lSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop elements: std.collection.ArrayList<std.ast.Expr> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6150,16 +6389,19 @@ class TupleLiteral <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop elements: std.collection.ArrayList<std.ast.Expr> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6189,26 +6431,31 @@ class RangeExpr <: std.ast.Expr {
 
     var step_: std.core.Option<std.ast.Expr>
 
+    @Annotation
     mut prop start: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop op: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop end: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop step: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6238,21 +6485,25 @@ class SubscriptExpr <: std.ast.Expr {
 
     var rSquare_: std.ast.Token
 
+    @Annotation
     mut prop baseExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop indexList: std.collection.ArrayList<std.ast.Expr> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6274,6 +6525,7 @@ class JumpExpr <: std.ast.Expr {
 
     var kind_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6297,11 +6549,13 @@ class IncOrDecExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
+    @Annotation
     mut prop op: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop expr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6349,41 +6603,49 @@ class TryExpr <: std.ast.Expr {
 
     var finallyBlock_: std.core.Option<std.ast.Block>
 
+    @Annotation
     mut prop keywordT: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop resourceSpec: std.collection.ArrayList<std.ast.VarDecl> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop tryBlock: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordsC: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop catchPatterns: std.collection.ArrayList<std.ast.Pattern> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop catchBlocks: std.collection.ArrayList<std.ast.Block> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordF: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop finallyBlock: std.ast.Block {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6407,11 +6669,13 @@ class OptionalExpr <: std.ast.Expr {
 
     var quest_: std.ast.Token
 
+    @Annotation
     mut prop baseExpr: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop quest: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6431,6 +6695,7 @@ class QuoteToken <: std.ast.Expr {
 
     var tokens_: std.ast.Tokens
 
+    @Annotation
     mut prop tokens: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6458,21 +6723,25 @@ class QuoteExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop exprs: std.collection.ArrayList<std.ast.Expr> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6492,6 +6761,7 @@ class WildcardExpr <: std.ast.Expr {
 
     var keyword_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6519,21 +6789,25 @@ class VArrayExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop vArrayType: std.ast.VArrayType {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6565,31 +6839,37 @@ class VArrayType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop elementTy: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop dollar: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop size: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6631,41 +6911,49 @@ class MacroExpandExpr <: std.ast.Expr {
 
     var hasParenthesis_: Bool
 
+    @Annotation
     mut prop at: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroAttrs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rSquare: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop macroInputs: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6777,14 +7065,17 @@ class McInfo {
 
     init(keyVal_: CString, v: CPointer<Unit>, vType: UInt8) { /* compiled code */ }
 
+    @Annotation
     prop keyV: CString {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop value: CPointer<Unit> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop valueType: UInt8 {
         get() { /* compiled code */ }
     }
@@ -6893,7 +7184,7 @@ struct Position <: std.ast.ToBytes {
 }
 
 interface ToTokens {
-    abstract func toTokens(): std.ast.Tokens
+    abstract open func toTokens(): std.ast.Tokens
 }
 
 class Program <: std.ast.Node {
@@ -6909,16 +7200,19 @@ class Program <: std.ast.Node {
 
     var decls_: std.collection.ArrayList<std.ast.Decl>
 
+    @Annotation
     mut prop packageHeader: std.ast.PackageHeader {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop importLists: std.collection.ArrayList<std.ast.ImportList> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop decls: std.collection.ArrayList<std.ast.Decl> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -6954,31 +7248,37 @@ class PackageHeader <: std.ast.Node {
 
     var isFromDerivation_: Bool
 
+    @Annotation
     mut prop accessible: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordM: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop keywordP: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop prefixPaths: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop prefixDots: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop packageIdentifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7030,46 +7330,55 @@ class ImportContent <: std.ast.Node {
 
     let innerToken_: std.ast.Tokens
 
+    @Annotation
     mut prop importKind: std.ast.ImportKind {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop prefixPaths: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop prefixDots: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop importAlias: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop items: std.collection.ArrayList<std.ast.ImportContent> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rBrace: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7090,11 +7399,11 @@ class ImportContent <: std.ast.Node {
     func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-extend ArrayList <: ToTokens {
+extend std.collection.ArrayList<T> <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Array <: ToTokens {
+extend std.core.Array<T> <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
@@ -7313,6 +7622,7 @@ class VarPattern <: std.ast.Pattern {
 
     var identifier_: std.ast.Token
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7336,6 +7646,7 @@ class ConstPattern <: std.ast.Pattern {
 
     var litConstExpr_: std.ast.LitConstExpr
 
+    @Annotation
     mut prop litConstExpr: std.ast.LitConstExpr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7357,6 +7668,7 @@ class WildcardPattern <: std.ast.Pattern {
 
     var keyWord_: std.ast.Token
 
+    @Annotation
     mut prop wildcard: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7378,6 +7690,7 @@ class VarOrEnumPattern <: std.ast.Pattern {
 
     var identifier_: std.ast.Token
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7407,16 +7720,19 @@ class ExceptTypePattern <: std.ast.Pattern {
 
     var bitOr_: std.ast.Tokens
 
+    @Annotation
     mut prop pattern: std.ast.Pattern {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7444,16 +7760,19 @@ class TypePattern <: std.ast.Pattern {
 
     var type_: std.ast.TypeNode
 
+    @Annotation
     mut prop pattern: std.ast.Pattern {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop colon: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patternType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7485,26 +7804,31 @@ class EnumPattern <: std.ast.Pattern {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop constructor: std.ast.Expr {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7534,21 +7858,25 @@ class TuplePattern <: std.ast.Pattern {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7586,7 +7914,7 @@ func createVArrayType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFor
 func createPrefixType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
 interface ToBytes {
-    abstract func toBytes(): std.core.Array<UInt8>
+    abstract open func toBytes(): std.core.Array<UInt8>
 }
 
 func getMacroPosition(macroObjPtr: CPointer<Unit>): (UInt32, Int32, Int32) { /* compiled code */ }
@@ -7670,11 +7998,12 @@ class ConcatTokens <: std.ast.Tokens {
 
     init(lc: std.ast.Tokens, rc: std.ast.Tokens) { /* compiled code */ }
 
+    @Annotation
     override prop size: Int64 {
         get() { /* compiled code */ }
     }
 
-    override func `get`(index: Int64): std.ast.Token { /* compiled code */ }
+    override func get(index: Int64): std.ast.Token { /* compiled code */ }
 
     operator func [](range: std.core.Range<Int64>): std.ast.Tokens { /* compiled code */ }
 
@@ -7683,69 +8012,69 @@ class ConcatTokens <: std.ast.Tokens {
     override func append(tk: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Token <: ToTokens {
+extend std.ast.Token <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Tokens <: ToTokens {
+extend std.ast.Tokens <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Int64 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Int32 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Int16 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Int8 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend UInt64 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend UInt32 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend UInt16 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend UInt8 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Float64 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Float32 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Float16 <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Bool <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend `Unit` <: ToTokens {
+extend Rune <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 func countDelimiter(charArray: std.core.Array<Rune>): (UInt16, std.core.String, std.core.String) { /* compiled code */ }
 
-extend String <: ToTokens {
+extend std.core.String <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
@@ -7766,26 +8095,31 @@ class RefType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7819,36 +8153,43 @@ class QualifiedType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
+    @Annotation
     mut prop baseType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop dot: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop identifier: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rAngle: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7874,16 +8215,19 @@ class ParenType <: std.ast.TypeNode {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop parenthesizedType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7911,16 +8255,19 @@ class TupleType <: std.ast.TypeNode {
 
     var rParen_: std.ast.Token
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7942,6 +8289,7 @@ class ThisType <: std.ast.TypeNode {
 
     var keyword_: std.ast.Token
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -7965,11 +8313,13 @@ class PrefixType <: std.ast.TypeNode {
 
     var baseType_: std.ast.TypeNode
 
+    @Annotation
     mut prop prefixOps: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop baseType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
@@ -8003,36 +8353,43 @@ class FuncType <: std.ast.TypeNode {
 
     var retTy_: std.ast.TypeNode
 
+    @Annotation
     mut prop keyword: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop lParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop commas: std.ast.Tokens {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop rParen: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop arrow: std.ast.Token {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     mut prop returnType: std.ast.TypeNode {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.decompiled.psi.text
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
+import org.cangnova.cangjie.analysis.decompiler.stub.COMPILED_DEFAULT_INITIALIZER
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjSingleValueToken
 import org.cangnova.cangjie.lexer.CjTokens
@@ -315,8 +316,8 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             appendLine(" {")
             withIndent {
                 if (typeStatement is CjEnum) {
-                    val enumEntries = typeStatement.constructor
-                    val members = typeStatement.declarations
+                    // 枚举构造项也属于类体声明，先划分再渲染，避免源码文本重复写出同一构造项。
+                    val (enumEntries, members) = typeStatement.declarations.partition { it is CjEnumConstructor }
                     withSuffix("\n") {
                         "\n\n".separated(
                             {
@@ -495,8 +496,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(field.name?.let(::renderIdentifier).orEmpty())
             withPrefix(": ") { field.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             if (field.hasInitializer()) {
-                append(" = ")
-                append(DECOMPILED_CODE_COMMENT)
+                renderCompiledInitializer()
             }
         }
 
@@ -507,8 +507,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append((variable.pattern as? CjBindingPattern)?.name?.let(::renderIdentifier) ?: "_")
             withPrefix(": ") { variable.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             if (variable.hasInitializer()) {
-                append(" = ")
-                append(DECOMPILED_CODE_COMMENT)
+                renderCompiledInitializer()
             }
         }
 
@@ -575,6 +574,13 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(" { ")
             append(DECOMPILED_CODE_COMMENT)
             append(" }")
+        }
+
+        private fun renderCompiledInitializer() {
+            append(" = ")
+            append(COMPILED_DEFAULT_INITIALIZER)
+            append(" ")
+            append(DECOMPILED_CODE_COMMENT)
         }
 
         private fun shouldRenderCompiledPropertyBody(property: CjProperty): Boolean {

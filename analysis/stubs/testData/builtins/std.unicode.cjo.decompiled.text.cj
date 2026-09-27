@@ -17,32 +17,32 @@ enum CasingOption {
 }
 
 interface UnicodeRuneExtension {
-    abstract func isLetter(): Bool
+    abstract open func isLetter(): Bool
 
-    abstract func isNumber(): Bool
+    abstract open func isNumber(): Bool
 
-    abstract func isLowerCase(): Bool
+    abstract open func isLowerCase(): Bool
 
-    abstract func isUpperCase(): Bool
+    abstract open func isUpperCase(): Bool
 
-    abstract func isTitleCase(): Bool
+    abstract open func isTitleCase(): Bool
 
-    abstract func isWhiteSpace(): Bool
+    abstract open func isWhiteSpace(): Bool
 
-    abstract func toUpperCase(): Rune
+    abstract open func toUpperCase(): Rune
 
-    abstract func toLowerCase(): Rune
+    abstract open func toLowerCase(): Rune
 
-    abstract func toTitleCase(): Rune
+    abstract open func toTitleCase(): Rune
 
-    abstract func toUpperCase(opt: std.unicode.CasingOption): Rune
+    abstract open func toUpperCase(opt: std.unicode.CasingOption): Rune
 
-    abstract func toLowerCase(opt: std.unicode.CasingOption): Rune
+    abstract open func toLowerCase(opt: std.unicode.CasingOption): Rune
 
-    abstract func toTitleCase(opt: std.unicode.CasingOption): Rune
+    abstract open func toTitleCase(opt: std.unicode.CasingOption): Rune
 }
 
-extend `Unit` <: UnicodeRuneExtension {
+extend Rune <: UnicodeRuneExtension {
     func isLetter(): Bool { /* compiled code */ }
 
     func isNumber(): Bool { /* compiled code */ }
@@ -69,32 +69,34 @@ extend `Unit` <: UnicodeRuneExtension {
 }
 
 interface UnicodeStringExtension {
-    abstract func isBlank(): Bool
+    abstract open func isBlank(): Bool
 
-    abstract func toLower(): std.core.String
+    abstract open func toLower(): std.core.String
 
-    abstract func toLower(opt: std.unicode.CasingOption): std.core.String
+    abstract open func toLower(opt: std.unicode.CasingOption): std.core.String
 
-    abstract func toTitle(): std.core.String
+    abstract open func toTitle(): std.core.String
 
-    abstract func toTitle(opt: std.unicode.CasingOption): std.core.String
+    abstract open func toTitle(opt: std.unicode.CasingOption): std.core.String
 
-    abstract func toUpper(): std.core.String
+    abstract open func toUpper(): std.core.String
 
-    abstract func toUpper(opt: std.unicode.CasingOption): std.core.String
+    abstract open func toUpper(opt: std.unicode.CasingOption): std.core.String
 
-    abstract func trim(): std.core.String
+    abstract open func trim(): std.core.String
 
-    abstract func trimRight(): std.core.String
+    @Deprecated[message: "Use member function `func trimEnd(): String` instead."]
+    abstract open func trimRight(): std.core.String
 
-    abstract func trimLeft(): std.core.String
+    @Deprecated[message: "Use member function `func trimStart(): String` instead."]
+    abstract open func trimLeft(): std.core.String
 
-    abstract func trimStart(): std.core.String
+    abstract open func trimStart(): std.core.String
 
-    abstract func trimEnd(): std.core.String
+    abstract open func trimEnd(): std.core.String
 }
 
-extend String <: UnicodeStringExtension {
+extend std.core.String <: UnicodeStringExtension {
     func isBlank(): Bool { /* compiled code */ }
 
     func toLower(): std.core.String { /* compiled code */ }
@@ -111,8 +113,10 @@ extend String <: UnicodeStringExtension {
 
     func trim(): std.core.String { /* compiled code */ }
 
+    @Deprecated[message: "Use member function ` public func trimStart(): String` instead."]
     func trimLeft(): std.core.String { /* compiled code */ }
 
+    @Deprecated[message: "Use member function ` public func trimEnd(): String` instead."]
     func trimRight(): std.core.String { /* compiled code */ }
 
     func trimStart(): std.core.String { /* compiled code */ }

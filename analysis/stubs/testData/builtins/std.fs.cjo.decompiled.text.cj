@@ -9,33 +9,41 @@ import std.io.*
 import std.time.*
 import std.io.IOException
 
-let PATH_SEPARATOR: std.core.String
+@Annotation
+let PATH_SEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
 
-let PATH_LISTSEPARATOR: std.core.String
+@Annotation
+let PATH_LISTSEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
 
 func copy(sourcePath: std.fs.Path, to: std.fs.Path, overwrite: Bool): Unit { /* compiled code */ }
 
 struct Path <: std.core.Equatable<std.fs.Path> & std.core.Hashable & std.core.ToString {
     let _rawPath: std.core.String
 
-    let Separator: std.core.String
+    @Annotation
+    const Separator: std.core.String = COMPILED_CODE /* compiled code */
 
-    let ListSeparator: std.core.String
+    @Annotation
+    const ListSeparator: std.core.String = COMPILED_CODE /* compiled code */
 
     init(rawPath: std.core.String) { /* compiled code */ }
 
+    @Annotation
     prop parent: std.fs.Path {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop fileName: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop extensionName: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop fileNameWithoutExtension: std.core.String {
         get() { /* compiled code */ }
     }
@@ -112,30 +120,37 @@ struct FileInfo <: std.core.Equatable<std.fs.FileInfo> {
 
     init(path: std.core.String) { /* compiled code */ }
 
+    @Annotation
     prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop parentDirectory: std.core.Option<std.fs.FileInfo> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop path: std.fs.Path {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop creationTime: std.time.DateTime {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop lastAccessTime: std.time.DateTime {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop lastModificationTime: std.time.DateTime {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
@@ -184,6 +199,7 @@ enum OpenMode <: std.core.ToString & std.core.Equatable<std.fs.OpenMode> {
 struct FileDescriptor {
     var _fileHandle: IntNative
 
+    @Annotation
     prop fileHandle: IntNative {
         get() { /* compiled code */ }
     }
@@ -210,14 +226,17 @@ class File <: std.core.Object & std.core.Resource & std.io.IOStream & std.io.See
 
     init(path: std.fs.Path, mode: std.fs.OpenMode) { /* compiled code */ }
 
+    @Annotation
     prop info: std.fs.FileInfo {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop fileDescriptor: std.fs.FileDescriptor {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop length: Int64 {
         get() { /* compiled code */ }
     }

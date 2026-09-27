@@ -19,10 +19,12 @@ class Random {
 
     init(seed: UInt64) { /* compiled code */ }
 
+    @Annotation
     prop seed: UInt64 {
         get() { /* compiled code */ }
     }
 
+    @Deprecated["Use member function `public func nextBits(bits: UInt64): UInt64` instead."]
     func next(bits: UInt64): UInt64 { /* compiled code */ }
 
     func nextBits(bits: UInt64): UInt64 { /* compiled code */ }
@@ -61,6 +63,7 @@ class Random {
 
     func nextInt64(upper: Int64): Int64 { /* compiled code */ }
 
+    @Deprecated["Use member function `public func nextBytes(arr: Array<Byte>): Unit` instead."]
     func nextUInt8s(array: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
 
     func nextBytes(bytes: std.core.Array<UInt8>): Unit { /* compiled code */ }

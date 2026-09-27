@@ -11,29 +11,30 @@ import std.unicode.*
 import std.sync.AtomicInt64
 
 interface Logger {
-    func warning(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
+    open func warning(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
 
-    func warning(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
+    open func warning(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
 
-    func error(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
+    open func error(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
 
-    func error(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
+    open func error(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
 
-    abstract func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit
+    abstract open func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit
 }
 
 interface DeclExt {
-    abstract mut prop modifiers: std.collection.ArrayList<std.ast.Modifier>
+    @Annotation
+    abstract open mut prop modifiers: std.collection.ArrayList<std.ast.Modifier>
 
-    func hasModifier(kind: std.ast.TokenKind): Bool { /* compiled code */ }
+    open func hasModifier(kind: std.ast.TokenKind): Bool { /* compiled code */ }
 
-    func hasModifier(predicate: (std.ast.TokenKind) -> Bool): Bool { /* compiled code */ }
+    open func hasModifier(predicate: (std.ast.TokenKind) -> Bool): Bool { /* compiled code */ }
 
-    func isStatic(): Bool { /* compiled code */ }
+    open func isStatic(): Bool { /* compiled code */ }
 
-    func isPrivate(): Bool { /* compiled code */ }
+    open func isPrivate(): Bool { /* compiled code */ }
 
-    abstract func unwrap(): std.ast.Decl
+    abstract open func unwrap(): std.ast.Decl
 }
 
 struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.QualifiedName> & std.core.Hashable {
@@ -47,12 +48,14 @@ struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.
 
     static func createUnchecked(tokens: std.core.Array<std.ast.Token>): std.deriving.api.QualifiedName { /* compiled code */ }
 
+    @Annotation
     prop simpleName: std.ast.Token {
         get() { /* compiled code */ }
     }
 
     func toSimpleNameQN(): std.deriving.api.QualifiedName { /* compiled code */ }
 
+    @Annotation
     prop components: std.core.Array<std.core.String> {
         get() { /* compiled code */ }
     }
@@ -95,10 +98,12 @@ struct GenericDecl <: std.core.Equatable<std.deriving.api.GenericDecl> & std.cor
 }
 
 struct DerivingTarget {
+    @Annotation
     prop interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -117,9 +122,9 @@ struct DerivingTarget {
 }
 
 interface GenericsInjector {
-    abstract func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode
+    abstract open func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode
 
-    func constraintsFor(iface: std.deriving.api.QualifiedName, generic: std.deriving.api.GenericDecl, target: std.deriving.api.DerivingTarget): std.core.Array<std.ast.GenericConstraint> { /* compiled code */ }
+    open func constraintsFor(iface: std.deriving.api.QualifiedName, generic: std.deriving.api.GenericDecl, target: std.deriving.api.DerivingTarget): std.core.Array<std.ast.GenericConstraint> { /* compiled code */ }
 
     static func noGenerics(): std.deriving.api.GenericsInjector { /* compiled code */ }
 
@@ -139,6 +144,7 @@ struct RecursiveGenericInjector <: std.deriving.api.GenericsInjector {
 }
 
 struct DerivingSettings {
+    @Annotation
     prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -164,6 +170,7 @@ struct DerivingInterfaceSettings {
     DerivingInterfaceSettings(name: std.deriving.api.QualifiedName, generics: std.core.Array<std.deriving.api.DerivingGenericSettings>) { /* compiled code */ }
 }
 
+@Annotation
 enum TargetNamedAttribute {
     | FieldAttribute(std.ast.VarDecl)
 
@@ -185,6 +192,7 @@ struct TargetEnumCase {
 struct Identifier <: std.core.ToString & std.core.Equatable<std.deriving.api.Identifier> & std.core.Hashable & std.ast.ToTokens {
     init(str: std.core.String) { /* compiled code */ }
 
+    @Annotation
     prop value: std.core.String {
         get() { /* compiled code */ }
     }
@@ -213,6 +221,7 @@ struct TargetEnumField {
 }
 
 struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
+    @Annotation
     prop hasUpperBounds: Bool {
         get() { /* compiled code */ }
     }
@@ -231,21 +240,24 @@ struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
 }
 
 interface DerivingNode <: std.deriving.api.AstExt {
-    abstract func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit
+    abstract open func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit
 
-    abstract func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
+    abstract open func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
 }
 
 interface Deriving {
-    abstract prop name: std.core.String
+    @Annotation
+    abstract open prop name: std.core.String
 
-    abstract prop description: std.core.String
+    @Annotation
+    abstract open prop description: std.core.String
 
-    abstract prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName>
+    @Annotation
+    abstract open prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName>
 
-    abstract func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo
+    abstract open func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo
 
-    abstract func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens
+    abstract open func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens
 }
 
 struct DerivingInterfaceInfo {
@@ -259,16 +271,16 @@ struct DerivingInterfaceInfo {
 }
 
 interface AstExt {
-    abstract func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit
+    abstract open func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit
 
-    abstract func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit
+    abstract open func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit
 
-    abstract func appendFunction(f: std.ast.FuncDecl): Unit
+    abstract open func appendFunction(f: std.ast.FuncDecl): Unit
 
-    abstract func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl
+    abstract open func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl
 }
 
-extend DerivingTarget {
+extend std.deriving.api.DerivingTarget {
     func createExtendSkeleton(): std.ast.ExtendDecl { /* compiled code */ }
 
     func appendAllConstraintsTo(ext: std.ast.ExtendDecl, deriving: std.deriving.api.Deriving, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
@@ -280,41 +292,49 @@ extend DerivingTarget {
     func genericConstraints(ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): std.core.Iterable<std.ast.GenericConstraint> { /* compiled code */ }
 }
 
-extend ExtendDecl <: DerivingNode {
+extend std.ast.ExtendDecl <: DerivingNode {
     func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
 
     func appendAllConstraintsTo(target: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit { /* compiled code */ }
 }
 
-extend DerivingTarget {
+extend std.deriving.api.DerivingTarget {
+    @Annotation
     prop isNonFinal: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isFinal: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isSealedClass: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isAbstractClass: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop allGenerics: std.core.Array<std.deriving.api.GenericDecl> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop hasAnyGenerics: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop superTypes: std.core.Array<std.ast.TypeNode> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop superTypeNames: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -326,39 +346,44 @@ extend DerivingTarget {
     func generics(): std.core.Option<std.ast.GenericParam> { /* compiled code */ }
 }
 
-extend TargetNamedAttribute {
+extend std.deriving.api.TargetNamedAttribute {
+    @Annotation
     prop decl: std.ast.Decl {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop identifier: std.deriving.api.Identifier {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop typeNode: std.core.Option<std.ast.TypeNode> {
         get() { /* compiled code */ }
     }
 }
 
-extend TargetNamedAttribute <: ToString {
+extend std.deriving.api.TargetNamedAttribute <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend TargetEnumCase {
+extend std.deriving.api.TargetEnumCase {
+    @Annotation
     prop totalArgumentsCount: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop components: std.core.Array<std.core.Option<std.deriving.api.TargetEnumField>> {
         get() { /* compiled code */ }
     }
 }
 
-extend GenericDecl {
+extend std.deriving.api.GenericDecl {
     func toType(): std.ast.RefType { /* compiled code */ }
 }
 
-extend Identifier {
+extend std.deriving.api.Identifier {
     func toType(): std.ast.RefType { /* compiled code */ }
 }
 
@@ -375,50 +400,50 @@ class CollectingLogger <: std.core.Object & std.deriving.api.Logger {
 }
 
 interface AppendGenerics {
-    abstract func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
+    abstract open func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
 }
 
-extend RefType <: AppendGenerics {
+extend std.ast.RefType <: AppendGenerics {
     func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
 }
 
-extend QualifiedType <: AppendGenerics {
+extend std.ast.QualifiedType <: AppendGenerics {
     func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
 }
 
 interface BodyExt {
-    abstract func declsUnwrapped(): std.core.Iterator<std.ast.Decl>
+    abstract open func declsUnwrapped(): std.core.Iterator<std.ast.Decl>
 }
 
 interface FuncParamExt {
-    abstract func unwrapParam(): std.ast.FuncParam
+    abstract open func unwrapParam(): std.ast.FuncParam
 }
 
 interface FunctionExt {
-    abstract func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam>
+    abstract open func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam>
 }
 
-extend Decl <: DeclExt {
+extend std.ast.Decl <: DeclExt {
     func unwrap(): std.ast.Decl { /* compiled code */ }
 }
 
-extend Body <: BodyExt {
+extend std.ast.Body <: BodyExt {
     func declsUnwrapped(): std.core.Iterator<std.ast.Decl> { /* compiled code */ }
 }
 
-extend FuncParam <: FuncParamExt {
+extend std.ast.FuncParam <: FuncParamExt {
     func unwrapParam(): std.ast.FuncParam { /* compiled code */ }
 }
 
-extend FuncDecl <: FunctionExt {
+extend std.ast.FuncDecl <: FunctionExt {
     func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
 }
 
-extend PrimaryCtorDecl <: FunctionExt {
+extend std.ast.PrimaryCtorDecl <: FunctionExt {
     func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
 }
 
-extend ExtendDecl <: AstExt {
+extend std.ast.ExtendDecl <: AstExt {
     func appendFunction(f: std.ast.FuncDecl): Unit { /* compiled code */ }
 
     func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl { /* compiled code */ }
@@ -428,9 +453,9 @@ extend ExtendDecl <: AstExt {
     func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit { /* compiled code */ }
 }
 
-func joinTokens(prefix: std.ast.ToTokens, postfix: std.ast.ToTokens, delimiter: std.ast.ToTokens, ifEmpty: std.ast.ToTokens): (std.core.Iterable<std.ast.Tokens>) -> std.ast.Tokens { /* compiled code */ }
+func joinTokens(prefix: std.ast.ToTokens, postfix: std.ast.ToTokens, delimiter: std.ast.ToTokens, ifEmpty: std.ast.ToTokens): std.ast.Tokens { /* compiled code */ }
 
-extend QualifiedName {
+extend std.deriving.api.QualifiedName {
     func toType(genericArgs: std.core.Array<std.ast.TypeNode>): std.ast.TypeNode { /* compiled code */ }
 }
 

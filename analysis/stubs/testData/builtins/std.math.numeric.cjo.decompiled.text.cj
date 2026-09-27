@@ -9,10 +9,12 @@ import std.random.*
 import std.core.*
 
 struct BigInt <: std.core.Comparable<std.math.numeric.BigInt> & std.core.Hashable & std.core.ToString {
+    @Annotation
     prop sign: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop bitLen: Int64 {
         get() { /* compiled code */ }
     }
@@ -51,10 +53,12 @@ struct BigInt <: std.core.Comparable<std.math.numeric.BigInt> & std.core.Hashabl
 
     init(sign: Bool, bitLen: Int64, rand: std.random.Random) { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public static func parse(value: String, radix!: Int64): BigInt` instead."]
     init(s: std.core.String, base: Int64) { /* compiled code */ }
 
     func testBit(index: Int64): Bool { /* compiled code */ }
 
+    @Deprecated[message: "Use global function `public func trailingZeros(x: BigInt): Int64` instead."]
     func lowestOneBit(): Int64 { /* compiled code */ }
 
     func setBit(index: Int64): std.math.numeric.BigInt { /* compiled code */ }
@@ -77,10 +81,13 @@ struct BigInt <: std.core.Comparable<std.math.numeric.BigInt> & std.core.Hashabl
 
     func divAndMod(that: std.math.numeric.BigInt): (std.math.numeric.BigInt, std.math.numeric.BigInt) { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead."]
     func quo(that: std.math.numeric.BigInt): std.math.numeric.BigInt { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead."]
     func rem(that: std.math.numeric.BigInt): std.math.numeric.BigInt { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func divAndMod(that: BigInt): (BigInt, BigInt)` instead."]
     func quoAndRem(that: std.math.numeric.BigInt): (std.math.numeric.BigInt, std.math.numeric.BigInt) { /* compiled code */ }
 
     func modInverse(that: std.math.numeric.BigInt): std.math.numeric.BigInt { /* compiled code */ }
@@ -176,26 +183,27 @@ func gcd(i1: std.math.numeric.BigInt, i2: std.math.numeric.BigInt): std.math.num
 
 func lcm(i1: std.math.numeric.BigInt, i2: std.math.numeric.BigInt): std.math.numeric.BigInt { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(i: BigInt): Int64` instead."]
 func countOne(i: std.math.numeric.BigInt): Int64 { /* compiled code */ }
 
 func countOnes(i: std.math.numeric.BigInt): Int64 { /* compiled code */ }
 
 func trailingZeros(x: std.math.numeric.BigInt): Int64 { /* compiled code */ }
 
-extend BigInt <: Number {
+extend std.math.numeric.BigInt <: Number {
 }
 
-extend BigInt <: Integer {
+extend std.math.numeric.BigInt <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 }
 
-extend BigInt <: Parsable {
+extend std.math.numeric.BigInt <: Parsable {
     static func parse(value: std.core.String): std.math.numeric.BigInt { /* compiled code */ }
 
     static func tryParse(value: std.core.String): std.core.Option<std.math.numeric.BigInt> { /* compiled code */ }
 }
 
-extend BigInt <: RadixConvertible {
+extend std.math.numeric.BigInt <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): std.math.numeric.BigInt { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<std.math.numeric.BigInt> { /* compiled code */ }
@@ -203,7 +211,7 @@ extend BigInt <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend BigInt <: Formattable {
+extend std.math.numeric.BigInt <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
@@ -216,22 +224,27 @@ struct Decimal <: std.core.Comparable<std.math.numeric.Decimal> & std.core.Hasha
 
     var _sign: Int64
 
+    @Annotation
     prop scale: Int32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop precision: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop value: std.math.numeric.BigInt {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop sign: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use member function `public static func parse(value: String): Decimal` instead."]
     init(val: std.core.String) { /* compiled code */ }
 
     init(val: std.math.numeric.BigInt, scale: Int32) { /* compiled code */ }
@@ -274,6 +287,7 @@ struct Decimal <: std.core.Comparable<std.math.numeric.Decimal> & std.core.Hasha
 
     func divWithPrecision(d: std.math.numeric.Decimal, precision: Int64, roundingMode: std.math.RoundingMode): std.math.numeric.Decimal { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func divAndMod(d: Decimal): (BigInt, Decimal)` instead."]
     func divAndRem(d: std.math.numeric.Decimal): (std.math.numeric.BigInt, std.math.numeric.Decimal) { /* compiled code */ }
 
     func divAndMod(d: std.math.numeric.Decimal): (std.math.numeric.BigInt, std.math.numeric.Decimal) { /* compiled code */ }
@@ -355,15 +369,15 @@ func round(d: std.math.numeric.Decimal, roundingMode: std.math.RoundingMode): st
 
 func sqrt(d: std.math.numeric.Decimal): std.math.numeric.Decimal { /* compiled code */ }
 
-extend Decimal <: Number {
+extend std.math.numeric.Decimal <: Number {
 }
 
-extend Decimal <: Parsable {
+extend std.math.numeric.Decimal <: Parsable {
     static func parse(value: std.core.String): std.math.numeric.Decimal { /* compiled code */ }
 
     static func tryParse(value: std.core.String): std.core.Option<std.math.numeric.Decimal> { /* compiled code */ }
 }
 
-extend Decimal <: Formattable {
+extend std.math.numeric.Decimal <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }

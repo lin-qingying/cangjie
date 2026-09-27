@@ -46,13 +46,12 @@ internal class DecompiledCjoRepository(
     /**
      * 从当前仓库根目录中加载指定包的 `.cjo` 数据。
      *
-     * 只有 package body 与 package header 都能成功读取时才返回结果；返回值同时携带原始虚拟文件、
-     * 包名、搜索根和版本兼容性，后续层不需要重新访问底层 [CjoManager]。
+     * 只有 package body 与 package header 都能成功读取时才返回结果；返回值携带原始虚拟文件、
+     * 包名、当前 repository manager 和版本兼容性，后续层复用同一包快照及其跨包索引。
      */
     fun loadPackageData(
         packageFqName: FqName,
         binaryFile: VirtualFile,
-        searchRoots: List<File>,
     ): LoadedCjoPackage? {
         val fullPkgName = packageFqName.asString()
         val loaded = cjoManager.loadPackageSnapshot(fullPkgName) ?: return null
@@ -63,7 +62,7 @@ internal class DecompiledCjoRepository(
             packageFqName = packageFqName,
             pkg = pkg,
             header = header,
-            searchRoots = searchRoots,
+            cjoManager = cjoManager,
             isVersionSupported = CjoBinaryFileReader.isSupportedVersion(pkg),
             sourcePath = loaded.sourcePath,
         )

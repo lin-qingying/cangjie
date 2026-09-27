@@ -7,111 +7,164 @@ import std.core.*
 import std.convert.*
 import std.collection.ArrayList
 
-let MIN_INT64: Int64
+@Annotation
+let MIN_INT64: Int64 = COMPILED_CODE /* compiled code */
 
-let MAX_INT64: Int64
+@Annotation
+let MAX_INT64: Int64 = COMPILED_CODE /* compiled code */
 
-let MAX_YEAR: Int64
+@Annotation
+let MAX_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
-let MIN_YEAR: Int64
+@Annotation
+let MIN_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
-let MAX_NANOSECOND: Int64
+@Annotation
+let MAX_NANOSECOND: Int64 = COMPILED_CODE /* compiled code */
 
-let MONTHS_PER_YEAR: Int64
+@Annotation
+let MONTHS_PER_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
-let DAYS_PER_WEEK: Int64
+@Annotation
+let DAYS_PER_WEEK: Int64 = COMPILED_CODE /* compiled code */
 
-let DAYS_OF_NORMAL_YEAR: Int64
+@Annotation
+let DAYS_OF_NORMAL_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
-let DAYS_OF_LEAP_YEAR: Int64
+@Annotation
+let DAYS_OF_LEAP_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let DAYS_PER_400YEARS: Int64
 
+@Annotation
 let DAYS_PER_100YEARS: Int64
 
+@Annotation
 let DAYS_PER_4YEARS: Int64
 
-let HOURS_PER_DAY: Int64
+@Annotation
+let HOURS_PER_DAY: Int64 = COMPILED_CODE /* compiled code */
 
-let MINUTES_PER_HOUR: Int64
+@Annotation
+let MINUTES_PER_HOUR: Int64 = COMPILED_CODE /* compiled code */
 
-let SECS_PER_MINUTE: Int64
+@Annotation
+let SECS_PER_MINUTE: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let SECS_PER_HOUR: Int64
 
+@Annotation
 let SECS_PER_DAY: Int64
 
+@Annotation
 let SECS_PER_WEEK: Int64
 
-let MS_PER_SEC: Int64
+@Annotation
+let MS_PER_SEC: Int64 = COMPILED_CODE /* compiled code */
 
-let US_PER_MS: Int64
+@Annotation
+let US_PER_MS: Int64 = COMPILED_CODE /* compiled code */
 
-let NS_PER_US: Int64
+@Annotation
+let NS_PER_US: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let US_PER_SEC: Int64
 
+@Annotation
 let NS_PER_MS: Int64
 
+@Annotation
 let NS_PER_SEC: Int64
 
+@Annotation
 let NS_PER_MINUTE: Int64
 
+@Annotation
 let NS_PER_HOUR: Int64
 
+@Annotation
 let NS_PER_DAY: Int64
 
+@Annotation
 let SECS_OF_NORMAL_YEAR: Int64
 
+@Annotation
 let SECS_OF_LEAP_YEAR: Int64
 
-let HOUR_12_INTERVAL: Int64
+@Annotation
+let HOUR_12_INTERVAL: Int64 = COMPILED_CODE /* compiled code */
 
-let HOUR_12_START: Int64
+@Annotation
+let HOUR_12_START: Int64 = COMPILED_CODE /* compiled code */
 
-let HOUR_12_END: Int64
+@Annotation
+let HOUR_12_END: Int64 = COMPILED_CODE /* compiled code */
 
-let HOUR_24_START: Int64
+@Annotation
+let HOUR_24_START: Int64 = COMPILED_CODE /* compiled code */
 
-let HOUR_24_NOON: Int64
+@Annotation
+let HOUR_24_NOON: Int64 = COMPILED_CODE /* compiled code */
 
-let START_AD_YEAR: Int64
+@Annotation
+let START_AD_YEAR: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let DAYS_OF_UNIX_TO_AD1: Int64
 
+@Annotation
 let SECS_OF_UNIX_TO_AD1: Int64
 
+@Annotation
 let DAYS_OF_MAX_TO_AD1: Int64
 
+@Annotation
 let SECS_OF_MAX_TO_AD1: Int64
 
+@Annotation
 let DAYS_OF_MIN_TO_AD1: Int64
 
+@Annotation
 let SECS_OF_MIN_TO_AD1: Int64
 
-let DAYS_OF_JAN_TO_MARCH_LEAP: Int64
+@Annotation
+let DAYS_OF_JAN_TO_MARCH_LEAP: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let MAX_OFFSET: Int64
 
+@Annotation
 let MIN_OFFSET: Int64
 
-let YEAR_OUT_OF_RANGE: std.core.String
+@Annotation
+let YEAR_OUT_OF_RANGE: std.core.String = COMPILED_CODE /* compiled code */
 
+@Annotation
 let MAX_UTC_SECS: Int64
 
+@Annotation
 let MIN_UTC_SECS: Int64
 
-let SEPARATOR: std.core.String
+@Annotation
+let SEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
 
-let SLASH_CHAR: std.core.String
+@Annotation
+let SLASH_CHAR: std.core.String = COMPILED_CODE /* compiled code */
 
-let TZIF_SOUTCE_LINUX: std.core.String
+@Annotation
+let TZIF_SOUTCE_LINUX: std.core.String = COMPILED_CODE /* compiled code */
 
-let LOCALTIME_SRC: std.core.String
+@Annotation
+let LOCALTIME_SRC: std.core.String = COMPILED_CODE /* compiled code */
 
-let TZPATH: std.core.String
+@Annotation
+let TZPATH: std.core.String = COMPILED_CODE /* compiled code */
 
-let MAXPATHLEN: Int64
+@Annotation
+let MAXPATHLEN: Int64 = COMPILED_CODE /* compiled code */
 
 class TimeZone <: std.core.Object & std.core.ToString & std.core.Equatable<std.time.TimeZone> {
     let UTC: std.time.TimeZone
@@ -128,6 +181,7 @@ class TimeZone <: std.core.Object & std.core.ToString & std.core.Equatable<std.t
 
     var cache: std.core.Option<(Int64, Int64, std.time.LocalTime)>
 
+    @Annotation
     prop id: std.core.String {
         get() { /* compiled code */ }
     }
@@ -160,76 +214,95 @@ struct DateTime <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     let tz: std.time.TimeZone
 
+    @Annotation
     static prop UnixEpoch: std.time.DateTime {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop year: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop month: std.time.Month {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use `public prop month: Month` instead."]
+    @Annotation
     prop monthValue: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop dayOfMonth: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop dayOfWeek: std.time.DayOfWeek {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop dayOfYear: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop hour: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop minute: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop second: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop nanosecond: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isoWeek: (Int64, Int64) {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop zone: std.time.TimeZone {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop zoneId: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop zoneOffset: std.core.Duration {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop date: (Int64, std.time.Month, Int64) {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop time: (Int64, Int64, Int64) {
         get() { /* compiled code */ }
     }
 
     init(secs: Int64, nanos: UInt32, tz: std.time.TimeZone) { /* compiled code */ }
 
+    @Frozen
     static func now(timeZone: std.time.TimeZone): std.time.DateTime { /* compiled code */ }
 
     static func nowUTC(): std.time.DateTime { /* compiled code */ }
@@ -252,6 +325,7 @@ struct DateTime <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     static func parse(str: std.core.String, format: std.core.String): std.time.DateTime { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public static func parse(str: String, format: String): DateTime` instead."]
     static func parse(str: std.core.String, format: std.time.DateTimeFormat): std.time.DateTime { /* compiled code */ }
 
     func inUTC(): std.time.DateTime { /* compiled code */ }
@@ -266,6 +340,7 @@ struct DateTime <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func format(fmt: String): String` instead."]
     func toString(format: std.time.DateTimeFormat): std.core.String { /* compiled code */ }
 
     func hashCode(): Int64 { /* compiled code */ }
@@ -372,6 +447,7 @@ enum Month <: std.core.ToString & std.core.Equatable<std.time.Month> {
 
     static func of(mon: Int64): std.time.Month { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func toInteger(): Int64` instead."]
     func value(): Int64 { /* compiled code */ }
 
     func toInteger(): Int64 { /* compiled code */ }
@@ -404,6 +480,7 @@ enum DayOfWeek <: std.core.ToString & std.core.Equatable<std.time.DayOfWeek> {
 
     static func of(dayOfWeek: Int64): std.time.DayOfWeek { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func toInteger(): Int64` instead."]
     func value(): Int64 { /* compiled code */ }
 
     func toInteger(): Int64 { /* compiled code */ }
@@ -420,13 +497,17 @@ enum DayOfWeek <: std.core.ToString & std.core.Equatable<std.time.DayOfWeek> {
 }
 
 class DateTimeFormat {
-    let RFC1123: std.core.String
+    @Annotation
+    const RFC1123: std.core.String = COMPILED_CODE /* compiled code */
 
-    let RFC3339: std.core.String
+    @Annotation
+    const RFC3339: std.core.String = COMPILED_CODE /* compiled code */
 
-    let RFC822: std.core.String
+    @Annotation
+    const RFC822: std.core.String = COMPILED_CODE /* compiled code */
 
-    let RFC850: std.core.String
+    @Annotation
+    const RFC850: std.core.String = COMPILED_CODE /* compiled code */
 
     let data: std.collection.ArrayList<std.time.FormatType>
 
@@ -434,8 +515,11 @@ class DateTimeFormat {
 
     init(formatString: std.core.String) { /* compiled code */ }
 
+    @Deprecated["Use member function `init(formatString: String)` instead."]
     static func of(format: std.core.String): std.time.DateTimeFormat { /* compiled code */ }
 
+    @Deprecated["The prop is deprecated, no substitutions."]
+    @Annotation
     prop format: std.core.String {
         get() { /* compiled code */ }
     }
@@ -516,7 +600,7 @@ struct DateTimeParser {
 
     mut func move(len: Int64): Unit { /* compiled code */ }
 
-    func `get`(offset: Int64): Rune { /* compiled code */ }
+    func get(offset: Int64): Rune { /* compiled code */ }
 
     mut func parseYear(value: Int64, length: Int64): Int64 { /* compiled code */ }
 
@@ -573,6 +657,7 @@ struct DateTimeParser {
     func checkOffsetLength(n: Int64): Unit { /* compiled code */ }
 }
 
+@Annotation
 enum FormatType {
     | FormatYear(Int64)
 
@@ -735,7 +820,7 @@ class TransTime {
 
 func parseTZ(footer: std.core.String, end: Int64, epochSecond: Int64): (std.core.String, Int64, Int64, Int64) { /* compiled code */ }
 
-func swap(left: T, right: T): (T, T) { /* compiled code */ }
+func swap<T>(left: T, right: T): (T, T) { /* compiled code */ }
 
 func parseTZName(footer: std.core.String): (std.core.String, std.core.String) { /* compiled code */ }
 

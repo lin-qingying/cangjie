@@ -7,14 +7,19 @@ import std.core.*
 import std.collection.*
 import std.sync.*
 
-let UNCAPTURED_GROUP_INDEX: Int64
+@Annotation
+let UNCAPTURED_GROUP_INDEX: Int64 = COMPILED_CODE /* compiled code */
 
-let REGEX_NORMAL: UInt32
+@Annotation
+let REGEX_NORMAL: UInt32 = COMPILED_CODE /* compiled code */
 
-let REGEX_IGNORECASE: UInt32
+@Annotation
+let REGEX_IGNORECASE: UInt32 = COMPILED_CODE /* compiled code */
 
-let REGEX_MULTILINE: UInt32
+@Annotation
+let REGEX_MULTILINE: UInt32 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let REGEX_UNICODE: UInt32
 
 struct Position {
@@ -42,6 +47,7 @@ struct MatchData {
 
     func matchPosition(group: std.core.String): std.regex.Position { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public func groupCount(): Int64` instead."]
     func groupNumber(): Int64 { /* compiled code */ }
 
     func groupCount(): Int64 { /* compiled code */ }
@@ -57,6 +63,7 @@ struct MatchData {
     MatchData(input: std.core.String, positions: std.core.Array<std.regex.Position>, rc: Int64, nameToIndex: (std.core.String) -> Int64) { /* compiled code */ }
 }
 
+@Deprecated[message: "APIs in Matcher have been moved to Regex."]
 class Matcher {
     var input: std.core.String
 
@@ -124,10 +131,12 @@ class Regex {
 
     init(pattern: std.core.String, flags: std.core.Array<std.regex.RegexFlag>) { /* compiled code */ }
 
+    @Deprecated[message: "Use member function `public Regex(let pattern: String, flags: Array<RegexFlag>)` instead."]
     init(pattern: std.core.String, option: std.regex.RegexOption) { /* compiled code */ }
 
     ~init() { /* compiled code */ }
 
+    @Deprecated[message: "`Matcher` has been marked as deprecated."]
     func matcher(input: std.core.String): std.regex.Matcher { /* compiled code */ }
 
     func matches(input: std.core.String): Bool { /* compiled code */ }
@@ -239,6 +248,7 @@ enum RegexFlag {
     static func getValue(flags: std.core.Array<std.regex.RegexFlag>): UInt32 { /* compiled code */ }
 }
 
+@Deprecated[message: "Use `public enum RegexFlag` instead."]
 class RegexOption <: std.core.Object & std.core.ToString {
     var option: UInt32
 

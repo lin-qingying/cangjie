@@ -5,41 +5,51 @@ package std.core
 
 import std.core
 
+@Frozen
 func arrayInitByCollection<T>(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
 
 interface Collection<T> <: std.core.Iterable<T> {
-    abstract prop size: Int64
+    @Annotation
+    abstract open prop size: Int64
 
-    abstract func isEmpty(): Bool
+    abstract open func isEmpty(): Bool
 
-    func toArray(): std.core.Array<T> { /* compiled code */ }
+    open func toArray(): std.core.Array<T> { /* compiled code */ }
 }
 
-class Iterator<T> <: std.core.Object & std.core.Iterable<T> {
+abstract class Iterator<T> <: std.core.Object & std.core.Iterable<T> {
     abstract func next(): std.core.Option<T>
 
+    @Frozen
     init() { /* compiled code */ }
 
+    @Frozen
     func iterator(): std.core.Iterator<T> { /* compiled code */ }
 }
 
 interface Iterable<E> {
-    abstract func iterator(): std.core.Iterator<E>
+    abstract open func iterator(): std.core.Iterator<E>
 }
 
+@Annotation
 enum Option<T> {
     | Some(T)
 
     | None
 
+    @Frozen
     func getOrThrow(): T { /* compiled code */ }
 
+    @Frozen
     func getOrThrow(exception: () -> std.core.Exception): T { /* compiled code */ }
 
+    @Frozen
     func getOrDefault(other: () -> T): T { /* compiled code */ }
 
+    @Frozen
     func isNone(): Bool { /* compiled code */ }
 
+    @Frozen
     func isSome(): Bool { /* compiled code */ }
 
     func map<R>(transform: (T) -> R): std.core.Option<R> { /* compiled code */ }
@@ -51,10 +61,12 @@ enum Option<T> {
 
 func arraySet<T>(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
 
+@Frozen
 func arrayInitByFunction<T>(array: std.core.Array<T>, initElement: (Int64) -> T): std.core.Array<T> { /* compiled code */ }
 
 func arraySize<T>(rawArr: std.core.Array<T>): Int64 { /* compiled code */ }
 
+@Frozen
 func toArray<T>(raw: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
 struct Array<T> {
@@ -64,74 +76,107 @@ struct Array<T> {
 
     let len: Int64
 
+    @Frozen
     func toRawArray(): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     init() { /* compiled code */ }
 
+    @Frozen
     init(size: Int64, repeat: T) { /* compiled code */ }
 
+    @Frozen
     init(elements: std.core.Collection<T>) { /* compiled code */ }
 
+    @Frozen
     init(size: Int64, initElement: (Int64) -> T) { /* compiled code */ }
 
+    @Frozen
     init(data: std.core.Array<T>, start: Int64, len: Int64) { /* compiled code */ }
 
+    @Frozen
+    @Annotation
     prop first: std.core.Option<T> {
         get() { /* compiled code */ }
     }
 
+    @Frozen
+    @Annotation
     prop last: std.core.Option<T> {
         get() { /* compiled code */ }
     }
 
+    @Frozen
     func slice(start: Int64, len: Int64): std.core.Array<T> { /* compiled code */ }
 
-    func `get`(index: Int64): std.core.Option<T> { /* compiled code */ }
+    @Frozen
+    func get(index: Int64): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     operator func [](index: Int64): T { /* compiled code */ }
 
+    @Frozen
     operator func [](index: Int64, value: T): Unit { /* compiled code */ }
 
+    @Frozen
     operator func [](range: std.core.Range<Int64>): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func fill(value: T): Unit { /* compiled code */ }
 
+    @Frozen
     operator func [](range: std.core.Range<Int64>, value: std.core.Array<T>): Unit { /* compiled code */ }
 
+    @Frozen
     func reverse(): Unit { /* compiled code */ }
 
+    @Frozen
     func rangeSlice(range: std.core.Range<Int64>, _: Int64): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func isLegal(start_: Int64, end_: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     func normalize(range: std.core.Range<Int64>): (Int64, Int64) { /* compiled code */ }
 
+    @Frozen
     func clone(): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func clone(range: std.core.Range<Int64>): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func copyTo(dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit { /* compiled code */ }
 
+    @Frozen
     func copyTo(dst: std.core.Array<T>): Unit { /* compiled code */ }
 
+    @Frozen
     func concat(other: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func getUnchecked(index: Int64): T { /* compiled code */ }
 
+    @Frozen
     func setUnchecked(index: Int64, element: T): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(index1: Int64, index2: Int64): Unit { /* compiled code */ }
 
+    @Frozen
     func splitAt(mid: Int64): (std.core.Array<T>, std.core.Array<T>) { /* compiled code */ }
 
+    @Frozen
     func repeat(n: Int64): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func map<R>(transform: (T) -> R): std.core.Array<R> { /* compiled code */ }
 }
 
+@Frozen
 func acquireArrayRawData<T>(arr: std.core.Array<T>): std.core.CPointerHandle<T> { /* compiled code */ }
 
-interface CType {
+open interface CType {
 }
 
 struct CPointerHandle<T> {
@@ -139,75 +184,100 @@ struct CPointerHandle<T> {
 
     let array: std.core.Array<T>
 
+    @Deprecated[message: "Use global function `public unsafe func acquireArrayRawData<T>(arr: Array<T>): CPointerHandle<T> where T <: CType` instead."]
     init() { /* compiled code */ }
 
+    @Deprecated[message: "Use global function `public unsafe func acquireArrayRawData<T>(arr: Array<T>): CPointerHandle<T> where T <: CType` instead."]
     init(ptr: CPointer<T>, arr: std.core.Array<T>) { /* compiled code */ }
 }
 
 func acquireRawData<T>(rawArr: std.core.Array<T>): CPointer<T> { /* compiled code */ }
 
-func releaseArrayRawData<T>(`handle`: std.core.CPointerHandle<T>): Unit { /* compiled code */ }
+@Frozen
+func releaseArrayRawData<T>(handle: std.core.CPointerHandle<T>): Unit { /* compiled code */ }
 
 func releaseRawData<T>(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit { /* compiled code */ }
 
-let ASCII_UPPER_TO_LOWER_DIFF: UInt8
+@Annotation
+let ASCII_UPPER_TO_LOWER_DIFF: UInt8 = COMPILED_CODE /* compiled code */
 
+@Frozen
 func max<T>(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
 interface Comparable<T> <: std.core.Equatable<T> & std.core.Less<T> & std.core.Greater<T> & std.core.LessOrEqual<T> & std.core.GreaterOrEqual<T> {
-    abstract func compare(that: T): std.core.Ordering
+    abstract open func compare(that: T): std.core.Ordering
 
-    operator func ==(rhs: T): Bool { /* compiled code */ }
+    open operator func ==(rhs: T): Bool { /* compiled code */ }
 
-    operator func <(rhs: T): Bool { /* compiled code */ }
+    open operator func <(rhs: T): Bool { /* compiled code */ }
 
-    operator func >(rhs: T): Bool { /* compiled code */ }
+    open operator func >(rhs: T): Bool { /* compiled code */ }
 
-    operator func <=(rhs: T): Bool { /* compiled code */ }
+    open operator func <=(rhs: T): Bool { /* compiled code */ }
 
-    operator func >=(rhs: T): Bool { /* compiled code */ }
+    open operator func >=(rhs: T): Bool { /* compiled code */ }
 }
 
+@Frozen
 func min<T>(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
+@Annotation
 let NS_PER_US: Int64
 
+@Annotation
 let NS_PER_MS: Int64
 
+@Annotation
 let NS_PER_SEC: Int64
 
+@Annotation
 let MS_PER_SEC: Int64
 
+@Annotation
 let US_PER_SEC: Int64
 
-let SECS_PER_MINUTE: Int64
+@Annotation
+let SECS_PER_MINUTE: Int64 = COMPILED_CODE /* compiled code */
 
-let MAX_NANOSECOND: UInt32
+@Annotation
+let MAX_NANOSECOND: UInt32 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let SECS_PER_HOUR: Int64
 
 let SECS_PER_DAY: Int64
 
-let MAX_INT64: Int64
+@Annotation
+let MAX_INT64: Int64 = COMPILED_CODE /* compiled code */
 
-let MIN_INT64: Int64
+@Annotation
+let MIN_INT64: Int64 = COMPILED_CODE /* compiled code */
 
-let FLOAT64_0: Float64
+@Annotation
+let FLOAT64_0: Float64 = COMPILED_CODE /* compiled code */
 
-let FLOAT64_1: Float64
+@Annotation
+let FLOAT64_1: Float64 = COMPILED_CODE /* compiled code */
 
-let SECS_MAX: UInt64
+@Annotation
+let SECS_MAX: UInt64 = COMPILED_CODE /* compiled code */
 
-let DUR_BASE: UInt32
+@Annotation
+let DUR_BASE: UInt32 = COMPILED_CODE /* compiled code */
 
-let SECRET0: UInt64
+@Annotation
+let SECRET0: UInt64 = COMPILED_CODE /* compiled code */
 
-let SECRET1: UInt64
+@Annotation
+let SECRET1: UInt64 = COMPILED_CODE /* compiled code */
 
-let SECRET2: UInt64
+@Annotation
+let SECRET2: UInt64 = COMPILED_CODE /* compiled code */
 
-let SECRET3: UInt64
+@Annotation
+let SECRET3: UInt64 = COMPILED_CODE /* compiled code */
 
+@Frozen
 func print(str: std.core.String, flush: Bool): Unit { /* compiled code */ }
 
 struct String <: std.core.Collection<UInt8> & std.core.Comparable<std.core.String> & std.core.Hashable & std.core.ToString {
@@ -217,184 +287,274 @@ struct String <: std.core.Collection<UInt8> & std.core.Comparable<std.core.Strin
 
     let length: UInt32
 
-    let empty: std.core.String
+    @Annotation
+    const empty: std.core.String
 
+    @Frozen
     init() { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Array<Rune>) { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Collection<Rune>) { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Array<UInt8>) { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Array<UInt8>, start: UInt32, len: UInt32) { /* compiled code */ }
 
+    @Frozen
     init(ptr: CPointer<UInt8>, cSize: Int64) { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Array<UInt8>) { /* compiled code */ }
 
-    func `get`(index: Int64): std.core.Option<UInt8> { /* compiled code */ }
+    @Frozen
+    func get(index: Int64): std.core.Option<UInt8> { /* compiled code */ }
 
+    @Frozen
     func acquireRaw(): CPointer<UInt8> { /* compiled code */ }
 
+    @Frozen
     func releaseRaw(ptr: CPointer<UInt8>): Unit { /* compiled code */ }
 
+    @Frozen
     func toRuneArray(): std.core.Array<Rune> { /* compiled code */ }
 
+    @Frozen
     func toArray(): std.core.Array<UInt8> { /* compiled code */ }
 
+    @Frozen
     func toString(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func iterator(): std.core.Iterator<UInt8> { /* compiled code */ }
 
+    @Frozen
     func runes(): std.core.Iterator<Rune> { /* compiled code */ }
 
+    @Frozen
     func lines(): std.core.Iterator<std.core.String> { /* compiled code */ }
 
+    @Frozen
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Frozen
     func isEmpty(): Bool { /* compiled code */ }
 
+    @Frozen
     func isAscii(): Bool { /* compiled code */ }
 
+    @Frozen
     func isAsciiBlank(): Bool { /* compiled code */ }
 
+    @Frozen
     func clone(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Frozen
     static func fromUtf8(utf8Data: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
+    @Frozen
     func rawData(): std.core.Array<UInt8> { /* compiled code */ }
 
+    @Frozen
     static func fromUtf8Unchecked(utf8Data: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
+    @Frozen
     func indexOf(b: UInt8): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOfImpl(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     func indexOfCommon(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     func indexOfFast(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     func indexOf(str: std.core.String): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(b: UInt8): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(str: std.core.String): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func count(str: std.core.String): Int64 { /* compiled code */ }
 
+    @Frozen
     func split(str: std.core.String, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func split(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func lazySplit(str: std.core.String, removeEmpty: Bool): std.core.Iterator<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func lazySplit(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Iterator<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func replace(old: std.core.String, new: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func insertString(new: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func replaceString(old: std.core.String, new: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func toAsciiLower(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func toAsciiUpper(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func toAsciiTitle(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func trimAscii(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func trimAsciiStart(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func trimAsciiEnd(): std.core.String { /* compiled code */ }
 
-    func trimStart(`set`: std.core.Array<Rune>): std.core.String { /* compiled code */ }
+    @Frozen
+    func trimStart(set: std.core.Array<Rune>): std.core.String { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.Array<Rune>): std.core.String { /* compiled code */ }
+    @Frozen
+    func trimEnd(set: std.core.Array<Rune>): std.core.String { /* compiled code */ }
 
-    func trimStart(`set`: std.core.String): std.core.String { /* compiled code */ }
+    @Frozen
+    func trimStart(set: std.core.String): std.core.String { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.String): std.core.String { /* compiled code */ }
+    @Frozen
+    func trimEnd(set: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func trimStart(predicate: (Rune) -> Bool): std.core.String { /* compiled code */ }
 
+    @Frozen
     func trimEnd(predicate: (Rune) -> Bool): std.core.String { /* compiled code */ }
 
+    @Frozen
     func removePrefix(prefix: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func removeSuffix(suffix: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func contains(str: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     func startsWith(prefix: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     func endsWith(suffix: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     func padStart(totalWidth: Int64, padding: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func padEnd(totalWidth: Int64, padding: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func equalsIgnoreAsciiCase(that: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     func byteEqualsIgnoreAsciiCase(b1: UInt8, b2: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     static func compareBytes(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     static func compareBytesCommon(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     static func compareBytesFast(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     func compare(str: std.core.String): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func +(right: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     operator func *(count: Int64): std.core.String { /* compiled code */ }
 
+    @Frozen
     operator func <(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(right: std.core.String): Bool { /* compiled code */ }
 
+    @Frozen
     operator func [](index: Int64): UInt8 { /* compiled code */ }
 
+    @Frozen
     func sliceUnchecked(startIndex: Int64, len: Int64): std.core.String { /* compiled code */ }
 
+    @Frozen
     operator func [](range: std.core.Range<Int64>): std.core.String { /* compiled code */ }
 
+    @Frozen
     static func join(strArray: std.core.Array<std.core.String>, delimiter: std.core.String): std.core.String { /* compiled code */ }
 
+    @Frozen
     func indexOfString(str: std.core.String, startIndex: Int64, fromLast: Bool): Int64 { /* compiled code */ }
 
+    @Frozen
     func splitOfString(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func splitOfStringForOneRune(maxSplits: Int64): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @Frozen
     func getRealSplitLenWithRemoveEmpty(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
     func splitAsStringArray(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @Frozen
     static func withRawData(rawData: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
+    @Frozen
     static func checkUtf8Encoding(data: std.core.Array<UInt8>): Bool { /* compiled code */ }
 }
 
@@ -408,173 +568,248 @@ class OutOfMemoryError <: std.core.Error {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
+@Frozen
 func println(): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintChar(c: UInt32, newLine: Bool, flush: Bool): Unit
 
+@Frozen
 func println(str: std.core.String): Unit { /* compiled code */ }
 
+@Frozen
 func eprint(str: std.core.String, flush: Bool): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_ErrorPrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Bool, flush: Bool): Int64
 
+@Frozen
 func eprintln(str: std.core.String): Unit { /* compiled code */ }
 
+@Frozen
 func eprint<T>(arg: T, flush: Bool): Unit { /* compiled code */ }
 
 interface ToString {
-    abstract func toString(): std.core.String
+    abstract open func toString(): std.core.String
 }
 
+@Frozen
 func eprintln<T>(arg: T): Unit { /* compiled code */ }
 
+@Frozen
 func print<T>(arg: T, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func println<T>(arg: T): Unit { /* compiled code */ }
 
+@Frozen
 func print(b: Bool, flush: Bool): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintBool(b: Bool, newLine: Bool, flush: Bool): Unit
 
+@Frozen
 func println(b: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(c: Rune, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func println(c: Rune): Unit { /* compiled code */ }
 
+@Frozen
 func print(f: Float16, flush: Bool): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintFloat(f: Float64, newLine: Bool, flush: Bool): Unit
 
+@Frozen
 func println(f: Float16): Unit { /* compiled code */ }
 
+@Frozen
 func print(f: Float32, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func println(f: Float32): Unit { /* compiled code */ }
 
+@Frozen
 func print(f: Float64, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func println(f: Float64): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: Int8, flush: Bool): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintSigned(i: Int64, newLine: Bool, flush: Bool): Unit
 
+@Frozen
 func print(i: Int16, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: Int32, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: Int64, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: UInt8, flush: Bool): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintUnsigned(i: UInt64, newLine: Bool, flush: Bool): Unit
 
+@Frozen
 func print(i: UInt16, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: UInt32, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func print(i: UInt64, flush: Bool): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: Int8): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: Int16): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: Int32): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: Int64): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: UInt8): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: UInt16): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: UInt32): Unit { /* compiled code */ }
 
+@Frozen
 func println(i: UInt64): Unit { /* compiled code */ }
 
-let MAX_TIMEOUT_NS: Int64
+@Annotation
+let MAX_TIMEOUT_NS: Int64 = COMPILED_CODE /* compiled code */
 
-let UNICODE_TO_UTF8_MAX_LEN: Int64
+@Annotation
+let UNICODE_TO_UTF8_MAX_LEN: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let IS_SIMD_SUPPORTED: Bool
 
 foreign func CJ_CORE_CanUseSIMD(): Bool
 
-let VECTOR_OFFSET_32: Int64
+@Annotation
+let VECTOR_OFFSET_32: Int64 = COMPILED_CODE /* compiled code */
 
-let ASCII_A: UInt8
+@Annotation
+let ASCII_A: UInt8 = COMPILED_CODE /* compiled code */
 
-let ASCII_Z: UInt8
+@Annotation
+let ASCII_Z: UInt8 = COMPILED_CODE /* compiled code */
 
-let ASCII_a: UInt8
+@Annotation
+let ASCII_a: UInt8 = COMPILED_CODE /* compiled code */
 
-let ASCII_z: UInt8
+@Annotation
+let ASCII_z: UInt8 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let ASCII_UPPER_LOWER_DIFFERENCE: UInt8
 
-let HIGH_1_MASK: UInt32
+@Annotation
+let HIGH_1_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_2_MASK: UInt32
+@Annotation
+let HIGH_2_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_3_MASK: UInt32
+@Annotation
+let HIGH_3_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_4_MASK: UInt32
+@Annotation
+let HIGH_4_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_5_MASK: UInt32
+@Annotation
+let HIGH_5_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_6_MASK: UInt32
+@Annotation
+let HIGH_6_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let SHIFT_30: UInt32
+@Annotation
+let SHIFT_30: UInt32 = COMPILED_CODE /* compiled code */
 
-let SHIFT_24: UInt32
+@Annotation
+let SHIFT_24: UInt32 = COMPILED_CODE /* compiled code */
 
-let SHIFT_18: UInt32
+@Annotation
+let SHIFT_18: UInt32 = COMPILED_CODE /* compiled code */
 
-let SHIFT_12: UInt32
+@Annotation
+let SHIFT_12: UInt32 = COMPILED_CODE /* compiled code */
 
-let SHIFT_6: UInt32
+@Annotation
+let SHIFT_6: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_6_MASK: UInt32
+@Annotation
+let LOW_6_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_5_MASK: UInt32
+@Annotation
+let LOW_5_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_4_MASK: UInt32
+@Annotation
+let LOW_4_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_3_MASK: UInt32
+@Annotation
+let LOW_3_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_2_MASK: UInt32
+@Annotation
+let LOW_2_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let LOW_1_MASK: UInt32
+@Annotation
+let LOW_1_MASK: UInt32 = COMPILED_CODE /* compiled code */
 
-let UTF8_5_MAX: UInt32
+@Annotation
+let UTF8_5_MAX: UInt32 = COMPILED_CODE /* compiled code */
 
-let UTF8_4_MAX: UInt32
+@Annotation
+let UTF8_4_MAX: UInt32 = COMPILED_CODE /* compiled code */
 
-let UTF8_3_MAX: UInt32
+@Annotation
+let UTF8_3_MAX: UInt32 = COMPILED_CODE /* compiled code */
 
-let UTF8_2_MAX: UInt32
+@Annotation
+let UTF8_2_MAX: UInt32 = COMPILED_CODE /* compiled code */
 
-let UTF8_1_MAX: UInt32
+@Annotation
+let UTF8_1_MAX: UInt32 = COMPILED_CODE /* compiled code */
 
-let HIGH_1_UInt8: UInt8
+@Annotation
+let HIGH_1_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-let HIGH_2_UInt8: UInt8
+@Annotation
+let HIGH_2_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-let HIGH_3_UInt8: UInt8
+@Annotation
+let HIGH_3_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-let HIGH_4_UInt8: UInt8
+@Annotation
+let HIGH_4_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-let HIGH_5_UInt8: UInt8
+@Annotation
+let HIGH_5_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
-let HIGH_6_UInt8: UInt8
+@Annotation
+let HIGH_6_UInt8: UInt8 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let EMPTY_UINT8_ARRAY: std.core.Array<UInt8>
 
+@Annotation
 let EMPTY_UINT8_RAW_ARRAY: std.core.Array<UInt8>
 
-let STRING_C_THRESHOLD: Int64
+@Annotation
+let STRING_C_THRESHOLD: Int64 = COMPILED_CODE /* compiled code */
 
-let INVALID_ID: Int64
+@Annotation
+let INVALID_ID: Int64 = COMPILED_CODE /* compiled code */
 
 func zeroValue<T>(): T { /* compiled code */ }
 
@@ -593,76 +828,112 @@ class StringBuilder <: std.core.Object & std.core.ToString {
 
     var endIndex: Int64
 
-    let defaultCapacity: Int64
+    @Annotation
+    const defaultCapacity: Int64 = COMPILED_CODE /* compiled code */
 
+    @Frozen
     init() { /* compiled code */ }
 
+    @Frozen
     init(str: std.core.String) { /* compiled code */ }
 
+    @Frozen
     init(r: Rune, n: Int64) { /* compiled code */ }
 
+    @Frozen
     init(value: std.core.Array<Rune>) { /* compiled code */ }
 
+    @Frozen
     init(capacity: Int64) { /* compiled code */ }
 
+    @Frozen
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Frozen
+    @Annotation
     prop capacity: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Frozen
     func toString(): std.core.String { /* compiled code */ }
 
+    @Frozen
     func reset(capacity: std.core.Option<Int64>): Unit { /* compiled code */ }
 
+    @Frozen
     func append(r: Rune): Unit { /* compiled code */ }
 
+    @Frozen
     func append(str: std.core.String): Unit { /* compiled code */ }
 
+    @Frozen
     func append(sb: std.core.StringBuilder): Unit { /* compiled code */ }
 
+    @Frozen
     func appendFromUtf8(arr: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
+    @Frozen
     func appendFromUtf8Unchecked(arr: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
+    @Frozen
     func append(runeArr: std.core.Array<Rune>): Unit { /* compiled code */ }
 
+    @Frozen
     func append(cstr: CString): Unit { /* compiled code */ }
 
+    @Frozen
     func append<T>(v: T): Unit { /* compiled code */ }
 
+    @Frozen
     func append<T>(val: std.core.Array<T>): Unit { /* compiled code */ }
 
+    @Frozen
     func append(b: Bool): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Int64): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Int32): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Int16): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Int8): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: UInt64): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: UInt32): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: UInt16): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: UInt8): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Float64): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Float32): Unit { /* compiled code */ }
 
+    @Frozen
     func append(n: Float16): Unit { /* compiled code */ }
 
+    @Frozen
     func reserve(additional: Int64): Unit { /* compiled code */ }
 
+    @Frozen
     func grow(minCapacity: Int64): Unit { /* compiled code */ }
 
+    @Frozen
     func append(cp: CPointer<UInt8>): Unit { /* compiled code */ }
 }
 
@@ -683,8 +954,10 @@ struct Range<T> <: std.core.Iterable<T> {
 
     let isClosed: Bool
 
+    @Frozen
     init(start: T, end: T, step: Int64, hasStart: Bool, hasEnd: Bool, isClosed: Bool) { /* compiled code */ }
 
+    @Frozen
     func iterator(): std.core.Iterator<T> { /* compiled code */ }
 
     func isEmpty(): Bool { /* compiled code */ }
@@ -692,12 +965,12 @@ struct Range<T> <: std.core.Iterable<T> {
     func last(): T { /* compiled code */ }
 }
 
-class IllegalArgumentException <: std.core.Exception {
+open class IllegalArgumentException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    open override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 func arrayGet<T>(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
@@ -709,17 +982,19 @@ class ArrayIterator<T> <: std.core.Iterator<T> {
 
     var myPosition: Int64
 
+    @Frozen
     init(data: std.core.Array<T>) { /* compiled code */ }
 
+    @Frozen
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 interface Equatable<T> <: std.core.Equal<T> & std.core.NotEqual<T> {
-    operator func !=(rhs: T): Bool { /* compiled code */ }
+    open operator func !=(rhs: T): Bool { /* compiled code */ }
 }
 
 interface Equal<T> {
-    abstract operator func ==(rhs: T): Bool
+    abstract open operator func ==(rhs: T): Bool
 }
 
 func readPointer<T>(c: CPointer<T>, idx: Int64): T { /* compiled code */ }
@@ -749,25 +1024,35 @@ struct Duration <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     static func of(sec: Int64, ns: Int64): std.core.Duration { /* compiled code */ }
 
-    let nanosecond: std.core.Duration
+    @Annotation
+    const nanosecond: std.core.Duration
 
-    let microsecond: std.core.Duration
+    @Annotation
+    const microsecond: std.core.Duration
 
-    let millisecond: std.core.Duration
+    @Annotation
+    const millisecond: std.core.Duration
 
-    let second: std.core.Duration
+    @Annotation
+    const second: std.core.Duration
 
-    let minute: std.core.Duration
+    @Annotation
+    const minute: std.core.Duration
 
-    let hour: std.core.Duration
+    @Annotation
+    const hour: std.core.Duration
 
-    let day: std.core.Duration
+    @Annotation
+    const day: std.core.Duration
 
-    let Zero: std.core.Duration
+    @Annotation
+    const Zero: std.core.Duration
 
-    let Max: std.core.Duration
+    @Annotation
+    const Max: std.core.Duration
 
-    let Min: std.core.Duration
+    @Annotation
+    const Min: std.core.Duration
 
     func toNanoseconds(): Int64 { /* compiled code */ }
 
@@ -839,25 +1124,29 @@ class Thread {
 
     init() { /* compiled code */ }
 
-    func setRuntimeCJThreadHandle(`handle`: CPointer<Unit>): Unit { /* compiled code */ }
+    func setRuntimeCJThreadHandle(handle: CPointer<Unit>): Unit { /* compiled code */ }
 
     func waitForCJThreadHandle(): Unit { /* compiled code */ }
 
     func clearRuntimeCJThreadHandle(): Unit { /* compiled code */ }
 
+    @Annotation
     static prop currentThread: std.core.Thread {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop id: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     mut prop name: std.core.String {
         get() { /* compiled code */ }
         set(value) { /* compiled code */ }
     }
 
+    @Annotation
     prop hasPendingCancellation: Bool {
         get() { /* compiled code */ }
     }
@@ -867,7 +1156,7 @@ class Thread {
     static func handleUncaughtExceptionBy(exHandler: (std.core.Thread, std.core.Exception) -> Unit): Unit { /* compiled code */ }
 }
 
-class FutureResult {
+open class FutureResult {
     init() { /* compiled code */ }
 }
 
@@ -875,7 +1164,7 @@ class FutureResInit <: std.core.FutureResult {
     init() { /* compiled code */ }
 }
 
-class Object {
+open class Object {
     init() { /* compiled code */ }
 }
 
@@ -884,8 +1173,10 @@ class MapIterator<T, R> <: std.core.Iterator<R> {
 
     let it: std.core.Iterator<T>
 
+    @Frozen
     init(it: std.core.Iterator<T>, transform: (T) -> R) { /* compiled code */ }
 
+    @Frozen
     func next(): std.core.Option<R> { /* compiled code */ }
 }
 
@@ -900,7 +1191,8 @@ class ZipIterator<T, R> <: std.core.Iterator<(T, R)> {
 }
 
 class EnumerateIterator<T> <: std.core.Iterator<(Int64, T)> {
-    var index: Int64
+    @Annotation
+    var index: Int64 = COMPILED_CODE /* compiled code */
 
     let it: std.core.Iterator<T>
 
@@ -934,7 +1226,8 @@ class StepIterator<T> <: std.core.Iterator<T> {
 
     let it: std.core.Iterator<T>
 
-    var index: Int64
+    @Annotation
+    var index: Int64 = COMPILED_CODE /* compiled code */
 
     init(it: std.core.Iterator<T>, count: Int64) { /* compiled code */ }
 
@@ -966,7 +1259,8 @@ class ConcatIterator<T> <: std.core.Iterator<T> {
 
     let other: std.core.Iterator<T>
 
-    var itOver: Bool
+    @Annotation
+    var itOver: Bool = COMPILED_CODE /* compiled code */
 
     init(it: std.core.Iterator<T>, other: std.core.Iterator<T>) { /* compiled code */ }
 
@@ -984,7 +1278,8 @@ class InspectIterator<T> <: std.core.Iterator<T> {
 }
 
 class FlatMapIterator<T, R> <: std.core.Iterator<R> {
-    var subIt: std.core.Option<std.core.Iterator<R>>
+    @Annotation
+    var subIt: std.core.Option<std.core.Iterator<R>> = COMPILED_CODE /* compiled code */
 
     let transform: (T) -> std.core.Iterable<R>
 
@@ -1002,7 +1297,8 @@ class IntersperseIterator<T> <: std.core.Iterator<T> {
 
     var item: std.core.Option<T>
 
-    var isInsert: Bool
+    @Annotation
+    var isInsert: Bool = COMPILED_CODE /* compiled code */
 
     init(it: std.core.Iterator<T>, separator: T) { /* compiled code */ }
 
@@ -1017,7 +1313,7 @@ class NoneValueException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-class Exception <: std.core.Object & std.core.ToString {
+open class Exception <: std.core.Object & std.core.ToString {
     var detailMessage: std.core.String
 
     var pcArray: std.core.Array<UInt64>
@@ -1028,13 +1324,14 @@ class Exception <: std.core.Object & std.core.ToString {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName(): std.core.String { /* compiled code */ }
+    open func getClassName(): std.core.String { /* compiled code */ }
 
-    prop message: std.core.String {
+    @Annotation
+    open prop message: std.core.String {
         get() { /* compiled code */ }
     }
 
-    func toString(): std.core.String { /* compiled code */ }
+    open func toString(): std.core.String { /* compiled code */ }
 
     func printStackTrace(): Unit { /* compiled code */ }
 
@@ -1042,9 +1339,9 @@ class Exception <: std.core.Object & std.core.ToString {
 }
 
 interface Countable<T> {
-    abstract func next(right: Int64): T
+    abstract open func next(right: Int64): T
 
-    abstract func position(): Int64
+    abstract open func position(): Int64
 }
 
 class RangeIterator<T> <: std.core.Iterator<T> {
@@ -1058,6 +1355,7 @@ class RangeIterator<T> <: std.core.Iterator<T> {
 
     init(first: T, last: T, step: Int64, isEmpty: Bool) { /* compiled code */ }
 
+    @Frozen
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
@@ -1076,10 +1374,12 @@ foreign func memcpy_s(dest: CPointer<UInt8>, destMax: UIntNative, src: CPointer<
 func utf8RuneSize(arr: std.core.Array<UInt8>, start: Int64, length: Int64): Int64 { /* compiled code */ }
 
 class StringByteIterator <: std.core.Iterator<UInt8> {
+    @Frozen
     func next(): std.core.Option<UInt8> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
+    @Frozen
     StringByteIterator(iteratorData: std.core.StringIteratorData) { /* compiled code */ }
 }
 
@@ -1096,18 +1396,22 @@ class StringIteratorData {
 }
 
 class StringRuneIterator <: std.core.Iterator<Rune> {
+    @Frozen
     func next(): std.core.Option<Rune> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
+    @Frozen
     StringRuneIterator(iteratorData: std.core.StringIteratorData) { /* compiled code */ }
 }
 
 class StringLineIterator <: std.core.Iterator<std.core.String> {
+    @Frozen
     func next(): std.core.Option<std.core.String> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
+    @Frozen
     StringLineIterator(iteratorData: std.core.StringIteratorData) { /* compiled code */ }
 }
 
@@ -1186,7 +1490,8 @@ foreign func CJ_CORE_Float64ToCPointer(num: Float64): CPointer<UInt8>
 foreign func strlen(str: CPointer<UInt8>): UIntNative
 
 class ThreadLocalKey <: std.core.Object & std.core.Hashable {
-    let ALPHA: Int64
+    @Annotation
+    const ALPHA: Int64 = COMPILED_CODE /* compiled code */
 
     let CURR: std.core.AtomicInt64
 
@@ -1223,67 +1528,91 @@ enum AnnotationKind {
     | Extension
 }
 
-class ArithmeticException <: std.core.Exception {
+open class ArithmeticException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    override func getClassName(): std.core.String { /* compiled code */ }
+    open override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-extend Array {
+extend std.core.Array<std.core.Array<T>> {
+    @Frozen
     func flatten(): std.core.Array<T> { /* compiled code */ }
 }
 
-extend Array <: Collection {
+extend std.core.Array<T> <: Collection {
+    @Frozen
     func iterator(): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Frozen
     func isEmpty(): Bool { /* compiled code */ }
 
+    @Frozen
     func toArray(): std.core.Array<T> { /* compiled code */ }
 }
 
-extend Array <: ToString {
+extend std.core.Array<T> <: ToString {
+    @Frozen
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend Array <: Equatable {
+extend std.core.Array<T> <: Equatable {
+    @Frozen
     operator func ==(that: std.core.Array<T>): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(that: std.core.Array<T>): Bool { /* compiled code */ }
 
+    @Frozen
     func contains(element: T): Bool { /* compiled code */ }
 
+    @Frozen
     func indexOf(element: T): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOf(element: T, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOf(elements: std.core.Array<T>): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func indexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(element: T): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(element: T, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(elements: std.core.Array<T>): std.core.Option<Int64> { /* compiled code */ }
 
+    @Frozen
     func lastIndexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func trimStart(`set`: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
+    @Frozen
+    func trimStart(set: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
+    @Frozen
+    func trimEnd(set: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func trimStart(predicate: (T) -> Bool): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func trimEnd(predicate: (T) -> Bool): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func removePrefix(prefix: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
+    @Frozen
     func removeSuffix(suffix: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 }
 
@@ -1365,15 +1694,15 @@ class AtomicBox<T> {
     func store(val: T): Unit { /* compiled code */ }
 }
 
-extend Box <: Hashable {
+extend std.core.Box<T> <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
 interface Hashable {
-    abstract func hashCode(): Int64
+    abstract open func hashCode(): Int64
 }
 
-extend Box <: Comparable {
+extend std.core.Box<T> <: Comparable {
     operator func ==(that: std.core.Box<T>): Bool { /* compiled code */ }
 
     operator func !=(that: std.core.Box<T>): Bool { /* compiled code */ }
@@ -1389,11 +1718,11 @@ extend Box <: Comparable {
     func compare(that: std.core.Box<T>): std.core.Ordering { /* compiled code */ }
 }
 
-extend Box <: ToString {
+extend std.core.Box<T> <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` {
+extend UInt8 {
     func isAsciiLetter(): Bool { /* compiled code */ }
 
     func isAsciiNumber(): Bool { /* compiled code */ }
@@ -1427,19 +1756,23 @@ func getPointerAddress<T>(c: CPointer<T>): UIntNative { /* compiled code */ }
 
 func addPointer<T>(c: CPointer<T>, offset: Int64): CPointer<T> { /* compiled code */ }
 
-extend `Unit` {
+extend CPointer<T> {
     func isNull(): Bool { /* compiled code */ }
 
     func isNotNull(): Bool { /* compiled code */ }
 
     func toUIntNative(): UIntNative { /* compiled code */ }
 
+    @Frozen
     func read(): T { /* compiled code */ }
 
+    @Frozen
     func write(value: T): Unit { /* compiled code */ }
 
+    @Frozen
     func read(idx: Int64): T { /* compiled code */ }
 
+    @Frozen
     func write(idx: Int64, value: T): Unit { /* compiled code */ }
 
     operator func +(offset: Int64): CPointer<T> { /* compiled code */ }
@@ -1452,6 +1785,7 @@ extend `Unit` {
 struct CPointerResource<T> <: std.core.Resource {
     let value: CPointer<T>
 
+    @Annotation
     let isFree: std.core.Box<Bool>
 
     init(p: CPointer<T>) { /* compiled code */ }
@@ -1462,9 +1796,9 @@ struct CPointerResource<T> <: std.core.Resource {
 }
 
 interface Resource {
-    abstract func isClosed(): Bool
+    abstract open func isClosed(): Bool
 
-    abstract func close(): Unit
+    abstract open func close(): Unit
 }
 
 foreign func strcmp(source: CPointer<UInt8>, target: CPointer<UInt8>): Int32
@@ -1477,7 +1811,7 @@ func convertCStr2Ptr(cs: CString): CPointer<UInt8> { /* compiled code */ }
 
 func createStrFromCPointer(cp: CPointer<UInt8>): std.core.String { /* compiled code */ }
 
-extend `Unit` <: ToString {
+extend CString <: ToString {
     func getChars(): CPointer<UInt8> { /* compiled code */ }
 
     func isNull(): Bool { /* compiled code */ }
@@ -1519,7 +1853,7 @@ struct CStringResource <: std.core.Resource {
     func close(): Unit { /* compiled code */ }
 }
 
-extend `Unit` {
+extend Rune {
     func isAsciiLetter(): Bool { /* compiled code */ }
 
     func isAsciiNumber(): Bool { /* compiled code */ }
@@ -1563,7 +1897,7 @@ extend `Unit` {
     static func intoUtf8Array(c: Rune, arr: std.core.Array<UInt8>, index: Int64): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Rune <: Comparable {
     func compare(rhs: Rune): std.core.Ordering { /* compiled code */ }
 }
 
@@ -1700,274 +2034,340 @@ func Float64Equal(a: Float64, b: Float64): Bool { /* compiled code */ }
 func Float64NotEqual(a: Float64, b: Float64): Bool { /* compiled code */ }
 
 interface Less<T> {
-    abstract operator func <(rhs: T): Bool
+    abstract open operator func <(rhs: T): Bool
 }
 
 interface Greater<T> {
-    abstract operator func >(rhs: T): Bool
+    abstract open operator func >(rhs: T): Bool
 }
 
 interface LessOrEqual<T> {
-    abstract operator func <=(rhs: T): Bool
+    abstract open operator func <=(rhs: T): Bool
 }
 
 interface GreaterOrEqual<T> {
-    abstract operator func >=(rhs: T): Bool
+    abstract open operator func >=(rhs: T): Bool
 }
 
-extend Ordering <: ToString {
+extend std.core.Ordering <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend Ordering <: Comparable {
+extend std.core.Ordering <: Comparable {
     func compare(that: std.core.Ordering): std.core.Ordering { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend IntNative <: Comparable {
     func compare(rhs: IntNative): std.core.Ordering { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Int64 <: Comparable {
     func compare(rhs: Int64): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Int64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Int64): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Int32 <: Comparable {
     func compare(rhs: Int32): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Int32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Int32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Int32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Int32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Int32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Int32): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Int16 <: Comparable {
     func compare(rhs: Int16): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Int16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Int16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Int16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Int16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Int16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Int16): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Int8 <: Comparable {
     func compare(rhs: Int8): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Int8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Int8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Int8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Int8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Int8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Int8): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend UIntNative <: Comparable {
     func compare(rhs: UIntNative): std.core.Ordering { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend UInt64 <: Comparable {
     func compare(rhs: UInt64): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: UInt64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: UInt64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: UInt64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: UInt64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: UInt64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: UInt64): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend UInt32 <: Comparable {
     func compare(rhs: UInt32): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: UInt32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: UInt32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: UInt32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: UInt32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: UInt32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: UInt32): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend UInt16 <: Comparable {
     func compare(rhs: UInt16): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: UInt16): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend UInt8 <: Comparable {
     func compare(rhs: UInt8): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: UInt8): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Float16 <: Comparable {
     func compare(rhs: Float16): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Float16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Float16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Float16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Float16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Float16): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Float16): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Float32 <: Comparable {
     func compare(rhs: Float32): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Float32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Float32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Float32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Float32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Float32): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Float32): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Comparable {
+extend Float64 <: Comparable {
     func compare(rhs: Float64): std.core.Ordering { /* compiled code */ }
 
+    @Frozen
     operator func <(rhs: Float64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >(rhs: Float64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func <=(rhs: Float64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func >=(rhs: Float64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func ==(rhs: Float64): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(rhs: Float64): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend IntNative <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): IntNative { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend Int64 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend Int32 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): Int32 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend Int16 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): Int16 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend Int8 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): Int8 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend UIntNative <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): UIntNative { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend UInt64 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend UInt32 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend UInt16 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend UInt8 <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): UInt8 { /* compiled code */ }
 }
 
-extend `Unit` <: Countable {
+extend Rune <: Countable {
     func position(): Int64 { /* compiled code */ }
 
     func next(right: Int64): Rune { /* compiled code */ }
@@ -2003,15 +2403,15 @@ func u32DividendMul(num3: UInt32, num2: UInt32, num1: UInt32, num0: UInt32, time
 
 func divAndMod(dividend: UInt64, dividend2: UInt32, divisor2: UInt32, divisor1: UInt32): UInt32 { /* compiled code */ }
 
-extend `Unit` {
+extend Int64 {
     operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 }
 
-extend `Unit` {
+extend Int64 {
     operator func -(r: UInt32): Int64 { /* compiled code */ }
 }
 
-extend `Unit` {
+extend UInt64 {
     operator func *(r: UInt32): UInt64 { /* compiled code */ }
 
     operator func /(r: UInt32): UInt64 { /* compiled code */ }
@@ -2019,15 +2419,15 @@ extend `Unit` {
     operator func %(r: UInt32): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` {
+extend UInt32 {
     operator func *(r: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` {
+extend Float64 {
     operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 }
 
-extend StringBuilder {
+extend std.core.StringBuilder {
     func append(num: Int64, unit: std.core.String): std.core.StringBuilder { /* compiled code */ }
 }
 
@@ -2038,6 +2438,7 @@ enum Endian {
 
     | Little
 
+    @Annotation
     static prop Platform: std.core.Endian {
         get() { /* compiled code */ }
     }
@@ -2046,22 +2447,22 @@ enum Endian {
 foreign func CJ_PlatformEndian(): UInt8
 
 interface NotEqual<T> {
-    abstract operator func !=(rhs: T): Bool
+    abstract open operator func !=(rhs: T): Bool
 }
 
-extend `Unit` <: Equatable {
+extend Bool <: Equatable {
     operator func ==(right: Bool): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Equatable {
+extend Unit <: Equatable {
     operator func ==(right: Unit): Bool { /* compiled code */ }
 }
 
-extend Range <: Equatable {
+extend std.core.Range<T> <: Equatable {
     operator func ==(that: std.core.Range<T>): Bool { /* compiled code */ }
 }
 
-class Error <: std.core.Object & std.core.ToString {
+open class Error <: std.core.Object & std.core.ToString {
     var detailMessage: std.core.String
 
     var pcArray: std.core.Array<UInt64>
@@ -2072,22 +2473,23 @@ class Error <: std.core.Object & std.core.ToString {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName(): std.core.String { /* compiled code */ }
+    open func getClassName(): std.core.String { /* compiled code */ }
 
-    prop message: std.core.String {
+    @Annotation
+    open prop message: std.core.String {
         get() { /* compiled code */ }
     }
 
-    func toString(): std.core.String { /* compiled code */ }
+    open func toString(): std.core.String { /* compiled code */ }
 
-    func printStackTrace(): Unit { /* compiled code */ }
+    open func printStackTrace(): Unit { /* compiled code */ }
 
-    func getStackTraceMessage(): std.core.String { /* compiled code */ }
+    open func getStackTraceMessage(): std.core.String { /* compiled code */ }
 
     func getStackTrace(): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 }
 
-class StackTraceElement {
+open class StackTraceElement {
     let declaringClass: std.core.String
 
     let methodName: std.core.String
@@ -2122,64 +2524,67 @@ func bitCast<From, To>(val: From): To { /* compiled code */ }
 interface BitCastRange {
 }
 
-extend `Unit` {
+extend Float64 {
     static func fromBits(bits: UInt64): Float64 { /* compiled code */ }
 
     func toBits(): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` {
+extend Float32 {
     static func fromBits(bits: UInt32): Float32 { /* compiled code */ }
 
     func toBits(): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` {
+extend Float16 {
     static func fromBits(bits: UInt16): Float16 { /* compiled code */ }
 
     func toBits(): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: BitCastRange {
+extend UInt64 <: BitCastRange {
 }
 
-extend `Unit` <: BitCastRange {
+extend Float64 <: BitCastRange {
 }
 
-extend `Unit` <: BitCastRange {
+extend UInt32 <: BitCastRange {
 }
 
-extend `Unit` <: BitCastRange {
+extend Float32 <: BitCastRange {
 }
 
-extend `Unit` <: BitCastRange {
+extend UInt16 <: BitCastRange {
 }
 
-extend `Unit` <: BitCastRange {
+extend Float16 <: BitCastRange {
 }
 
-func composition<T1, T2, T3>(f: (T1) -> T2, g: (T2) -> T3): (T1) -> T3 { /* compiled code */ }
+func composition<T1, T2, T3>(f: (T1) -> T2, g: (T2) -> T3): T3 { /* compiled code */ }
 
 func futureInit<T>(future: std.core.Future<T>): Unit { /* compiled code */ }
 
 class Future<T> {
+    @Annotation
     let _thread: std.core.Thread
 
+    @Annotation
     var result: std.core.FutureResult
 
     var executeFn: () -> T
 
     init(fn: () -> T) { /* compiled code */ }
 
+    @Annotation
     prop thread: std.core.Thread {
         get() { /* compiled code */ }
     }
 
-    func `get`(): T { /* compiled code */ }
+    func get(): T { /* compiled code */ }
 
     func tryGet(): std.core.Option<T> { /* compiled code */ }
 
-    func `get`(timeout: std.core.Duration): T { /* compiled code */ }
+    func get(timeout: std.core.Duration): T { /* compiled code */ }
 
     func cancel(): Unit { /* compiled code */ }
 
@@ -2219,24 +2624,24 @@ class FutureExcept <: std.core.FutureResult {
 }
 
 interface ThreadContext {
-    abstract func end(): Unit
+    abstract open func end(): Unit
 
-    abstract func hasEnded(): Bool
+    abstract open func hasEnded(): Bool
 }
 
-extend Ordering <: Hashable {
+extend std.core.Ordering <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Hashable {
+extend Unit <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Hashable {
+extend Bool <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Hashable {
+extend Rune <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
@@ -2248,149 +2653,175 @@ func i64tof64(num: Int64): Float64 { /* compiled code */ }
 
 func f642i64(num: Float64): Int64 { /* compiled code */ }
 
-extend `Unit` <: Hashable {
+extend IntNative <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: IntNative {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: IntNative {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend Int64 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Int64 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend Int32 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: Int32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Int32 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend Int16 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: Int16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Int16 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend Int8 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: Int8 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Int8 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend UIntNative <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: UIntNative {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: UIntNative {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend UInt64 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: UInt64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: UInt64 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend UInt32 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: UInt32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: UInt32 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend UInt16 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: UInt16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: UInt16 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend UInt8 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop Max: UInt8 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: UInt8 {
         get() { /* compiled code */ }
     }
 }
 
-extend `Unit` <: Hashable {
+extend Float64 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop NaN: Float64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Inf: Float64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Max: Float64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Float64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinDenormal: Float64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinNormal: Float64 {
         get() { /* compiled code */ }
     }
@@ -2406,29 +2837,35 @@ extend `Unit` <: Hashable {
     static func min(a: Float64, b: Float64, others: std.core.Array<Float64>): Float64 { /* compiled code */ }
 }
 
-extend `Unit` <: Hashable {
+extend Float32 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop NaN: Float32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Inf: Float32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Max: Float32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Float32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinDenormal: Float32 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinNormal: Float32 {
         get() { /* compiled code */ }
     }
@@ -2444,29 +2881,35 @@ extend `Unit` <: Hashable {
     static func min(a: Float32, b: Float32, others: std.core.Array<Float32>): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: Hashable {
+extend Float16 <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 
+    @Annotation
     static prop NaN: Float16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Inf: Float16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Max: Float16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop Min: Float16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinDenormal: Float16 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop MinNormal: Float16 {
         get() { /* compiled code */ }
     }
@@ -2482,42 +2925,42 @@ extend `Unit` <: Hashable {
     static func min(a: Float16, b: Float16, others: std.core.Array<Float16>): Float16 { /* compiled code */ }
 }
 
-extend Range <: Hashable {
+extend std.core.Range<T> <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
 interface Hasher {
-    abstract func finish(): Int64
+    abstract open func finish(): Int64
 
-    abstract mut func reset(): Unit
+    abstract open mut func reset(): Unit
 
-    abstract mut func write(value: Bool): Unit
+    abstract open mut func write(value: Bool): Unit
 
-    abstract mut func write(value: Rune): Unit
+    abstract open mut func write(value: Rune): Unit
 
-    abstract mut func write(value: Int8): Unit
+    abstract open mut func write(value: Int8): Unit
 
-    abstract mut func write(value: Int16): Unit
+    abstract open mut func write(value: Int16): Unit
 
-    abstract mut func write(value: Int32): Unit
+    abstract open mut func write(value: Int32): Unit
 
-    abstract mut func write(value: Int64): Unit
+    abstract open mut func write(value: Int64): Unit
 
-    abstract mut func write(value: UInt8): Unit
+    abstract open mut func write(value: UInt8): Unit
 
-    abstract mut func write(value: UInt16): Unit
+    abstract open mut func write(value: UInt16): Unit
 
-    abstract mut func write(value: UInt32): Unit
+    abstract open mut func write(value: UInt32): Unit
 
-    abstract mut func write(value: UInt64): Unit
+    abstract open mut func write(value: UInt64): Unit
 
-    abstract mut func write(value: Float16): Unit
+    abstract open mut func write(value: Float16): Unit
 
-    abstract mut func write(value: Float32): Unit
+    abstract open mut func write(value: Float32): Unit
 
-    abstract mut func write(value: Float64): Unit
+    abstract open mut func write(value: Float64): Unit
 
-    abstract mut func write(value: std.core.String): Unit
+    abstract open mut func write(value: std.core.String): Unit
 }
 
 struct DefaultHasher <: std.core.Hasher {
@@ -2566,7 +3009,7 @@ func r4(arr: std.core.Array<UInt8>, pos: Int64): UInt64 { /* compiled code */ }
 
 func r8(arr: std.core.Array<UInt8>, pos: Int64): UInt64 { /* compiled code */ }
 
-class IllegalFormatException <: std.core.IllegalArgumentException {
+open class IllegalFormatException <: std.core.IllegalArgumentException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
@@ -2598,61 +3041,85 @@ class IncompatiblePackageException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-extend Iterator {
+extend std.core.Iterator<T> {
+    @Frozen
     func contains(element: T): Bool { /* compiled code */ }
 }
 
-extend Iterator {
+extend std.core.Iterator<T> {
     func max(): std.core.Option<T> { /* compiled code */ }
 
     func min(): std.core.Option<T> { /* compiled code */ }
 }
 
-extend Iterator {
+extend std.core.Iterator<T> {
+    @Frozen
     func zip<R>(it: std.core.Iterator<R>): std.core.Iterator<(T, R)> { /* compiled code */ }
 
+    @Frozen
     func enumerate(): std.core.Iterator<(Int64, T)> { /* compiled code */ }
 
+    @Frozen
     func filter(predicate: (T) -> Bool): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func filterMap<R>(transform: (T) -> std.core.Option<R>): std.core.Iterator<R> { /* compiled code */ }
 
+    @Frozen
     func map<R>(transform: (T) -> R): std.core.Iterator<R> { /* compiled code */ }
 
+    @Frozen
     func step(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func skip(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func take(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func concat(other: std.core.Iterator<T>): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func inspect(action: (T) -> Unit): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func flatMap<R>(transform: (T) -> std.core.Iterator<R>): std.core.Iterator<R> { /* compiled code */ }
 
+    @Frozen
     func intersperse(separator: T): std.core.Iterator<T> { /* compiled code */ }
 
+    @Frozen
     func all(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
+    @Frozen
     func any(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
+    @Frozen
     func none(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
+    @Frozen
     func isEmpty(): Bool { /* compiled code */ }
 
+    @Frozen
     func count(): Int64 { /* compiled code */ }
 
+    @Frozen
     func forEach(action: (T) -> Unit): Unit { /* compiled code */ }
 
+    @Frozen
     func first(): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func last(): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func at(n: Int64): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func reduce(operation: (T, T) -> T): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func fold<R>(initial: R, operation: (R, T) -> R): R { /* compiled code */ }
 }
 
@@ -2719,21 +3186,23 @@ func ifSome<T>(o: std.core.Option<T>, action: (T) -> Unit): Unit { /* compiled c
 
 func ifNone<T>(o: std.core.Option<T>, action: () -> Unit): Unit { /* compiled code */ }
 
-extend Option <: Equatable {
+extend std.core.Option<T> <: Equatable {
+    @Frozen
     operator func ==(that: std.core.Option<T>): Bool { /* compiled code */ }
 
+    @Frozen
     operator func !=(that: std.core.Option<T>): Bool { /* compiled code */ }
 }
 
-extend Option <: ToString {
+extend std.core.Option<T> <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend Option <: Hashable {
+extend std.core.Option<T> <: Hashable {
     func hashCode(): Int64 { /* compiled code */ }
 }
 
-extend Option {
+extend std.core.Option<std.core.Option<T>> {
     func flatten(): std.core.Option<T> { /* compiled code */ }
 }
 
@@ -2827,9 +3296,9 @@ func isThreadObjectInited(): Bool { /* compiled code */ }
 
 func getThreadObject(): std.core.Thread { /* compiled code */ }
 
-foreign func CJ_MRT_SetCJThreadName(`handle`: CPointer<Unit>, name: CPointer<UInt8>, len: Int64): Unit
+foreign func CJ_MRT_SetCJThreadName(handle: CPointer<Unit>, name: CPointer<UInt8>, len: Int64): Unit
 
-foreign func CJ_MRT_GetCJThreadId(`handle`: CPointer<Unit>): Int64
+foreign func CJ_MRT_GetCJThreadId(handle: CPointer<Unit>): Int64
 
 foreign func CJ_MRT_GetCurrentCJThread(): CPointer<Unit>
 
@@ -2840,9 +3309,9 @@ class ThreadLocalMap {
 
     init() { /* compiled code */ }
 
-    func `get`<T>(tlKey: std.core.ThreadLocalKey): std.core.Option<T> { /* compiled code */ }
+    func get<T>(tlKey: std.core.ThreadLocalKey): std.core.Option<T> { /* compiled code */ }
 
-    func `set`<T>(tlKey: std.core.ThreadLocalKey, value: T): Unit { /* compiled code */ }
+    func set<T>(tlKey: std.core.ThreadLocalKey, value: T): Unit { /* compiled code */ }
 
     func remove(tlKey: std.core.ThreadLocalKey): Unit { /* compiled code */ }
 }
@@ -2858,11 +3327,12 @@ let EMPTY_KEY: std.core.ThreadLocalKey
 let DELETED_KEY: std.core.ThreadLocalKey
 
 class ThreadLocal<T> {
+    @Annotation
     let key: std.core.ThreadLocalKey
 
-    func `get`(): std.core.Option<T> { /* compiled code */ }
+    func get(): std.core.Option<T> { /* compiled code */ }
 
-    func `set`(value: std.core.Option<T>): Unit { /* compiled code */ }
+    func set(value: std.core.Option<T>): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -2891,67 +3361,67 @@ class TimeoutException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Int64 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend IntNative <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Int32 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Int16 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Int8 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend UInt64 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend UIntNative <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend UInt32 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend UInt16 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend UInt8 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Float64 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Float32 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Float16 <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Bool <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Rune <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: ToString {
+extend Unit <: ToString {
     func toString(): std.core.String { /* compiled code */ }
 }
 

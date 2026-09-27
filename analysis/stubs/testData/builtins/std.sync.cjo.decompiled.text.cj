@@ -7,117 +7,176 @@ import std.core.*
 import std.time.MonoTime
 import std.time.DateTime
 
-let MAX_TIMEOUT_NS: Int64
+@Annotation
+let MAX_TIMEOUT_NS: Int64 = COMPILED_CODE /* compiled code */
 
+@Annotation
 let TIMER_BLOCK_BUFFER_SIZE: Int64
 
-let TIMER_LIST_DEFAULT_CAPACITY: Int64
+@Annotation
+let TIMER_LIST_DEFAULT_CAPACITY: Int64 = COMPILED_CODE /* compiled code */
 
 class AtomicInt8 {
     var value: Int8
 
     init(val: Int8) { /* compiled code */ }
 
+    @Frozen
     func load(): Int8 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func load(): Int8` instead."]
+    @Frozen
     func load(memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func store(val: Int8): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: Int8): Unit` instead."]
     func store(val: Int8, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: Int8): Int8` instead."]
     func swap(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: Int8, new: Int8): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Int8, new: Int8): Bool` instead."]
     func compareAndSwap(old: Int8, new: Int8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: Int8): Int8` instead."]
     func fetchAdd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: Int8): Int8` instead."]
     func fetchSub(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: Int8): Int8` instead."]
     func fetchAnd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: Int8): Int8` instead."]
     func fetchOr(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: Int8): Int8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: Int8): Int8` instead."]
     func fetchXor(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 }
 
+@Deprecated
 enum MemoryOrder {
     | SeqCst
 }
 
-func load(atomicType: ATOMIC_TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func load<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
+@Deprecated
 let DefaultMemoryOrder: std.sync.MemoryOrder
 
-func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
+func store<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-func swap(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func swap<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
+func compareAndSwap<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func fetchAdd<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchSub(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func fetchSub<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchAnd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func fetchAnd<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchOr(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func fetchOr<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchXor(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
+func fetchXor<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
 class AtomicInt16 {
     var value: Int16
 
     init(val: Int16) { /* compiled code */ }
 
+    @Frozen
     func load(): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): Int16` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func store(val: Int16): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: Int16): Unit` instead."]
     func store(val: Int16, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: Int16): Int16` instead."]
     func swap(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: Int16, new: Int16): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Int16, new: Int16): Bool` instead."]
     func compareAndSwap(old: Int16, new: Int16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: Int16): Int16` instead."]
     func fetchAdd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: Int16): Int16` instead."]
     func fetchSub(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: Int16): Int16` instead."]
     func fetchAnd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: Int16): Int16` instead."]
     func fetchOr(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: Int16): Int16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: Int16): Int16` instead."]
     func fetchXor(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 }
 
@@ -126,40 +185,67 @@ class AtomicInt32 {
 
     init(val: Int32) { /* compiled code */ }
 
+    @Frozen
     func load(): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): Int32` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func store(val: Int32): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: Int32): Unit` instead."]
     func store(val: Int32, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: Int32): Int32` instead."]
     func swap(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: Int32, new: Int32): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Int32, new: Int32): Bool` instead."]
     func compareAndSwap(old: Int32, new: Int32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: Int32): Int32` instead."]
     func fetchAdd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: Int32): Int32` instead."]
     func fetchSub(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: Int32): Int32` instead."]
     func fetchAnd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: Int32): Int32` instead."]
     func fetchOr(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: Int32): Int32 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: Int32): Int32` instead."]
     func fetchXor(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 }
 
@@ -168,40 +254,67 @@ class AtomicInt64 {
 
     init(val: Int64) { /* compiled code */ }
 
+    @Frozen
     func load(): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): Int64` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func store(val: Int64): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: Int64): Unit` instead."]
     func store(val: Int64, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: Int64): Int64` instead."]
     func swap(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: Int64, new: Int64): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Int64, new: Int64): Bool` instead."]
     func compareAndSwap(old: Int64, new: Int64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: Int64): Int64` instead."]
     func fetchAdd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: Int64): Int64` instead."]
     func fetchSub(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: Int64): Int64` instead."]
     func fetchAnd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: Int64): Int64` instead."]
     func fetchOr(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: Int64): Int64 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: Int64): Int64` instead."]
     func fetchXor(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 }
 
@@ -210,40 +323,67 @@ class AtomicUInt8 {
 
     init(val: UInt8) { /* compiled code */ }
 
+    @Frozen
     func load(): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): UInt8` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func store(val: UInt8): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: UInt8): Unit` instead."]
     func store(val: UInt8, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: UInt8): UInt8` instead."]
     func swap(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: UInt8, new: UInt8): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: UInt8, new: UInt8): Bool` instead."]
     func compareAndSwap(old: UInt8, new: UInt8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: UInt8): UInt8` instead."]
     func fetchAdd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: UInt8): UInt8` instead."]
     func fetchSub(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: UInt8): UInt8` instead."]
     func fetchAnd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: UInt8): UInt8` instead."]
     func fetchOr(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: UInt8): UInt8 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: UInt8): UInt8` instead."]
     func fetchXor(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 }
 
@@ -252,40 +392,67 @@ class AtomicUInt16 {
 
     init(val: UInt16) { /* compiled code */ }
 
+    @Frozen
     func load(): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): UInt16` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func store(val: UInt16): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: UInt16): Unit` instead."]
     func store(val: UInt16, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: UInt16): UInt16` instead."]
     func swap(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: UInt16, new: UInt16): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: UInt16, new: UInt16): Bool` instead."]
     func compareAndSwap(old: UInt16, new: UInt16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAdd(val: UInt16): UInt16` instead."]
     func fetchAdd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchSub(val: UInt16): UInt16` instead."]
     func fetchSub(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchAnd(val: UInt16): UInt16` instead."]
     func fetchAnd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchOr(val: UInt16): UInt16` instead."]
     func fetchOr(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: UInt16): UInt16 { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func fetchXor(val: UInt16): UInt16` instead."]
     func fetchXor(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 }
 
@@ -294,40 +461,67 @@ class AtomicUInt32 {
 
     init(val: UInt32) { /* compiled code */ }
 
+    @Frozen
     func load(): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func load(): UInt32` instead."]
+    @Frozen
     func load(memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func store(val: UInt32): Unit { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func store(val: UInt32): Unit` instead."]
+    @Frozen
     func store(val: UInt32, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func swap(val: UInt32): UInt32` instead."]
+    @Frozen
     func swap(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: UInt32, new: UInt32): Bool { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func compareAndSwap(old: UInt32, new: UInt32): Bool` instead."]
+    @Frozen
     func compareAndSwap(old: UInt32, new: UInt32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchAdd(val: UInt32): UInt32` instead."]
+    @Frozen
     func fetchAdd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchSub(val: UInt32): UInt32` instead."]
+    @Frozen
     func fetchSub(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchAnd(val: UInt32): UInt32` instead."]
+    @Frozen
     func fetchAnd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchOr(val: UInt32): UInt32` instead."]
+    @Frozen
     func fetchOr(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: UInt32): UInt32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchXor(val: UInt32): UInt32` instead."]
+    @Frozen
     func fetchXor(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 }
 
@@ -336,40 +530,67 @@ class AtomicUInt64 {
 
     init(val: UInt64) { /* compiled code */ }
 
+    @Frozen
     func load(): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func load(): UInt64` instead."]
+    @Frozen
     func load(memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func store(val: UInt64): Unit { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func store(val: UInt64): Unit` instead."]
+    @Frozen
     func store(val: UInt64, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func swap(val: UInt64): UInt64` instead."]
+    @Frozen
     func swap(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: UInt64, new: UInt64): Bool { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func compareAndSwap(old: UInt64, new: UInt64): Bool` instead."]
+    @Frozen
     func compareAndSwap(old: UInt64, new: UInt64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func fetchAdd(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchAdd(val: UInt64): UInt64` instead."]
+    @Frozen
     func fetchAdd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func fetchSub(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchSub(val: UInt64): UInt64` instead."]
+    @Frozen
     func fetchSub(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func fetchAnd(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchAnd(val: UInt64): UInt64` instead."]
+    @Frozen
     func fetchAnd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func fetchOr(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchOr(val: UInt64): UInt64` instead."]
+    @Frozen
     func fetchOr(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
+    @Frozen
     func fetchXor(val: UInt64): UInt64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func fetchXor(val: UInt64): UInt64` instead."]
+    @Frozen
     func fetchXor(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 }
 
@@ -378,20 +599,32 @@ class AtomicBool {
 
     init(val: Bool) { /* compiled code */ }
 
+    @Frozen
     func load(): Bool { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func load(): Bool` instead."]
+    @Frozen
     func load(memoryOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func store(val: Bool): Unit { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func store(val: Bool): Unit` instead."]
+    @Frozen
     func store(val: Bool, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: Bool): Bool { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func swap(val: Bool): Bool` instead."]
+    @Frozen
     func swap(val: Bool, memoryOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: Bool, new: Bool): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Bool, new: Bool): Bool` instead."]
     func compareAndSwap(old: Bool, new: Bool, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
     func transBoolToInt8(v: Bool): Int8 { /* compiled code */ }
@@ -399,49 +632,76 @@ class AtomicBool {
     func transInt8ToBool(v: Int8): Bool { /* compiled code */ }
 }
 
-class AtomicReference {
+class AtomicReference<T> {
     var value4cjnative: T
 
     init(val: T) { /* compiled code */ }
 
+    @Frozen
     func load(): T { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): T` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): T { /* compiled code */ }
 
+    @Frozen
     func store(val: T): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: T): Unit` instead."]
     func store(val: T, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: T): T { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: T): T` instead."]
     func swap(val: T, memoryOrder: std.sync.MemoryOrder): T { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: T, new: T): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: T, new: T): Bool` instead."]
     func compareAndSwap(old: T, new: T, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 }
 
-class AtomicOptionReference {
-    var value: std.core.Option<T>
+class AtomicOptionReference<T> {
+    @Annotation
+    var value: std.core.Option<T> = COMPILED_CODE /* compiled code */
 
+    @Frozen
     init() { /* compiled code */ }
 
+    @Frozen
     init(val: std.core.Option<T>) { /* compiled code */ }
 
+    @Frozen
     func load(): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func load(): Option<T>` instead."]
     func load(memoryOrder: std.sync.MemoryOrder): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func store(val: std.core.Option<T>): Unit { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func store(val: Option<T>): Unit` instead."]
     func store(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
+    @Frozen
     func swap(val: std.core.Option<T>): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func swap(val: Option<T>): Option<T>` instead."]
     func swap(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): std.core.Option<T> { /* compiled code */ }
 
+    @Frozen
     func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>): Bool { /* compiled code */ }
 
+    @Frozen
+    @Deprecated[message: "Use `public func compareAndSwap(old: Option<T>, new: Option<T>): Bool` instead."]
     func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 }
 
@@ -460,6 +720,7 @@ class SyncCounter {
 
     init(count: Int64) { /* compiled code */ }
 
+    @Annotation
     prop count: Int64 {
         get() { /* compiled code */ }
     }
@@ -469,12 +730,13 @@ class SyncCounter {
     func waitUntilZero(timeout: std.core.Duration): Unit { /* compiled code */ }
 }
 
+@Deprecated[message: "Use `public interface Lock` instead."]
 interface IReentrantMutex {
-    abstract func lock(): Unit
+    abstract open func lock(): Unit
 
-    abstract func tryLock(): Bool
+    abstract open func tryLock(): Bool
 
-    abstract func unlock(): Unit
+    abstract open func unlock(): Unit
 }
 
 class IllegalSynchronizationStateException <: std.core.Exception {
@@ -486,31 +748,32 @@ class IllegalSynchronizationStateException <: std.core.Exception {
 }
 
 interface Lock {
-    abstract func lock(): Unit
+    abstract open func lock(): Unit
 
-    abstract func tryLock(): Bool
+    abstract open func tryLock(): Bool
 
-    abstract func unlock(): Unit
+    abstract open func unlock(): Unit
 }
 
 interface UniqueLock <: std.sync.Lock {
-    abstract func condition(): std.sync.Condition
+    abstract open func condition(): std.sync.Condition
 }
 
 interface Condition {
-    abstract func wait(): Unit
+    abstract open func wait(): Unit
 
-    abstract func wait(timeout: std.core.Duration): Bool
+    abstract open func wait(timeout: std.core.Duration): Bool
 
-    abstract func waitUntil(predicate: () -> Bool): Unit
+    abstract open func waitUntil(predicate: () -> Bool): Unit
 
-    abstract func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
+    abstract open func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
 
-    abstract func notify(): Unit
+    abstract open func notify(): Unit
 
-    abstract func notifyAll(): Unit
+    abstract open func notifyAll(): Unit
 }
 
+@Deprecated[message: "Use `public interface Condition` instead."]
 class Monitor <: std.sync.ReentrantMutex {
     init() { /* compiled code */ }
 
@@ -537,22 +800,24 @@ class Mutex <: std.core.Object & std.sync.UniqueLock {
     func checkMutexStatus(): Unit { /* compiled code */ }
 }
 
-class ReentrantMutex <: std.core.Object & std.sync.Lock {
+@Deprecated[message: "Use `public class Mutex` instead."]
+open class ReentrantMutex <: std.core.Object & std.sync.Lock {
     let mutex: std.sync.Mutex
 
     init() { /* compiled code */ }
 
     init(mutex: std.sync.Mutex) { /* compiled code */ }
 
-    func lock(): Unit { /* compiled code */ }
+    open func lock(): Unit { /* compiled code */ }
 
-    func tryLock(): Bool { /* compiled code */ }
+    open func tryLock(): Bool { /* compiled code */ }
 
-    func unlock(): Unit { /* compiled code */ }
+    open func unlock(): Unit { /* compiled code */ }
 
     func checkMutexStatus(): Unit { /* compiled code */ }
 }
 
+@Deprecated[message: "Use `public interface Condition` instead."]
 struct ConditionID {
     init(m: std.sync.MultiConditionMonitor, wqPtr: std.sync.WaitQueue) { /* compiled code */ }
 
@@ -561,6 +826,7 @@ struct ConditionID {
     let waitQueue: std.sync.WaitQueue
 }
 
+@Deprecated[message: "Use `public class Mutex` instead."]
 class MultiConditionMonitor <: std.sync.ReentrantMutex {
     init() { /* compiled code */ }
 
@@ -630,10 +896,12 @@ class ReadWriteLock {
 
     let _writeLock: std.sync.UniqueLock
 
+    @Annotation
     prop readLock: std.sync.Lock {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop writeLock: std.sync.UniqueLock {
         get() { /* compiled code */ }
     }
@@ -741,12 +1009,14 @@ class SyncList {
     init() { /* compiled code */ }
 }
 
+@Deprecated
 enum ReadWriteMutexMode {
     | Unfair
 
     | Fair
 }
 
+@Deprecated[message: "Use `public class ReadWriteLock` instead."]
 class ReentrantReadWriteMutex {
     let readMutex_: std.sync.ReentrantReadMutex
 
@@ -754,15 +1024,18 @@ class ReentrantReadWriteMutex {
 
     init(mode: std.sync.ReadWriteMutexMode) { /* compiled code */ }
 
+    @Annotation
     prop readMutex: std.sync.ReentrantReadMutex {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop writeMutex: std.sync.ReentrantWriteMutex {
         get() { /* compiled code */ }
     }
 }
 
+@Deprecated[message: "Use `public interface Lock` instead."]
 class ReentrantReadMutex <: std.sync.ReentrantMutex {
     let rwMutex: std.sync.ReadWriteLockImpl
 
@@ -775,6 +1048,7 @@ class ReentrantReadMutex <: std.sync.ReentrantMutex {
     func unlock(): Unit { /* compiled code */ }
 }
 
+@Deprecated[message: "Use `public interface UniqueLock` instead."]
 class ReentrantWriteMutex <: std.sync.ReentrantMutex {
     let rwMutex: std.sync.ReadWriteLockImpl
 
@@ -796,6 +1070,7 @@ class Semaphore {
 
     init(count: Int64) { /* compiled code */ }
 
+    @Annotation
     prop count: Int64 {
         get() { /* compiled code */ }
     }
@@ -891,15 +1166,15 @@ enum CatchupStyle {
     | Skip
 }
 
-func delayStyleTick(interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
+func delayStyleTick(interval: std.core.Duration): std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func burstStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
+func burstStyleTick(delay: std.core.Duration, interval: std.core.Duration): std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func skipStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
+func skipStyleTick(delay: std.core.Duration, interval: std.core.Duration): std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func tickDuring(delay: std.core.Duration, period: std.core.Duration, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
+func tickDuring(delay: std.core.Duration, period: std.core.Duration, nextTick: () -> std.core.Option<std.core.Duration>): std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func tickTimes(count: Int64, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
+func tickTimes(count: Int64, nextTick: () -> std.core.Option<std.core.Duration>): std.core.Option<std.core.Duration> { /* compiled code */ }
 
 class TimerQueue {
     let front: std.sync.AtomicReference<std.sync.TimerBlock>
@@ -920,10 +1195,12 @@ class TimerQueue {
 class TimerHeap {
     let data: std.sync.TimerList
 
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isEmpty: Bool {
         get() { /* compiled code */ }
     }
@@ -954,6 +1231,7 @@ class TimerList {
 
     func isEmpty(): Bool { /* compiled code */ }
 
+    @Annotation
     prop size: Int64 {
         get() { /* compiled code */ }
     }
@@ -967,6 +1245,7 @@ enum PushResult {
     | Succeed
 }
 
+@Annotation
 enum PopResult {
     | BlockDone
 

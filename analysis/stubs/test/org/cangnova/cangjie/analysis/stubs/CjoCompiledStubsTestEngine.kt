@@ -1,12 +1,11 @@
 package org.cangnova.cangjie.analysis.stubs
 
-import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.indexing.FileContentImpl
 import org.cangnova.cangjie.analysis.api.util.requireIsInstance
 import org.cangnova.cangjie.analysis.decompiled.psi.CjoFileDecompilers
 import org.cangnova.cangjie.analysis.decompiled.psi.file.CjDecompiledFile
-import org.cangnova.cangjie.lang.CangJieFileType
+import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -48,17 +47,15 @@ internal object CjoCompiledStubsTestEngine {
             file.calcStubTree().root
         } catch (e: Throwable) {
             val sourceStubDump = runCatching {
-                val sourceFile = PsiFileFactory.getInstance(file.project).createFileFromText(
-                    "${file.name}.decompiled.cj",
-                    CangJieFileType.INSTANCE,
-                    file.text.orEmpty(),
-                ) as CjFile
+                val sourceFile = CjPsiFactory.forPackage(file.project, file.packageFqName)
+                    .createFile("${file.name}.decompiled.cj", file.text.orEmpty())
                 render(sourceFile.calcStubTree().root as CangJieFileStubImpl)
             }.getOrElse { sourceError ->
                 "<failed to compute source stub tree: ${sourceError::class.qualifiedName}: ${sourceError.message}>"
             }
             throw AssertionError(
-                e.message.orEmpty() + "\n\nBinary stub tree:\n" + render(fileStub) + "\n\nSource text stub tree:\n" + sourceStubDump,
+                e.message.orEmpty() + "\n\nBinary stub tree:\n" + render(fileStub) +
+                        "\n\nSource text stub tree:\n" + sourceStubDump,
                 e,
             )
         }

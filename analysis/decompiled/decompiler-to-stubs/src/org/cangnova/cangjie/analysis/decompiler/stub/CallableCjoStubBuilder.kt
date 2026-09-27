@@ -38,6 +38,9 @@ import org.cangnova.cangjie.psi.stubs.PatternKind
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.impl.*
 
+/** CJO 二进制 stub 与反编译文本共享此名称，表示不可见的已编译初始化器。 */
+public const val COMPILED_DEFAULT_INITIALIZER: String = "COMPILED_CODE"
+
 /**
  * `.cjo` callable stub 构建器。
  *
@@ -272,6 +275,7 @@ internal fun createFieldStub(
     declaration: CfirFieldVariable,
     context: CjoStubBuilderContext,
 ) {
+    val hasInitializer = declaration.initializer != null
     if (parent is CangJieFileStubImpl) {
         val variableStub = CangJieVariableStubImpl(
             parent = parent,
@@ -279,7 +283,7 @@ internal fun createFieldStub(
             isVar = declaration.isVar,
             isConst = declaration.status.isConst,
             isTopLevel = true,
-            hasInitializer = declaration.initializer != null,
+            hasInitializer = hasInitializer,
             hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
             origin = context.packageFacadeOrigin,
         )
@@ -291,6 +295,7 @@ internal fun createFieldStub(
         )
         CangJieNameReferenceExpressionStubImpl(bindingPatternStub, StringRef.fromString(declaration.name.asString()))
         context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
+        if (hasInitializer) createCompiledInitializerReferenceStub(variableStub)
         return
     }
 
@@ -300,12 +305,13 @@ internal fun createFieldStub(
         fqName = callableFqName(parent, context, declaration.name),
         isVar = declaration.isVar,
         isConst = declaration.status.isConst,
-        hasInitializer = declaration.initializer != null,
+        hasInitializer = hasInitializer,
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(fieldStub, annotations = declaration.annotations)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(fieldStub, declaration.returnTypeRef)
+    if (hasInitializer) createCompiledInitializerReferenceStub(fieldStub)
 }
 
 /**
@@ -318,26 +324,36 @@ internal fun createPatternVariableStub(
     declaration: CfirPatternVariable,
     context: CjoStubBuilderContext,
 ) {
+    val hasInitializer = declaration.initializer != null
     val variableStub = CangJieVariableStubImpl(
         parent = parent,
         patternKind = declaration.pattern.toPatternKind(),
         isVar = declaration.isVar,
         isConst = declaration.status.isConst,
         isTopLevel = parent is CangJieFileStubImpl,
-        hasInitializer = declaration.initializer != null,
+        hasInitializer = hasInitializer,
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(variableStub, annotations = declaration.annotations)
-    context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
     createPatternStub(declaration.pattern, variableStub)
+    context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)
+    if (hasInitializer) createCompiledInitializerReferenceStub(variableStub)
+}
+
+/** 为 binary initializer placeholder 构建与反编译文本相同的引用表达式子树。 */
+private fun createCompiledInitializerReferenceStub(parent: StubElement<*>) {
+    CangJieNameReferenceExpressionStubImpl(
+        parent = parent,
+        referencedName = StringRef.fromString(COMPILED_DEFAULT_INITIALIZER),
+    )
 }
 
 /**
  * 为构造函数构建 primary 或 secondary constructor stub。
  *
- * 反序列化出的构造函数通过 CFIR 实现类名区分 primary/secondary，并使用上下文中的所属类型短名
- * 作为 constructor stub 的 containing class name。
+ * 反序列化出的构造函数通过 CFIR 的 `isPrimary` 语义标记区分 primary/secondary，
+ * 并使用上下文中的所属类型短名作为 constructor stub 的 containing class name。
  */
 internal fun createConstructorStub(
     parent: StubElement<*>,
@@ -345,7 +361,7 @@ internal fun createConstructorStub(
     context: CjoStubBuilderContext,
 ) {
     val containingClassSimpleName = context.owningClassSimpleName ?: declaration.symbol.callableId.callableName.asString()
-    val isPrimary = declaration.javaClass.simpleName.contains("Primary", ignoreCase = true)
+    val isPrimary = declaration.isPrimary
     if (isPrimary) {
         val constructorStub = CangJieConstructorStubImpl<CjPrimaryConstructor>(
             parent = parent,
@@ -510,7 +526,7 @@ private fun createPropertyBodyStub(
  *
  * 必须与反编译文本 reparse 后的 AST stubbable 节点一一对应：
  * - getter：空 VALUE_PARAMETER_LIST（对齐 `get()` / 函数空参列表）
- * - setter：无类型 `value` 参数 + 空 ANNOTATIONS（对齐 parseValueParameter 始终生成 ANNOTATIONS）
+ * - setter：无类型 `value` 参数（对齐反编译文本 `set(value)` 的 PSI 结构）
  *
  * 否则 `std.core.cjo` 等大体量文件会在 calcStubTree reconcile 时失败。
  */
@@ -529,12 +545,9 @@ private fun createPropertyAccessorStub(
         // 对齐 createCallableParameterListStub(..., createEmptyList = true) 与 parsePropertyGet
         context.typeStubBuilder.createEmptyParameterListStub(accessorStub)
     } else {
-        // includeAnnotations=true：parser 对 value parameter 始终生成空 ANNOTATIONS 节点
-        // （见 parseValueParameter + parseAnnotations），必须与 reparse 的 AST 对齐
         context.typeStubBuilder.createSimpleParameterListStub(
             parent = accessorStub,
             parameterNames = listOf(PROPERTY_SETTER_PARAMETER_NAME),
-            includeAnnotations = true,
         )
     }
 }

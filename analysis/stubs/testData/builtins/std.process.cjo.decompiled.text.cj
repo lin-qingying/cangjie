@@ -10,6 +10,7 @@ import std.sync.*
 import std.core.*
 import std.time.*
 
+@Deprecated[message: "Use related global functions in the std.env instead."]
 class CurrentProcess <: std.process.Process {
     let _stdIn: std.io.InputStream
 
@@ -19,26 +20,32 @@ class CurrentProcess <: std.process.Process {
 
     ~init() { /* compiled code */ }
 
+    @Annotation
     prop stdErr: std.io.OutputStream {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop stdOut: std.io.OutputStream {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop stdIn: std.io.InputStream {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop arguments: std.core.Array<std.core.String> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop homeDirectory: std.fs.Path {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop tempDirectory: std.fs.Path {
         get() { /* compiled code */ }
     }
@@ -56,7 +63,7 @@ class CurrentProcess <: std.process.Process {
     func terminateAliveProcess(pid: Int32, force: Bool): Unit { /* compiled code */ }
 }
 
-class Process {
+open class Process {
     var _pid: Int64
 
     var _handle: IntNative
@@ -77,56 +84,76 @@ class Process {
 
     var _startTime: Int64
 
+    @Deprecated[message: "CurrentProcess has been marked as deprecated, use related global functions in the std.env instead."]
+    @Annotation
     static prop current: std.process.CurrentProcess {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop pid: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop command: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop startTime: std.time.DateTime {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop systemTime: std.core.Duration {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop userTime: std.core.Duration {
         get() { /* compiled code */ }
     }
 
-    prop arguments: std.core.Array<std.core.String> {
+    @Deprecated
+    @Annotation
+    open prop arguments: std.core.Array<std.core.String> {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use global function `public func getCommandLine(): Array<String>` in std.env instead."]
+    @Annotation
     prop commandLine: std.core.Array<std.core.String> {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use global function `public func getHomeDirectory(): Path` in std.env instead."]
+    @Annotation
     prop workingDirectory: std.fs.Path {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use global function `public func getVariables(): Array<(String, String)>` in std.env instead."]
+    @Annotation
     prop environment: std.collection.Map<std.core.String, std.core.String> {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use global function `public func findProcess(pid: Int64): Process` instead."]
     static func of(pid: Int64): std.process.Process { /* compiled code */ }
 
+    @Deprecated[message: "Use global function `public func launch(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Inherit, stdErr!: ProcessRedirect = Inherit): SubProcess` instead."]
     static func start(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): std.process.SubProcess { /* compiled code */ }
 
+    @Deprecated[message: "Use global function `public func execute(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Inherit, stdErr!: ProcessRedirect = Inherit, timeout!: ?Duration = None): Int64` instead."]
     static func run(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect, timeout: std.core.Option<std.core.Duration>): Int64 { /* compiled code */ }
 
+    @Deprecated[message: "Use global function `public func executeWithOutput(command: String, arguments: Array<String>, workingDirectory!: ?Path = None, environment!: ?Map<String, String> = None, stdIn!: ProcessRedirect = Inherit, stdOut!: ProcessRedirect = Pipe, stdErr!: ProcessRedirect = Pipe): (Int64, Array<Byte>, Array<Byte>)` instead."]
     static func runOutput(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>) { /* compiled code */ }
 
     static func buildCurrentProcess(): std.process.CurrentProcess { /* compiled code */ }
@@ -137,7 +164,7 @@ class Process {
 
     func terminate(force: Bool): Unit { /* compiled code */ }
 
-    func terminateAliveProcess(pid: Int32, force: Bool): Unit { /* compiled code */ }
+    open func terminateAliveProcess(pid: Int32, force: Bool): Unit { /* compiled code */ }
 
     static func hasDiscardMode(std_redirects: std.core.Array<std.process.ProcessRedirect>): Bool { /* compiled code */ }
 }
@@ -175,7 +202,7 @@ struct ProcessStartInfo {
 struct ProcessRtnData {
     let pid: Int32
 
-    let `handle`: IntNative
+    let handle: IntNative
 
     let stdInHandle: IntNative
 
@@ -198,6 +225,7 @@ struct ExitInfo {
     init() { /* compiled code */ }
 }
 
+@Annotation
 enum ProcessRedirect {
     | Inherit
 
@@ -217,26 +245,35 @@ class SubProcess <: std.process.Process {
 
     ~init() { /* compiled code */ }
 
+    @Annotation
     prop stdInPipe: std.io.OutputStream {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop stdOutPipe: std.io.InputStream {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop stdErrPipe: std.io.InputStream {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use `public prop stdErrPipe: InputStream` instead."]
+    @Annotation
     prop stdErr: std.io.InputStream {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use `public prop stdOutPipe: InputStream` instead."]
+    @Annotation
     prop stdOut: std.io.InputStream {
         get() { /* compiled code */ }
     }
 
+    @Deprecated[message: "Use `public prop stdInPipe: OutputStream` instead."]
+    @Annotation
     prop stdIn: std.io.OutputStream {
         get() { /* compiled code */ }
     }

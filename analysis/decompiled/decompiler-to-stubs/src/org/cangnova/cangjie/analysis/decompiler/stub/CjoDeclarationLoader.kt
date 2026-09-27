@@ -2,12 +2,9 @@ package org.cangnova.cangjie.analysis.decompiler.stub
 
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeclDeserializer
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirTypeDeserializer
-import java.io.File
 
 /**
  * `.cjo` -> CFIR declaration 列表的共享加载器。
@@ -28,20 +25,11 @@ object CjoDeclarationLoader {
         loadedPackage: LoadedCjoPackage,
         moduleData: CfirModuleData,
     ): List<CfirDeclaration> {
-        val cjoManager = CjoManager(
-            CjoSearchPath { key ->
-                when (key) {
-                    "CANGJIE_LIBRARY", "CANGJIE_STDLIB_MODULE" ->
-                        loadedPackage.searchRoots.joinToString(File.pathSeparator) { it.absolutePath }
-                    else -> null
-                }
-            },
-        )
         val context = CfirDeserializationContext(
             pkg = loadedPackage.pkg,
             header = loadedPackage.header,
             moduleData = moduleData,
-            cjoManager = cjoManager,
+            cjoManager = loadedPackage.cjoManager,
             sourcePath = loadedPackage.sourcePath,
         )
         val typeDeserializer = CfirTypeDeserializer(context)

@@ -6,23 +6,32 @@ package std.argopt
 import std.collection.*
 import std.core.*
 
+@Deprecated[message: "Use global function `public func parseArguments(args: Array<String>, specs: Array<ArgumentSpec>): ParsedArguments` instead."]
+@!APILevel[since: "22"]
 class ArgOpt {
     var utils: std.argopt.ParserHelper
 
     var arguments: std.argopt.Arguments
 
+    @!APILevel[since: "22"]
     init(shortArgFormat: std.core.String) { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     init(longArgList: std.core.Array<std.core.String>) { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     init(shortArgFormat: std.core.String, longArgList: std.core.Array<std.core.String>) { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     init(args: std.core.Array<std.core.String>, shortArgFormat: std.core.String, longArgList: std.core.Array<std.core.String>) { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     func getArg(arg: std.core.String): std.core.Option<std.core.String> { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     func getUnparseArgs(): std.core.Array<std.core.String> { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     func getArgumentsMap(): std.collection.HashMap<std.core.String, std.core.String> { /* compiled code */ }
 }
 
@@ -42,54 +51,77 @@ class Arguments {
     init() { /* compiled code */ }
 }
 
+@!APILevel[since: "22"]
 enum ArgumentMode <: std.core.ToString & std.core.Equatable<std.argopt.ArgumentMode> {
-    | NoValue
+    | @!APILevel[since: "22"]
+    NoValue
 
-    | RequiredValue
+    | @!APILevel[since: "22"]
+    RequiredValue
 
-    | OptionalValue
+    | @!APILevel[since: "22"]
+    OptionalValue
 
+    @!APILevel[since: "22"]
     func toString(): std.core.String { /* compiled code */ }
 
     operator func ==(that: std.argopt.ArgumentMode): Bool { /* compiled code */ }
 }
 
+@!APILevel[since: "22"]
+@Annotation
 enum ArgumentSpec {
-    | Short(Rune, std.argopt.ArgumentMode)
+    | @!APILevel[since: "22"]
+    Short(Rune, std.argopt.ArgumentMode)
 
-    | Short(Rune, std.argopt.ArgumentMode, (std.core.String) -> Unit)
+    | @!APILevel[since: "22"]
+    Short(Rune, std.argopt.ArgumentMode, (std.core.String) -> Unit)
 
-    | Long(std.core.String, std.argopt.ArgumentMode)
+    | @!APILevel[since: "22"]
+    Long(std.core.String, std.argopt.ArgumentMode)
 
-    | Long(std.core.String, std.argopt.ArgumentMode, (std.core.String) -> Unit)
+    | @!APILevel[since: "22"]
+    Long(std.core.String, std.argopt.ArgumentMode, (std.core.String) -> Unit)
 
-    | Full(std.core.String, Rune, std.argopt.ArgumentMode)
+    | @!APILevel[since: "22"]
+    Full(std.core.String, Rune, std.argopt.ArgumentMode)
 
-    | Full(std.core.String, Rune, std.argopt.ArgumentMode, (std.core.String) -> Unit)
+    | @!APILevel[since: "22"]
+    Full(std.core.String, Rune, std.argopt.ArgumentMode, (std.core.String) -> Unit)
 
-    | NonOptions((std.core.Array<std.core.String>) -> Unit)
+    | @!APILevel[since: "22"]
+    NonOptions((std.core.Array<std.core.String>) -> Unit)
 }
 
+@!APILevel[since: "22"]
 struct ParsedArguments {
     var _options: std.collection.HashMap<std.core.String, std.core.String>
 
     var _nonOptions: std.core.Array<std.core.String>
 
+    @!APILevel[since: "22"]
+    @Annotation
     prop options: std.collection.ReadOnlyMap<std.core.String, std.core.String> {
         get() { /* compiled code */ }
     }
 
+    @!APILevel[since: "22"]
+    @Annotation
     prop nonOptions: std.core.Array<std.core.String> {
         get() { /* compiled code */ }
     }
 }
 
+@!APILevel[since: "22"]
 class ArgumentParseException <: std.core.Exception {
+    @!APILevel[since: "22"]
     init() { /* compiled code */ }
 
+    @!APILevel[since: "22"]
     init(message: std.core.String) { /* compiled code */ }
 
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
+@!APILevel[since: "22", throwexception: true]
 func parseArguments(args: std.core.Array<std.core.String>, specs: std.core.Array<std.argopt.ArgumentSpec>): std.argopt.ParsedArguments { /* compiled code */ }

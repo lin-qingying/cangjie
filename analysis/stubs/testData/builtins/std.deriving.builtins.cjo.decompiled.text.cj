@@ -10,14 +10,17 @@ import std.core.*
 import std.deriving.resolve.Types
 
 class ArbitraryDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -29,17 +32,20 @@ class ArbitraryDeriving <: std.core.Object & std.deriving.api.Deriving {
     init() { /* compiled code */ }
 }
 
-func commaSeparated(things: std.core.Iterable<T>): std.ast.Tokens { /* compiled code */ }
+func commaSeparated<T>(things: std.core.Iterable<T>): std.ast.Tokens { /* compiled code */ }
 
 class ComparableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -52,14 +58,17 @@ class ComparableDeriving <: std.core.Object & std.deriving.api.Deriving {
 }
 
 class EquatableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -72,14 +81,17 @@ class EquatableDeriving <: std.core.Object & std.deriving.api.Deriving {
 }
 
 class HashableDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -92,14 +104,17 @@ class HashableDeriving <: std.core.Object & std.deriving.api.Deriving {
 }
 
 class ShrinkDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }
@@ -112,14 +127,17 @@ class ShrinkDeriving <: std.core.Object & std.deriving.api.Deriving {
 }
 
 class ToStringDeriving <: std.core.Object & std.deriving.api.Deriving {
+    @Annotation
     override prop name: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop description: std.core.String {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     override prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
         get() { /* compiled code */ }
     }

@@ -5,122 +5,166 @@ package std.math
 
 import std.core.*
 
+@Frozen
 func abs(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicFabs(x: T): T { /* compiled code */ }
+func intrinsicFabs<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func abs(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func abs(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func abs(x: Int64): Int64 { /* compiled code */ }
 
-func intrinsicAbs(x: T): T { /* compiled code */ }
+func intrinsicAbs<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func abs(x: Int32): Int32 { /* compiled code */ }
 
+@Frozen
 func abs(x: Int16): Int16 { /* compiled code */ }
 
+@Frozen
 func abs(x: Int8): Int8 { /* compiled code */ }
 
+@Frozen
 func sqrt(x: Float16): Float16 { /* compiled code */ }
 
-func intrinsicSqrt(x: T): T { /* compiled code */ }
+func intrinsicSqrt<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func sqrt(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func sqrt(x: Float64): Float64 { /* compiled code */ }
 
+@Frozen
 func exp(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicExp(x: T): T { /* compiled code */ }
+func intrinsicExp<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func exp(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func exp(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func exp2(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicExp2(x: T): T { /* compiled code */ }
+func intrinsicExp2<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func exp2(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func exp2(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func log10(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicLog10(x: T): T { /* compiled code */ }
+func intrinsicLog10<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func log10(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func log10(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func log2(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicLog2(x: T): T { /* compiled code */ }
+func intrinsicLog2<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func log2(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func log2(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func log(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicLog(x: T): T { /* compiled code */ }
+func intrinsicLog<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func log(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func log(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func floor(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicFloor(x: T): T { /* compiled code */ }
+func intrinsicFloor<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func floor(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func floor(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func ceil(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicCeil(x: T): T { /* compiled code */ }
+func intrinsicCeil<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func ceil(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func ceil(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func trunc(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicTrunc(x: T): T { /* compiled code */ }
+func intrinsicTrunc<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func trunc(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func trunc(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func sin(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicSin(x: T): T { /* compiled code */ }
+func intrinsicSin<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func sin(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func sin(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func cos(x: Float64): Float64 { /* compiled code */ }
 
-func intrinsicCos(x: T): T { /* compiled code */ }
+func intrinsicCos<T>(x: T): T { /* compiled code */ }
 
+@Frozen
 func cos(x: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func cos(x: Float16): Float16 { /* compiled code */ }
 
+@Frozen
 func pow(base: Float64, exponent: Float64): Float64 { /* compiled code */ }
 
-func intrinsicPow(x: T, y: T): T { /* compiled code */ }
+func intrinsicPow<T>(x: T, y: T): T { /* compiled code */ }
 
+@Frozen
 func pow(base: Float32, exponent: Float32): Float32 { /* compiled code */ }
 
+@Frozen
 func pow(base: Float64, exponent: Int64): Float64 { /* compiled code */ }
 
 foreign func CJ_CORE_FastPowerDoubleInt64(x: Float64, y: Int64): Float64
 
+@Frozen
 func pow(base: Float32, exponent: Int32): Float32 { /* compiled code */ }
 
 func intrinsicPowi(x: Float32, y: Int32): Float32 { /* compiled code */ }
@@ -143,115 +187,122 @@ enum RoundingMode <: std.core.Equatable<std.math.RoundingMode> & std.core.ToStri
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: MathExtension {
+extend Float64 <: MathExtension {
+    @Deprecated[message: "Use `public func getPI()` instead."]
     static func GetPI(): Float64 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func getE()` instead."]
     static func GetE(): Float64 { /* compiled code */ }
 }
 
-interface MathExtension {
+@Deprecated[message: "Use `public interface FloatingPoint<T>` instead."]
+interface MathExtension<T> {
     abstract static func GetPI(): T
 
     abstract static func GetE(): T
 }
 
-extend `Unit` <: MathExtension {
+extend Float32 <: MathExtension {
+    @Deprecated[message: "Use `public func getPI()` instead."]
     static func GetPI(): Float32 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func getE()` instead."]
     static func GetE(): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: MathExtension {
+extend Float16 <: MathExtension {
+    @Deprecated[message: "Use `public func getPI()` instead."]
     static func GetPI(): Float16 { /* compiled code */ }
 
+    @Deprecated[message: "Use `public func getE()` instead."]
     static func GetE(): Float16 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Int8 <: MaxMinValue {
     static func getMax(): Int8 { /* compiled code */ }
 
     static func getMin(): Int8 { /* compiled code */ }
 }
 
-interface MaxMinValue {
+interface MaxMinValue<T> {
     abstract static func getMax(): T
 
     abstract static func getMin(): T
 }
 
-extend `Unit` <: MaxMinValue {
+extend Int16 <: MaxMinValue {
     static func getMax(): Int16 { /* compiled code */ }
 
     static func getMin(): Int16 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Int32 <: MaxMinValue {
     static func getMax(): Int32 { /* compiled code */ }
 
     static func getMin(): Int32 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Int64 <: MaxMinValue {
     static func getMax(): Int64 { /* compiled code */ }
 
     static func getMin(): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend IntNative <: MaxMinValue {
     static func getMax(): IntNative { /* compiled code */ }
 
     static func getMin(): IntNative { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend UInt8 <: MaxMinValue {
     static func getMax(): UInt8 { /* compiled code */ }
 
     static func getMin(): UInt8 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend UInt16 <: MaxMinValue {
     static func getMax(): UInt16 { /* compiled code */ }
 
     static func getMin(): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend UInt32 <: MaxMinValue {
     static func getMax(): UInt32 { /* compiled code */ }
 
     static func getMin(): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend UInt64 <: MaxMinValue {
     static func getMax(): UInt64 { /* compiled code */ }
 
     static func getMin(): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend UIntNative <: MaxMinValue {
     static func getMax(): UIntNative { /* compiled code */ }
 
     static func getMin(): UIntNative { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Float16 <: MaxMinValue {
     static func getMax(): Float16 { /* compiled code */ }
 
     static func getMin(): Float16 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Float32 <: MaxMinValue {
     static func getMax(): Float32 { /* compiled code */ }
 
     static func getMin(): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: MaxMinValue {
+extend Float64 <: MaxMinValue {
     static func getMax(): Float64 { /* compiled code */ }
 
     static func getMin(): Float64 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Int8 <: Number {
     operator func *(right: Int8): Int8 { /* compiled code */ }
 
     operator func +(right: Int8): Int8 { /* compiled code */ }
@@ -263,19 +314,19 @@ extend `Unit` <: Number {
     operator func /(right: Int8): Int8 { /* compiled code */ }
 }
 
-interface Number {
-    abstract operator func +(rhs: T): T
+interface Number<T> {
+    abstract open operator func +(rhs: T): T
 
-    abstract operator func -(rhs: T): T
+    abstract open operator func -(rhs: T): T
 
-    abstract operator func *(rhs: T): T
+    abstract open operator func *(rhs: T): T
 
-    abstract operator func /(rhs: T): T
+    abstract open operator func /(rhs: T): T
 
-    abstract operator func -(): T
+    abstract open operator func -(): T
 }
 
-extend `Unit` <: Number {
+extend Int16 <: Number {
     operator func *(right: Int16): Int16 { /* compiled code */ }
 
     operator func +(right: Int16): Int16 { /* compiled code */ }
@@ -287,7 +338,7 @@ extend `Unit` <: Number {
     operator func /(right: Int16): Int16 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Int32 <: Number {
     operator func *(right: Int32): Int32 { /* compiled code */ }
 
     operator func +(right: Int32): Int32 { /* compiled code */ }
@@ -299,7 +350,7 @@ extend `Unit` <: Number {
     operator func /(right: Int32): Int32 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Int64 <: Number {
     operator func *(right: Int64): Int64 { /* compiled code */ }
 
     operator func +(right: Int64): Int64 { /* compiled code */ }
@@ -311,7 +362,7 @@ extend `Unit` <: Number {
     operator func /(right: Int64): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend IntNative <: Number {
     operator func *(right: IntNative): IntNative { /* compiled code */ }
 
     operator func +(right: IntNative): IntNative { /* compiled code */ }
@@ -323,7 +374,7 @@ extend `Unit` <: Number {
     operator func /(right: IntNative): IntNative { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend UInt8 <: Number {
     operator func *(right: UInt8): UInt8 { /* compiled code */ }
 
     operator func +(right: UInt8): UInt8 { /* compiled code */ }
@@ -335,7 +386,7 @@ extend `Unit` <: Number {
     operator func /(right: UInt8): UInt8 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend UInt16 <: Number {
     operator func *(right: UInt16): UInt16 { /* compiled code */ }
 
     operator func +(right: UInt16): UInt16 { /* compiled code */ }
@@ -347,7 +398,7 @@ extend `Unit` <: Number {
     operator func /(right: UInt16): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend UInt32 <: Number {
     operator func *(right: UInt32): UInt32 { /* compiled code */ }
 
     operator func +(right: UInt32): UInt32 { /* compiled code */ }
@@ -359,7 +410,7 @@ extend `Unit` <: Number {
     operator func /(right: UInt32): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend UInt64 <: Number {
     operator func *(right: UInt64): UInt64 { /* compiled code */ }
 
     operator func +(right: UInt64): UInt64 { /* compiled code */ }
@@ -371,7 +422,7 @@ extend `Unit` <: Number {
     operator func /(right: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend UIntNative <: Number {
     operator func *(right: UIntNative): UIntNative { /* compiled code */ }
 
     operator func +(right: UIntNative): UIntNative { /* compiled code */ }
@@ -383,7 +434,7 @@ extend `Unit` <: Number {
     operator func /(right: UIntNative): UIntNative { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Float16 <: Number {
     operator func *(right: Float16): Float16 { /* compiled code */ }
 
     operator func +(right: Float16): Float16 { /* compiled code */ }
@@ -395,7 +446,7 @@ extend `Unit` <: Number {
     operator func /(right: Float16): Float16 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Float32 <: Number {
     operator func *(right: Float32): Float32 { /* compiled code */ }
 
     operator func +(right: Float32): Float32 { /* compiled code */ }
@@ -407,7 +458,7 @@ extend `Unit` <: Number {
     operator func /(right: Float32): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: Number {
+extend Float64 <: Number {
     operator func *(right: Float64): Float64 { /* compiled code */ }
 
     operator func +(right: Float64): Float64 { /* compiled code */ }
@@ -419,7 +470,7 @@ extend `Unit` <: Number {
     operator func /(right: Float64): Float64 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend Int8 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int8 { /* compiled code */ }
@@ -437,25 +488,25 @@ extend `Unit` <: Integer {
     operator func |(right: Int8): Int8 { /* compiled code */ }
 }
 
-interface Integer <: std.math.Number<T> {
+interface Integer<T> <: std.math.Number<T> {
     abstract static func isSigned(): Bool
 
-    abstract operator func %(rhs: T): T
+    abstract open operator func %(rhs: T): T
 
-    abstract operator func &(rhs: T): T
+    abstract open operator func &(rhs: T): T
 
-    abstract operator func |(rhs: T): T
+    abstract open operator func |(rhs: T): T
 
-    abstract operator func ^(rhs: T): T
+    abstract open operator func ^(rhs: T): T
 
-    abstract operator func !(): T
+    abstract open operator func !(): T
 
-    abstract operator func >>(n: Int64): T
+    abstract open operator func >>(n: Int64): T
 
-    abstract operator func <<(n: Int64): T
+    abstract open operator func <<(n: Int64): T
 }
 
-extend `Unit` <: Integer {
+extend Int16 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int16 { /* compiled code */ }
@@ -473,7 +524,7 @@ extend `Unit` <: Integer {
     operator func |(right: Int16): Int16 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend Int32 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int32 { /* compiled code */ }
@@ -491,7 +542,7 @@ extend `Unit` <: Integer {
     operator func |(right: Int32): Int32 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend Int64 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int64 { /* compiled code */ }
@@ -509,7 +560,7 @@ extend `Unit` <: Integer {
     operator func |(right: Int64): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend IntNative <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): IntNative { /* compiled code */ }
@@ -527,7 +578,7 @@ extend `Unit` <: Integer {
     operator func |(right: IntNative): IntNative { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend UInt8 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt8 { /* compiled code */ }
@@ -545,7 +596,7 @@ extend `Unit` <: Integer {
     operator func |(right: UInt8): UInt8 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend UInt16 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt16 { /* compiled code */ }
@@ -563,7 +614,7 @@ extend `Unit` <: Integer {
     operator func |(right: UInt16): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend UInt32 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt32 { /* compiled code */ }
@@ -581,7 +632,7 @@ extend `Unit` <: Integer {
     operator func |(right: UInt32): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend UInt64 <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt64 { /* compiled code */ }
@@ -599,7 +650,7 @@ extend `Unit` <: Integer {
     operator func |(right: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` <: Integer {
+extend UIntNative <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UIntNative { /* compiled code */ }
@@ -617,7 +668,7 @@ extend `Unit` <: Integer {
     operator func |(right: UIntNative): UIntNative { /* compiled code */ }
 }
 
-extend `Unit` <: FloatingPoint {
+extend Float16 <: FloatingPoint {
     static func getPI(): Float16 { /* compiled code */ }
 
     static func getE(): Float16 { /* compiled code */ }
@@ -631,7 +682,7 @@ extend `Unit` <: FloatingPoint {
     static func getMinNormal(): Float16 { /* compiled code */ }
 }
 
-interface FloatingPoint <: std.math.Number<T> {
+interface FloatingPoint<T> <: std.math.Number<T> {
     abstract static func getPI(): T
 
     abstract static func getE(): T
@@ -644,14 +695,14 @@ interface FloatingPoint <: std.math.Number<T> {
 
     abstract static func getMinNormal(): T
 
-    abstract func isInf(): Bool
+    abstract open func isInf(): Bool
 
-    abstract func isNaN(): Bool
+    abstract open func isNaN(): Bool
 
-    abstract func isNormal(): Bool
+    abstract open func isNormal(): Bool
 }
 
-extend `Unit` <: FloatingPoint {
+extend Float32 <: FloatingPoint {
     static func getPI(): Float32 { /* compiled code */ }
 
     static func getE(): Float32 { /* compiled code */ }
@@ -665,7 +716,7 @@ extend `Unit` <: FloatingPoint {
     static func getMinNormal(): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: FloatingPoint {
+extend Float64 <: FloatingPoint {
     static func getPI(): Float64 { /* compiled code */ }
 
     static func getE(): Float64 { /* compiled code */ }
@@ -817,20 +868,28 @@ func countOnes(x: Int32): Int64 { /* compiled code */ }
 
 func countOnes(x: Int64): Int64 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: Int8): Int64` instead."]
 func countOne(x: Int8): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: Int16): Int64` instead."]
 func countOne(x: Int16): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: Int32): Int64` instead."]
 func countOne(x: Int32): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: Int64): Int64` instead."]
 func countOne(x: Int64): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: UInt8): Int64` instead."]
 func countOne(x: UInt8): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: UInt16): Int64` instead."]
 func countOne(x: UInt16): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: UInt32): Int64` instead."]
 func countOne(x: UInt32): Int8 { /* compiled code */ }
 
+@Deprecated[message: "Use global function `public func countOnes(x: UInt64): Int64` instead."]
 func countOne(x: UInt64): Int8 { /* compiled code */ }
 
 func reverse(x: UInt64): UInt64 { /* compiled code */ }
@@ -987,4 +1046,4 @@ foreign func CJ_MATH_Fmod(x: Float64, y: Float64): Float64
 
 foreign func CJ_MATH_Fmodf(x: Float32, y: Float32): Float32
 
-func intrinsicRound(x: T): T { /* compiled code */ }
+func intrinsicRound<T>(x: T): T { /* compiled code */ }

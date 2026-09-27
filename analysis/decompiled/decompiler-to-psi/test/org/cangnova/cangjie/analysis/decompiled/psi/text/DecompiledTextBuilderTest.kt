@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.decompiled.psi.text
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.stubs.ObjectStubSerializer
 import com.intellij.psi.stubs.PsiFileStub
 import com.intellij.psi.stubs.StubElement
@@ -11,6 +12,7 @@ import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.util.io.AbstractStringEnumerator
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.CangJieCoreEnvironment
+import org.cangnova.cangjie.analysis.decompiler.stub.COMPILED_DEFAULT_INITIALIZER
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
@@ -19,19 +21,30 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjAbstractClassBody
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjFieldVariable
+import org.cangnova.cangjie.psi.CjMacroExpression
+import org.cangnova.cangjie.psi.CjStringTemplateExpression
+import org.cangnova.cangjie.psi.CjValueArgumentList
+import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.cangnova.cangjie.psi.stubs.impl.CangJieClassStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieAnnotationStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFieldStubImpl
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.impl.CangJieBasicTypeStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieMacroStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieMainFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieModifierListStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieParameterStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderWithTextStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieOperationReferenceStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyAccessorStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieStructStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieValueArgumentStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.deepCopy
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -51,13 +64,9 @@ import java.io.ByteArrayOutputStream
 class DecompiledTextBuilderTest {
     @Test
     fun annotationArgumentsAndCompileTimePrefixSurviveDecompiledText() {
-        withCoreEnvironment { environment ->
+        withCoreEnvironment {
             val annotation = "@!APILevel[since: \"22\", permission: \"a\" & \"b\"]"
-            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
-                "sample.cj", CangJieFileType.INSTANCE,
-                "package sample\n$annotation\nfunc f(): Unit {}",
-            ) as CjFile
-            val rendered = buildDecompiledText(source.calcStubTree().root as CangJieFileStubImpl)
+            val rendered = buildDecompiledText(createCompiledAnnotationFileStub())
             assertTrue(rendered.contains(annotation), rendered)
         }
     }
@@ -83,16 +92,41 @@ class DecompiledTextBuilderTest {
         }
     }
 
+    /** 枚举构造项同时出现在 declarations 与 constructor 查询中时，反编译文本只输出一次。 */
+    @Test
+    fun enumConstructorsAreRenderedOnceBeforeMembers() {
+        withCoreEnvironment { environment ->
+            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
+                "enum.cj",
+                CangJieFileType.INSTANCE,
+                """
+                package sample
+
+                enum Color {
+                    | Red
+                    | Green
+
+                    func display(): Int64 { return 0 }
+                }
+                """.trimIndent(),
+            ) as CjFile
+            val fileStub = source.calcStubTree().root as CangJieFileStubImpl
+
+            val rendered = buildDecompiledText(fileStub)
+
+            assertEquals(1, Regex("\\| Red").findAll(rendered).count(), rendered)
+            assertEquals(1, Regex("\\| Green").findAll(rendered).count(), rendered)
+            assertEquals(1, Regex("func display\\(").findAll(rendered).count(), rendered)
+            assertTrue(rendered.indexOf("| Green") < rendered.indexOf("func display"), rendered)
+        }
+    }
+
     /** 注解渲染必须可用于已落盘的 compiled stub，不能借用原始文件 AST。 */
     @Test
     fun annotationArgumentsSurviveSerializationAndDeepCopy() {
-        withCoreEnvironment { environment ->
+        withCoreEnvironment {
             val annotation = "@!APILevel[since: \"22\", permission: \"a\" & \"b\"]"
-            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
-                "sample.cj", CangJieFileType.INSTANCE,
-                "package sample\n$annotation\nfunc f(): Unit {}",
-            ) as CjFile
-            val sourceStub = source.calcStubTree().root as CangJieFileStubImpl
+            val sourceStub = createCompiledAnnotationFileStub()
             val restored = (roundTripStub(sourceStub) as CangJieFileStubImpl).deepCopy()
             assertNull(restored.psi, "恢复后的 stub 不得绑定源码 PSI")
             fun shape(stub: StubElement<*>): String = buildString {
@@ -461,11 +495,6 @@ class DecompiledTextBuilderTest {
                     isNamed = false,
                     functionTypeParameterName = null,
                 )
-                // 对齐 parseValueParameter：value parameter 始终有空 ANNOTATIONS
-                CangJiePlaceHolderStubImpl<org.cangnova.cangjie.psi.CjAnnotations>(
-                    setterParameterStub,
-                    CjStubElementTypes.ANNOTATIONS,
-                )
             }
 
             assertTrue(rendered.contains("get() { /* compiled code */ }"), rendered)
@@ -531,6 +560,109 @@ class DecompiledTextBuilderTest {
         val fileStub = CangJieFileStubImpl.forFile(samplePackage)
         build(fileStub)
         return buildDecompiledText(fileStub)
+    }
+
+    /** CJO initializer 占位符须在文本与 stub 中使用同名引用，且不能吞掉下一条注解声明。 */
+    @Test
+    fun compiledFieldInitializerUsesStructuredPlaceholder() {
+        withCoreEnvironment { environment ->
+            val rendered = renderManualStructStub { bodyStub ->
+                val fieldStub = CangJieFieldStubImpl(
+                    parent = bodyStub,
+                    name = StringRef.fromString("initialized"),
+                    fqName = sampleStructFqName.child(Name.identifier("initialized")),
+                    isVar = false,
+                    isConst = false,
+                    hasInitializer = true,
+                    hasReturnTypeRef = true,
+                    origin = null,
+                )
+                createEmptyHeader(fieldStub)
+                createBasicTypeReference(fieldStub, "Int64")
+                CangJieNameReferenceExpressionStubImpl(
+                    fieldStub,
+                    StringRef.fromString(COMPILED_DEFAULT_INITIALIZER),
+                )
+            }
+
+            assertTrue(
+                rendered.contains("let initialized: Int64 = $COMPILED_DEFAULT_INITIALIZER /* compiled code */"),
+                rendered,
+            )
+
+            val sourceText = rendered.substringBeforeLast("}") + """
+
+                @!APILevel
+                let next: Int64
+            }
+            """.trimIndent()
+            val source = PsiFileFactory.getInstance(environment.project).createFileFromText(
+                "compiled.cj",
+                CangJieFileType.INSTANCE,
+                sourceText,
+            ) as CjFile
+            val fields = PsiTreeUtil.collectElementsOfType(source, CjFieldVariable::class.java)
+                .sortedBy { it.textOffset }
+            assertEquals(listOf("initialized", "next"), fields.map { it.name })
+            assertTrue(fields.first().hasInitializer(), sourceText)
+            assertEquals(COMPILED_DEFAULT_INITIALIZER, fields.first().initializer?.text)
+            assertTrue(PsiTreeUtil.collectElementsOfType(source, CjMacroExpression::class.java).isEmpty(), sourceText)
+        }
+    }
+
+    /**
+     * 构造 CJO 注解反编译器写入的 compiled-stub 形状，字符串片段由持久化 text stub 承载。
+     */
+    private fun createCompiledAnnotationFileStub(): CangJieFileStubImpl {
+        val fileStub = CangJieFileStubImpl.forFile(samplePackage)
+        val structStub = CangJieStructStubImpl(
+            type = CjStubElementTypes.STRUCT,
+            parent = fileStub,
+            qualifiedName = StringRef.fromString(sampleStructFqName.asString()),
+            classId = null,
+            name = StringRef.fromString(sampleStructName.asString()),
+            superNames = emptyArray(),
+        )
+        val annotations = CangJiePlaceHolderStubImpl<CjAnnotations>(structStub, CjStubElementTypes.ANNOTATIONS)
+        val annotation = CangJieAnnotationStubImpl(
+            parent = annotations,
+            shortName = StringRef.fromString("APILevel"),
+            hasValueArguments = true,
+            compileTimeVisible = true,
+        )
+        val arguments = CangJiePlaceHolderStubImpl<CjValueArgumentList>(annotation, CjStubElementTypes.VALUE_ARGUMENT_LIST)
+
+        fun addNamedArgument(name: String, expression: (StubElement<*>) -> Unit) {
+            val argument = CangJieValueArgumentStubImpl(arguments, CjStubElementTypes.VALUE_ARGUMENT, false)
+            val argumentName = CangJiePlaceHolderStubImpl<CjValueArgumentName>(argument, CjStubElementTypes.VALUE_ARGUMENT_NAME)
+            CangJieNameReferenceExpressionStubImpl(argumentName, StringRef.fromString(name))
+            expression(argument)
+        }
+
+        addNamedArgument("since") { argument -> addStringTemplate(argument, "22") }
+        addNamedArgument("permission") { argument ->
+            val binary = CangJiePlaceHolderStubImpl<org.cangnova.cangjie.psi.CjBinaryExpression>(
+                argument,
+                CjStubElementTypes.BINARY_EXPRESSION,
+            )
+            addStringTemplate(binary, "a")
+            CangJieOperationReferenceStubImpl(binary, CjTokens.AND)
+            addStringTemplate(binary, "b")
+        }
+
+        CangJieModifierListStubImpl(structStub, 0L, CjStubElementTypes.MODIFIER_LIST)
+        CangJiePlaceHolderStubImpl<CjAbstractClassBody>(structStub, CjStubElementTypes.CLASS_BODY)
+        return fileStub
+    }
+
+    /** 为 compiled annotation stub 创建带文本的字符串模板节点。 */
+    private fun addStringTemplate(parent: StubElement<*>, value: String) {
+        val template = CangJiePlaceHolderStubImpl<CjStringTemplateExpression>(parent, CjStubElementTypes.STRING_TEMPLATE)
+        CangJiePlaceHolderWithTextStubImpl<org.cangnova.cangjie.psi.CjLiteralStringTemplateEntry>(
+            template,
+            CjStubElementTypes.LITERAL_STRING_TEMPLATE_ENTRY,
+            value,
+        )
     }
 
     /**

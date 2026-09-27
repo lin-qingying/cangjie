@@ -43,7 +43,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=body]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract mut]
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
+        CangJieStub$MODIFIER_LIST[abstract open mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -53,7 +58,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Body]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -75,7 +80,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=TargetNamedAttribute]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -95,7 +100,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Decl]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -115,7 +120,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=PropDecl]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -140,7 +145,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -169,7 +173,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -182,9 +185,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=F]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -214,7 +219,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -225,7 +229,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputOptions]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -236,7 +239,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ClassLikeDecl]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -400,7 +402,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -421,7 +422,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=DeriveInterfaceOption]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -442,7 +442,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=QualifiedName]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -463,7 +462,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=QualifiedName]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -473,7 +471,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Decl]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -494,7 +491,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -515,7 +511,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -568,7 +563,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -580,7 +574,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=DerivingSettings]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -596,7 +589,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -626,7 +618,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=TargetNamedAttribute]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -646,7 +637,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -666,7 +656,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -708,7 +697,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -728,7 +716,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -748,51 +735,28 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$FUNCTION_TYPE
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterator]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
                   CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterable]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=TargetNamedAttribute]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterator]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
                     CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=TargetNamedAttribute]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=TargetNamedAttribute]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -801,7 +765,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -810,7 +773,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -819,7 +781,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decl]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -839,7 +800,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -859,7 +819,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -879,7 +838,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -901,7 +859,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -912,7 +869,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputOptions]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -923,7 +879,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DerivingTarget]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -954,7 +909,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -965,7 +919,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputOptions]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -974,7 +927,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=EnumDecl]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -998,6 +950,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=ClassDecl]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
@@ -1032,6 +988,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=StructDecl]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
@@ -1066,7 +1026,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1086,7 +1045,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=GenericDecl]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1106,7 +1064,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=DeriveInterfaceOption]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1160,7 +1117,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1171,7 +1127,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1186,7 +1141,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1197,7 +1151,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1208,7 +1161,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=QualifiedName]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1217,7 +1169,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Token]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1238,6 +1189,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=ParsedGenericConstraint]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=constraints]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1259,6 +1215,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=ParsedGenericConstraint]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1331,7 +1288,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1343,7 +1299,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1355,7 +1310,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=QualifiedName]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1380,7 +1334,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1391,7 +1344,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputOptions]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1424,7 +1376,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1469,7 +1420,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1557,7 +1507,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1569,7 +1518,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1666,7 +1614,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1676,7 +1623,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Token]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1701,7 +1647,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1710,7 +1655,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1747,7 +1691,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1756,7 +1699,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1789,7 +1731,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1800,7 +1741,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=PushbackTokensIterator]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1906,7 +1846,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1960,7 +1899,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1977,7 +1915,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1987,7 +1924,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1998,7 +1934,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Mark]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2030,7 +1965,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -2053,16 +1987,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2105,9 +2040,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -2125,49 +2061,35 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$FUNCTION_TYPE
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=HashMap]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
                   CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterable]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=HashMap]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
                     CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=F]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -2188,36 +2110,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$FUNCTION_TYPE
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterable]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterable]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=F]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Iterable]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
   CangJieStub$STRUCT[classId=std/deriving/impl/MapNotNoneIterable, fqName=std.deriving.impl.MapNotNoneIterable, name=MapNotNoneIterable, superNames=[Iterable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=F]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2291,7 +2200,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -2306,7 +2214,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=F]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
@@ -2330,6 +2237,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
   CangJieStub$CLASS[classId=std/deriving/impl/MapNotNoneIterator, fqName=std.deriving.impl.MapNotNoneIterator, name=MapNotNoneIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=F]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2403,7 +2313,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -2418,7 +2327,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=F]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
@@ -2444,7 +2352,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

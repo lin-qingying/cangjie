@@ -39,26 +39,32 @@ class Scope <: std.core.Object & std.core.Equatable<std.deriving.resolve.Scope> 
 
     func appendScopeType(t: std.ast.TypeNode): Unit { /* compiled code */ }
 
+    @Annotation
     prop root: std.core.Option<std.deriving.resolve.Scope> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop funcScope: std.core.Option<std.deriving.resolve.Scope> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isRoot: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop allInvalids: std.core.Array<std.deriving.api.Identifier> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop isFuncScope: Bool {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop scopeType: std.ast.TypeNode {
         get() { /* compiled code */ }
     }
@@ -92,7 +98,7 @@ func constructorDecl(c: std.ast.PrimaryCtorDecl, parent: std.deriving.resolve.Sc
 
 func funcDecl(f: std.ast.FuncDecl, parent: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-extend Scope {
+extend std.deriving.resolve.Scope {
     func appendParams(funcParams: std.core.Iterable<std.ast.FuncParam>): Unit { /* compiled code */ }
 }
 
@@ -132,6 +138,7 @@ func patternExpr(p: std.ast.Pattern, t: std.ast.TypeNode, scope: std.deriving.re
 
 func optionType(t: std.ast.TypeNode): std.ast.TypeNode { /* compiled code */ }
 
+@Annotation
 enum ScopeResolveResult {
     | Unresolved(std.deriving.api.Identifier)
 
@@ -139,14 +146,17 @@ enum ScopeResolveResult {
 
     | ResolvedType(std.deriving.api.Identifier, std.ast.TypeNode, std.deriving.resolve.Scope)
 
+    @Annotation
     prop resolvedType: std.core.Option<std.ast.TypeNode> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop scope: std.core.Option<std.deriving.resolve.Scope> {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop id: std.deriving.api.Identifier {
         get() { /* compiled code */ }
     }
@@ -206,8 +216,8 @@ func unionApprox(a: std.core.Option<std.ast.TypeNode>, b: std.core.Option<std.as
 
 func typeByKeyword(keyword: std.ast.Token): std.ast.TypeNode { /* compiled code */ }
 
-func myReduce(combine: (T, T) -> T): (std.core.Iterable<T>) -> std.core.Option<T> { /* compiled code */ }
+func myReduce<T>(combine: (T, T) -> T): std.core.Option<T> { /* compiled code */ }
 
-func unopt(opt: std.core.Option<std.core.Option<T>>): std.core.Option<T> { /* compiled code */ }
+func unopt<T>(opt: std.core.Option<std.core.Option<T>>): std.core.Option<T> { /* compiled code */ }
 
 func myParseType(tokens: std.ast.Tokens): std.ast.TypeNode { /* compiled code */ }
