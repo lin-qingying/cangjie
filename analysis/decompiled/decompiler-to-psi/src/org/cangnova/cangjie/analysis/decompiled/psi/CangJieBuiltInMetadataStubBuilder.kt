@@ -3,9 +3,13 @@ package org.cangnova.cangjie.analysis.decompiled.psi
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.stubs.BinaryFileStubBuilder
+import com.intellij.psi.stubs.Stub
+import com.intellij.util.indexing.FileContent
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CangJieMetadataStubBuilder
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoModuleDataProvider
+import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoStubBuilder
 import org.cangnova.cangjie.analysis.decompiler.stub.file.DecompiledPackageDataFinder
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.psi.stubs.CangJieStubVersions
@@ -59,4 +63,27 @@ object CangJieBuiltInMetadataStubBuilder : CangJieMetadataStubBuilder() {
 
         return FileWithMetadata.Compatible(loadedPackage, moduleData)
     }
+}
+
+/** `.cjo` file type 的 binary-stub dispatcher，按同一 CJO decompiler 扩展选择 stub builder。 */
+class CangJieBinaryFileStubBuilder : BinaryFileStubBuilder {
+    private fun findStubBuilder(file: VirtualFile): CjoStubBuilder? {
+        return CjoFileDecompilers.getInstance()
+            .find(file, CjoFileDecompilers.Full::class.java)
+            ?.getStubBuilder()
+            ?.also { builder ->
+                check(builder.getStubVersion() == getStubVersion()) {
+                    "All `.cjo` stub builders must use the shared file-type stub version ${getStubVersion()}"
+                }
+            }
+    }
+
+    override fun acceptsFile(file: VirtualFile): Boolean =
+        findStubBuilder(file)?.acceptsFile(file) == true
+
+    override fun buildStubTree(fileContent: FileContent): Stub? =
+        findStubBuilder(fileContent.file)?.buildStubTree(fileContent)
+
+    /** IntelliJ 的 binary-stub index 只有 file-type 级版本，因此所有 CJO builder 共用此版本。 */
+    override fun getStubVersion(): Int = CangJieStubVersions.BUILTIN_STUB_VERSION
 }

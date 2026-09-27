@@ -25,17 +25,32 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=blockSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=algorithm]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -45,10 +60,9 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -64,10 +78,9 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -83,7 +96,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -98,21 +111,32 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func digest<T>(algorithm: T, input: InputStream): Array<Byte> where T <: Digest` instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -134,14 +158,14 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -163,14 +187,14 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

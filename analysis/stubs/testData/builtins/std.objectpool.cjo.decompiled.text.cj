@@ -6,7 +6,8 @@ package std.objectpool
 import std.collection.concurrent.*
 import std.core.*
 
-class ObjectPool {
+@Deprecated
+class ObjectPool<T> {
     var pool: std.core.Array<std.collection.concurrent.ConcurrentLinkedQueue<T>>
 
     let newFunc: () -> T
@@ -15,7 +16,7 @@ class ObjectPool {
 
     init(newFunc: () -> T, resetFunc: std.core.Option<(T) -> T>) { /* compiled code */ }
 
-    func `get`(): T { /* compiled code */ }
+    func get(): T { /* compiled code */ }
 
     func put(item: T): Unit { /* compiled code */ }
 }

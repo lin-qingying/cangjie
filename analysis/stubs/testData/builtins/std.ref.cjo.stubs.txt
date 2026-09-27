@@ -41,13 +41,16 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=CleanupPolicy]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.ref.CleanupPolicy, name=EAGER, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.ref.CleanupPolicy, name=DEFERRED, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -62,7 +65,6 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -85,7 +87,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=CleanupPolicy]
   CangJieStub$CLASS[classId=std/ref/WeakRefBase, fqName=std.ref.WeakRefBase, name=WeakRefBase, superNames=[]]
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[abstract open]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_value]
         CangJieStub$ANNOTATIONS
@@ -121,7 +123,6 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -139,7 +140,6 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Object]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -150,6 +150,8 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
   CangJieStub$CLASS[classId=std/ref/WeakRef, fqName=std.ref.WeakRef, name=WeakRef, superNames=[WeakRefBase]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -165,12 +167,10 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -180,6 +180,11 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=CleanupPolicy]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=cleanupPolicy]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -190,8 +195,14 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CleanupPolicy]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -207,6 +218,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.ref, facadeFqName=std.ref]]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

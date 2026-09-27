@@ -8,20 +8,25 @@ import std.io.InputStream
 import std.sync.*
 import std.io.OutputStream
 
+@Deprecated[message: "Use related global functions in the std.env instead."]
 class Console {
+    @Annotation
     static prop stdIn: std.console.ConsoleReader {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop stdOut: std.console.ConsoleWriter {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop stdErr: std.console.ConsoleWriter {
         get() { /* compiled code */ }
     }
 }
 
+@Deprecated[message: "This class migrate to the std.env."]
 class ConsoleReader <: std.core.Object & std.io.InputStream {
     var buffer: std.core.Array<UInt8>
 
@@ -42,6 +47,7 @@ class ConsoleReader <: std.core.Object & std.io.InputStream {
     func read(arr: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 }
 
+@Deprecated[message: "This class migrate to the std.env."]
 class ConsoleWriter <: std.core.Object & std.io.OutputStream {
     let mutex: std.sync.ReentrantMutex
 
@@ -59,7 +65,7 @@ class ConsoleWriter <: std.core.Object & std.io.OutputStream {
 
     func write(v: std.core.String): Unit { /* compiled code */ }
 
-    func write(v: T): Unit { /* compiled code */ }
+    func write<T>(v: T): Unit { /* compiled code */ }
 
     func write(v: Bool): Unit { /* compiled code */ }
 
@@ -89,7 +95,7 @@ class ConsoleWriter <: std.core.Object & std.io.OutputStream {
 
     func writeln(v: std.core.String): Unit { /* compiled code */ }
 
-    func writeln(v: T): Unit { /* compiled code */ }
+    func writeln<T>(v: T): Unit { /* compiled code */ }
 
     func writeln(v: Bool): Unit { /* compiled code */ }
 

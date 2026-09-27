@@ -19,7 +19,7 @@ enum CleanupPolicy <: std.core.Equatable<std.ref.CleanupPolicy> {
 
 func getDeferredWeakRefPolicy(): std.ref.CleanupPolicy { /* compiled code */ }
 
-class WeakRefBase {
+abstract open class WeakRefBase {
     var _value: std.core.Option<std.core.Object>
 
     let _cleanupPolicy: std.ref.CleanupPolicy
@@ -27,13 +27,15 @@ class WeakRefBase {
     init(value: std.core.Option<std.core.Object>, cleanupPolicy: std.ref.CleanupPolicy) { /* compiled code */ }
 }
 
-class WeakRef <: std.ref.WeakRefBase {
+class WeakRef<T> <: std.ref.WeakRefBase {
     init(value: T, cleanupPolicy: std.ref.CleanupPolicy) { /* compiled code */ }
 
+    @Annotation
     prop cleanupPolicy: std.ref.CleanupPolicy {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     prop value: std.core.Option<T> {
         get() { /* compiled code */ }
     }

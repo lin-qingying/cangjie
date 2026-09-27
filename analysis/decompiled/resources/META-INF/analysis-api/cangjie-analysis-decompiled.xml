@@ -12,6 +12,10 @@
   </extensions>
 
   <extensions defaultExtensionNs="com.intellij">
+    <filetype.stubBuilder
+        filetype="cjo"
+        implementationClass="org.cangnova.cangjie.analysis.decompiled.psi.CangJieBinaryFileStubBuilder"
+    />
     <filetype.decompiler
         filetype="cjo"
         implementationClass="org.cangnova.cangjie.analysis.decompiled.psi.CjoBinaryFileDecompiler"

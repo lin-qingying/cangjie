@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.decompiled
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
@@ -67,6 +68,46 @@ class DecompiledBinaryIndexImpl(
     override fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile> {
         refreshIfNeeded()
         return builtinsIndex(module.targetPlatform).files
+    }
+
+    /** 返回指定 builtins platform 在搜索作用域内的缓存 package 文件映射。 */
+    override fun getBuiltinsPackages(
+        module: CaBuiltinsModule,
+        searchScope: GlobalSearchScope,
+    ): Map<FqName, VirtualFile> {
+        refreshIfNeeded()
+        return getBuiltinsPackages(module.targetPlatform, searchScope)
+    }
+
+    /**
+     * 返回当前项目 builtins modules 在搜索作用域内的缓存 package 文件映射。
+     *
+     * 复用索引构建时解析的 package header；stub 构建期间不再遍历并读取整个 builtins 文件集。
+     */
+    override fun getBuiltinsPackages(searchScope: GlobalSearchScope): Map<FqName, VirtualFile> {
+        refreshIfNeeded()
+        val targetPlatforms = knownBuiltinsModules(CaModuleProvider.getInstance(project))
+            .map { module -> module.targetPlatform }
+            .toList()
+            .ifEmpty { listOf(CangJiePlatforms.defaultCangJiePlatform) }
+
+        return buildMap {
+            targetPlatforms.forEach { targetPlatform ->
+                builtinsIndex(targetPlatform).packageFiles.forEach { (packageName, file) ->
+                    if (searchScope.contains(file)) putIfAbsent(packageName, file)
+                }
+            }
+        }
+    }
+
+    /** 按指定 builtins platform 返回作用域内的 package 文件映射。 */
+    private fun getBuiltinsPackages(
+        targetPlatform: TargetPlatform,
+        searchScope: GlobalSearchScope,
+    ): Map<FqName, VirtualFile> = buildMap {
+        builtinsIndex(targetPlatform).packageFiles.forEach { (packageName, file) ->
+            if (searchScope.contains(file)) put(packageName, file)
+        }
     }
 
     /**

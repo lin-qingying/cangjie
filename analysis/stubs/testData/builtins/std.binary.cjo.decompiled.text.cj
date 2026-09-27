@@ -5,23 +5,23 @@ package std.binary
 
 import std.core.*
 
-interface BigEndianOrder {
-    abstract func writeBigEndian(buffer: std.core.Array<UInt8>): Int64
+interface BigEndianOrder<T> {
+    abstract open func writeBigEndian(buffer: std.core.Array<UInt8>): Int64
 
     abstract static func readBigEndian(buffer: std.core.Array<UInt8>): T
 }
 
-interface LittleEndianOrder {
-    abstract func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64
+interface LittleEndianOrder<T> {
+    abstract open func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64
 
     abstract static func readLittleEndian(buffer: std.core.Array<UInt8>): T
 }
 
-interface SwapEndianOrder {
-    abstract func swapBytes(): T
+interface SwapEndianOrder<T> {
+    abstract open func swapBytes(): T
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend UInt64 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -33,7 +33,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): UInt64 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend Int64 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -45,7 +45,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): Int64 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend UInt32 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -57,7 +57,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): UInt32 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend Int32 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -69,7 +69,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): Int32 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend UInt16 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -81,7 +81,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): UInt16 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend Int16 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -93,7 +93,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): Int16 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend UInt8 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -105,7 +105,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): UInt8 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
+extend Int8 <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -117,7 +117,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder & SwapEndianOrder {
     func swapBytes(): Int8 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder {
+extend Float64 <: BigEndianOrder & LittleEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -127,7 +127,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder {
     static func readLittleEndian(buffer: std.core.Array<UInt8>): Float64 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder {
+extend Float32 <: BigEndianOrder & LittleEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -137,7 +137,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder {
     static func readLittleEndian(buffer: std.core.Array<UInt8>): Float32 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder {
+extend Float16 <: BigEndianOrder & LittleEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
@@ -147,7 +147,7 @@ extend `Unit` <: BigEndianOrder & LittleEndianOrder {
     static func readLittleEndian(buffer: std.core.Array<UInt8>): Float16 { /* compiled code */ }
 }
 
-extend `Unit` <: BigEndianOrder & LittleEndianOrder {
+extend Bool <: BigEndianOrder & LittleEndianOrder {
     func writeLittleEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
 
     func writeBigEndian(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }

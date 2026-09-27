@@ -10,9 +10,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -29,10 +30,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -52,16 +52,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.convert.Flags, name=NoFlag, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.convert.Flags, name=Minus, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.convert.Flags, name=Plus, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.convert.Flags, name=Sharp, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.convert.Flags, name=Zero, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -76,7 +85,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -86,12 +94,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Flags]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Int64, extendId=std.convert:Int64<:Formattable, fqName=std.convert.Int64, name=Int64, receiverTypeName=Int64, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -103,7 +110,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -118,12 +124,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Int32, extendId=std.convert:Int32<:Formattable, fqName=std.convert.Int32, name=Int32, receiverTypeName=Int32, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -135,7 +140,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -150,12 +154,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Int16, extendId=std.convert:Int16<:Formattable, fqName=std.convert.Int16, name=Int16, receiverTypeName=Int16, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -167,7 +170,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -182,12 +184,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Int8, extendId=std.convert:Int8<:Formattable, fqName=std.convert.Int8, name=Int8, receiverTypeName=Int8, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -199,7 +200,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -214,12 +214,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt64, extendId=std.convert:UInt64<:Formattable, fqName=std.convert.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -231,7 +230,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -246,12 +244,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt32, extendId=std.convert:UInt32<:Formattable, fqName=std.convert.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -263,7 +260,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -278,12 +274,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt16, extendId=std.convert:UInt16<:Formattable, fqName=std.convert.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -295,7 +290,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -310,12 +304,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt8, extendId=std.convert:UInt8<:Formattable, fqName=std.convert.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -327,7 +320,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -342,12 +334,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Float64, extendId=std.convert:Float64<:Formattable, fqName=std.convert.Float64, name=Float64, receiverTypeName=Float64, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -359,7 +350,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -374,12 +364,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Float32, extendId=std.convert:Float32<:Formattable, fqName=std.convert.Float32, name=Float32, receiverTypeName=Float32, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -391,7 +380,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -406,12 +394,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Float16, extendId=std.convert:Float16<:Formattable, fqName=std.convert.Float16, name=Float16, receiverTypeName=Float16, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -423,7 +410,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -438,12 +424,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Rune, extendId=std.convert:Rune<:Formattable, fqName=std.convert.Rune, name=Rune, receiverTypeName=Rune, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Rune]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -455,7 +440,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -503,7 +487,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -528,7 +511,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -556,7 +538,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -574,13 +555,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
   CangJieStub$INTERFACE[classId=std/convert/Parsable, fqName=std.convert.Parsable, name=Parsable, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -596,7 +578,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -619,13 +600,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
   CangJieStub$INTERFACE[classId=std/convert/RadixConvertible, fqName=std.convert.RadixConvertible, name=RadixConvertible, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -634,7 +616,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -645,7 +626,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -654,7 +634,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -671,10 +650,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -684,12 +662,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Int8, extendId=std.convert:Int8<:Parsable, fqName=std.convert.Int8, name=Int8, receiverTypeName=Int8, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -701,7 +678,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -716,7 +692,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -735,12 +710,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Int8, extendId=std.convert:Int8<:RadixConvertible, fqName=std.convert.Int8, name=Int8, receiverTypeName=Int8, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -752,7 +726,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -761,7 +734,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -771,7 +743,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -780,7 +751,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -799,7 +769,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -809,12 +778,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt8, extendId=std.convert:UInt8<:Parsable, fqName=std.convert.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -826,7 +794,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -841,7 +808,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -860,12 +826,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/UInt8, extendId=std.convert:UInt8<:RadixConvertible, fqName=std.convert.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt8]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -877,7 +842,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -886,7 +850,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -896,7 +859,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -905,7 +867,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -924,7 +885,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -934,12 +894,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Int16, extendId=std.convert:Int16<:Parsable, fqName=std.convert.Int16, name=Int16, receiverTypeName=Int16, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -951,7 +910,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -966,7 +924,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -985,12 +942,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Int16, extendId=std.convert:Int16<:RadixConvertible, fqName=std.convert.Int16, name=Int16, receiverTypeName=Int16, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1002,7 +958,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1011,7 +966,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1021,7 +975,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1030,7 +983,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1049,7 +1001,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1059,12 +1010,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt16, extendId=std.convert:UInt16<:Parsable, fqName=std.convert.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1076,7 +1026,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1091,7 +1040,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1110,12 +1058,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/UInt16, extendId=std.convert:UInt16<:RadixConvertible, fqName=std.convert.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1127,7 +1074,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1136,7 +1082,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1146,7 +1091,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1155,7 +1099,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1174,7 +1117,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1184,12 +1126,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Int32, extendId=std.convert:Int32<:Parsable, fqName=std.convert.Int32, name=Int32, receiverTypeName=Int32, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1201,7 +1142,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1216,7 +1156,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1235,12 +1174,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Int32, extendId=std.convert:Int32<:RadixConvertible, fqName=std.convert.Int32, name=Int32, receiverTypeName=Int32, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1252,7 +1190,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1261,7 +1198,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1271,7 +1207,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1280,7 +1215,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1299,7 +1233,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1309,12 +1242,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt32, extendId=std.convert:UInt32<:Parsable, fqName=std.convert.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1326,7 +1258,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1341,7 +1272,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1360,12 +1290,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/UInt32, extendId=std.convert:UInt32<:RadixConvertible, fqName=std.convert.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1377,7 +1306,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1386,7 +1314,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1396,7 +1323,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1405,7 +1331,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1424,7 +1349,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1434,12 +1358,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Int64, extendId=std.convert:Int64<:Parsable, fqName=std.convert.Int64, name=Int64, receiverTypeName=Int64, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1451,7 +1374,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1466,7 +1388,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1485,12 +1406,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Int64, extendId=std.convert:Int64<:RadixConvertible, fqName=std.convert.Int64, name=Int64, receiverTypeName=Int64, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Int64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1502,7 +1422,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1511,7 +1430,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1521,7 +1439,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1530,7 +1447,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1549,7 +1465,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1559,12 +1474,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/UInt64, extendId=std.convert:UInt64<:Parsable, fqName=std.convert.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1576,7 +1490,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1591,7 +1504,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1610,12 +1522,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/UInt64, extendId=std.convert:UInt64<:RadixConvertible, fqName=std.convert.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=UInt64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1627,7 +1538,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1636,7 +1546,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1646,7 +1555,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1655,7 +1563,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1674,7 +1581,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1687,24 +1593,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
   CangJieStub$INTERFACE[classId=std/convert/FloatParsable, fqName=std.convert.FloatParsable, name=FloatParsable, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Float16, extendId=std.convert:Float16<:Parsable, fqName=std.convert.Float16, name=Float16, receiverTypeName=Float16, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float16]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1713,10 +1619,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1731,7 +1641,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1750,12 +1659,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Float32, extendId=std.convert:Float32<:Parsable, fqName=std.convert.Float32, name=Float32, receiverTypeName=Float32, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float32]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1764,10 +1672,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1782,7 +1694,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1801,12 +1712,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Float64, extendId=std.convert:Float64<:Parsable, fqName=std.convert.Float64, name=Float64, receiverTypeName=Float64, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Float64]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1815,10 +1725,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1833,7 +1747,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1852,12 +1765,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Rune, extendId=std.convert:Rune<:Parsable, fqName=std.convert.Rune, name=Rune, receiverTypeName=Rune, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Rune]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1869,7 +1781,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1884,7 +1795,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1903,12 +1813,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Bool, extendId=std.convert:Bool<:Parsable, fqName=std.convert.Bool, name=Bool, receiverTypeName=Bool, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
+      CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1920,7 +1829,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1935,7 +1843,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE

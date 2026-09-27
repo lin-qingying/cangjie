@@ -25,15 +25,26 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.collection.concurrent.BUF_SIZE_BITS, name=BUF_SIZE_BITS]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=BUF_SIZE_BITS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.collection.concurrent.BUF_SIZE, name=BUF_SIZE]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=BUF_SIZE]
@@ -42,6 +53,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/KVList, fqName=std.collection.concurrent.KVList, name=KVList, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myData]
         CangJieStub$ANNOTATIONS
@@ -72,14 +86,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -97,10 +114,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -115,21 +136,42 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
   CangJieStub$ENUM[classId=std/collection/concurrent/FindKey, fqName=std.collection.concurrent.FindKey, isNonExhaustive=false, name=FindKey, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.collection.concurrent.FindKey, name=FIND, typeCount=1]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_LIST
           CangJieStub$TYPE_REFERENCE
             CangJieStub$USER_TYPE
               CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.collection.concurrent.FindKey, name=NotFind, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.collection.concurrent.FindKey, name=NotMigrate, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
   CangJieStub$STRUCT[classId=std/collection/concurrent/Bucket, fqName=std.collection.concurrent.Bucket, name=Bucket, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=atomic_ref_entries]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -160,14 +202,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -190,16 +235,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -253,6 +295,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/HNode, fqName=std.collection.concurrent.HNode, name=HNode, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=buckets]
         CangJieStub$ANNOTATIONS
@@ -317,6 +362,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=migratingIndex]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -327,6 +377,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=migratedIndex]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -367,14 +422,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -395,7 +453,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -433,7 +490,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -441,6 +497,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/ConcurrentHashMapIterator, fqName=std.collection.concurrent.ConcurrentHashMapIterator, name=ConcurrentHashMapIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -482,13 +541,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curBucketIndex]
+      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curBucketIndex]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curEntries]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curEntries]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -517,17 +587,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=entriesIndex]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=entriesIndex]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentHashMapIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -548,6 +624,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -576,6 +657,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/ConcurrentHashMap, fqName=std.collection.concurrent.ConcurrentHashMap, name=ConcurrentHashMap, superNames=[Object, ConcurrentMap, Collection]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -625,6 +709,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=counts]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -642,13 +731,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
-      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=COUNT_SIZE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=COUNT_SIZE]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=curHNodeVersion]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -718,7 +818,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentHashMap]
@@ -726,11 +825,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentHashMap]
@@ -738,7 +835,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -757,7 +853,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentHashMap]
@@ -765,11 +860,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -785,15 +878,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -811,10 +907,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -822,15 +922,117 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func add(key: K, value: V): ?V` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func addIfAbsent(key: K, value: V): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -851,85 +1053,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -947,15 +1070,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func entryView(K, (MapEntryView<K, V>) -> Unit)` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -979,15 +1111,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -1005,15 +1140,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func entryView(key: K, fn: (MapEntryView<K, V>)->Unit): ?V` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1038,15 +1182,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func entryView(key: K, fn: (MapEntryView<K, V>)->Unit): ?V` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1057,7 +1210,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1085,12 +1237,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1130,7 +1280,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -1142,12 +1291,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -1155,11 +1302,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1168,6 +1321,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1193,12 +1351,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -1219,12 +1375,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1235,7 +1389,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1263,7 +1416,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1273,7 +1425,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1287,7 +1438,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1295,6 +1445,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/Block, fqName=std.collection.concurrent.Block, name=Block, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=version]
         CangJieStub$ANNOTATIONS
@@ -1303,6 +1455,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=isExtended]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1313,6 +1470,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicBool]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=next]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1339,6 +1501,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=allocated]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1349,6 +1516,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=committed]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1359,6 +1531,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=reserved]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1369,6 +1546,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=buffer]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1405,6 +1587,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/ConcurrentLinkedQueueIterator, fqName=std.collection.concurrent.ConcurrentLinkedQueueIterator, name=ConcurrentLinkedQueueIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1459,17 +1643,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=hasNext]
+      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=hasNext]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentLinkedQueueIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1485,7 +1674,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1502,6 +1690,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1525,6 +1718,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/ConcurrentLinkedQueue, fqName=std.collection.concurrent.ConcurrentLinkedQueue, name=ConcurrentLinkedQueue, superNames=[Object, Collection]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1606,10 +1801,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ConcurrentLinkedQueue]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use the other version of `init` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1624,17 +1829,33 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func addIfAbsent(key: K, value: V): ?V` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -1645,7 +1866,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -1653,6 +1873,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func remove(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1685,6 +1916,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func peek(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1739,6 +1981,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1756,6 +2003,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/ArrayBlockingQueue, fqName=std.collection.concurrent.ArrayBlockingQueue, name=ArrayBlockingQueue, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=capacity]
         CangJieStub$ANNOTATIONS
@@ -1789,6 +2038,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=allocated]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1799,6 +2053,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicUInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=reserved]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1809,6 +2068,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicUInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=sendQSize]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1819,6 +2083,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicUInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=receiveQSize]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1829,6 +2098,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicUInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=sendMonitor]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1839,6 +2113,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Monitor]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=receiveMonitor]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1857,19 +2136,27 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ArrayBlockingQueue]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use the other version of `init` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1888,17 +2175,33 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func add(element: E): Unit` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -1909,7 +2212,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -1917,15 +2219,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func add(element: E, timeout: Duration): Bool` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1940,12 +2251,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1957,6 +2266,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func remove(): E` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -1971,10 +2291,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func remove(timeout: Duration): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1999,7 +2329,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2021,6 +2350,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func peek(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -2053,10 +2393,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func tryAdd(element: E): Bool` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2067,7 +2417,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2075,6 +2424,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func tryRemove(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -2107,7 +2467,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
   CangJieStub$TYPEALIAS[classId=std/collection/concurrent/BlockingQueue, fqName=std.collection.concurrent.BlockingQueue, name=BlockingQueue]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use LinkedBlockingQueue instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -2125,6 +2498,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$CLASS[classId=std/collection/concurrent/LinkedBlockingQueue, fqName=std.collection.concurrent.LinkedBlockingQueue, name=LinkedBlockingQueue, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=capacity]
         CangJieStub$ANNOTATIONS
@@ -2133,6 +2508,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=sendMonitor]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2143,6 +2523,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Monitor]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=receiveMonitor]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2153,6 +2538,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Monitor]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=sendQSize]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2163,6 +2553,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=receiveQSize]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -2228,7 +2623,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LinkedBlockingQueue]
@@ -2237,14 +2631,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LinkedBlockingQueue]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use the other version of `init` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2259,14 +2662,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LinkedBlockingQueue]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use the other version of `init` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2281,17 +2693,33 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+            CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func add(element: E): Unit` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2302,7 +2730,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2310,15 +2737,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func add(element: E, timeout: Duration): Bool` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2333,12 +2769,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2350,6 +2784,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func remove(): E` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -2364,10 +2809,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func remove(timeout: Duration): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2392,7 +2847,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2414,6 +2868,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func peek(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -2446,10 +2911,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func tryAdd(element: E): Bool` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2460,7 +2935,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=E]
@@ -2468,6 +2942,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func tryRemove(): Option<E>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -2501,6 +2986,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$TYPEALIAS[classId=std/collection/concurrent/KeyValue, fqName=std.collection.concurrent.KeyValue, name=KeyValue]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$TUPLE_TYPE
         CangJieStub$TYPE_REFERENCE
@@ -2514,13 +3002,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
   CangJieStub$INTERFACE[classId=std/collection/concurrent/ConcurrentMap, fqName=std.collection.concurrent.ConcurrentMap, name=ConcurrentMap, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=V]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -2538,10 +3028,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -2549,15 +3038,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func add(key: K, value: V): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2575,15 +3073,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2601,15 +3097,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func addIfAbsent(key: K, value: V): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2627,15 +3132,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2653,10 +3156,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -2674,15 +3176,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func entryView(key: K, fn: (MapEntryView<K, V>)->Unit): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -2706,15 +3217,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2732,15 +3241,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func entryView(key: K, fn: (MapEntryView<K, V>)->Unit): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -2765,15 +3283,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `func entryView(key: K, fn: (MapEntryView<K, V>)->Unit): ?V` instead.]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -2784,7 +3311,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -2809,15 +3335,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -2854,10 +3378,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract operator]
+        CangJieStub$MODIFIER_LIST[abstract open operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
@@ -2866,15 +3389,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract operator]
+        CangJieStub$MODIFIER_LIST[abstract open operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
@@ -2882,7 +3403,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection.concurrent, faca
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$TYPEALIAS[classId=std/collection/concurrent/NonBlockingQueue, fqName=std.collection.concurrent.NonBlockingQueue, name=NonBlockingQueue]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use ConcurrentLinkedQueue instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE

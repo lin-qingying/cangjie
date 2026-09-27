@@ -17,7 +17,7 @@ abstract class CangJieMetadataDecompiler : CjoFileDecompilers.Full() {
     /**
      * 判断指定文件是否可由当前 metadata stub builder 处理。
      */
-    final override fun accepts(file: VirtualFile): Boolean = getStubBuilder().isSupported(file)
+    override fun accepts(file: VirtualFile): Boolean = getStubBuilder().hasStub(file)
 
     /**
      * 返回当前 decompiler 使用的 `.cjo` stub builder。
@@ -40,7 +40,7 @@ abstract class CangJieMetadataDecompiler : CjoFileDecompilers.Full() {
         manager: PsiManager,
         physical: Boolean,
     ): CangJieDecompiledFileViewProvider = CangJieDecompiledFileViewProvider(manager, file, physical) { provider ->
-        if (getStubBuilder().hasStub(provider.virtualFile)) {
+        if (!manager.project.isDefault && getStubBuilder().hasStub(provider.virtualFile)) {
             createFile(provider)
         } else {
             null

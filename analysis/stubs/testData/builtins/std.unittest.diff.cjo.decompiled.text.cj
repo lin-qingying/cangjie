@@ -11,13 +11,15 @@ import std.collection.ArrayList
 import std.convert.Formattable
 import std.math.ceil
 
-interface AssertPrintable {
-    abstract prop hasNestedDiff: Bool
+interface AssertPrintable<T> {
+    @Annotation
+    abstract open prop hasNestedDiff: Bool
 
-    abstract func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, that: T, thisPrefix: std.core.String, thatPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter
+    abstract open func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, that: T, thisPrefix: std.core.String, thatPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter
 }
 
-extend `Unit` <: AssertPrintable {
+extend Float16 <: AssertPrintable {
+    @Annotation
     prop hasNestedDiff: Bool {
         get() { /* compiled code */ }
     }
@@ -25,7 +27,8 @@ extend `Unit` <: AssertPrintable {
     func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, right: Float16, leftPrefix: std.core.String, rightPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-extend `Unit` <: AssertPrintable {
+extend Float32 <: AssertPrintable {
+    @Annotation
     prop hasNestedDiff: Bool {
         get() { /* compiled code */ }
     }
@@ -33,7 +36,8 @@ extend `Unit` <: AssertPrintable {
     func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, right: Float32, leftPrefix: std.core.String, rightPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-extend `Unit` <: AssertPrintable {
+extend Float64 <: AssertPrintable {
+    @Annotation
     prop hasNestedDiff: Bool {
         get() { /* compiled code */ }
     }
@@ -41,7 +45,8 @@ extend `Unit` <: AssertPrintable {
     func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, right: Float64, leftPrefix: std.core.String, rightPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-extend Option <: AssertPrintable {
+extend std.core.Option<T> <: AssertPrintable {
+    @Annotation
     prop hasNestedDiff: Bool {
         get() { /* compiled code */ }
     }
@@ -49,7 +54,8 @@ extend Option <: AssertPrintable {
     func pprintForAssertion(pp: std.unittest.common.PrettyPrinter, right: std.core.Option<T>, leftPrefix: std.core.String, rightPrefix: std.core.String, level: Int64): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-extend String <: AssertPrintable {
+extend std.core.String <: AssertPrintable {
+    @Annotation
     prop hasNestedDiff: Bool {
         get() { /* compiled code */ }
     }

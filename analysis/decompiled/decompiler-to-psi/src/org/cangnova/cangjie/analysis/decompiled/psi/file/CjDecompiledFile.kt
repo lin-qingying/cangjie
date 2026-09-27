@@ -8,13 +8,14 @@ package org.cangnova.cangjie.analysis.decompiled.psi.file
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiFile
 import com.intellij.psi.StubBuilder
-import com.intellij.util.indexing.FileContentImpl
+import com.intellij.psi.stubs.StubTreeLoader
+import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.analysis.api.util.requireIsInstance
-import org.cangnova.cangjie.analysis.decompiled.psi.CjoFileDecompilers
 import org.cangnova.cangjie.analysis.decompiled.psi.CangJieDecompiledFileViewProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.text.buildDecompiledText
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImplementationDetail
+import org.cangnova.cangjie.psi.CjParserLanguageModuleNameProvider
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.deepCopy
 import org.cangnova.cangjie.utils.concurrent.block.LockedClearableLazyValue
@@ -30,7 +31,12 @@ abstract class CjDecompiledFile(
      * 当前反编译文件所属的 view provider，用于访问原始虚拟文件和清理文本缓存。
      */
     private val provider: CangJieDecompiledFileViewProvider,
-) : CjFile(provider, true) {
+) : CjFile(provider, true), CjParserLanguageModuleNameProvider {
+    /** binary stub 是反编译文本与 parser module context 的共同数据源。 */
+    private val compiledFileStub = LockedClearableLazyValue(Any()) {
+        CompiledStubBuilder.readOrBuildCompiledStub(this)
+    }
+
     /**
      * 返回用于反编译 PSI 的自定义 stub builder。
      *
@@ -46,9 +52,12 @@ abstract class CjDecompiledFile(
      * 第一次访问时读取或构建 compiled stub，再通过 decompiled text builder 渲染成可展示源码。
      */
     private val decompiledText = LockedClearableLazyValue(Any()) {
-        val stub = CompiledStubBuilder.readOrBuildCompiledStub(this)
-        buildDecompiledText(stub)
+        buildDecompiledText(compiledFileStub.get())
     }
+
+    /** 从 binary stub package 中提取 parser 所需模块名，避免反解析刚生成的文本求 package。 */
+    override fun parserLanguageModuleName(): String =
+        BuiltInAnnotationRegistry.sourceModuleName(compiledFileStub.get().getPackageFqName())
 
     /**
      * 返回由 compiled stub 渲染出的反编译源码文本。
@@ -82,6 +91,7 @@ abstract class CjDecompiledFile(
         super.onContentReload()
 
         provider.content.drop()
+        compiledFileStub.drop()
         decompiledText.drop()
     }
 }
@@ -116,17 +126,22 @@ private object CompiledStubBuilder : StubBuilder {
         val virtualFile = file.viewProvider.virtualFile
         val project = file.project
 
-        val decompiler = checkNotNull(CjoFileDecompilers.getInstance().find(virtualFile, CjoFileDecompilers.Full::class.java)) {
-            "CangJie .cjo decompiler is not registered for ${virtualFile.path}"
+        check(!project.isDefault) {
+            "CangJie `.cjo` decompiled PSI requires a project with module context"
         }
-        val fileStub = decompiler
-            .getStubBuilder()
-            .buildFileStub(FileContentImpl.createByFile(virtualFile, project)) as? CangJieFileStubImpl
+        val stubLoader = StubTreeLoader.getInstance()
+        val stubTree = stubLoader.readOrBuild(project, virtualFile, null)
+        val fileStub = stubTree?.root as? CangJieFileStubImpl
         return if (fileStub != null) {
             fileStub
         } else {
+            val cause = if (stubTree == null) {
+                "CangJie file stub is not found"
+            } else {
+                "unexpected CangJie stub tree (${stubTree.root::class.simpleName})"
+            }
             val text = """
-                // Could not decompile the file: CangJie file stub is not found
+                // Could not decompile the file: $cause
                 // Please report an issue: https://github.com/lin-qingying/cangjie/issues
             """.trimIndent()
 

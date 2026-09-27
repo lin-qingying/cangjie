@@ -15,10 +15,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
       CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -32,21 +38,31 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, by!: (T, T) -> Ordering, stable!: Bool = false, descending!: Bool = false): Unit` instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -60,7 +76,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -83,10 +98,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, by!: (T, T) -> Ordering, stable!: Bool = false, descending!: Bool = false): Unit` instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -100,7 +127,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -123,10 +149,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -143,10 +181,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -163,10 +213,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Frozen]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -180,7 +236,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -200,11 +255,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -212,9 +265,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -228,7 +282,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -243,11 +296,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -255,9 +306,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -271,7 +324,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -283,11 +335,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -295,9 +345,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -311,11 +362,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -323,9 +372,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -339,7 +389,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -359,11 +408,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -371,9 +418,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -387,7 +435,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -402,11 +449,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -414,9 +459,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -430,7 +477,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -442,11 +488,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -454,9 +498,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -470,11 +515,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -482,9 +525,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -498,7 +542,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -518,11 +561,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -530,9 +571,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -546,7 +588,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -561,11 +602,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
@@ -573,9 +612,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=K]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -589,7 +630,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$FUNCTION_TYPE
             CangJieStub$VALUE_PARAMETER_LIST
@@ -601,25 +641,35 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$INTERFACE[classId=std/sort/SortByExtension, fqName=std.sort.SortByExtension, name=SortByExtension, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=The interface is deprecated, no substitutions.]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -642,14 +692,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -672,36 +720,45 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$INTERFACE[classId=std/sort/SortExtension, fqName=std.sort.SortExtension, name=SortExtension, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=The interface is deprecated, no substitutions.]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[abstract]
+        CangJieStub$MODIFIER_LIST[abstract open]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
@@ -711,7 +768,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -720,10 +786,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, by!: (T, T) -> Ordering, stable!: Bool = false, descending!: Bool = false): Unit` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -746,14 +822,23 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, by!: (T, T) -> Ordering, stable!: Bool = false, descending!: Bool = false): Unit` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -779,7 +864,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -788,32 +882,74 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use global function `public func sort<T>(data: Array<T>, stable!: Bool = false, descending!: Bool = false): Unit where T <: Comparable<T>` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE

@@ -79,7 +79,7 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
         val fromProvider = assertIs<CfirClass>(kotlin.test.assertNotNull(provider.getClassLikeSymbolByClassId(classId)).cfir)
         // 触发用 VirtualFile 故意不同名，sidecar 必须取实际选中 CJO 的 sibling。
         val input = LoadedCjoPackage(LightVirtualFile("unrelated.cjo"), FqName("test.pkg"), loaded.pkg,
-            loaded.header, listOf(root.toFile()), true, loaded.sourcePath)
+            loaded.header, manager, true, loaded.sourcePath)
         val fromDecompiler = assertIs<CfirClass>(CjoDeclarationLoader.loadDeclarations(input, Module()).single())
         fun annotationValues(declaration: CfirClass) = declaration.annotations.map { annotation ->
             val call = assertIs<CfirAnnotationCall>(annotation)

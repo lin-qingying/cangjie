@@ -6,7 +6,8 @@ package std.runtime
 import std.core.*
 import std.fs.*
 
-func blackBox(input: T): T { /* compiled code */ }
+@Frozen
+func blackBox<T>(input: T): T { /* compiled code */ }
 
 func invokeGC(heavy: Bool): Unit { /* compiled code */ }
 
@@ -18,8 +19,10 @@ func getCjGCFreedSize(): Int64 { /* compiled code */ }
 
 func setCjGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
+@Deprecated[message: "Use 'public func gc(heavy!: Bool = false): Unit' instead."]
 func GC(heavy: Bool): Unit { /* compiled code */ }
 
+@Deprecated[message: "Use 'public func setGCThreshold(value: UInt64): Unit' instead."]
 func SetGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
 func gc(heavy: Bool): Unit { /* compiled code */ }
@@ -46,15 +49,19 @@ class MemoryInfoException <: std.core.Exception {
     func getClassName(): std.core.String { /* compiled code */ }
 }
 
+@Deprecated[message: "All static Properties are converted to public functions."]
 struct MemoryInfo {
+    @Annotation
     static prop maxHeapSize: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop allocatedHeapSize: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop heapPhysicalMemory: Int64 {
         get() { /* compiled code */ }
     }
@@ -82,7 +89,9 @@ class ProfilingInfoException <: std.core.Exception {
     func getClassName(): std.core.String { /* compiled code */ }
 }
 
+@Deprecated[message: "All static Properties are converted to public functions."]
 struct ProcessorInfo {
+    @Annotation
     static prop processorCount: Int64 {
         get() { /* compiled code */ }
     }
@@ -102,15 +111,19 @@ func getBlockingThreadNumber(): Int64 { /* compiled code */ }
 
 func getNativeThreadNumber(): Int64 { /* compiled code */ }
 
+@Deprecated[message: "All static Properties are converted to public functions."]
 struct ThreadInfo {
+    @Annotation
     static prop threadCount: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop blockingThreadCount: Int64 {
         get() { /* compiled code */ }
     }
 
+    @Annotation
     static prop nativeThreadCount: Int64 {
         get() { /* compiled code */ }
     }

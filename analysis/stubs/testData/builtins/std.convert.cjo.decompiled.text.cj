@@ -5,10 +5,10 @@ package std.convert
 
 import std.core.*
 
-func parseFloat(data: std.core.String): T { /* compiled code */ }
+func parseFloat<T>(data: std.core.String): T { /* compiled code */ }
 
 interface Formattable {
-    abstract func format(fmt: std.core.String): std.core.String
+    abstract open func format(fmt: std.core.String): std.core.String
 }
 
 enum Flags {
@@ -27,51 +27,51 @@ enum Flags {
     operator func !=(right: std.convert.Flags): Bool { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Int64 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Int32 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Int16 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Int8 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend UInt64 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend UInt32 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend UInt16 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend UInt8 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Float64 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Float32 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Float16 <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Formattable {
+extend Rune <: Formattable {
     func format(fmt: std.core.String): std.core.String { /* compiled code */ }
 }
 
@@ -93,27 +93,27 @@ func parseFormat(fmt: std.core.String): (std.convert.Flags, Int64, Int64, Rune) 
 
 func escapeControlCharacters(str: std.core.String): std.core.String { /* compiled code */ }
 
-interface Parsable {
+interface Parsable<T> {
     abstract static func parse(value: std.core.String): T
 
     abstract static func tryParse(value: std.core.String): std.core.Option<T>
 }
 
-interface RadixConvertible {
+interface RadixConvertible<T> {
     abstract static func parse(value: std.core.String, radix: Int64): T
 
     abstract static func tryParse(value: std.core.String, radix: Int64): std.core.Option<T>
 
-    abstract func toString(radix: Int64): std.core.String
+    abstract open func toString(radix: Int64): std.core.String
 }
 
-extend `Unit` <: Parsable {
+extend Int8 <: Parsable {
     static func parse(data: std.core.String): Int8 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Int8> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend Int8 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): Int8 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<Int8> { /* compiled code */ }
@@ -121,13 +121,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend UInt8 <: Parsable {
     static func parse(data: std.core.String): UInt8 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<UInt8> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend UInt8 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): UInt8 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<UInt8> { /* compiled code */ }
@@ -135,13 +135,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Int16 <: Parsable {
     static func parse(data: std.core.String): Int16 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Int16> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend Int16 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): Int16 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<Int16> { /* compiled code */ }
@@ -149,13 +149,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend UInt16 <: Parsable {
     static func parse(data: std.core.String): UInt16 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<UInt16> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend UInt16 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): UInt16 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<UInt16> { /* compiled code */ }
@@ -163,13 +163,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Int32 <: Parsable {
     static func parse(data: std.core.String): Int32 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Int32> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend Int32 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): Int32 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<Int32> { /* compiled code */ }
@@ -177,13 +177,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend UInt32 <: Parsable {
     static func parse(data: std.core.String): UInt32 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<UInt32> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend UInt32 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): UInt32 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<UInt32> { /* compiled code */ }
@@ -191,13 +191,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Int64 <: Parsable {
     static func parse(data: std.core.String): Int64 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Int64> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend Int64 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): Int64 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<Int64> { /* compiled code */ }
@@ -205,13 +205,13 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend UInt64 <: Parsable {
     static func parse(data: std.core.String): UInt64 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<UInt64> { /* compiled code */ }
 }
 
-extend `Unit` <: RadixConvertible {
+extend UInt64 <: RadixConvertible {
     static func parse(value: std.core.String, radix: Int64): UInt64 { /* compiled code */ }
 
     static func tryParse(value: std.core.String, radix: Int64): std.core.Option<UInt64> { /* compiled code */ }
@@ -219,35 +219,38 @@ extend `Unit` <: RadixConvertible {
     func toString(radix: Int64): std.core.String { /* compiled code */ }
 }
 
-interface FloatParsable {
+interface FloatParsable<T> {
     abstract static func fromFloat64(n: Float64): T
 }
 
-extend `Unit` <: Parsable {
+extend Float16 <: Parsable {
+    @Frozen
     static func parse(data: std.core.String): Float16 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Float16> { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Float32 <: Parsable {
+    @Frozen
     static func parse(data: std.core.String): Float32 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Float32> { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Float64 <: Parsable {
+    @Frozen
     static func parse(data: std.core.String): Float64 { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Float64> { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Rune <: Parsable {
     static func parse(data: std.core.String): Rune { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Rune> { /* compiled code */ }
 }
 
-extend `Unit` <: Parsable {
+extend Bool <: Parsable {
     static func parse(data: std.core.String): Bool { /* compiled code */ }
 
     static func tryParse(data: std.core.String): std.core.Option<Bool> { /* compiled code */ }

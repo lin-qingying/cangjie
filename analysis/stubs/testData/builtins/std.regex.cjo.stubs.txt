@@ -13,36 +13,65 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync, isAllUnder=true, aliasName=null)], packageFqName=std.regex]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex.UNCAPTURED_GROUP_INDEX, name=UNCAPTURED_GROUP_INDEX]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=UNCAPTURED_GROUP_INDEX]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex.REGEX_NORMAL, name=REGEX_NORMAL]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=REGEX_NORMAL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex.REGEX_IGNORECASE, name=REGEX_IGNORECASE]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=REGEX_IGNORECASE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex.REGEX_MULTILINE, name=REGEX_MULTILINE]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=REGEX_MULTILINE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Annotation]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex.REGEX_UNICODE, name=REGEX_UNICODE]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=REGEX_UNICODE]
@@ -67,11 +96,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=start]
@@ -89,12 +116,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
@@ -118,7 +143,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -133,7 +157,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -164,7 +187,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -179,7 +201,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -196,6 +217,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Position]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public func groupCount(): Int64` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
@@ -261,7 +293,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -271,7 +302,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -290,12 +320,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Position]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
@@ -312,6 +340,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$CLASS[classId=std/regex/Matcher, fqName=std.regex.Matcher, name=Matcher, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=APIs in Matcher have been moved to Regex.]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=input]
@@ -430,7 +469,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -439,7 +477,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Regex]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -512,7 +549,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -571,7 +607,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -591,7 +626,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -600,7 +634,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -615,7 +648,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -635,7 +667,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -644,7 +675,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -679,7 +709,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -703,11 +732,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -744,7 +771,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -849,7 +875,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -858,7 +883,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -877,10 +901,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=RegexFlag]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Regex]
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use member function `public Regex(let pattern: String, flags: Array<RegexFlag>)` instead.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -889,7 +923,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -903,10 +936,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+          CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+            CangJieStub$CONSTRUCTOR_CALLEE
+              CangJieStub$TYPE_REFERENCE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+            CangJieStub$VALUE_ARGUMENT_LIST
+              CangJieStub$VALUE_ARGUMENT[isSpread=false]
+                CangJieStub$VALUE_ARGUMENT_NAME
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+                CangJieStub$STRING_TEMPLATE
+                  CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=`Matcher` has been marked as deprecated.]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -926,7 +969,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -964,7 +1006,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -973,7 +1014,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
@@ -997,7 +1037,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1006,12 +1045,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1020,11 +1057,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$BASIC_TYPE[basicType=Unit]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
@@ -1048,7 +1083,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1057,11 +1091,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1071,7 +1103,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1080,7 +1111,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
@@ -1104,7 +1134,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1113,7 +1142,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
@@ -1137,7 +1165,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1146,7 +1173,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1166,7 +1192,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1175,7 +1200,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1184,7 +1208,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1199,7 +1222,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1208,7 +1230,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1228,7 +1249,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1237,7 +1257,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1246,7 +1265,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1261,7 +1279,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1290,7 +1307,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1299,7 +1315,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
@@ -1402,7 +1417,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1411,7 +1425,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Regex]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1420,7 +1433,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FINALIZER[fqName=null, hasBody=true, isTopLevel=false, name=FindIterator]
@@ -1506,7 +1518,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1516,12 +1527,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$BASIC_TYPE[basicType=Unit]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int32]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
@@ -1554,17 +1563,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt32]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt32]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
@@ -1578,12 +1584,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$TYPE_REFERENCE
@@ -1603,7 +1607,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1623,7 +1626,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1632,20 +1634,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1660,7 +1658,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1680,7 +1677,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
     CangJieStub$TYPE_REFERENCE
@@ -1691,7 +1687,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1716,7 +1711,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1731,7 +1725,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1746,7 +1739,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1755,24 +1747,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1787,7 +1774,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
@@ -1798,7 +1784,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
@@ -1813,8 +1798,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.regex.RegexFlag, name=IgnoreCase, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.regex.RegexFlag, name=MultiLine, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.regex.RegexFlag, name=Unicode, typeCount=0]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1826,7 +1817,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1847,6 +1837,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
           CangJieStub$BASIC_TYPE[basicType=UInt32]
   CangJieStub$CLASS[classId=std/regex/RegexOption, fqName=std.regex.RegexOption, name=RegexOption, superNames=[Object, ToString]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
+        CangJieStub$VALUE_ARGUMENT_LIST
+          CangJieStub$VALUE_ARGUMENT[isSpread=false]
+            CangJieStub$VALUE_ARGUMENT_NAME
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=message]
+            CangJieStub$STRING_TEMPLATE
+              CangJieStub$LITERAL_STRING_TEMPLATE_ENTRY[text=Use `public enum RegexFlag` instead.]
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
@@ -1928,7 +1929,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=RegexFlag]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex._phantom, name=_phantom]
@@ -1940,7 +1941,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Object]
-  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$BINDING_PATTERN[fqName=std.regex._rf, name=_rf]
@@ -1966,7 +1967,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1998,7 +1998,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.regex, facadeFqName=std.reg
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE

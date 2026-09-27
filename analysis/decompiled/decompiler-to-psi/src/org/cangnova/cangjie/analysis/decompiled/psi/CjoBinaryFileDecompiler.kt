@@ -25,7 +25,7 @@ class CjoBinaryFileDecompiler : BinaryFileDecompiler {
             ?: ProjectLocator.getPreferredProject(file)
             ?: return ""
 
-        if (project.isDisposed) return ""
+        if (project.isDisposed || project.isDefault) return ""
 
         return PsiManager.getInstance(project).findFile(file)?.text.orEmpty()
     }

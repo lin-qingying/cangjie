@@ -14,7 +14,14 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
   CangJieStub$CLASS[classId=std/objectpool/ObjectPool, fqName=std.objectpool.ObjectPool, name=ObjectPool, superNames=[]]
     CangJieStub$ANNOTATIONS
+      CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Deprecated]
+        CangJieStub$CONSTRUCTOR_CALLEE
+          CangJieStub$TYPE_REFERENCE
+            CangJieStub$USER_TYPE
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=Deprecated]
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=pool]
         CangJieStub$ANNOTATIONS
@@ -78,7 +85,6 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -86,7 +92,6 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -118,7 +123,6 @@ CangJieFileStubImpl[File[packageFqName=std.objectpool]]
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]

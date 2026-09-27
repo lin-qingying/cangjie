@@ -52,6 +52,9 @@ abstract class CangJieMetadataStubBuilder : CjoStubBuilder() {
      */
     fun hasStub(file: VirtualFile): Boolean = isSupported(file) && file.readSafely { hasMetadata(file) } == true
 
+    /** 只让包含可读取 package metadata 的 `.cjo` 进入二进制 stub 构建。 */
+    final override fun acceptsFile(file: VirtualFile): Boolean = hasStub(file)
+
     /**
      * 在无项目上下文时安全读取文件 metadata。
      */
@@ -69,11 +72,11 @@ abstract class CangJieMetadataStubBuilder : CjoStubBuilder() {
     /**
      * 从 IntelliJ indexing file content 构建 compiled file stub。
      */
-    final override fun buildFileStub(content: FileContent): PsiFileStub<*>? {
-        val virtualFile = content.file
+    final override fun buildFileStub(fileContent: FileContent): PsiFileStub<*>? {
+        val virtualFile = fileContent.file
         check(isSupported(virtualFile)) { "Unexpected compiled file type: ${virtualFile.fileType.name}" }
 
-        val file = readFileSafely(virtualFile, content.content, content.project) ?: return null
+        val file = readFileSafely(virtualFile, fileContent.content, fileContent.project) ?: return null
         return when (file) {
             is FileWithMetadata.Incompatible -> org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl.forInvalid(file.errorText)
             is FileWithMetadata.Compatible -> CjoFileStubBuilder.buildFileStub(file.loadedPackage, file.moduleData)

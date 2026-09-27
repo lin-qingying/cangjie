@@ -11,19 +11,26 @@ import std.collection.*
 import std.fs.*
 import std.io.*
 
-let defaultCapacity: Int64
+@Annotation
+let defaultCapacity: Int64 = COMPILED_CODE /* compiled code */
 
-let STDIN_FD: IntNative
+@Annotation
+let STDIN_FD: IntNative = COMPILED_CODE /* compiled code */
 
-let STDOUT_FD: IntNative
+@Annotation
+let STDOUT_FD: IntNative = COMPILED_CODE /* compiled code */
 
-let STDERR_FD: IntNative
+@Annotation
+let STDERR_FD: IntNative = COMPILED_CODE /* compiled code */
 
-let RTN_CODE_MIN_VAL: Int64
+@Annotation
+let RTN_CODE_MIN_VAL: Int64 = COMPILED_CODE /* compiled code */
 
-let RTN_CODE_MAX_VAL: Int64
+@Annotation
+let RTN_CODE_MAX_VAL: Int64 = COMPILED_CODE /* compiled code */
 
-let NULL_BYTE: std.core.String
+@Annotation
+let NULL_BYTE: std.core.String = COMPILED_CODE /* compiled code */
 
 class ConsoleReader <: std.core.Object & std.io.InputStream {
     var buffer: std.core.Array<UInt8>
@@ -78,7 +85,7 @@ class ConsoleWriter <: std.core.Object & std.io.OutputStream {
 
     func write(v: std.core.String): Unit { /* compiled code */ }
 
-    func write(v: T): Unit { /* compiled code */ }
+    func write<T>(v: T): Unit { /* compiled code */ }
 
     func write(v: Bool): Unit { /* compiled code */ }
 
@@ -108,7 +115,7 @@ class ConsoleWriter <: std.core.Object & std.io.OutputStream {
 
     func writeln(v: std.core.String): Unit { /* compiled code */ }
 
-    func writeln(v: T): Unit { /* compiled code */ }
+    func writeln<T>(v: T): Unit { /* compiled code */ }
 
     func writeln(v: Bool): Unit { /* compiled code */ }
 
