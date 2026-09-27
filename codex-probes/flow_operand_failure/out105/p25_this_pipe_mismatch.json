@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_invalid_binary_expr",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "invalid binary operator '|>' on type 'This' and '(Int64) -> Int64'",
+                "Location": {
+                    "File": "C:\\Users\\lin17\\AppData\\Local\\Temp\\fv\\p25.cj",
+                    "Line": 7,
+                    "Column": 14
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "C:\\Users\\lin17\\AppData\\Local\\Temp\\fv\\p25.cj",
+                            "Line": 7,
+                            "Column": 14
+                        },
+                        "End": {
+                            "File": "C:\\Users\\lin17\\AppData\\Local\\Temp\\fv\\p25.cj",
+                            "Line": 7,
+                            "Column": 16
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

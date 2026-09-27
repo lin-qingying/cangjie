@@ -1,0 +1,31 @@
+exit=1 p21_fixture_nomarkers
+exit=0 p22_var_arg_to_array
+exit=1 p21(1.0.0)
+== out105/p21_fixture_nomarkers.json
+"DiagKind": "sema_mismatched_types"
+"Message": "mismatched types"
+"Column": 5
+"Column": 5
+"Column": 11
+"Errors": 1
+== out105/p22_var_arg_to_array.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Column": 8
+"Column": 8
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Column": 1
+"Column": 1
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out100/p21_fixture_nomarkers.json
+"DiagKind": "sema_mismatched_types"
+"Message": "mismatched types"
+"Column": 5
+"Column": 5
+"Column": 11
+"Errors": 1

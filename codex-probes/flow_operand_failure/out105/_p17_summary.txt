@@ -1,0 +1,10 @@
+exit=1 p17_wrong_arg_kind
+exit=1 p18_bad_assignment
+== out105/p17_wrong_arg_kind.json
+"DiagKind": "sema_mismatched_types"
+"Message": "mismatched types"
+"Errors": 1
+== out105/p18_bad_assignment.json
+"DiagKind": "sema_cannot_convert_literal"
+"Message": "cannot convert an integer literal to type 'Struct-Array<Int64>'"
+"Errors": 1

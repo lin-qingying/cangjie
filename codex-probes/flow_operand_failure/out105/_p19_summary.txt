@@ -1,0 +1,14 @@
+exit=1 p19_literal_to_string
+exit=0 p20_literal_one_to_array
+== out105/p19_literal_to_string.json
+"DiagKind": "sema_cannot_convert_literal"
+"Message": "cannot convert an integer literal to type 'Struct-String'"
+"Errors": 1
+== out105/p20_literal_one_to_array.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0

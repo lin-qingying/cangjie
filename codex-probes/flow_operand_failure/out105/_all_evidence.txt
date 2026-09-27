@@ -1,0 +1,368 @@
+== out105/p10_composition_missing_receiver.json
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'unknownReceiver'"
+"Line": 8
+"Column": 13
+"Line": 8
+"Column": 13
+"Line": 8
+"Column": 14
+"Errors": 1
+== out105/p11_composition_ambiguous_operand.json
+"DiagKind": "sema_ambiguous_use"
+"Message": "ambiguous use of 'overloaded'"
+"Line": 9
+"Column": 13
+"Line": 9
+"Column": 13
+"Line": 9
+"Column": 25
+"Message": "found candidate"
+"Line": 3
+"Column": 17
+"Line": 3
+"Column": 27
+"Message": "found candidate"
+"Line": 4
+"Column": 17
+"Line": 4
+"Column": 27
+"Errors": 1
+== out105/p12_err_pipeline_00_exact.json
+"DiagKind": "parse_expected_expr_or_decl_in"
+"Message": "expected expression or declaration, found '<'"
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 6
+"Errors": 1
+== out105/p12b_fixture_verbatim.json
+"DiagKind": "parse_expected_expr_or_decl_in"
+"Message": "expected expression or declaration, found '<'"
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 6
+"Errors": 1
+== out105/p13_direct_call_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 5
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p14_pipeline_stmt_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 6
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p15_pipeline_in_func.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 8
+"Column": 1
+"Line": 8
+"Column": 1
+"Line": 8
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p16_directcall_in_method.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 10
+"Column": 1
+"Line": 10
+"Column": 1
+"Line": 10
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p17_wrong_arg_kind.json
+"DiagKind": "sema_mismatched_types"
+"Message": "mismatched types"
+"Line": 5
+"Column": 19
+"Line": 5
+"Column": 19
+"Line": 5
+"Column": 24
+"Errors": 1
+== out105/p18_bad_assignment.json
+"DiagKind": "sema_cannot_convert_literal"
+"Message": "cannot convert an integer literal to type 'Struct-Array<Int64>'"
+"Line": 3
+"Column": 31
+"Line": 3
+"Column": 31
+"Line": 3
+"Column": 32
+"Errors": 1
+== out105/p19_literal_to_string.json
+"DiagKind": "sema_cannot_convert_literal"
+"Message": "cannot convert an integer literal to type 'Struct-String'"
+"Line": 5
+"Column": 19
+"Line": 5
+"Column": 19
+"Line": 5
+"Column": 20
+"Errors": 1
+== out105/p1_comp_field_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr"
+"Message": "invalid binary operator '~>' on type 'Int64' and '(Int64) -> Int64'"
+"Line": 5
+"Column": 18
+"Line": 5
+"Column": 18
+"Line": 5
+"Column": 20
+"Errors": 1
+== out105/p20_literal_one_to_array.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 10
+"Column": 1
+"Line": 10
+"Column": 1
+"Line": 10
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p21_fixture_nomarkers.json
+"DiagKind": "sema_mismatched_types"
+"Message": "mismatched types"
+"Line": 6
+"Column": 5
+"Line": 6
+"Column": 5
+"Line": 6
+"Column": 11
+"Errors": 1
+== out105/p22_var_arg_to_array.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 11
+"Column": 1
+"Line": 11
+"Column": 1
+"Line": 11
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p23_pipeline_undeclared_right.json
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'undefinedFunc'"
+"Line": 2
+"Column": 18
+"Line": 2
+"Column": 18
+"Line": 2
+"Column": 19
+"Errors": 1
+== out105/p24_undeclared_both_parts.json
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'undefinedFunc'"
+"Line": 2
+"Column": 13
+"Line": 2
+"Column": 13
+"Line": 2
+"Column": 14
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'undefinedFunc'"
+"Line": 2
+"Column": 30
+"Line": 2
+"Column": 30
+"Line": 2
+"Column": 31
+"Errors": 2
+== out105/p2_pipe_this.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'v'"
+"Line": 5
+"Column": 8
+"Line": 5
+"Column": 8
+"Line": 5
+"Column": 9
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 7
+"Column": 1
+"Line": 7
+"Column": 1
+"Line": 7
+"Column": 10
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p3_pipe_nonfunc_right.json
+"DiagKind": "sema_invalid_binary_expr"
+"Message": "invalid binary operator '|>' on type 'Int64' and 'Int64'"
+"Line": 3
+"Column": 18
+"Line": 3
+"Column": 18
+"Line": 3
+"Column": 20
+"Errors": 1
+== out105/p4_control_composition.json
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 6
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p5_control_pipeline.json
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 6
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p6_comp_both_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr"
+"Message": "invalid binary operator '~>' on type 'Int64' and 'Int64'"
+"Line": 3
+"Column": 18
+"Line": 3
+"Column": 18
+"Line": 3
+"Column": 20
+"Errors": 1
+== out105/p7_composition_both_missing.json
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'f'"
+"Line": 2
+"Column": 13
+"Line": 2
+"Column": 13
+"Line": 2
+"Column": 14
+"DiagKind": "sema_undeclared_identifier"
+"Message": "undeclared identifier 'g'"
+"Line": 2
+"Column": 18
+"Line": 2
+"Column": 18
+"Line": 2
+"Column": 19
+"Errors": 2
+== out105/p8_pipeline_arg_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 5
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p9_pipeline_ok_control.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 3
+"Column": 8
+"Line": 3
+"Column": 8
+"Line": 3
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 5
+"Column": 1
+"Line": 5
+"Column": 1
+"Line": 7
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0

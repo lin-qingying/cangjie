@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_undeclared_identifier",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared identifier 'unknownReceiver'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p10_composition_missing_receiver.cj",
+                    "Line": 8,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p10_composition_missing_receiver.cj",
+                            "Line": 8,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p10_composition_missing_receiver.cj",
+                            "Line": 8,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnnings": 0,
+        "PrintedWarnnings": 0
+    }
+}

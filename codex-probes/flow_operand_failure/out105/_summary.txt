@@ -1,0 +1,13 @@
+exit=1 p1_comp_field_nonfunc
+exit=0 p2_pipe_this
+exit=1 p3_pipe_nonfunc_right
+exit=0 p4_control_composition
+exit=0 p5_control_pipeline
+exit=1 p6_comp_both_nonfunc
+   40 out105/p1_comp_field_nonfunc.json
+   84 out105/p2_pipe_this.json
+   40 out105/p3_pipe_nonfunc_right.json
+   47 out105/p4_control_composition.json
+   47 out105/p5_control_pipeline.json
+   40 out105/p6_comp_both_nonfunc.json
+  298 total

@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_cannot_convert_literal",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "cannot convert an integer literal to type 'Struct-Array<Int64>'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p18_bad_assignment.cj",
+                    "Line": 3,
+                    "Column": 31
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p18_bad_assignment.cj",
+                            "Line": 3,
+                            "Column": 31
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p18_bad_assignment.cj",
+                            "Line": 3,
+                            "Column": 32
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

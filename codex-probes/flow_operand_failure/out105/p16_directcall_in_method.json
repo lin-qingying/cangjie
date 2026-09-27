@@ -1,0 +1,84 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "chir_dce_unused_variable",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused variable:'input'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                    "Line": 1,
+                    "Column": 8
+                },
+                "MainHint": {
+                    "Content": "unused variable",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                            "Line": 1,
+                            "Column": 8
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                            "Line": 1,
+                            "Column": 13
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "chir_dce_unused_function_main",
+                "Severity": "warning",
+                "WarnGroup": "unused",
+                "DiagCategory": "chir",
+                "Message": "unused function:'main'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                    "Line": 10,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "unused function",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                            "Line": 10,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p16_directcall_in_method.cj",
+                            "Line": 10,
+                            "Column": 10
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "this warning can be suppressed by setting the compiler option `-Woff unused`",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 0,
+        "PrintedErrors": 0,
+        "Warnings": 2,
+        "PrintedWarnings": 2
+    }
+}

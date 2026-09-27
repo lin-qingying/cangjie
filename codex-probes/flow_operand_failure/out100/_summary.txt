@@ -1,0 +1,28 @@
+exit=1 p1_comp_field_nonfunc
+exit=1 p1_comp_field_nonfunc
+exit=0 p2_pipe_this
+exit=1 p3_pipe_nonfunc_right
+exit=0 p2_pipe_this
+exit=1 p3_pipe_nonfunc_right
+exit=0 p4_control_composition
+exit=0 p4_control_composition
+exit=0 p5_control_pipeline
+exit=1 p6_comp_both_nonfunc
+-rwxr-xr-x 1 lin17 197609 132798408 Dec  4  2025 /c/Users/lin17/.cangjie/sdks/cangjie-1.0.0/bin/cjc.exe
+Cangjie Compiler: 1.0.0 (cjnative)
+Target: x86_64-w64-mingw32
+exit=0 p5_control_pipeline
+exit=1 p6_comp_both_nonfunc
+== out100/p1_comp_field_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr"
+== out100/p2_pipe_this.json
+"DiagKind": "chir_dce_unused_variable"
+"DiagKind": "chir_dce_unused_function_main"
+== out100/p3_pipe_nonfunc_right.json
+"DiagKind": "sema_invalid_binary_expr"
+== out100/p4_control_composition.json
+"DiagKind": "chir_dce_unused_function_main"
+== out100/p5_control_pipeline.json
+"DiagKind": "chir_dce_unused_function_main"
+== out100/p6_comp_both_nonfunc.json
+"DiagKind": "sema_invalid_binary_expr"
