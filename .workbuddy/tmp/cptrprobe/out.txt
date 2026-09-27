@@ -1,0 +1,50 @@
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:4:18:
+  | 
+4 |     var node17 = CPointer(malloc)
+  |                  ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:5:24:
+  | 
+5 |     var node9: CType = CPointer()
+  |                        ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:6:27:
+  | 
+6 |     var node14: CString = CPointer()
+  |                           ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:7:18:
+  | 
+7 |     var node15 = CPointer()
+  |                  ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:8:18:
+  | 
+8 |     var node13 = CPointer(CPointer<Unit>())
+  |                  ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:9:25:
+  | 
+9 |     let erased: CType = CPointer()
+  |                         ^ 
+  | 
+
+error[0m: 'CPointer' generic type cannot be inferred
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\cptrprobe\p.cj:10:29:
+   | 
+10 |     let erasedCast: CType = CPointer(CPointer<Int64>())
+   |                             ^ 
+   | 
+
+7 errors generated, 7 errors printed.

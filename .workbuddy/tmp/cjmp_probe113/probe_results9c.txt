@@ -1,0 +1,69 @@
+=================== CASE T16_SpecificInitVsUnmarkedCommonPrimary ===================
+>>> common compile
+>>> specific compile
+error[0m: constructor 'init' has overload conflicts
+ ==> specific.cj:4:21:
+  | 
+4 |     public specific init(x: Int64) {}
+  |                     ^^^^ 
+  | 
+note[0m: conflict with the declaration
+ ==> common.cj:4:12:
+
+error[0m: 'specific' constructor can not find 'common' match
+ ==> specific.cj:4:5:
+  | 
+4 |     public specific init(x: Int64) {}
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+2 errors generated, 2 errors printed.
+=================== CASE T17_SpecificInitWithUnmarkedCommonPrimaryAndCommonInit ===================
+>>> common compile
+>>> specific compile
+warning[0m: unused variable:'x'
+ ==> common.cj:4:15:
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused variable:'x'
+ ==> specific.cj:4:26:
+  | 
+4 |     public specific init(x: Bool) {}
+  |                          ^ unused variable
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+2 warnings generated, 2 warnings printed.
+=================== CASE T18_SpecificMarkedPrimaryCtor ===================
+>>> common compile
+>>> specific compile
+error[0m: unexpected modifier 'specific' on primary constructor
+ ==> specific.cj:4:12:
+  | 
+3 | public specific class Q {
+  |                 ~~~~~ in class
+4 |     public specific Q(x: Int64) {}
+  |            ^^^^^^^^ ~ on primary constructor
+  |            |
+  |            unexpected modifier
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE T19_UnmarkedSpecificPrimaryCtor ===================
+>>> common compile
+>>> specific compile
+error[0m: constructor 'init' has overload conflicts
+ ==> specific.cj:5:21:
+  | 
+5 |     public specific init(x: Int64) {}
+  |                     ^^^^ 
+  | 
+note[0m: conflict with the declaration
+ ==> specific.cj:4:12:
+  | 
+4 |     public R(x: Int64) {}
+  |            ^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== DONE ===================

@@ -1,0 +1,305 @@
+warning[0m: unused import 'std.ast.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:4:1:
+  | 
+4 | import std.ast.*
+  | ^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.binary.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:5:1:
+  | 
+5 | import std.binary.*
+  | ^^^^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.collection.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:6:1:
+  | 
+6 | import std.collection.*
+  | ^^^^^^^^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.collection.concurrent.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:7:1:
+  | 
+7 | import std.collection.concurrent.*
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.console.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:8:1:
+  | 
+8 | import std.console.*
+  | ^^^^^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.convert.*'
+ ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:9:1:
+  | 
+9 | import std.convert.*
+  | ^^^^^^^^^^^^^^^^^^^^ unused import
+  | 
+  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.core.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:10:1:
+   | 
+10 | import std.core.*
+   | ^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.crypto.cipher.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:11:1:
+   | 
+11 | import std.crypto.cipher.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.crypto.digest.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:12:1:
+   | 
+12 | import std.crypto.digest.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.database.sql.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:13:1:
+   | 
+13 | import std.database.sql.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.deriving.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:14:1:
+   | 
+14 | import std.deriving.*
+   | ^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.env.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:15:1:
+   | 
+15 | import std.env.*
+   | ^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.fs.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:16:1:
+   | 
+16 | import std.fs.*
+   | ^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.io.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:17:1:
+   | 
+17 | import std.io.*
+   | ^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.math.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:18:1:
+   | 
+18 | import std.math.*
+   | ^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.math.numeric.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:19:1:
+   | 
+19 | import std.math.numeric.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.net.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:20:1:
+   | 
+20 | import std.net.*
+   | ^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.objectpool.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:21:1:
+   | 
+21 | import std.objectpool.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.overflow.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:22:1:
+   | 
+22 | import std.overflow.*
+   | ^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.posix.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:23:1:
+   | 
+23 | import std.posix.*
+   | ^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.process.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:24:1:
+   | 
+24 | import std.process.*
+   | ^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.random.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:25:1:
+   | 
+25 | import std.random.*
+   | ^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.ref.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:26:1:
+   | 
+26 | import std.ref.*
+   | ^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.reflect.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:27:1:
+   | 
+27 | import std.reflect.*
+   | ^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.regex.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:28:1:
+   | 
+28 | import std.regex.*
+   | ^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.runtime.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:29:1:
+   | 
+29 | import std.runtime.*
+   | ^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.sort.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:30:1:
+   | 
+30 | import std.sort.*
+   | ^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.sync.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:31:1:
+   | 
+31 | import std.sync.*
+   | ^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.time.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:32:1:
+   | 
+32 | import std.time.*
+   | ^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unicode.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:33:1:
+   | 
+33 | import std.unicode.*
+   | ^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:34:1:
+   | 
+34 | import std.unittest.*
+   | ^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.common.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:35:1:
+   | 
+35 | import std.unittest.common.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.diff.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:36:1:
+   | 
+36 | import std.unittest.diff.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.mock.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:37:1:
+   | 
+37 | import std.unittest.mock.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.mock.mockmacro.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:38:1:
+   | 
+38 | import std.unittest.mock.mockmacro.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.prop_test.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:39:1:
+   | 
+39 | import std.unittest.prop_test.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: unused import 'std.unittest.testmacro.*'
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:40:1:
+   | 
+40 | import std.unittest.testmacro.*
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unused import
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
+
+warning[0m: class 'ArgOpt' is deprecated. Use global function `public func parseArguments(args: Array<String>, specs: Array<ArgumentSpec>): ParsedArguments` instead.
+  ==> D:\code\intellij\cangjie\.workbuddy\tmp\unusedprobe\full.cj:43:5:
+   | 
+43 |     ArgOpt()
+   |     ^^^^^^ deprecated
+   | 
+   # note: this warning can be suppressed by setting the compiler option `-Woff deprecated`
+
+38 warnings generated, 38 warnings printed.

@@ -1,0 +1,167 @@
+=================== CASE extend_common_single ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public interface Iface {}
+
+public common extend Iface <: Dummy {}
+
+public interface Dummy {}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: expected no modifier before extend declaration, found 'public'
+ ==> common.cj:9:1:
+  | 
+9 | public common extend Iface <: Dummy {}
+  | ^^^^^^        ~~~~~~ before extend declaration
+  | |
+  | expected no modifier here
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE extend_common_with_public ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public interface Iface2 {}
+
+public interface Dummy2 {}
+
+public common public extend Iface2 <: Dummy2 {}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: expected no modifier before extend declaration, found 'public'
+  ==> common.cj:11:1:
+   | 
+11 | public common public extend Iface2 <: Dummy2 {}
+   | ^^^^^^               ~~~~~~ before extend declaration
+   | |
+   | expected no modifier here
+   | 
+
+error[0m: duplicated modifier: 'public'
+  ==> common.cj:11:15:
+   | 
+11 | public common public extend Iface2 <: Dummy2 {}
+   | ~~~~~~        ^^^^^^ duplicated modifier
+   | |
+   | previous one is here
+   | 
+
+2 errors generated, 2 errors printed.
+>>> common compile failed, skip specific
+=================== CASE toplevel_prop_common ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common prop gp: Int64 {
+    get() {
+        1
+    }
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: unexpected property declaration in 'top-level' scope
+ ==> common.cj:7:15:
+  | 
+7 | public common prop gp: Int64 {
+  |               ^^^^ unexpected property declaration in 'top-level' scope
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE common_typealias ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common type TA = Int64
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: unexpected modifier 'common' on type alias declaration
+ ==> common.cj:7:8:
+  | 
+7 | public common type TA = Int64
+  |        ^^^^^^ ~~~~ on type alias declaration
+  |        |
+  |        unexpected modifier
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE common_on_value_parameter ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public func ff(common x: Int64): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: expected no modifier before non-member variable parameter, found 'common'
+ ==> common.cj:7:16:
+  | 
+7 | public func ff(common x: Int64): Int64 {
+  |                ^^^^^^ ~~~~~~~~ before non-member variable parameter
+  |                |
+  |                expected no modifier here
+  | 
+help: if you want an immutable member variable, use 'let':
+  | 
+7 | public func ff(common let x: Int64): Int64 {
+  |                       ~~~~~~~~~~~~ 
+  | 
+help: or 'var' to get a mutable member variable:
+  | 
+7 | public func ff(common var x: Int64): Int64 {
+  |                       ~~~~~~~~~~~~ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== DONE ===================

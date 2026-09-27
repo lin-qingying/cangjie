@@ -1,0 +1,291 @@
+=================== CASE base ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+>>> specific compile
+>>> dll: out.dll
+=================== CASE spec_param_default_named ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific func Pf(x!: Int64 = 1): Int64 {
+    x
+}
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function 'Pf' can not find 'common' match
+ ==> specific.cj:7:1:
+  | 
+7 |   public specific func Pf(x!: Int64 = 1): Int64 {
+  |  _^
+8 | |     x
+9 | | }
+  | |_^
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE common_param_default_named ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+>>> specific compile
+>>> dll: out.dll
+=================== CASE spec_iface_member_no_body ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific interface I2 {
+    func m(): Unit
+}
+>>> common compile
+>>> specific compile
+error[0m: the member m must have body in 'specific' I2
+ ==> specific.cj:8:5:
+  | 
+8 |     func m(): Unit
+  |     ^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE common_decl_in_specific_mode ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public common class XC {}
+>>> common compile
+>>> specific compile
+error[0m: common declaration must be defined in common package part
+ ==> specific.cj:1:1:
+  | 
+1 | package cjmp_p
+  | ^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE specific_decl_in_common_mode ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public specific class YS {}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public common class XC {}
+>>> common compile
+error[0m: specific declaration must be defined in specific package part
+ ==> common.cj:1:1:
+  | 
+1 | package cjmp_p
+  | ^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE spec_var_init_only ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific var sv = 1
+>>> common compile
+>>> specific compile
+error[0m: 'specific' variable 'sv' can not find 'common' match
+ ==> specific.cj:7:1:
+  | 
+7 | public specific var sv = 1
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE spec_var_type_only ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific var sv2: Int64
+>>> common compile
+>>> specific compile
+error[0m: variable in top-level scope must be initialized 
+ ==> specific.cj:7:31:
+  | 
+7 | public specific var sv2: Int64
+  |                 ~~~~~~~~~~~~~~^ expected '=' here
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE spec_let_init_only ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific let sl = 2
+>>> common compile
+>>> specific compile
+error[0m: 'specific' variable 'sl' can not find 'common' match
+ ==> specific.cj:7:1:
+  | 
+7 | public specific let sl = 2
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> dll: 
+=================== CASE common_abstract_member_ok ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common abstract class CA {
+    public abstract func f(): Unit
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: at least one constructor is required in common class 'CA'
+ ==> common.cj:7:30:
+  | 
+7 | public common abstract class CA {
+  |                              ^^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE spec_class_no_ctor ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common abstract class CA {
+    public abstract func f(): Unit
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific class Solo {}
+>>> common compile
+error[0m: at least one constructor is required in common class 'CA'
+ ==> common.cj:7:30:
+  | 
+7 | public common abstract class CA {
+  |                              ^^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== DONE ===================
