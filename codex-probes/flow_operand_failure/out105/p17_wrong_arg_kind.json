@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_mismatched_types",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "mismatched types",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p17_wrong_arg_kind.cj",
+                    "Line": 5,
+                    "Column": 19
+                },
+                "MainHint": {
+                    "Content": "expected 'Struct-Array<Int64>', found 'Struct-String'",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p17_wrong_arg_kind.cj",
+                            "Line": 5,
+                            "Column": 19
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p17_wrong_arg_kind.cj",
+                            "Line": 5,
+                            "Column": 24
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

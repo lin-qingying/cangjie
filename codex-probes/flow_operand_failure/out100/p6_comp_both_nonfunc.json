@@ -1,0 +1,40 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_invalid_binary_expr",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "invalid binary operator '~>' on type 'Int64' and 'Int64'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p6_comp_both_nonfunc.cj",
+                    "Line": 3,
+                    "Column": 18
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p6_comp_both_nonfunc.cj",
+                            "Line": 3,
+                            "Column": 18
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p6_comp_both_nonfunc.cj",
+                            "Line": 3,
+                            "Column": 20
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnnings": 0,
+        "PrintedWarnnings": 0
+    }
+}

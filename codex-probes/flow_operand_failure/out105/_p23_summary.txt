@@ -1,0 +1,2 @@
+exit=1 105/p23_pipeline_undeclared_right
+exit=1 105/p24_undeclared_both_parts

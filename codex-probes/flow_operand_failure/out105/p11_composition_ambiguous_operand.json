@@ -1,0 +1,81 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_ambiguous_use",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "ambiguous use of 'overloaded'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                    "Line": 9,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                            "Line": 9,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                            "Line": 9,
+                            "Column": 25
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "found candidate",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                                    "Line": 3,
+                                    "Column": 17
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                                    "Line": 3,
+                                    "Column": 27
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    },
+                    {
+                        "Message": "found candidate",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                                    "Line": 4,
+                                    "Column": 17
+                                },
+                                "End": {
+                                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p11_composition_ambiguous_operand.cj",
+                                    "Line": 4,
+                                    "Column": 27
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

@@ -1,0 +1,42 @@
+exit=1 p12_err_pipeline_00_exact
+exit=1 p12b_fixture_verbatim
+== out105/p12_err_pipeline_00_exact.json
+"DiagKind": "parse_expected_expr_or_decl_in"
+"Message": "expected expression or declaration, found '<'"
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 6
+"Errors": 1
+== out105/p12b_fixture_verbatim.json
+"DiagKind": "parse_expected_expr_or_decl_in"
+"Message": "expected expression or declaration, found '<'"
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 5
+"Line": 8
+"Column": 6
+"Errors": 1
+== out105/p8_pipeline_arg_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 8
+"Line": 1
+"Column": 13
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Line": 3
+"Column": 1
+"Line": 3
+"Column": 1
+"Line": 5
+"Column": 2
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0

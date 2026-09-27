@@ -1,0 +1,70 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_undeclared_identifier",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared identifier 'f'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                    "Line": 2,
+                    "Column": 13
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                            "Line": 2,
+                            "Column": 13
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                            "Line": 2,
+                            "Column": 14
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_undeclared_identifier",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared identifier 'g'",
+                "Location": {
+                    "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                    "Line": 2,
+                    "Column": 18
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                            "Line": 2,
+                            "Column": 18
+                        },
+                        "End": {
+                            "File": "D:\\code\\intellij\\cangjie\\codex-probes\\flow_operand_failure\\p7_composition_both_missing.cj",
+                            "Line": 2,
+                            "Column": 19
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 2,
+        "PrintedErrors": 2,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}

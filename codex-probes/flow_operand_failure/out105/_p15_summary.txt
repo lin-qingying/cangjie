@@ -1,0 +1,18 @@
+exit=0 p15_pipeline_in_func
+exit=0 p16_directcall_in_method
+== out105/p15_pipeline_in_func.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p16_directcall_in_method.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0

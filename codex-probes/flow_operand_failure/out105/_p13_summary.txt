@@ -1,0 +1,27 @@
+exit=0 p13_direct_call_mismatch
+exit=0 p14_pipeline_stmt_mismatch
+exit=0 p8_pipeline_arg_mismatch
+== out105/p13_direct_call_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p14_pipeline_stmt_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
+== out105/p8_pipeline_arg_mismatch.json
+"DiagKind": "chir_dce_unused_variable"
+"Message": "unused variable:'input'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"DiagKind": "chir_dce_unused_function_main"
+"Message": "unused function:'main'"
+"Message": "this warning can be suppressed by setting the compiler option `-Woff unused`"
+"Errors": 0
