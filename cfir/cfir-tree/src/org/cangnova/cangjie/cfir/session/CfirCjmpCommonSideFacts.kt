@@ -85,7 +85,7 @@ object CfirCjmpCommonSideFacts {
     ): Boolean {
         if (storage.specificBindingsFor(common).isNotEmpty()) return false
         if (common is CfirEnumConstructor) {
-            // 官方：外层 enum 带默认实现且无 specific 实现时构造器无需配对
+            // 无 specific enum 实现时，官方对 COMMON_WITH_DEFAULT 外层 enum 豁免其构造器配对。
             return !(outer != null && outer.cjmpHasCommonDefault() && storage.specificBindingsFor(outer).isEmpty())
         }
         if (common is CfirPatternVariable &&

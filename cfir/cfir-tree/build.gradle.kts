@@ -10,6 +10,7 @@ dependencies {
     api(project(":compiler:config"))
     api(project(":common"))
     api(project(":util"))
+    api(project(":resolution.common"))
 
     compileOnly(intellijCore())
 

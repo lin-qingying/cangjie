@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpFunctionSymbolMarker
 /**
  * 所有函数类符号的密封基类，对齐 K2 `FirFunctionSymbol`。
  *
@@ -14,7 +15,9 @@ import org.cangnova.cangjie.name.Name
  *
  * @property callableId 函数符号的 callable id；匿名/错误函数使用 special 包下的 stub id。
  */
-sealed class CfirFunctionSymbol<out D : CfirFunction>(override val callableId: CallableId) : CfirCallableSymbol<D>() {
+sealed class CfirFunctionSymbol<out D : CfirFunction>(override val callableId: CallableId) :
+    CfirCallableSymbol<D>(),
+    CjmpFunctionSymbolMarker {
     /**
      * 函数值参数对应的符号列表。
      */

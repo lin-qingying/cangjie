@@ -19,6 +19,11 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpClassLikeSymbolMarker
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpCallableSymbolMarker
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpDeclarationSymbolMarker
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeParameterSymbolMarker
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpValueParameterSymbolMarker
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 /**
@@ -27,7 +32,7 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
  * 符号是声明的稳定标识符，在解析过程中保持不变，
  * 即使声明节点本身因转换而被替换。
  */
-sealed class CfirBasedSymbol<out D : CfirDeclaration> {
+sealed class CfirBasedSymbol<out D : CfirDeclaration> : CjmpDeclarationSymbolMarker {
     /**
      * 当前符号绑定的声明实例。
      */
@@ -104,7 +109,7 @@ sealed class CfirClassifierSymbol<D : CfirDeclaration> : CfirThisOwnerSymbol<D>(
  */
 sealed class CfirClassLikeSymbol<D : CfirClassLikeDeclaration>(
     classId: ClassId,
-) : CfirClassifierSymbol<D>() {
+) : CfirClassifierSymbol<D>(), CjmpClassLikeSymbolMarker {
 
     /**
      * class-like 声明的稳定 class id。
@@ -316,7 +321,7 @@ class CfirTypeAliasSymbol(
  * 与持有 ClassId 的符号不同，类型参数没有全局唯一的 ClassId，
  * 其身份由声明位置决定，lookup tag 直接绑定到本符号实例（引用相等）。
  */
-class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>() {
+class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>(), CjmpTypeParameterSymbolMarker {
 
     /**
      * 类型参数名称；未绑定时使用占位名。
@@ -373,7 +378,9 @@ class CfirTypeParameterSymbol : CfirClassifierSymbol<CfirTypeParameter>() {
  *
  * [CallableId] = 所在包/类 + 可调用名称，在全局范围内唯一标识一个可调用声明。
  */
-sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> : CfirBasedSymbol<D>() {
+sealed class CfirCallableSymbol<out D : CfirCallableDeclaration> :
+    CfirBasedSymbol<D>(),
+    CjmpCallableSymbolMarker {
     /**
      * callable 的稳定 id。
      */
@@ -717,7 +724,7 @@ class CfirPatternBindingSymbol(
 /** 值参数符号，对应函数声明中的形参。 */
 class CfirValueParameterSymbol(
   callableId: CallableId,
-) : CfirVariableSymbol<CfirValueParameter>(callableId) {
+) : CfirVariableSymbol<CfirValueParameter>(callableId), CjmpValueParameterSymbolMarker {
     /**
      * 值参数名称。
      */
