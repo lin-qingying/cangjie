@@ -20,31 +20,31 @@ class CfirCompositeExtendProvider(
      */
     private val providers: List<CfirExtendProvider>,
 ) : CfirExtendProvider {
-    override fun getAllExtends(): List<CfirExtend> = providers.flatMap { it.getAllExtends() }.distinct()
+    override fun getAllExtends(): List<CfirExtend> = providers.flatMap { it.getAllExtends() }.distinctBy { it.symbol }
 
     /**
      * 聚合所有 provider 中匹配目标 key 的 extend。
      */
     override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
-        providers.flatMap { it.getExtendsForTarget(targetKey) }
+        providers.flatMap { it.getExtendsForTarget(targetKey) }.distinctBy { it.symbol }
 
     /**
      * 聚合所有 provider 中扩展指定 class 的 extend。
      */
     override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
-        providers.flatMap { it.getExtendsForClass(classId) }
+        providers.flatMap { it.getExtendsForClass(classId) }.distinctBy { it.symbol }
 
     /**
      * 聚合指定包内的 extend。
      */
     override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
-        providers.flatMap { it.getExtendsInPackage(packageFqName) }
+        providers.flatMap { it.getExtendsInPackage(packageFqName) }.distinctBy { it.symbol }
 
     /**
      * 聚合扩展指定 builtin primitive 的 extend。
      */
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
-        providers.flatMap { it.getExtendsForBuiltinType(kind) }
+        providers.flatMap { it.getExtendsForBuiltinType(kind) }.distinctBy { it.symbol }
 
     /**
      * 按 provider 顺序返回 callable 所属的第一个 owner extend。

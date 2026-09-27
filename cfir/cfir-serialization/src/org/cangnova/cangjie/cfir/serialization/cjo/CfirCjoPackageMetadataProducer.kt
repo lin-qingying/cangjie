@@ -18,8 +18,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -362,41 +364,35 @@ object CfirCjoPackageMetadataProducer {
          * - `specific func` → 只带 `SPECIFIC`；
          * - `common func`（有体）→ `COMMON + FROM_COMMON_PART + COMMON_WITH_DEFAULT`。
          *
-         * `COMMON_WITH_DEFAULT` 按官方 `SetCJMPAttrs`（ParseCJMPDecl.cpp:57-65 + :141-161）
-         * 在**写侧派生**：common 声明自带默认实现（函数有体 / property 有访问器 / var 有初始值）
-         * 即置位。`FROM_COMMON_PART` 标记"该声明来自 common part 的 cjo"——本仓库当前只写出
-         * 源声明（[collect] 要求 `origin == Source`），故该位仅对反序列化来源的声明防御性保留。
+         * `COMMON_WITH_DEFAULT` 按官方 `SetCJMPAttrs` 在写侧派生：函数/构造器体、属性访问器、变量初值，
+         * 以及 class/interface/struct/enum/extend 的全部 common 成员均有默认实现时置位。
+         * `FROM_COMMON_PART` 表示本包元数据来自 common-part 编译，故该档位写出的每个声明都携带此位。
          */
         private fun addCjmpAttributes(
             values: MutableSet<CfirAttribute>,
             declaration: CfirDeclaration,
             status: org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus,
         ) {
+            if (writesCjmpCommonPart) values += CfirAttribute.FROM_COMMON_PART
             if (status.isSpecific) values += CfirAttribute.SPECIFIC
             if (!status.isCommon) return
             values += CfirAttribute.COMMON
-            if (declaration.origin != org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin.Source) {
-                values += CfirAttribute.FROM_COMMON_PART
-            }
-            if (status.isCommonWithDefault || hasCjmpDefault(declaration)) {
+            if (status.isCommonWithDefault || declaration.cjmpHasCommonDefault()) {
                 values += CfirAttribute.COMMON_WITH_DEFAULT
             }
-        }
-
-        /** 官方 `HasDefault` 对位：声明自身是否自带默认实现/初始化。 */
-        private fun hasCjmpDefault(declaration: CfirDeclaration): Boolean = when (declaration) {
-            is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> declaration.body != null
-            is org.cangnova.cangjie.cfir.declarations.CfirProperty ->
-                declaration.getter != null || declaration.setter != null
-
-            is org.cangnova.cangjie.cfir.declarations.CfirVariable -> declaration.initializer != null
-            else -> false
         }
 
         private fun attributes(declaration: CfirDeclaration, topLevel: Boolean): List<ULong> {
             val values = linkedSetOf<CfirAttribute>()
             if (topLevel) values += CfirAttribute.GLOBAL
             val status = (declaration as? CfirMemberDeclaration)?.status ?: return emptyList()
+            // CJO 中构造器同样写为 FuncDecl，必须保留官方身份位供反序列化恢复声明种类。
+            if (declaration is CfirConstructor) {
+                values += CfirAttribute.CONSTRUCTOR
+                if (declaration.isPrimary) values += CfirAttribute.PRIMARY_CONSTRUCTOR
+            } else if (declaration is CfirEnumConstructor) {
+                values += CfirAttribute.ENUM_CONSTRUCTOR
+            }
             if (status.isC || declaration.interopInfo?.resolvedAbi?.kind == CfirAbiKind.C) values += CfirAttribute.C
             if (status.isForeign) values += CfirAttribute.FOREIGN
             if (status.isStatic) values += CfirAttribute.STATIC
@@ -408,7 +404,14 @@ object CfirCjoPackageMetadataProducer {
             if (status.isUnsafe) values += CfirAttribute.UNSAFE
             if (status.isMut) values += CfirAttribute.MUT
             addCjmpAttributes(values, declaration, status)
-            if (declaration is CfirFunction && declaration.typeParameters.isNotEmpty()) values += CfirAttribute.GENERIC
+            val hasGenericTypeParameters = when (declaration) {
+                is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>().isNotEmpty()
+                is CfirFunction -> declaration.typeParameters.isNotEmpty()
+                is CfirExtend -> declaration.typeParameters.isNotEmpty()
+                else -> false
+            }
+            // Attribute.GENERIC 同时标记 class-like 与 extend owner，供 CJO 消费端的实例化筛选使用。
+            if (hasGenericTypeParameters) values += CfirAttribute.GENERIC
             if (declaration.annotationInfo?.isIntrinsic == true) values += CfirAttribute.INTRINSIC
             if (declaration.annotationInfo?.isMockSupported == true) values += CfirAttribute.MOCK_SUPPORTED
             if (declaration.status.visibility == org.cangnova.cangjie.descriptors.Visibilities.Public) values += CfirAttribute.PUBLIC
@@ -534,6 +537,18 @@ object CfirCjoPackageMetadataProducer {
             typeIndex[type] = index
             val metadata = when (type) {
                 is ConePrimitiveType -> CjoTypeMetadata(type.kind.toCjoTypeKind())
+                is ConeTypeParameterType -> {
+                    val declaration = type.lookupTag.typeParameterSymbol.cfir
+                    val index = declarationIndex[declaration]
+                        ?: unsupported("CJO generic type parameter was not indexed: ${declaration.name}")
+                    CjoTypeMetadata(
+                        kind = PackageFormat.TypeKind.Generic,
+                        semanticInfo = CjoGenericTypeInfoMetadata(
+                            declarationIndex = index,
+                            upperBounds = declaration.bounds.map { bound -> type(typeOf(bound)) },
+                        ),
+                    )
+                }
                 is ConeClassLikeType -> CjoTypeMetadata(
                     kind = if (type.isInterface) PackageFormat.TypeKind.Interface else PackageFormat.TypeKind.Class,
                     typeArguments = type.typeArguments.map { projectionType(it) },
@@ -562,7 +577,7 @@ object CfirCjoPackageMetadataProducer {
                     type.parameterTypes.map(::type),
                     semanticInfo = CjoFunctionTypeInfoMetadata(type(type.returnType), type.isCFunc, type.hasVariableLenArg),
                 )
-                else -> unsupported("unsupported live CJO type $type")
+                else -> unsupported("unsupported live CJO type ${type::class.qualifiedName} ($type)")
             }
             types += metadata
             return index

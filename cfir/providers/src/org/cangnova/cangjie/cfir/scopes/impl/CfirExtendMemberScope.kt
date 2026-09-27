@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
@@ -11,6 +12,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.isCjmpShadowedCommonDeclaration
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
@@ -26,6 +28,7 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.idealExtendLookupTypes
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -60,6 +63,15 @@ class CfirExtendMemberScope(
      * 构造 extend 体内成员 scope 时需要排除的当前 extend 声明。
      */
     private val excludingExtend: CfirExtend? = null,
+    /**
+     * 限定当前接收者直接参与的 extend owner 集合。null 表示保留普通 use-site 的全部候选。
+     */
+    private val includedExtends: Set<CfirExtend>? = null,
+    /**
+     * 当前 owner extend 实例化成员图中的成员来源。此时 peer 的 private 声明不能进入
+     * owner scope，否则会在类继承合并时先隐藏接口默认成员。
+     */
+    private val memberOwnerExtend: CfirExtend? = null,
 ) : CfirTypeScope() {
 
     /**
@@ -173,9 +185,17 @@ class CfirExtendMemberScope(
 
         val extends = extendsForTarget()
         for ((extend, concreteReceiverType) in extends) {
+            if (includedExtends != null && extend !in includedExtends) continue
             if (extend === excludingExtend) continue
             if (!extend.isApplicableAtReceiver(concreteReceiverType)) continue
             for (declaration in extend.declarations) {
+                if (memberOwnerExtend != null && extend !== memberOwnerExtend &&
+                    declaration is CfirMemberDeclaration &&
+                    declaration.status.visibility == Visibilities.Private
+                ) {
+                    continue
+                }
+                if (session.isCjmpShadowedCommonDeclaration(declaration)) continue
                 indexDeclaration(
                     declaration = declaration,
                     classifiers = classifiers,
