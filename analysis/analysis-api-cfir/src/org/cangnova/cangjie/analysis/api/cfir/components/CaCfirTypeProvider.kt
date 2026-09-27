@@ -7,14 +7,20 @@ import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.utils.cfirSymbol
 import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseTypeProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
 import org.cangnova.cangjie.cfir.resolve.defaultType
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 /**
  * 对齐 Kotlin `KaFirTypeProvider` 的公开类型入口。
@@ -45,6 +51,19 @@ internal class CaCfirTypeProvider(
                 }
 
                 defaultConeType.asCaType()
+            }
+        }
+
+    /** 通过 low-level CFIR 元素映射解析 PSI 类型引用，并返回其已解析的 Cone 类型。 */
+    override val CjTypeReference.type: CaType
+        get() = withValidityAssertion {
+            this@type.withPsiValidityAssertion {
+                val cfirElement = this@type.getOrBuildCfir(analysisSession.resolutionFacade)
+                val cfirTypeRef = cfirElement as? CfirTypeRef
+                    ?: errorWithAttachment("CjTypeReference is not mapped to a CFIR type reference") {
+                        withPsiEntry("typeReference", this@type)
+                    }
+                cfirTypeRef.coneType.asCaType(analysisSession)
             }
         }
 }

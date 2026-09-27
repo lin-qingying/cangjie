@@ -3,11 +3,14 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.signatures.CaCfirEnumConstructorSignature
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.signatures.renderFunctionSignature
 import org.cangnova.cangjie.analysis.api.cfir.signatures.renderVariableSignature
+import org.cangnova.cangjie.analysis.api.signatures.CaEnumConstructorSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 
@@ -36,4 +39,8 @@ internal class CaCfirSignatureSubstitutor(
     override fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S> {
         return analysisSession.renderVariableSignature(this)
     }
+
+    /** 将仓颉枚举构造器映射为携带 payload 类型的公开签名。 */
+    override fun <S : CaEnumConstructorSymbol> S.asSignature(): CaEnumConstructorSignature<S> =
+        CaCfirEnumConstructorSignature(this)
 }

@@ -8,6 +8,8 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -94,6 +96,35 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             },
             "interface 成员签名中的外层类型参数 `T` 不应在 Analysis API 懒解析链路上退化成 UNRESOLVED_REFERENCE: " +
                 diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.text}" },
+        )
+    }
+
+    /** Analysis API exposes the peer range and witness attached to an undecidable extend-order diagnostic. */
+    @Test
+    fun extendCheckSequencePeerNote(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+        val sequenceDiagnostics = diagnostics.filter {
+            it.factoryName == "EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE"
+        }
+
+        assertEquals(2, sequenceDiagnostics.size)
+        for (diagnostic in sequenceDiagnostics) {
+            val peerNote = diagnostic.relatedInformation.single()
+            val peerPsi = requireNotNull(peerNote.psi)
+            assertNotNull(peerNote.textRange)
+            assertEquals(mainFile, peerPsi.containingFile)
+            assertNotEquals(diagnostic.psi, peerPsi, "the note navigates to the peer declaration range")
+            assertTrue(peerNote.message.contains("I1"))
+            assertTrue(peerNote.message.contains("I3"))
+        }
+        assertTrue(
+            sequenceDiagnostics.any {
+                val note = it.relatedInformation.single().message
+                "I2" in note && "I1" in note && "I4" in note && "I3" in note
+            },
+            "the peer note preserves both opposing subtype relations",
         )
     }
 }

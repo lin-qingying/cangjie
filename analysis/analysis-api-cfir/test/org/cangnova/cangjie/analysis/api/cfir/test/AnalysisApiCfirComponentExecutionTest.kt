@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.evaluation.CaCollectionCompileTimeValue
 import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
@@ -57,8 +58,9 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
         val importCandidate = functions.single { it.name == "needsImport" }
         val hiddenCandidate = functions.single { it.name == "hiddenCandidate" }
         val useSite = functions.single { it.name == "consume" }
-        val qualifiedCall = PsiTreeUtil.findChildrenOfType(mainFile, CjDotQualifiedExpression::class.java)
-            .single { it.text == "completion.consumer.directCandidate()" }
+        val qualifiedCalls = PsiTreeUtil.findChildrenOfType(mainFile, CjDotQualifiedExpression::class.java)
+        val importQualifiedCall = qualifiedCalls
+            .single { it.text == "provider.needsImport()" }
 
         analyzeForTest(mainFile) {
             val directDecision = directCandidate.symbol.checkCompletionCandidate(useSite)
@@ -68,24 +70,42 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
             val importDecision = importCandidate.symbol.checkCompletionCandidate(useSite)
             assertEquals(CaCompletionCandidateStatus.REQUIRES_IMPORT, importDecision.status)
             assertEquals("completion.provider.needsImport", importDecision.requiredImport.toString())
+            val requiredImport = requireNotNull(importDecision.requiredImport)
 
             val hiddenDecision = hiddenCandidate.symbol.checkCompletionCandidate(useSite)
             assertEquals(CaCompletionCandidateStatus.HIDDEN, hiddenDecision.status)
             assertNull(hiddenDecision.requiredImport)
 
-            val shorteningOperation = mainFile.collectReferenceShorteningPlan().operations
-                .single { it.expression.text == qualifiedCall.text }
-            assertEquals("directCandidate", shorteningOperation.shortName.asString())
-            assertEquals(directDecision.status, shorteningOperation.decision.status)
-            assertEquals(directDecision.requiredImport, shorteningOperation.decision.requiredImport)
+            val shorteningPlan = mainFile.collectReferenceShorteningPlan()
+            val importShorteningOperation = shorteningPlan.operations.single { it.expression.text == importQualifiedCall.text }
+            assertEquals("needsImport", importShorteningOperation.shortName.asString())
+            assertEquals(CaCompletionCandidateStatus.REQUIRES_IMPORT, importShorteningOperation.decision.status)
+            assertEquals(requiredImport, importShorteningOperation.decision.requiredImport)
 
-            val shorteningCommand = qualifiedCall.collectReferenceShorteningsInElement()
-            assertEquals(listOf(qualifiedCall.text), shorteningCommand.operations.map { it.expression.text })
-            assertTrue(shorteningCommand.importsToAdd.isEmpty())
+            val importShorteningCommand = importQualifiedCall.collectReferenceShorteningsInElement()
+            assertEquals(listOf(importQualifiedCall.text), importShorteningCommand.operations.map { it.expression.text })
+            assertEquals(listOf(requiredImport), importShorteningCommand.importsToAdd.toList())
 
             val importPlan = mainFile.collectImportOptimizationPlan()
-            assertTrue(importPlan.missingImports.isEmpty())
+            assertEquals(listOf(requiredImport), importPlan.missingImports)
         }
+    }
+
+    /** 源码 type reference 只能通过当前文件导入的包名或别名访问 package member。 */
+    @Test
+    fun packageQualifierTypeResolution(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+        val unresolvedTypeNames = diagnostics.filter { it.factoryName == "UNDECLARED_TYPE_NAME" }
+
+        assertEquals(
+            listOf("completion"),
+            unresolvedTypeNames.flatMap { diagnostic ->
+                diagnostic.textRanges.map { range -> mainFile.text.substring(range.startOffset, range.endOffset) }
+            },
+            diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.text}" },
+        )
     }
 
     /**

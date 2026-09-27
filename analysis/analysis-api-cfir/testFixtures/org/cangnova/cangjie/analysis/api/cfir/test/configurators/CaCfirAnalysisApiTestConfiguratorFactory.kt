@@ -134,6 +134,10 @@ open class CaCfirConfiguredAnalysisApiTestConfigurator(
                 builder.configureLibraryCompilationSupport()
             }
 
+            TestModuleKind.LibraryBinary,
+            TestModuleKind.LibrarySource,
+            -> builder.configureLibraryCompilationSupport()
+
             else -> Unit
         }
     }
