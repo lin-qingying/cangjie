@@ -1,0 +1,241 @@
+=================== CASE matched_spec_default ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+>>> common compile
+>>> specific compile
+>>> dll: out.dll
+=================== CASE matched_readthrough ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific func Pc(x!: Int64): Int64 {
+    x
+}
+>>> common compile
+>>> specific compile
+>>> dll: out.dll
+=================== CASE matched_both_defaults ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common func Pc(x!: Int64 = 1): Int64 {
+    x
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific func Pc(x!: Int64 = 2): Int64 {
+    x
+}
+>>> common compile
+>>> specific compile
+error[0m: parameter default value should be on either 'common' or 'specific' side, not both
+ ==> specific.cj:7:25:
+  | 
+7 | public specific func Pc(x!: Int64 = 2): Int64 {
+  |                         ^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'specific' function 'Pc' can not find 'common' match
+ ==> specific.cj:7:1:
+  | 
+7 |   public specific func Pc(x!: Int64 = 2): Int64 {
+  |  _^
+8 | |     x
+9 | | }
+  | |_^
+  | 
+
+2 errors generated, 2 errors printed.
+>>> dll: 
+=================== CASE common_class_member_var_implicit ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common class CM {
+    public CM() {}
+    public common var mv = 1
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+>>> specific compile
+Reflection format: modifier type is invalid
+!4 = !{!"public", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!4 = !{!"public", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!9 = !{!"hasSRet0", !"mut", !"private", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!11 = !{!"mut", !"private", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!4 = !{!"public", !"reflectVersion1", !"none"}
+in global value cjmp_p:CM.ti
+LLVM ERROR: Broken global value found, compilation aborted!
+Exception Code: 0xC000001D
+ #0 0x00007ffb5392f3c0 HandleAbort (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xcef3c0)
+ #1 0x00007ffc44fbec01 (C:\WINDOWS\System32\msvcrt.dll+0x2ec01)
+ #2 0x00007ffc44fc305b (C:\WINDOWS\System32\msvcrt.dll+0x3305b)
+ #3 0x00007ffb5383f57d llvm::report_fatal_error(llvm::Twine const&, bool) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xbff57d)
+ #4 0x00007ffb5383f3c5 llvm::report_fatal_error(char const*, bool) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xbff3c5)
+ #5 0x00007ffb54ac5967 llvm::CJIRVerifier::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) const (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0xc25967)
+ #6 0x00007ffb54ac3fb3 llvm::CJIRVerifier::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) const (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0xc23fb3)
+ #7 0x00007ffb55c070f4 llvm::detail::PassModel<llvm::Module, llvm::CJIRVerifier, llvm::PreservedAnalyses, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0x1d670f4)
+ #8 0x00007ffb537132b3 llvm::PassManager<llvm::Module, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xad32b3)
+ #9 0x00007ff69c2faac6 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0xaac6)
+#10 0x00007ff69c3138de (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x238de)
+#11 0x00007ff69c2f1316 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x1316)
+#12 0x00007ff69c2f1366 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x1366)
+#13 0x00007ffc453fcd87 (C:\WINDOWS\System32\KERNEL32.DLL+0x2cd87)
+#14 0x00007ffc4636caec (C:\WINDOWS\SYSTEM32\ntdll.dll+0xacaec)
+error: ""C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.5\\third_party\\llvm\\bin\\opt.exe" "D:\\code\\intellij\\cangjie\\.workbuddy\\tmp\\cjmp_probe113\\tmp\\cangjie-tmp-DLMTIS1QT2H4-71690f3e\\cjmp_p.bc" "-passes=default<O0>" "--cangjie-pipeline" "--only-verify-out" "--mtriple=x86_64-w64-mingw32" "-o" "D:\\code\\intellij\\cangjie\\.workbuddy\\tmp\\cjmp_probe113\\tmp\\cangjie-tmp-DLMTIS1QT2H4-71690f3e\\cjmp_p.opt.bc" ": command failed with exit code 3221225501 (use -V to see invocation)
+>>> dll: 
+=================== CASE matched_var_spec_implicit ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common var gv: Int64
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+
+public specific var gv = 5
+>>> common compile
+>>> specific compile
+>>> dll: out.dll
+=================== CASE common_class_with_ctor_ok ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common class WithCtor {
+    public WithCtor() {}
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+>>> specific compile
+Reflection format: modifier type is invalid
+!5 = !{!"public", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!7 = !{!"hasSRet0", !"mut", !"private", !"reflectVersion1", !"none"}
+Reflection format: modifier type is invalid
+!5 = !{!"public", !"reflectVersion1", !"none"}
+in global value cjmp_p:WithCtor.ti
+LLVM ERROR: Broken global value found, compilation aborted!
+Exception Code: 0xC000001D
+ #0 0x00007ffb5392f3c0 HandleAbort (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xcef3c0)
+ #1 0x00007ffc44fbec01 (C:\WINDOWS\System32\msvcrt.dll+0x2ec01)
+ #2 0x00007ffc44fc305b (C:\WINDOWS\System32\msvcrt.dll+0x3305b)
+ #3 0x00007ffb5383f57d llvm::report_fatal_error(llvm::Twine const&, bool) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xbff57d)
+ #4 0x00007ffb5383f3c5 llvm::report_fatal_error(char const*, bool) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xbff3c5)
+ #5 0x00007ffb54ac5967 llvm::CJIRVerifier::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) const (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0xc25967)
+ #6 0x00007ffb54ac3fb3 llvm::CJIRVerifier::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) const (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0xc23fb3)
+ #7 0x00007ffb55c070f4 llvm::detail::PassModel<llvm::Module, llvm::CJIRVerifier, llvm::PreservedAnalyses, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-15.dll+0x1d670f4)
+ #8 0x00007ffb537132b3 llvm::PassManager<llvm::Module, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\libLLVM-Foundation-15.dll+0xad32b3)
+ #9 0x00007ff69c2faac6 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0xaac6)
+#10 0x00007ff69c3138de (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x238de)
+#11 0x00007ff69c2f1316 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x1316)
+#12 0x00007ff69c2f1366 (C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5\third_party\llvm\bin\opt.exe+0x1366)
+#13 0x00007ffc453fcd87 (C:\WINDOWS\System32\KERNEL32.DLL+0x2cd87)
+#14 0x00007ffc4636caec (C:\WINDOWS\SYSTEM32\ntdll.dll+0xacaec)
+error: ""C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.5\\third_party\\llvm\\bin\\opt.exe" "D:\\code\\intellij\\cangjie\\.workbuddy\\tmp\\cjmp_probe113\\tmp\\cangjie-tmp-DLMTIXA7LXPS-e5034154\\cjmp_p.bc" "-passes=default<O0>" "--cangjie-pipeline" "--only-verify-out" "--mtriple=x86_64-w64-mingw32" "-o" "D:\\code\\intellij\\cangjie\\.workbuddy\\tmp\\cjmp_probe113\\tmp\\cangjie-tmp-DLMTIXA7LXPS-e5034154\\cjmp_p.opt.bc" ": command failed with exit code 3221225501 (use -V to see invocation)
+>>> dll: 
+=================== CASE common_class_member_no_body ===================
+--- common.cj ---
+package cjmp_p
+
+public common func Platform(): String {
+    "Common"
+}
+
+public common class CF {
+    public CF() {}
+    public common func m()
+}
+--- specific.cj ---
+package cjmp_p
+
+public specific func Platform(): String {
+    "Spec"
+}
+>>> common compile
+error[0m: 'common' function return type must be specified
+ ==> common.cj:9:19:
+  | 
+9 |     public common func m()
+  |                   ^ 
+  | 
+
+error[0m: abstract function must have return type
+ ==> common.cj:9:27:
+  | 
+9 |     public common func m()
+  |                           ^ abstract function must have return type
+  | 
+
+2 errors generated, 2 errors printed.
+>>> common compile failed, skip specific
+=================== DONE ===================

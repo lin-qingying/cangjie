@@ -1,0 +1,95 @@
+=================== CASE ClassKindMismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' decl kind(interface) is not equal to 'common'(class)
+ ==> specific.cj:3:1:
+  | 
+3 | public specific interface Repo {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' class 'Repo' can not find 'specific' match
+ ==> common.cj:3:1:
+
+error[0m: 'common' constructor can not find 'specific' match
+ ==> common.cj:4:5:
+
+3 errors generated, 3 errors printed.
+=================== CASE DuplicateSpecific ===================
+>>> common compile
+>>> specific compile
+error[0m: function 'f' has overload conflicts
+ ==> specific.cj:4:22:
+  | 
+4 | public specific func f(): Int64 { 2 }
+  |                      ^ 
+  | 
+note[0m: conflict with the declaration
+ ==> specific.cj:3:22:
+  | 
+3 | public specific func f(): Int64 { 1 }
+  |                      ^ 
+  | 
+
+error[0m: 'common' function has several specific implementations
+ ==> common.cj:3:1:
+
+error[0m: 'specific' function 'f' can not find 'common' match
+ ==> specific.cj:4:1:
+  | 
+4 | public specific func f(): Int64 { 2 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+3 errors generated, 3 errors printed.
+=================== CASE InterfaceKindMismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' decl kind(struct) is not equal to 'common'(interface)
+ ==> specific.cj:3:1:
+  | 
+3 | public specific struct Config {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE NotMatched ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' decl kind(class) is not equal to 'common'(interface)
+ ==> specific.cj:3:1:
+  | 
+3 | public specific class Printable {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE OpenTypeMismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' decl kind(interface) is not equal to 'common'(class)
+ ==> specific.cj:3:1:
+  | 
+3 | public specific interface Service {}
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' class 'Service' can not find 'specific' match
+ ==> common.cj:3:1:
+
+error[0m: 'common' constructor can not find 'specific' match
+ ==> common.cj:4:5:
+
+3 errors generated, 3 errors printed.
+=================== CASE PairMismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: the member print must have body in 'specific' Printable
+ ==> specific.cj:4:5:
+  | 
+4 |     func print(): Unit
+  |     ^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== DONE ===================

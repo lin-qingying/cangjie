@@ -1,0 +1,304 @@
+
+/**
+ * CJMP 配对结论检查器（specific 方向；逐条对位 cjc 1.1.3 `CheckCJMP.cpp`）。
+ *
+ * 只在 specific 编译（mode=SPECIFIC）且版本门开启时工作，消费 CJMP_MATCHING 阶段写入的
+ * [org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage]：
+ * - 未配对：`DiagNotMatchedDecl(decl, "specific", …, "common")`；参数级失败先在参数上报告
+ *  （`sema_specific_has_different_parameter` / `sema_cjmp_parameter_default_value_both_sides`）；
+ *   nominal 种类不同只报 `specific_has_different_kind`、common 带默认实现而 specific 为 abstract 只报
+ *   `sema_specific_member_must_have_implementation`（官方同位置后报诊断被诊断引擎去重，1.1.3 实测）；
+ * - 已配对：修饰符（`MatchCJMPDeclAttrs`）、变量/属性类型（`MatchCJMPVar`/`MatchCJMPProp`）、
+ *   var/let、注解多重集（`MatchCJMPDeclAnnotations`）、第二绑定（`TrySetSpecificImpl`）、
+ *   nominal 超类型与枚举穷尽性（`MatchCommonNominalDeclWithSpecific`/`MatchNominativeDecl`）。
+ */
+object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirDeclaration) {
+        val member = declaration as? CfirMemberDeclaration ?: return
+        if (!member.status.isSpecific) return
+        if (declaration is CfirEnumConstructor || declaration is CfirTypeAlias) return
+        if (!CjmpGate.isEnabled(context)) return
+        if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
+        val storage = context.session.cjmpMappingStorageOrNull ?: return
+
+        val common = storage.commonFor(declaration)
+        if (common != null) {
+            checkMatched(declaration, common as CfirMemberDeclaration, storage)
+        } else {
+            reportUnmatched(declaration, storage)
+        }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportUnmatched(declaration: CfirDeclaration, storage: CfirCjmpMappingStorage) {
+        val kinds = storage.mismatchKindsFor(declaration)
+        if (!storage.isUnmatched(declaration) && kinds.isEmpty()) return
+
+        if (declaration is CfirClassLikeDeclaration && CjmpMismatchKind.CLASS_KIND in kinds) {
+            val common = context.session.dependenciesSymbolProvider
+                .getClassLikeSymbolByClassId(declaration.symbol.classId)?.cfir as? CfirClassLikeDeclaration
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND,
+                a = cjmpDeclKind(declaration),
+                b = common?.let(::cjmpDeclKind) ?: cjmpDeclKind(declaration),
+            )
+            return
+        }
+        if (CjmpMismatchKind.MISSING_BODY in kinds) {
+            val callable = declaration as? CfirCallableDeclaration
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION,
+                a = callable?.symbol?.name?.asString().orEmpty(),
+                b = callable?.symbol?.callableId?.classId?.shortClassName?.asString().orEmpty(),
+            )
+            return
+        }
+        storage.parameterMismatchesFor(declaration).firstOrNull()?.let { mismatch ->
+            val parameter = (declaration as? CfirFunction)?.valueParameters?.getOrNull(mismatch.parameterIndex)
+            reporter.reportOn(
+                source = parameter?.source ?: declaration.source,
+                factory = if (mismatch.kind == CjmpMismatchKind.PARAMETER_DEFAULT_VALUE_BOTH_SIDES) {
+                    CfirErrors.CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES
+                } else {
+                    CfirErrors.SPECIFIC_HAS_DIFFERENT_PARAMETER
+                },
+            )
+        }
+        reporter.reportOn(
+            source = declaration.source,
+            factory = CfirErrors.NOT_MATCHED,
+            a = "specific",
+            b = cjmpDeclInfo(declaration),
+            c = "common",
+        )
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkMatched(specific: CfirDeclaration, common: CfirMemberDeclaration, storage: CfirCjmpMappingStorage) {
+        val specificStatus = (specific as CfirMemberDeclaration).status
+        val bindings = storage.specificBindingsFor(common)
+        if (bindings.size > 1 && bindings.first() !== specific) {
+            reporter.reportOn(
+                source = specific.source,
+                factory = CfirErrors.MULTIPLE_COMMON_IMPLEMENTATIONS,
+                a = cjmpDeclKind(common),
+            )
+            return
+        }
+
+        if (specific is CfirClassLikeDeclaration && common is CfirClassLikeDeclaration) {
+            if (!checkModifiers(specific, specificStatus, common, isNominal = true)) return
+            if (specific.superTypeRefs.size != common.superTypeRefs.size) {
+                reporter.reportOn(
+                    source = specific.source,
+                    factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_SUPER_TYPE,
+                    a = cjmpDeclKind(specific),
+                )
+                return
+            }
+            if (specific is CfirEnum && common is CfirEnum && !common.isNonExhaustive && specific.isNonExhaustive) {
+                reporter.reportOn(
+                    source = specific.source,
+                    factory = CfirErrors.COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH,
+                    a = cjmpDeclKind(common),
+                    b = cjmpDeclKind(specific),
+                )
+            }
+            return
+        }
+
+        // MatchCJMPVar / MatchCJMPProp：类型与 var/let 在配对后报告
+        val specificType = callableType(specific)
+        val commonType = callableType(common)
+        if (specificType != null && commonType != null &&
+            !AbstractTypeChecker.equalTypes(context.session.typeContext, specificType, commonType)
+        ) {
+            val kind = when (specific) {
+                is CfirProperty -> "property"
+                is CfirVariable -> if (specific.isVar) "var" else "let"
+                else -> null
+            }
+            if (kind != null) {
+                reporter.reportOn(source = specific.source, factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_TYPE, a = kind)
+            }
+        }
+        if (specific is CfirVariable && common is CfirVariable && specific.isVar != common.isVar) {
+            reporter.reportOn(
+                source = specific.source,
+                factory = CfirErrors.SPECIFIC_VAR_NOT_MATCH_LET,
+                a = if (specific.isVar) "var" else "let",
+                b = if (common.isVar) "var" else "let",
+            )
+        }
+
+        if (!checkModifiers(specific, specificStatus, common, isNominal = false)) return
+
+        val specificAnnotations = specific.annotationKeys(context.languageVersionSettings)
+        val commonAnnotations = common.annotationKeys(context.languageVersionSettings)
+        if (!annotationKeyMultisetsEqual(specificAnnotations, commonAnnotations)) {
+            reporter.reportOn(
+                source = specific.source,
+                factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_ANNOTATION,
+                a = cjmpDeclKind(specific),
+            )
+        }
+    }
+
+    /**
+     * 官方 `MatchCJMPDeclAttrs`：nominal 比较 ABSTRACT/PUBLIC/OPEN/PROTECTED/C/SEALED，
+     * 其余比较 STATIC/MUT/PRIVATE/PUBLIC/PROTECTED/FOREIGN/UNSAFE/OPEN/ABSTRACT；首个差异报告后返回 false。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkModifiers(
+        specific: CfirDeclaration,
+        specificStatus: CfirDeclarationStatus,
+        common: CfirMemberDeclaration,
+        isNominal: Boolean,
+    ): Boolean {
+        val commonStatus = common.status
+        val isFuncOrProp = common is CfirNamedFunction || common is CfirProperty
+        val abstractOrOpenDiffers = specificStatus.isAbstract != commonStatus.isAbstract ||
+                specificStatus.isOpen != commonStatus.isOpen
+        val sealedAbstractAllowed = isNominal && common is CfirClass && specificStatus.isSealed && commonStatus.isAbstract
+        if (abstractOrOpenDiffers) {
+            when {
+                isFuncOrProp && specificStatus.isAbstract && commonStatus.isOpen -> {
+                    val kind = if (common is CfirNamedFunction) "function" else "property"
+                    reporter.reportOn(
+                        source = specific.source,
+                        factory = CfirErrors.OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON,
+                        a = kind,
+                        b = kind,
+                    )
+                    return false
+                }
+                // abstract 成员可由 open 成员实现；两侧 static 的 abstract 同理（官方例外）
+                isFuncOrProp && commonStatus.isAbstract && specificStatus.isOpen -> Unit
+                commonStatus.isAbstract && commonStatus.isStatic && specificStatus.isStatic -> Unit
+                sealedAbstractAllowed -> Unit
+                else -> return reportModifier(specific)
+            }
+        }
+        val differs = specificStatus.visibility != commonStatus.visibility ||
+                (isNominal && specificStatus.isSealed != commonStatus.isSealed && !sealedAbstractAllowed) ||
+                (isNominal && specificStatus.isC != commonStatus.isC) ||
+                (!isNominal && (
+                        specificStatus.isStatic != commonStatus.isStatic ||
+                                specificStatus.isMut != commonStatus.isMut ||
+                                specificStatus.isForeign != commonStatus.isForeign ||
+                                specificStatus.isUnsafe != commonStatus.isUnsafe))
+        if (differs) return reportModifier(specific)
+        return true
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportModifier(specific: CfirDeclaration): Boolean {
+        reporter.reportOn(
+            source = specific.source,
+            factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_MODIFIER,
+            a = cjmpDeclKind(specific),
+        )
+        return false
+    }
+
+    private fun callableType(declaration: CfirDeclaration): ConeCangJieType? {
+        val typeRef = when (declaration) {
+            is CfirProperty -> declaration.returnTypeRef
+            is CfirVariable -> declaration.returnTypeRef
+            else -> return null
+        }
+        val type = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        return type.takeUnless { it is ConeErrorType }
+    }
+}
+
+/**
+ * CJMP 配对结论检查器（common 方向；官方 `MatchCJMPDecls` 的 common 声明循环 + `MustMatchWithSpecific`）。
+ *
+ * 在 specific 编译的 specific 会话里运行（配对存储在该会话）：对当前文件所在包的 common 声明
+ *（来自 refinement 依赖模块，含 nominal 成员）逐个判定——未被任何 specific 绑定、且不在官方豁免面内
+ *（`COMMON_WITH_DEFAULT`、interface 成员、enum 构造器）时报 `NOT_MATCHED("common", …, "specific")`，
+ * 锚在 common 声明上（计划 G20：源码 common 有真实 source；反序列化 common 无 source 时不报，
+ * 不改锚到 specific 侧）。同一包只处理一次。
+ */
+object CfirCjmpCommonSideChecker : CfirFileChecker() {
+    override val requiresImplementation: Boolean get() = true
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirFile) {
+        if (!CjmpGate.isEnabled(context)) return
+        if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
+        val storage = context.session.cjmpMappingStorageOrNull ?: return
+        val packageFqName = declaration.packageDirective.packageFqName
+        if (!storage.markCommonSideChecked(packageFqName.asString())) return
+
+        val refinementModules = context.session.moduleData.allRefinementDependencies.mapTo(HashSet()) { it.name }
+        if (refinementModules.isEmpty()) return
+        val provider = context.session.dependenciesSymbolProvider
+        val names = provider.symbolNamesProvider
+        val commonDeclarations = buildList<CfirDeclaration> {
+            names.getTopLevelClassifierNamesInPackage(packageFqName).orEmpty().forEach { name ->
+                provider.getClassLikeSymbolByClassId(ClassId(packageFqName, name))?.cfir?.let(::add)
+            }
+            names.getTopLevelCallableNamesInPackage(packageFqName).orEmpty().forEach { name ->
+                provider.getTopLevelCallableSymbols(packageFqName, name).forEach { add(it.cfir) }
+            }
+        }.distinct().filter { common ->
+            (common as? CfirMemberDeclaration)?.status?.isCommon == true && common.moduleData.name in refinementModules
+        }
+
+        for (common in commonDeclarations) {
+            reportIfMustMatch(common, storage, outer = null)
+            if (common is CfirClassLikeDeclaration) {
+                for (member in common.declarations) {
+                    val memberStatus = (member as? CfirMemberDeclaration)?.status ?: continue
+                    if (!memberStatus.isCommon || member is CfirEnumConstructor) continue
+                    reportIfMustMatch(member, storage, outer = common)
+                }
+            }
+        }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportIfMustMatch(common: CfirDeclaration, storage: CfirCjmpMappingStorage, outer: CfirClassLikeDeclaration?) {
+        if (storage.specificBindingsFor(common).isNotEmpty()) return
+        if (common.cjmpHasCommonDefault()) return
+        if (outer is CfirInterface) return
+        val source = common.source ?: return
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.NOT_MATCHED,
+            a = "common",
+            b = cjmpDeclInfo(common),
+            c = "specific",
+        )
+    }
+}
+
+/** 官方 `DeclKindToString`（TypeCheckUtil.cpp `DECL2STRMAP`）。 */
+private fun cjmpDeclKind(declaration: CfirDeclaration): String = when (declaration) {
+    is CfirClass -> "class"
+    is CfirStruct -> "struct"
+    is CfirInterface -> "interface"
+    is CfirEnum -> "enum"
+    is CfirExtend -> "extend"
+    is CfirProperty -> "property"
+    is CfirFunction -> "function"
+    is CfirVariable -> "variable"
+    is CfirTypeAlias -> "type alias"
+    else -> "declaration"
+}
+
+/** 官方 `DiagNotMatchedDecl` 的第二参数："constructor" 或 "Kind 'name'"。 */
+private fun cjmpDeclInfo(declaration: CfirDeclaration): String {
+    if (declaration is CfirConstructor) return "constructor"
+    val name = when (declaration) {
+        is CfirClassLikeDeclaration -> declaration.name.asString()
+        is CfirCallableDeclaration -> declaration.symbol.name.asString()
+        else -> ""
+    }
+    return "${cjmpDeclKind(declaration)} '$name'"
+}

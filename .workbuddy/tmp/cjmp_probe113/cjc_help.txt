@@ -1,0 +1,186 @@
+Usage:
+      cjc [option] file...
+
+Options:
+  --diagnostic-format <value> Diagnostic format. Candidate modes: 
+    <value>=json                
+    <value>=noColor             
+    <value>=default             
+  --scan-dependency           Get the package(s) which the current package depends on
+  --no-sub-pkg                The package doesn't have sub-packages
+  --cfg <value>               User defined condition to compile
+  --debug-macro               Enable debug macro
+  --parallel-macro-expansion  Enable parallel macro expansion
+  -g                          Enable compile debug version target
+  --trimpath <value>          Remove a specified path prefix in debuginfo
+  -s, --strip-all             Strip the symbol table from executable and dynamic library
+  --test                      Enable compile test
+  --test-only                 Compile test files only (`<filename>_test.cj`), production parts should be added as a dependency separately
+  --export-for-test           Export some additional kinds of declaration specifically for using them in tests
+  --mock <value>              Specify whether mock features are enabled, or disabled, or a runtime exception is thrown when trying to use mock features
+    <value>=on                  
+    <value>=off                 
+    <value>=runtime-error       
+  -o, --output <value>        Specify product name or output directory when compiling a package
+  --output-dir <value>        Specify output directory (it affects '--output' option)
+  --output-javagen-dir <value>
+                              Specify output directory for javagen
+  --no-prelude                Not import cangjie std.core package by default, only applicable when compiling std.core
+  --static                    Statically link cangjie library
+  --static-std                Statically link packages of the std module
+  --dy-std                    Dynamically link packages of the std module
+  --static-libs               Statically link packages of other modules except std
+  --dy-libs                   Dynamically link packages of other modules except std
+  --lto <value>               Enable LTO to either 'full' or 'thin' (Not available for Windows target)
+    <value>=full                
+    <value>=thin                
+  --compile-as-exe            Hide symbols from bitcode files in LTO mode, and only the package init symbols remain visible
+  --profile-compile-time      Print time spent of all phases in the compilation
+  --profile-compile-memory    Print memory usage of all phases in the compilation
+  --enable-eh                 Enables experimental support for effect handlers (Experimental)
+  --dump-ast                  Dump human readable AST when compiling for debug
+  --dump-chir                 Dump human readable CHIR when compiling for debug
+  --dump-ir                   Dump human readable IR
+  --dump-all                  Dump all of AST, CHIR, IR
+  --dump-to-screen            Dump to screen instead of file
+  --emit-chir                 emit CHIR serialization file of the specified phase. Candidate phases:
+    <value>=raw                 emit CHIR before compiler optimization
+    <value>=opt                 emit CHIR after compiler optimization (default)
+  --fchir-constant-propagation
+                              Enable constant propagation optimizaion in CHIR
+  --fno-chir-constant-propagation
+                              Disable constant propagation optimizaion in CHIR
+  --fchir-function-inlining   Enable function inlining optimizaion in CHIR
+  --fno-chir-function-inlining
+                              Disable function inlining optimizaion in CHIR
+  --fchir-devirtualization    Enable devirtualization optimizaion in CHIR
+  --fno-chir-devirtualization Disable devirtualization optimizaion in CHIR
+  --sanitizer-coverage-inline-8bit-counters
+                              Enable sanitizer-coverage-inline-8bit-counters in CHIR
+  --sanitizer-coverage-inline-bool-flag
+                              Enable sanitizer-coverage-inline-bool-flag in CHIR
+  --sanitizer-coverage-trace-pc-guard
+                              Enable sanitizer-coverage-trace-pc-guard in CHIR
+  --sanitizer-coverage-pc-table
+                              Enable sanitizer-coverage-pc-table in CHIR
+  --sanitizer-coverage-stack-depth
+                              Enable sanitizer-coverage-stack-depth in CHIR
+  --sanitizer-coverage-trace-compares
+                              Enable sanitizer-coverage-trace-compares in CHIR
+  --sanitizer-coverage-trace-memcmp
+                              Enable sanitizer-coverage-trace-memcmp in CHIR
+  --sanitizer-coverage-level=0
+                              sancov level 0
+  --sanitizer-coverage-level=1
+                              sancov level 1
+  --sanitizer-coverage-level=2
+                              sancov level 2
+  --sanitizer-coverage-level <value>
+                              Set sanitizer-coverage level
+  --int-overflow <value>      Specify default integer overflow strategy: 
+    <value>=throwing            
+    <value>=wrapping            
+    <value>=saturating          
+  --fast-math                 Enable fast-math mode
+  --link-option <value>       An option directly passed to linker
+  --link-options <value>      Options directly passed to linker
+  -L, --library-path <value>  Add directory to library search path
+  -l, --library <value>       Link library
+  --set-runtime-rpath         Add cangjie runtime directory to rpath
+  -B, --toolchain <value>     Use toolchain binaries and object files at the given directory
+  --target <value>            Generate code for the given target platform
+  --target-cpu <value>        Generate instructions for the given target processor (Experimental)
+  --sysroot <value>           Set the system root directory under which bin, lib and include can be found
+  --output-type <value>       Specify output file type
+    <value>=exe                 emit executable (default)
+    <value>=staticlib           emit static library
+    <value>=dylib               emit dynamic library
+  --compile-target <value>    Specify compile target for obj (Experimental)
+  -O0                         Optimization level 0 (default)
+  -O, -O1                     Optimization level 1
+  -O2                         Optimization level 2
+  -Os                         Optimization level s, like -O2 with extra optimizations for size
+  -Oz                         Optimization level z, like -Os but reduces code size further
+  -O<value>                   Set Optimization level
+  --module-name <value>       Tell compiler name of the module
+  -p, --package               Specify package directory to be compiled
+  --import-path <value>       Add .cjo search path
+  --plugin <value>            Specify the dynamic library path of compiler plugin
+  --common-part-cjo           Add .cjo path for common part of package (Experimental)
+  --incremental-compile       Enable incremental compilation. (Experimental)
+  --save-temps <value>        Save intermediate compilation results. <value>: path to save temp files.
+  -Woff, --warn-off <value>   Suppress a specific group of warning
+    <value>=all                 
+    <value>=unused              
+    <value>=unused-main         
+    <value>=driver-arg          
+    <value>=deprecated          
+    <value>=unsupport-compile-source  
+    <value>=package-import      
+    <value>=parser              
+    <value>=semantics           
+    <value>=interpreter         
+    <value>=apilevel-check      
+  -Won, --warn-on <value>     Report a specific group of warning
+    <value>=all                 
+    <value>=unused              
+    <value>=unused-main         
+    <value>=driver-arg          
+    <value>=deprecated          
+    <value>=unsupport-compile-source  
+    <value>=package-import      
+    <value>=parser              
+    <value>=semantics           
+    <value>=interpreter         
+    <value>=apilevel-check      
+  --error-count-limit <value> Emit specified <number> of errors only. Available options: all, <number> (8 by default)
+  -V, --verbose               Enable verbose
+  -v, --version               Print compiler version information 
+  -h, --help                  Show usage
+  --compile-macro             Options to compile the macro define package
+  --coverage                  Enable coverage
+  --experimental              Enable experimental options
+  -j, --jobs <value>          Number of tasks to run at once
+  --apc, --aggressive-parallel-compile
+                              Enable agrressive parallel compile and specify the number of tasks to run at once
+  --sanitize <value>          Enable sanitizer: 
+    <value>=address             enable address sanitizer
+    <value>=thread              enable thread sanitizer
+    <value>=hwaddress           enable hardware-assisted address sanitizer
+  --sanitize-set-rpath        Add -rpath with cangjie runtime directory to linker flags for sanitizer-enabled product
+  --fobf-string               Enable string literal obfuscation
+  --fno-obf-string            Disable string literal obfuscation
+  --fobf-const                Enable constant literal obfuscation
+  --fno-obf-const             Disable constant literal obfuscation
+  --fobf-layout               Enable code layout obfuscation
+  --fno-obf-layout            Disable code layout obfuscation
+  --fobf-cf-flatten           Enable control flow flatten obfuscation
+  --fno-obf-cf-flatten        Disable control flow flatten obfuscation
+  --fobf-cf-bogus             Enable control flow bogus obfuscation
+  --fno-obf-cf-bogus          Disable control flow bogus obfuscation
+  --fobf-all                  Enable all obfuscations
+  --fobf-export-symbols       Obfuscate export symbols when layout obfuscation is enabled
+  --fno-obf-export-symbols    Don't obfuscate export symbols when layout obfuscation is enabled
+  --obf-sym-input-mapping <value>
+                              Specify the input files of symbol mapping for layout obfuscation
+  --obf-sym-output-mapping <value>
+                              Specify the output file of symbol mapping for layout obfuscation
+  --obf-apply-mapping-file <value>
+                              Supply user-defined symbol mapping file for layout obfuscation
+  --obf-sym-prefix <value>    Specify the prefix of obfuscated symbols for layout obfuscation
+  --fobf-source-path          Obfuscate source path of symbols when layout obfuscation is enabled
+  --fno-obf-source-path       Don't obfuscate source path of symbols when layout obfuscation is enabled
+  --fobf-line-number          Obfuscate line number of symbols when layout obfuscation is enabled
+  --fno-obf-line-number       Don't obfuscate line number of symbols when layout obfuscation is enabled
+  --obf-config <value>        Specify obfuscation configure file
+  --obf-level <value>         Specify obfuscation level. Available value: 1 to 9 (5 by default)
+  --obf-seed <value>          Specify random seed for obfuscation algorithm. Available value: <number>
+  --disable-reflection        Disable reflection
+  --stack-trace-format <value>
+                              Specify stack trace format
+    <value>=default             
+    <value>=simple              
+    <value>=all                 
+  --pgo-instr-gen             PGO instrumentation
+  --pgo-instr-use <value>     Read PGO instrumentation profile
+  --discard-eh-frame          Discard the eh_frame section

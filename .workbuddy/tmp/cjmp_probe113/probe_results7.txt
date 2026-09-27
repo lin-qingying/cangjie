@@ -1,0 +1,171 @@
+=================== CASE common_default_omitted ===================
+>>> common compile
+>>> specific compile
+=================== CASE default_both_sides ===================
+>>> common compile
+>>> specific compile
+error[0m: parameter default value should be on either 'common' or 'specific' side, not both
+ ==> specific.cj:3:24:
+  | 
+3 | public specific func a(x!: Int64 = 2): Int64 { x }
+  |                        ^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'specific' function 'a' can not find 'common' match
+ ==> specific.cj:3:1:
+  | 
+3 | public specific func a(x!: Int64 = 2): Int64 { x }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' function 'a' can not find 'specific' match
+ ==> common.cj:3:1:
+
+3 errors generated, 3 errors printed.
+=================== CASE default_read_through ===================
+>>> common compile
+>>> specific compile
+=================== CASE enum_nonexhaustive ===================
+>>> common compile
+>>> specific compile
+error[0m: exhaustive 'common' enum cannot be matched with non-exhaustive 'specific' enum
+ ==> specific.cj:3:1:
+  | 
+3 |   public specific enum E {
+  |  _^
+4 | |     | A | B | ...
+5 | | }
+  | |_^
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE iface_exempt ===================
+>>> common compile
+>>> specific compile
+=================== CASE kind_mismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' decl kind(struct) is not equal to 'common'(class)
+ ==> specific.cj:3:1:
+  | 
+3 |   public specific struct K {
+  |  _^
+4 | |     public specific init() {}
+5 | | }
+  | |_^
+  | 
+
+error[0m: 'specific' constructor can not find 'common' match
+ ==> specific.cj:4:5:
+  | 
+4 |     public specific init() {}
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' class 'K' can not find 'specific' match
+ ==> common.cj:3:1:
+
+error[0m: 'common' constructor can not find 'specific' match
+ ==> common.cj:4:5:
+
+4 errors generated, 4 errors printed.
+=================== CASE member_missing ===================
+>>> common compile
+>>> specific compile
+error[0m: 'common' function 'f' can not find 'specific' match
+ ==> common.cj:5:5:
+
+1 error generated, 1 error printed.
+=================== CASE missing_specific ===================
+>>> common compile
+>>> specific compile
+error[0m: 'common' function 'b' can not find 'specific' match
+ ==> common.cj:4:1:
+
+1 error generated, 1 error printed.
+=================== CASE named_param_name ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function parameter is not match 'common' parameter
+ ==> specific.cj:3:24:
+  | 
+3 | public specific func a(y!: Int64): Int64 { 1 }
+  |                        ^^^^^^^^^ 
+  | 
+
+error[0m: 'specific' function 'a' can not find 'common' match
+ ==> specific.cj:3:1:
+  | 
+3 | public specific func a(y!: Int64): Int64 { 1 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' function 'a' can not find 'specific' match
+ ==> common.cj:3:1:
+
+3 errors generated, 3 errors printed.
+=================== CASE ok_basic ===================
+>>> common compile
+>>> specific compile
+=================== CASE orphan_specific ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function 'z' can not find 'common' match
+ ==> specific.cj:4:1:
+  | 
+4 | public specific func z(): Int64 { 2 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE param_type_mismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function 'a' can not find 'common' match
+ ==> specific.cj:3:1:
+  | 
+3 | public specific func a(x: String): Int64 { 1 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' function 'a' can not find 'specific' match
+ ==> common.cj:3:1:
+
+2 errors generated, 2 errors printed.
+=================== CASE return_type_mismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function 'a' can not find 'common' match
+ ==> specific.cj:3:1:
+  | 
+3 | public specific func a(): String { "" }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+error[0m: 'common' function 'a' can not find 'specific' match
+ ==> common.cj:3:1:
+
+2 errors generated, 2 errors printed.
+=================== CASE var_type_mismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' let type is not equal to 'common' type
+ ==> specific.cj:3:1:
+  | 
+3 | public specific let v: String = ""
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== CASE visibility_mismatch ===================
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function modifier is not match 'common' modifier
+ ==> specific.cj:3:1:
+  | 
+3 | specific func a(): Int64 { 1 }
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+  | 
+
+1 error generated, 1 error printed.
+=================== DONE ===================

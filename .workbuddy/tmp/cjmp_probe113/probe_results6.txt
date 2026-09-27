@@ -1,0 +1,60 @@
+=================== CASE common_iface_member_marked ===================
+--- common.cj ---
+package cjmp_p
+
+
+public common interface I {
+    common func m()
+}
+>>> common compile
+error[0m: 'common' function return type must be specified
+ ==> common.cj:5:12:
+  | 
+5 |     common func m()
+  |            ^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE toplevel_bodyless_confirm ===================
+--- common.cj ---
+package cjmp_p
+
+
+public common func NoRet()
+>>> common compile
+error[0m: 'common' function return type must be specified
+ ==> common.cj:4:15:
+  | 
+4 | public common func NoRet()
+  |               ^ 
+  | 
+
+1 error generated, 1 error printed.
+>>> common compile failed, skip specific
+=================== CASE specific_toplevel_bodyless ===================
+--- common.cj ---
+package cjmp_p
+
+
+public common func Platform(): String {
+    "Common"
+}
+>>> common compile
+>>> specific compile
+error[0m: 'specific' function return type must be specified
+ ==> specific.cj:7:17:
+  | 
+7 | public specific func Pf()
+  |                 ^ 
+  | 
+
+error[0m: body of function 'Pf' is missing
+ ==> specific.cj:7:26:
+  | 
+7 | public specific func Pf()
+  |                          ^ missing function body here
+  | 
+
+2 errors generated, 2 errors printed.
+=================== DONE ===================
