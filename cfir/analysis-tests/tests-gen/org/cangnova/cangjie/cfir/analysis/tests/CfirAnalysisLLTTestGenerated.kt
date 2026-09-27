@@ -8723,6 +8723,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/main4-1.cj")
             }
 
+            @TestMetadata("privateFunctionsCauseGenericInstantiationAmbiguity.cj")
+            @Test
+            fun testPrivateFunctionsCauseGenericInstantiationAmbiguity() {
+                runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/privateFunctionsCauseGenericInstantiationAmbiguity.cj")
+            }
+
             @TestMetadata("import_test")
             @TestDataPath("${'$'}PROJECT_ROOT")
             @Nested
