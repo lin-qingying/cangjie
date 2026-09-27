@@ -43,11 +43,22 @@ class CangJieStandalonePackageProviderFactory(
     override fun createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider {
         val packageNames = buildSet {
             fileCollector.collect(searchScope).mapTo(this) { it.packageFqName }
+            addAll(collectBuiltinsPackageNames(searchScope))
             addAll(collectLibraryPackageNames(searchScope))
         }
         if (packageNames.isEmpty()) return CangJieEmptyPackageProvider
 
         return CangJieStandalonePackageProvider(packageNames)
+    }
+
+    /**
+     * 从应用级 builtins virtual-file provider 建立内建包索引。
+     *
+     * builtins `.cjo` 文件不属于 standalone project 的 source/library roots，且测试宿主可能不会
+     * 将 `CaBuiltinsModule` 放入 `CaModuleProvider.allModules`；包事实因此直接从 binary header 读取。
+     */
+    private fun collectBuiltinsPackageNames(searchScope: GlobalSearchScope): Set<FqName> {
+        return CaDecompiledBinaryIndex.getInstance(project).getBuiltinsPackages(searchScope).keys
     }
 
     /**
