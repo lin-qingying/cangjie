@@ -5,12 +5,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.session.CfirCjmpCommonSideFacts
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cjmpMappingStorageOrNull
 import org.cangnova.cangjie.cfir.session.cjmpSettings
-import org.cangnova.cangjie.cfir.session.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.session.dependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
@@ -26,7 +26,7 @@ import org.cangnova.cangjie.name.ClassId
  * 源码 common（多模块测试、IDE）由 `CfirCjmpCommonSideChecker` 在 common 源上报告；CLI specific 编译时
  * common 来自 `--common-part-cjo`，声明没有 PSI/LightTree source。官方用 cjo 内嵌位置输出
  * `common.cj:行:列`（cjc 1.1.3 实测 `'common' function 'b' can not find 'specific' match ==> common.cj:4:1`），
- * 本仓库从 cjo 恢复的 [org.cangnova.cangjie.cfir.session.CfirCjoDeclarationPosition] 以编译消息外显，
+ * 本仓库从 cjo 恢复的 [org.cangnova.cangjie.cfir.declarations.CfirCjoDeclarationPosition] 以编译消息外显，
  * 判据与源码路径共用 [CfirCjmpCommonSideFacts]。
  */
 internal object CjmpDeserializedCommonSideReporter {
