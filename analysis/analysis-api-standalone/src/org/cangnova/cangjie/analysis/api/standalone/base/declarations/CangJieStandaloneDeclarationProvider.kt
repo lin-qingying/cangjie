@@ -21,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclaratio
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieEmptyDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieFileBasedDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.name.ClassId
@@ -55,12 +56,32 @@ class CangJieStandaloneDeclarationProviderFactory(
      */
     override fun createDeclarationProvider(scope: GlobalSearchScope, contextualModule: CaModule?): CangJieDeclarationProvider {
         val providers = when (contextualModule) {
+            is CaBuiltinsModule -> createBuiltinsDeclarationProviders(contextualModule, scope)
             is CaLibraryModule -> createLibraryDeclarationProviders(contextualModule, scope)
             else -> fileCollector.collect(scope).map(::CangJieFileBasedDeclarationProvider)
         }
         if (providers.isEmpty()) return CangJieEmptyDeclarationProvider
 
         return CangJieCompositeDeclarationProvider.create(providers)
+    }
+
+    /**
+     * 从 builtins binary index 收集当前搜索作用域中的反编译 PSI 声明。
+     *
+     * builtins 文件由应用级 virtual-file provider 持有，不属于 standalone source roots；
+     * 因此它们必须沿 binary index/decompiler 路径进入声明索引。
+     */
+    private fun createBuiltinsDeclarationProviders(
+        builtinsModule: CaBuiltinsModule,
+        scope: GlobalSearchScope,
+    ): List<CangJieFileBasedDeclarationProvider> {
+        val packageFiles = CaDecompiledBinaryIndex.getInstance(project)
+            .getBuiltinsPackages(builtinsModule, scope)
+        return packageFiles.mapNotNull { (packageFqName, binaryFile) ->
+            val file = psiManager.findFile(binaryFile) as? CjFile ?: return@mapNotNull null
+            CangJieFileBasedDeclarationProvider(file, packageFqName)
+        }
+            .toList()
     }
 
     /**

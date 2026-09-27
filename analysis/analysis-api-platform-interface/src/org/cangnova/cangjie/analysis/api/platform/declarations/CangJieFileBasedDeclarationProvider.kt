@@ -27,12 +27,20 @@ import org.cangnova.cangjie.utils.yieldIfNotNull
  * 基于单个 [CjFile] 的声明 provider。
  */
 @CaPlatformInterface
-class CangJieFileBasedDeclarationProvider(
+class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 作为声明查询来源的仓颉文件。
      */
     val cangjieFile: CjFile,
+    /** 为当前 file PSI 返回稳定 package 身份的函数。 */
+    private val packageFqNameProvider: (CjFile) -> FqName,
 ) : CangJieDeclarationProvider {
+    /** 以源码 PSI package 声明作为 package 身份。 */
+    constructor(cangjieFile: CjFile) : this(cangjieFile, { file -> file.packageFqName })
+
+    /** 对 compiled/decompiled file 使用 binary index 已解析的 package 身份。 */
+    constructor(cangjieFile: CjFile, packageFqName: FqName) : this(cangjieFile, { packageFqName })
+
     /**
      * 用于从 VirtualFile 恢复最新 PSI 的 PSI manager。
      */
@@ -67,7 +75,7 @@ class CangJieFileBasedDeclarationProvider(
     private val filePackageFqName: FqName
         get() {
             val file = currentCangJieFile
-            return file.packageFqName
+            return packageFqNameProvider(file)
         }
 
     /**

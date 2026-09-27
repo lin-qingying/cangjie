@@ -45,6 +45,14 @@ internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProvider
     override fun getBuiltinVirtualFiles(): Set<VirtualFile> = files
 
     /**
+     * 返回当前测试项目使用的 builtins binary 文件。
+     *
+     * 测试宿主的 builtins 根目录与 application 级集合相同，复用已收集文件集，避免基类再次遍历 VFS roots。
+     */
+    @Suppress("UNUSED_PARAMETER")
+    override fun getBuiltinVirtualFiles(project: Project): Set<VirtualFile> = files
+
+    /**
      * 返回全部 builtins 根目录。
      */
     override fun getBuiltinRootVirtualFiles(): Set<VirtualFile> {

@@ -5,6 +5,8 @@ import com.intellij.mock.MockApplication
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectLocator
+import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.CangjieCoreProjectEnvironment
@@ -92,11 +94,13 @@ class CaAnalysisApiEnvironmentManagerImpl(
     override fun initializeEnvironment() {
         ensureStdlibPropertyForAnalysisTests()
         sharedCoreEnvironment
-        (getApplication() as MockApplication).apply {
+        val application = getApplication() as MockApplication
+        application.apply {
             if (getServiceIfCreated(BuiltinsVirtualFileProvider::class.java) == null) {
                 registerService(BuiltinsVirtualFileProvider::class.java, BuiltinsVirtualFileProviderTestImpl())
             }
         }
+        application.installAnalysisTestProjectLocator(sharedCoreEnvironment.project)
 
         /**
          * Analysis API 测试需要直接在内存 PSI 上工作，因此这里显式注册 ParserDefinition，
@@ -169,6 +173,25 @@ class CaAnalysisApiEnvironmentManagerImpl(
             .firstOrNull { file -> file.resolve("settings.gradle.kts").isFile }
             ?: start
     }
+
+    /** 在单项目 Analysis API mock application 中，为 decompiled PSI 提供确定的所属 project。 */
+    private fun MockApplication.installAnalysisTestProjectLocator(project: Project) {
+        val current = getServiceIfCreated(ProjectLocator::class.java)
+        if (current is AnalysisTestProjectLocator) {
+            current.project = project
+        } else if (current == null) {
+            registerService(ProjectLocator::class.java, AnalysisTestProjectLocator(project))
+        }
+    }
+}
+
+/** Analysis API 的 headless 测试环境只装配一个 Project。 */
+private class AnalysisTestProjectLocator(
+    @Volatile var project: Project,
+) : ProjectLocator() {
+    override fun guessProjectForFile(file: VirtualFile): Project = project
+
+    override fun getProjectsForFile(file: VirtualFile): Collection<Project> = listOf(project)
 }
 
 /**

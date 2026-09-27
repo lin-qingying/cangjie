@@ -28,10 +28,13 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjPsiFactory
+import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.elementContext
 import org.cangnova.cangjie.psi.psiUtil.findDescendantOfType
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.test.services.TestServices
 import com.intellij.psi.PsiManager
 import java.nio.file.Files
@@ -173,10 +176,10 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
                 """
                     package sample.standalone.priority.helper
 
-                    class Helper {
+                    public class Helper {
                     }
 
-                    func helperFactory(): Helper {
+                    public func helperFactory(): Helper {
                         return Helper()
                     }
                 """.trimIndent(),
@@ -263,8 +266,15 @@ class StandaloneSessionBuilderTest : AbstractAnalysisApiExecutionTest(
             }
 
             context.analyze(specificCall) {
+                val calleeReference = specificCall.calleeExpression as? CjReferenceExpression
+                val resolvedCalleeSymbols = calleeReference?.resolveToSymbols().orEmpty()
+                assertEquals(listOf("helperFactory"), resolvedCalleeSymbols.map { it.name?.asString() })
                 val resolvedCall = specificCall.resolveToCall()?.successfulFunctionCallOrNull()
-                    ?: error("Specific file root must resolve helperFactory() through its own dependency edge.")
+                    ?: error(
+                        "Specific file root must resolve helperFactory() through its own dependency edge; " +
+                            "visible candidates=${getTopLevelCallableSymbols(FqName("sample.standalone.priority.helper"), Name.identifier("helperFactory"))
+                                .map { it.callableId?.toString() }}",
+                    )
                 assertEquals("helperFactory", resolvedCall.partiallyAppliedSymbol.signature.symbol.name?.asString())
                 assertSame(specificFileModule, specificFile.symbol.containingModule)
             }
