@@ -24,6 +24,7 @@ object AnalysisApiComponentTestDirectives : SimpleDirectivesContainer() {
     val TARGET_CALL by stringDirective(
         description = "指定当前测试应定位的调用表达式文本。",
         applicability = DirectiveApplicability.File,
+        multiLine = true,
     )
 
     /**

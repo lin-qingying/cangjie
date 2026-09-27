@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
@@ -10,7 +9,6 @@ import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.services.TestServices
@@ -31,8 +29,7 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
      */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
-        val memberCall = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
-            .single { call -> matchesTargetCall(call, directives.targetCallText) }
+        val memberCall = findCallByTargetText(mainFile, directives.targetCallText)
         val expectedArgumentTypes = directives[AnalysisApiComponentTestDirectives.EXPECTED_ARGUMENT_TYPE]
         val expectedExplicitReceiverType = directives.singleOrZeroValue(
             AnalysisApiComponentTestDirectives.EXPECTED_EXPLICIT_RECEIVER_TYPE,
@@ -60,18 +57,4 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
         }
     }
 
-    /**
-     * 调用表达式的 PSI 形状和源码文本并不总是同构。
-     *
-     * 例如成员调用 `counter.add(42)` 常常会被拆成带 selector 的 qualified 结构。
-     * 测试需要稳定地从源码意图中选中目标调用，因此同时接受：
-     * 1. 调用表达式自身文本
-     * 2. callee 文本
-     * 3. 调用所在父表达式文本
-     */
-    private fun matchesTargetCall(callExpression: CjCallExpression, expectedText: String): Boolean {
-        return callExpression.text == expectedText ||
-            callExpression.calleeExpression?.text == expectedText ||
-            callExpression.parent?.text == expectedText
-    }
 }

@@ -3,7 +3,9 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.configurators
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.psi.FileTypeFileViewProviders
+import com.intellij.psi.stubs.BinaryFileStubBuilders
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.CangJieBinaryFileStubBuilder
 import org.cangnova.cangjie.analysis.decompiled.psi.CangJieDecompiledFileViewProviderFactory
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
@@ -49,6 +51,11 @@ object CaAnalysisApiDecompiledTestServiceRegistrar : AnalysisApiTestServiceRegis
      */
     fun registerApplicationServices(application: MockApplication) {
         PluginStructureProvider.registerApplicationServices(application, DECOMPILED_PLUGIN_XML)
+        BinaryFileStubBuilders.INSTANCE.addExplicitExtension(
+            CangJieBuiltInFileType,
+            CangJieBinaryFileStubBuilder(),
+            application,
+        )
         FileTypeFileViewProviders.INSTANCE.addExplicitExtension(
             CangJieBuiltInFileType,
             CangJieDecompiledFileViewProviderFactory(),

@@ -1,15 +1,14 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolver
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
 import org.cangnova.cangjie.analysis.api.resolution.CaCall
 import org.cangnova.cangjie.analysis.api.resolution.CaCallableMemberCall
+import org.cangnova.cangjie.analysis.api.resolution.CaErrorCallInfo
 import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
@@ -32,14 +31,17 @@ abstract class AbstractResolveCallInfoTest : AbstractAnalysisApiComponentTest() 
      */
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         val directives = directivesForMainFile(mainFile, mainModule)
-        val callExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
-            .single { call -> matchesTargetCall(call, directives.targetCallText) }
+        val callExpression = findCallByTargetText(mainFile, directives.targetCallText)
 
         val actual = analyzeForTest(callExpression) {
             val callInfo = callExpression.resolveToCall()
             buildString {
                 appendLine("callInfoClass: ${callInfo?.let { it::class.simpleName } ?: "null"}")
                 appendLine("callsSize: ${callInfo?.calls?.size ?: 0}")
+                if (callInfo is CaErrorCallInfo) {
+                    appendLine("diagnosticFactory: ${callInfo.diagnostic.factoryName}")
+                    appendLine("diagnosticMessage: ${callInfo.diagnostic.defaultMessage}")
+                }
                 if (callInfo == null) {
                     append("NO_CALL")
                 } else {
@@ -69,14 +71,4 @@ abstract class AbstractResolveCallInfoTest : AbstractAnalysisApiComponentTest() 
         }
     }
 
-    /**
-     * 调用表达式的 PSI 形状和源码文本并不总是同构。
-     *
-     * 与 `AbstractResolveCallTest` 保持同一目标选择协议：接受调用自身、callee 与父表达式文本。
-     */
-    private fun matchesTargetCall(callExpression: CjCallExpression, expectedText: String): Boolean {
-        return callExpression.text == expectedText ||
-            callExpression.calleeExpression?.text == expectedText ||
-            callExpression.parent?.text == expectedText
-    }
 }

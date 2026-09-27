@@ -37,7 +37,12 @@ abstract class AbstractBuiltInTypeTest : AbstractTypeTest() {
     ): CaType = with(analysisSession) {
         val classId = ClassId.fromString(module.testModule.directives.singleValue(Directives.BUILTIN_CLASS_ID))
         val symbol = getClassLikeSymbol(classId)
-            ?: error("Cannot resolve built-in class-like symbol `${classId.asString()}`.")
+            ?: error(
+                    "Cannot resolve built-in class-like symbol `${classId.asString()}`; " +
+                    "package=${getPackageSymbol(classId.packageFqName)}, " +
+                    "same-name candidates=${getTopLevelClassLikeSymbols(classId.packageFqName, classId.shortClassName)}, " +
+                    "stdlibRoot=${System.getProperty("cangjie.stdlib.module")}",
+            )
         buildClassType(symbol)
     }
 
