@@ -60,6 +60,19 @@ object CfirExtendProviderComposer {
     }
 
     /**
+     * 惰性合并当前源码索引与 depends-on/库依赖 extend provider。
+     *
+     * LL session 的 refinement modules 在注册自身 extend provider 时尚未必完成 session 构造，
+     * 因而必须在首次查询时读取依赖 provider，不能在注册阶段提前创建依赖 session。
+     */
+    fun lazyCombine(
+        ownProvider: CfirExtendProvider,
+        dependencyProvidersRef: () -> List<CfirExtendProvider>,
+    ): CfirExtendProvider = lazyProvider {
+        combine(ownProvider, dependencyProvidersRef())
+    }
+
+    /**
      * 惰性版本的 [fromSymbolProviders]。
      *
      * [providersRef] 延迟捕获依赖符号 provider 集合：extend provider 的注册早于依赖 provider 创建，
@@ -68,34 +81,36 @@ object CfirExtendProviderComposer {
      * 生命周期内稳定，IDE 依赖变更会重建 session。
      */
     fun lazyFromSymbolProviders(providersRef: () -> List<CfirSymbolProvider>): CfirExtendProvider {
-        return object : CfirExtendProvider {
-            private val delegate: CfirExtendProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
-                fromSymbolProviders(providersRef())
-            }
-
-            override fun getAllExtends(): List<CfirExtend> = delegate.getAllExtends()
-
-            override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
-                delegate.getExtendsForTarget(targetKey)
-
-            override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
-                delegate.getExtendsForClass(classId)
-
-            override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
-                delegate.getExtendsInPackage(packageFqName)
-
-            override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
-                delegate.getExtendsForBuiltinType(kind)
-
-            override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? =
-                delegate.getContainingExtend(symbol)
-
-            override fun getPackageFqName(extend: CfirExtend): FqName? =
-                delegate.getPackageFqName(extend)
-
-            override fun getContainingFile(extend: CfirExtend): CfirFile? =
-                delegate.getContainingFile(extend)
-
+        return lazyProvider {
+            fromSymbolProviders(providersRef())
         }
+    }
+
+    /** 创建使用线程安全 lazy 初始化的 provider 代理。 */
+    private fun lazyProvider(providerRef: () -> CfirExtendProvider): CfirExtendProvider = object : CfirExtendProvider {
+        private val delegate: CfirExtendProvider by lazy(LazyThreadSafetyMode.PUBLICATION, providerRef)
+
+        override fun getAllExtends(): List<CfirExtend> = delegate.getAllExtends()
+
+        override fun getExtendsForTarget(targetKey: CfirExtendTargetKey): List<CfirExtend> =
+            delegate.getExtendsForTarget(targetKey)
+
+        override fun getExtendsForClass(classId: ClassId): List<CfirExtend> =
+            delegate.getExtendsForClass(classId)
+
+        override fun getExtendsInPackage(packageFqName: FqName): List<CfirExtend> =
+            delegate.getExtendsInPackage(packageFqName)
+
+        override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
+            delegate.getExtendsForBuiltinType(kind)
+
+        override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? =
+            delegate.getContainingExtend(symbol)
+
+        override fun getPackageFqName(extend: CfirExtend): FqName? =
+            delegate.getPackageFqName(extend)
+
+        override fun getContainingFile(extend: CfirExtend): CfirFile? =
+            delegate.getContainingFile(extend)
     }
 }

@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.scopes
 
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -94,8 +95,27 @@ fun createCallableTypeParameterSubstitutorForOverride(
 ): ConeSubstitutor? {
     if (!overriding.isBound || !overridden.isBound) return null
 
-    val overridingTypeParameters = overriding.cfir.typeParameters
-    val overriddenTypeParameters = overridden.cfir.typeParameters
+    return createTypeParameterSubstitutorForOverride(
+        overriding = overriding.cfir,
+        overridden = overridden.cfir,
+        context = context,
+    )
+}
+
+/**
+ * 构造两个声明 owner 之间按位置映射的类型参数替换器。
+ *
+ * override、CJMP callable 与 nominal 声明共享同一 alpha-equivalence 映射，确保约束比较
+ * 始终在 child 的类型参数空间内执行。
+ */
+fun createTypeParameterSubstitutorForOverride(
+    overriding: CfirTypeParameterRefsOwner,
+    overridden: CfirTypeParameterRefsOwner,
+    context: ConeTypeContext,
+): ConeSubstitutor? {
+
+    val overridingTypeParameters = overriding.typeParameters
+    val overriddenTypeParameters = overridden.typeParameters
     if (overridingTypeParameters.size != overriddenTypeParameters.size) return null
     if (overriddenTypeParameters.isEmpty()) return ConeSubstitutor.Empty
 

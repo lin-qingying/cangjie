@@ -69,7 +69,6 @@ import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
-import org.cangnova.cangjie.cfir.session.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -139,17 +138,15 @@ class CfirDeclDeserializer(
      * @param declIndex allDecls 中的索引（0-based）
      */
     /**
-     * 记录声明的 cjo 源码位置（计划 G20：common 方向 CJMP 诊断锚点）。
-     *
-     * 只对 CJMP 相关声明（COMMON / FROM_COMMON_PART）记录；`begin.file` 为 `allFiles` 的 1 基下标。
+     * 记录反序列化声明的原始 CJO 源码位置，供 common-side 报告和候选 related-information 共用。
+     * `begin.file` 为 `allFiles` 的 1 基下标。
      */
     private fun recordCjoDeclarationPosition(decl: PackageFormat.Decl, result: CfirDeclaration) {
-        if (!testAttr(decl, AttrBit.COMMON) && !testAttr(decl, AttrBit.FROM_COMMON_PART)) return
         val begin = decl.begin ?: return
         val fileIndex = begin.file.toInt() - 1
         if (fileIndex !in 0 until context.pkg.allFilesLength) return
         val filePath = context.pkg.allFiles(fileIndex) ?: return
-        result.cjoDeclarationPosition = org.cangnova.cangjie.cfir.session.CfirCjoDeclarationPosition(
+        result.cjoDeclarationPosition = CfirCjoDeclarationPosition(
             filePath = filePath,
             line = begin.line,
             column = begin.column,

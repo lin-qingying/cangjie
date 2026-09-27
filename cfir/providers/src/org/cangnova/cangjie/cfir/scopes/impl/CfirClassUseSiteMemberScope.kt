@@ -234,6 +234,12 @@ class CfirClassUseSiteMemberScope private constructor(
      * 当前父类型展开路径，用于阻断继承图中的递归 class id。
      */
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
+    /**
+     * 限定当前 owner 的直接 extend 输入；父 class scope 仍按普通 use-site 语义收集其 extend。
+     */
+    private val includedRootExtends: Set<CfirExtend>? = null,
+    /** 当前 generic-instantiation extend owner；只作用于本 root 的 direct extend member scope。 */
+    private val memberOwnerExtend: CfirExtend? = null,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
     CfirMemberLookupCompletenessScope {
     /**
@@ -251,6 +257,8 @@ class CfirClassUseSiteMemberScope private constructor(
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
         allowBareGenericStaticQualifierExtends: Boolean = false,
         excludingExtend: CfirExtend? = null,
+        includedRootExtends: Set<CfirExtend>? = null,
+        memberOwnerExtend: CfirExtend? = null,
     ) : this(
         session = session,
         classSymbol = classSymbol,
@@ -265,6 +273,8 @@ class CfirClassUseSiteMemberScope private constructor(
         excludingExtend = excludingExtend,
         inheritedLookupProvenance = CfirCallableLookupProvenance.None,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
+        includedRootExtends = includedRootExtends,
+        memberOwnerExtend = memberOwnerExtend,
     )
 
     /**
@@ -421,6 +431,8 @@ class CfirClassUseSiteMemberScope private constructor(
                 receiverType = receiverType,
                 allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
                 excludingExtend = excludingExtend,
+                includedExtends = includedRootExtends,
+                memberOwnerExtend = memberOwnerExtend,
             )
         }
 
@@ -671,6 +683,8 @@ class CfirClassUseSiteMemberScope private constructor(
         excludingExtend = excludingExtend,
         inheritedLookupProvenance = inheritedLookupProvenance,
         supertypePath = supertypePath,
+        includedRootExtends = includedRootExtends,
+        memberOwnerExtend = memberOwnerExtend,
     )
 
     /**
@@ -1424,7 +1438,15 @@ class CfirClassUseSiteMemberScope private constructor(
             }
         }
 
-        return descriptors.map { descriptor ->
+        val ownerScopedDescriptors = includedRootExtends?.let { includedExtends ->
+            descriptors.filter { descriptor ->
+                val extendOrigin = descriptor.origin as? CfirInstantiatedSupertypeOrigin.Extend
+                    ?: return@filter true
+                extendOrigin.propagationPath.isNotEmpty() || extendOrigin.sourceExtend in includedExtends
+            }
+        } ?: descriptors
+
+        return ownerScopedDescriptors.map { descriptor ->
             descriptor.copy(
                 type = descriptor.type.fullyExpandedType(session),
                 provenanceType = descriptor.provenanceType.fullyExpandedType(session),

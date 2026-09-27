@@ -25,7 +25,9 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
@@ -44,6 +46,26 @@ class CfirTypeSubstitutorByMap(
      */
     private val replacements: Map<TypeConstructorMarker, ConeCangJieType>,
 ) : ConeSubstitutor() {
+    companion object {
+        /**
+         * 构造 common → specific 的按身份类型参数替换器。
+         *
+         * 替换目标保留 specific 类型参数的 lookup tag，因此可递归处理 tuple、function、
+         * class-like、alias、intersection 和 union 等复合类型。
+         */
+        fun fromTypeParameterMapping(
+            commonToSpecific: Map<CfirTypeParameter, CfirTypeParameter>,
+        ): ConeSubstitutor {
+            if (commonToSpecific.isEmpty()) return ConeSubstitutor.Empty
+            val replacements: Map<TypeConstructorMarker, ConeCangJieType> = commonToSpecific
+                .map { (common, specific) ->
+                    common.symbol.toLookupTag() to ConeTypeParameterTypeImpl(specific.symbol.toLookupTag())
+                }
+                .toMap()
+            return CfirTypeSubstitutorByMap(replacements)
+        }
+    }
+
     /**
      * 替换 [type] 或其结构字段；返回 `null` 表示没有发生变化。
      */
