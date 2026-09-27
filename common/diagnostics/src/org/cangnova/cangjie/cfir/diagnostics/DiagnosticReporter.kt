@@ -17,7 +17,31 @@ interface DiagnosticBaseContext {
      * 当前诊断创建和渲染使用的语言版本设置。
      */
     val languageVersionSettings: LanguageVersionSettings
+
+    /** 主诊断附带的相关源码位置；常规诊断为空。 */
+    val relatedInformation: List<CjDiagnosticRelatedInformation>
+        get() = emptyList()
 }
+
+/** 一条指向另一源码位置的诊断说明。 */
+data class CjDiagnosticRelatedInformation(
+    /** 相关源码位置；二进制来源可能没有可绘制的源码范围。 */
+    val element: AbstractCjSourceElement?,
+    /** 供编译器消息与 IDE 导航使用的说明文本。 */
+    val message: String,
+    /** 反序列化 CJO 声明携带的原始源文件位置。 */
+    val sourceLocation: CjDiagnosticRelatedSourceLocation? = null,
+)
+
+/** CJO 声明对应的源文件位置，行和列均为一基。 */
+data class CjDiagnosticRelatedSourceLocation(
+    /** CJO metadata 保存的原始源码路径。 */
+    val filePath: String,
+    /** 原始源码行号。 */
+    val line: Int,
+    /** 原始源码列号。 */
+    val column: Int,
+)
 
 /**
  * 诊断上报时使用的完整上下文。
@@ -62,6 +86,18 @@ interface DiagnosticContext : DiagnosticBaseContext {
          * 默认上下文不屏蔽任何诊断。
          */
         override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean = false
+    }
+}
+
+/** 在保留原 suppress、文件归属和语言设置语义的同时附加相关源码说明。 */
+fun DiagnosticContext.withRelatedInformation(
+    relatedInformation: List<CjDiagnosticRelatedInformation>,
+): DiagnosticContext {
+    if (relatedInformation.isEmpty()) return this
+    val inheritedInformation = this.relatedInformation
+    return object : DiagnosticContext by this {
+        override val relatedInformation: List<CjDiagnosticRelatedInformation> =
+            inheritedInformation + relatedInformation
     }
 }
 
