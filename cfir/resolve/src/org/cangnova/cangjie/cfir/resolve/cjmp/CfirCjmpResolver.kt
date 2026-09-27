@@ -23,11 +23,20 @@ package org.cangnova.cangjie.cfir.resolve.cjmp
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.dependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 
 /**
  * CJMP common 候选查找（对齐 Kotlin `FirExpectActualResolver.findExpectForActual`）。
@@ -44,15 +53,122 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
  * 先经 ClassId 找到 common 容器，再在容器成员中按名筛选。
  */
 object CfirCjmpResolver {
-    /** extend 配对键：扩展目标类型 + 实现接口集合（渲染后的 cone 类型文本，跨 session 按结构比较）。 */
-    private fun extendKey(extend: org.cangnova.cangjie.cfir.declarations.CfirExtend): Pair<String, Set<String>>? {
-        val target = extend.extendedTypeRef.coneTypeOrNullSafe()?.toString() ?: return null
-        val interfaces = extend.superTypeRefs.mapNotNull { it.coneTypeOrNullSafe()?.toString() }.toSet()
-        return target to interfaces
+    /**
+     * 返回 specific callable 的 first-fit 匹配组。
+     *
+     * 顶层声明跨文件按官方文件名与源码位置稳定排序；class/extend 成员保持所属声明列表的源码顺序，
+     * 以便 eager 遍历和 LL 对单个成员的并发请求得到相同的绑定胜者。
+     */
+    fun findSpecificCallablesInMatchOrder(
+        specific: CfirCallableDeclaration,
+        session: CfirSession,
+        containingContainer: CfirDeclaration? = null,
+    ): List<CfirCallableDeclaration> {
+        if (!specific.status.isSpecific || specific is CfirEnumConstructor) return listOf(specific)
+
+        val containingExtend = session.extendProvider.getContainingExtend(specific.symbol)
+        val containingClassId = specific.symbol.callableId.classId
+        val specificContainer = containingContainer ?: when {
+            containingExtend != null -> containingExtend
+            containingClassId != null ->
+                session.symbolProvider.getClassLikeSymbolByClassId(containingClassId)?.cfir as? CfirClassLikeDeclaration
+
+            else -> null
+        }
+        val declarations = when (specificContainer) {
+            is CfirClassLikeDeclaration -> specificContainer.declarations
+            is CfirExtend -> specificContainer.declarations
+            else -> null
+        }
+        if (declarations != null) {
+            val matchingMembers = declarations
+                .filterIsInstance<CfirCallableDeclaration>()
+                .filter { candidate ->
+                    candidate.status.isSpecific && candidate.symbol.name == specific.symbol.name
+                }
+            return (matchingMembers + specific).distinctBy { it.symbol }
+        }
+        if (containingClassId != null || containingExtend != null) return listOf(specific)
+        return findSpecificTopLevelCallablesInMatchOrder(specific, session)
     }
 
-    private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.coneTypeOrNullSafe(): org.cangnova.cangjie.cfir.types.ConeCangJieType? =
-        runCatching { (this as? org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef)?.coneType }.getOrNull()
+    /**
+     * 返回顶层 specific callable 的完整同名匹配组，并按官方文件名与声明顺序排列。
+     *
+     * LL 按目标懒解析时也必须先完成该组，才能保持 cjc `MatchCJMPDecls` 的 first-fit 绑定次序。
+     */
+    fun findSpecificTopLevelCallablesInMatchOrder(
+        specific: CfirCallableDeclaration,
+        session: CfirSession,
+    ): List<CfirCallableDeclaration> {
+        if (!specific.status.isSpecific) return listOf(specific)
+        val callableId = specific.symbol.callableId
+        if (callableId.classId != null || specific.isLocal || session.extendProvider.getContainingExtend(specific.symbol) != null) {
+            return listOf(specific)
+        }
+
+        val siblings = session.symbolProvider
+            .getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
+            .asSequence()
+            .map { it.cfir }
+            .filterIsInstance<CfirCallableDeclaration>()
+            .filter { candidate ->
+                candidate.moduleData.name == specific.moduleData.name &&
+                        candidate.status.isSpecific &&
+                        candidate.symbol.callableId == callableId &&
+                        !candidate.isLocal &&
+                        session.extendProvider.getContainingExtend(candidate.symbol) == null
+            }
+            .toList()
+        return (listOf(specific) + siblings)
+            .distinctBy { it.symbol }
+            .sortedWith(
+                compareBy<CfirCallableDeclaration>(
+                    { session.cfirProvider.getContainingFile(it.symbol)?.sourceFile?.name.orEmpty() },
+                    { session.cfirProvider.getContainingFile(it.symbol)?.sourceFile?.path.orEmpty() },
+                    { it.source?.startOffset ?: Int.MAX_VALUE },
+                    { it.source?.endOffset ?: Int.MAX_VALUE },
+                ),
+            )
+    }
+
+    /** 同名 pattern binding 也共享官方 specific 声明 first-fit 顺序。 */
+    fun findSpecificTopLevelPatternVariablesInMatchOrder(
+        specific: CfirPatternVariable,
+        session: CfirSession,
+    ): List<CfirPatternVariable> {
+        if (!specific.status.isSpecific || specific.symbol.callableId.classId != null || specific.isLocal ||
+            session.extendProvider.getContainingExtend(specific.symbol) != null
+        ) {
+            return listOf(specific)
+        }
+
+        val bindingNames = specific.pattern.bindingVariables().mapTo(linkedSetOf()) { it.name }
+        val candidates = bindingNames.flatMap { bindingName ->
+            session.symbolProvider
+                .getTopLevelCallableSymbols(specific.symbol.callableId.packageName, bindingName)
+                .map { it.cfir }
+                .filterIsInstance<CfirPatternVariable>()
+        }.filter { candidate ->
+            candidate.moduleData.name == specific.moduleData.name &&
+                    candidate.status.isSpecific &&
+                    candidate.symbol.callableId.classId == null &&
+                    !candidate.isLocal &&
+                    session.extendProvider.getContainingExtend(candidate.symbol) == null &&
+                    candidate.pattern.bindingVariables().any { it.name in bindingNames }
+        }
+
+        return (listOf(specific) + candidates)
+            .distinctBy { it.symbol }
+            .sortedWith(
+                compareBy<CfirPatternVariable>(
+                    { session.cfirProvider.getContainingFile(it.symbol)?.sourceFile?.name.orEmpty() },
+                    { session.cfirProvider.getContainingFile(it.symbol)?.sourceFile?.path.orEmpty() },
+                    { it.source?.startOffset ?: Int.MAX_VALUE },
+                    { it.source?.endOffset ?: Int.MAX_VALUE },
+                ),
+            )
+    }
 
     /**
      * 求 [specific] 声明的 common 候选（结构匹配前的候选集合，未做兼容性判定）。
@@ -71,10 +187,12 @@ object CfirCjmpResolver {
                     .orEmpty()
 
             is org.cangnova.cangjie.cfir.declarations.CfirExtend -> {
-                // 官方 `MergeCJMPExtensions` 键：扩展类型 + `<:` 接口集；候选取 refinement 依赖中的 common extend
-                val key = extendKey(specific) ?: return emptyList()
+                // 官方 `MergeCJMPExtensions` 键：扩展类型、接口集及按位置映射的泛型约束。
+                specific.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
                 session.extendProvider.getAllExtends().filter { candidate ->
-                    candidate !== specific && extendKey(candidate) == key
+                    candidate.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
+                    candidate !== specific &&
+                            CfirCjmpMatcher.haveSameExtendKey(specific, candidate) == CjmpTypeCompatibility.COMPATIBLE
                 }
             }
 
@@ -112,4 +230,30 @@ object CfirCjmpResolver {
                         candidate.moduleData.name in dependencyNames
             }
     }
+
+    /**
+     * 在已配对的 nominal 或 extend 容器中查找成员候选。
+     *
+     * 该入口由成员自己的 CJMP_MATCHING 调用使用；common 容器必须来自 specific 父声明的已存储配对，
+     * 以保证外层匹配失败时不会独立配对其子成员。
+     */
+    fun findCommonMemberCandidates(
+        specific: CfirCallableDeclaration,
+        commonContainer: CfirDeclaration,
+    ): List<CfirCallableDeclaration> = findCommonMemberCandidates(specific, listOf(commonContainer))
+
+    /** 同 key 的多个 common extend 都贡献其直接成员候选。 */
+    fun findCommonMemberCandidates(
+        specific: CfirCallableDeclaration,
+        commonContainers: List<CfirDeclaration>,
+    ): List<CfirCallableDeclaration> = commonContainers.flatMap { commonContainer ->
+        val commonDeclarations = when (commonContainer) {
+            is CfirClassLikeDeclaration -> commonContainer.declarations
+            is CfirExtend -> commonContainer.declarations
+            else -> emptyList()
+        }
+        commonDeclarations.filterIsInstance<CfirCallableDeclaration>().filter { candidate ->
+            candidate.status.isCommon && candidate.symbol.name == specific.symbol.name
+        }
+    }.distinctBy { it.symbol }
 }

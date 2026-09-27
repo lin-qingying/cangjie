@@ -11,12 +11,22 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeDescriptor
 import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirNullSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.session.CfirLanguageSettingsComponent
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerDisposition
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
+import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -891,6 +901,359 @@ class CfirExtendIndexStoreTest {
         assertTrue(query.doesExtendInheritFrom(childExtend, parentExtend))
         assertFalse(query.doesExtendInheritFrom(parentExtend, childExtend))
     }
+
+    @Test
+    fun `extend member peer disposition compares direct instantiated interfaces`() {
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val packageFqName = FqName("sample.owner-order")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Target"))
+        val parentInterfaceId = ClassId(packageFqName, Name.identifier("IParent"))
+        val childInterfaceId = ClassId(packageFqName, Name.identifier("IChild"))
+        val grandParentInterfaceId = ClassId(packageFqName, Name.identifier("IGrandParent"))
+        val unrelatedInterfaceId = ClassId(packageFqName, Name.identifier("IUnrelated"))
+        val genericParentInterfaceId = ClassId(packageFqName, Name.identifier("IGenericParent"))
+        val genericChildInterfaceId = ClassId(packageFqName, Name.identifier("IGenericChild"))
+
+        val targetClass = ExtendTestFixtures.newClass(moduleData, "Target", classId = targetClassId)
+        val genericParentTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val genericChildTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "U")
+        val grandParentInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IGrandParent",
+            classId = grandParentInterfaceId,
+        )
+        val parentInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IParent",
+            classId = parentInterfaceId,
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(grandParentInterfaceId, isInterface = true)),
+        )
+        val childInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IChild",
+            classId = childInterfaceId,
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true)),
+        )
+        val unrelatedInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IUnrelated",
+            classId = unrelatedInterfaceId,
+        )
+        val genericParentInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IGenericParent",
+            classId = genericParentInterfaceId,
+            typeParameters = listOf(genericParentTypeParameter),
+        )
+        val genericChildInterface = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "IGenericChild",
+            classId = genericChildInterfaceId,
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    genericParentInterfaceId,
+                    listOf(ExtendTestFixtures.typeParameterType(genericChildTypeParameter)),
+                    isInterface = true,
+                )
+            ),
+            typeParameters = listOf(genericChildTypeParameter),
+        )
+        val undecidablePeer = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(childInterfaceId, isInterface = true),
+                ExtendTestFixtures.classTypeRef(grandParentInterfaceId, isInterface = true),
+            ),
+        )
+        val parentExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true)),
+        )
+        val sameInterfacePeer = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true)),
+        )
+        val childAndSharedPeer = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true),
+                ExtendTestFixtures.classTypeRef(childInterfaceId, isInterface = true),
+            ),
+        )
+        val unrelatedExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(ExtendTestFixtures.classTypeRef(unrelatedInterfaceId, isInterface = true)),
+        )
+        val genericParentExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    genericParentInterfaceId,
+                    listOf(ConePrimitiveType.BOOLEAN),
+                    isInterface = true,
+                )
+            ),
+        )
+        val genericChildExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(targetClassId),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    genericChildInterfaceId,
+                    listOf(ConePrimitiveType.INT32),
+                    isInterface = true,
+                )
+            ),
+        )
+        val declarations = listOf(
+            targetClass,
+            grandParentInterface,
+            parentInterface,
+            childInterface,
+            unrelatedInterface,
+            genericParentInterface,
+            genericChildInterface,
+        )
+        val extends = listOf(
+            parentExtend,
+            sameInterfacePeer,
+            childAndSharedPeer,
+            unrelatedExtend,
+            undecidablePeer,
+            genericParentExtend,
+            genericChildExtend,
+        )
+        val file = ExtendTestFixtures.newFile(moduleData, packageFqName, extends)
+        val typeResolver = MapBackedTypeResolver(declarations.associateBy { it.symbol.classId })
+        val store = CfirExtendIndexStore()
+        store.rebuild(listOf(file), typeResolver)
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
+        session.register(CfirTypeResolver::class, typeResolver)
+        session.register(
+            CfirExtendProvider::class,
+            TestExtendProvider(extends.associateWith { packageFqName }),
+        )
+
+        fun edge(extend: CfirExtend, index: Int): CfirInstantiatedSupertypeDescriptor {
+            val sourceTypeRef = extend.superTypeRefs[index] as CfirResolvedTypeRef
+            return CfirInstantiatedSupertypeDescriptor(
+                type = sourceTypeRef.coneType,
+                origin = CfirInstantiatedSupertypeOrigin.Extend(
+                    sourceExtend = extend,
+                    declarationPackage = packageFqName,
+                    sourceTypeRef = sourceTypeRef,
+                ),
+            )
+        }
+
+        val targetType = ExtendTestFixtures.classTypeRef(targetClassId).coneType
+        val childType = ExtendTestFixtures.classTypeRef(childInterfaceId, isInterface = true).coneType
+        val parentType = ExtendTestFixtures.classTypeRef(parentInterfaceId, isInterface = true).coneType
+        val genericChildInt32Type = ExtendTestFixtures.classTypeRef(
+            genericChildInterfaceId,
+            listOf(ConePrimitiveType.INT32),
+            isInterface = true,
+        ).coneType
+        val genericParentInt32Type = ExtendTestFixtures.classTypeRef(
+            genericParentInterfaceId,
+            listOf(ConePrimitiveType.INT32),
+            isInterface = true,
+        ).coneType
+        val genericParentBooleanType = ExtendTestFixtures.classTypeRef(
+            genericParentInterfaceId,
+            listOf(ConePrimitiveType.BOOLEAN),
+            isInterface = true,
+        ).coneType
+        session.register(
+            CfirTypeAwareSupertypeProvider::class,
+            TestTypeAwareSupertypeProvider(
+                mapOf(
+                    targetType to listOf(
+                        edge(parentExtend, 0),
+                        edge(sameInterfacePeer, 0),
+                        edge(childAndSharedPeer, 0),
+                        edge(childAndSharedPeer, 1),
+                        edge(unrelatedExtend, 0),
+                        edge(undecidablePeer, 0),
+                        edge(undecidablePeer, 1),
+                        edge(genericParentExtend, 0),
+                        edge(genericChildExtend, 0),
+                    ),
+                    childType to listOf(declaredDescriptor(parentType, childInterface.superTypeRefs.single())),
+                    parentType to listOf(
+                        declaredDescriptor(
+                            ExtendTestFixtures.classTypeRef(grandParentInterfaceId, isInterface = true).coneType,
+                            parentInterface.superTypeRefs.single(),
+                        )
+                    ),
+                    genericChildInt32Type to listOf(
+                        declaredDescriptor(
+                            genericParentInt32Type,
+                            genericChildInterface.superTypeRefs.single(),
+                        )
+                    ),
+                ),
+            ),
+        )
+        val query = CfirExtendRuleQueryServiceImpl(session, store)
+
+        assertEquals(
+            CfirExtendMemberPeerDisposition.INCLUDE,
+            query.extendMemberPeerDecision(parentExtend, sameInterfacePeer).disposition,
+        )
+        assertEquals(
+            CfirExtendMemberPeerDisposition.EXCLUDE,
+            query.extendMemberPeerDecision(parentExtend, childAndSharedPeer).disposition,
+        )
+        assertEquals(
+            CfirExtendMemberPeerDisposition.INCLUDE,
+            query.extendMemberPeerDecision(childAndSharedPeer, parentExtend).disposition,
+        )
+        assertEquals(
+            CfirExtendMemberPeerDisposition.INCLUDE,
+            query.extendMemberPeerDecision(parentExtend, unrelatedExtend).disposition,
+        )
+        val undecidableDecision = query.extendMemberPeerDecision(parentExtend, undecidablePeer)
+        assertEquals(CfirExtendMemberPeerDisposition.UNDECIDABLE, undecidableDecision.disposition)
+        assertEquals(
+            listOf(parentInterfaceId),
+            undecidableDecision.conflictWitness?.ownerInterfaces?.mapNotNull { it.classId },
+        )
+        assertEquals(
+            setOf(childInterfaceId, grandParentInterfaceId),
+            undecidableDecision.conflictWitness?.peerInterfaces?.mapNotNullTo(linkedSetOf()) { it.classId },
+        )
+        assertEquals(
+            listOf(childInterfaceId, parentInterfaceId, grandParentInterfaceId),
+            undecidableDecision.conflictWitness?.conflictChains?.single()?.relations
+                ?.flatMap { relation -> listOf(relation.subInterface.classId, relation.superInterface.classId) }
+                ?.distinct(),
+        )
+        assertEquals(
+            CfirExtendMemberPeerDisposition.INCLUDE,
+            query.extendMemberPeerDecision(genericParentExtend, genericChildExtend).disposition,
+        )
+        assertTrue(query.hasUndecidableExtendCheckSequence(parentExtend))
+        val sequenceConflict = query.undecidableExtendCheckSequenceConflicts(parentExtend).single()
+        assertEquals(undecidablePeer, sequenceConflict.peerDeclaration)
+        assertEquals(undecidableDecision.conflictWitness, sequenceConflict.witness)
+    }
+
+    @Test
+    fun `extend member peer disposition substitutes generic target parameters by owner identity`() {
+        val (session, moduleData) = ExtendTestFixtures.newSessionAndModule()
+        val packageFqName = FqName("sample.generic-owner-order")
+        val targetClassId = ClassId(packageFqName, Name.identifier("Box"))
+        val parentInterfaceId = ClassId(packageFqName, Name.identifier("Parent"))
+        val childInterfaceId = ClassId(packageFqName, Name.identifier("Child"))
+
+        val targetTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "T")
+        val ownerTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "OwnerT")
+        val peerTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "PeerU")
+        val parentTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "P")
+        val childTypeParameter = ExtendTestFixtures.newTypeParameter(moduleData, "C")
+        val target = ExtendTestFixtures.newClass(
+            moduleData = moduleData,
+            name = "Box",
+            classId = targetClassId,
+            typeParameters = listOf(targetTypeParameter),
+        )
+        val parent = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "Parent",
+            classId = parentInterfaceId,
+            typeParameters = listOf(parentTypeParameter),
+        )
+        val child = ExtendTestFixtures.newInterface(
+            moduleData = moduleData,
+            name = "Child",
+            classId = childInterfaceId,
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    parentInterfaceId,
+                    listOf(ExtendTestFixtures.typeParameterType(childTypeParameter)),
+                    isInterface = true,
+                ),
+            ),
+            typeParameters = listOf(childTypeParameter),
+        )
+        val ownerExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                targetClassId,
+                listOf(ExtendTestFixtures.typeParameterType(ownerTypeParameter)),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    parentInterfaceId,
+                    listOf(ExtendTestFixtures.typeParameterType(ownerTypeParameter)),
+                    isInterface = true,
+                ),
+            ),
+            typeParameters = listOf(ownerTypeParameter),
+        )
+        val peerExtend = ExtendTestFixtures.newExtend(
+            moduleData = moduleData,
+            extendedTypeRef = ExtendTestFixtures.classTypeRef(
+                targetClassId,
+                listOf(ExtendTestFixtures.typeParameterType(peerTypeParameter)),
+            ),
+            superTypeRefs = listOf(
+                ExtendTestFixtures.classTypeRef(
+                    childInterfaceId,
+                    listOf(ExtendTestFixtures.typeParameterType(peerTypeParameter)),
+                    isInterface = true,
+                ),
+            ),
+            typeParameters = listOf(peerTypeParameter),
+        )
+        val declarations = listOf<CfirClassLikeDeclaration>(target, parent, child)
+        val extends = listOf(ownerExtend, peerExtend)
+        val file = ExtendTestFixtures.newFile(moduleData, packageFqName, extends)
+        val store = CfirExtendIndexStore()
+        val typeResolver = MapBackedTypeResolver(declarations.associateBy { it.symbol.classId })
+        store.rebuild(listOf(file), typeResolver)
+        session.registerRuleQueryTypeInfrastructure(TypeParameterRuleQuerySymbolProvider(session, declarations))
+        session.register(CfirTypeResolver::class, typeResolver)
+        session.register(CfirExtendProvider::class, TestExtendProvider(extends.associateWith { packageFqName }))
+
+        val ownerTargetType = (ownerExtend.extendedTypeRef as CfirResolvedTypeRef).coneType
+        val ownerInterfaceType = ExtendTestFixtures.classTypeRef(
+            parentInterfaceId,
+            listOf(ExtendTestFixtures.typeParameterType(ownerTypeParameter)),
+            isInterface = true,
+        ).coneType
+        val peerInterfaceType = ExtendTestFixtures.classTypeRef(
+            childInterfaceId,
+            listOf(ExtendTestFixtures.typeParameterType(ownerTypeParameter)),
+            isInterface = true,
+        ).coneType
+        session.register(
+            CfirTypeAwareSupertypeProvider::class,
+            TestTypeAwareSupertypeProvider(
+                mapOf(
+                    ownerTargetType to listOf(
+                        extendDescriptor(ownerInterfaceType, ownerExtend, packageFqName),
+                        extendDescriptor(peerInterfaceType, peerExtend, packageFqName),
+                    ),
+                    peerInterfaceType to listOf(
+                        declaredDescriptor(ownerInterfaceType, child.superTypeRefs.single()),
+                    ),
+                ),
+            ),
+        )
+
+        val query = CfirExtendRuleQueryServiceImpl(session, store)
+        val decision = query.extendMemberPeerDecision(ownerExtend, peerExtend)
+
+        assertEquals(CfirExtendMemberPeerDisposition.EXCLUDE, decision.disposition)
+    }
 }
 
 /** 构造 primitive resolved type ref。 */
@@ -939,10 +1302,49 @@ private fun implicitObjectDescriptor(
     )
 
 /** 注册规则查询测试所需的真实类型系统基础组件。 */
-private fun CfirSession.registerRuleQueryTypeInfrastructure() {
+private fun CfirSession.registerRuleQueryTypeInfrastructure() =
+    registerRuleQueryTypeInfrastructure(CfirEmptySymbolProvider(this))
+
+private fun CfirSession.registerRuleQueryTypeInfrastructure(symbolProvider: CfirSymbolProvider) {
     register(CfirLanguageSettingsComponent::class, CfirLanguageSettingsComponent(LanguageVersionSettingsImpl.DEFAULT))
+    register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
     register(TypeComponents::class, TypeComponents(this))
-    register(CfirSymbolProvider::class, CfirEmptySymbolProvider(this))
+    register(CfirSymbolProvider::class, symbolProvider)
+}
+
+/** 为 type-aware 子类型查询提供真实 class-like 与泛型形状。 */
+@OptIn(CfirSymbolProviderInternals::class)
+private class TypeParameterRuleQuerySymbolProvider(
+    session: CfirSession,
+    declarations: List<CfirClassLikeDeclaration>,
+) : CfirSymbolProvider(session) {
+    private val declarationsByClassId = declarations.associateBy { it.symbol.classId }
+
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirNullSymbolNamesProvider
+
+    override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
+        declarationsByClassId[classId]?.symbol
+
+    override fun getTopLevelCallableSymbolsTo(
+        destination: MutableList<CfirCallableSymbol<*>>,
+        packageFqName: FqName,
+        name: Name,
+    ) = Unit
+
+    override fun getTopLevelFunctionSymbolsTo(
+        destination: MutableList<CfirNamedFunctionSymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) = Unit
+
+    override fun getTopLevelPropertySymbolsTo(
+        destination: MutableList<CfirPropertySymbol>,
+        packageFqName: FqName,
+        name: Name,
+    ) = Unit
+
+    override fun hasPackage(fqName: FqName): Boolean =
+        declarationsByClassId.keys.any { it.packageFqName == fqName }
 }
 
 /** 测试用来源保留父图。 */

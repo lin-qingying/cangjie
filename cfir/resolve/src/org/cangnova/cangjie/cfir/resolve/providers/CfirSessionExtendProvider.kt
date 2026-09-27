@@ -77,12 +77,12 @@ class CfirSessionExtendProvider(
      * 返回 extend 声明所在包名。
      */
     override fun getPackageFqName(extend: CfirExtend): FqName? {
-        return indexStore.modelForDeclaration(extend)?.packageFqName
+        return indexStore.packageFqNameOf(extend)
     }
 
     /** 返回索引中记录的源码 extend 所属文件。 */
     override fun getContainingFile(extend: CfirExtend): CfirFile? {
-        return indexStore.modelForDeclaration(extend)?.containingFile
+        return indexStore.containingFileOf(extend)
     }
 
 }

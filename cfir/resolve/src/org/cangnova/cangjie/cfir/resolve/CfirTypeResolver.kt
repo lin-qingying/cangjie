@@ -57,6 +57,7 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
+import org.cangnova.cangjie.source.CjBinarySourceElement
 
 /**
  * CFIR 类型解析器抽象。
@@ -526,11 +527,21 @@ class CfirTypeResolverImpl(
             )
         }
 
-        return resolveQualifiedClassLikeInPackage(
-            packageFqName = qualifierNames.dropLast(1).toFqName(),
-            lastQualifier = lastQualifier,
-            typeRef = typeRef,
-            configuration = configuration,
+        if (configuration.useSiteFile == null && typeRef.source is CjBinarySourceElement) {
+            // 二进制声明携带的是规范化全限定类型身份，不存在源码 import 表可查。
+            // 源码类型引用必须命中当前文件的 package import/alias，不能据文本前缀反查 package。
+            return resolveQualifiedClassLikeInPackage(
+                packageFqName = qualifierNames.dropLast(1).toFqName(),
+                lastQualifier = lastQualifier,
+                typeRef = typeRef,
+                configuration = configuration,
+            )
+        }
+
+        return QualifiedClassLikeResolution(
+            classId = null,
+            declaration = null,
+            diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier.take(1)),
         )
     }
 

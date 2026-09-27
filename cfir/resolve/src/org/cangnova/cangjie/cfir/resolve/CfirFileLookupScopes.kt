@@ -39,9 +39,10 @@ data class CfirFileLookupScopes(
 /**
  * 为 [file] 创建统一的文件级结构 scope。
  *
- * 源码显式 import 必须已经由 IMPORTS phase 写入 session binding store；缺失 binding
- * 表示解析阶段契约被破坏，不能退回 provider 现场重放。语言默认 import 也先转换为同一
- * binding 模型，并在 session 内只解析一次。
+ * 源码显式 import 必须已经由调用方 session 的 IMPORTS phase 写入 binding store；缺失 binding
+ * 表示解析阶段契约被破坏，不能退回 provider 现场重放。dangling designation 映射到上下文文件时，
+ * LL resolver 会在 target session 中为该文件补录 binding，使 scope 的符号身份与当前 provider 一致。
+ * 语言默认 import 与显式 import 共用当前 session 的 binding 模型。
  */
 fun CfirSession.createFileLookupScopes(
     file: CfirFile,

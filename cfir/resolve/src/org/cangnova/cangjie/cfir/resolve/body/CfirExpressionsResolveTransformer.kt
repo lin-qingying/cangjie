@@ -665,17 +665,20 @@ open class CfirExpressionsResolveTransformer(
                     }
                 )
             }
+            // CFIR 暂无 Kotlin FirResolvedQualifier 节点；导入包名只作为静态限定符接收者，
+            // 因而清除早先的值解析错误并写入稳定的 Unit 类型，后续成员查找由包作用域完成。
             if (
                 isUsedAsReceiver &&
-                calleeReference is CfirErrorNamedReference &&
                 qualifiedAccessExpression.importedPackageQualifierOrNull(components.file, components.session) != null
             ) {
-                qualifiedAccessExpression.replaceCalleeReference(
-                    buildNamedReference {
-                        source = calleeReference.source
-                        name = calleeReference.name
-                    }
-                )
+                if (calleeReference is CfirErrorNamedReference) {
+                    qualifiedAccessExpression.replaceCalleeReference(
+                        buildNamedReference {
+                            source = calleeReference.source
+                            name = calleeReference.name
+                        },
+                    )
+                }
                 qualifiedAccessExpression.replaceConeTypeOrNull(components.session.builtinTypes.unitType)
                 return@whileAnalysing qualifiedAccessExpression
             }

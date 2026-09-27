@@ -29,18 +29,25 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.CjmpMismatchKind
-import org.cangnova.cangjie.cfir.session.cjmpHasCommonDefault
+import org.cangnova.cangjie.resolve.calls.mpp.AbstractCjmpMatcher
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpMatchResult
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpMismatchKind
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 /**
  * CJMP 配对执行核心（前端 CJMP_MATCHING 阶段与 low-level 懒解析共用）。
  *
  * 只负责"对某个声明求配对并写存储"，不含遍历/门禁/锁语义。流程对位 cjc 1.1.3：
- * - nominal：`MergeCommonIntoSpecific`——种类相同才合并（绑定），合并成功后其 specific 成员才参与配对；
- *   合并失败（种类不同）时 specific 成员一律无配对；
+ * - nominal：`MergeCommonIntoSpecific`——种类相同才合并（绑定），成员随后在自己的声明级入口查找对位；
+ *   父容器未配对时，其 specific 成员不建立独立配对；
  * - 非 nominal：`MatchSpecificDeclWithCommonDecls`——逐候选尝试，首个成功者绑定；参数级失败记录锚点；
  * - 绑定：`TrySetSpecificImpl`——common 已被绑定时为第二绑定（检查器报 `MULTIPLE_COMMON_IMPLEMENTATIONS`）；
  *   common 自带默认实现而 specific 成员为 abstract 时不绑定（`NeedToReportMissingBody`）。
@@ -51,83 +58,130 @@ object CfirCjmpMatchRunner {
     /**
      * 对单个声明执行配对并写存储。
      *
-     * 只处理标记为 specific 的**顶层**声明；成员经外层 nominal 的 [matchMembers] 路径处理。
+     * 每个 specific 声明独立进入 matcher。容器只建立自身配对与泛型映射，成员通过已配对父容器
+     * 查找 common 候选；该调用形状同时服务 eager 树遍历和 LL 声明级懒解析。
      */
-    fun matchDeclaration(declaration: CfirDeclaration, session: CfirSession, storage: CfirCjmpMappingStorage) {
-        val status = (declaration as? CfirMemberDeclaration)?.status ?: return
-        if (!status.isSpecific) return
-        if (declaration is CfirEnumConstructor) return
-        if (declaration is CfirCallableDeclaration && declaration.symbol.callableId.classId != null) return
+    fun matchDeclaration(
+        declaration: CfirDeclaration,
+        session: CfirSession,
+        storage: CfirCjmpMappingStorage,
+        containingContainer: CfirDeclaration? = null,
+    ) {
+        val member = declaration as? CfirMemberDeclaration ?: return
+        val specificContainer = containingContainer ?:
+                (declaration as? CfirCallableDeclaration)?.containingCjmpContainer(session)
+
+        if (declaration is CfirEnumConstructor) {
+            val specificEnum = specificContainer as? CfirEnum ?: return
+            if (specificEnum.status.isSpecific) matchEnumConstructor(declaration, specificEnum, storage)
+            return
+        }
+
+        if (!member.status.isSpecific) return
+        if (declaration is CfirConstructor && declaration.status.isStatic) return
+
+        if (declaration is CfirPatternVariable) {
+            val commonCandidates = if (specificContainer != null) {
+                val commonContainers = storage.commonCounterpartsFor(specificContainer)
+                if (commonContainers.isEmpty()) {
+                    storage.recordUnmatched(declaration)
+                    return
+                }
+                CfirCjmpResolver.findCommonMemberCandidates(declaration, commonContainers)
+            } else {
+                CfirCjmpResolver.findCommonCandidates(declaration, session)
+                    .filterIsInstance<CfirCallableDeclaration>()
+            }
+            matchPatternVariable(
+                declaration,
+                commonCandidates,
+                session,
+                storage,
+                specificContainer?.let(storage::typeParameterMappingFor).orEmpty(),
+            )
+            return
+        }
+
+        if (declaration is CfirCallableDeclaration) {
+            if (specificContainer != null) {
+                val commonContainers = storage.commonCounterpartsFor(specificContainer)
+                if (commonContainers.isEmpty()) {
+                    storage.recordUnmatched(declaration)
+                    return
+                }
+                val candidates = CfirCjmpResolver.findCommonMemberCandidates(declaration, commonContainers)
+                if (candidates.isEmpty()) {
+                    storage.recordUnmatched(declaration)
+                    return
+                }
+                matchAgainstCandidates(
+                    declaration,
+                    candidates,
+                    session,
+                    storage,
+                    storage.typeParameterMappingFor(specificContainer),
+                )
+                return
+            }
+        }
+
+        if (declaration is CfirExtend && isDuplicateSpecificExtend(declaration, session)) {
+            storage.recordDuplicateSpecificExtend(declaration)
+            return
+        }
 
         val candidates = CfirCjmpResolver.findCommonCandidates(declaration, session)
         if (candidates.isEmpty()) {
             storage.recordUnmatched(declaration)
-            if (declaration is CfirClassLikeDeclaration) markMembersUnmatched(declaration, storage)
             return
-        }
-        if (declaration is CfirPatternVariable) {
-            matchPatternVariable(declaration, candidates, session, storage)
-            return
-        }
-        val matchedCommon = matchAgainstCandidates(declaration, candidates, session, storage)
-        if (declaration is CfirClassLikeDeclaration) {
-            if (matchedCommon is CfirClassLikeDeclaration) {
-                matchMembers(declaration, matchedCommon, session, storage)
-                if (declaration is CfirEnum && matchedCommon is CfirEnum) {
-                    matchEnumConstructors(declaration, matchedCommon, session, storage)
-                }
-            } else {
-                markMembersUnmatched(declaration, storage)
-            }
         }
         if (declaration is CfirExtend) {
-            if (matchedCommon is CfirExtend) {
-                matchMemberLists(declaration.declarations, matchedCommon.declarations, session, storage)
+            matchExtend(declaration, candidates, session, storage)
+            return
+        }
+        matchAgainstCandidates(declaration, candidates, session, storage)
+    }
+
+    /** MergeCJMPExtensions 把同 key 的全部 common extend 合并到一个 specific extend。 */
+    private fun matchExtend(
+        specific: CfirExtend,
+        candidates: List<CfirDeclaration>,
+        session: CfirSession,
+        storage: CfirCjmpMappingStorage,
+    ) {
+        val matchingContext = CfirCjmpMatchingContext(session, storage)
+        val matchedCommonExtends = mutableListOf<CfirExtend>()
+        val mismatchedCommonExtends = mutableListOf<Pair<CfirExtend, CjmpMismatchKind>>()
+
+        for (candidate in candidates.filterIsInstance<CfirExtend>()) {
+            candidate.resolveCjmpSignatureTypes()
+            when (val result = AbstractCjmpMatcher.match(
+                specific = specific.symbol,
+                common = candidate.symbol,
+                context = matchingContext,
+            )) {
+                CjmpMatchResult.Matched -> matchedCommonExtends += candidate
+                // 官方在键分组前跳过类型无效的 extend，不能让未解析候选压制其它已匹配 owner。
+                CjmpMatchResult.TypeNotResolved -> Unit
+
+                is CjmpMatchResult.Mismatched -> mismatchedCommonExtends += candidate to result.kind
+                is CjmpMatchResult.ParameterMismatched -> mismatchedCommonExtends += candidate to result.mismatch.kind
+            }
+        }
+
+        if (matchedCommonExtends.isEmpty()) {
+            if (mismatchedCommonExtends.isEmpty()) {
+                storage.recordUnmatched(specific)
             } else {
-                markMemberListUnmatched(declaration.declarations, storage)
+                mismatchedCommonExtends.forEach { (common, kind) -> storage.recordMismatch(specific, kind, common) }
             }
+            return
         }
-    }
 
-    /**
-     * 已配对容器内的成员配对（官方合并后 `MatchSpecificDeclWithCommonDecls` 的成员面）。
-     *
-     * 只有标记 specific 的成员参与；enum 构造器随外层豁免（C18），static init 不参与（C31）。
-     */
-    fun matchMembers(
-        specific: CfirClassLikeDeclaration,
-        common: CfirClassLikeDeclaration,
-        session: CfirSession,
-        storage: CfirCjmpMappingStorage,
-    ) {
-        matchMemberLists(specific.declarations, common.declarations, session, storage)
-    }
-
-    /** 成员列表配对（nominal 成员与 extend 成员共用）。 */
-    private fun matchMemberLists(
-        specificDeclarations: List<CfirDeclaration>,
-        commonDeclarations: List<CfirDeclaration>,
-        session: CfirSession,
-        storage: CfirCjmpMappingStorage,
-    ) {
-        val commonMembers = commonDeclarations
-            .filterIsInstance<CfirCallableDeclaration>()
-            .filter { it !is CfirEnumConstructor && it.status.isCommon }
-        for (member in specificDeclarations) {
-            if (member !is CfirCallableDeclaration || !member.status.isSpecific) continue
-            if (member is CfirEnumConstructor) continue
-            if (member is CfirConstructor && member.status.isStatic) continue
-
-            val candidates = commonMembers.filter { candidate ->
-                candidate.symbol.name == member.symbol.name &&
-                        (candidate is CfirConstructor) == (member is CfirConstructor)
-            }
-            if (candidates.isEmpty()) {
-                storage.recordUnmatched(member)
-                continue
-            }
-            matchAgainstCandidates(member, candidates, session, storage)
-        }
+        storage.bindCommonExtendCounterparts(
+            specific,
+            matchedCommonExtends.map { common -> common to common.typeParameters.zip(specific.typeParameters).toMap() },
+        )
     }
 
     /**
@@ -138,23 +192,17 @@ object CfirCjmpMatchRunner {
         candidates: List<CfirDeclaration>,
         session: CfirSession,
         storage: CfirCjmpMappingStorage,
+        parentTypeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter> = emptyMap(),
     ): CfirDeclaration? {
-        for (candidate in candidates) {
-            when (val result = CfirCjmpMatcher.match(specific, candidate, session)) {
-                is CjmpMatchResult.Matched -> {
-                    if (needToReportMissingBody(candidate, specific)) {
-                        storage.recordMismatch(specific, CjmpMismatchKind.MISSING_BODY)
-                        continue
-                    }
-                    // 第二绑定（common 已有 specific 实现）绑定失败，继续尝试其余候选（官方候选循环）
-                    if (storage.bind(specific, candidate)) return candidate
-                }
-
-                is CjmpMatchResult.ParameterMismatched -> storage.recordParameterMismatch(specific, result.mismatch)
-                is CjmpMatchResult.Mismatched -> storage.recordMismatch(specific, result.kind)
-            }
-        }
-        return null
+        specific.resolveCjmpSignatureTypes()
+        candidates.forEach { it.resolveCjmpSignatureTypes() }
+        val matchingContext = CfirCjmpMatchingContext(session, storage)
+        return AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(
+            specific = specific.symbol,
+            commonCandidates = candidates.map { it.symbol },
+            context = matchingContext,
+            parentTypeParameterMapping = matchingContext.parentTypeParameterMapping(parentTypeParameterMapping),
+        )?.cfir
     }
 
     /**
@@ -164,78 +212,121 @@ object CfirCjmpMatchRunner {
      */
     private fun matchPatternVariable(
         declaration: CfirPatternVariable,
-        candidates: List<CfirDeclaration>,
+        candidates: List<CfirCallableDeclaration>,
         session: CfirSession,
         storage: CfirCjmpMappingStorage,
+        parentTypeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
     ) {
+        declaration.resolveCjmpSignatureTypes()
+        candidates.forEach { it.resolveCjmpSignatureTypes() }
+        val matchingContext = CfirCjmpMatchingContext(session, storage)
+        val mappedParentTypeParameters = matchingContext.parentTypeParameterMapping(parentTypeParameterMapping)
         val bindings = declaration.pattern.bindingVariables()
         val matched = bindings.map { binding ->
             val sameName = candidates.filter {
-                (it as? CfirCallableDeclaration)?.symbol?.name == binding.name
+                it.symbol.name == binding.name
             }
-            sameName.firstOrNull { CfirCjmpMatcher.match(declaration, it, session) is CjmpMatchResult.Matched }
+            sameName.firstOrNull {
+                AbstractCjmpMatcher.match(
+                    specific = declaration.symbol,
+                    common = it.symbol,
+                    context = matchingContext,
+                    parentTypeParameterMapping = mappedParentTypeParameters,
+                ) == CjmpMatchResult.Matched
+            }
         }
         if (matched.isEmpty() || matched.any { it == null }) {
             storage.recordUnmatched(declaration)
             return
         }
         if (bindings.size == 1) {
-            storage.bind(declaration, matched.single()!!)
+            storage.bind(declaration, matched.single()!!, parentTypeParameterMapping)
         } else {
             // 元组模式：逐绑定记录配对（模式变量本身不绑定单个 common，检查器对其保持静默）
-            bindings.zip(matched).forEach { (binding, common) -> storage.bind(binding, common!!) }
+            bindings.zip(matched).forEach { (binding, common) ->
+                storage.bind(binding, common!!, parentTypeParameterMapping)
+            }
         }
     }
 
     /**
-     * enum 构造器配对（官方 `MatchCJMPEnumConstructor`）：按名配对，带参构造器要求参数类型逐个相同；
-     * common enum 非穷尽时 specific 多出的构造器合法（官方对 COMMON_NON_EXHAUSTIVE 外层静默返回）。
+     * enum 构造器声明级配对（官方 `MatchCJMPEnumConstructor`）：父 enum 已配对后按名比较，
+     * 带参构造器的参数类型逐个相同；common enum 非穷尽时 specific 多出的构造器合法。
      */
-    private fun matchEnumConstructors(
-        specific: CfirEnum,
-        common: CfirEnum,
-        session: CfirSession,
+    private fun matchEnumConstructor(
+        specific: CfirEnumConstructor,
+        specificEnum: CfirEnum,
         storage: CfirCjmpMappingStorage,
     ) {
-        val commonConstructors = common.declarations.filterIsInstance<CfirEnumConstructor>()
-        for (constructor in specific.declarations.filterIsInstance<CfirEnumConstructor>()) {
-            val counterpart = commonConstructors.firstOrNull { candidate ->
-                candidate.name == constructor.name &&
-                        CfirCjmpMatcher.matchEnumConstructors(constructor, candidate)
+        val commonEnum = storage.commonFor(specificEnum) as? CfirEnum
+        if (commonEnum == null) {
+            storage.recordUnmatched(specific)
+            return
+        }
+        specific.resolveCjmpSignatureTypes()
+        val typeParameterMapping = storage.typeParameterMappingFor(specificEnum)
+        val sameName = commonEnum.declarations
+            .filterIsInstance<CfirEnumConstructor>()
+            .filter { it.name == specific.name }
+            .onEach { it.resolveCjmpSignatureTypes() }
+        val counterpart = sameName.firstOrNull { candidate ->
+            CfirCjmpMatcher.matchEnumConstructors(specific, candidate, typeParameterMapping) ==
+                    CjmpTypeCompatibility.COMPATIBLE
+        }
+        val unresolved = sameName.firstOrNull { candidate ->
+            CfirCjmpMatcher.matchEnumConstructors(specific, candidate, typeParameterMapping) ==
+                    CjmpTypeCompatibility.UNRESOLVED
+        }
+        when {
+            counterpart != null -> storage.bind(specific, counterpart, typeParameterMapping)
+            unresolved != null -> storage.recordMismatch(specific, CjmpMismatchKind.TYPE_NOT_RESOLVED, unresolved)
+            commonEnum.isNonExhaustive -> Unit
+            else -> storage.recordUnmatched(specific)
+        }
+    }
+
+    /** 按官方 MergeCJMPExtensions 键排除同包、同模块中较早声明之后的 specific extend。 */
+    private fun isDuplicateSpecificExtend(specific: CfirExtend, session: CfirSession): Boolean {
+        val allExtends = session.extendProvider.getAllExtends()
+        allExtends.forEach { it.resolveCjmpSignatureTypes() }
+        val currentPackage = session.extendProvider.getPackageFqName(specific)
+            ?: session.extendProvider.getContainingFile(specific)?.packageDirective?.packageFqName
+            ?: return false
+        val siblings = allExtends
+            .filter { candidate ->
+                candidate !== specific &&
+                        candidate.status.isSpecific &&
+                        candidate.moduleData.name == specific.moduleData.name &&
+                        (session.extendProvider.getPackageFqName(candidate)
+                            ?: session.extendProvider.getContainingFile(candidate)?.packageDirective?.packageFqName) == currentPackage &&
+                        CfirCjmpMatcher.haveSameExtendKey(specific, candidate) == CjmpTypeCompatibility.COMPATIBLE
             }
-            when {
-                counterpart != null -> storage.bind(constructor, counterpart)
-                common.isNonExhaustive -> Unit
-                else -> storage.recordUnmatched(constructor)
-            }
+            .sortedWith(
+                compareBy<CfirExtend>(
+                    { session.extendProvider.getContainingFile(it)?.sourceFile?.path.orEmpty() },
+                    { it.source?.startOffset ?: Int.MAX_VALUE },
+                ),
+            )
+        if (siblings.isEmpty()) return false
+
+        val currentPath = session.extendProvider.getContainingFile(specific)?.sourceFile?.path.orEmpty()
+        val currentOffset = specific.source?.startOffset ?: Int.MAX_VALUE
+        return siblings.any { candidate ->
+            val candidatePath = session.extendProvider.getContainingFile(candidate)?.sourceFile?.path.orEmpty()
+            val candidateOffset = candidate.source?.startOffset ?: Int.MAX_VALUE
+            candidatePath < currentPath || candidatePath == currentPath && candidateOffset < currentOffset
         }
     }
 
-    /** 未配对 nominal 的 specific 成员一律无配对（官方合并失败后成员找不到 common）。 */
-    private fun markMembersUnmatched(specific: CfirClassLikeDeclaration, storage: CfirCjmpMappingStorage) {
-        markMemberListUnmatched(specific.declarations, storage)
-        if (specific is CfirEnum) {
-            specific.declarations.filterIsInstance<CfirEnumConstructor>().forEach(storage::recordUnmatched)
-        }
+    private fun CfirDeclaration.resolveCjmpSignatureTypes() {
+        if (this is CfirMemberDeclaration) lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
     }
 
-    private fun markMemberListUnmatched(declarations: List<CfirDeclaration>, storage: CfirCjmpMappingStorage) {
-        for (member in declarations) {
-            if (member !is CfirCallableDeclaration || !member.status.isSpecific) continue
-            if (member is CfirEnumConstructor) continue
-            if (member is CfirConstructor && member.status.isStatic) continue
-            storage.recordUnmatched(member)
-        }
-    }
-
-    /**
-     * 官方 `NeedToReportMissingBody`：common 成员自带默认实现（且非 abstract）而 specific 成员为 abstract。
-     */
-    private fun needToReportMissingBody(common: CfirDeclaration, specific: CfirDeclaration): Boolean {
-        val commonStatus = (common as? CfirMemberDeclaration)?.status ?: return false
-        val specificStatus = (specific as? CfirMemberDeclaration)?.status ?: return false
-        if (common !is CfirCallableDeclaration || common.symbol.callableId.classId == null) return false
-        return common.cjmpHasCommonDefault() && !commonStatus.isAbstract && specificStatus.isAbstract
+    /** specific member 的父容器；common 候选只从该容器的已配对 common 声明中读取。 */
+    private fun CfirCallableDeclaration.containingCjmpContainer(session: CfirSession): CfirDeclaration? {
+        session.extendProvider.getContainingExtend(symbol)?.let { return it }
+        val containingClassId = symbol.callableId.classId ?: return null
+        return session.symbolProvider.getClassLikeSymbolByClassId(containingClassId)?.cfir as? CfirClassLikeDeclaration
     }
 
     /**
@@ -244,6 +335,8 @@ object CfirCjmpMatchRunner {
      */
     fun canHaveCommonCounterpart(declaration: CfirDeclaration): Boolean = when (declaration) {
         is CfirClassLikeDeclaration -> true
+        is CfirExtend -> true
+        is CfirPatternVariable -> true
         is CfirConstructor -> !declaration.status.isStatic
         is CfirCallableDeclaration -> true
         else -> false

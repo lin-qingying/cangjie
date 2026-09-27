@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.builder.buildTypeAlias
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityChecker
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProviderWithoutCallables
@@ -195,6 +196,7 @@ class CfirTypeResolverTypeAliasExpansionTest {
         val symbolProvider = TestTypeAliasSymbolProvider(session, aliasDeclaration)
         session.register(CfirSymbolProvider::class, symbolProvider)
         session.register(CfirProvider::class, CfirLibrarySessionProvider(symbolProvider))
+        session.register(CfirAccessibilityChecker::class, CfirAccessibilityChecker(session))
         return CfirTypeResolverImpl(session)
     }
 

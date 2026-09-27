@@ -241,6 +241,7 @@ internal object ExtendTestFixtures {
         classId: ClassId,
         superTypeRefs: List<CfirTypeRef> = emptyList(),
         declarations: List<CfirDeclaration> = emptyList(),
+        typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirClassImpl {
         val symbol = CfirClassSymbol(classId)
         val klass = CfirClassImpl(
@@ -253,7 +254,7 @@ internal object ExtendTestFixtures {
             deprecationsProvider = EmptyDeprecationsProvider,
             scopeProvider = CfirCangJieScopeProvider(),
             status = CfirDeclarationStatusImpl(),
-            typeParameters = mutableListOf(),
+            typeParameters = typeParameters.toMutableList(),
             symbol = symbol,
             superTypeRefs = superTypeRefs.toMutableList(),
             declarations = declarations.toMutableList(),
@@ -272,6 +273,7 @@ internal object ExtendTestFixtures {
         classId: ClassId,
         superTypeRefs: List<CfirTypeRef> = emptyList(),
         declarations: List<CfirDeclaration> = emptyList(),
+        typeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirInterface {
         val symbol = CfirInterfaceSymbol(classId)
         val interfaceDeclaration = CfirInterfaceImpl(
@@ -285,7 +287,7 @@ internal object ExtendTestFixtures {
             scopeProvider = CfirCangJieScopeProvider(),
             declarations = declarations.toMutableList(),
             status = CfirDeclarationStatusImpl(),
-            typeParameters = mutableListOf(),
+            typeParameters = typeParameters.toMutableList(),
             symbol = symbol,
             superTypeRefs = superTypeRefs.toMutableList(),
             name = Name.identifier(name),
