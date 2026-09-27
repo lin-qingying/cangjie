@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.name.ClassId
 import java.util.Collections
@@ -53,6 +54,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.*
@@ -319,6 +321,9 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
 
         val packageFiles = context.session.cfirProvider
             .getCfirFilesByPackage(file.packageDirective.packageFqName)
+        packageFiles.forEach { packageFile ->
+            packageFile.lazyResolveToPhase(context.session.bodyResolvePrerequisitePhase)
+        }
         val privateGroups = linkedMapOf<Name, MutableList<CfirClassLikeDeclaration>>()
         for (packageFile in packageFiles) {
             for (decl in packageFile.declarations) {

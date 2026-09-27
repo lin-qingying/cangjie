@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -15,7 +16,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedInformation
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedSourceLocation
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.diagnostics.reportOnWithRelatedInformation
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
 import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendType
@@ -23,6 +27,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.semanticExtendedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
+import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictChain
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictWitness
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
@@ -56,6 +63,7 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -217,14 +225,57 @@ object CfirExtendCheckSequenceChecker : CfirExtendChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirExtend) {
         val query = context.session.extendRuleQueryServiceOrNull ?: return
-        if (!query.hasUndecidableExtendCheckSequence(declaration)) return
+        val conflicts = query.undecidableExtendCheckSequenceConflicts(declaration)
+        if (conflicts.isEmpty()) return
 
-        reporter.reportOn(
+        reporter.reportOnWithRelatedInformation(
             source = declaration.source?.firstCharacterDiagnosticSource() ?: declaration.extendedTypeRef.source,
             factory = CfirErrors.EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE,
+            relatedInformation = conflicts.map { conflict ->
+                val peer = conflict.peerDeclaration as? CfirExtend
+                val peerSource = peer?.extendedTypeRef?.source?.firstCharacterDiagnosticSource()
+                    ?: peer?.source?.firstCharacterDiagnosticSource()
+                conflict.witness.toExtendCheckSequenceRelatedInformation(
+                    peerSource = peerSource,
+                    sourceLocation = peer?.cjoDeclarationPosition?.let { position ->
+                        CjDiagnosticRelatedSourceLocation(position.filePath, position.line, position.column)
+                    },
+                )
+            },
+            context = context,
         )
     }
 }
+
+/** 保留 peer 的独立源码范围与 pairwise 直接接口证据，供 IDE 导航和 CLI note 展示。 */
+internal fun CfirExtendMemberPeerConflictWitness.toExtendCheckSequenceRelatedInformation(
+    peerSource: AbstractCjSourceElement?,
+    sourceLocation: CjDiagnosticRelatedSourceLocation? = null,
+): CjDiagnosticRelatedInformation = CjDiagnosticRelatedInformation(
+    element = peerSource,
+    message = "conflict with this extension, beacase of ${conflictChains.joinToString(separator = " and ") { chain ->
+        "'${chain.renderExtendInterfaceChain()}'"
+    }}",
+    sourceLocation = sourceLocation,
+)
+
+private fun CfirExtendMemberPeerConflictChain.renderExtendInterfaceChain(): String =
+    buildList {
+        val firstRelation = relations.first()
+        add(firstRelation.subInterface)
+        add(firstRelation.superInterface)
+        for (relation in relations.drop(1)) {
+            check(last() == relation.subInterface) {
+                "Adjacent interface conflict relations must form a subtype chain"
+            }
+            add(relation.superInterface)
+        }
+    }.joinToString(" <: ") { it.renderExtendInterfaceInstance() }
+
+private fun CfirExtendInheritedInterfaceSemantic.renderExtendInterfaceInstance(): String =
+    classId?.asString()?.let { classId ->
+        if (semanticKey == classId) classId else "$classId ($semanticKey)"
+    } ?: semanticKey
 
 /**
  * extend orphan rule 检查器。

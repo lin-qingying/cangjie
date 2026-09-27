@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -102,6 +103,8 @@ private fun checkEnsurePreparedToMockTarget(declaration: CfirDeclaration) {
         }
         .forEach { annotation ->
             if (declaration is CfirAnonymousFunction) return@forEach
+            val status = (declaration as? CfirMemberDeclaration)?.status
+            if (status?.isCommon == true || status?.isSpecific == true) return@forEach
             reporter.reportOn(
                 source = annotation.source ?: declaration.source,
                 factory = CfirErrors.ILLEGAL_USE_OF_ANNOTATION,

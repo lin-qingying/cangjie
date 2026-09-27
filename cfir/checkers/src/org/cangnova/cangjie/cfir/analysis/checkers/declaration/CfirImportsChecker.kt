@@ -5,6 +5,7 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
@@ -29,6 +30,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.isPackageVisibleSourceImport
 import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -36,6 +38,7 @@ import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
+import org.cangnova.cangjie.cfir.session.rawMacroSurfaceUsageStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -288,6 +291,7 @@ object CfirImportsChecker : CfirFileChecker() {
             if (importedName in usage.names) continue
             if (import.aliasName == null && import.referencesAnyClassId(usage.targets, importBindingsByImport)) continue
             if (import.aliasName == null && importedFqName in usage.targets.macroPackages) continue
+            if (importedFqName in usage.targets.macroCallFqNames) continue
             if (import.referencesUsedMacroPackage(declaration, context.session, importBindingsByImport)) continue
 
             reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
@@ -317,6 +321,7 @@ object CfirImportsChecker : CfirFileChecker() {
         val classTargetNames = linkedSetOf<ReferencedClassTarget>()
         val callablePackages = linkedSetOf<FqName>()
         val macroPackages = linkedSetOf<FqName>()
+        val macroCallFqNames = linkedSetOf<FqName>()
 
         for (file in files) {
             val usage = file.collectImportUsage(session)
@@ -325,6 +330,7 @@ object CfirImportsChecker : CfirFileChecker() {
             classTargetNames += usage.targets.classTargetNames
             callablePackages += usage.targets.callablePackages
             macroPackages += usage.targets.macroPackages
+            macroCallFqNames += usage.targets.macroCallFqNames
         }
 
         return ImportUsage(
@@ -334,6 +340,7 @@ object CfirImportsChecker : CfirFileChecker() {
                 classTargetNames = classTargetNames,
                 callablePackages = callablePackages,
                 macroPackages = macroPackages,
+                macroCallFqNames = macroCallFqNames,
             ),
         )
     }
@@ -414,7 +421,31 @@ object CfirImportsChecker : CfirFileChecker() {
      * construction-only macro 调用也计为 import 使用。
      */
     private fun CfirFile.collectMacroSurfaceReferencedNames(session: CfirSession): Set<Name> {
-        return session.macroExpansionRegistry?.usedMacroNames(this).orEmpty()
+        return buildSet {
+            addAll(session.macroExpansionRegistry?.usedMacroNames(this@collectMacroSurfaceReferencedNames).orEmpty())
+            for (surface in rawMacroExpressionSurfaces(session)) {
+                if (!surface.isQualifiedName) {
+                    surface.qualifiedName?.shortName()?.let(::add)
+                }
+            }
+        }
+    }
+
+    /** 从发起 Raw CFIR 构建的 session 读取同一文件对象的 expression macro surface。 */
+    private fun CfirFile.rawMacroExpressionSurfaces(session: CfirSession): List<MacroSurfaceExpr> {
+        val sourceFileIdentity = this@rawMacroExpressionSurfaces.psi ?: return emptyList()
+        return buildList {
+            session.rawMacroSurfaceUsageStoreOrNull?.let { store ->
+                addAll(store.expressionSurfaces(this@rawMacroExpressionSurfaces))
+                addAll(store.expressionSurfacesForSourceFile(sourceFileIdentity))
+            }
+            moduleData.session.takeUnless { it === session }
+                ?.rawMacroSurfaceUsageStoreOrNull
+                ?.let { store ->
+                    addAll(store.expressionSurfaces(this@rawMacroExpressionSurfaces))
+                    addAll(store.expressionSurfacesForSourceFile(sourceFileIdentity))
+                }
+        }.distinctBy { it.surfaceId }
     }
 
     /**
@@ -446,13 +477,20 @@ object CfirImportsChecker : CfirFileChecker() {
         val classTargetNames = linkedSetOf<ReferencedClassTarget>()
         val callablePackages = linkedSetOf<FqName>()
         val macroPackages = linkedSetOf<FqName>()
+        val macroCallFqNames = linkedSetOf<FqName>()
+        for (surface in rawMacroExpressionSurfaces(session)) {
+            if (!surface.isQualifiedName) continue
+            val qualifiedName = surface.qualifiedName ?: continue
+            macroCallFqNames += qualifiedName
+            qualifiedName.parent().takeUnless { it.isRoot }?.let(macroPackages::add)
+        }
         accept(object : CfirDefaultVisitorVoid() {
             override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
                 element.acceptChildren(this)
             }
 
             override fun visitAnnotation(annotation: CfirAnnotation) {
-                recordMacroAnnotationPackage(annotation, macroPackages, session)
+                recordMacroAnnotationUsage(annotation, macroPackages, macroCallFqNames, session)
                 annotation.platformAnnotationClassIdOrNull()?.let { classId ->
                     classIds += classId
                     classTargetNames += ReferencedClassTarget(classId, classId.shortClassName)
@@ -535,6 +573,7 @@ object CfirImportsChecker : CfirFileChecker() {
             classTargetNames = classTargetNames,
             callablePackages = callablePackages,
             macroPackages = macroPackages,
+            macroCallFqNames = macroCallFqNames,
         )
     }
 
@@ -562,9 +601,10 @@ object CfirImportsChecker : CfirFileChecker() {
      * 声明宏在 construction 或 degraded 路径中可能仍以 annotation 形式保留在 final CFIR；
      * unused-import 判定必须读取 raw-builder 写入的 slot metadata，而不是把它当普通类型引用。
      */
-    private fun recordMacroAnnotationPackage(
+    private fun recordMacroAnnotationUsage(
         annotation: CfirAnnotation,
         macroPackages: MutableSet<FqName>,
+        macroCallFqNames: MutableSet<FqName>,
         session: CfirSession,
     ) {
         val annotationCall = annotation as? CfirAnnotationCall ?: return
@@ -572,7 +612,9 @@ object CfirImportsChecker : CfirFileChecker() {
             ?.snapshot(annotationCall)
             ?.qualifiedName
             ?: return
-        qualifiedName.parent().takeUnless { it.isRoot }?.let(macroPackages::add)
+        val packageName = qualifiedName.parent().takeUnless { it.isRoot } ?: return
+        macroPackages += packageName
+        macroCallFqNames += qualifiedName
     }
 
     /**
@@ -810,6 +852,8 @@ object CfirImportsChecker : CfirFileChecker() {
         val classTargetNames: Set<ReferencedClassTarget>,
         val callablePackages: Set<FqName>,
         val macroPackages: Set<FqName>,
+        /** Raw-builder annotation metadata identifies the exact macro/custom annotation target. */
+        val macroCallFqNames: Set<FqName>,
     )
 
     /** 官方 unused-import 使用图中的 `(identifier, declaration target)` 配对。 */
