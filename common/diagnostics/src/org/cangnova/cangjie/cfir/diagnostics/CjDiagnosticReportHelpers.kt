@@ -34,6 +34,56 @@ fun DiagnosticReporter.reportOn(
     report(factory.on(source.requireNotNull(), positioningStrategy, context), context)
 }
 
+/** 使用显式诊断上下文上报带 peer 源码说明的无参数诊断。 */
+fun DiagnosticReporter.reportOnWithRelatedInformation(
+    source: AbstractCjSourceElement?,
+    factory: CjDiagnosticFactory0,
+    relatedInformation: List<CjDiagnosticRelatedInformation>,
+    context: DiagnosticContext,
+    positioningStrategy: AbstractSourceElementPositioningStrategy? = null,
+) {
+    val relatedContext = context.withRelatedInformation(relatedInformation)
+    report(factory.on(source.requireNotNull(), positioningStrategy, relatedContext), relatedContext)
+}
+
+/** 使用 context receiver 提供的诊断上下文上报带 peer 源码说明的无参数诊断。 */
+context(context: DiagnosticContext)
+fun DiagnosticReporter.reportOnWithRelatedInformation(
+    source: AbstractCjSourceElement?,
+    factory: CjDiagnosticFactory0,
+    relatedInformation: List<CjDiagnosticRelatedInformation>,
+    positioningStrategy: AbstractSourceElementPositioningStrategy? = null,
+) {
+    reportOnWithRelatedInformation(source, factory, relatedInformation, context, positioningStrategy)
+}
+
+/** 使用显式诊断上下文上报带参数与 peer 源码说明的二参数诊断。 */
+fun <A, B> DiagnosticReporter.reportOnWithRelatedInformation(
+    source: AbstractCjSourceElement?,
+    factory: CjDiagnosticFactory2<A, B>,
+    a: A,
+    b: B,
+    relatedInformation: List<CjDiagnosticRelatedInformation>,
+    context: DiagnosticContext,
+    positioningStrategy: AbstractSourceElementPositioningStrategy? = null,
+) {
+    val relatedContext = context.withRelatedInformation(relatedInformation)
+    report(factory.on(source.requireNotNull(), a, b, positioningStrategy, relatedContext), relatedContext)
+}
+
+/** 使用 context receiver 提供的诊断上下文上报带参数与 peer 源码说明的二参数诊断。 */
+context(context: DiagnosticContext)
+fun <A, B> DiagnosticReporter.reportOnWithRelatedInformation(
+    source: AbstractCjSourceElement?,
+    factory: CjDiagnosticFactory2<A, B>,
+    a: A,
+    b: B,
+    relatedInformation: List<CjDiagnosticRelatedInformation>,
+    positioningStrategy: AbstractSourceElementPositioningStrategy? = null,
+) {
+    reportOnWithRelatedInformation(source, factory, a, b, relatedInformation, context, positioningStrategy)
+}
+
 /**
  * 使用 context receiver 提供的诊断上下文上报无参数源码诊断。
  */
@@ -336,5 +386,3 @@ fun <F : CjDiagnosticFactoryN> CjDiagnosticFactoryForDeprecation<F>.chooseFactor
         warningFactory
     }
 }
-
-

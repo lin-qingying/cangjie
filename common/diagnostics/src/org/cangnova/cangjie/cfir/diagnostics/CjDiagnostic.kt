@@ -49,8 +49,20 @@ sealed class CjDiagnostic {
      * 使用当前诊断工厂的仓颉渲染器生成面向用户的诊断消息。
      */
     fun renderMessage(): String {
-        return factory.cjRenderer.render(this)
+        val primaryMessage = factory.cjRenderer.render(this)
+        if (relatedInformation.isEmpty()) return primaryMessage
+        return buildString {
+            append(primaryMessage)
+            for (information in relatedInformation) {
+                append("\n  note: ")
+                append(information.message)
+            }
+        }
     }
+
+    /** 主诊断之外的相关源码位置与说明，不改变主诊断的工厂、严重级别或高亮范围。 */
+    val relatedInformation: List<CjDiagnosticRelatedInformation>
+        get() = context.relatedInformation
 }
 
 /**
