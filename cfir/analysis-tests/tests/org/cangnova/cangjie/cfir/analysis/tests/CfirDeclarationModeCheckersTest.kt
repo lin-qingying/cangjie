@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.cfir.pipeline.runCheckers
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.session.CfirCjmpMode
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.psi.CjFile
 
@@ -170,22 +170,19 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
 
     @Test
     fun testSourceFileReportsMainInCommonPackagePart() {
+        // 官方 File::isCommon：common 编译中含 common 声明的文件即 common package part 文件，其中的 main 报错
+        //（cjc 1.1.3 `--output-type=chir` 实测）。common 修饰符走正常源码装填，不再手工改写 status。
         assertCheckerDualMode(
             fixtureName = "commonPackageMain",
             source = """
-                main() {
+                public common func f(): Int64
+
+                main(): Int64 {
                     0
                 }
             """.trimIndent(),
             expectedInCj = "COMMON_PACKAGE_HAS_MAIN",
-            // `common` 修饰符不经源码语法产生（HMPP common part 由 cjo 反序列化引入），
-            // 测试按官方 cjo 路径的产物直接置位，验证"common main 在 .cj 报错、.cj.d 被过滤"。
-            mutateCfir = { cfirFile ->
-                val mainFunction = cfirFile.declarations.filterIsInstance<CfirMainFunction>().firstOrNull()
-                if (mainFunction != null) {
-                    (mainFunction.status as? CfirDeclarationStatusImpl)?.isCommon = true
-                }
-            },
+            cjmpMode = CfirCjmpMode.COMMON,
         )
     }
 
@@ -290,9 +287,12 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
 
     private fun collectDiagnosticNames(
         cjFile: CjFile,
-        mutateCfir: (CfirFile) -> Unit = {},
+        cjmpMode: CfirCjmpMode? = null,
     ): List<String> {
         val session = createTestSession()
+        if (cjmpMode != null) {
+            session.register(CfirCjmpSettingsComponent::class, CfirCjmpSettingsComponent(explicitMode = cjmpMode))
+        }
         // 测试需要看到真实异常，注册"原样重抛"的 handler，
         // 避免 CLI 包装器把无路径 PSI 文件上的异常吞成 "Sourceless CfirFile"。
         session.register(
@@ -308,7 +308,6 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
             },
         )
         val cfirFile = cjFile.toCfirFile(session = session)
-        mutateCfir(cfirFile)
 
         // 对齐 analyse.kt 的 resolveAndCheckCfir 两段式：resolve 与 checkers 是两个独立步骤，
         // checker 诊断只在 runCheckers 阶段收集，resolve 阶段诊断走 session 注册的 reporter。
@@ -351,15 +350,15 @@ class CfirDeclarationModeCheckersTest : AbstractCfirAnalysisResolveTest() {
         fixtureName: String,
         source: String,
         expectedInCj: String,
-        mutateCfir: (CfirFile) -> Unit = {},
+        cjmpMode: CfirCjmpMode? = null,
     ) {
-        val cjDiagnostics = collectDiagnosticNames(createCjFile(fixtureName, source), mutateCfir)
+        val cjDiagnostics = collectDiagnosticNames(createCjFile(fixtureName, source), cjmpMode)
         assertTrue(
             expectedInCj in cjDiagnostics,
             "`.cj` 下 $fixtureName 必须由带 requiresImplementation 标记的 checker 产出 $expectedInCj，实际：$cjDiagnostics",
         )
 
-        val cjdDiagnostics = collectDiagnosticNames(createDeclarationCjFile(fixtureName, source), mutateCfir)
+        val cjdDiagnostics = collectDiagnosticNames(createDeclarationCjFile(fixtureName, source), cjmpMode)
         assertTrue(
             cjdDiagnostics.isEmpty(),
             "`.cj.d` 下同一文本不得产出任何诊断（requiresImplementation 豁免在统一分派处跳过该 checker），实际：$cjdDiagnostics",
