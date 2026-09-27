@@ -65,4 +65,10 @@ abstract class CommonCompilerArguments : CommonToolArguments() {
             field = value
         }
 
+    var cjmpCompileCommon: Boolean = false
+        set(value) {
+            checkFrozen()
+            field = value
+        }
+
 }

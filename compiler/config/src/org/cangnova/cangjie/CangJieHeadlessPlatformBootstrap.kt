@@ -59,7 +59,6 @@ import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.jetbrains.concurrency.AsyncPromise
 import org.jetbrains.concurrency.CancellablePromise
 import java.lang.reflect.Constructor
-import java.util.Collection
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 import java.util.function.BooleanSupplier

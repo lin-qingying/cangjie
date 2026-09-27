@@ -90,6 +90,13 @@ data class CangJieCompilerArgument(
     }
 }
 
+/** 参数描述对应的生成参数类属性名，供字段生成与命令行解析共享。 */
+public val CangJieCompilerArgument.generatedPropertyName: String
+    get() = compilerName ?: name
+        .removePrefix("X").removePrefix("X")
+        .split("-").joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
+        .replaceFirstChar(Char::lowercaseChar)
+
 /**
  * 构造 `CangJieCompilerArgument` 的 DSL builder。
  */
