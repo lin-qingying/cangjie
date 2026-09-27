@@ -17,10 +17,12 @@ private func hiddenCandidate(): Int64 {
 // FILE: consumer.cj
 package completion.consumer
 
+import completion.provider
+
 func directCandidate(): Int64 {
     return 3
 }
 
 func consume(): Int64 {
-    return completion.consumer.directCandidate()
+    return directCandidate() + provider.needsImport()
 }

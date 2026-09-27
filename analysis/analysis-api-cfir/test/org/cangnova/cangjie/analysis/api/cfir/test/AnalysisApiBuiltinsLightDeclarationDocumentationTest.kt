@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationPro
 import org.cangnova.cangjie.analysis.api.lightDeclarations.documentation
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.CjoBinaryFileDecompiler
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -121,6 +122,23 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
         assertNotNull(decompiledFile)
         assertTrue(decompiledFile!!.text.contains("ObjectPool"))
         assertTrue(decompiledFile.text.length < 200_000, "std.objectpool decompiled text 不应异常膨胀")
+
+        val file = requireNotNull(findBuiltinsCore(mainFile)) {
+            "builtins decompiled PSI 应可恢复 `std.core`"
+        }
+        val psiText = requireNotNull(file.text)
+        assertTrue(
+            psiText.contains("String"),
+            "std.core.cjo 应反编译出标准库声明，实际预览=${psiText.take(300)}",
+        )
+        val providerText = file.viewProvider.contents.toString()
+        val binaryEditorText = CjoBinaryFileDecompiler().decompile(file.virtualFile).toString()
+        assertEquals(psiText, providerText)
+        assertEquals(psiText, binaryEditorText)
+        assertEquals(psiText.length, file.textLength)
+        assertEquals(psiText.length, providerText.length)
+        assertEquals(psiText.length, binaryEditorText.length)
+        assertEquals(psiText.length, file.textRange.endOffset)
     }
 
     /**
@@ -153,6 +171,20 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
                     "Cannot find std.objectpool in builtins files: " +
                         builtinFiles.map { file -> file.path + ":" + binaryIndex.readPackageFqName(file) }.sorted(),
                 )
+            PsiManager.getInstance(mainFile.project).findFile(binaryFile) as? CjFile
+        }
+    }
+
+    /** 从 builtins 二进制索引或虚拟文件提供器中定位 `std.core` 的反编译 PSI 文件。 */
+    private fun findBuiltinsCore(mainFile: CjFile): CjFile? {
+        return ApplicationManager.getApplication().runWriteAction<CjFile?> {
+            val binaryIndex = mainFile.project.getService(CaDecompiledBinaryIndex::class.java)
+            val binaryFile = binaryIndex.findBuiltinsBinaryFile(FqName("std.core"))
+                ?: BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles().firstOrNull { virtualFile ->
+                    virtualFile.name.equals("std.core.cjo", ignoreCase = true) &&
+                        binaryIndex.readPackageFqName(virtualFile) == FqName("std.core")
+                }
+                ?: error("Cannot find std.core.cjo in builtins files")
             PsiManager.getInstance(mainFile.project).findFile(binaryFile) as? CjFile
         }
     }
