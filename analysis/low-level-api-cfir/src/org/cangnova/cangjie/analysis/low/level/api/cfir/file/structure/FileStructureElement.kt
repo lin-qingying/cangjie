@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialAnalyzable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
@@ -315,7 +316,7 @@ internal class DeclarationStructureElement(
                 return null
             }
 
-            require(declaration.resolvePhase >= CfirResolvePhase.BODY_RESOLVE.previous)
+            require(declaration.resolvePhase >= declaration.moduleData.session.bodyResolvePrerequisitePhase)
 
             // 仓颉主干当前没有 Kotlin FIR 的 empty/single-expression block 声明形态，
             // partial body 分支只保留主干真实存在的 lazy block 与普通 block。

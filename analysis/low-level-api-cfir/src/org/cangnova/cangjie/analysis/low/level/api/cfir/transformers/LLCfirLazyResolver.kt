@@ -95,10 +95,19 @@ internal sealed class LLCfirLazyResolver(val resolverPhase: CfirResolvePhase) {
      * 校验 [target] 已经解析到 [resolverPhase]，并递归检查嵌套声明。
      */
     fun checkIsResolved(target: CfirElementWithResolveState) {
+        if (!shouldCheckIsResolved(target)) return
         target.checkPhase(resolverPhase)
         phaseSpecificCheckIsResolved(target)
         checkNestedDeclarationsAreResolved(target)
     }
+
+    /**
+     * 某个语义门关闭时，阶段解析器可声明该目标不适用于当前 resolve phase。
+     *
+     * 例如 CJMP feature/mode 门关闭时，LL resolver 必须保持声明相位不变；
+     * 此时对应的阶段后置条件也不适用。
+     */
+    protected open fun shouldCheckIsResolved(target: CfirElementWithResolveState): Boolean = true
 
     /**
      * 校验当前阶段的专有完成条件。

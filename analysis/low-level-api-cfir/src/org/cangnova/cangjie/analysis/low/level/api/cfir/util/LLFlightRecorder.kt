@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
+import com.intellij.openapi.diagnostic.logger
 import jdk.jfr.*
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -48,21 +49,43 @@ private const val CANGJIE_CODE_ANALYSIS_EVENT_CATEGORY = "CangJie Code Analysis"
  */
 object LLFlightRecorder {
     /**
+     * JFR 事件类型仅在运行时确实可用时初始化，避免可选遥测影响 CFIR 分析。
+     */
+    private data class EventTypes(
+        val phase: EventType,
+        val phaseWithTrace: EventType,
+        val partialBodyAnalysis: EventType,
+        val readyPhase: EventType,
+        val phaseSuspension: EventType,
+        val stopWorldInvalidation: EventType,
+    )
+
+    /**
+     * 延迟注册全部 JFR 事件；JFR 内部初始化失败时缓存不可用状态并继续正常解析。
+     */
+    private val eventTypes: EventTypes? by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        try {
+            EventTypes(
+                phase = EventType.getEventType(LLPhaseEvent::class.java),
+                phaseWithTrace = EventType.getEventType(LLPhaseWithTraceEvent::class.java),
+                partialBodyAnalysis = EventType.getEventType(LLPartialBodyAnalysisEvent::class.java),
+                readyPhase = EventType.getEventType(LLReadyPhaseEvent::class.java),
+                phaseSuspension = EventType.getEventType(LLPhaseSuspensionEvent::class.java),
+                stopWorldInvalidation = EventType.getEventType(LLStopWorldInvalidation::class.java),
+            )
+        } catch (failure: LinkageError) {
+            logger<LLFlightRecorder>().warn("JFR initialization failed; low-level CFIR events are disabled", failure)
+            null
+        }
+    }
+
+    /**
      * 是否记录带堆栈的阶段事件。
      */
     private val includePhaseTraces: Boolean by lazy(LazyThreadSafetyMode.PUBLICATION) {
         System.getProperty("cangjie.analysis.jfr.includePhaseTraces") == "true"
                 || System.getenv("CANGJIE_ANALYSIS_JFR_INCLUDE_PHASE_TRACES") == "true"
     }
-
-    /**
-     * 不带堆栈的阶段执行事件类型。
-     */
-    private val phaseEventType = EventType.getEventType(LLPhaseEvent::class.java)
-    /**
-     * 带堆栈的阶段执行事件类型。
-     */
-    private val phaseWithTraceEventType = EventType.getEventType(LLPhaseWithTraceEvent::class.java)
 
     /**
      * 记录 [target] 开始推进到 [requestedPhase] 的阶段事件。
@@ -76,8 +99,9 @@ object LLFlightRecorder {
         containingDeclarations: List<CfirDeclaration>,
         requestedPhase: CfirResolvePhase
     ): LLPhaseEventCompleter? {
+        val eventTypes = eventTypes ?: return null
         if (includePhaseTraces) {
-            if (!phaseWithTraceEventType.isEnabled) {
+            if (!eventTypes.phaseWithTrace.isEnabled) {
                 return null
             }
 
@@ -90,7 +114,7 @@ object LLFlightRecorder {
                 begin()
             }
         } else {
-            if (!phaseEventType.isEnabled) {
+            if (!eventTypes.phase.isEnabled) {
                 return null
             }
 
@@ -106,18 +130,14 @@ object LLFlightRecorder {
     }
 
     /**
-     * 局部 body 分析事件类型。
-     */
-    private val partialBodyAnalysisEventType = EventType.getEventType(LLPartialBodyAnalysisEvent::class.java)
-
-    /**
      * 记录 [declaration] 的 body 完成一次局部分析。
      *
      * @param declaration 被局部分析的声明。
      * @param state 当前局部分析状态。
      */
     internal fun partialBodyAnalyzed(declaration: CfirElementWithResolveState, state: LLPartialBodyAnalysisState) {
-        if (!partialBodyAnalysisEventType.isEnabled) {
+        val eventType = eventTypes?.partialBodyAnalysis ?: return
+        if (!eventType.isEnabled) {
             return
         }
 
@@ -129,17 +149,13 @@ object LLFlightRecorder {
     }
 
     /**
-     * 已就绪阶段事件类型。
-     */
-    private val readyPhaseEventType = EventType.getEventType(LLReadyPhaseEvent::class.java)
-
-    /**
      * 记录 [target] 被请求推进到 [requestedPhase]，但目标已经处于该阶段或更高阶段。
      *
      * 当调用方已经持有 containing declarations 时，应使用另一个重载以避免重新收集 designation。
      */
     internal fun readyPhase(target: CfirElementWithResolveState, requestedPhase: CfirResolvePhase) {
-        if (!readyPhaseEventType.isEnabled) {
+        val eventType = eventTypes?.readyPhase ?: return
+        if (!eventType.isEnabled) {
             return
         }
 
@@ -163,7 +179,8 @@ object LLFlightRecorder {
         containingDeclarations: List<CfirDeclaration>,
         requestedPhase: CfirResolvePhase
     ) {
-        if (!readyPhaseEventType.isEnabled) {
+        val eventType = eventTypes?.readyPhase ?: return
+        if (!eventType.isEnabled) {
             return
         }
 
@@ -176,17 +193,13 @@ object LLFlightRecorder {
     }
 
     /**
-     * 阶段挂起事件类型。
-     */
-    private val phaseSuspensionEventType = EventType.getEventType(LLPhaseSuspensionEvent::class.java)
-
-    /**
      * 记录当前线程等待其他线程完成 [declaration] 的 [requestedPhase] 阶段分析。
      *
      * 返回的 completer 用于在等待结束时提交事件。
      */
     internal fun phaseSuspension(declaration: CfirElementWithResolveState, requestedPhase: CfirResolvePhase): LLPhaseSuspensionEventCompleter? {
-        if (!phaseSuspensionEventType.isEnabled) {
+        val eventType = eventTypes?.phaseSuspension ?: return null
+        if (!eventType.isEnabled) {
             return null
         }
 
@@ -197,11 +210,6 @@ object LLFlightRecorder {
             begin()
         }
     }
-
-    /**
-     * stop-the-world 失效事件类型。
-     */
-    private val stopWorldInvalidationEventType = EventType.getEventType(LLStopWorldInvalidation::class.java)
 
     /**
      * 记录 stop-the-world 会话失效已经被调度。
@@ -221,7 +229,8 @@ object LLFlightRecorder {
      * 提交 stop-the-world 会话失效状态事件。
      */
     private fun stopWorldSessionInvalidation(newState: Boolean) {
-        if (!stopWorldInvalidationEventType.isEnabled) {
+        val eventType = eventTypes?.stopWorldInvalidation ?: return
+        if (!eventType.isEnabled) {
             return
         }
 

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractSessionInvalidationTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.AbstractResolveToCfirSymbolTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractDeprecationsResolveTest
+import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractCfirCjmpMatchingTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractSourceLazyDeclarationResolveScopeBasedTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceCfirContextCollectionTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceDiagnosticTraversalCounterTest
@@ -30,6 +31,10 @@ fun main(args: Array<String>) {
 
             testClass<AbstractCfirSourceLazyDeclarationResolveByReferenceTest> {
                 model("lazyResolveByReference", pattern = """^(.+)\.cj$""")
+            }
+
+            testClass<AbstractCfirCjmpMatchingTest> {
+                model("cjmpMatching", pattern = """^(.+)\.cj$""")
             }
 
             testClass<AbstractSourceLazyDeclarationResolveScopeBasedTest> {

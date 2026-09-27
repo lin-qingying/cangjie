@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
+import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiModifiablePsiTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
@@ -28,10 +29,21 @@ fun analysisApiCfirSourceTestConfigurator(analyseInDependentSession: Boolean): A
 }
 
 /**
+ * Low-level CFIR PSI 修改测试配置器，只为执行 PSI 写入的测试安装修改专用服务。
+ */
+fun analysisApiCfirModifiablePsiSourceTestConfigurator(analyseInDependentSession: Boolean): AnalysisApiTestConfigurator {
+    return AnalysisApiCfirSourceTestConfigurator(
+        analyseInDependentSession = analyseInDependentSession,
+        additionalServiceRegistrars = listOf(CaAnalysisApiModifiablePsiTestServiceRegistrar),
+    )
+}
+
+/**
  * 通过 analysis-api-cfir 的源码模块配置器承载 low-level CFIR 测试配置。
  */
 private class AnalysisApiCfirSourceTestConfigurator(
     analyseInDependentSession: Boolean,
+    private val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> = emptyList(),
 ) : AnalysisApiTestConfigurator() {
     /**
      * 实际执行项目结构、服务注册和文件准备工作的 Analysis API CFIR 配置器。
@@ -71,7 +83,7 @@ private class AnalysisApiCfirSourceTestConfigurator(
      * 当前配置器需要注册到测试项目中的 Analysis API 服务集合。
      */
     override val serviceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>>
-        get() = delegate.serviceRegistrars
+        get() = delegate.serviceRegistrars + additionalServiceRegistrars
 
     /**
      * 将基础测试配置写入 builder，并让委托配置器负责 disposable 生命周期绑定。

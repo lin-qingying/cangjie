@@ -161,7 +161,6 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
     private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
         val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
         val containingClasses = containingDeclarations.filterIsInstance<CfirClass>()
-        val containingClassLikes = containingDeclarations.filterIsInstance<CfirClassLikeDeclaration>()
 
         var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
         if (containingFile != null) {
@@ -177,9 +176,14 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
         if (containingClasses.isNotEmpty()) {
             configuration = configuration.withContainingClassDeclarations(containingClasses)
         }
-        if (containingClassLikes.isNotEmpty()) {
-            for (containingClassLike in containingClassLikes) {
-                configuration = configuration.withAdditionalTypeParameters(containingClassLike.typeParametersForResolution())
+        // LL 独立解析成员签名时必须重建完整的外围类型参数链；extend 成员同样能引用 extend 自身的类型参数。
+        for (containingDeclaration in containingDeclarations) {
+            configuration = when (containingDeclaration) {
+                is CfirClassLikeDeclaration -> configuration.withAdditionalTypeParameters(
+                    containingDeclaration.typeParametersForResolution(),
+                )
+                is CfirExtend -> configuration.withAdditionalTypeParameters(containingDeclaration.typeParameters)
+                else -> configuration
             }
         }
         return configuration
