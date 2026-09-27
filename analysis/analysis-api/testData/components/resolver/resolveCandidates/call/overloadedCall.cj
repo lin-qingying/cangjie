@@ -1,5 +1,5 @@
 // FILE: overloadedCall.cj
-// TARGET_CALL: Point(1)
+// TARGET_CALL: Point(value: 1)
 package sample.resolver.candidates
 
 class Point {
@@ -17,5 +17,5 @@ func makeOrigin(): Point {
 }
 
 func makePoint(): Point {
-    return Point(1)
+    return Point(value: 1)
 }

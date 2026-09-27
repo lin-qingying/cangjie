@@ -3,9 +3,11 @@ package org.cangnova.cangjie.analysis.api.components
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
+import org.cangnova.cangjie.analysis.api.signatures.CaEnumConstructorSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
@@ -16,7 +18,7 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
  * 这里直接对齐 Kotlin `KaSignatureSubstitutor` 的主路径：
  * 1. `asSignature()` 从公开 symbol 构造未替换签名；
  * 2. `substitute()` 在 symbol 维度统一套用公开 substitutor；
- * 3. function / variable 族保留精确返回类型。
+ * 3. function、variable 与仓颉 enum constructor 族保留精确签名形状。
  */
 interface CaSignatureSubstitutor : CaLifetimeOwner {
     /**
@@ -28,6 +30,9 @@ interface CaSignatureSubstitutor : CaLifetimeOwner {
      * 把 function symbol 转为未替换的签名,保留函数级别的精确返回类型。
      */
     fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S>
+
+    /** 将仓颉枚举构造器符号转为保留 payload 类型的精确签名。 */
+    fun <S : CaEnumConstructorSymbol> S.asSignature(): CaEnumConstructorSignature<S>
 
     /**
      * 把 variable symbol 转为未替换的签名,保留变量级别的精确类型。
@@ -43,6 +48,9 @@ interface CaSignatureSubstitutor : CaLifetimeOwner {
      * 用给定 [substitutor] 替换函数签名中的类型变量。
      */
     fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S>
+
+    /** 用给定 [substitutor] 替换枚举构造器签名中的 payload 与返回类型。 */
+    fun <S : CaEnumConstructorSymbol> S.substitute(substitutor: CaSubstitutor): CaEnumConstructorSignature<S>
 
     /**
      * 用给定 [substitutor] 替换变量签名中的类型变量。
@@ -65,6 +73,16 @@ fun <S : CaCallableSymbol> S.asSignature(): CaCallableSignature<S> {
  */
 context(session: CaSession)
 fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S> {
+    return with(session) {
+        asSignature()
+    }
+}
+
+/**
+ * 顶层桥接:在当前 [CaSession] 上下文中把枚举构造器符号转为精确签名。
+ */
+context(session: CaSession)
+fun <S : CaEnumConstructorSymbol> S.asSignature(): CaEnumConstructorSignature<S> {
     return with(session) {
         asSignature()
     }
@@ -95,6 +113,16 @@ fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableS
  */
 context(session: CaSession)
 fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S> {
+    return with(session) {
+        substitute(substitutor)
+    }
+}
+
+/**
+ * 顶层桥接:在当前 [CaSession] 上下文中替换枚举构造器签名。
+ */
+context(session: CaSession)
+fun <S : CaEnumConstructorSymbol> S.substitute(substitutor: CaSubstitutor): CaEnumConstructorSignature<S> {
     return with(session) {
         substitute(substitutor)
     }

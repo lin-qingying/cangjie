@@ -1,19 +1,14 @@
 // FILE: ambiguityByConversion.cj
-// TARGET_CALL: Printer().render()
+// TARGET_CALL: choose(fail(error))
 package sample.resolver.candidates
 
-class Printer {
-    public func render(): String {
-        return "member"
-    }
+func fail(error: Error): Nothing {
+    throw error
 }
 
-extend Printer {
-    public func render(): String {
-        return "extend"
-    }
-}
+func choose(value: Int64): Unit {}
+func choose(value: String): Unit {}
 
-func usePrinter(): String {
-    return Printer().render()
+func callWithBottomType(error: Error): Unit {
+    choose(fail(error))
 }
