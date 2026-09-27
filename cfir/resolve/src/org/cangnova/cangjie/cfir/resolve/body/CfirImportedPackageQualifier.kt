@@ -92,9 +92,7 @@ internal fun CfirExpression.importedPackageQualifierOrNull(
     return file.resolveImportedPackageQualifier(name, session)
 }
 
-/**
- * 为表达式命中的导入包限定符创建包成员作用域。
- */
+/** 为导入包名或别名创建静态 package member scope。 */
 internal fun CfirExpression.importedPackageQualifierScopeOrNull(
     file: CfirFile,
     session: CfirSession,

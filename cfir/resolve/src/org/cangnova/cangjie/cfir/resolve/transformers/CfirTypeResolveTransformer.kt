@@ -412,7 +412,7 @@ class CfirTypeResolveTransformer(
             .withAdditionalTypeParameters(constructor.typeParameters)
         constructor.transformTypeParameters(this, configuration)
         if (constructor.returnTypeRef is CfirImplicitTypeRef) {
-            val ownerClass = data.topContainer as? CfirClassLikeDeclaration
+            val ownerClass = constructorOwnerForTypeResolution(constructor, data)
             val ownerType = ownerClass?.let(::buildConstructedTypeForConstructorOwner)
                 ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve constructor owner type"))
             constructor.replaceReturnTypeRef(
@@ -425,6 +425,30 @@ class CfirTypeResolveTransformer(
         constructor.transformAnnotations(this, configuration)
         bumpPhase(constructor)
         return constructor
+    }
+
+    /**
+     * 恢复构造器的真实 owner。
+     *
+     * 整文件 TYPES 遍历从 topContainer 取得 owner；Analysis/LL 按构造器符号单独懒解析时，
+     * topContainer 不再是所属类，必须按 constructor 的 callable ClassId 查回同一声明。
+     */
+    private fun constructorOwnerForTypeResolution(
+        constructor: CfirConstructor,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirClassLikeDeclaration? {
+        val ownerClassId = constructor.symbol.callableId.classId
+        val topContainer = data.topContainer as? CfirClassLikeDeclaration
+        val topContainerClassId = (topContainer?.symbol as? CfirClassLikeSymbol<*>)?.classId
+        if (topContainer != null && (ownerClassId == null || ownerClassId == topContainerClassId)) {
+            return topContainer
+        }
+
+        if (ownerClassId != null) {
+            return session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir
+        }
+
+        return data.containingClassDeclarations.lastOrNull()
     }
 
     /**

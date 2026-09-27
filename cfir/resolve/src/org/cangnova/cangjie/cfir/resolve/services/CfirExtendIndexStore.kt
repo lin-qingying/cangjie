@@ -76,6 +76,9 @@ class CfirExtendIndexStore(
     private var modelsByOrigin: Map<CfirExtendSemanticOrigin, List<CfirExtendSemanticModel>> = emptyMap()
     /** extend 声明节点到其语义模型的索引。 */
     private var modelByDeclaration: Map<CfirExtend, CfirExtendSemanticModel> = emptyMap()
+    /** extend 声明到其结构性源码文件的索引，在类型与继承语义完成前即可使用。 */
+    @Volatile
+    private var sourceFileByDeclaration: Map<CfirExtend, CfirFile> = emptyMap()
     /** extend 成员符号到 owner extend 声明的索引。 */
     private var containingExtendByCallableSymbol: Map<CfirCallableSymbol<*>, CfirExtend> = emptyMap()
     /** 最近一次重建索引使用的类型解析器，查询接口成员的最终签名时继续复用。 */
@@ -84,12 +87,42 @@ class CfirExtendIndexStore(
     private var interfaceClosureByClassId: Map<ClassId, Set<ClassId>> = emptyMap()
 
     /**
+     * 在 extend 头部类型懒解析前记录声明所属文件。
+     *
+     * 该索引只保存 CFIR 文件已确定的 owner 与 package，不依赖尚未完成的目标类型、supertype 或接口闭包。
+     */
+    @Synchronized
+    fun recordDeclarationSources(files: List<CfirFile>) {
+        sourceFileByDeclaration = buildMap {
+            for (file in files) {
+                for (declaration in file.declarations) {
+                    if (declaration is CfirExtend) put(declaration, file)
+                }
+            }
+        }
+    }
+
+    /** 返回 extend 声明对应的源码文件。 */
+    fun containingFileOf(declaration: Any): CfirFile? {
+        val extend = declaration as? CfirExtend ?: return modelForDeclaration(declaration)?.containingFile
+        return sourceFileByDeclaration[extend] ?: modelByDeclaration[extend]?.containingFile
+    }
+
+    /** 返回 extend 声明的 package；类型解析期间也可由结构性文件 owner 得到。 */
+    fun packageFqNameOf(declaration: Any): FqName? {
+        val extend = declaration as? CfirExtend ?: return modelForDeclaration(declaration)?.packageFqName
+        return sourceFileByDeclaration[extend]?.packageDirective?.packageFqName
+            ?: modelByDeclaration[extend]?.packageFqName
+    }
+
+    /**
      * 基于当前文件集合重建所有 extend 语义索引。
      *
      * 该方法是同步入口，保证模型列表与各类派生索引在同一批文件快照下更新。
      */
     @Synchronized
     fun rebuild(files: List<CfirFile>, resolver: CfirTypeResolver) {
+        recordDeclarationSources(files)
         typeResolver = resolver
         val collected = buildList {
             for (file in files) {

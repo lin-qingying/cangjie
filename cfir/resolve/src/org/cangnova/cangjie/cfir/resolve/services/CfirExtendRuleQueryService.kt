@@ -9,11 +9,19 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInheritedInterfaceSemantic
 import org.cangnova.cangjie.cfir.session.services.CfirExtendInterfaceOccurrence
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerDisposition
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerDecision
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictWitness
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictChain
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerConflictRelation
+import org.cangnova.cangjie.cfir.session.services.CfirExtendMemberPeerSequenceConflict
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetKey
 import org.cangnova.cangjie.cfir.session.services.CfirExtendTargetInterfaceView
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -22,6 +30,7 @@ import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 基于 [CfirExtendIndexStore] 的 extend 规则查询服务实现。
@@ -102,7 +111,7 @@ class CfirExtendRuleQueryServiceImpl(
      * 返回声明所在包名。
      */
     override fun packageFqNameOf(declaration: Any): FqName =
-        requireNotNull(indexStore.modelForDeclaration(declaration)?.packageFqName) {
+        requireNotNull(indexStore.packageFqNameOf(declaration)) {
             "Extend declaration package is not indexed: $declaration"
         }
 
@@ -177,10 +186,153 @@ class CfirExtendRuleQueryServiceImpl(
         indexStore.doesExtendInheritFrom(childDeclaration, parentDeclaration)
 
     /**
-     * 判断声明是否存在无法判定的 extend 检查序列。
+     * 对齐官方 `DeterminingSkipExtendByInheritanceRelationship` 的逐 owner/peer 接口比较。
+     *
+     * ClassId 闭包只能回答是否存在某种继承关系，无法保留同一直接接口重复出现、多个接口分别
+     * 指向父/子方向，以及泛型接口的不同实例。本查询直接消费类型感知父图中的接口实例边。
+     */
+    override fun extendMemberPeerDecision(
+        ownerDeclaration: Any,
+        peerDeclaration: Any,
+    ): CfirExtendMemberPeerDecision {
+        val owner = ownerDeclaration as? CfirExtend
+            ?: error("Extend member owner relation requires a CfirExtend owner: $ownerDeclaration")
+        val peer = peerDeclaration as? CfirExtend
+            ?: error("Extend member owner relation requires a CfirExtend peer: $peerDeclaration")
+        if (owner === peer) return CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.INCLUDE)
+        val ownerTargetKey = indexStore.targetKeyOf(owner)
+            ?: return CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.INCLUDE)
+        val peerTargetKey = indexStore.targetKeyOf(peer)
+            ?: return CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.EXCLUDE)
+        if (ownerTargetKey != peerTargetKey) {
+            return CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.EXCLUDE)
+        }
+
+        val ownerTargetType = owner.extendedTypeRef.coneTypeOrNull
+            ?.fullyExpandedType(session)
+            ?: return CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.INCLUDE)
+        val descriptors = checkNotNull(session.typeAwareSupertypeProviderOrNull) {
+            "Extend member owner ordering requires the type-aware supertype provider"
+        }.getDirectSupertypeDescriptors(ownerTargetType)
+        val ownerInterfaces = descriptors.directInterfaceTypesFrom(owner)
+        val peerInterfaces = descriptors.directInterfaceTypesFrom(peer)
+        val typeNormalizer = CfirExtendTypeSemanticNormalizer(owner, session, session.typeResolver)
+
+        fun interfaceSemantic(type: ConeCangJieType): CfirExtendInheritedInterfaceSemantic =
+            CfirExtendInheritedInterfaceSemantic(
+                classId = type.classIdOrPrimitiveClassId,
+                semanticKey = typeNormalizer.semanticKeyOrNull(type),
+            )
+
+        fun undecidableDecision(
+            conflictChains: List<List<Pair<ConeCangJieType, ConeCangJieType>>>,
+        ): CfirExtendMemberPeerDecision = CfirExtendMemberPeerDecision(
+            disposition = CfirExtendMemberPeerDisposition.UNDECIDABLE,
+            conflictWitness = CfirExtendMemberPeerConflictWitness(
+                ownerInterfaces = ownerInterfaces.map(::interfaceSemantic),
+                peerInterfaces = peerInterfaces.map(::interfaceSemantic),
+                conflictChains = conflictChains.map { chain ->
+                    CfirExtendMemberPeerConflictChain(
+                        relations = chain.map { (subInterface, superInterface) ->
+                            CfirExtendMemberPeerConflictRelation(
+                                subInterface = interfaceSemantic(subInterface),
+                                superInterface = interfaceSemantic(superInterface),
+                            )
+                        },
+                    )
+                },
+            ),
+        )
+
+        var previousSkipPeer: Boolean? = null
+        var previousRelation: Pair<ConeCangJieType, ConeCangJieType>? = null
+        for (ownerInterface in ownerInterfaces) {
+            var peerProvidesSubtype = false
+            var peerProvidesSupertype = false
+            var peerSubtypeWitness: ConeCangJieType? = null
+            var peerSupertypeWitness: ConeCangJieType? = null
+            for (peerInterface in peerInterfaces) {
+                if (AbstractTypeChecker.equalTypes(session.typeContext, ownerInterface, peerInterface)) continue
+                if (AbstractTypeChecker.isSubtypeOf(session.typeContext, peerInterface, ownerInterface)) {
+                    peerProvidesSubtype = true
+                    peerSubtypeWitness = peerInterface
+                }
+                if (AbstractTypeChecker.isSubtypeOf(session.typeContext, ownerInterface, peerInterface)) {
+                    peerProvidesSupertype = true
+                    peerSupertypeWitness = peerInterface
+                }
+            }
+
+            if (peerProvidesSubtype && peerProvidesSupertype) {
+                return undecidableDecision(
+                    listOf(
+                        listOf(
+                            checkNotNull(peerSubtypeWitness) to ownerInterface,
+                            ownerInterface to checkNotNull(peerSupertypeWitness),
+                        ),
+                    ),
+                )
+            }
+            if (!peerProvidesSubtype && !peerProvidesSupertype) continue
+
+            val skipPeer = peerProvidesSubtype
+            val currentRelation = if (skipPeer) {
+                checkNotNull(peerSubtypeWitness) to ownerInterface
+            } else {
+                ownerInterface to checkNotNull(peerSupertypeWitness)
+            }
+            if (previousSkipPeer != null && previousSkipPeer != skipPeer) {
+                return undecidableDecision(
+                    listOf(
+                        listOf(checkNotNull(previousRelation)),
+                        listOf(currentRelation),
+                    ),
+                )
+            }
+            previousSkipPeer = skipPeer
+            previousRelation = currentRelation
+        }
+
+        return if (previousSkipPeer == true) {
+            CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.EXCLUDE)
+        } else {
+            CfirExtendMemberPeerDecision(CfirExtendMemberPeerDisposition.INCLUDE)
+        }
+    }
+
+    private fun List<CfirInstantiatedSupertypeDescriptor>.directInterfaceTypesFrom(
+        extend: CfirExtend,
+    ): List<ConeCangJieType> = mapNotNull { descriptor ->
+        val origin = descriptor.origin as? CfirInstantiatedSupertypeOrigin.Extend ?: return@mapNotNull null
+        if (origin.sourceExtend !== extend || origin.propagationPath.isNotEmpty()) return@mapNotNull null
+        val interfaceType = descriptor.type.fullyExpandedType(session)
+        val classId = interfaceType.classIdOrPrimitiveClassId ?: return@mapNotNull null
+        val declaration = session.typeResolver.resolveClass(classId)
+        interfaceType.takeIf { declaration is CfirInterface }
+    }
+
+    /**
+     * 通过同一 pairwise 实例接口判据查找不可决定的 owner/peer 顺序；该关系同时驱动
+     * `EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE` 报告与实例化成员 peer 的纳入决策。
      */
     override fun hasUndecidableExtendCheckSequence(declaration: Any): Boolean =
-        indexStore.hasUndecidableExtendCheckSequence(declaration)
+        undecidableExtendCheckSequenceConflicts(declaration).isNotEmpty()
+
+    override fun undecidableExtendCheckSequenceConflicts(
+        declaration: Any,
+    ): List<CfirExtendMemberPeerSequenceConflict> {
+        val owner = declaration as? CfirExtend ?: return emptyList()
+        val targetKey = indexStore.targetKeyOf(owner) ?: return emptyList()
+        val ownerPackage = session.extendProvider.getPackageFqName(owner)
+        return indexStore.modelsForTarget(targetKey).mapNotNull { model ->
+            val peer = model.declaration
+            if (peer === owner) return@mapNotNull null
+            if (ownerPackage == null || session.extendProvider.getPackageFqName(peer) != ownerPackage) return@mapNotNull null
+            extendMemberPeerDecision(owner, peer).conflictWitness?.let { witness ->
+                CfirExtendMemberPeerSequenceConflict(peer, witness)
+            }
+        }
+    }
 
     /**
      * 返回声明继承 interface 的语义 key。

@@ -53,6 +53,22 @@ class CfirImportResolveTransformer(
     /** IMPORTS 阶段使用的诊断报告器。 */
     private val diagnosticReporter: CfirDiagnosticReporter,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.IMPORTS) {
+    /**
+     * 为已达到 IMPORTS phase 的 [file] 在当前 session 中补录 bindings。
+     *
+     * dangling designation 可能携带 foreign-session 文件路径。该入口只解析并记录当前 session 的文件级
+     * import 事实，不把 foreign-session 文件交给树 transformer 遍历或推进 phase。
+     */
+    fun recordImportBindingsForFile(file: CfirFile) {
+        require(file.resolvePhase >= CfirResolvePhase.IMPORTS) {
+            "Cannot record import bindings before the file reaches IMPORTS phase"
+        }
+        recordImportBindingsIfNeeded(file)
+        checkNotNull(session.importBindingStore.getBindings(file)) {
+            "Current session failed to record import bindings for ${file.sourceFile?.path ?: file.name}"
+        }
+    }
+
     /** 对非声明元素继续递归转换；声明元素转交 [transformDeclaration] 控制阶段推进。 */
     override fun <E : CfirElement> transformElement(element: E, data: Nothing?): E {
         if (element is CfirDeclaration) {
@@ -88,24 +104,26 @@ class CfirImportResolveTransformer(
      */
     private fun recordImportBindingsIfNeeded(file: CfirFile) {
         val store = session.importBindingStore
-        val bindingResolver = CfirImportBindingResolver(session)
-        recordDefaultImportBindingsIfNeeded(store, bindingResolver)
-        if (store.getBindings(file) != null) return
+        synchronized(store) {
+            val bindingResolver = CfirImportBindingResolver(session)
+            recordDefaultImportBindingsIfNeeded(store, bindingResolver)
+            if (store.getBindings(file) != null) return
 
-        val conflictReporter = CfirImportConflictReporter(diagnosticReporter)
-        val resolvedImports = file.imports.map { importDirective ->
-            bindingResolver.resolveImportBinding(importDirective, CfirLookupOrigin.EXPLICIT_IMPORT)
-        }
-        conflictReporter.reportUnresolvedTargets(resolvedImports)
-        conflictReporter.reportConflicts(resolvedImports)
-        store.record(file, resolvedImports)
-        val filePath = file.sourceFile?.path ?: return
-        session.importTracker?.let { tracker ->
-            for (resolvedImport in resolvedImports) {
-                tracker.reportImportDirectives(
-                    filePath,
-                    resolvedImport.importDirective.importedFqName?.asString(),
-                )
+            val conflictReporter = CfirImportConflictReporter(diagnosticReporter)
+            val resolvedImports = file.imports.map { importDirective ->
+                bindingResolver.resolveImportBinding(importDirective, CfirLookupOrigin.EXPLICIT_IMPORT)
+            }
+            conflictReporter.reportUnresolvedTargets(resolvedImports)
+            conflictReporter.reportConflicts(resolvedImports)
+            store.record(file, resolvedImports)
+            val filePath = file.sourceFile?.path ?: return
+            session.importTracker?.let { tracker ->
+                for (resolvedImport in resolvedImports) {
+                    tracker.reportImportDirectives(
+                        filePath,
+                        resolvedImport.importDirective.importedFqName?.asString(),
+                    )
+                }
             }
         }
     }

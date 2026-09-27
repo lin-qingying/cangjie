@@ -2222,6 +2222,7 @@ class CfirPCLAInferenceSession(
                 ConstraintKind.LOWER -> AbstractTypeChecker.isSubtypeOf(typeContext, constraintType, solution)
                 ConstraintKind.EQUALITY -> AbstractTypeChecker.equalTypes(typeContext, solution, constraintType)
                 else -> true
+
             }
             if (!compatible) return null
         }

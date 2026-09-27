@@ -1,23 +1,3 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 package org.cangnova.cangjie.cfir.resolve.cjmp
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -26,6 +6,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
@@ -34,208 +16,135 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.CjmpMismatchKind
-import org.cangnova.cangjie.cfir.session.CjmpParameterMismatch
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
 
-/** 匹配结论。 */
-sealed class CjmpMatchResult {
-    /** 匹配成功（可绑定）。 */
-    data object Matched : CjmpMatchResult()
-
-    /** 声明级失配（无参数锚点）。 */
-    data class Mismatched(val kind: CjmpMismatchKind) : CjmpMatchResult()
-
-    /** 参数级失配（官方在该参数上报告诊断后返回 false）。 */
-    data class ParameterMismatched(val mismatch: CjmpParameterMismatch) : CjmpMatchResult()
-}
-
-/**
- * CJMP 匹配（逐条对位 cjc 1.1.3 `src/Sema/CJMP/CheckCJMP.cpp`，计划风险 3：以 1.1.3 实测与源码为准）。
- *
- * - class-like：`MatchNominativeDecl`——仅种类（class/struct/interface/enum）相等即配对；种类不同
- *   不绑定（[CjmpMismatchKind.CLASS_KIND]，检查器报 `SPECIFIC_HAS_DIFFERENT_KIND`）；
- * - 函数/构造器：`MatchCJMPFunction`——
- *   1. 泛型参数个数相等（`IsCJMPDeclMatchable`）；
- *   2. 函数类型 specific ≤ common（`IsFuncDeclSubType`：参数类型**逐个相同**，返回类型**协变**），
- *      不满足即静默失败（只报 NOT_MATCHED）；
- *   3. 逐参数：命名性/命名参数名不同 → 参数级失败（`SPECIFIC_HAS_DIFFERENT_PARAMETER`）；
- *      两侧同时带默认值 → 参数级失败（`CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES`）；
- * - 变量/属性：`MatchCJMPVar` / `MatchCJMPProp`——同名同种类即配对，类型差异由检查器在已配对对上报告。
- *
- * 泛型形参按位置映射（D6：重命名合法）。跨 session 类型同一性按 ClassId 结构判定（风险 9）。
- */
+/** CFIR 层的 CJMP 特有键、类型适配与声明分类；兼容性算法位于 resolution.common。 */
 object CfirCjmpMatcher {
-    /** 判定 [specific] 与 [common] 是否配对。调用方保证名称与容器一致（候选查找）。 */
-    fun match(specific: CfirDeclaration, common: CfirDeclaration, session: CfirSession): CjmpMatchResult {
-        if (specific is CfirClassLikeDeclaration || common is CfirClassLikeDeclaration) {
-            if (specific !is CfirClassLikeDeclaration || common !is CfirClassLikeDeclaration) {
-                return CjmpMatchResult.Mismatched(CjmpMismatchKind.CLASS_KIND)
-            }
-            return if (nominalKind(specific) == nominalKind(common)) {
-                CjmpMatchResult.Matched
-            } else {
-                CjmpMatchResult.Mismatched(CjmpMismatchKind.CLASS_KIND)
-            }
+    /** 官方 MergeCJMPExtensions 键：目标类型、接口集合与按位置映射后的约束均须一致。 */
+    fun haveSameExtendKey(first: CfirExtend, second: CfirExtend): CjmpTypeCompatibility {
+        if (first.typeParameters.size != second.typeParameters.size) return CjmpTypeCompatibility.INCOMPATIBLE
+        val typeParameterMapping = second.typeParameters.zip(first.typeParameters).toMap()
+        val firstTarget = typeOf(first.extendedTypeRef) ?: return CjmpTypeCompatibility.UNRESOLVED
+        val secondTarget = typeOf(second.extendedTypeRef) ?: return CjmpTypeCompatibility.UNRESOLVED
+        val targetCompatibility = typesEquivalent(firstTarget, secondTarget, typeParameterMapping)
+        if (targetCompatibility != CjmpTypeCompatibility.COMPATIBLE) {
+            return targetCompatibility
         }
-        if (specific is org.cangnova.cangjie.cfir.declarations.CfirExtend ||
-            common is org.cangnova.cangjie.cfir.declarations.CfirExtend
-        ) {
-            // extend 由候选键（扩展类型 + 接口集）保证同一性
-            return if (specific is org.cangnova.cangjie.cfir.declarations.CfirExtend &&
-                common is org.cangnova.cangjie.cfir.declarations.CfirExtend
-            ) CjmpMatchResult.Matched else CjmpMatchResult.Mismatched(CjmpMismatchKind.CLASS_KIND)
+
+        val firstInterfaces = first.superTypeRefs.map { typeOf(it) ?: return CjmpTypeCompatibility.UNRESOLVED }
+        val secondInterfaces = second.superTypeRefs.map { typeOf(it) ?: return CjmpTypeCompatibility.UNRESOLVED }
+        val interfacesCompatibility = sameTypeSet(firstInterfaces, secondInterfaces, typeParameterMapping)
+        if (interfacesCompatibility != CjmpTypeCompatibility.COMPATIBLE) return interfacesCompatibility
+
+        for (index in first.typeParameters.indices) {
+            val firstBounds = first.typeParameters[index].bounds.map { typeOf(it) ?: return CjmpTypeCompatibility.UNRESOLVED }
+            val secondBounds = second.typeParameters[index].bounds.map { typeOf(it) ?: return CjmpTypeCompatibility.UNRESOLVED }
+            val boundsCompatibility = sameTypeSet(firstBounds, secondBounds, typeParameterMapping)
+            if (boundsCompatibility != CjmpTypeCompatibility.COMPATIBLE) return boundsCompatibility
         }
-        if (callableKind(specific) != callableKind(common)) {
-            return CjmpMatchResult.Mismatched(CjmpMismatchKind.CALLABLE_KIND)
-        }
-        if (specific is CfirFunction && common is CfirFunction) {
-            return matchFunctions(specific, common, session)
-        }
-        return CjmpMatchResult.Matched
+        return CjmpTypeCompatibility.COMPATIBLE
     }
 
-    /** 官方 `MatchEnumFuncTypes`：带参 enum 构造器参数类型逐个相同（无参构造器按名即配对）。 */
+    /** 带参 enum 构造器按位置比较参数类型，common 外层泛型先替换到 specific 空间。 */
     fun matchEnumConstructors(
-        specific: org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor,
-        common: org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor,
-    ): Boolean {
-        if (specific.valueParameters.size != common.valueParameters.size) return false
-        return specific.valueParameters.indices.all { i ->
-            identical(
-                specific.valueParameters[i].returnTypeRef.coneTypeOrNull(),
-                common.valueParameters[i].returnTypeRef.coneTypeOrNull(),
-                emptyMap(),
-            )
-        }
-    }
-
-    /** 官方 `MatchCJMPFunction` 对位。 */
-    private fun matchFunctions(specific: CfirFunction, common: CfirFunction, session: CfirSession): CjmpMatchResult {
-        if (specific.typeParameters.size != common.typeParameters.size) {
-            return CjmpMatchResult.Mismatched(CjmpMismatchKind.FUNCTION_TYPE_PARAMETER_COUNT)
-        }
-        val specificParameters = specific.valueParameters
-        val commonParameters = common.valueParameters
-        if (specificParameters.size != commonParameters.size) {
-            return CjmpMatchResult.Mismatched(CjmpMismatchKind.PARAMETER_COUNT)
-        }
-
-        // 泛型形参按位置映射（common 的 T → specific 的 T'）
-        val typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter> =
-            common.typeParameters.zip(specific.typeParameters).toMap()
-
-        // IsFuncDeclSubType：参数类型逐个相同
-        for (i in specificParameters.indices) {
-            if (!identical(
-                    specificParameters[i].returnTypeRef.coneTypeOrNull(),
-                    commonParameters[i].returnTypeRef.coneTypeOrNull(),
-                    typeParameterMapping,
-                )
-            ) {
-                return CjmpMatchResult.Mismatched(CjmpMismatchKind.PARAMETER_TYPES)
-            }
-        }
-        // IsFuncDeclSubType：返回类型协变（构造器无返回类型比较面）
-        if (specific !is CfirConstructor && !returnTypeCompatible(specific, common, typeParameterMapping, session)) {
-            return CjmpMatchResult.Mismatched(CjmpMismatchKind.FUNCTION_TYPE)
-        }
-
-        for (i in specificParameters.indices) {
-            val specificParameter = specificParameters[i]
-            val commonParameter = commonParameters[i]
-            if (specificParameter.isNamed != commonParameter.isNamed ||
-                (specificParameter.isNamed && specificParameter.name != commonParameter.name)
-            ) {
-                return CjmpMatchResult.ParameterMismatched(
-                    CjmpParameterMismatch(CjmpMismatchKind.PARAMETER_NAMES, i),
-                )
-            }
-            if (specificParameter.defaultValue != null && commonParameter.defaultValue != null) {
-                return CjmpMatchResult.ParameterMismatched(
-                    CjmpParameterMismatch(CjmpMismatchKind.PARAMETER_DEFAULT_VALUE_BOTH_SIDES, i),
-                )
-            }
-        }
-        return CjmpMatchResult.Matched
-    }
-
-    /**
-     * 返回类型 specific ≤ common（官方 `IsSubtype(retTy1, retTy2)`）。
-     *
-     * 类型不可得（未解析/隐式）时不在此否决；泛型形参按位置映射后按身份比较。
-     */
-    private fun returnTypeCompatible(
-        specific: CfirFunction,
-        common: CfirFunction,
+        specific: CfirEnumConstructor,
+        common: CfirEnumConstructor,
         typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
-        session: CfirSession,
-    ): Boolean {
-        val specificType = specific.returnTypeRef.coneTypeOrNull() ?: return true
-        val commonType = common.returnTypeRef.coneTypeOrNull() ?: return true
-        if (specificType is ConeErrorType || commonType is ConeErrorType) return true
-        if (identical(specificType, commonType, typeParameterMapping)) return true
-        return runCatching {
-            AbstractTypeChecker.isSubtypeOf(session.typeContext, specificType, commonType)
-        }.getOrDefault(false)
+    ): CjmpTypeCompatibility {
+        if (specific.valueParameters.size != common.valueParameters.size) return CjmpTypeCompatibility.INCOMPATIBLE
+        for (index in specific.valueParameters.indices) {
+            val compatibility = typesEquivalent(
+                typeOf(specific.valueParameters[index].returnTypeRef),
+                typeOf(common.valueParameters[index].returnTypeRef),
+                typeParameterMapping,
+            )
+            if (compatibility != CjmpTypeCompatibility.COMPATIBLE) return compatibility
+        }
+        return CjmpTypeCompatibility.COMPATIBLE
     }
 
-    /**
-     * 类型相同（官方 `IsTyEqual` 对位；跨 session 按 ClassId 结构比较，风险 9）。
-     *
-     * - 两侧都是类型参数：common 形参按位置映射到 specific 形参；
-     * - 两侧都是 class-like：ClassId 相等 + 实参递归；
-     * - 两侧都是原生类型：kind 相等；
-     * - 其余形态退化为 Cone 结构相等；类型不可得时不否决。
-     */
-    private fun identical(
+    fun substituteCommonType(
+        commonType: ConeCangJieType,
+        typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
+    ): ConeCangJieType =
+        CfirTypeSubstitutorByMap.fromTypeParameterMapping(typeParameterMapping).substituteOrSelf(commonType)
+
+    /** 类型引用只在解析阶段已产出 resolved type 时提供给共享 matcher。 */
+    fun typeOf(typeRef: CfirTypeRef?): ConeCangJieType? = (typeRef as? CfirResolvedTypeRef)?.coneType
+
+    internal fun typesEquivalent(
         specificType: ConeCangJieType?,
         commonType: ConeCangJieType?,
         typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
-    ): Boolean {
-        if (specificType == null || commonType == null) return true
+    ): CjmpTypeCompatibility {
+        if (specificType == null || commonType == null) return CjmpTypeCompatibility.UNRESOLVED
+        if (specificType is ConeErrorType || commonType is ConeErrorType) return CjmpTypeCompatibility.UNRESOLVED
 
-        if (specificType is ConeTypeParameterType && commonType is ConeTypeParameterType) {
-            val specificTag = specificType.lookupTag as? ConeTypeParameterLookupTag ?: return false
-            val commonTag = commonType.lookupTag as? ConeTypeParameterLookupTag ?: return false
-            val mappedSpecificSymbol = typeParameterMapping.entries
+        if (specificType is ConeTypeParameterType || commonType is ConeTypeParameterType) {
+            if (specificType !is ConeTypeParameterType || commonType !is ConeTypeParameterType) {
+                return CjmpTypeCompatibility.INCOMPATIBLE
+            }
+            val specificTag = specificType.lookupTag as? ConeTypeParameterLookupTag
+                ?: return CjmpTypeCompatibility.INCOMPATIBLE
+            val commonTag = commonType.lookupTag as? ConeTypeParameterLookupTag
+                ?: return CjmpTypeCompatibility.INCOMPATIBLE
+            val mappedSpecific = typeParameterMapping.entries
                 .firstOrNull { it.key.symbol == commonTag.typeParameterSymbol }
                 ?.value?.symbol
-            return mappedSpecificSymbol == specificTag.typeParameterSymbol ||
-                    specificTag.typeParameterSymbol == commonTag.typeParameterSymbol
-        }
-
-        if (specificType is ConeClassLikeType && commonType is ConeClassLikeType) {
-            if (specificType.classId != commonType.classId) return false
-            val specificArguments = specificType.typeArguments
-            val commonArguments = commonType.typeArguments
-            if (specificArguments.size != commonArguments.size) return false
-            return specificArguments.indices.all { i ->
-                identical(specificArguments[i].type, commonArguments[i].type, typeParameterMapping)
+            return if (mappedSpecific == specificTag.typeParameterSymbol ||
+                specificTag.typeParameterSymbol == commonTag.typeParameterSymbol
+            ) {
+                CjmpTypeCompatibility.COMPATIBLE
+            } else {
+                CjmpTypeCompatibility.INCOMPATIBLE
             }
         }
 
-        if (specificType is ConePrimitiveType && commonType is ConePrimitiveType) {
-            return specificType.kind == commonType.kind
+        if (specificType is ConeClassLikeType || commonType is ConeClassLikeType) {
+            if (specificType !is ConeClassLikeType || commonType !is ConeClassLikeType) {
+                return CjmpTypeCompatibility.INCOMPATIBLE
+            }
+            if (specificType.classId != commonType.classId) return CjmpTypeCompatibility.INCOMPATIBLE
+            val specificArguments = specificType.typeArguments
+            val commonArguments = commonType.typeArguments
+            if (specificArguments.size != commonArguments.size) return CjmpTypeCompatibility.INCOMPATIBLE
+            var unresolved = false
+            for (index in specificArguments.indices) {
+                when (typesEquivalent(specificArguments[index].type, commonArguments[index].type, typeParameterMapping)) {
+                    CjmpTypeCompatibility.COMPATIBLE -> Unit
+                    CjmpTypeCompatibility.INCOMPATIBLE -> return CjmpTypeCompatibility.INCOMPATIBLE
+                    CjmpTypeCompatibility.UNRESOLVED -> unresolved = true
+                }
+            }
+            return if (unresolved) CjmpTypeCompatibility.UNRESOLVED else CjmpTypeCompatibility.COMPATIBLE
         }
 
-        return specificType == commonType
+        if (specificType is ConePrimitiveType || commonType is ConePrimitiveType) {
+            return if (specificType is ConePrimitiveType && commonType is ConePrimitiveType &&
+                specificType.kind == commonType.kind
+            ) {
+                CjmpTypeCompatibility.COMPATIBLE
+            } else {
+                CjmpTypeCompatibility.INCOMPATIBLE
+            }
+        }
+
+        return if (specificType == commonType) CjmpTypeCompatibility.COMPATIBLE
+        else CjmpTypeCompatibility.INCOMPATIBLE
     }
 
-    /** 官方 `ASTKind` 的 nominal 种类面（class/struct/interface/enum）。 */
-    fun nominalKind(declaration: CfirClassLikeDeclaration): String = when (declaration) {
+    internal fun nominalKind(declaration: CfirClassLikeDeclaration): String = when (declaration) {
         is CfirClass -> "class"
         is CfirStruct -> "struct"
         is CfirInterface -> "interface"
@@ -243,10 +152,7 @@ object CfirCjmpMatcher {
         else -> "class"
     }
 
-    /**
-     * 可调用者种类（官方 `ASTKind`：FUNC_DECL（含构造器，构造器只与构造器同名）/ PROP_DECL / VAR_DECL）。
-     */
-    private fun callableKind(declaration: CfirDeclaration): String = when (declaration) {
+    internal fun callableKind(declaration: CfirDeclaration): String = when (declaration) {
         is CfirConstructor -> "constructor"
         is CfirNamedFunction -> "function"
         is CfirProperty -> "property"
@@ -255,15 +161,40 @@ object CfirCjmpMatcher {
         else -> "other"
     }
 
-    /**
-     * 安全读取 cone 类型：未解析/隐式引用返回 null（匹配阶段不因类型未就绪崩溃；调用方按"不否决"处理）。
-     */
-    private fun CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
-        if (this is CfirResolvedTypeRef) return coneType
-        return runCatching { coneType }.getOrNull()
+    internal fun typeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> = when (declaration) {
+        is CfirClassLikeDeclaration -> declaration.typeParameters.map { it.symbol.cfir as CfirTypeParameter }
+        is CfirExtend -> declaration.typeParameters
+        is CfirFunction -> declaration.typeParameters
+        else -> emptyList()
     }
 
-    /** 声明是否为 specific 侧（供运行核心判断成员是否参与配对）。 */
+    private fun sameTypeSet(
+        first: List<ConeCangJieType>,
+        second: List<ConeCangJieType>,
+        typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
+    ): CjmpTypeCompatibility {
+        if (first.size != second.size) return CjmpTypeCompatibility.INCOMPATIBLE
+        val unmatched = second.toMutableList()
+        for (type in first) {
+            var unresolved = false
+            val index = unmatched.indexOfFirst { candidate ->
+                when (typesEquivalent(type, candidate, typeParameterMapping)) {
+                    CjmpTypeCompatibility.COMPATIBLE -> true
+                    CjmpTypeCompatibility.INCOMPATIBLE -> false
+                    CjmpTypeCompatibility.UNRESOLVED -> {
+                        unresolved = true
+                        false
+                    }
+                }
+            }
+            if (index < 0) {
+                return if (unresolved) CjmpTypeCompatibility.UNRESOLVED else CjmpTypeCompatibility.INCOMPATIBLE
+            }
+            unmatched.removeAt(index)
+        }
+        return CjmpTypeCompatibility.COMPATIBLE
+    }
+
     fun isSpecific(declaration: CfirDeclaration): Boolean =
         (declaration as? CfirMemberDeclaration)?.status?.isSpecific == true
 }

@@ -37,7 +37,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirInstantiatedSupertypeOrig
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
-import org.cangnova.cangjie.cfir.resolve.providers.getDeclarationPackage
 import org.cangnova.cangjie.cfir.resolve.providers.isExtendSuperTypeRefPredicateVisible
 import org.cangnova.cangjie.cfir.resolve.providers.ordinarySupertypeTypeOrNull
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -344,7 +343,7 @@ class CfirTypeAwareSupertypeProviderImpl(
                 type = substitutor.substituteOrSelf(coneType),
                 origin = CfirInstantiatedSupertypeOrigin.Extend(
                     sourceExtend = extend,
-                    declarationPackage = requireNotNull(extend.getDeclarationPackage()) {
+                    declarationPackage = requireNotNull(session.extendProvider.getPackageFqName(extend)) {
                         "Extend declaration package is not indexed: ${extend.symbol}"
                     },
                     sourceTypeRef = superTypeRef,
