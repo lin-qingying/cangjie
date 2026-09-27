@@ -27,7 +27,7 @@
 | G1 | **词法/语法层无 `common`/`specific`** | `CjTokens.java`、`CangJieLexer.flex`、`CangJieParsing.kt:212 ModifierKind` 均无；被容错解析为垃圾 modifier | 官方 `Tokens.inc:170-171` 普通 TOKEN + `ParserModifierRules.cpp` 冲突表；Kotlin `KtTokens.java:336-337` softKeywordModifier |
 | G2 | **raw builder 不装填 isCommon/isSpecific** | `AbstractRawCfirBuilder.kt:247-285 buildDeclarationStatus` 参数表无此二项；psi2cfir/light-tree2cfir 无法置 true；全仓库唯一置位点是测试手工赋值 | Kotlin `PsiRawFirBuilder.kt:794-795`、`ModifierFlag.kt` 位标志 |
 | G3 | **跨模块配对路由结构不通**（致命） | `LLModuleWithDependenciesSymbolProvider.kt:79-87` 先查本模块；checker 的 `symbolProvider.getClassLikeSymbolByClassId` 永远查到自己（isCommon=false 即 return）；`MULTIPLE_COMMON_IMPLEMENTATIONS` 永不触发 | Kotlin `FirExpectActualResolver`：expect 候选只在 `transitiveDependsOn` 模块的包 scope 中找 |
-| G4 | **driver 无分步编译支撑** | `compiler/` 全模块 grep commonPart = 0；无编译模式选项 | 官方 `--common-part-cjo/--common-part-chir`（`Options.inc:593-598`）+ `parse_unexpected_cjmp_decl` 模式门 |
+| G4 | **driver 无分步编译支撑**（2026-09-23 基线缺口；Phase 4/4.4 已落地） | 当时 `compiler/` 全模块 grep commonPart = 0；当前 CLI/pipeline 已有 common-part 输入与 common CHIR 输出模式 | 官方 `--common-part-cjo/--common-part-chir`；1.1.3 模式门按 file-part 诊断，不再使用无触发点的 `parse_unexpected_cjmp_decl` |
 | G5 | **序列化写入侧不发 COMMON 位** | `CfirCjoPackageMetadataProducer.kt:327-342` 无 COMMON/FROM_COMMON_PART/SPECIFIC | 官方 `ASTWriter.cpp:1573-1583,1648-1678` 位图写出 + common cjo 重标注 |
 | G6 | **无配对解析阶段与配对结果存储** | `CfirResolvePhase` 无 EXPECT_ACTUAL_MATCHING（历史 KDoc 引用被 703027568 删除）；checker 现在靠 symbolProvider 现查现配 | Kotlin `FirExpectActualMatcherTransformer` + `FirDeclaration.expectForActual` |
 | G7 | **checker 语义偏差 5 处** | ①返回类型用 `equalTypes`（官方是子型/协变）；②命名参数只查个数不查名字（官方：命名参数名必须相同）；③无泛型约束宽严比较（官方 `CheckGenericTypeBoundsMapped`：child 更宽松）；④无默认值/注解传播动作（官方 `PropagateDefaultArguments`/`PropagateCJMPDeclAnnotations`，且**先匹配后传播**，否则报误导性 `sema_not_matched`——CheckCJMP.cpp:1358-1372）；⑤注解比较用 `Set<AnnotationMatchKey>`（Checker:759-777），官方按**出现次数多重集**一一对应（CheckCJMPAnnotations.cpp:150-196） | 见 §3 裁决点 D8 |
@@ -41,7 +41,7 @@
 | G15 | **类型精化缺失**（三轮发现）：specific 模式中对已配对 common 类型的引用（超类型列表、成员类型、返回类型、extend 目标）必须解析到 specific 声明；官方在合并期做类型替换（`GetInheritedTypesWithSpecificImpl`，CheckCJMP.cpp:1446-1458），Kotlin 对位是 type refinement（k2_kmp.md 专章 + `ExpectActualUtils.kt` actualize）——现方案只有声明查找遮蔽，无类型引用精化 | 官方 `GetInheritedTypesWithSpecificImpl`；Kotlin `compiler/fir/providers/.../types/ExpectActualUtils.kt` | 见 Phase 2.6 |
 | G16 | **LL 分析管线无 CJMP_MATCHING 入口**（三轮发现）：`analysis/low-level-api-cfir` 的 phase target resolver 链需要对应挂点——历史上被删的 `LLCfirExpectActualMatchingTargetResolver` KDoc（703027568）即此物；不补则 LLT 的 LL 路径与 IDE 路径永远看不到配对结果，PSI/raw 双路径验收形同虚设 | Kotlin：`FirResolvePhase.EXPECT_ACTUAL_MATCHING` 被前端与 LL 共同消费 | 见 Phase 2.7 |
 | G17 | **反序列化期加载门诊断无报告通道约定**（四轮发现）：G13 的四层加载门（cjoVersion/包名/features 子集/选项）发生在 session/checker 之前，`DiagnosticReporter` 尚不可用——需要约定加载期诊断的收集与外显通道 | 仓库先例：cjd 家族 collector-list 模式（`CjdAnnotationConversionDiagnostic`/`CjdBinaryMatchDiagnostic`，反序列化产出诊断列表随结果上浮） | 见 Phase 4.3 |
-| G18 | **AA 生成物同步遗漏**（五轮发现）：新增诊断（12 parse + 30 sema 改动 + 加载门）必须再生成 `analysis/analysis-api-cfir` 的诊断转换器三件套（`CaCfirDiagnostics.kt`/`CaCfirDiagnosticsImpl.kt`/`CaCfirDataClassConverters.kt`——首轮盘点已证实三者含 CJMP 诊断），漏生成则 AA 消费端编译失败或诊断静默丢失 | 首轮仓库盘点 grep 命中三文件 | 见 Phase 0/3 任务清单 |
+| G18 | **AA 生成物同步遗漏**（五轮发现）：新增 parse/file-part 诊断、sema 诊断变更与加载门诊断必须再生成 `analysis/analysis-api-cfir` 的诊断转换器三件套（`CaCfirDiagnostics.kt`/`CaCfirDiagnosticsImpl.kt`/`CaCfirDataClassConverters.kt`——首轮盘点已证实三者含 CJMP 诊断），漏生成则 AA 消费端编译失败或诊断静默丢失 | 首轮仓库盘点 grep 命中三文件 | 见 Phase 0/3 任务清单 |
 | G19 | **测试模式注入路径缺失**（五轮发现）：§8.4 矩阵要求 mode=Common/Specific 正例 fixture，但 `CjmpSettingsComponent` 的值来自 CLI 编译模式，LLT 无法传 CLI 选项——没有注入路径则 Common/Specific 正例 fixture **无法落地** | `ModuleStructureExtractorImpl.kt:329-348`（模块指令 → 模块配置的唯一汇聚点）；Kotlin `// MODULE: platform()()(common)` 把模块角色编入指令语法的先例 | 见 Phase 5.1、§8.1 模式合法性矩阵 |
 | G20 | **反序列化声明的诊断锚定**（六轮发现）：`NOT_MATCHED`（common 缺 specific 方向）、`COMMON_PACKAGE_HAS_MAIN` 等 sema 诊断需锚在 common 侧声明上——specific 编译时它是反序列化声明，**可能没有真实 source**。官方锚得住是因为 cjo 内嵌 AST 位置（ASTWriter 序列化 positions）；本仓库 cjo 是否携带位置未验证 | 官方 cjo 带 position（ASTWriter.cpp 反序列化可还原 source）；Kotlin 对位：期望侧诊断在 MPP 平台编译中锚于 common **源**（同一调用内全模块源 FIR 可用），本仓库 e2e 模型 common 是反序列化流——两者前提不同 | 见 Phase 4.4 锚定核实项 |
 | G21 | **checker 实际覆盖面只有 class**（八轮发现，实锤）：`CfirCommonSpecificChecker.check()` 首行 `if (declaration !is CfirClass) return`（`CfirCommonSpecificChecker.kt:47`），而 `CfirStruct/CfirEnum/CfirInterface` 都是 `CfirClassLikeDeclaration` 直接子类、**非 CfirClass 子类**（gen 声明文件 :23）——struct/enum/interface 的 common/specific 整体被跳过；`CfirExtend`（CfirMemberDeclaration）与顶层 func/var/prop 不在 classLikeCheckers 注册组（`CommonDeclarationCheckers.kt:191`）——官方四类 nominal + extend + 顶层 callable 的匹配检查实际只覆盖 1/5。G3（路由不通）此前掩盖了这一点 | gen 层级证据 + 官方 `MatchCJMPDecls`（nominal + 非声明 `CJMPDeclMatchKey` 哈希 + extend 键匹配 + enum 构造器全覆盖） | 见 Phase 3.1 |
@@ -80,21 +80,21 @@
 | D7 | **默认值：只允许一侧**（`CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES` 已有）；common 侧有默认值时对 specific 侧**读穿**（logical read-through）：specific 参数无默认值时，调用解析从配对 common 声明的参数读默认值——**不做物理表达式克隆**（官方 `CloneDefaultArgument` 是单 AST 内克隆，本仓库跨模块/session 克隆 CFIR 表达式树既不可行也无必要，D1 逻辑合并的必然推论）；注解传播（`@Attribute` 全量、`Deprecated` 单向继承 common→specific）同样读穿。**次序硬约束：匹配 → 注解传播 → 默认值传播 → 验证**（官方 CheckCJMP.cpp:1358-1372 注释：先传播后匹配会报误导性 `sema_not_matched`） | 官方 `Parameters.cpp:39-57,201-224` + `MatchSpecificWithCommon` 尾部传播段 |
 | D8 | **common 带默认实现时 specific 可整体省略/覆盖**：`COMMON_WITH_DEFAULT` 语义按官方 parse 期判定（有体/有初始化即置，`SetCJMPAttrs` 对位）；**CFIR 侧不新增 status 位——在 STATUS resolve 阶段从 body/initializer 推导**（派生值，写侧序列化时才落位）；参与 `MustMatchWithPlatform` 等价判定；interface 成员豁免配对；编译 common 侧（非 specific 模式）不报"缺 specific" | 官方 `MustMatchWithPlatform` 六豁免 + `SetCJMPAttrs`（ParseCJMPDecl.cpp:57-65） |
 | D9 | **诊断名对齐官方**：官方 `specific_has_different_kind` 无 `sema_` 前缀、`common_non_exaustive_platfrom_exaustive_mismatch` 官方拼写含 typo——本仓库按既有约定用规范化名（已登记的命名策略），**语义触发条件**逐条照官方；函数返回类型不匹配已裁决复用 `RETURN_TYPE_INCOMPATIBLE`（见 D4，三轮关闭） | 官方 DiagnosticSema.def:282-313 + 仓库 diagnostic 命名策略 |
-| D10 | **门控双层**：版本门（`LanguageFeature.CommonSpecificDeclarations`，已有）继续作为下界；driver 落地 common/specific 编译模式选项后，补齐官方模式门（`parse_unexpected_cjmp_decl` 对位：非 common/specific 编译模式下使用修饰符报错）。官方真门是 cjpm 包布局，登记为后续项不变 | 官方 ParseCJMPDecl.cpp:107-131 + 既有决策记录 |
+| D10 | **门控双层**：版本门（`LanguageFeature.CommonSpecificDeclarations`）继续作为下界；编译模式由 session 组件承载。以 v1.1.3 为准，mode=None 的 common/specific 声明由文件级 `parse_common_in_non_common_file` / `parse_specific_in_non_specific_file` 报告，`parse_unexpected_cjmp_decl` 保留诊断工厂但无触发点 | 官方 v1.1.3 `ParseCJMPDecl.cpp:108-138`、cjc mode-none 探针 |
 | D11 | **Kotlin 语义一律不带入**：无 typealias actualize、无 suspend/inline、无 @OptionalExpectation、无多后端平台轴、actual 不走序列化配对（specific 编译时重新匹配）、无变体发布。HMPP 任意层 DAG 修正（三轮）：dependsOn **链**被官方多 parent 事实支持（D3），但 Kotlin 的中间源集共享语义（default hierarchy template、源集子集共享）不带入——仓颉链上每层都是完整编译单元 | 技能非谈判条款 + 官方 `CheckCJMP.cpp:43` |
-| D12 | **parser 保持配置无关 + `common`/`specific` 为硬关键字**（2026-09-23 二轮纠错：原案误选 Kotlin 式软关键字，违反 D11）。官方证据：`Tokens.inc:170-171` 用普通 `TOKEN` 宏（`Token.h:30`），与 `EXPERIMENTAL_TOKEN` 家族（perform/resume/throwing/handle，`Tokens.inc:11-12,172-175`，唯一有词法级实验开关的家族）明确区分——即官方 1.1 词法**无条件**把 `common`/`specific` 识别为关键字，不随 --experimental 或语言版本回退为标识符。本仓库同款：lexer 无条件产出 `COMMON_KEYWORD`/`SPECIFIC_KEYWORD`（配置无关，自动满足"PSI 树跨版本相同"硬验收）；代价 = 该二词不能再作标识符（`package common` 类用法被击穿，官方 1.1 同价），现有 fixture `cstAccessibleCommonParent.cj` 需改名（官方证据充分，Fixture Edit Gate 条款 1）。版本/模式**只决定报哪种错，不决定怎么解析** | 官方 `Token.h:30`/`Tokens.inc:11-12,170-175`；本仓库 `CangJieParser.kt:147-182` 零配置注入 |
-| D13 | **12 条 parse 族诊断落为 CFIR 诊断，报告点 = 专用 checker**（四轮纠错：原案"raw-builder 报告"自相矛盾——raw-cfir 不依赖 checkers（`CjmpGate` 所在），且 raw 层没有进入 `CfirErrors` 管道的报告通道；Kotlin 的 `ConeSyntaxDiagnostic` 模式在本仓库缺转换基建，不宜为此新建）。落点：`CfirCjmpParseRulesChecker`（declarationCheckers + fileCheckers 双注册），**逐条在 CFIR 声明形状上可判定**：common/specific 函数缺返回类型、specific 参数带默认值、var/let 缺类型且无初始值、成员与外层修饰符不一致、static init 被修饰、泛型非法修饰、common class/struct 无显式构造、explicitly abstract 越界、模式声明非法、模式门（`parse_unexpected_cjmp_decl`）。诊断名保留官方 `parse_*` 前缀；版本门禁在 checker 层经 D16。**两个形状保真风险**：①pattern 声明（tuple/enum/wildcard）的 CFIR 保真度待核（可能被 erasure）；②显式 abstract 与推导 abstract 的区分待核（status.isAbstract 是否保留显式来源）——任一失真则该项降级为 parse 期 `PsiErrorElement`（IDE-only，编译诊断登记降级理由） | `AbstractLightTreeRawCfirBuilder.kt:42-45`（丢弃语法错误的现状证据）；仓库先例：缺口文档已记录 parse_cjmp_* 语义由语义层承接；cjd collector 模式 |
+| D12 | ~~**parser 保持配置无关 + `common`/`specific` 为硬关键字**~~（**十轮 C40 推翻**：二者是官方**上下文关键字**，落为本仓库软关键字修饰符，见 §9.7；"parser 配置无关、版本/模式只决定报哪种错不决定怎么解析"的原则保留）（2026-09-23 二轮纠错：原案误选 Kotlin 式软关键字，违反 D11）。官方证据：`Tokens.inc:170-171` 用普通 `TOKEN` 宏（`Token.h:30`），与 `EXPERIMENTAL_TOKEN` 家族（perform/resume/throwing/handle，`Tokens.inc:11-12,172-175`，唯一有词法级实验开关的家族）明确区分——即官方 1.1 词法**无条件**把 `common`/`specific` 识别为关键字，不随 --experimental 或语言版本回退为标识符。本仓库同款：lexer 无条件产出 `COMMON_KEYWORD`/`SPECIFIC_KEYWORD`（配置无关，自动满足"PSI 树跨版本相同"硬验收）；代价 = 该二词不能再作标识符（`package common` 类用法被击穿，官方 1.1 同价），现有 fixture `cstAccessibleCommonParent.cj` 需改名（官方证据充分，Fixture Edit Gate 条款 1）。版本/模式**只决定报哪种错，不决定怎么解析** | 官方 `Token.h:30`/`Tokens.inc:11-12,170-175`；本仓库 `CangJieParser.kt:147-182` 零配置注入 |
+| D13 | **parse 族诊断落为 CFIR 诊断，报告点 = 专用 checker**（四轮纠错：raw-cfir 没有进入 `CfirErrors` 管道的报告通道）。落点：`CfirCjmpParseRulesChecker`（declarationCheckers + fileCheckers 双注册），按 CFIR 声明形状判定；`parse_unexpected_cjmp_decl` 在 v1.1.3 无触发点，mode/file-part 错位由 `CfirCjmpFilePartChecker` 报 `parse_common_in_non_common_file` / `parse_specific_in_non_specific_file`。版本门禁在 checker 层经 D16。已确认 pattern 和显式 abstract 来源在 CFIR 中保真。 |
 | D14 | **编译模式 = session 组件，非 CheckerContext 字段**：新增 `CjmpSettingsComponent`（模式枚举 None/Common/Specific），完全复刻 `CfirInteropSettingsComponent` 四段式样板（key → CfirAbstractSessionFactory 注册 → session 访问器 → checker 消费）；CLI 侧新增 `-Xcjmp-common-part(-chir)` 对位选项。模式判据对齐官方：Specific ⇔ common-part 输入非空，Common ⇔ CHIR 输出模式。**per-session 语义（五轮明确）**：多模块编译中每个模块 session 持有自己的组件值——源模块模式由 driver options 决定；测试模块由 `// MODULE` 角色语法决定（G19）；IDE 由模块 kind（`TargetPlatform.isCommon()` 等）决定。`parse_unexpected_cjmp_decl` 之外的 file-part 非法组合见 §8.1 矩阵 | `CfirFrontendConfigurationKeys.kt:186-190`、`CfirInteropSettings.kt:34-51`、`CfirGeneralSemanticsChecker.kt:280-283`；官方 Option.h:1195-1203 |
 | D15 | **序列化加载侧补官方 6 层门**（对齐 `PreloadCommonPartOfPackage` 门序列）：cjo 格式版本门（缺版本即拒，防官方 v1.0.0 "写了不校验"的洞）、包名一致门、**features 子集门 `common ⊆ specific`**（官方 `feature_is_not_subset_of_child_set`）、编译选项匹配门；**属性位装填保持无版本判断**（官方同款：兼容性由 cjo 格式版本承担，不逐位门禁）；同时修 `:769-772` 重复赋值 | 官方 `ASTLoaderCJMP.cpp`、`ASTLoader.cpp:57-121`（`VersionAtLeast` 分支原语） |
-| D16 | **门禁判定单一权威 + 一行式辅助**：不加诊断工厂级/Reporter 级中心过滤（Kotlin 明确无此层，接口注释钦定"加 LanguageFeature 枚举 + 调 supportsFeature"）；提供 `requireCjmpFeatureSupport` 式辅助（对位 Kotlin `FirHelpers.kt:1010 requireFeatureSupport`），把"版本门 → 模式门 →（未来）包布局门"的判定顺序收敛到一个入口，30+12 条诊断全部经它 | Kotlin `LanguageVersionSettings.kt:752-772` 注释、`FirHelpers.kt:1010-1025` |
+| D16 | **门禁判定单一权威 + 一行式辅助**：不加诊断工厂级/Reporter 级中心过滤（Kotlin 明确无此层）；以 `CjmpGate` 收敛版本门，并由 `CfirCjmpFilePartChecker` 根据编译模式判定 source file-part。版本门先于 file-part 门；无触发点的保留诊断不计入活跃报告面 | Kotlin `LanguageVersionSettings.kt:752-772` 注释、官方 v1.1.3 file-part 判据 |
 
 ## 4. 分阶段实施任务书
 
 每阶段：改动 → 受影响模块构建 → 定向测试 → 全量 `:cfir:analysis-tests:test` 回归 → REPAIR_LOG 不适用（本计划非修复流），进度记入阶段验收表。
 
 ### Phase 0 — 词法/语法通路（G1+G11）
-1. `psi`：`CjTokens` 新增 `COMMON_KEYWORD`/`SPECIFIC_KEYWORD`（**硬关键字**，对齐官方 `TOKEN` 宏语义——非 Kotlin 式软关键字，D12 纠错）；`CangJieLexer.flex` 加规则（无条件映射，无上下文回退）；`CangJieParsing.ModifierKind` 加 `COMMON`/`SPECIFIC`；修饰符冲突表对齐官方 `ParserModifierRules.cpp`（COMMON/SPECIFIC 互斥、与 PRIVATE 等冲突，按 class/struct/enum/interface/**extend**/toplevel 各表——九轮 C39 补 extend 表；局部声明（含 `CfirPatternVariable`）一律拒绝）。**parser 不做任何版本/模式判断**（D12）：语法接受性无条件。命名注意：`CangJieParsing.kt:2808 parseCommonDeclaration`/`:2258 parseClassCommonDeclaration` 是无关的"通用声明"分派函数，新增解析逻辑命名用 `parseCjmp*` 前缀避撞。
-2. **parse 族诊断落为 CFIR 诊断**（G8+G11+D13；~~数量矛盾~~九轮 C38 修正：12 + §8.1 矩阵的 2 条 file-part = **14 条**，终数以 1.1.3 cjc 实测为准）：`CfirDiagnosticsList` 新增 `parse_*` 命名空间（12 条官方 `DiagnosticParser.def` 名单 + `parse_common_in_non_common_file` / `parse_specific_in_non_specific_file`）；报告点 = **专用 `CfirCjmpParseRulesChecker`**（declarationCheckers + fileCheckers 双注册，D13 四轮纠错——不是 raw-builder；file-part 两条由 fileCheckers 判定）；`CjmpGate` 版本门在 Phase 0 item 3 落地后于此 checker 首次消费；模式门（`parse_unexpected_cjmp_decl`）留桩（Phase 4 接线）。~~形状保真核实~~（八轮全关闭）：①pattern 声明保真无忧——`CfirPatternVariable` 保留 pattern（`PsiRawCfirBuilder.kt:1371-1401`）；②**显式 abstract 来源区分原生支持**——`CfirDeclarationStatusImpl` 已有 `isAbstractExplicit`（`Modifier.ABSTRACT_EXPLICIT` 位，:124-125，另有 isVisibilityExplicit/isModalityExplicit 同族），`parse_explicitly_abstract_only_for_cjmp_abstract_class` 与 `EXPLICITLY_ABSTRACT_*` 全部可 checker 判定，降级预案作废。
+1. `psi`：`CjTokens` 新增 `COMMON_KEYWORD`/`SPECIFIC_KEYWORD`，lexer 无条件产出 token，PSI 层以 `softKeywordModifier` 实现官方**上下文关键字**：修饰符位置按后续 token 判定，标识符、包路径与 import 位置仍可使用（D12 十轮 C40）；`CangJieParsing.ModifierKind` 加 `COMMON`/`SPECIFIC`；修饰符冲突表对齐官方 `ParserModifierRules.cpp`（COMMON/SPECIFIC 互斥、与 PRIVATE 等冲突，按 class/struct/enum/interface/**extend**/toplevel 各表——九轮 C39 补 extend 表；局部声明（含 `CfirPatternVariable`）一律拒绝）。**parser 不做任何版本/模式判断**（D12）：语法接受性无条件。命名注意：`CangJieParsing.kt:2808 parseCommonDeclaration`/`:2258 parseClassCommonDeclaration` 是无关的"通用声明"分派函数，新增解析逻辑命名用 `parseCjmp*` 前缀避撞。
+2. **parse 族诊断落为 CFIR 诊断**（G8+G11+D13；现有 12 条官方 parse 工厂 + 2 条 file-part 工厂，共 14 条）：`CfirDiagnosticsList` 新增 `parse_*` 命名空间；报告点 = **专用 `CfirCjmpParseRulesChecker`**（declarationCheckers + fileCheckers 双注册，D13 四轮纠错——不是 raw-builder；file-part 两条由 fileCheckers 判定）。1.1.3 下 `parse_unexpected_cjmp_decl` 保留登记但没有触发点；mode=None 时按源文件 part 报 `parse_common_in_non_common_file` / `parse_specific_in_non_specific_file`。~~形状保真核实~~（八轮全关闭）：①pattern 声明保真无忧——`CfirPatternVariable` 保留 pattern（`PsiRawCfirBuilder.kt:1371-1401`）；②**显式 abstract 来源区分原生支持**——`CfirDeclarationStatusImpl` 已有 `isAbstractExplicit`（`Modifier.ABSTRACT_EXPLICIT` 位，:124-125，另有 isVisibilityExplicit/isModalityExplicit 同族），`parse_explicitly_abstract_only_for_cjmp_abstract_class` 与 `EXPLICITLY_ABSTRACT_*` 全部可 checker 判定，降级预案作废。
 3. `cfir/checkers`：新增 D16 的 `CjmpGate` 门禁辅助（版本门单入口），Phase 0 先落版本门判定，模式门留桩（Phase 4 接线）。~~版本门诊断工厂复用核查~~（七轮定案）：interop 路径报的是**专用诊断**（`CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG`，`CfirGeneralSemanticsChecker.kt:288-292`），仓库无通用"feature 不支持"诊断可复用——**新增专用版本门诊断**（建议名 `UNSUPPORTED_COMMON_SPECIFIC_LANGUAGE_VERSION`，对位 Kotlin `UNSUPPORTED_FEATURE`/`NOT_A_MULTIPLATFORM_COMPILATION` 双先例）。**约定修正（六轮）**：`LanguageFeature.CommonSpecificDeclarations` 现为 `CanStillBeDisabledForNow(NO_ISSUE_SPECIFIED)`，违反仓库约定"feature 条目必须带 issue 编号"——随本阶段补上决策引用。**AA 生成物同步（G18）**：`CfirDiagnosticsList` 改动后重跑 checkers-component-generator，并再生成 `analysis/analysis-api-cfir` 转换器三件套（`CaCfirDiagnostics.kt`/`CaCfirDiagnosticsImpl.kt`/`CaCfirDataClassConverters.kt`）。
 4. 验收：`common`/`specific` 语法进 PSI 树（1.0.5 与 1.1 设置下 PSI 树结构**完全相同**，D12 验收标准）；v1.0.x 下报版本门诊断（对齐现有 fixture `commonSpecificSuppressedLangver105.cj` 改写为官方语义等价）。
 
@@ -118,17 +118,17 @@
 2. 补齐：泛型约束宽严比较（D6）、enum 构造器配对（官方 `MatchCJMPEnumConstructor`）、extend 按"扩展类型+接口集+泛型约束"键配对（官方 `MergeCJMPExtensions` 键）、`COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH` 接线（死诊断转活；~~前置核实~~（七轮关闭）：声明级 `...` 语法**已存在**——`parseEnumList` 处理非穷举枚举省略号（`CangJieParsing.kt:3137-3142`，`isEnumConstructorStart:3161` 接受 ELLIPSIS）；实现期仅剩确认 enum `...` entry 的 CFIR 表示与 light-tree 双路径）、interface 豁免（`MustMatchWithPlatform`）、**注解比较改多重集**（出现次数一一对应，替换现 `Set<AnnotationMatchKey>`，G7⑤）、`COMMON_WITH_DEFAULT` 派生（D8，STATUS 阶段 body/initializer 推导）。
 3. **修门禁逃逸（G12）**：`CfirCommonPackageMainChecker`（`COMMON_PACKAGE_HAS_MAIN`）接入 D16 `CjmpGate`；两处既有入口门禁（`CfirCommonSpecificChecker:51`、`CfirCommonCtorImmutableAssignChecker:34`）改走同一辅助，消除散写。
 4. 删除 `COMMON_GENERIC_RENAME_NOT_SUPPORTED`（D6，Fixture Edit Gate 条款 1：官方无触发点且按位置映射重命名合法）；同步 `CfirDiagnosticsList`/`CfirErrorsDefaultMessages`/`CfirNonSuppressibleErrorNames`/生成物 + **AA 转换器三件套再生成（G18，同 Phase 0 item 3）**。
-5. 验收：30 条 sema 诊断逐条有 fixture 且与官方 `DiagnosticSema.def:282-313` 触发条件一致（逐条对照表随 PR）；`// LANGUAGE_VERSION: 1.0.5` 下全族 44 条诊断零报告（30 sema + 14 parse，C38 口径）。
+5. 验收：按 v1.1.3 当前诊断工厂逐条核对 fixture：29 条 sema + 14 条 parse/file-part；对官方 1.1.3 无触发点的保留工厂明确登记，不为凑覆盖伪造触发。`// LANGUAGE_VERSION: 1.0.5` 下所有 CJMP 专属工厂零报告，只保留版本门诊断。
 
 ### Phase 4 — driver 编译模式与序列化读写（G4+G5+G13+G14）
-1. `compiler/arguments` + `cfir/entrypoint`：按 D14 四段式样板新增 `-Xcjmp-common-part`（路径列表）/`-Xcjmp-common-part-chir` 对位选项与 `CjmpSettingsComponent`（模式枚举 None/Common/Specific，判据对齐官方：Specific ⇔ chir 输入非空，Common ⇔ CHIR 输出模式）；两个选项数量配对校验（官方 `driver_require_common_chir_for_each_common_cjo` 对位）；`parse_unexpected_cjmp_decl` 接模式门（D10/D16 门禁序：版本门先于模式门）。
+1. `compiler/arguments` + `cfir/entrypoint`：按 D14 四段式样板新增 `-Xcjmp-common-part`（路径列表）/`-Xcjmp-common-part-chir` 对位选项与 `CjmpSettingsComponent`（模式枚举 None/Common/Specific，判据对齐官方：Specific ⇔ chir 输入非空，Common ⇔ CHIR 输出模式）；两个选项数量配对校验（官方 `driver_require_common_chir_for_each_common_cjo` 对位）；以 file-part checker 接模式门（D10/D16：版本门先于 file-part 诊断）。
 2. `cfir/cfir-serialization` 写侧：`CfirCjoPackageMetadataProducer` 写出 COMMON/FROM_COMMON_PART/SPECIFIC/COMMON_WITH_DEFAULT 位；common 侧写出重标注（specific → COMMON + COMMON_WITH_DEFAULT，对齐官方 ASTWriter.cpp:1656-1662）。
 3. `cfir/cfir-serialization` 读侧（G13+D15+G17）：修 `:769-772` 重复赋值；补官方 6 层门中适用的四层——cjo 格式版本门（缺版本即拒）、包名一致门、features 子集门 `common ⊆ specific`（`feature_is_not_subset_of_child_set` 对位诊断）、编译选项匹配门；**属性位装填保持无版本判断**（D15，官方同款）。**加载门诊断通道（G17）**：按 cjd 家族 collector-list 先例（`CjdAnnotationConversionDiagnostic` 模式）——加载器产出 `CjmpLoadDiagnostic` 列表随反序列化结果上浮，由装配层外显（编译输出/LLT 断言）。features 指令集（`// FEATURES` 文件级指令）如本仓库尚无对应物，随门实现最小采集（文件级字符串集合），来源对齐官方 `File::GetFeatures()`。
 4. 验收：common cjo 写出→读回→status 位往返一致；specific 模式加载 common cjo 后配对可用（最小 e2e；实现路径：common cjo 装载为**反序列化 library session**——`CfirDeserializedSymbolProvider` 已有，specific 源 session 的 dependsOn 指向之，matcher 沿该边查找，不再新建装载机制）；版本/包名/features/选项四门的正反例 fixture 各一。**锚定核实项（G20）**：验证本仓库 cjo 是否携带声明 source 位置——带则 common 侧诊断（`NOT_MATCHED` common 方向、`COMMON_PACKAGE_HAS_MAIN`）直接锚反序列化声明；不带则按仓库 Diagnostic Range Policy 精神定再锚策略（锚 specific 侧查找起点或包级），并登记与官方锚点差异。
 
 ### Phase 5 — 测试基建与 fixture 全量（G10）
 1. `tests/test-infrastructure` + `cfir/analysis-tests`：`// MODULE: name[(deps)]` 指令解析（移植 Kotlin `ModuleStructureDirectives.kt` 模式）→ `CaSourceModuleImpl` dependsOn 图 → 每模块独立 pipeline；PSI 与 non-PSI 双套生成。**模块角色语法（G19）**：`// MODULE` 支持角色标注（如 `// MODULE: common` / `// MODULE: specific(common)`），`ModuleStructureExtractorImpl`（:329-348 汇聚点）据此为每模块 session 装配 `CjmpSettingsComponent`——无此路径则 §8.4 的 Common/Specific 正例与 §8.1 合法性矩阵 fixture 均无法落地。
-2. 重写 `testData/diagnostics2/common-specific/` 10 个占位为真实多模块 fixture；按官方 30 条 sema + 12 条 parse 逐诊断建 fixture（含默认值读穿、泛型宽严、协变返回、enum/extend 配对、interface 豁免、common 侧编译子集、类型精化超类型替换）。
+2. 重写 `testData/diagnostics2/common-specific/` 占位为真实多模块 fixture；按 v1.1.3 当前 29 条 sema + 14 条 parse/file-part 工厂逐项建立有真实触发面的 fixture（含默认值读穿、泛型宽严、协变返回、enum/extend 配对、interface 豁免、common 侧编译子集、类型精化超类型替换）。无触发点工厂须有官方证据并单独登记。
 3. **门禁矩阵 fixture（§8.4）**：版本门 × 模式门 × 特性开关的三维正反例 + 行为级反例（§8.5.5）。~~版本钉扎理由修正（七轮）~~：实测 `LATEST_STABLE = CANGJIE_1_1_3`（`LanguageVersionSettings.kt:90`）——**默认版本门是开的**，C20 的"静默假阴性"方向反转；钉 `// LANGUAGE_VERSION: 1.1.0` 仍保留，但理由改为**显式性 + 未来 LATEST_STABLE 演进不改变 fixture 语义**。
 4. 验收：`:cfir:analysis-tests:test` 全量回归 + 新增 cjmp 生成套件全绿；与官方 cjc 1.1.3 探针输出对照（`cangjie-official-testdata-inline-diagnostics` 流程抽查）。
 
@@ -157,7 +157,7 @@ Phase 0/1 是纯加法可先做；Phase 2 是唯一动 resolve 主干的高风�
 3. **官方 origin/main 比 1.1.3 新**（含 2026-09 perf 重构与 `Parameters.cpp`）；凡 origin/main 与 1.1.3 cjc 实测行为有出入处，以 cjc 1.1.3 实测为准并用探针固化。
 4. **`CfirCommonSpecificChecker` 现有 11 处 symbolProvider 现查**全部要改为消费配对结果，改完前该 checker 在 LLT 上不可达（fixture 占位掩盖了这一点）——Phase 2 完成前不要试图"修 fixture"。
 5. 死诊断/反官方诊断的删除走 Fixture Edit Gate：官方证据已在 §3 D6 给足，fixture 同步改，不作为"适配现实现"记档。
-6. **硬关键字破坏面（D12 纠错引入）**：`common`/`specific` 成为无条件关键字后，作标识符/package 名的既有代码被击穿——已实测 `testData/diagnostics/coverage/accessibility/cstAccessibleCommonParent.cj` 的 `package common`（1 处）；实现 Phase 0 时须全仓 grep 复核（源码 + testData + 宏样例），命中处随 Phase 0 一并改名（官方 1.1 同价，Fixture Edit Gate 条款 1）。
+6. ~~**硬关键字破坏面（D12 纠错引入）**~~（十轮 C40 撤销：上下文关键字不击穿标识符用法，`cstAccessibleCommonParent.cj` 已恢复 `package common`）：`common`/`specific` 成为无条件关键字后，作标识符/package 名的既有代码被击穿——已实测 `testData/diagnostics/coverage/accessibility/cstAccessibleCommonParent.cj` 的 `package common`（1 处）；实现 Phase 0 时须全仓 grep 复核（源码 + testData + 宏样例），命中处随 Phase 0 一并改名（官方 1.1 同价，Fixture Edit Gate 条款 1）。
 7. **Phase 2 的可验证性边界**：driver 分步编译在 Phase 4 才落地，Phase 2 的配对引擎**只能**经 `analysis-test-framework` 的多模块装配（`CaSourceModuleImpl.directDependsOnDependencies`）驱动验证——不要试图在 Phase 2 前造 driver。
 8. **读穿实现的 session 边界**：specific 模块解析时读穿 common 模块的默认值表达式/注解，跨 session 访问 CFIR 节点须走符号提供者路径（common 侧声明以 symbol 形式被引用），不得直接持有另一个 session 的 CFIR 树节点——否则破坏 LLFir 缓存/失效模型。
 9. **跨模块类型同一性**（G15 的地基）：common `Repo` 与 specific `Repo` 分属不同 session，类型系统必须依赖 **ClassId 结构相等**判定同一性——CFIR 类型比较按 ClassId + 实参结构比较即天然成立；**禁止**跨 session 的成员 scope 级类型比较（成员归属检查一律经配对声明路由）。若后续发现类型比较依赖 symbol 同一性的路径，是 G15 精化实现的首要雷区。
@@ -169,18 +169,18 @@ Phase 0/1 是纯加法可先做；Phase 2 是唯一动 resolve 主干的高风�
 | 门 | 判定条件 | 对位诊断 | 落地层 |
 |---|---|---|---|
 | ① 版本门 | `languageVersion < 1.1.0`（`LanguageFeature.CommonSpecificDeclarations`，已有） | 1.0.x 语义 = 官方 `parse_expected_decl` 的等价（本仓库用 CFIR 诊断报"当前语言版本不支持 common/specific"） | checker/raw-builder（session 之后才有版本信息，G11/D13） |
-| ② 模式门 | `CjmpSettingsComponent.mode == None` 且 ① 已过（版本 ≥ 1.1） | `parse_unexpected_cjmp_decl`（"to compile with common/specific declarations, correct compiler options must be specified"） | D14 session 组件 + D16 门禁辅助；Phase 4 接线 |
+| ② 模式门 | `CjmpSettingsComponent.mode == None` 且 ① 已过（版本 ≥ 1.1） | 文件内 `common` → `parse_common_in_non_common_file`；文件内 `specific` → `parse_specific_in_non_specific_file`（1.1.3 实测；`parse_unexpected_cjmp_decl` 无触发点） | D14 session 组件 + D16 门禁辅助；file-part checker |
 | ③ 加载门 | common cjo 加载期：cjoVersion / 包名 / features 子集 `common⊆specific` / 编译选项匹配 | 官方 `module_version_not_identical`、`module_common_cjo_wrong_package`、`feature_is_not_subset_of_child_set`、`module_common_cjo_{debug,opt}_mismatch` | 反序列化/加载层（Phase 4，D15），**不在属性位装填处做版本判断** |
 | （未来④） | cjpm 包布局（common package part / specific package part） | 官方 `parse_common_in_non_common_file`（1.1.3 实测真门） | 已登记非目标/P0 待办；①②作为过渡下界不变 |
 
-**判定顺序**：① → ② → 语义检查。① 不过时整族短路（不报 42 条，只报版本诊断）；① 过 ② 不过时报 `parse_unexpected_cjmp_decl`（对齐官方 ParseCJMPDecl.cpp:107-131 的分流：官方是"非 CHIR 输出且无 common-part-cjo 即报"）。
+**判定顺序**：① → ② → 语义检查。① 不过时整族短路，只报版本门诊断；① 通过但声明所在文件 part 与编译模式不符时，由 `CfirCjmpFilePartChecker` 报对应 file-part 诊断。1.1.3 没有 `parse_unexpected_cjmp_decl` 的可达触发形。
 
 **②模式门的修饰符 × 模式合法性矩阵**（五轮补全；1.1.3 实测语义为准，origin/main 把三条 file-part 诊断重构为文件级标记——本仓库按 1.1.3 落）：
 
 | 修饰符 \ 模式 | None | Common（编译 common part 源） | Specific（编译 specific part 源，已加载 common cjo） |
 |---|---|---|---|
-| `common` | 非法（`parse_unexpected_cjmp_decl`） | 合法 | **非法**（= 官方 1.1.3 实测 `parse_common_in_non_common_file` 语义：specific 源文件不写 common 声明，common 声明来自 cjo。注意 origin/main 已把此诊断重构为文件级标记——按风险 3 原则以 1.1.3 实测名为准） |
-| `specific` | 非法（同上） | **非法**（对位 `parse_specific_in_non_specific_file`，同名重构注意） | 合法 |
+| `common` | 非法（`parse_common_in_non_common_file`） | 合法 | **非法**（specific 源文件不写 common 声明，common 声明来自 cjo） |
+| `specific` | 非法（`parse_specific_in_non_specific_file`） | **非法** | 合法 |
 
 注：多 parent 链场景（D3）中间层文件可同时含 common 声明——该场景由文件级 part 标记承载而非模式枚举，首版 fixture 不覆盖，登记为链式源集的后续项。
 
@@ -220,9 +220,9 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
 | 维度 | 设置 | 期望 |
 |---|---|---|
 | 版本门正例 | `LANGUAGE_VERSION: 1.1.0` + 模式开 | 全语义可用 |
-| 版本门反例 | `LANGUAGE_VERSION: 1.0.5` | 仅版本诊断，42 条族诊断零报告（现有 `commonSpecificSuppressedLangver105.cj` 扩展为此形态） |
+| 版本门反例 | `LANGUAGE_VERSION: 1.0.5` | 仅版本门诊断；当前 29 条 sema + 14 条 parse/file-part 工厂均不报告（`commonSpecificSuppressedLangver105.cj` 的覆盖范围仍需按清单复核） |
 | 特性覆盖反例 | `LANGUAGE_VERSION: 1.1.0` + `LANGUAGE: -CommonSpecificDeclarations` | 同版本门反例（specificFeatures 覆盖生效） |
-| 模式门反例 | 1.1.0 + mode=None | `parse_unexpected_cjmp_decl` 对位诊断，无配对/匹配诊断 |
+| 模式门反例 | 1.1.0 + mode=None | common 与 specific 两个方向分别报 file-part 诊断；无配对/匹配诊断 |
 | 模式门反例（part 错位 ×2，§8.1 矩阵） | 1.1.0 + mode=Common 内写 `specific`；1.1.0 + mode=Specific 源内写 `common` | 各报 file-part 非法诊断（1.1.3 名） |
 | 模式门正例（Common 侧） | 1.1.0 + mode=Common | common 侧子集检查跑，不报"缺 specific"（D8/MustMatchWithPlatform） |
 | 模式门正例（Specific 侧） | 1.1.0 + mode=Specific + common-part 输入 | 配对+验证全量跑 |
@@ -240,12 +240,12 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
 
 | # | 原案 | 纠错 | 证据 |
 |---|---|---|---|
-| C1 | `common`/`specific` 按 Kotlin 式**软关键字**实现（softKeywordModifier 模式 + 标识符回退） | **硬关键字**（无条件 TOKEN，无回退）；软关键字选择违反 D11（把 Kotlin 语义带入了官方没有的地方） | 官方 `Token.h:30`（TOKEN=常规枚举）、`Tokens.inc:11-12`（EXPERIMENTAL_TOKEN 默认展开为 TOKEN，该家族才有词法级实验开关）、`:170-171`（COMMON/SPECIFIC 用普通 TOKEN） |
+| C1 | `common`/`specific` 按 Kotlin 式**软关键字**实现（softKeywordModifier 模式 + 标识符回退） | **硬关键字**（无条件 TOKEN，无回退）；软关键字选择违反 D11（把 Kotlin 语义带入了官方没有的地方）——**十轮 C40 推翻**：官方另有上下文关键字表，软关键字是其本仓库对位 | 官方 `Token.h:30`（TOKEN=常规枚举）、`Tokens.inc:11-12`（EXPERIMENTAL_TOKEN 默认展开为 TOKEN，该家族才有词法级实验开关）、`:170-171`（COMMON/SPECIFIC 用普通 TOKEN） |
 | C2 | G7 记 4 处 checker 语义偏差 | 增至 **5 处**：⑤注解比较现用 `Set`，官方按出现次数**多重集**一一对应 | `CfirCommonSpecificChecker.kt:759-777` vs 官方 `CheckCJMPAnnotations.cpp:150-196` |
 | C3 | "默认值克隆表达式到 specific 侧" | 改为**读穿**（read-through）：跨模块/session 物理克隆 CFIR 表达式树不可行也无必要；官方克隆是单 AST 前提下的产物；注解传播同理 | 官方 `Parameters.cpp:39-57` 单 AST 语境；D1 逻辑合并推论 |
 | C4 | 传播动作无次序约束 | **次序硬约束：匹配 → 注解传播 → 默认值传播 → 验证**（先传播后匹配会报误导性 `sema_not_matched`） | 官方 `CheckCJMP.cpp:1358-1372` 注释 |
 | C5 | `COMMON_WITH_DEFAULT` 暗示新增 status 位 | **派生值**：STATUS 阶段从 body/initializer 推导，不新增源侧位；仅写侧序列化落位 | 官方 `SetCJMPAttrs`（ParseCJMPDecl.cpp:57-65）判定条件 |
-| C6 | 硬关键字破坏面未评估 | 实测击穿 `package common`（`cstAccessibleCommonParent.cj`，1 处）+ 全仓 grep 复核义务入 Phase 0 | 本轮 testData grep |
+| C6 | 硬关键字破坏面未评估 | 实测击穿 `package common`（`cstAccessibleCommonParent.cj`，1 处）+ 全仓 grep 复核义务入 Phase 0（十轮 C40 撤销，fixture 已恢复） | 本轮 testData grep |
 | C7 | Phase 2 验证方式未说明 | 明确：Phase 4 前只能经 analysis-test-framework 多模块装配验证，不许提前造 driver | G4 driver 缺位事实 |
 
 ### 9.1 三轮深化补全记录（2026-09-23）
@@ -312,6 +312,71 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
 | C36 | **G21 实锤：checker 实际覆盖面只有 class**——`CfirCommonSpecificChecker.check()` 首行 `!is CfirClass` guard 跳过 struct/enum/interface（三者是 CfirClassLikeDeclaration 直接子类，gen :23）；`CfirExtend` 与顶层 callable 不在注册组（`CommonDeclarationCheckers.kt:191`）。官方匹配面 = 四类 nominal + extend + 顶层 callable + enum 构造器，实际只覆盖 1/5。G3（路由不通）+ fixture 占位双重掩盖了它。Phase 3.1 已扩为覆盖面重构任务 | `CfirCommonSpecificChecker.kt:47`；gen 类层级；`CommonDeclarationCheckers.kt:191` |
 | C37 | 清理项：`CfirDeclarationModeCheckersTest.kt:186` 手工 `(status as CfirDeclarationStatusImpl).isCommon = true` 是全仓库唯一置位点——Phase 1 落地真实装填后该测试须改为走正常路径（保留为 status 透传断言） | 首轮盘点 §2 |
 
+### 9.7 十轮纠错记录（2026-09-26）
+
+| # | 原案缺陷 | 补全/裁决 | 证据 |
+|---|---|---|---|
+| C40 | D12/C1 把 `common`/`specific` 定为**硬关键字**，击穿标识符用法：`import std.unittest.common.*` 在单项 import 路径断开（MergeStd `testImportall` 四例失败），`package common` fixture 被迫改名 | **上下文关键字**：官方词法虽无条件产出 COMMON/SPECIFIC token，但二者列在 `GetContextualKeyword()`（与 public/private/internal/protected/override/redef/abstract/sealed/open/features 同表），标识符位置经 `Seeing(IDENTIFIER) \|\| SeeingContextualKeyword()` 接受；修饰符位置由 `SeeingKeywordAndOperater` 判定——后随官方 Tokens.inc `DOT..EQUAL` 区间 token（`~`/`@` 除外）即为标识符。落地：`CjTokens` 改 `softKeywordModifier` 并入 `SOFT_KEYWORDS`（移出 `KEYWORDS`）；`CangJieParsing.tryParseModifier` 增官方运算符后随规则（对全体软关键字修饰符生效）；`CangJieExpressionParsing.parseAtomicExpression` 软关键字 token 按标识符解析；撤销 `atPackageNameSegment`；`cstAccessibleCommonParent.cj` 恢复 `package common`；`ModifierParsingTest` 增标识符位置全覆盖用例。§8.5.4 PSI 版本无关性不受影响（软关键字同样配置无关） | 官方 v1.1.3 `src/Lex/Lexer.cpp:46-51`、`src/Parse/ParserUtils.cpp:632`（`ExpectPackageIdentWithPos`）/`:663`（`SeeingKeywordAndOperater`）、`ParseDecl.cpp:1918`（`ParseModifiers`）、`ParseAtom.cpp:108`；cjc 1.0.5 与 1.1.3（含 `--experimental`）实测 `package common`、`package a.common.specific`、全局/局部 `let common`、`func common`、形参/成员/`class common`/`struct specific`、枚举构造器 `\| common \| specific`、泛型形参 `common`、`import std.unittest.{common.*, diff.*}` 全部通过（探针 `.workbuddy/tmp/cjmp_probe113/kw/`） |
+| C41 | `COMMON_PACKAGE_HAS_MAIN` 按 `main.status.isCommon` 判定——main 不能合法带 `common`，判据结构死，C37 测试只能靠手工改写 status 触发 | 官方判据是**文件级** `File::isCommon`：common 编译中文件内任一声明（含成员）带 `common` 即成为 common package part 文件，其中的 main 报错（与先后无关）；同包其它不含 common 声明的文件中的 main 不报；`common main()` 由修饰符规则拒绝，不使文件成为 common。**C37 关闭**：`CfirDeclarationModeCheckersTest` 改走源码装填 + `CJMP_MODE=COMMON` 会话组件；新增 fixture `commonSpecificCommonPackageMain{,OtherFile}.cj` | 官方 v1.1.3 `TypeCheckDecl.cpp:125`（`CheckEntryFunc`）、`ParseCJMPDecl.cpp:108-137`（`CheckCJMPModifiers` 置 `isCommon`）；cjc 1.1.3 `--output-type=chir` 实测（`.workbuddy/tmp/cjmp_probe113/mainp/`：含 common 声明文件中的 main 报且与先后无关、无 common 声明文件与同包另一文件不报、`common main()` 报 unexpected modifier） |
+| C42 | §8.1 只登记两条 file-part 诊断 | 1.1.3 另有 `parse_common_and_specific_in_the_same_file`，仅在 common 与 specific 编译同时生效（链式中间层）时可达——随 §8.1 注的链式源集后续项登记，首版不落 | 官方 v1.1.3 `ParseCJMPDecl.cpp:117,131` |
+| C43 | —（探针顺带发现，非 cjmp 专属） | 官方拒绝 main 上的任何修饰符（`unexpected modifier 'public' on main function`）；本仓库 `ModifierCheckerTargets` 把 main 视作 head(FUNCTION) 静默接受——登记为独立任务，不在本计划范围 | cjc 1.1.3 实测 |
+| C44 | `CfirCommonSpecificChecker.checkSpecificExtraConstraints` 以启发式报告 `SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR`（common 侧存在任意主构造器 + specific init）与 `SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL`（specific 标记的主构造器形参不是成员变量） | 两条报告删除，工厂保留登记：官方只在 `MatchCJMPFunction` 把 specific 构造器与 **common 标记的**主构造器配对时触发，而主构造器不能带 common/specific，1.1.3 无可达触发点。原启发式在合法程序上误报（common 未标记主构造器 `P2(x: Int64)` + `common init(Bool)`，specific `specific init(Bool)`：cjc 零错误），并在 `specific Q(x)` 的修饰符错误之外追加错误。回归 fixture：`e2e/cjmpSpecificInitWithUnmarkedCommonPrimary.cj`、`e2e/cjmpSpecificMarkedPrimaryConstructor.cj` | 官方 v1.1.3 `CheckCJMP.cpp:967-980`；探针 `.workbuddy/tmp/cjmp_probe113/p9/T16-T19`、结果 `probe_results9c.txt` |
+| C45 | 未登记缺口 | **跨 session 构造器重载冲突缺失**：common 类只有未标记主构造器 `P(x: Int64)`、specific 类写同签名 `specific init(x: Int64)` 时，cjc 1.1.3 报 `constructor 'init' has overload conflicts`（锚 specific `init`，note 指向 common 主构造器）+ `'specific' constructor can not find 'common' match`；本仓库只报 `NOT_MATCHED`。§11.2 的 `checkUnmarkedDirectMemberOverloadConflicts` 只覆盖"未标记 specific 函数 × common 函数"，官方合并后的成员集合冲突还含"common 未标记成员（含主构造器）× specific 成员"。待补，补齐时恢复该探针 fixture | 探针 `p9/T16`（`probe_results9c.txt`） |
+
+### 9.8 v1.1.3 诊断工厂逐条对照（2026-09-27，Phase 3.5 / Phase 5.2 验收件）
+
+口径：29 条 sema + 14 条 parse/file-part（§4 Phase 3.5）。判定依据为官方 v1.1.3 源码触发点 + cjc 1.1.3 实测（探针 `.workbuddy/tmp/cjmp_probe113/`，`probe_results7*.txt`、`probe_results9*.txt`）；
+覆盖以 `cfir/analysis-tests/testData` 内联期望为准。
+
+**有真实触发面且已有 fixture（24 sema + 10 parse）**：
+
+| 诊断 | fixture |
+|---|---|
+| MULTIPLE_COMMON_IMPLEMENTATIONS | `e2e/cjmpDuplicateSpecific` |
+| COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS | `commonSpecificExtensionPrivateDuplicate` |
+| COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS | `commonSpecificExtensionCommonPrivate` |
+| NOT_MATCHED | `e2e/` 多例（双向、成员、enum 构造器、extend） |
+| SPECIFIC_VAR_NOT_MATCH_LET | `e2e/cjmpVarNotMatchLet` |
+| SPECIFIC_HAS_DIFFERENT_KIND | `e2e/cjmpKindMismatch*`（5 例） |
+| COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH | `e2e/cjmpEnumNonExhaustive` |
+| SPECIFIC_HAS_DIFFERENT_TYPE | `e2e/cjmpLetTypeMismatch` |
+| SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION | `e2e/cjmpMemberMustHaveImplementation` |
+| SPECIFIC_HAS_DIFFERENT_MODIFIER | `e2e/cjmpVisibilityMismatch`、`e2e/cjmpClassModifierMismatch` |
+| SPECIFIC_HAS_DIFFERENT_ANNOTATION | `e2e/cjmpAnnotationSpecificOnly`（反例 `e2e/cjmpAnnotationCommonOnly`：仅 common 带注解零诊断） |
+| SPECIFIC_HAS_DEPRECATED_ANNOTATION | `e2e/cjmpDeprecatedOnSpecific` |
+| CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES | `e2e/cjmpDefaultBothSides` |
+| SPECIFIC_HAS_DIFFERENT_PARAMETER | `e2e/cjmpNamedParamName`、`e2e/cjmpFirstFitCandidateDiagnostic` |
+| SPECIFIC_HAS_DIFFERENT_SUPER_TYPE | `e2e/cjmpSuperTypeMismatch` |
+| SPECIFIC_HAS_DUPLICATE_EXTENSIONS | `e2e/cjmpDuplicateExtensions`（登记差异：官方按 unordered_set 挑选被报者，本仓库确定地报后出现者） |
+| COMMON_PACKAGE_HAS_MAIN | `commonSpecificCommonPackageMain`（反例 `commonSpecificCommonPackageMainOtherFile`） |
+| COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR | `commonSpecificAssignCommonLetInConstructor`、`commonSpecificStaticLetInStaticInit` |
+| CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER | `commonSpecificAbstractMemberNoExplicitModifier`、`e2e/cjmpSpecificAbstractMemberNoExplicitModifier` |
+| EXPLICITLY_ABSTRACT_CAN_NOT_HAVE_BODY | `commonSpecificExplicitAbstractWithBody` |
+| OPEN_ABSTRACT_SPECIFIC_CAN_NOT_REPLACE_OPEN_COMMON | `e2e/cjmpOpenToAbstract` |
+| CJMP_NON_SPECIFIC_ABSTRACT_MEMBER_IN_SPECIFIC_CLASS | `e2e/cjmpNonSpecificAbstractMember` |
+| COMMON_GENERIC_FROZEN_NOT_SUPPORTED | `commonSpecificGenericFrozen` |
+| COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED | `commonSpecificAnnotationNotAllowed` |
+| PARSE_COMMON/SPECIFIC_FUNCTION_MUST_HAVE_RETURN_TYPE | `commonSpecificParseRulesCommon01`、`e2e/cjmpSpecificFunctionMissingReturnType` |
+| PARSE_SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION | `commonSpecificParseRulesSpecific01` |
+| PARSE_CJMP_OUTDECL_MISS_MATCH / PARSE_CJMP_STATIC_INIT / PARSE_CJMP_PATTERN_DECL | `commonSpecificParseRulesCommon01` |
+| PARSE_CJMP_IN_COMMON_CTOR_REQUIRED | `commonSpecificOpenClassNoInitPlaceholder`、`commonSpecificOpenClassNoInitGeneralSubclass` |
+| PARSE_EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS | `coverage/declaration-status/memberStatusCheckersRich` 等 |
+| PARSE_COMMON_IN_NON_COMMON_FILE / PARSE_SPECIFIC_IN_NON_SPECIFIC_FILE | `gate/` 4 例（mode=None 两方向、Common/Specific 模式错位） |
+
+**官方 1.1.3 无可达触发点，保留工厂、不伪造触发（5 sema + 4 parse）**：
+
+| 诊断 | 原因（官方先行拦截点） | 证据 / 反例 fixture |
+|---|---|---|
+| COMMON_OPEN_CLASS_NO_INIT | common 类无构造器先被 `parse_cjmp_in_common_ctor_required` 拒绝，`PreCheckCJMPClass` 到不了 | 探针 p9_done/C01、C03；`commonSpecificOpenClassNoInitGeneralSubclass`（只报 parse 族） |
+| SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR | 主构造器不能带 common/specific（C44） | 探针 p9_done/C02、T02、p9/T16-T17；`e2e/cjmpSpecificInitWithUnmarkedCommonPrimary`、`commonSpecificPrimaryConstructorModifier` |
+| SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL | 同上（C44） | 探针 p9_done/T03、p9/T18；`e2e/cjmpSpecificMarkedPrimaryConstructor` |
+| COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT | `InitializationChecker::CheckLetFlag` 先报 `sema_common_assign_to_common_immutable_in_ctor`（官方 GlobalVarChecker 分支在其后） | 探针 p9_done/C06、p9_done/T15；`commonSpecificStaticLetInStaticInit` |
+| EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS（sema 变体） | 官方 sema 条目无引用点，由 parse 变体负责 | 官方 v1.1.3 全文仅 `ParseDecl.cpp:2157`、`Parser.cpp:451` 报 parse 变体 |
+| PARSE_SPECIFIC_FUNCTION_PARAMETER_CANNOT_HAVE_DEFAULT_VALUE / PARSE_EXPECTED_TYPE_WITH_CJMP_VAR / PARSE_CJMP_GENERIC_DECL | 见 §10「官方 1.1.3 探针结论」 | §10 |
+| PARSE_UNEXPECTED_CJMP_DECL | 1.1.3 模式门报文件级 file-part 诊断，无此条触发点 | §10 Phase 4.4 |
+
+验证：`:cfir:analysis-tests:test --tests '*Diagnostics2*CommonSpecific*' --tests '*CfirDeclarationModeCheckersTest*'` **241 tests，0 failures，73 skipped**（WithoutAliasExpansion 框架跳过；2026-09-27）。
+
 ## 10. 实施进度（2026-09-24）
 
 ### Phase 0 — 词法/语法通路与门禁基建（落地）
@@ -320,9 +385,9 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
 
 | 层 | 文件 | 内容 |
 |---|---|---|
-| lexer/tokens | `psi/.../lexer/CjTokens.java` | `COMMON_KEYWORD(221)`/`SPECIFIC_KEYWORD(222)`（`keywordModifier` 硬关键字，对位官方 `Tokens.inc:170-171` 普通 TOKEN）；入 `MODIFIER_KEYWORDS_ARRAY`（尾部追加）与 `KEYWORDS` |
+| lexer/tokens | `psi/.../lexer/CjTokens.java` | `COMMON_KEYWORD(221)`/`SPECIFIC_KEYWORD(222)`（十轮 C40 起为 `softKeywordModifier`，入 `SOFT_KEYWORDS`，对位官方上下文关键字表 `Lexer.cpp GetContextualKeyword`）；入 `MODIFIER_KEYWORDS_ARRAY`（尾部追加） |
 | lexer | `psi/.../lexer/CangJieLexer.flex` | `"common"`/`"specific"` 两条无条件规则（无上下文回退） |
-| parser | `psi/.../parsing/CangJieParsing.kt` | `ModifierKind.COMMON/SPECIFIC` + `ModifierDetector` 装填；`atPackageNameSegment()` 让 import 包名段容忍关键字（对齐官方 `ExpectPackageIdentWithPos`；`std.unittest.common` 实测） |
+| parser | `psi/.../parsing/CangJieParsing.kt` | `ModifierKind.COMMON/SPECIFIC` + `ModifierDetector` 装填；~~`atPackageNameSegment()` 让 import 包名段容忍关键字~~（十轮 C40 撤销：它只覆盖 `parseImportItem`，单项 import 路径仍断在 `std.unittest.common.*`，且放宽到全部硬关键字；改为软关键字经 `at(IDENTIFIER)` 重映射） |
 | stub | `psi/.../psi/stubs/CangJieStubVersions.kt` | `SOURCE_STUB_VERSION` 209 → 210（修饰符掩码 +2 位） |
 | 诊断 | `cfir/checkers/checkers-component-generator/.../CfirDiagnosticsList.kt` | COMMON_SPECIFIC 组新增 14 条 `PARSE_*`（12 条官方 `DiagnosticParser.def:266-277` 名单 + 2 条 file-part） |
 | 消息 | `cfir/checkers/.../CfirErrorsDefaultMessages.kt` | 14 条默认消息（官方原文 + cjc 1.1.3 实测文案） |
@@ -355,7 +420,7 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
 - 编译：`:psi` / `:cfir:checkers` / `:cfir:raw-cfir:{raw-cfir-common,psi2cfir,light-tree2cfir}` / `:cfir:resolve` 全绿。
 - `:psi:test`：74 通过 / 1 失败（`ForeignAndAnnotationParsingTest.platformAnnotationSurfaceIsRetainedWithoutBuiltinKindFacade`，归因并行会话的注解 builtin 重构，与 cjmp 无关）。
 - 生成物：`CfirErrors.kt` / `CfirNonSuppressibleErrorNames.kt` 已重生成（14 条 `PARSE_*` 入列）；AA 转换器三件套待 `:analysis:analysis-api-cfir:generateDiagnostics` 重生成。
-- fixture：`commonSpecificSuppressedLangver105.cj` 改写为版本门期望；5 个占位 fixture 按新行为补 `PARSE_*` 期望；新增 `commonSpecificParseRules{Common,Specific}01.cj`；`cstAccessibleCommonParent.cj` 的 `package common` 改名 `commonpkg`。
+- fixture：`commonSpecificSuppressedLangver105.cj` 改写为版本门期望；5 个占位 fixture 按新行为补 `PARSE_*` 期望；新增 `commonSpecificParseRules{Common,Specific}01.cj`；~~`cstAccessibleCommonParent.cj` 的 `package common` 改名 `commonpkg`~~（十轮 C40 已恢复原文）。
 - 全量 `:cfir:analysis-tests:test` 回归：待跑（Phase 5 前）。
 
 ### Phase 3 — 检查器改造与语义补齐（第 1 批落地并验证，2026-09-24）
@@ -387,15 +452,7 @@ CjmpGate 门禁辅助（checkers）  ①版本门（languageVersionSettings.supp
   `checkMemberMatch` 对 `commonDecl is CfirInterface` 整体跳过 NOT_MATCHED/MUST_HAVE_IMPLEMENTATION 对
   （官方 CheckCJMP.cpp:822-825；其余豁免项中，"有默认实现"由 body 非空判据等价、var 成员按官方调用点天然后置、编译 common 模式豁免属 Phase 4 模式门）。
 
-**Phase 3 收口状态**：核心批次（覆盖面/存储消费/门禁/官方判据修正/参数形/死诊断转活与删除/注解多重集/接口豁免）全部落地并经
-「编译 + `*CfirAnalysisDiagnostics*` 全族切片 1224 用例」验证。剩余登记项：泛型约束宽严比较（D6）、enum 构造器配对（官方按具体声明配对，
-本仓库 C18 下 enum 构造器不携带 cjmp，需 Phase 4/5 有载体后激活）、extend 键配对与 `SPECIFIC_HAS_DUPLICATE_EXTENSIONS` 键细化
-（官方 `MergeCJMPExtensions` 键 = 扩展类型 + `<:` 继承集 + 泛型约束；现实现仅按扩展类型短名）、`COMMON_WITH_DEFAULT` 派生（D8，STATUS 阶段）、
-sema `EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS` 死条目清理。Phase 4（driver 模式与序列化读写）与 Phase 5（多模块 fixture 全量）为下一阶段。
-
-**后续批次（Phase 3 余项，已登记）**：泛型约束宽严比较（D6，复用 `AbstractTypeChecker.isSubtypeOf`）、enum 构造器配对、
-extend 键配对、interface 成员豁免（`MustMatchWithPlatform`）、注解多重集一一对应（G7⑤，官方 CheckCJMPAnnotations 计数判据）、
-`COMMON_WITH_DEFAULT` 派生（D8）、30 条 sema 诊断逐条 fixture（Phase 5 联动）。
+**Phase 3 收口快照（2026-09-24；后续项以 2026-09-25 的 Phase 4.4 记录为准）**：当日核心批次（覆盖面/存储消费/门禁/官方判据修正/参数形/注解多重集/接口豁免）经编译和 `*CfirAnalysisDiagnostics*` 切片验证。下列“剩余项”是当日快照，不代表当前状态：泛型函数约束、enum 构造器、extend 键、`COMMON_WITH_DEFAULT` 与逐诊断 fixture 已在后续阶段部分落地；当前仍需核验并补齐的是 nominal 泛型约束、泛型 enum 构造器约束映射、extend 泛型约束键及 `COMMON_WITH_DEFAULT` 的 nominal/extend/constructor 序列化覆盖，详见 Phase 4.4 的续办记录。
 
 ### Phase 2 — 配对引擎（代码落地；编译/测试验证排队中）
 
@@ -446,7 +503,7 @@ extend 键配对、interface 成员豁免（`MustMatchWithPlatform`）、注解�
 
 验证：`:compiler:frontend` / `:cfir:entrypoint` / `:cfir:cfir-serialization` / `:analysis:low-level-api-cfir` / test fixtures 编译全绿；`CjmpCommonPartCjoTest` 全过；版本门引发的 3 个既有测试夹具（`CjoFullIdResolverTest`、`CjdBinaryFixture`、`CjdDeclarationLoaderIntegrationTest`）补写 `cjoVersion`（官方加载同样拒绝无版本 cjo）。
 剩余 `:cfir:cfir-serialization:test` 4 失败 + decompiler-to-stubs 1 失败：测试 session 未注册 `CfirLanguageSettingsComponent`（`publishInteropInfo`/`publishAnnotationInfo` 需要），归因并行注解/interop 重构，与 cjmp 无关。
-未完成：4.4 e2e（common cjo 写出→specific 源编译配对）与 G20 锚定核实；CHIR 输出模式（Common 判据）无 driver 对位选项，Common 暂仅经测试指令注入。
+**本段为 2026-09-24 快照，已由下方 2026-09-25 的 Phase 4.4 记录更新**：CLI common CHIR 输出选项、common cjo→specific e2e 与 G20 位置恢复已有实现；当前剩余项见 Phase 4.4 与 §10 最新进度。
 
 ### Phase 4.4 + Phase 5 — e2e 与多模块 fixture、语义对齐 cjc 1.1.3（2026-09-25）
 
@@ -469,8 +526,64 @@ extend 键配对、interface 成员豁免（`MustMatchWithPlatform`）、注解�
 | CLI e2e（4.4） | `compiler/frontend/test/.../CjmpTwoPhaseCompilationTest` | common 编译写 cjo（属性位 + options）→ specific 编译加载配对；未配对 specific NOT_MATCHED；common 方向带位置报告 |
 
 fixture（全部经 cjc 1.1.3 两段式探针取证，`.workbuddy/tmp/cjmp_probe113/probe_results7*.txt`）：
-`diagnostics2/common-specific/e2e/`（27 个两模块 fixture）+ `gate/`（mode=None 两方向、特性覆盖反例）；原 6 个单文件占位
+`diagnostics2/common-specific/e2e/`（当前 38 个两模块 fixture）+ `gate/`（mode=None 两方向、特性覆盖反例）；原 6 个单文件占位
 （`commonSpecific*Placeholder.cj`）由同主题两模块 fixture 替换。
 
 登记差异：`GENERIC_CONSTRAINT_NOT_LOOSER` 锚约束条目（仓库 override 路径既有约定），官方起点为 `where`；
 反序列化 common 的 enum 构造器位置仅在其带 COMMON/FROM_COMMON_PART 位时记录。
+
+## 11. 实施进度更新（2026-09-26，继续）
+
+### 本轮已落地
+
+- eager 与 LL 的 `CJMP_MATCHING` 统一以 language feature + `SPECIFIC` session mode 判门；mode 在测试/IDE session 创建后注入，因此处理时动态读取。
+- §8.4 增补 Common 模式写 `specific`、Specific 模式写 `common` 两个官方 file-part 门 fixture。PSI/LightTree Gate 子套件 12 项通过。
+- LL 增加 CJMP 专项生成测试：从 `specific` class 入口确认 class/member 配对写入；mode=None 用例确认映射存储为空且相位未推进。该组 3 项（含 all-files 检查）通过。
+- `CfirCjmpMappingStorage` 改用并发集合和列表，记录 common→specific 类型参数映射与 mismatch 候选；nominal/extend 成员匹配将外层类型参数映射传入函数匹配及属性类型检查。
+- 加入 nominal 泛型元数不相等分支。cjc 1.1.3 两阶段探针证实 `Box<T>` 对 `Box` 不合并，class 与 constructor 双向各报 `NOT_MATCHED`。
+- cjc 1.1.3 两阶段探针对 `Box<T>`/`Box<U>` 的成员 `identity(T): T`/`identity(U): U` 及 common-only 默认 `Holder<T>` 上的 generic extend `T→V` 返回成功。
+- LL extend provider 首次查询时惰性合并当前模块、depends-on 源模块和反序列化依赖的 extend provider；继承与 generic-instantiation 检查跳过当前 specific session 中已成功配对的 common extend 成员。
+- `CjmpTwoPhaseCompilationTest` 增加 constructor 的 `COMMON_WITH_DEFAULT`/`FROM_COMMON_PART` 位往返断言、pipeline 参数 CJO/CHIR 数量门测试，以及不支持版本、错误包名、features 子集、debug 选项不一致的 G17 外显测试。
+
+### 当前验证与未闭合项
+
+- PSI/LightTree CommonSpecific 总套件：**201 tests，0 failures，64 skipped**。PSI/LightTree 的 44 项 E2E 与 6 项 Gate 均通过；WithoutAliasExpansion 路径按其现有测试框架跳过 64 项。
+- LL CJMP 专项：`CfirCjmpMatchingTestGenerated` **3/3 通过**，包括 class/member 配对、generic extend/member 配对与 mode=None 不写映射且不推进相位。
+- `CjmpTwoPhaseCompilationTest` 最近完成 **10/10 通过**（2026-09-26 19:16 Asia/Shanghai）：constructor 属性位往返、cjo 版本/包名/features/debug 拒载经 pipeline message collector 外显、argument 对象的 CJO/CHIR 数量门，以及缺少 options 的 common CJO 发出 warning 并继续编译。warning 用例现带 common 声明位与匹配的 specific 声明，确保真正触发 common 包加载。
+- cjc 1.1.3 generic nominal/member 与 common-only default generic extend 探针通过；nominal arity mismatch 探针按官方输出 class/constructor 双向 NOT_MATCHED。本地 PSI/LightTree generic member fixture 已通过。
+- 完整 `:cfir:analysis-tests:test` 在本轮结构整改前已完成，Gradle `BUILD SUCCESSFUL`（18 分 35 秒）；1,265 个 XML 汇总为 **8,889 tests、0 failures、0 errors、375 skipped**，无无效 XML（2026-09-26 17:28:44–17:28:46，Asia/Shanghai）。这仅是整改前基线，不能替代本轮的定向复验。
+- command-line 文本参数解析入口在主仓库源码中尚未找到；`compiler/arguments` 当前定义参数描述，生成的 `CommonCompilerArguments` 只承载值，现有 CJMP 数量门测试直接构造 arguments 对象并进入 pipeline，不能证明 CLI 文本解析。
+- **针对初审 REJECT 的整改已编译**：`resolution.common` 新增 marker、`CjmpMatchingContext` 与 `AbstractCjmpMatcher`；CFIR context 负责类型运算和 storage 回调。eager/LL 改走同一 `transformMemberDeclaration` 入口，eager 仅显式遍历文件、nominal 与 extend 的声明列表；未解析/错误类型走结构化 `TypeNotResolved` 结果。`CfirCompositeExtendProvider` 的聚合查询按 extend symbol 去重，避免传递 depends-on provider 重复计数。
+- 重构后验证：`:cfir:resolve:compileKotlin`、`:cfir:checkers:compileKotlin`、`:analysis:low-level-api-cfir:compileKotlin` 通过；`resolution.common` 的 AbstractCjmpMatcher 单测 **2/2 通过**；`:cfir:analysis-tests:test --tests '*CfirAnalysisDiagnostics2*CommonSpecific*'` **201 项、0 失败、64 跳过**（19:20 XML）；两段式前端测试 **10/10**（19:16 XML）。
+- LL 生成测试已尝试，但本轮未能完成验收：先前运行暴露了 member/first-fit 未绑定；随后 matcher 已改为在 LL 进入配对前推进具体签名到 `IMPLICIT_TYPES`，但最新 LL 测试还未抵达用例。当前 `analysis-api-cfir:compileKotlin` 被工作区现有 `CaCfirResolver.kt:233,450` 的 enum-constructor/function-symbol 类型不匹配挡住；排除该任务后，LL 测试初始化又因缺少 `CaCfirSessionProvider` 运行时类失败。没有改动这些无关 API 文件。
+- 官方 v1.1.3 取证确认普通声明是按 specific/common 容器向量顺序 first-fit，文件名排序后按声明顺序收集；extend 合并使用 unordered set，不能套用普通声明源码顺序。LL 为顶层 callable 加了按文件名/声明位置稳定排序的同名组预处理，并在目标锁外将组内声明推进到前一阶段；绑定双向索引同步事务。仍需验证 LL 并发请求与 eager 的同一胜者/诊断。
+- 官方类型取证确认 null/invalid/error 类型不兼容；未推断返回类型的 `Quest` 只在官方 pre-check 匹配中暂时接受，`PostTypeCheck` 再复核。本仓库 CJMP phase 在 `IMPLICIT_TYPES` 后，TypeNotResolved 会阻止绑定；还需针对有效隐式返回类型和错误签名做回归。
+- Kotlin parity 仍未批准，Gatekeeper 复审待回。Cangjie class/extend 外层配对后批量处理成员是为了复用官方外层泛型替换前提，仍需复核它与 Kotlin 声明级 visitor 的边界。LL first-fit fixture 已加入，尚未成功执行；generic-instantiation 对继承默认签名的过滤、CLI 文本参数解析入口也未闭合。
+
+### 11.1 声明级 owner、enum constructor 与多 common extend（2026-09-26）
+
+- `CfirCjmpMatcherTransformer` 的 eager 遍历用线程隔离的外围声明上下文；LL resolver 从当前 designation 的 `containingDeclarations` 显式传入 class/enum/extend owner。成员候选只从已配对 owner 读取，enum constructor 资格按 specific 父 enum 判定（其自身 status 不承载 `SPECIFIC` 位）。
+- `CfirCjmpMappingStorage.bind` 对被拒绝第二绑定的重复解析保持幂等：第二实现保留在 common 反向索引供 `MULTIPLE_COMMON_IMPLEMENTATIONS` 检查，不再触发“反向存在、正向不存在”的错误断言。
+- `MergeCJMPExtensions` 多 owner 关系落到 `commonCounterpartsFor`：同 key 的所有 common extend 直接成员共同进入 specific 成员候选，外层 common→specific 泛型映射合并后传给声明级 matcher；specific/common 方向 checker 与 common 遮蔽消费全部 owner。
+- 新增 `cjmpMultipleCommonExtends.cj` PSI/LightTree e2e，以及 LL generic multi-extend fixture。`cjc 1.1.3` 两阶段探针（`.workbuddy/tmp/cjmp_probe113/multi_extend_{common,specific}.cj`）通过，specific extend 仅实现第二个 common extend 的泛型成员时零诊断。
+- enum parent owner 与重复绑定修正后的 PSI/LightTree CommonSpecific 切片：**204 tests，0 failures，65 skipped**。包含多 common extend e2e。
+- LL 复验发现并修复 generic extend 成员签名的外围类型参数缺失：`LLCfirTypeLazyResolver.buildConfiguration` 原只重建 class-like 链，现按 designation 声明顺序同时装入 class-like 与 extend 类型参数；因此 specific/common extend 的 `T`/`V` 均在 `TYPES` 阶段解析。`CfirCjmpMatchingTestGenerated` **5/5 通过**，包含 generic multi-extend 成员绑定（2026-09-26 14:37 UTC）。
+- 泛型实例化补齐 nominal counterpart 的成员投影：`CfirGenericInstantiationChecker` 在 specific class/interface 的 effective scope 外，按已配对 common declaration 构造 common session use-site scope；收集未由 specific 成员实现的 common 继承签名，并以 storage 映射过滤已配对成员。官方 `cjc 1.1.3` 探针确认 common interface 默认 `f(T)` 经 specific 空接口继承后，在 `C<Int64>` 与 specific `f(Int64)` 冲突；新增 `cjmpGenericCounterpartInheritedDefaultInstantiation.cj` PSI/默认路径通过。
+- enum 构造器的 unresolved 签名纳入 specific `NOT_MATCHED` 判定，并按 common enum 的穷尽性抑制 specific 方向诊断。common 方向按官方 `MustMatchWithSpecific` 处理：paired outer enum 下 common 构造器仍须匹配；若 outer common enum 带 `COMMON_WITH_DEFAULT` 且本身没有 specific 实现，则其构造器可豁免。`cjmpEnumConstructorUnresolvedType.cj` 覆盖 exhaustive 与 non-exhaustive 且 outer enum 已配对的情况。
+- first-fit 参数/缺实现体诊断与最终绑定状态分开存储：后续 candidate 成功绑定会清除结构性失败状态，但不清除 `CfirCjmpCandidateDiagnostic`；matched specific checker 重放该候选诊断。`cjmpFirstFitCandidateDiagnostic.cj` 的多 common 模块场景确认首候选参数名诊断保留且第二候选可成功绑定。官方依据为 v1.1.3 `CheckCJMP.cpp:915-990,1115-1155` 的即时报告与 first-fit 顺序。
+- 上述补充 fixture 完成后，PSI/默认/WithoutAliasExpansion CommonSpecific 总切片：**213 tests，0 failures，68 skipped**（2026-09-26 15:34–15:35 UTC）；WithoutAliasExpansion 路径跳过为其现有框架行为。包含 enum unresolved、first-fit retained diagnostic 与 generic inherited default projection。
+- 仍待：本仓库只找到 compiler argument 描述 DSL 与生成的参数数据类，未发现 command-line text parser/runtime CLI entrypoint；需确认是否存在仓库外消费入口再关闭 CLI 验收。Kotlin parity gatekeeper 需针对 common-counterpart generic scope、candidate diagnostics 与本轮 owner/extend 改动复审。完整 `:cfir:analysis-tests:test` **8,889 tests** 仍是结构整改前基线，尚未在本轮重跑。
+
+### 11.2 继续：CLI 闭环、owner-specific 实例化成员图与 2026-09-27 回归
+
+- CLI parser 到 frontend 的 host→pipeline 路径已补 stub pipeline 集成测试，`:compiler:cli:test` **2/2 通过**；生产 CLI 子类/main 仍按本计划的 host-to-frontend 范围处理，不把 P0 包布局门禁扩入本批。
+- LL CJMP 生成测试现为 **5/5 通过**；CommonSpecific PSI/LightTree、e2e/gate 切片及通用 specific 校验已完成逐步复验。全量 `:cfir:analysis-tests:test` 最近快照 `20260927-cjmp-final-full-v2` 汇总为 **8,909 tests、0 failures、381 skipped**；这是本次 owner-group/未标记成员诊断修改之前的基线，不能作为本轮最终验收。
+- private extend owner 审计确认不能把 nominal 与当前目标的 direct extend 扁平混查。generic-instantiation 现改为 nominal owner 单独收集；每个可见且约束适用的 direct extend 建立自己的 effective use-site scope，保留目标 nominal 成员、实例化接口边、peer extends 和 `lookupProvenance`。owner 的直接 private 成员保留，peer 成员按 owner 文件可见性检查。
+- peer 纳入规则改由 `CfirExtendRuleQueryService` 按 owner target pattern 上实例化的直接接口类型作 pairwise 判断：strict child-only peer 排除，parent/unrelated/shared-direct-interface 纳入，顺序不可判定时返回 `UNDECIDABLE` 并继续纳入；结果保留 owner/peer 的接口语义 key 作为冲突 witness。source declaration sequence checker 只比较同包 peers；具体实例化时按 current package/owner file 分支决定是否比较 peer 顺序。
+- pairwise owner 单测覆盖同接口、共享直接父接口并带子接口、无接口继承关系、parent/child 两方向、不可判定 witness，以及相同接口 ClassId 下不同泛型实参不构成错误的父子关系。
+- cjc 1.1.3 已确认 `privateExtendOwnerGroups.cj` 在 private extend `f(T)` 与 nominal `f(Int64)`、以及两个无接口关系的 same-target extends（private `f(T)` / public `f(Int64)`）实例化时各报一条 `GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS`。本地 fixture 已按两条诊断锚到 `Int64` 实例。
+- `cjmpUnmarkedDirectMemberSignatureMerge.cj` 已按 cjc 1.1.3 的 `sema_overload_conflicts` 结果标记 specific 直接函数；specific 类 checker 增补 common CJO 与未标记 specific direct function 的跨 session 同签名诊断，generic-instantiation 仍不重复报错。
+- 本轮初次编译 `:cfir:providers:compileKotlin :cfir:checkers:compileKotlin` 已通过（BUILD SUCCESSFUL，2m51s）；此前 `CjFile` unresolved reference 未在该次编译复现，相关未跟踪 macro 文件未改动。
+- `:cfir:resolve:test --tests '*CfirExtendIndexStoreTest'` 已进入全局 Gradle queue，等待另一条 active Gradle 测试释放锁；pairwise service 实现及 PSI/LightTree fixture 尚待编译和运行验证。
+- 本轮剩余验收：resolve pairwise owner 单测；private owner 与 CJMP CommonSpecific PSI/LightTree 定向切片；`:compiler:cli:test` 回归；然后跑完整 `:cfir:analysis-tests:test` 并生成新的结果快照。完成这些后再请 Kotlin parity gatekeeper 对最终 owner-context 与跨 session overload 变更复审。
+- 当前 CFIR 诊断 reporter 仍只呈现 `EXTEND_CHECK_SEQUENCE_CANNOT_DECIDE` 主诊断，pairwise peer/interface witness 已在查询结果中保留，尚未映射为 cjc 的 peer note/继承链文案。
