@@ -1,7 +1,9 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test
 
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
@@ -43,6 +45,27 @@ abstract class AbstractAnalysisApiComponentTest : AbstractAnalysisApiBasedTest()
             )
 
         return testFile.directives
+    }
+
+    /**
+     * 按调用自身文本、callee 文本、父表达式文本的优先级唯一定位测试调用。
+     *
+     * qualified selector 的 PSI call 与源码完整表达式并不总是同一节点；嵌套调用也可能同时匹配父表达式，
+     * 因此必须先选择最具体的非空匹配层，再校验该层唯一性。
+     */
+    protected fun findCallByTargetText(mainFile: CjFile, targetCallText: String): CjCallExpression {
+        val calls = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
+        val matchingCalls = listOf(
+            calls.filter { call -> call.text == targetCallText },
+            calls.filter { call -> call.calleeExpression?.text == targetCallText },
+            calls.filter { call -> call.parent?.text == targetCallText },
+        ).firstOrNull { candidates -> candidates.isNotEmpty() }.orEmpty()
+
+        require(matchingCalls.size == 1) {
+            "TARGET_CALL '$targetCallText' must identify one call at its most specific PSI level; " +
+                "matched ${matchingCalls.size}: ${matchingCalls.joinToString { it.text }}"
+        }
+        return matchingCalls.single()
     }
 
     /**
