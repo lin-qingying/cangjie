@@ -149,6 +149,8 @@ public data class ModifierTarget(
     val kind: DeclarationKind,
     val site: Site,
     val container: DeclarationKind? = null,
+    /** 当前成员是否位于 common/specific abstract class 中。 */
+    val isCommonSpecificAbstractClassMember: Boolean = false,
 ) {
     /** 是否为成员声明。 */
     public val isMember: Boolean get() = site == Site.MEMBER
@@ -164,8 +166,11 @@ public data class ModifierTarget(
         public fun head(kind: DeclarationKind): ModifierTarget = ModifierTarget(kind, Site.HEAD)
 
         /** 创建一个成员目标，可携带容器种类。 */
-        public fun member(kind: DeclarationKind, container: DeclarationKind? = null): ModifierTarget =
-            ModifierTarget(kind, Site.MEMBER, container)
+        public fun member(
+            kind: DeclarationKind,
+            container: DeclarationKind? = null,
+            isCommonSpecificAbstractClassMember: Boolean = false,
+        ): ModifierTarget = ModifierTarget(kind, Site.MEMBER, container, isCommonSpecificAbstractClassMember)
 
         /** 创建一个局部目标。 */
         public fun local(kind: DeclarationKind): ModifierTarget = ModifierTarget(kind, Site.LOCAL)

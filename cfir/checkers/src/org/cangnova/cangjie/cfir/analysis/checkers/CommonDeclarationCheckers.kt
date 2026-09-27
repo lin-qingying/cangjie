@@ -40,6 +40,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirModifierChecker,
             CfirCjmpParseRulesChecker,
             CfirCjmpMatchingChecker,
+            CfirCommonSpecificDeclarationChecker,
             CfirTypeConstraintsChecker,
         )
 
@@ -152,6 +153,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirExtendStaticGenericDependencyChecker,
             CfirExtendExtraChecker,
             CfirConstExtendDeclarationChecker,
+            CfirCommonSpecificExtendChecker,
         )
 
     /** 对构造器委托和初始化规则执行的 checker 集合。 */

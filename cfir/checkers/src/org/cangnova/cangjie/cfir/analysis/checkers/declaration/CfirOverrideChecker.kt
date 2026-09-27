@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.createCallableTypeParameterSubstitutorForOverride
+import org.cangnova.cangjie.cfir.scopes.createTypeParameterSubstitutorForOverride
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.symbols.*
@@ -397,18 +398,30 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         declaration: CfirCallableDeclaration,
         overriddenSymbols: List<CfirCallableSymbol<*>>,
     ) {
-        val declarationSymbol = declaration.symbol as? CfirCallableSymbol<*> ?: return
-        val childTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        checkGenericConstraintCompatibility(
+            declaration,
+            overriddenSymbols.mapNotNull { it.cfir as? CfirMemberDeclaration },
+        )
+    }
+
+    /** CJMP 以同一宽严规则检查 nominal 与 callable 的按位置对应泛型约束。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    internal fun checkGenericConstraintCompatibility(
+        declaration: CfirMemberDeclaration,
+        overriddenDeclarations: List<CfirMemberDeclaration>,
+    ) {
+        val childTypeParameters = declaration.typeParameters
         if (childTypeParameters.isEmpty()) return
 
         val parentDomainsByTypeParameter = List(childTypeParameters.size) {
             linkedSetOf<ConeCangJieType>()
         }
 
-        for (overridden in overriddenSymbols) {
-            val parentTypeParameters = (overridden.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
-            val parentToChildSubstitutor = createCallableTypeParameterSubstitutorForOverride(
-                overriding = declarationSymbol,
+        for (overridden in overriddenDeclarations) {
+            val parentTypeParameters = overridden.typeParameters
+            if (parentTypeParameters.size != childTypeParameters.size) continue
+            val parentToChildSubstitutor = createTypeParameterSubstitutorForOverride(
+                overriding = declaration,
                 overridden = overridden,
                 context = context.session.typeContext,
             ) ?: continue
@@ -460,7 +473,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
  *
  * 优先返回声明属性中记录的类型约束 source，以便诊断落在具体 where/upper-bound 条目上。
  */
-private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
+private fun CfirMemberDeclaration.genericConstraintDiagnosticSource(
     typeParameter: CfirTypeParameterRef,
 ) = attributes.typeConstraintDiagnosticData
     ?.typeConstraints

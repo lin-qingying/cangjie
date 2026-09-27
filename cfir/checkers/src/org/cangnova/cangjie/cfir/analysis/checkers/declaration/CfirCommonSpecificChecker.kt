@@ -28,17 +28,17 @@ import org.cangnova.cangjie.cfir.expressions.annotationVersionSupport
 import org.cangnova.cangjie.cfir.expressions.isSupportedBuiltinAnnotation
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.expressions.platformAnnotationKind
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.dependenciesSymbolProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.cjmpSettings
 import org.cangnova.cangjie.cfir.session.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.session.CfirCjmpMode
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.session.CfirCjmpCommonSideFacts
+import org.cangnova.cangjie.cfir.session.CfirCjmpCandidateDiagnostic
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.session.CfirCjmpMappingStorage
-import org.cangnova.cangjie.cfir.session.CjmpMismatchKind
+import org.cangnova.cangjie.resolve.calls.mpp.CjmpMismatchKind
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
@@ -53,6 +53,8 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
@@ -80,24 +82,79 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         if (!CjmpGate.isEnabled(context)) return
 
         // 配对结论（NOT_MATCHED / 种类 / 修饰符 / 超类型 / 穷尽性）统一由 CfirCjmpMatchingChecker
-        // 与 CfirCjmpCommonSideChecker 消费配对存储报告；此处只保留 specific 额外约束。
+        // 与 CfirCjmpCommonSideChecker 消费配对存储报告；此处保留 specific 额外约束及
+        // common CJO 与未标记 direct member 之间的普通 overload 冲突检查。
         if (declaration.status.isSpecific) {
+            checkUnmarkedDirectMemberOverloadConflicts(declaration)
             checkSpecificExtraConstraints(declaration)
         }
 
         // 对 common 声明执行约束检查
         if (declaration.status.isCommon) {
             checkCommonDeclarationConstraints(declaration)
-            checkCommonExtraConstraints(declaration)
         }
 
         // common/specific 声明的修饰符和注解限制
         if (declaration.status.isCommon || declaration.status.isSpecific) {
-            checkCommonSpecificAnnotations(declaration)
             checkCJMPAbstractClassMembers(declaration)
             // 注意：explicitly abstract 的 sema 诊断无官方触发点（origin/main 全文无引用），
             // 该形态由 parse 变体统一负责（CfirCjmpParseRulesChecker，1.1.3 实测消息对位），
             // 此处不再重复检查（Phase 3 收敛：sema 条目已登记为后续清理项）。
+        }
+    }
+
+    /**
+     * common CJO 与 specific nominal 的直接函数声明来自不同 session；一般 redeclaration
+     * collector 看不到跨 session 的同签名声明。未标记为 specific 的 specific 直接成员仍按
+     * 官方 `PreCheckFuncRedefinition` 与 common 成员组成普通 overload conflict。
+     */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkUnmarkedDirectMemberOverloadConflicts(specificOwner: CfirClassLikeDeclaration) {
+        if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
+        val storage = context.session.cjmpMappingStorageOrNull ?: return
+        val commonOwner = storage.commonFor(specificOwner) as? CfirClassLikeDeclaration ?: return
+        val classTypeParameterMapping = storage.typeParameterMappingFor(specificOwner)
+        val reportedSignatures = linkedSetOf<List<String>>()
+
+        for (specificFunction in specificOwner.declarations.filterIsInstance<CfirNamedFunction>()) {
+            if (specificFunction.status.isSpecific) continue
+
+            for (commonFunction in commonOwner.declarations.filterIsInstance<CfirNamedFunction>()) {
+                if (!commonFunction.status.isCommon) continue
+                if (commonFunction.name != specificFunction.name) continue
+                if (commonFunction.status.isStatic != specificFunction.status.isStatic) continue
+                if (commonFunction.typeParameters.size != specificFunction.typeParameters.size) continue
+                if (commonFunction.valueParameters.size != specificFunction.valueParameters.size) continue
+
+                val typeParameterMapping = buildMap {
+                    putAll(classTypeParameterMapping)
+                    commonFunction.typeParameters.zip(specificFunction.typeParameters).forEach { (common, specific) ->
+                        put(common, specific)
+                    }
+                }
+                val commonToSpecificSubstitutor =
+                    CfirTypeSubstitutorByMap.fromTypeParameterMapping(typeParameterMapping)
+                val sameParameterSignature = commonFunction.valueParameters.zip(specificFunction.valueParameters)
+                    .all { (commonParameter, specificParameter) ->
+                        val commonType = commonParameter.returnTypeRef.coneTypeOrNull ?: return@all false
+                        val specificType = specificParameter.returnTypeRef.coneTypeOrNull ?: return@all false
+                        val mappedCommonType = commonToSpecificSubstitutor.substituteOrSelf(commonType)
+                        commonType !is ConeErrorType && specificType !is ConeErrorType &&
+                                AbstractTypeChecker.equalTypes(context.session.typeContext, mappedCommonType, specificType)
+                    }
+                if (!sameParameterSignature) continue
+
+                val signature = specificFunction.valueParameters.map { parameter ->
+                    parameter.returnTypeRef.coneTypeOrNull?.toString().orEmpty()
+                }
+                if (!reportedSignatures.add(signature)) continue
+                reporter.reportOn(
+                    source = specificFunction.source,
+                    factory = CfirErrors.CONFLICTING_OVERLOADS,
+                    a = listOf(specificFunction.name.asString()),
+                )
+                break
+            }
         }
     }
 
@@ -137,7 +194,6 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
 
     /**
      * specific 声明的额外约束：
-     * - specific 主构造器必须与 common 的成员声明一致
      * - open abstract specific 不能替代 open common
      * - 非 specific 抽象成员不能在 specific 类中
      * - specific 类不能同时有多个相同的 extension
@@ -203,157 +259,10 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
             }
         }
 
-        // specific init 不能实现 primary common constructor
-        for (member in specificDecl.declarations) {
-            if (member !is org.cangnova.cangjie.cfir.declarations.CfirConstructor) continue
-            if (member.status.isSpecific && commonDecl != null) {
-                val commonPrimary = commonDecl.declarations
-                    .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
-                    .firstOrNull { it.isPrimary }
-                if (commonPrimary != null) {
-                    reporter.reportOn(
-                        source = member.source,
-                        factory = CfirErrors.SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR,
-                    )
-                }
-            }
-        }
-
-        // specific primary constructor 参数必须也是成员变量声明
-        val primaryCtor = specificDecl.declarations
-            .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
-            .firstOrNull { it.isPrimary && it.status.isSpecific }
-        if (primaryCtor != null) {
-            val memberFieldNames = specificDecl.declarations
-                .filterIsInstance<CfirFieldVariable>()
-                .map { it.name }
-                .toSet()
-            for (param in primaryCtor.valueParameters) {
-                if (param.name !in memberFieldNames) {
-                    reporter.reportOn(
-                        source = param.source ?: primaryCtor.source,
-                        factory = CfirErrors.SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL,
-                    )
-                }
-            }
-        }
-    }
-
-    /**
-     * common 声明的额外约束：
-     * - MULTIPLE_COMMON_IMPLEMENTATIONS: common 声明不能有多个 specific 实现（通过 symbolProvider 检查）
-     * - COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH
-     * - COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT
-     * - COMMON_ASSIGN_TO_COMMON_IMMUTABLE_IN_CTOR
-     * - common 的私有成员约束
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkCommonExtraConstraints(commonDecl: CfirClassLikeDeclaration) {
-        // common 泛型声明的 @Frozen 限制
-        if (commonDecl.typeParameters.isNotEmpty()) {
-            if (commonDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.FROZEN)) {
-                reporter.reportOn(
-                    source = commonDecl.source,
-                    factory = CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED,
-                    a = "class",
-                )
-            }
-        }
-
-        // common open class 的 static let 不能在 static init 中初始化
-        for (member in commonDecl.declarations) {
-            if (member !is CfirFieldVariable) continue
-            if (!member.status.isStatic) continue
-            if (member.isVar) continue
-            // 检查是否在 static init 中赋值——需要检查 CFG
-            // 声明级只能检查：static let 必须在声明处初始化
-            if (member.initializer == null) {
-                reporter.reportOn(
-                    source = member.source ?: commonDecl.source,
-                    factory = CfirErrors.COMMON_STATIC_LET_CANT_BE_INITIALIZED_IN_STATIC_INIT,
-                    a = member.name,
-                )
-            }
-        }
-
-        // common 的 private 成员扩展约束
-        for (member in commonDecl.declarations) {
-            if (member !is org.cangnova.cangjie.cfir.declarations.CfirExtend) continue
-            val privateMembers = member.declarations.mapNotNull { sub ->
-                val name = memberName(sub) ?: return@mapNotNull null
-                val vis = when (sub) {
-                    is CfirNamedFunction -> sub.status.visibility
-                    is CfirProperty -> sub.status.visibility
-                    else -> return@mapNotNull null
-                }
-                if (vis == org.cangnova.cangjie.descriptors.Visibilities.Private) {
-                    name to (memberKind(sub) ?: "member")
-                } else null
-            }
-            // 检查重复的 private 成员
-            val nameCount = mutableMapOf<Name, Int>()
-            for ((name, _) in privateMembers) {
-                nameCount[name] = (nameCount[name] ?: 0) + 1
-            }
-            for ((name, count) in nameCount) {
-                if (count > 1) {
-                    val kind = privateMembers.first { it.first == name }.second
-                    reporter.reportOn(
-                        source = member.source ?: commonDecl.source,
-                        factory = CfirErrors.COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS,
-                        a = commonDecl.name,
-                        b = kind,
-                        c = name,
-                    )
-                }
-            }
-            // common 声明不能有标注 private 的成员（冲突）
-            if (member.status.isCommon) {
-                for ((name, kind) in privateMembers) {
-                    reporter.reportOn(
-                        source = member.source ?: commonDecl.source,
-                        factory = CfirErrors.COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS,
-                        a = kind,
-                        b = name,
-                    )
-                }
-            }
-        }
-
-        // MULTIPLE_COMMON_IMPLEMENTATIONS 已移至 specific 侧消费（C17：matcher 第二绑定 →
-        // checkSpecificMatchesCommon 消费存储上报）；此处不再 symbolProvider 现查。
-        // COMMON_NON_EXHAUSTIVE_PLATFORM_EXHAUSTIVE_MISMATCH 接线属 Phase 3 item 2。
-    }
-
-    /**
-     * common/specific 的注解限制。
-     *
-     * 对齐 C++ DiagKind::sema_common_specific_annotation_not_allowed
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkCommonSpecificAnnotations(decl: CfirClassLikeDeclaration) {
-        for (ann in decl.annotations) {
-            val call = ann as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall ?: continue
-            val builtinKind = ann.annotationKind
-            val platformKind = call.platformAnnotationKind
-            val supportedPlatform = call.annotationVersionSupport(context.languageVersionSettings) ==
-                org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
-            val supportedBuiltin = builtinKind?.let { kind ->
-                call.isSupportedBuiltinAnnotation(kind, context.languageVersionSettings)
-            } ?: true
-            if (supportedBuiltin && builtinKind in DISALLOWED_ON_COMMON_SPECIFIC ||
-                (supportedPlatform && platformKind in DISALLOWED_PLATFORM_ON_COMMON_SPECIFIC)
-            ) {
-                val name = call.builtInDescriptor?.sourceName
-                    ?: call.platformAnnotationDescriptor?.sourceName
-                    ?: continue
-                reporter.reportOn(
-                    source = decl.source,
-                    factory = CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED,
-                    a = Name.identifier(name),
-                )
-            }
-        }
+        // SPECIFIC_INIT_COMMON_PRIMARY_CONSTRUCTOR / SPECIFIC_PRIMARY_UNMATCHED_VAR_DECL 不在此报告：
+        // 官方只在 MatchCJMPFunction 把 specific 构造器与 common 标记的主构造器配对时触发（CheckCJMP.cpp:967-980），
+        // 而主构造器不能带 common/specific（WRONG_MODIFIER_TARGET），cjc 1.1.3 无可达触发点。
+        // 此前按"common 侧存在任意主构造器 / specific 标记主构造器"的启发式报告，会在合法程序上误报。
     }
 
     /**
@@ -404,10 +313,137 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     }
 }
 
+/** common/specific 声明通用限制；覆盖 class-like、顶层 callable 与 extend。 */
+object CfirCommonSpecificDeclarationChecker : CfirBasicDeclarationChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirDeclaration) {
+        val member = declaration as? CfirMemberDeclaration ?: return
+        if (!member.status.isCommon && !member.status.isSpecific) return
+        if (!CjmpGate.isEnabled(context)) return
+
+        checkGenericFrozen(member)
+        checkCommonSpecificAnnotations(member)
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkGenericFrozen(declaration: CfirMemberDeclaration) {
+        if (declaration.typeParameters.isEmpty()) return
+        val frozen = declaration.annotations
+            .filterIsInstance<org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall>()
+            .firstOrNull { annotation ->
+                annotation.annotationKind == BuiltInAnnotationKind.FROZEN &&
+                        annotation.isSupportedBuiltinAnnotation(
+                            BuiltInAnnotationKind.FROZEN,
+                            context.languageVersionSettings,
+                        )
+            } ?: return
+        reporter.reportOn(
+            source = frozen.source ?: declaration.source,
+            factory = CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED,
+            a = cjmpDeclKind(declaration),
+        )
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCommonSpecificAnnotations(declaration: CfirDeclaration) {
+        for (annotation in declaration.annotations) {
+            val call = annotation as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall ?: continue
+            val builtinKind = annotation.annotationKind
+            val platformKind = call.platformAnnotationKind
+            val supportedPlatform = call.annotationVersionSupport(context.languageVersionSettings) ==
+                    org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus.SUPPORTED
+            val supportedBuiltin = builtinKind?.let { kind ->
+                call.isSupportedBuiltinAnnotation(kind, context.languageVersionSettings)
+            } ?: true
+            if (supportedBuiltin && builtinKind in DISALLOWED_ON_COMMON_SPECIFIC ||
+                supportedPlatform && platformKind in DISALLOWED_PLATFORM_ON_COMMON_SPECIFIC
+            ) {
+                val name = call.builtInDescriptor?.sourceName
+                    ?: call.platformAnnotationDescriptor?.sourceName
+                    ?: continue
+                reporter.reportOn(
+                    source = call.source ?: declaration.source,
+                    factory = CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED,
+                    a = Name.identifier(name),
+                )
+            }
+        }
+    }
+}
+
+/** Common 编译中的顶层 common extend 检查，对齐官方 `CheckCommonExtensions`。 */
+object CfirCommonSpecificExtendChecker : CfirExtendChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirExtend) {
+        if (!declaration.status.isCommon || declaration.superTypeRefs.isNotEmpty()) return
+        if (!CjmpGate.isEnabled(context) || context.session.cjmpSettings.mode != CfirCjmpMode.COMMON) return
+
+        val targetKey = (declaration.extendedTypeRef as? CfirResolvedTypeRef)?.coneType?.toString() ?: return
+        val packageName = context.session.extendProvider.getPackageFqName(declaration)
+            ?: context.session.extendProvider.getContainingFile(declaration)?.packageDirective?.packageFqName
+            ?: return
+        data class PrivateMember(val extend: CfirExtend, val declaration: CfirDeclaration, val name: Name, val kind: String)
+
+        val matchingExtends = context.session.extendProvider.getAllExtends().filter { candidate ->
+            candidate.status.isCommon && candidate.superTypeRefs.isEmpty() &&
+                    candidate.moduleData.name == declaration.moduleData.name &&
+                    (context.session.extendProvider.getPackageFqName(candidate)
+                        ?: context.session.extendProvider.getContainingFile(candidate)?.packageDirective?.packageFqName) == packageName &&
+                    (candidate.extendedTypeRef as? CfirResolvedTypeRef)?.coneType?.toString() == targetKey
+        }
+        val privateMembers = matchingExtends.flatMap { extend ->
+            extend.declarations.mapNotNull { member ->
+                val (name, kind, visibility) = when (member) {
+                    is CfirNamedFunction -> Triple(member.name, "function", member.status.visibility)
+                    is CfirProperty -> Triple(member.name, "property", member.status.visibility)
+                    else -> return@mapNotNull null
+                }
+                if (visibility != org.cangnova.cangjie.descriptors.Visibilities.Private) return@mapNotNull null
+                PrivateMember(extend, member, name, kind)
+            }
+        }
+
+        for ((name, duplicates) in privateMembers.groupBy { it.name }) {
+            val ordered = duplicates.sortedWith(
+                compareBy<PrivateMember>(
+                    { context.session.extendProvider.getContainingFile(it.extend)?.sourceFile?.path.orEmpty() },
+                    { it.declaration.source?.startOffset ?: Int.MAX_VALUE },
+                ),
+            )
+            for ((index, duplicate) in ordered.withIndex()) {
+                if (duplicate.extend !== declaration || index == 0) continue
+                reporter.reportOn(
+                    source = duplicate.declaration.source ?: declaration.source,
+                    factory = CfirErrors.COMMON_DIRECT_EXTENSION_HAS_DUPLICATE_PRIVATE_MEMBERS,
+                    a = CfirCjmpCommonSideFacts.declName(declaration),
+                    b = duplicate.kind,
+                    c = name,
+                )
+            }
+        }
+
+        for (privateMember in privateMembers.filter { it.extend === declaration }) {
+            val member = privateMember.declaration
+            val name = privateMember.name
+            val kind = privateMember.kind
+            if ((member as? CfirMemberDeclaration)?.status?.isCommon != true) continue
+            reporter.reportOn(
+                source = member.source ?: declaration.source,
+                factory = CfirErrors.COMMON_DIRECT_EXTENSION_HAS_COMMON_PRIVATE_MEMBERS,
+                a = kind,
+                b = name,
+            )
+        }
+    }
+}
+
 /**
  * common 包 main 函数检查器
  *
- * 对齐 C++ DiagKind::sema_common_package_has_main
+ * 对齐官方 `TypeCheckerImpl::CheckEntryFunc` 的 `sema_common_package_has_main`（cjc 1.1.3）：判据是**文件级**
+ * `File::isCommon`——common 编译（CHIR 输出）中，文件内任一声明带 `common` 修饰符即成为 common package part
+ * 文件（`MPParserImpl::CheckCJMPModifiers` 置位），该文件中的 main 报错（与 main 在文件中的先后无关）；
+ * 同包其它不含 common 声明的文件中的 main 不报。`common main()` 本身由修饰符规则拒绝，不使文件成为 common。
  *
  * 注册为 fileCheckers
  */
@@ -415,20 +451,36 @@ object CfirCommonPackageMainChecker : CfirFileChecker() {
     override val requiresImplementation: Boolean get() = true
 
     /**
-     * 检查 common 包中是否声明了 main 函数。
+     * 检查 common package part 文件中是否声明了 main 函数。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFile) {
-        // 版本门（G12 逃逸修复）：非 1.1+ 语义下 common/specific 整族静默。
+    override fun check(declaration: CfirFile) {
+        // 版本门 + 模式门（G12 逃逸修复）：非 1.1+ 语义或非 CJMP 编译下整族静默；common part 只存在于 common 编译。
         if (!CjmpGate.isEnabled(context)) return
+        if (context.session.cjmpSettings.mode != CfirCjmpMode.COMMON) return
+        if (declaration.declarations.none { it.declaresCjmpCommon() }) return
         for (decl in declaration.declarations) {
-            if (decl is org.cangnova.cangjie.cfir.declarations.CfirMainFunction && decl.status.isCommon) {
+            if (decl is org.cangnova.cangjie.cfir.declarations.CfirMainFunction) {
                 reporter.reportOn(
                     source = decl.source,
                     factory = CfirErrors.COMMON_PACKAGE_HAS_MAIN,
                 )
             }
         }
+    }
+
+    /**
+     * 声明自身或其成员带 `common` 修饰符（官方对每个经 `ParseDecl` 解析的声明调用 `CheckCJMPModifiers`，成员亦然）。
+     */
+    private fun CfirDeclaration.declaresCjmpCommon(): Boolean {
+        if (this is org.cangnova.cangjie.cfir.declarations.CfirMainFunction) return false
+        if ((this as? CfirMemberDeclaration)?.status?.isCommon == true) return true
+        val members = when (this) {
+            is CfirClassLikeDeclaration -> declarations
+            is CfirExtend -> declarations
+            else -> return false
+        }
+        return members.any { it.declaresCjmpCommon() }
     }
 }
 
@@ -470,11 +522,11 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
  * FOREIGN_SETTER_NAME、CONSTSAFE、ENSURE_PREPARED_TO_MOCK、NON_PRODUCT）——
  * 其中 @Deprecated 由 [CfirCjmpMatchingChecker] 按官方 `PostCheckDeprecatedAnnotation` 单独负责。
  */
-private fun CfirDeclaration.annotationKeys(
+private fun CfirDeclaration.annotationMatches(
     settings: org.cangnova.cangjie.LanguageVersionSettings,
-): List<AnnotationMatchKey> =
+): List<CjmpAnnotationMatch> =
     annotations.mapNotNull { annotation ->
-        when {
+        val key = when {
             annotation.annotationKind != null &&
                 ((annotation as? org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall)
                     ?.isSupportedBuiltinAnnotation(annotation.annotationKind!!, settings)
@@ -489,7 +541,8 @@ private fun CfirDeclaration.annotationKeys(
             annotation.annotationClassId != null -> AnnotationMatchKey.Resolved(annotation.annotationClassId!!)
             else -> null
         }
-    }.filterNot { key -> key.isSpecialHandledForCjmpMatch() }
+        key?.takeUnless { it.isSpecialHandledForCjmpMatch() }?.let { CjmpAnnotationMatch(it, annotation) }
+    }
 
 /**
  * 官方 `IsSpecialHandledAnnotation`（CheckCJMPAnnotations.cpp:198-203）对位：
@@ -529,11 +582,19 @@ private val SPECIAL_HANDLED_PLATFORM_ANNOTATIONS: Set<CangjiePlatformAnnotationK
     CangjiePlatformAnnotationKind.FOREIGN_SETTER_NAME,
 )
 
-/**
- * 注解身份多重集相等：元素与出现次数同时相等（官方双向一一对应语义的等价判据）。
- */
-private fun annotationKeyMultisetsEqual(a: List<AnnotationMatchKey>, b: List<AnnotationMatchKey>): Boolean =
-    a.size == b.size && a.groupingBy { it }.eachCount() == b.groupingBy { it }.eachCount()
+/** common 注解在匹配后传播到 specific；只报告 specific 侧仍无法与 common 一一匹配的注解。 */
+private fun firstUnmatchedSpecificAnnotation(
+    specific: List<CjmpAnnotationMatch>,
+    common: List<CjmpAnnotationMatch>,
+): CjmpAnnotationMatch? {
+    val remainingCommon = common.groupingBy { it.key }.eachCount().toMutableMap()
+    for (annotation in specific) {
+        val remaining = remainingCommon[annotation.key] ?: 0
+        if (remaining == 0) return annotation
+        remainingCommon[annotation.key] = remaining - 1
+    }
+    return null
+}
 
 /**
  * 注解身份匹配键，用于 common/specific 双份声明的注解一致性比较。
@@ -546,6 +607,11 @@ private sealed interface AnnotationMatchKey {
     data class Platform(val kind: CangjiePlatformAnnotationKind) : AnnotationMatchKey
     data class Resolved(val classId: org.cangnova.cangjie.name.ClassId) : AnnotationMatchKey
 }
+
+private data class CjmpAnnotationMatch(
+    val key: AnnotationMatchKey,
+    val annotation: org.cangnova.cangjie.cfir.expressions.CfirAnnotation,
+)
 
 /**
  * Deprecated 注解名。
@@ -561,6 +627,7 @@ private val DISALLOWED_ON_COMMON_SPECIFIC: Set<BuiltInAnnotationKind> = setOf(
     // C/Java AST 互操作身份不能与 common/specific 共存
     BuiltInAnnotationKind.C,
     BuiltInAnnotationKind.JAVA,
+    BuiltInAnnotationKind.ENSURE_PREPARED_TO_MOCK,
 )
 
 /** common/specific 声明上禁止出现的平台注解身份，对齐官方 CheckNotAllowedAnnotations 的平台侧集合。 */
@@ -596,9 +663,21 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
         if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
         val storage = context.session.cjmpMappingStorageOrNull ?: return
 
-        val common = storage.commonFor(declaration)
-        if (common != null) {
-            checkMatched(declaration, common as CfirMemberDeclaration, storage)
+        if (declaration is CfirExtend && storage.isDuplicateSpecificExtend(declaration)) {
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.SPECIFIC_HAS_DUPLICATE_EXTENSIONS,
+                a = CfirCjmpCommonSideFacts.declName(declaration),
+            )
+            return
+        }
+
+        val commonCounterparts = storage.commonCounterpartsFor(declaration)
+        reportCandidateDiagnostics(declaration, storage)
+        if (commonCounterparts.isNotEmpty()) {
+            commonCounterparts.forEach { common ->
+                checkMatched(declaration, common as CfirMemberDeclaration, storage)
+            }
         } else {
             reportUnmatched(declaration, storage)
         }
@@ -615,7 +694,10 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
         if (!CjmpGate.isEnabled(context)) return
         if (context.session.cjmpSettings.mode != CfirCjmpMode.SPECIFIC) return
         val storage = context.session.cjmpMappingStorageOrNull ?: return
-        if (!storage.isUnmatched(declaration)) return
+        val commonEnum = storage.commonFor(enum) as? CfirEnum
+        if (commonEnum?.isNonExhaustive == true) return
+        val signatureUnresolved = CjmpMismatchKind.TYPE_NOT_RESOLVED in storage.mismatchKindsFor(declaration)
+        if (!storage.isUnmatched(declaration) && !signatureUnresolved) return
         reporter.reportOn(
             source = declaration.source,
             factory = CfirErrors.NOT_MATCHED,
@@ -625,14 +707,61 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
         )
     }
 
+    /** 重放 first-fit 失败候选已触发的诊断；后续候选成功只决定映射，不撤销这些诊断。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportCandidateDiagnostics(
+        declaration: CfirDeclaration,
+        storage: CfirCjmpMappingStorage,
+    ) {
+        for (diagnostic in storage.candidateDiagnosticsFor(declaration)) {
+            when (diagnostic) {
+                is CfirCjmpCandidateDiagnostic.MissingBody -> {
+                    val callable = declaration as? CfirCallableDeclaration
+                    val commonContainerName = diagnostic.commonCandidate?.let(::cjmpCandidateContainerName)
+                        ?: callable?.symbol?.callableId?.classId?.shortClassName?.asString().orEmpty()
+                    reporter.reportOn(
+                        source = declaration.source,
+                        factory = CfirErrors.SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION,
+                        a = callable?.symbol?.name?.asString().orEmpty(),
+                        b = commonContainerName,
+                    )
+                }
+                is CfirCjmpCandidateDiagnostic.ParameterMismatch -> {
+                    val mismatch = diagnostic.mismatch
+                    val parameter = (declaration as? CfirFunction)?.valueParameters?.getOrNull(mismatch.parameterIndex)
+                    reporter.reportOn(
+                        source = parameter?.source ?: declaration.source,
+                        factory = if (mismatch.kind == CjmpMismatchKind.PARAMETER_DEFAULT_VALUE_BOTH_SIDES) {
+                            CfirErrors.CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES
+                        } else {
+                            CfirErrors.SPECIFIC_HAS_DIFFERENT_PARAMETER
+                        },
+                    )
+                }
+            }
+        }
+    }
+
+    /** 对齐官方 `commonDecl.outerDecl.identifier`，同时覆盖 class 成员与 extend 成员。 */
+    private fun cjmpCandidateContainerName(candidate: CfirDeclaration): String? {
+        val callable = candidate as? CfirCallableDeclaration ?: return null
+        val containingExtend = callable.moduleData.session.extendProvider.getContainingExtend(callable.symbol)
+        return containingExtend?.let(CfirCjmpCommonSideFacts::declName)?.asString()
+            ?: callable.symbol.callableId.classId?.shortClassName?.asString()
+    }
+
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun reportUnmatched(declaration: CfirDeclaration, storage: CfirCjmpMappingStorage) {
         val kinds = storage.mismatchKindsFor(declaration)
         if (!storage.isUnmatched(declaration) && kinds.isEmpty()) return
 
+        // 官方 NeedToReportMissingBody 只报告成员缺实现诊断，不再追加 NOT_MATCHED。
+        if (CjmpMismatchKind.MISSING_BODY in kinds) return
+
         if (declaration is CfirClassLikeDeclaration && CjmpMismatchKind.CLASS_KIND in kinds) {
-            val common = context.session.dependenciesSymbolProvider
-                .getClassLikeSymbolByClassId(declaration.symbol.classId)?.cfir as? CfirClassLikeDeclaration
+            val common = storage.mismatchCandidatesFor(declaration)
+                .filterIsInstance<CfirClassLikeDeclaration>()
+                .firstOrNull()
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND,
@@ -640,27 +769,6 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
                 b = common?.let(::cjmpDeclKind) ?: cjmpDeclKind(declaration),
             )
             return
-        }
-        if (CjmpMismatchKind.MISSING_BODY in kinds) {
-            val callable = declaration as? CfirCallableDeclaration
-            reporter.reportOn(
-                source = declaration.source,
-                factory = CfirErrors.SPECIFIC_MEMBER_MUST_HAVE_IMPLEMENTATION,
-                a = callable?.symbol?.name?.asString().orEmpty(),
-                b = callable?.symbol?.callableId?.classId?.shortClassName?.asString().orEmpty(),
-            )
-            return
-        }
-        storage.parameterMismatchesFor(declaration).firstOrNull()?.let { mismatch ->
-            val parameter = (declaration as? CfirFunction)?.valueParameters?.getOrNull(mismatch.parameterIndex)
-            reporter.reportOn(
-                source = parameter?.source ?: declaration.source,
-                factory = if (mismatch.kind == CjmpMismatchKind.PARAMETER_DEFAULT_VALUE_BOTH_SIDES) {
-                    CfirErrors.CJMP_PARAMETER_DEFAULT_VALUE_BOTH_SIDES
-                } else {
-                    CfirErrors.SPECIFIC_HAS_DIFFERENT_PARAMETER
-                },
-            )
         }
         reporter.reportOn(
             source = declaration.source,
@@ -687,6 +795,7 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
         }
 
         if (specific is CfirClassLikeDeclaration && common is CfirClassLikeDeclaration) {
+            CfirOverrideChecker.checkGenericConstraintCompatibility(specific, listOf(common))
             if (!checkModifiers(specific, specificStatus, common, isNominal = true)) return
             if (specific.superTypeRefs.size != common.superTypeRefs.size) {
                 reporter.reportOn(
@@ -710,8 +819,12 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
         // MatchCJMPVar / MatchCJMPProp：类型与 var/let 在配对后报告
         val specificType = callableType(specific)
         val commonType = callableType(common)
-        if (specificType != null && commonType != null &&
-            !AbstractTypeChecker.equalTypes(context.session.typeContext, specificType, commonType)
+        val mappedCommonType = commonType?.let {
+            CfirTypeSubstitutorByMap.fromTypeParameterMapping(storage.typeParameterMappingFor(specific))
+                .substituteOrSelf(it)
+        }
+        if (specificType != null && mappedCommonType != null &&
+            !AbstractTypeChecker.equalTypes(context.session.typeContext, specificType, mappedCommonType)
         ) {
             val kind = when (specific) {
                 is CfirProperty -> "property"
@@ -738,11 +851,12 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
             CfirOverrideChecker.checkGenericConstraintCompatibility(specific, listOf(common.symbol))
         }
 
-        val specificAnnotations = specific.annotationKeys(context.languageVersionSettings)
-        val commonAnnotations = common.annotationKeys(context.languageVersionSettings)
-        if (!annotationKeyMultisetsEqual(specificAnnotations, commonAnnotations)) {
+        val specificAnnotations = specific.annotationMatches(context.languageVersionSettings)
+        val commonAnnotations = common.annotationMatches(context.languageVersionSettings)
+        val unmatchedSpecificAnnotation = firstUnmatchedSpecificAnnotation(specificAnnotations, commonAnnotations)
+        if (unmatchedSpecificAnnotation != null) {
             reporter.reportOn(
-                source = specific.source,
+                source = unmatchedSpecificAnnotation.annotation.source ?: specific.source,
                 factory = CfirErrors.SPECIFIC_HAS_DIFFERENT_ANNOTATION,
                 a = cjmpDeclKind(specific),
             )

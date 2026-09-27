@@ -2111,7 +2111,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // common/specific 抽象类成员必须有明确修饰符
-        val CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER by error<PsiElement> {
+        val CJMP_ABSTRACT_CLASS_MEMBER_HAS_NO_EXPLICIT_MODIFIER by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("className")
             parameter<String>("memberKind")
             parameter<String>("modifier")

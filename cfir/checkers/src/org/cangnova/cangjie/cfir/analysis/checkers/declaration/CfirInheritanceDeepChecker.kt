@@ -55,6 +55,7 @@ import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenan
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.isCjmpShadowedCommonDeclaration
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.session.extendRuleQueryServiceOrNull
 import org.cangnova.cangjie.cfir.session.services.CfirExtendRuleQueryService
@@ -1763,6 +1764,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 val substitution = findExtendDeclarationSubstitution(context.session, extend, receiverType)
                     ?: continue
                 for (member in extend.declarations) {
+                    if (context.session.isCjmpShadowedCommonDeclaration(member)) continue
                     when (member) {
                         is CfirNamedFunction -> {
                             if (member.name != name) continue
@@ -1841,6 +1843,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         }
 
                         for (member in extend.declarations) {
+                            if (context.session.isCjmpShadowedCommonDeclaration(member)) continue
                             val symbol = when (member) {
                                 is CfirNamedFunction -> member.symbol?.takeIf { member.name == name }
                                 is CfirProperty -> member.symbol.takeIf { member.name == name }

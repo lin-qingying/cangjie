@@ -50,9 +50,7 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
         val source = declaration.source ?: return
-        if (declaration is CfirConstructor && declaration.isPrimary && !source.isConstructorSource()) {
-            return
-        }
+        if (declaration is CfirConstructor && declaration.isPrimary && !source.isConstructorSource()) return
 
         val modifiers = source.realSourceModifiers() ?: return
         val reportedNodes = hashSetOf<SourceModifier>()
@@ -67,7 +65,7 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         for (modifier in modifiers) {
             if (modifier in reportedNodes) continue
             when {
-                !checkTarget(modifier, actualTargets) -> reportedNodes += modifier
+                !checkTarget(modifier, actualTargets, declaration) -> reportedNodes += modifier
                 !checkParent(modifier, actualParents) -> reportedNodes += modifier
             }
         }
@@ -82,12 +80,17 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
     private fun checkTarget(
         modifier: SourceModifier,
         actualTargets: List<ModifierTarget>,
+        declaration: CfirDeclaration,
     ): Boolean {
         val modifierToken = modifier.token
         val possiblePredicate = possibleTargetMap[modifierToken]
 
+        val primaryConstructorCjmpModifier = declaration is CfirConstructor && declaration.isPrimary &&
+                (modifierToken == CjTokens.COMMON_KEYWORD || modifierToken == CjTokens.SPECIFIC_KEYWORD) &&
+                context.languageVersionSettings.supportsFeature(org.cangnova.cangjie.LanguageFeature.CommonSpecificDeclarations)
+
         // 不在允许表中的修饰符视为无目标约束，直接通过。
-        val isWrongTarget = possiblePredicate == null || actualTargets.none {
+        val isWrongTarget = primaryConstructorCjmpModifier || possiblePredicate == null || actualTargets.none {
             possiblePredicate.isAllowed(it, context.languageVersionSettings)
         }
         if (isWrongTarget) {

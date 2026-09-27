@@ -117,7 +117,13 @@ internal val possibleTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = m
         ModifierTargetPredicate.anySiteOf(DeclarationKind.STATIC_INITIALIZER),
     ),
 
-    ABSTRACT_KEYWORD to ModifierTargetPredicate.headOf(DeclarationKind.CLASS),
+    ABSTRACT_KEYWORD to ModifierTargetPredicate.anyOf(
+        ModifierTargetPredicate.headOf(DeclarationKind.CLASS),
+        ModifierTargetPredicate { target, _ ->
+            target.isMember && target.kind in setOf(DeclarationKind.FUNCTION, DeclarationKind.PROPERTY) &&
+                    target.isCommonSpecificAbstractClassMember
+        },
+    ),
 
     // `mut` 的容器细分规则（官方 `ParserModifierRules.cpp` 修饰符表 + cjc 1.0.5 实测）：
     // - 成员函数：仅允许 interface / struct / struct 的扩展；class / enum 体内官方报
@@ -367,7 +373,13 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
     is CfirInterface -> listOf(ModifierTarget.head(DeclarationKind.INTERFACE))
     is CfirEnum -> listOf(ModifierTarget.head(DeclarationKind.ENUM))
     is CfirExtend -> listOf(ModifierTarget.head(DeclarationKind.EXTEND))
-    is CfirProperty -> listOf(ModifierTarget.member(DeclarationKind.PROPERTY, container = closestContainingTypeKind()))
+    is CfirProperty -> listOf(
+        ModifierTarget.member(
+            DeclarationKind.PROPERTY,
+            container = closestContainingTypeKind(),
+            isCommonSpecificAbstractClassMember = isWithinCommonSpecificAbstractClass(),
+        ),
+    )
     is CfirPatternVariable, is CfirPatternBindingVariable -> {
         val containingType = closestContainingTypeKind()
         if ((declaration as CfirVariable).isLocal) {
@@ -427,11 +439,17 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
         if (declaration.isLocal) {
             listOf(ModifierTarget.local(DeclarationKind.FUNCTION))
         } else {
-            listOfModifierTargetForNonLocalFunction(closestContainingTypeKind())
+            listOfModifierTargetForNonLocalFunction(
+                closestContainingTypeKind(),
+                isWithinCommonSpecificAbstractClass(),
+            )
         }
     }
 
-    is CfirFunction -> listOfModifierTargetForNonLocalFunction(closestContainingTypeKind())
+    is CfirFunction -> listOfModifierTargetForNonLocalFunction(
+        closestContainingTypeKind(),
+        isWithinCommonSpecificAbstractClass(),
+    )
     is CfirTypeAlias -> listOf(ModifierTarget.head(DeclarationKind.TYPEALIAS))
     is CfirFile -> listOf(ModifierTarget.head(DeclarationKind.FILE))
     is CfirTypeParameter -> listOf(ModifierTarget.head(DeclarationKind.TYPE_PARAMETER))
@@ -445,12 +463,27 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
  * 修复点：顶层函数此前一律被错打为 `member(FUNCTION, container=null)`，
  * 致使 `headOf(...)` 谓词错过它、`memberOf(...)` 谓词误命中它，触发误报或漏报。
  */
-private fun listOfModifierTargetForNonLocalFunction(container: DeclarationKind?): List<ModifierTarget> =
+private fun listOfModifierTargetForNonLocalFunction(
+    container: DeclarationKind?,
+    isCommonSpecificAbstractClassMember: Boolean,
+): List<ModifierTarget> =
     if (container == null) {
         listOf(ModifierTarget.head(DeclarationKind.FUNCTION))
     } else {
-        listOf(ModifierTarget.member(DeclarationKind.FUNCTION, container = container))
+        listOf(
+            ModifierTarget.member(
+                DeclarationKind.FUNCTION,
+                container = container,
+                isCommonSpecificAbstractClassMember = isCommonSpecificAbstractClassMember,
+            ),
+        )
     }
+
+/** CJMP abstract 成员只允许出现在 common/specific abstract class 中。 */
+private fun CheckerContext.isWithinCommonSpecificAbstractClass(): Boolean =
+    findClosestDeclaration<CfirClass>()?.status?.let { status ->
+        status.isAbstract && (status.isCommon || status.isSpecific)
+    } == true
 
 
 /**

@@ -6,9 +6,11 @@ import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.lexer.CjKeywordToken
@@ -53,6 +55,15 @@ internal fun checkCompatibilityType(
         !context.languageVersionSettings.supportsFeature(LanguageFeature.CommonSpecificDeclarations)
     ) {
         return
+    }
+
+    // `common private` extension members use the dedicated Common-mode diagnostic rather than
+    // the generic pair-conflict diagnostics. The common extension checker reports that rule.
+    if (owner is CfirMemberDeclaration &&
+        setOf(firstModifierToken, secondModifierToken) == setOf(CjTokens.COMMON_KEYWORD, CjTokens.PRIVATE_KEYWORD)
+    ) {
+        val containingExtend = context.findClosestDeclaration<CfirExtend>()
+        if (containingExtend != null && containingExtend !== owner && containingExtend.status.isCommon) return
     }
 
     when (val compatibilityType = compatibility(firstModifierToken, secondModifierToken)) {
