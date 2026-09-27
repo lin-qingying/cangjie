@@ -1,0 +1,15 @@
+callInfoClass: CaBaseErrorCallInfo
+callsSize: 2
+diagnosticFactory: AMBIGUOUS_FUNCTION_CALL
+diagnosticMessage: Ambiguous function call for 'choose'.
+symbolClass: CaCfirNamedFunctionSymbol
+name: choose
+callableId: sample.resolver.candidates.choose
+receiverType: null
+returnType: Unit
+
+symbolClass: CaCfirNamedFunctionSymbol
+name: choose
+callableId: sample.resolver.candidates.choose
+receiverType: null
+returnType: Unit

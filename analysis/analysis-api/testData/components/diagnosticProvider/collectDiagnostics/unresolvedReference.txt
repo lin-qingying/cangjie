@@ -1,4 +1,4 @@
 Diagnostics from file:
-  for PSI element of type CjCallExpression at (4,5-18)
+  for PSI element of type CjNameReferenceExpression at (4,5-16)
     UNRESOLVED_REFERENCE      text ranges: [(46,57)]
-      PSI: CjCallExpression at (4,5-18)
+      PSI: CjNameReferenceExpression at (4,5-16)

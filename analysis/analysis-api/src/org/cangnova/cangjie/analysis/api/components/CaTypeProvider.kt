@@ -28,6 +28,9 @@ interface CaTypeProvider : CaLifetimeOwner {
      * 非 `vararg` 参数返回 `null`。
      */
     val CaValueParameterSymbol.varargArrayType: CaType?
+
+    /** 返回该 PSI 类型引用解析后的公开类型。 */
+    val CjTypeReference.type: CaType
 }
 
 

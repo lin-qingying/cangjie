@@ -1,0 +1,2 @@
+CjTypeReference: Box<Int64>
+CaType: sample.typeprovider.refs.Box<Int64>

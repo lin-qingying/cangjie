@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
+import org.cangnova.cangjie.analysis.api.signatures.CaEnumConstructorSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
 import org.cangnova.cangjie.analysis.api.symbols.*
@@ -89,6 +90,26 @@ interface CaFunctionCall<S : CaFunctionSymbol> : CaSingleCall<S, CaFunctionSigna
      */
     @Deprecated("Use the content of the `partiallyAppliedSymbol` directly instead")
     override val partiallyAppliedSymbol: CaPartiallyAppliedSymbol<S, CaFunctionSignature<S>>
+}
+
+/**
+ * 仓颉枚举构造器调用。
+ *
+ * 枚举 payload 不是命名函数的值参数，因此独立暴露 payload 实参到 payload 类型的映射。
+ */
+@OptIn(CaImplementationDetail::class, CaExperimentalApi::class)
+@SubclassOptInRequired(CaImplementationDetail::class)
+interface CaEnumConstructorCall<S : CaEnumConstructorSymbol> :
+    CaSingleCall<S, CaEnumConstructorSignature<S>>,
+    CaCallableMemberCall<S, CaEnumConstructorSignature<S>> {
+
+    /** payload PSI 实参到其候选专属类型的映射。 */
+    val payloadArgumentMapping: Map<CjExpression, CaType>
+
+    /** 枚举构造器的部分应用符号。 */
+    @Suppress("DEPRECATION")
+    @Deprecated("Use the content of the `partiallyAppliedSymbol` directly instead")
+    override val partiallyAppliedSymbol: CaPartiallyAppliedSymbol<S, CaEnumConstructorSignature<S>>
 }
 
 /**

@@ -1,4 +1,4 @@
-// LOOK_UP_FOR_ELEMENT_OF_TYPE: CjCallExpression
+// LOOK_UP_FOR_ELEMENT_OF_TYPE: CjNameReferenceExpression
 package sample.diagnostics
 
 func main() {

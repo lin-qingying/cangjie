@@ -1,0 +1,2 @@
+CjTypeReference: (Int64) -> Int64
+CaType: (Int64) -> Int64

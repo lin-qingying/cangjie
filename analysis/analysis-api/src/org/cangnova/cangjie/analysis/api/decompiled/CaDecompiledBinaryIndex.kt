@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.decompiled
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -23,6 +24,15 @@ interface CaDecompiledBinaryIndex {
 
     /** 枚举 builtins 模块中的所有反编译 binary 文件。 */
     fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile>
+
+    /** 返回指定 builtins module 在搜索作用域内的 package 与 binary 文件映射。 */
+    fun getBuiltinsPackages(
+        module: CaBuiltinsModule,
+        searchScope: GlobalSearchScope,
+    ): Map<FqName, VirtualFile>
+
+    /** 返回当前项目 builtins modules 在搜索作用域内的 package 与 binary 文件映射。 */
+    fun getBuiltinsPackages(searchScope: GlobalSearchScope): Map<FqName, VirtualFile>
 
     /**
      * 直接从 `.cjo` binary 头读取真实包名。
