@@ -14,7 +14,9 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.getContainingFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkAnalysisReadiness
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
+import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirImportResolveTransformer
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
@@ -38,7 +40,10 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      * Resolution is performed under the lock specific to each declaration that is going to be resolved.
      */
     fun lazyResolve(target: CfirElementWithResolveState, toPhase: CfirResolvePhase) {
-        if (checkAnalysisReadiness(target, containingDeclarations = null, toPhase)) {
+        if (
+            checkAnalysisReadiness(target, containingDeclarations = null, toPhase) &&
+            target.hasImportBindingsForContainingFile()
+        ) {
             return
         }
 
@@ -53,7 +58,11 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      * Resolution is performed under the lock specific to each declaration that is going to be resolved.
      */
     fun lazyResolveWithCallableMembers(target: CfirClass, toPhase: CfirResolvePhase) {
-        if (target.resolvePhase >= toPhase && target.declarations.all { it !is CfirCallableDeclaration || it.resolvePhase >= toPhase }) {
+        if (
+            target.resolvePhase >= toPhase &&
+            target.declarations.all { it !is CfirCallableDeclaration || it.resolvePhase >= toPhase } &&
+            target.hasImportBindingsForContainingFile()
+        ) {
             LLFlightRecorder.readyPhase(target, toPhase)
             return
         }
@@ -89,6 +98,9 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             if (toPhase == CfirResolvePhase.IMPORTS) return
 
             val target = resolveTarget(targetElement) ?: return
+            // IGNORE_SELF dangling designation 会把文件路径映射到上下文模块的原始 CFIR 文件，
+            // 该文件与 dangling target 可能属于不同 session，必须在进入后续 phase 前为路径文件建立 bindings。
+            target.cfirFile?.let(::resolveDesignationFileToImports)
             lazyResolveTargets(target, toPhase)
         } catch (e: Exception) {
             handleExceptionFromResolve(e, targetElement, fromPhase, toPhase)
@@ -108,7 +120,7 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         toPhase: CfirResolvePhase,
     ) {
         try {
-            target.cfirFile?.let(::resolveFileToImportsWithLock)
+            target.cfirFile?.let(::resolveDesignationFileToImports)
             if (toPhase == CfirResolvePhase.IMPORTS) return
 
             lazyResolveTargets(target, toPhase)
@@ -125,10 +137,38 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      * 对没有包含文件的 synthetic 或特殊 CFIR 元素直接返回。
      */
     private fun resolveContainingFileToImports(target: CfirElementWithResolveState) {
-        if (checkAnalysisReadiness(target, containingDeclarations = null, CfirResolvePhase.IMPORTS)) return
-
         val containingCfirFile = target.getContainingFile() ?: return
+        if (
+            checkAnalysisReadiness(target, containingDeclarations = null, CfirResolvePhase.IMPORTS) &&
+            containingCfirFile.moduleData.session.importBindingStore.getBindings(containingCfirFile) != null
+        ) {
+            return
+        }
         resolveFileToImportsWithLock(containingCfirFile)
+    }
+
+    /** Phase readiness is declaration-local, while import bindings are stored per CFIR file object and session. */
+    private fun CfirElementWithResolveState.hasImportBindingsForContainingFile(): Boolean {
+        val file = (this as? CfirFile) ?: getContainingFile() ?: return true
+        return file.moduleData.session.importBindingStore.getBindings(file) != null
+    }
+
+    /**
+     * 在文件 owner session 中推进 [cfirFile] 的 IMPORTS phase。
+     */
+    private fun resolveFileToImportsWithLock(cfirFile: CfirFile) {
+        val lockProvider = moduleComponents.globalResolveComponents.lockProvider
+        val session = cfirFile.moduleData.session
+        lockProvider.withGlobalLock {
+            val transformer = CfirImportResolveTransformer(session, session.diagnosticReporter)
+            if (cfirFile.resolvePhase < CfirResolvePhase.IMPORTS) {
+                lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
+                    cfirFile.transformSingle(transformer, null)
+                }
+            }
+            // withWriteLock 对已达到 IMPORTS 的文件会跳过 action；owner session 仍需补录自己的 binding。
+            if (cfirFile.resolvePhase >= CfirResolvePhase.IMPORTS) transformer.recordImportBindingsForFile(cfirFile)
+        }
     }
 
     /**
@@ -136,18 +176,26 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
      *
      * import resolve 是同文件后续声明 resolve 的前置条件，必须通过 lock provider 串行化。
      */
-    private fun resolveFileToImportsWithLock(cfirFile: CfirFile) {
+    private fun resolveDesignationFileToImports(cfirFile: CfirFile) {
+        resolveFileToImportsWithLock(cfirFile)
+
+        val targetSession = moduleComponents.session
+        recordFileImportBindingsForSessionWithLock(cfirFile, targetSession)
+        checkNotNull(targetSession.importBindingStore.getBindings(cfirFile)) {
+            "Designation file import bindings were not recorded in the resolver session for " +
+                "${cfirFile.sourceFile?.path ?: cfirFile.packageDirective.packageFqName}"
+        }
+    }
+
+    /**
+     * 在 [session] 中为已到 IMPORTS phase 的 [cfirFile] 记录该 session 自己的解析结果。
+     */
+    private fun recordFileImportBindingsForSessionWithLock(cfirFile: CfirFile, session: CfirSession) {
         val lockProvider = moduleComponents.globalResolveComponents.lockProvider
         lockProvider.withGlobalLock {
-            lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
-                cfirFile.transformSingle(
-                    CfirImportResolveTransformer(
-                        cfirFile.moduleData.session,
-                        cfirFile.moduleData.session.diagnosticReporter,
-                    ),
-                    null,
-                )
-            }
+            // foreign-session 文件已由 owner 推进到 IMPORTS；这里只补录 resolver session binding，不推进文件 phase。
+            CfirImportResolveTransformer(session, session.diagnosticReporter)
+                .recordImportBindingsForFile(cfirFile)
         }
     }
 

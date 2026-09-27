@@ -17,6 +17,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.psi.*
@@ -227,7 +228,7 @@ internal class FileStructure private constructor(
      */
     private fun createRootStructure(): RootStructureElement {
         val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
-        cfirFile.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+        cfirFile.lazyResolveToPhase(cfirFile.moduleData.session.bodyResolvePrerequisitePhase)
         return RootStructureElement(cfirFile, moduleComponents)
     }
 

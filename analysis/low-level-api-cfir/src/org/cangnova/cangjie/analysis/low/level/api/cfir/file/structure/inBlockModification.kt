@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyA
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildLazyBlock
@@ -141,7 +142,7 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
         return true
     }
 
-    decreasePhase(CfirResolvePhase.BODY_RESOLVE.previous)
+    decreasePhase(moduleData.session.bodyResolvePrerequisitePhase)
     replaceBlock(buildLazyBlock())
 
     return true
@@ -150,12 +151,12 @@ private fun CfirCodeFragment.inBodyInvalidation(): Boolean {
 /**
  * 表示移除函数体或初始化器之后声明应保留的最高解析阶段。
  *
- * 该阶段不会超过 [CfirResolvePhase.BODY_RESOLVE] 的前一阶段，同时也不会提升当前声明已有的
+ * 该阶段不会超过当前 session 的 body resolve 前置阶段，同时也不会提升当前声明已有的
  * [CfirDeclaration.resolvePhase]，用于在失效时保持阶段单调回退而不引入额外解析。
  */
 private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase
     get() {
-        return minOf(CfirResolvePhase.BODY_RESOLVE.previous, resolvePhase)
+        return minOf(moduleData.session.bodyResolvePrerequisitePhase, resolvePhase)
     }
 
 /**
@@ -167,7 +168,7 @@ private val CfirDeclaration.phaseWithoutBody: CfirResolvePhase
 private fun CfirDeclaration.decreasePhase(newPhase: CfirResolvePhase) {
     if (isPartialBodyResolvable) {
         val oldPhase = resolvePhase
-        if (oldPhase >= CfirResolvePhase.BODY_RESOLVE.previous) {
+        if (oldPhase >= moduleData.session.bodyResolvePrerequisitePhase) {
             partialBodyAnalysisState = null
         }
     }

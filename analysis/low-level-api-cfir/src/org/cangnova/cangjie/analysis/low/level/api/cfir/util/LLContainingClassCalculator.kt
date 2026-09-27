@@ -90,7 +90,7 @@ internal object LLContainingClassCalculator {
      * 根据 [psi] 所属模块解析外围 class-like 符号。
      */
     private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: CjTypeStatement?): CfirClassLikeSymbol<*>? {
-        if (psi == null) {
+        if (psi == null || psi is CjExtend) {
             return null
         }
 

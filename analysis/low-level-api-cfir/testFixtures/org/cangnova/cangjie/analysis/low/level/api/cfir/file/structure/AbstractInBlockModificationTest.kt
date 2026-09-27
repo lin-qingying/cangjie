@@ -11,7 +11,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.platform.modification.CaElementModificationType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
-import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirModifiablePsiSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
@@ -40,7 +40,7 @@ abstract class AbstractInBlockModificationTest : AbstractAnalysisApiBasedTest() 
     /**
      * 使用源码 low-level CFIR 测试配置。
      */
-    override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
+    override val configurator = analysisApiCfirModifiablePsiSourceTestConfigurator(analyseInDependentSession = false)
 
     /**
      * 块内修改后用于替换标记表达式的文本。

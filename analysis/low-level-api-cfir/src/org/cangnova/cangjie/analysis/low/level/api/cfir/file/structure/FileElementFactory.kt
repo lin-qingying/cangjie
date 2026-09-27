@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.resolve
 import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPrimaryConstructor
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 /**
@@ -22,34 +23,37 @@ internal object FileElementFactory {
         cfirDeclaration: CfirDeclaration,
         cfirFile: CfirFile,
         moduleComponents: LLCfirModuleResolveComponents,
-    ): FileStructureElement = when (cfirDeclaration) {
-        is CfirClassLikeDeclaration -> {
-            cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+    ): FileStructureElement {
+        val bodyResolvePrerequisitePhase = cfirDeclaration.moduleData.session.bodyResolvePrerequisitePhase
+        return when (cfirDeclaration) {
+            is CfirClassLikeDeclaration -> {
+                cfirDeclaration.lazyResolveToPhase(bodyResolvePrerequisitePhase)
 
-            lazyResolveClassGeneratedMembersIfNeeded(cfirDeclaration)
-            ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
-        }
-
-        is CfirExtend -> {
-            cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-            cfirDeclaration.declarations.forEach { declaration ->
-                declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                lazyResolveClassGeneratedMembersIfNeeded(cfirDeclaration)
+                ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
             }
-            ExtendDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
-        }
 
-        else -> {
-            if (cfirDeclaration is CfirPrimaryConstructor) {
+            is CfirExtend -> {
                 cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-                cfirDeclaration.valueParameters.forEach { parameter ->
-                    parameter.correspondingProperty?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                cfirDeclaration.declarations.forEach { declaration ->
+                    declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
                 }
-            } else {
-                /** Reserve the [CfirResolvePhase.BODY_RESOLVE] for partial body analysis. */
-                cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
+                ExtendDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
             }
 
-            DeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+            else -> {
+                if (cfirDeclaration is CfirPrimaryConstructor) {
+                    cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                    cfirDeclaration.valueParameters.forEach { parameter ->
+                        parameter.correspondingProperty?.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+                    }
+                } else {
+                    /** Reserve the [CfirResolvePhase.BODY_RESOLVE] for partial body analysis. */
+                    cfirDeclaration.lazyResolveToPhase(bodyResolvePrerequisitePhase)
+                }
+
+                DeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+            }
         }
     }
 

@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -196,6 +197,10 @@ internal class LLCfirImplicitBodyTargetResolver(
      */
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
+            is CfirEnumConstructor -> {
+                // 枚举构造器返回类型由所属 enum 在 TYPES 阶段写入，且没有函数体可供隐式返回类型推断。
+            }
+
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
                 transformer.context.returnTypeCalculator.callableCopyTypeCalculator.computeReturnType(target)
             }

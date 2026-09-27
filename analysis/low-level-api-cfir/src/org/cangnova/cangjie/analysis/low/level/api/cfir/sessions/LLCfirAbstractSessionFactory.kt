@@ -39,11 +39,13 @@ import org.cangnova.cangjie.cfir.CfirNameConflictsTracker
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.diagnostics.CjRegisteredDiagnosticFactoriesStorage
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.extensions.*
 import org.cangnova.cangjie.cfir.resolve.providers.*
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirExtendProviderComposer
 import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 import org.cangnova.cangjie.psi.CjCodeFragment
@@ -757,7 +759,9 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         val deserializedProvider = CfirExtendProviderComposer.lazyFromSymbolProviders(dependencyProvidersRef)
         register(
             CfirExtendProvider::class,
-            CfirExtendProviderComposer.combine(ownProvider, listOf(deserializedProvider))
+            CfirExtendProviderComposer.lazyCombine(ownProvider) {
+                moduleData.allRefinementDependencies.mapNotNull { it.session.extendProviderOrNull } + deserializedProvider
+            },
         )
     }
 

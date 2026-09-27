@@ -83,10 +83,11 @@ private class LLCfirSuperTypeTargetResolver(
             is CfirClassLikeDeclaration -> {
                 target.lazyResolveToPhase(resolverPhase.previous)
                 performCustomResolveUnderLock(target) {
+                    val useSiteFile = containingFile()
                     target.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration(
                         session = resolveTargetSession,
                         scopeSession = resolveTargetScopeSession,
-                        useSiteFile = containingFile(),
+                        useSiteFile = useSiteFile,
                         containingDeclarations = containingDeclarations,
                     )
                 }

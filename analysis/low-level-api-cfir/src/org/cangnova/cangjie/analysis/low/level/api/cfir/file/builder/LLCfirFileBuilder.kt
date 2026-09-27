@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjec
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.session.recordRawExpressionMacroSurfaces
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.utils.ThreadSafe
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
@@ -39,10 +40,17 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
             }
         }
 
-        PsiRawCfirBuilder(
+        val builder = PsiRawCfirBuilder(
             moduleComponents.session,
             moduleComponents.scopeProvider,
             bodyBuildingMode = BodyBuildingMode.LAZY_BODIES
-        ).buildCfirFile(cjFile)
+        )
+        val cfirFile = builder.buildCfirFile(cjFile)
+        moduleComponents.session.recordRawExpressionMacroSurfaces(
+            file = cfirFile,
+            sourceFileIdentity = cjFile,
+            surfaces = builder.consumeCollectedMacroSurfaces(),
+        )
+        cfirFile
     }
 }

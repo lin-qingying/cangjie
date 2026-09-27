@@ -47,6 +47,9 @@ internal class LLCfirSessionExtendProvider(
      */
     private var indexedFiles: Set<CfirFile> = emptySet()
 
+    /** 当前线程是否正为这批文件建立 extend 索引，防止类型解析重入启动相同工作。 */
+    private var indexBuildInProgress: Boolean = false
+
     /** 全量扩展枚举与定向查询使用相同的懒解析索引版本。 */
     override fun getAllExtends(): List<CfirExtend> {
         ensureIndexIsFresh()
@@ -121,14 +124,24 @@ internal class LLCfirSessionExtendProvider(
         if (fileSet == indexedFiles) return
 
         synchronized(this) {
+            if (indexBuildInProgress) return
+
             val latestFiles = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
             val latestFileSet = latestFiles.toSet()
             if (latestFiles.isEmpty() || latestFileSet == indexedFiles) return
 
-            // LL 索引消费与主编译器 EXTENSIONS 阶段保持一致：extend 头部必须先完成 TYPES。
-            latestFiles.forEach(::resolveTopLevelExtendsToTypes)
-            indexStore.rebuild(latestFiles, session.typeResolver)
-            indexedFiles = latestFileSet
+            indexBuildInProgress = true
+            try {
+                // 包与文件 owner 在 TYPES 完成前已由文件结构确定，先发布该部分索引，供类型解析中的
+                // extend 可见性查询读取；完整目标/接口模型仍在头部 resolve 完成后一次性重建。
+                indexStore.recordDeclarationSources(latestFiles)
+                // LL 索引消费与主编译器 EXTENSIONS 阶段保持一致：extend 头部必须先完成 TYPES。
+                latestFiles.forEach(::resolveTopLevelExtendsToTypes)
+                indexStore.rebuild(latestFiles, session.typeResolver)
+                indexedFiles = latestFileSet
+            } finally {
+                indexBuildInProgress = false
+            }
         }
     }
 

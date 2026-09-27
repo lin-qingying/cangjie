@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.recordRawExpressionMacroSurfaces
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
@@ -41,11 +42,18 @@ internal object RawCfirNonLocalDeclarationBuilder {
     ): CfirDeclaration {
         check(rootNonLocalDeclaration is CjDeclaration || rootNonLocalDeclaration is CjCodeFragment)
 
-        val rebuiltFile = PsiRawCfirBuilder(
+        val builder = PsiRawCfirBuilder(
             session,
             scopeProvider,
             bodyBuildingMode = BodyBuildingMode.NORMAL,
-        ).buildCfirFile(rootNonLocalDeclaration.containingCjFile)
+        )
+        val sourceFile = rootNonLocalDeclaration.containingCjFile
+        val rebuiltFile = builder.buildCfirFile(sourceFile)
+        session.recordRawExpressionMacroSurfaces(
+            file = rebuiltFile,
+            sourceFileIdentity = sourceFile,
+            surfaces = builder.consumeCollectedMacroSurfaces(),
+        )
 
         return when (rootNonLocalDeclaration) {
             is CjCodeFragment -> rebuiltFile.codeFragment

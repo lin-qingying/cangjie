@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -64,7 +65,7 @@ internal sealed class LLCfirTargetResolver(
      */
     val resolveTargetSession: LLCfirSession get() = resolveTarget.session
     /**
-     * 当前会话的作用域会话。
+     * 当前解析目标所属会话的作用域会话。
      */
     val resolveTargetScopeSession: ScopeSession get() = resolveTargetSession.getScopeSession()
     /**
@@ -391,7 +392,17 @@ internal sealed class LLCfirTargetResolver(
      * 校验 [target] 至少已经达到当前阶段的前一阶段。
      */
     private fun checkThatResolvedAtLeastToPreviousPhase(target: CfirElementWithResolveState) {
-        when (val previousPhase = resolverPhase.previous) {
+        val targetSession = when (target) {
+            is CfirDeclaration -> target.moduleData.session
+            is CfirFile -> target.moduleData.session
+            else -> resolveTargetSession
+        }
+        val previousPhase = if (resolverPhase == CfirResolvePhase.BODY_RESOLVE) {
+            targetSession.bodyResolvePrerequisitePhase
+        } else {
+            resolverPhase.previous
+        }
+        when (previousPhase) {
             CfirResolvePhase.IMPORTS -> {}
             else -> {
                 target.checkPhase(previousPhase)
