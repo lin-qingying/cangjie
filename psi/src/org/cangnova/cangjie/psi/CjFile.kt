@@ -49,6 +49,12 @@ import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets.FILE_DECLARATION_TYPE
  */
 interface CangJieFile
 
+/** 为无源码文本的编译文件提供解析器需要的模块名。 */
+interface CjParserLanguageModuleNameProvider {
+    /** 返回该文件生成文本应使用的仓颉模块名。 */
+    fun parserLanguageModuleName(): String
+}
+
 /**
  * 仓颉文件的抽象基类，实现了通用功能。
  * 此类为IntelliJ PSI结构中的仓颉语言文件提供核心实现。
