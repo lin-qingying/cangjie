@@ -38,6 +38,7 @@ import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.parsing.AbstractCangJieParsing.ParsingContext
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjParserLanguageModuleNameProvider
 import org.cangnova.cangjie.psi.parserLanguageModuleName
 import org.cangnova.cangjie.psi.parsedLanguageModuleName
 import org.jetbrains.annotations.NotNull
@@ -151,9 +152,13 @@ class CangJieParser(project: Project) : PsiParser {
             // factory 已从外部 context 写入片段 seed；真实 package 由 parser 随后覆盖。
             val languageModuleName = if (psiFile is CjFile) {
                 psiFile.parsedLanguageModuleName = null
-                psiFile.parserLanguageModuleName
+                val configuredModuleName = psiFile.parserLanguageModuleName
+                when {
+                    configuredModuleName.isNotEmpty() -> configuredModuleName
+                    psiFile is CjParserLanguageModuleNameProvider -> psiFile.parserLanguageModuleName()
+                    else -> configuredModuleName
+                }
             } else ""
-
             // 文件语义模式：由文件本身推导，一次确定并随构造注入。
             // 不放进 ParsingContext —— 那是"用哪套文法"，与"文件是什么种类"正交。
             // 非 CjFile（理论上到不了这里）回退到按文件名判定，保留能力而不留第二处判定。
