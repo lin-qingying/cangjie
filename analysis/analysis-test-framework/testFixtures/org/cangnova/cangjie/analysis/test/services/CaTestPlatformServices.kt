@@ -157,11 +157,9 @@ class CaTestPlatformState(
             get() = cachedSnapshot
 
         /**
-         * 按 builtins、library binary、source/module structure 的顺序解析元素所属模块。
+         * 按 PSI 文件的真实内容归属解析模块；测试场景与 Kotlin TestProjectStructureProvider 一样不以 use-site 覆盖文件模块。
          */
         fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-            useSiteModule?.let { return it }
-
             val containingFile = element.containingFile
                 ?: error("Cannot resolve module for PSI element without containing file: $element")
             val virtualFile = containingFile.virtualFile

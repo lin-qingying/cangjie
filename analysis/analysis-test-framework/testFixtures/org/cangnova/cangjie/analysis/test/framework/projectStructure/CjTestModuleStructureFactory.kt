@@ -98,6 +98,9 @@ object CjTestModuleStructureFactory {
         val resolvedFriendDependencies = cjTestModule.testModule.friendDependencies.map { dependency ->
             resolveDependencyModule(modulesByName, dependency)
         }
+        val resolvedDependsOnDependencies = cjTestModule.testModule.dependsOnDependencies.map { dependency ->
+            resolveDependencyModule(modulesByName, dependency)
+        }
 
         if (cjTestModule.testModule.hasAnalysisApiFallbackDependencies) {
             require(
@@ -123,6 +126,9 @@ object CjTestModuleStructureFactory {
                 resolvedFriendDependencies.forEach(binaryOwner::addFriendDependencyIfAbsent)
             }
         }
+
+        dependencyOwner.directDependsOnDependencies += resolvedDependsOnDependencies
+        binaryArtifactOwner?.directDependsOnDependencies?.addAll(resolvedDependsOnDependencies)
 
         if (primaryModule is CaDanglingFileModuleImpl) {
             primaryModule.contextModule = requireNotNull(resolvedRegularDependencies.firstOrNull()) {

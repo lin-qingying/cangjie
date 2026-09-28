@@ -77,6 +77,9 @@ interface CjmpMatchingContext<D : CjmpDeclarationSymbolMarker, T : CjmpTypeParam
 
     fun returnType(declaration: D): Type?
 
+    /** specific 函数体已成功推断出返回类型；其返回兼容性需在 first-fit 配对后检查。 */
+    fun hasInferredReturnType(declaration: D): Boolean
+
     fun areTypesEquivalent(specific: Type?, common: Type?, typeParameterMapping: Map<T, T>): CjmpTypeCompatibility
 
     fun isSubtypeOf(specific: Type?, common: Type?, typeParameterMapping: Map<T, T>): CjmpTypeCompatibility

@@ -47,17 +47,21 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.cjoDeclarationPosition
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedInformation
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRelatedSourceLocation
+import org.cangnova.cangjie.cfir.diagnostics.withRelatedInformation
 
 /**
  * common/specific 跨平台匹配检查器（CommonSpecific 分组）
@@ -104,9 +108,9 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * common CJO 与 specific nominal 的直接函数声明来自不同 session；一般 redeclaration
-     * collector 看不到跨 session 的同签名声明。未标记为 specific 的 specific 直接成员仍按
-     * 官方 `PreCheckFuncRedefinition` 与 common 成员组成普通 overload conflict。
+     * common CJO 与 specific nominal 的直接成员来自不同 session；一般 redeclaration collector
+     * 看不到跨 session 的同签名声明。未标记 specific 的 specific 函数，以及 specific secondary
+     * constructor 对 common 未标记 primary constructor，仍按官方重载规则形成冲突。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkUnmarkedDirectMemberOverloadConflicts(specificOwner: CfirClassLikeDeclaration) {
@@ -116,12 +120,26 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         val classTypeParameterMapping = storage.typeParameterMappingFor(specificOwner)
         val reportedSignatures = linkedSetOf<List<String>>()
 
-        for (specificFunction in specificOwner.declarations.filterIsInstance<CfirNamedFunction>()) {
-            if (specificFunction.status.isSpecific) continue
+        val specificFunctions = specificOwner.declarations.filterIsInstance<CfirFunction>().filter { function ->
+            when (function) {
+                is CfirNamedFunction -> !function.status.isSpecific
+                is CfirConstructor -> function.status.isSpecific && !function.isPrimary
+                else -> false
+            }
+        }
+        val commonFunctions = commonOwner.declarations.filterIsInstance<CfirFunction>()
 
-            for (commonFunction in commonOwner.declarations.filterIsInstance<CfirNamedFunction>()) {
-                if (!commonFunction.status.isCommon) continue
-                if (commonFunction.name != specificFunction.name) continue
+        for (specificFunction in specificFunctions) {
+            val commonCandidates = commonFunctions.filter { commonFunction ->
+                when (specificFunction) {
+                    is CfirNamedFunction -> commonFunction is CfirNamedFunction && commonFunction.status.isCommon
+                    is CfirConstructor -> commonFunction is CfirConstructor && commonFunction.isPrimary
+                    else -> false
+                }
+            }
+
+            for (commonFunction in commonCandidates) {
+                if (commonFunction.symbol.name != specificFunction.symbol.name) continue
                 if (commonFunction.status.isStatic != specificFunction.status.isStatic) continue
                 if (commonFunction.typeParameters.size != specificFunction.typeParameters.size) continue
                 if (commonFunction.valueParameters.size != specificFunction.valueParameters.size) continue
@@ -139,19 +157,48 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
                         val commonType = commonParameter.returnTypeRef.coneTypeOrNull ?: return@all false
                         val specificType = specificParameter.returnTypeRef.coneTypeOrNull ?: return@all false
                         val mappedCommonType = commonToSpecificSubstitutor.substituteOrSelf(commonType)
-                        commonType !is ConeErrorType && specificType !is ConeErrorType &&
+                        !commonType.containsErrorType() && !specificType.containsErrorType() &&
                                 AbstractTypeChecker.equalTypes(context.session.typeContext, mappedCommonType, specificType)
                     }
                 if (!sameParameterSignature) continue
 
-                val signature = specificFunction.valueParameters.map { parameter ->
-                    parameter.returnTypeRef.coneTypeOrNull?.toString().orEmpty()
+                val signature = buildList {
+                    add(specificFunction::class.qualifiedName.orEmpty())
+                    add(specificFunction.symbol.name.asString())
+                    add(specificFunction.status.isStatic.toString())
+                    add(specificFunction.typeParameters.size.toString())
+                    addAll(specificFunction.valueParameters.map { parameter ->
+                        parameter.returnTypeRef.coneTypeOrNull?.toString().orEmpty()
+                    })
                 }
                 if (!reportedSignatures.add(signature)) continue
+                val diagnosticContext = if (specificFunction is CfirConstructor && commonFunction is CfirConstructor) {
+                    val position = commonFunction.cjoDeclarationPosition
+                    context.withRelatedInformation(
+                        listOf(
+                            CjDiagnosticRelatedInformation(
+                                element = commonFunction.source,
+                                message = "conflict with the declaration",
+                                sourceLocation = position?.let { cjoPosition ->
+                                    val identifierLine = cjoPosition.identifierLine ?: return@let null
+                                    val identifierColumn = cjoPosition.identifierColumn ?: return@let null
+                                    CjDiagnosticRelatedSourceLocation(
+                                        filePath = cjoPosition.filePath,
+                                        line = identifierLine,
+                                        column = identifierColumn,
+                                    )
+                                },
+                            ),
+                        ),
+                    )
+                } else {
+                    context
+                }
                 reporter.reportOn(
                     source = specificFunction.source,
                     factory = CfirErrors.CONFLICTING_OVERLOADS,
-                    a = listOf(specificFunction.name.asString()),
+                    a = listOf(specificFunction.symbol.name.asString()),
+                    context = diagnosticContext,
                 )
                 break
             }
@@ -816,6 +863,32 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
             return
         }
 
+        // 官方 PostTypeCheck：函数体推断的返回类型在 first-fit 配对后比较；不兼容时保留配对并报告
+        // sema_return_type_incompatible，而不是回退成 NOT_MATCHED。
+        if (specific is CfirNamedFunction && common is CfirNamedFunction) {
+            val specificReturnType = specific.returnTypeRef.coneTypeOrNull
+            val commonReturnType = common.returnTypeRef.coneTypeOrNull
+            if (specificReturnType != null && commonReturnType != null &&
+                !specificReturnType.containsErrorType() && !commonReturnType.containsErrorType()
+            ) {
+                val mappedCommonReturnType = CfirTypeSubstitutorByMap.fromTypeParameterMapping(
+                    storage.typeParameterMappingFor(specific),
+                ).substituteOrSelf(commonReturnType)
+                if (!AbstractTypeChecker.isSubtypeOf(
+                        context.session.typeContext,
+                        specificReturnType,
+                        mappedCommonReturnType,
+                    )
+                ) {
+                    reporter.reportOn(
+                        source = specific.source,
+                        factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
+                        a = specific.symbol.name,
+                    )
+                }
+            }
+        }
+
         // MatchCJMPVar / MatchCJMPProp：类型与 var/let 在配对后报告
         val specificType = callableType(specific)
         val commonType = callableType(common)
@@ -927,7 +1000,7 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
             else -> return null
         }
         val type = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return null
-        return type.takeUnless { it is ConeErrorType }
+        return type.takeUnless { it.containsErrorType() }
     }
 }
 

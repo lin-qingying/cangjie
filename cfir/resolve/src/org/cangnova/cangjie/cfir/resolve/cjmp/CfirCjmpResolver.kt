@@ -22,6 +22,7 @@ package org.cangnova.cangjie.cfir.resolve.cjmp
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -226,7 +227,10 @@ object CfirCjmpResolver {
         return rawCandidates
             .distinct()
             .filter { candidate ->
-                (candidate as? CfirMemberDeclaration)?.status?.isCommon == true &&
+                // 官方 `ParseCJMPDecl` 禁止 primary constructor 带 common/specific；它不能成为
+                // specific secondary init 的 CJMP 对应物，即使 common CJO 将它放在 owner 成员表中。
+                (candidate !is CfirConstructor || !candidate.isPrimary) &&
+                        (candidate as? CfirMemberDeclaration)?.status?.isCommon == true &&
                         candidate.moduleData.name in dependencyNames
             }
     }
@@ -253,7 +257,8 @@ object CfirCjmpResolver {
             else -> emptyList()
         }
         commonDeclarations.filterIsInstance<CfirCallableDeclaration>().filter { candidate ->
-            candidate.status.isCommon && candidate.symbol.name == specific.symbol.name
+            (candidate !is CfirConstructor || !candidate.isPrimary) &&
+                    candidate.status.isCommon && candidate.symbol.name == specific.symbol.name
         }
     }.distinctBy { it.symbol }
 }

@@ -25,7 +25,7 @@ common extend<T> Holder<T> {
     public common func extendIdentity(value: T): T
 }
 
-// MODULE: specific
+// MODULE: specific()()(common)
 // MAIN_MODULE
 // FILE: specific.cj
 package cjmp_ll

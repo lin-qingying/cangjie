@@ -76,12 +76,18 @@ object AbstractCjmpMatcher {
         }
 
         if (!context.isConstructor(specific)) {
-            when (context.isSubtypeOf(context.returnType(specific), context.returnType(common), typeParameterMapping)) {
-                CjmpTypeCompatibility.COMPATIBLE -> Unit
-                CjmpTypeCompatibility.INCOMPATIBLE ->
-                    return CjmpMatchResult.Mismatched(CjmpMismatchKind.FUNCTION_TYPE)
+            val returnCompatibility = context.isSubtypeOf(
+                context.returnType(specific),
+                context.returnType(common),
+                typeParameterMapping,
+            )
+            when {
+                returnCompatibility == CjmpTypeCompatibility.UNRESOLVED ->
+                    return CjmpMatchResult.TypeNotResolved
 
-                CjmpTypeCompatibility.UNRESOLVED -> return CjmpMatchResult.TypeNotResolved
+                returnCompatibility == CjmpTypeCompatibility.INCOMPATIBLE &&
+                        !context.hasInferredReturnType(specific) ->
+                    return CjmpMatchResult.Mismatched(CjmpMismatchKind.FUNCTION_TYPE)
             }
         }
 

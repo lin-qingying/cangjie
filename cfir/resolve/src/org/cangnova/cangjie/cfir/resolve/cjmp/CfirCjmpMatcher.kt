@@ -18,14 +18,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
 
@@ -80,8 +80,8 @@ object CfirCjmpMatcher {
     ): ConeCangJieType =
         CfirTypeSubstitutorByMap.fromTypeParameterMapping(typeParameterMapping).substituteOrSelf(commonType)
 
-    /** 类型引用只在解析阶段已产出 resolved type 时提供给共享 matcher。 */
-    fun typeOf(typeRef: CfirTypeRef?): ConeCangJieType? = (typeRef as? CfirResolvedTypeRef)?.coneType
+    /** 显式和函数体推断的返回类型均读取通用 CFIR resolved type view。 */
+    fun typeOf(typeRef: CfirTypeRef?): ConeCangJieType? = typeRef?.coneTypeOrNull
 
     internal fun typesEquivalent(
         specificType: ConeCangJieType?,
@@ -89,7 +89,7 @@ object CfirCjmpMatcher {
         typeParameterMapping: Map<CfirTypeParameter, CfirTypeParameter>,
     ): CjmpTypeCompatibility {
         if (specificType == null || commonType == null) return CjmpTypeCompatibility.UNRESOLVED
-        if (specificType is ConeErrorType || commonType is ConeErrorType) return CjmpTypeCompatibility.UNRESOLVED
+        if (specificType.containsErrorType() || commonType.containsErrorType()) return CjmpTypeCompatibility.UNRESOLVED
 
         if (specificType is ConeTypeParameterType || commonType is ConeTypeParameterType) {
             if (specificType !is ConeTypeParameterType || commonType !is ConeTypeParameterType) {

@@ -25,6 +25,12 @@ public class CfirCjmpMatchingTestGenerated extends AbstractCfirCjmpMatchingTest 
   }
 
   @Test
+  @TestMetadata("firstFitCandidateDiagnostic.cj")
+  public void testFirstFitCandidateDiagnostic() {
+    run("firstFitCandidateDiagnostic.cj");
+  }
+
+  @Test
   @TestMetadata("memberFirstMatch.cj")
   public void testMemberFirstMatch() {
     run("memberFirstMatch.cj");
@@ -34,6 +40,12 @@ public class CfirCjmpMatchingTestGenerated extends AbstractCfirCjmpMatchingTest 
   @TestMetadata("modeNoneDoesNotMatch.cj")
   public void testModeNoneDoesNotMatch() {
     run("modeNoneDoesNotMatch.cj");
+  }
+
+  @Test
+  @TestMetadata("parallelTopLevelSpecificFirstMatch.cj")
+  public void testParallelTopLevelSpecificFirstMatch() {
+    run("parallelTopLevelSpecificFirstMatch.cj");
   }
 
   @Test
