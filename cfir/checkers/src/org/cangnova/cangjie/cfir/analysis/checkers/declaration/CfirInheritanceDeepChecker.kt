@@ -1392,6 +1392,22 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         val cannotOverride = classDecl?.let {
                             ownInfo.canNotOverride(superInfo, it, context)
                         } == true
+                        if (subject.isExtendSubject &&
+                            inheritedSource.isExtendTarget &&
+                            returnTypeConflict == null &&
+                            superInfo.isImplementableForVisibility(context) &&
+                            ownInfo.hasWeakVisibilityComparedTo(superInfo)
+                        ) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedWeakVisibilities.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.WEAK_VISIBILITY,
+                                    a = superInfo.name,
+                                    b = superInfo.visibility,
+                                )
+                            }
+                        }
                         if (classDecl != null &&
                             !cannotOverride &&
                             !ownInfo.isOverride &&
@@ -2257,6 +2273,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         if (!canImplement(superInfo)) return false
         val compareResult = Visibilities.compare(visibility, superInfo.visibility)
         return compareResult == null || compareResult < 0
+    }
+
+    /** 官方 CheckAccessVisibility 对接口、open/abstract 和 static 父成员执行可见性比较。 */
+    private fun InheritedMemberInfo.isImplementableForVisibility(context: CheckerContext): Boolean {
+        val callable = symbol ?: return false
+        val declaration = callable.cfir
+        if (declaration.status.isAbstract || declaration.status.isOpen || declaration.status.isStatic) return true
+        return context.ownerClassSymbol(callable)?.cfir is CfirInterface
     }
 
     /**

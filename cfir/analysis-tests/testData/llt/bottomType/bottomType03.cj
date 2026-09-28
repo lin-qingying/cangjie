@@ -9,11 +9,10 @@ func foo() {
     return 1
     let a = one
     let b = two
-    return a + b
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>return a + b<!>
 }
 
 main(): Int64 {
     foo()
     return 0
 }
-

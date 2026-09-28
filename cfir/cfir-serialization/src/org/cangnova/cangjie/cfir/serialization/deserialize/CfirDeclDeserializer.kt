@@ -150,6 +150,8 @@ class CfirDeclDeserializer(
             filePath = filePath,
             line = begin.line,
             column = begin.column,
+            identifierLine = decl.identifierPos?.line,
+            identifierColumn = decl.identifierPos?.column,
         )
     }
 

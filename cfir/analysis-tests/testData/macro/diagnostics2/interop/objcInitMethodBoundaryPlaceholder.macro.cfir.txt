@@ -3,13 +3,13 @@
 FILE: objcInitMethodBoundaryPlaceholder.cj
     @R|ObjCMirror|() internal? open class WidgetMirror {
         public? init()
-        @R|ObjCInit|() public static func buildOk(): R|kotlin.Unit| {
+        @R|ObjCInit|() public static func buildOk(): R|WidgetMirror| {
             RETURN {
                 FUNCTION_CALL(WidgetMirror -> CfirConstructorSymbol) {
                 }
             }
         }
-        @R|ObjCInit|() public static func buildBad(): R|kotlin.Unit| {
+        @R|ObjCInit|() public static func buildBad(): R|Int64| {
             RETURN {
                 INT(0)
             }

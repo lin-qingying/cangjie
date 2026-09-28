@@ -2,6 +2,9 @@
 
 package org.cangnova.cangjie.cfir.serialization.cjo
 
+import com.intellij.psi.PsiNameIdentifierOwner
+import com.intellij.lang.LighterASTNode
+import com.intellij.openapi.util.Ref
 import PackageFormat.AnnoKind
 import PackageFormat.DeclKind
 import PackageFormat.ExprKind
@@ -10,6 +13,7 @@ import PackageFormat.StringKind
 import PackageFormat.SemaTyInfo
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
@@ -29,6 +33,12 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.metadata.model.Attribute as CfirAttribute
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjPrimaryConstructor
+import org.cangnova.cangjie.source.CjLightSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import java.util.IdentityHashMap
 
 /**
@@ -122,19 +132,25 @@ object CfirCjoPackageMetadataProducer {
         }
 
         private fun collect(declaration: CfirDeclaration, isTopLevel: Boolean, file: CfirFile) {
-            require(declaration.origin == CfirDeclarationOrigin.Source) {
-                "Cannot serialize non-source declaration ${declaration::class.simpleName} from live CFIR"
+            val canonicalDeclaration = canonicalDeclaration(declaration)
+            require(canonicalDeclaration.origin == CfirDeclarationOrigin.Source) {
+                "Cannot serialize non-source declaration ${canonicalDeclaration::class.simpleName} from live CFIR"
             }
-            if (declarationIndex.putIfAbsent(declaration, declarations.size.toUInt() + 1u) == null) {
-                declarations += declaration
-                topLevel[declaration] = isTopLevel
-                declarationFiles[declaration] = file
-                if (declaration is CfirClassLikeDeclaration) {
-                    classIndex[(declaration.symbol as CfirClassLikeSymbol<*>).classId] = declarationIndex[declaration]!!
+            if (declarationIndex.putIfAbsent(canonicalDeclaration, declarations.size.toUInt() + 1u) == null) {
+                declarations += canonicalDeclaration
+                topLevel[canonicalDeclaration] = isTopLevel
+                declarationFiles[canonicalDeclaration] = file
+                if (canonicalDeclaration is CfirClassLikeDeclaration) {
+                    classIndex[(canonicalDeclaration.symbol as CfirClassLikeSymbol<*>).classId] =
+                        declarationIndex[canonicalDeclaration]!!
                 }
-                declarationChildren(declaration).forEach { collect(it, false, file) }
+                declarationChildren(canonicalDeclaration).forEach { collect(it, false, file) }
             }
         }
+
+        /** 所有 CJO 对类型参数的引用都归一到 symbol 绑定的 GenericParamDecl 实例。 */
+        private fun canonicalDeclaration(declaration: CfirDeclaration): CfirDeclaration =
+            (declaration as? CfirTypeParameter)?.symbol?.cfir ?: declaration
 
         /** Convert a real CFIR source offset to the official package position. */
         private fun position(file: CfirFile, offset: Int): CjoPositionMetadata? {
@@ -170,8 +186,51 @@ object CfirCjoPackageMetadataProducer {
             return position(file, source.startOffset) to position(file, source.endOffset)
         }
 
+        /** Official `Decl.identifierPos` points at the declaration name, independently of modifiers. */
+        private fun declarationIdentifierPosition(declaration: CfirDeclaration): CjoPositionMetadata? {
+            val file = declarationFiles[declaration] ?: return null
+            val source = declaration.source ?: return null
+            val identifierOffset = when (source) {
+                is CjPsiSourceElement -> {
+                    val identifier = when (val psi = source.psi) {
+                        is CjPrimaryConstructor -> psi.identifier
+                        is CjConstructor<*> -> psi.getIdentifyingElement()
+                        is PsiNameIdentifierOwner -> psi.nameIdentifier
+                        else -> null
+                    }
+                    identifier?.textRange?.startOffset
+                }
+                is CjLightSourceElement -> source.declarationIdentifierOffset(declaration)
+                else -> null
+            } ?: return null
+            return position(file, identifierOffset)
+        }
+
+        /** LightTree 源区间覆盖整条声明；按 token kind 取标识符，与 PSI 的 identifying-element 契约一致。 */
+        private fun CjLightSourceElement.declarationIdentifierOffset(declaration: CfirDeclaration): Int? {
+            val identifierTokenType = when (declaration) {
+                is CfirConstructor -> if (declaration.isPrimary) CjTokens.IDENTIFIER else CjTokens.INIT_KEYWORD
+                else -> null
+            }
+            val childrenRef = Ref<Array<LighterASTNode?>>()
+            val childCount = treeStructure.getChildren(lighterASTNode, childrenRef)
+            if (childCount <= 0) return null
+            val identifier = childrenRef.get()?.take(childCount)?.filterNotNull()?.firstOrNull { child ->
+                if (identifierTokenType != null) {
+                    child.tokenType == identifierTokenType
+                } else {
+                    child.tokenType == CjTokens.IDENTIFIER || child.tokenType == CjNodeTypes.OPERATION_NAME
+                }
+            } ?: return null
+            return treeStructure.getStartOffset(identifier)
+        }
+
         private fun declarationChildren(declaration: CfirDeclaration): List<CfirDeclaration> = buildList {
             when (declaration) {
+                is CfirEnum -> {
+                    addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
+                    addAll(declaration.cjoBodyDeclarations())
+                }
                 is CfirClassLikeDeclaration -> {
                     addAll(declaration.typeParameters.filterIsInstance<CfirTypeParameter>())
                     addAll(declaration.declarations)
@@ -194,9 +253,16 @@ object CfirCjoPackageMetadataProducer {
             }
         }
 
+        /**
+         * Enum 的 CFIR 声明树会携带合成 primary constructor；官方 `EnumInfo.body` 只保存 enum variant 与显式成员。
+        */
+        private fun CfirEnum.cjoBodyDeclarations(): List<CfirDeclaration> =
+            declarations.filterNot { it is CfirConstructor && it.isPrimary }
+
         private fun genericMetadata(declaration: CfirDeclaration): CjoGenericMetadata? {
             val parameters = when (declaration) {
                 is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
+                is CfirConstructor -> emptyList()
                 is CfirFunction -> declaration.typeParameters
                 is CfirExtend -> declaration.typeParameters
                 else -> emptyList()
@@ -229,6 +295,7 @@ object CfirCjoPackageMetadataProducer {
                 type = declarationType(declaration),
                 begin = begin,
                 end = end,
+                identifierPosition = declarationIdentifierPosition(declaration),
                 generic = genericMetadata(declaration),
                 attributes = attributes(declaration, topLevel),
                 annotations = annotations(declaration),
@@ -253,7 +320,7 @@ object CfirCjoPackageMetadataProducer {
             is CfirEnum -> DeclKind.EnumDecl
             is CfirTypeAlias -> DeclKind.TypeAliasDecl
             is CfirProperty -> DeclKind.PropDecl
-            is CfirEnumConstructor -> DeclKind.FuncDecl
+            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) DeclKind.VarDecl else DeclKind.FuncDecl
             is CfirFunction -> DeclKind.FuncDecl
             is CfirValueParameter -> DeclKind.FuncParam
             is CfirTypeParameter -> DeclKind.GenericParamDecl
@@ -274,7 +341,11 @@ object CfirCjoPackageMetadataProducer {
             is CfirTypeAlias -> typeOf(declaration.expandedTypeRef).let(::type)
             is CfirExtend -> typeOf(declaration.extendedTypeRef).let(::type)
             is CfirTypeParameter -> type(ConeTypeParameterTypeImpl(declaration.symbol.toLookupTag()))
-            is CfirEnumConstructor -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, false, false))
+            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) {
+                typeOf(declaration.returnTypeRef).let(::type)
+            } else {
+                type(functionType(declaration.valueParameters, declaration.returnTypeRef, false, false))
+            }
             is CfirFunction -> type(functionType(declaration.valueParameters, declaration.returnTypeRef, declaration.interopInfo?.resolvedAbi?.isCFunction == true, declaration.hasVariableLenArg))
             is CfirCallableDeclaration -> type(declaration.returnTypeRef.coneTypeOrNull ?: unsupported("unresolved return type"))
             else -> unsupported("missing declaration type")
@@ -296,13 +367,17 @@ object CfirCjoPackageMetadataProducer {
             ref.coneTypeOrNull ?: unsupported("unresolved CFIR type reference")
 
         private fun declarationInfo(declaration: CfirDeclaration): CjoDeclarationInfo? = when (declaration) {
-            is CfirEnumConstructor -> CjoFunctionInfo(
-                body = CjoFunctionBodyInfo(
-                    parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
-                    desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
-                    returnType = typeOf(declaration.returnTypeRef).let(::type),
-                ),
-            )
+            is CfirEnumConstructor -> if (declaration.valueParameters.isEmpty()) {
+                CjoVariableInfo(isVar = false, isConst = false)
+            } else {
+                CjoFunctionInfo(
+                    body = CjoFunctionBodyInfo(
+                        parameterLists = listOf(declaration.valueParameters.map { ref(it) }),
+                        desugaredParameterLists = listOf(declaration.valueParameters.map { ref(it.desugaredParameter ?: it) }),
+                        returnType = typeOf(declaration.returnTypeRef).let(::type),
+                    ),
+                )
+            }
             is CfirFunction -> CjoFunctionInfo(
                 overflowStrategy = declaration.annotationInfo?.overflowStrategy ?: declaration.interopInfo?.overflowStrategy,
                 body = CjoFunctionBodyInfo(
@@ -332,7 +407,7 @@ object CfirCjoPackageMetadataProducer {
             )
             is CfirEnum -> CjoEnumInfo(
                 inheritedTypes = declaration.superTypeRefs.map(::typeOf).map(::type),
-                body = declaration.declarations.map(::ref),
+                body = declaration.cjoBodyDeclarations().map(::ref),
                 hasArguments = declaration.declarations.filterIsInstance<CfirEnumConstructor>()
                     .any { it.valueParameters.isNotEmpty() },
                 nonExhaustive = declaration.isNonExhaustive,
@@ -353,8 +428,11 @@ object CfirCjoPackageMetadataProducer {
             else -> null
         }
 
-        private fun ref(declaration: CfirDeclaration): UInt = declarationIndex[declaration]
-            ?: error("CJO declaration reference was not indexed: ${declarationName(declaration)}")
+        private fun ref(declaration: CfirDeclaration): UInt {
+            val canonicalDeclaration = canonicalDeclaration(declaration)
+            return declarationIndex[canonicalDeclaration]
+                ?: error("CJO declaration reference was not indexed: ${declarationName(canonicalDeclaration)}")
+        }
 
         /**
          * 写出 CJMP 属性位（官方 `Attribute::COMMON / SPECIFIC / FROM_COMMON_PART /
@@ -406,6 +484,7 @@ object CfirCjoPackageMetadataProducer {
             addCjmpAttributes(values, declaration, status)
             val hasGenericTypeParameters = when (declaration) {
                 is CfirClassLikeDeclaration -> declaration.typeParameters.filterIsInstance<CfirTypeParameter>().isNotEmpty()
+                is CfirConstructor -> false
                 is CfirFunction -> declaration.typeParameters.isNotEmpty()
                 is CfirExtend -> declaration.typeParameters.isNotEmpty()
                 else -> false
@@ -414,7 +493,13 @@ object CfirCjoPackageMetadataProducer {
             if (hasGenericTypeParameters) values += CfirAttribute.GENERIC
             if (declaration.annotationInfo?.isIntrinsic == true) values += CfirAttribute.INTRINSIC
             if (declaration.annotationInfo?.isMockSupported == true) values += CfirAttribute.MOCK_SUPPORTED
-            if (declaration.status.visibility == org.cangnova.cangjie.descriptors.Visibilities.Public) values += CfirAttribute.PUBLIC
+            when (declaration.status.visibility) {
+                Visibilities.Public -> values += CfirAttribute.PUBLIC
+                Visibilities.Private -> values += CfirAttribute.PRIVATE
+                Visibilities.Protected -> values += CfirAttribute.PROTECTED
+                Visibilities.Internal -> values += CfirAttribute.INTERNAL
+                else -> Unit
+            }
             val max = values.maxOfOrNull { it.ordinal } ?: return emptyList()
             val words = ULongArray(max / 64 + 1)
             values.forEach { words[it.ordinal / 64] = words[it.ordinal / 64] or (1uL shl (it.ordinal % 64)) }
@@ -535,6 +620,9 @@ object CfirCjoPackageMetadataProducer {
             require(type !in typeIndex) { "Recursive CJO type is not serializable yet: $type" }
             val index = types.size.toUInt() + 1u
             typeIndex[type] = index
+            // 上界、类型实参及函数子类型会递归增加类型表；先占住本节点的格式索引，递归后再回填，
+            // 保证 CJO 中所有引用仍指向其预先分配的 1-based type index。
+            types += CjoTypeMetadata(PackageFormat.TypeKind.Invalid)
             val metadata = when (type) {
                 is ConePrimitiveType -> CjoTypeMetadata(type.kind.toCjoTypeKind())
                 is ConeTypeParameterType -> {
@@ -579,7 +667,7 @@ object CfirCjoPackageMetadataProducer {
                 )
                 else -> unsupported("unsupported live CJO type ${type::class.qualifiedName} ($type)")
             }
-            types += metadata
+            types[index.toInt() - 1] = metadata
             return index
         }
 
@@ -597,7 +685,13 @@ object CfirCjoPackageMetadataProducer {
             return CjoCompositeTypeInfoMetadata(
                 declarationIndex = 0u,
                 packageId = packageIndex,
-                declarationKey = classId.relativeClassName.asString(),
+                // 官方 std.core.Any 在 FullId 中使用稳定 exportId；它可能没有单独可加载的
+                // std.core CJO，因此不能把短类名 Any 写成普通 imported-package reference。
+                declarationKey = if (classId == StdlibClassIds.Any) {
+                    "_CNat3AnyE"
+                } else {
+                    classId.relativeClassName.asString()
+                },
             )
         }
 

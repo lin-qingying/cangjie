@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitutionForConstraintDerivation
 import org.cangnova.cangjie.cfir.resolve.providers.DeclaredSupertypeClassification
 import org.cangnova.cangjie.cfir.resolve.providers.classifyDeclaredSupertype
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
@@ -975,6 +976,10 @@ private class GenericInstantiationAnalyzer(
         instantiatedType: ConeCangJieType,
     ): Map<Name, List<InstantiatedMemberSignature>> {
         val signatures = mutableListOf<InstantiatedMemberSignature>()
+        val memberAccessContext = checkerContext.accessContext(CfirAccessKind.CALLABLE).copy(
+            receiverType = instantiatedType,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+        )
         for (extend in extends) {
             if (
                 checkerContext.session.accessibilityChecker.checkExtend(
@@ -992,6 +997,13 @@ private class GenericInstantiationAnalyzer(
 
             signatures += extend.collectOwnFunctionSignatures(substitution.substitutor)
                 .filterNot { checkerContext.session.isCjmpShadowedCommonDeclaration(it.function) }
+                .filter { signature ->
+                    checkerContext.session.accessibilityChecker.checkCallable(
+                        symbol = signature.function.symbol,
+                        context = memberAccessContext,
+                        provenance = signature.lookupProvenance,
+                    ) is CfirAccessibilityResult.Accessible
+                }
             if (!checkerContext.session.isCjmpShadowedCommonDeclaration(extend)) {
                 signatures += extend.collectInheritedDefaultFunctionSignatures(extend, substitution.substitutor)
             }
@@ -1120,7 +1132,7 @@ private class GenericInstantiationAnalyzer(
                 includedRootExtends = includedExtends,
                 memberOwnerExtend = memberOwnerExtend,
             )?.substituted ?: return emptyList()
-            return collectInstantiatedMemberScopeSignatures(
+            val inheritedScopeSignatures = collectInstantiatedMemberScopeSignatures(
                 concreteScopes = concreteScopes,
                 genericScope = genericScope,
                 ownFunctions = ownerFunctions,
@@ -1129,6 +1141,45 @@ private class GenericInstantiationAnalyzer(
                 includeDeclaredConstructors = includeDeclaredConstructors,
                 memberOwnerExtend = memberOwnerExtend,
             )
+            val ownerExtend = memberOwnerExtend ?: return inheritedScopeSignatures
+            // A partially generic receiver is a declaration shape, not a completed instantiation.
+            // The scope map already carries the valid symbolic signatures; re-adding raw owner
+            // declarations here would diagnose CJMP matching pairs at `Box<T>` / `Holder<T>`.
+            if (substitutions.values.any { it.containsUnfixedTypeParameterOrVariable() }) return inheritedScopeSignatures
+            val targetPattern = ownerExtend.extendedTypeRef.coneTypeOrNull ?: return inheritedScopeSignatures
+            val concreteOwnerSubstitution = createExtendDeclarationSubstitution(
+                session = checkerContext.session,
+                extend = ownerExtend,
+                targetPattern = targetPattern,
+                concreteReceiverType = instantiatedType,
+            ) ?: return inheritedScopeSignatures
+            // The owner was selected above using the fully instantiated receiver and its checked bounds.
+            // For the generic signature view, substitute the selected owner's type parameters structurally;
+            // rechecking its bound against the nominal owner's unconstrained type parameter would drop its own
+            // declarations from the signature map.
+            val genericOwnerSubstitution = createExtendDeclarationSubstitutionForConstraintDerivation(
+                session = checkerContext.session,
+                extend = ownerExtend,
+                targetPattern = targetPattern,
+                concreteReceiverType = genericType,
+            ) ?: return inheritedScopeSignatures
+            val ownerDirectSignatures = ownerExtend.declarations.asSequence()
+                .filterIsInstance<CfirFunction>()
+                .mapNotNull { function ->
+                    function.toInstantiatedMemberSignature(
+                        ownerName = name,
+                        substitutor = concreteOwnerSubstitution.substitutor,
+                        genericSubstitutor = genericOwnerSubstitution.substitutor,
+                        lookupProvenance = CfirCallableLookupProvenance.directExtendMember(ownerExtend),
+                    )
+                }
+                .filterNot { directSignature ->
+                    inheritedScopeSignatures.any { scopeSignature ->
+                        scopeSignature.function === directSignature.function
+                    }
+                }
+                .toList()
+            return inheritedScopeSignatures + ownerDirectSignatures
         }
 
         val nominalSignatures = collectOwnerSignatures(
@@ -1915,6 +1966,26 @@ private class GenericInstantiationAnalyzer(
             if (visited.put(type, Unit) != null) continue
 
             if (type is ConeTypeParameterType) return true
+
+            for (nestedType in type.nestedTypesForTraversal()) {
+                workList.add(TypeTraversalItem(nestedType, depth + 1))
+            }
+        }
+        return false
+    }
+
+    /** 泛型参数和推导类型变量都表示尚未具体化的 receiver argument。 */
+    private fun ConeCangJieType.containsUnfixedTypeParameterOrVariable(): Boolean {
+        val visited = IdentityHashMap<ConeCangJieType, Unit>()
+        val workList = ArrayDeque<TypeTraversalItem>()
+        workList.add(TypeTraversalItem(this, depth = 0))
+
+        while (workList.isNotEmpty()) {
+            val (type, depth) = workList.removeLast()
+            if (depth >= TYPE_KEY_MAX_DEPTH) continue
+            if (visited.put(type, Unit) != null) continue
+
+            if (type is ConeTypeParameterType || type is ConeTypeVariableType) return true
 
             for (nestedType in type.nestedTypesForTraversal()) {
                 workList.add(TypeTraversalItem(nestedType, depth + 1))
