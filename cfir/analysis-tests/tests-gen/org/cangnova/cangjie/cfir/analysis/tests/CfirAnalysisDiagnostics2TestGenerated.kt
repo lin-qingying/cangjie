@@ -321,6 +321,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericOuterTypeParameterMembers.cj")
             }
 
+            @TestMetadata("cjmpInferredReturnTypePostCheck.cj")
+            @Test
+            fun testCjmpInferredReturnTypePostCheck() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpInferredReturnTypePostCheck.cj")
+            }
+
             @TestMetadata("cjmpInterfaceMemberExempt.cj")
             @Test
             fun testCjmpInterfaceMemberExempt() {
@@ -457,6 +463,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
             @Test
             fun testCjmpSpecificFunctionMissingReturnType() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificFunctionMissingReturnType.cj")
+            }
+
+            @TestMetadata("cjmpSpecificInitConflictsWithUnmarkedCommonPrimary.cj")
+            @Test
+            fun testCjmpSpecificInitConflictsWithUnmarkedCommonPrimary() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificInitConflictsWithUnmarkedCommonPrimary.cj")
             }
 
             @TestMetadata("cjmpSpecificInitWithUnmarkedCommonPrimary.cj")

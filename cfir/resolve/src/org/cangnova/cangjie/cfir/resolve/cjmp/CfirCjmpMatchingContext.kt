@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.cjmp
 
+import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -13,7 +14,7 @@ import org.cangnova.cangjie.cfir.session.cjmpHasCommonDefault
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.containsErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpMatchingContext
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpMatchingValueParameter
@@ -83,6 +84,13 @@ internal class CfirCjmpMatchingContext(
     override fun returnType(declaration: CfirBasedSymbol<*>): ConeCangJieType? =
         (declaration.declaration() as? CfirFunction)?.let { CfirCjmpMatcher.typeOf(it.returnTypeRef) }
 
+    override fun hasInferredReturnType(declaration: CfirBasedSymbol<*>): Boolean {
+        val function = declaration.declaration() as? CfirFunction ?: return false
+        if (!function.hasImplicitOrInferredReturnType()) return false
+        val inferredType = CfirCjmpMatcher.typeOf(function.returnTypeRef) ?: return false
+        return !inferredType.containsErrorType()
+    }
+
     override fun areTypesEquivalent(
         specific: ConeCangJieType?,
         common: ConeCangJieType?,
@@ -96,7 +104,7 @@ internal class CfirCjmpMatchingContext(
         typeParameterMapping: Map<CfirCjmpTypeParameterMarker, CfirCjmpTypeParameterMarker>,
     ): CjmpTypeCompatibility {
         if (specific == null || common == null) return CjmpTypeCompatibility.UNRESOLVED
-        if (specific is ConeErrorType || common is ConeErrorType) return CjmpTypeCompatibility.UNRESOLVED
+        if (specific.containsErrorType() || common.containsErrorType()) return CjmpTypeCompatibility.UNRESOLVED
 
         val cfirTypeParameterMapping = typeParameterMapping.toCfirTypeParameters()
         val substitutedCommon = CfirCjmpMatcher.substituteCommonType(common, cfirTypeParameterMapping)

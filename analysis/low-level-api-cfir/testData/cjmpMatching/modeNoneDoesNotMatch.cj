@@ -17,7 +17,7 @@ common extend<T> Holder<T> {
     public common func extendIdentity(value: T): T { value }
 }
 
-// MODULE: modeNone
+// MODULE: modeNone()()(common)
 // MAIN_MODULE
 // FILE: specific.cj
 package cjmp_ll

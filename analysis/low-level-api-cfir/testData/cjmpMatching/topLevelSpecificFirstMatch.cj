@@ -18,7 +18,7 @@ common extend<T> Holder<T> {
 
 public common func shared(): Int64
 
-// MODULE: firstMatch
+// MODULE: firstMatch()()(common)
 // MAIN_MODULE
 // FILE: specific.cj
 package cjmp_ll
