@@ -656,6 +656,8 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression =
         whileAnalysing(session, qualifiedAccessExpression) {
             val calleeReference = qualifiedAccessExpression.calleeReference
+            val importedPackageQualifier =
+                qualifiedAccessExpression.importedPackageQualifierOrNull(components.file, components.session)
             if (calleeReference is CfirContextDependentNamedReference) {
                 if (data is ResolutionMode.ContextDependent) return@whileAnalysing qualifiedAccessExpression
                 qualifiedAccessExpression.replaceCalleeReference(
@@ -665,11 +667,27 @@ open class CfirExpressionsResolveTransformer(
                     }
                 )
             }
-            // CFIR 暂无 Kotlin FirResolvedQualifier 节点；导入包名只作为静态限定符接收者，
-            // 因而清除早先的值解析错误并写入稳定的 Unit 类型，后续成员查找由包作用域完成。
             if (
                 isUsedAsReceiver &&
-                qualifiedAccessExpression.importedPackageQualifierOrNull(components.file, components.session) != null
+                importedPackageQualifier?.isAmbiguous == true &&
+                qualifiedAccessExpression.calleeReference is CfirErrorNamedReference
+            ) {
+                val errorReference = qualifiedAccessExpression.calleeReference as CfirErrorNamedReference
+                // 交给命名值解析的 package-qualifier 分支生成 AMBIGUOUS_USE，避免把旧的
+                // UNRESOLVED_REFERENCE 留在 receiver 上，也避免转成 Unit 后丢掉歧义状态。
+                qualifiedAccessExpression.replaceCalleeReference(
+                    buildNamedReference {
+                        source = errorReference.source
+                        name = errorReference.name
+                    },
+                )
+            }
+            // CFIR 暂无 Kotlin FirResolvedQualifier 节点；唯一导入包名只作为静态限定符接收者，
+            // 因而清除早先的值解析错误并写入稳定的 Unit 类型，后续成员查找由包作用域完成。
+            // 同名的多个导入包必须保留错误路径，由调用解析报告包限定符歧义。
+            if (
+                isUsedAsReceiver &&
+                importedPackageQualifier != null && !importedPackageQualifier.isAmbiguous
             ) {
                 if (calleeReference is CfirErrorNamedReference) {
                     qualifiedAccessExpression.replaceCalleeReference(
@@ -688,7 +706,7 @@ open class CfirExpressionsResolveTransformer(
             // 不能再次按普通值表达式解析成 unresolved package name。
             if (
                 qualifiedAccessExpression.coneTypeOrNull != null &&
-                qualifiedAccessExpression.importedPackageQualifierOrNull(components.file, components.session) != null
+                importedPackageQualifier != null && !importedPackageQualifier.isAmbiguous
             ) {
                 return@whileAnalysing qualifiedAccessExpression
             }
@@ -714,7 +732,7 @@ open class CfirExpressionsResolveTransformer(
                 is CfirErrorNamedReference -> {
                     if (
                         isUsedAsReceiver &&
-                        qualifiedAccessExpression.importedPackageQualifierOrNull(components.file, components.session) != null
+                        importedPackageQualifier != null && !importedPackageQualifier.isAmbiguous
                     ) {
                         val errorReference = qualifiedAccessExpression.calleeReference as CfirErrorNamedReference
                         qualifiedAccessExpression.replaceCalleeReference(

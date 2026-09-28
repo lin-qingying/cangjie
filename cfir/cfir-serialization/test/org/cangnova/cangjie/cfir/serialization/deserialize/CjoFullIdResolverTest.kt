@@ -93,6 +93,42 @@ class CjoFullIdResolverTest {
     }
 
     /**
+     * 官方 std.core FullId 使用 exportId，而运行时可能没有单独可加载的 std.core CJO。
+     */
+    @Test
+    fun `resolver restores only official std core Any export id without package cjo`() {
+        val fixture = FullIdTestFixture.create(imports = listOf("std.core"), includeTypeReferences = false)
+        val resolver = fixture.context.fullIdResolver
+
+        assertEquals(
+            "std.core.Any",
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat3AnyE"))?.asFqNameString(),
+        )
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "Object")),
+        )
+        assertEquals(
+            null,
+            resolver.resolveClassId(createFullId(pkgId = 0, decl = "_CNat3UnknownE")),
+        )
+
+        val unrelatedPackageFixture = FullIdTestFixture.create()
+        assertEquals(
+            null,
+            unrelatedPackageFixture.context.fullIdResolver
+                .resolveClassId(createFullId(pkgId = 0, decl = "_CNat3AnyE")),
+        )
+
+        val effectFixture = FullIdTestFixture.create(imports = listOf("stdx.effect"), includeTypeReferences = false)
+        assertEquals(
+            null,
+            effectFixture.context.fullIdResolver
+                .resolveClassId(createFullId(pkgId = 0, decl = "Command")),
+        )
+    }
+
+    /**
      * 验证仓颉不支持嵌套类声明时，FullId resolver 会拒绝嵌套 class-like 声明。
      */
     @Test
@@ -123,7 +159,10 @@ class CjoFullIdResolverTest {
             /**
              * 构造包含当前包声明、导入包声明和类型表引用的普通 FullId 测试夹具。
              */
-            fun create(): FullIdTestFixture {
+            fun create(
+                imports: List<String> = listOf("dep.pkg"),
+                includeTypeReferences: Boolean = true,
+            ): FullIdTestFixture {
                 val tempDir = createTempDirectory("cjo-fullid-test").toFile()
 
                 tempDir.resolve("dep.cjo").writeBytes(
@@ -145,7 +184,7 @@ class CjoFullIdResolverTest {
                 tempDir.resolve("main.cjo").writeBytes(
                     buildPackageBytes(
                         fullPackageName = "main.pkg",
-                        imports = listOf("dep.pkg"),
+                        imports = imports,
                         decls = listOf(
                             DeclSpec(
                                 identifier = "LocalOuter",
@@ -156,11 +195,15 @@ class CjoFullIdResolverTest {
                                 exportId = "main::LocalLeaf",
                             ),
                         ),
-                        types = listOf(
-                            TypeSpec(fullIdPkgId = -2, fullIdIndex = 2u),
-                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "dep::Outer"),
-                            TypeSpec(fullIdPkgId = 0, fullIdDecl = "Leaf"),
-                        ),
+                        types = if (includeTypeReferences) {
+                            listOf(
+                                TypeSpec(fullIdPkgId = -2, fullIdIndex = 2u),
+                                TypeSpec(fullIdPkgId = 0, fullIdDecl = "dep::Outer"),
+                                TypeSpec(fullIdPkgId = 0, fullIdDecl = "Leaf"),
+                            )
+                        } else {
+                            emptyList()
+                        },
                     ),
                 )
 

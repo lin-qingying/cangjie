@@ -446,12 +446,11 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     }
 
     /**
-     * 识别由互不继承的 sibling extend 接口共同形成的待实现默认成员。
+     * 判断是否不应把 peer extend 的 interface default 当作当前成员的 shadow parent。
      *
-     * 官方 MergeInheritedMemberHelper 使用 IsExtendInheritRelation 区分默认实现冲突
-     * 与既有父实现：前者由当前 extend 的成员实现，后者仍参与 shadow 检查。
-     * 来源必须取自 use-site 成员图；目标类型自身继承的接口和相关 extend 引入的默认
-     * 成员已经是有效实现，不能仅因当前 extend 声明了接口便将其排除。
+     * 当前 private 成员与 peer interface default 的可见性关系由继承检查器报告；把该候选
+     * 留在 shadow 检查中会错误地产生 EXTEND_MEMBER_CANNOT_SHADOW。泛型实例化仍由 owner
+     * 成员图保留当前 extend 的 private 声明并与 default 比较。
      */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isIndependentInterfaceDefault(
         currentMember: CfirDeclaration,
@@ -474,7 +473,9 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
                 ?: return@any false
             context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir is CfirInterface
         }
-        return implementsInterface &&
+        val currentMemberIsPrivate =
+            (currentMember as? CfirMemberDeclaration)?.status?.visibility == Visibilities.Private
+        return (implementsInterface || currentMemberIsPrivate) &&
                 !context.session.extendRuleQueryService.areExtendsInInheritRelation(currentExtend, sourceExtend)
     }
 

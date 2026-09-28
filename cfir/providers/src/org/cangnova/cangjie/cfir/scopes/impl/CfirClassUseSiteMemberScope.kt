@@ -238,7 +238,7 @@ class CfirClassUseSiteMemberScope private constructor(
      * 限定当前 owner 的直接 extend 输入；父 class scope 仍按普通 use-site 语义收集其 extend。
      */
     private val includedRootExtends: Set<CfirExtend>? = null,
-    /** 当前 generic-instantiation extend owner；只作用于本 root 的 direct extend member scope。 */
+    /** 当前 generic-instantiation extend owner；作为本 scope 与父 scope 的 private peer 过滤上下文。 */
     private val memberOwnerExtend: CfirExtend? = null,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
     CfirMemberLookupCompletenessScope {
@@ -763,13 +763,35 @@ class CfirClassUseSiteMemberScope private constructor(
         }
 
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (local.any { it.overridesFunctionCandidate(candidate.member, it.overrideSubstitutorForOwnFunction()) } &&
+            if (candidate.isImplementedByLocalFunction(local) &&
                 !candidate.member.isExtendMemberForOverrideResolution()
             ) {
                 continue
             }
             add(candidate)
         }
+    }
+
+    /**
+     * 判断当前 scope 的直接函数是否实现了父 scope 的 default member。
+     *
+     * 在 generic-instantiation owner scope 中，nominal private 成员不能先吞掉父链 default；
+     * 非 private owner 成员可实现 nominal 父链成员，private extend owner 函数则保留用于实例化比较。
+     * extend 成员也不能替换由其它 peer extend 引入的成员，否则会丢失 owner 间的冲突候选。
+     */
+    private fun CfirFunctionInheritanceProvenance.isImplementedByLocalFunction(
+        localFunctions: List<CfirNamedFunctionSymbol>,
+    ): Boolean = localFunctions.any { localFunction ->
+        if (!localFunction.overridesFunctionCandidate(member, localFunction.overrideSubstitutorForOwnFunction())) {
+            return@any false
+        }
+        if (memberOwnerExtend == null) return@any true
+
+        val localOwnerExtend = localFunction.getContainingExtend()
+            ?: return@any localFunction.cfir.status.visibility != Visibilities.Private
+        lookupProvenance.sourceExtend === localOwnerExtend ||
+                (lookupProvenance.sourceExtend == null &&
+                        localFunction.cfir.status.visibility != Visibilities.Private)
     }
 
     /**
@@ -1118,7 +1140,7 @@ class CfirClassUseSiteMemberScope private constructor(
         }
         val localFunctions = local.filterIsInstance<CfirNamedFunctionSymbol>()
         for (candidate in getFunctionsFromParentsByName(name)) {
-            if (localFunctions.any { it.overridesFunctionCandidate(candidate.member, it.overrideSubstitutorForOwnFunction()) } &&
+            if (candidate.isImplementedByLocalFunction(localFunctions) &&
                 !candidate.member.isExtendMemberForOverrideResolution()
             ) {
                 continue
@@ -1220,6 +1242,8 @@ class CfirClassUseSiteMemberScope private constructor(
                 excludingExtend = excludingExtend,
                 inheritedLookupProvenance = parentLookupProvenance,
                 supertypePath = supertypePath.child(classId),
+                // Owner 访问策略沿父 scope 传播，使 private peer 在接口 default 合并前被过滤。
+                memberOwnerExtend = memberOwnerExtend,
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
         }

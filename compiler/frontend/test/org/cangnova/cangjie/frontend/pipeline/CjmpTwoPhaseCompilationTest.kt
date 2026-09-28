@@ -2,10 +2,17 @@ package org.cangnova.cangjie.frontend.pipeline
 
 import PackageFormat.Package
 import PackageFormat.DeclKind
+import PackageFormat.CompositeTyInfo
+import PackageFormat.ClassInfo
+import PackageFormat.ExtendInfo
+import PackageFormat.GenericTyInfo
+import PackageFormat.EnumInfo
 import com.intellij.openapi.util.Disposer
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticWithSource
 import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpChirOutput
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleDebug
 import org.cangnova.cangjie.cfir.entrypoint.configuration.cjmpModuleOptLevel
@@ -25,6 +32,11 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoSchemaProfile
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoTypeMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjmpCommonPartLoadGate
 import org.cangnova.cangjie.cfir.session.cjmpMappingStorageOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.addClasspathRoot
 import org.cangnova.cangjie.config.addCangJieSourceRoot
@@ -36,7 +48,9 @@ import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.metadata.model.Attribute
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.frontend.arguments.CommonCompilerArguments
 import org.cangnova.cangjie.frontend.arguments.Freezable
 import org.cangnova.cangjie.phaser.CompilerPhase
@@ -88,6 +102,20 @@ class CjmpTwoPhaseCompilationTest {
         val completed: Boolean,
         val locations: List<CompilerMessageSourceLocation?> = emptyList(),
         val cjmpNominalMappings: Map<String, Pair<String, Map<String, String>>> = emptyMap(),
+        val deserializedExtendFacts: List<DeserializedExtendFact> = emptyList(),
+    )
+
+    private data class DeserializedExtendFact(
+        val packageName: String,
+        val targetType: String,
+        val superTypes: List<String>,
+        val typeParameterUpperBounds: List<List<DeserializedTypeFact>>,
+        val privateFunctionNames: List<String>,
+    )
+
+    private data class DeserializedTypeFact(
+        val renderedType: String,
+        val classIdOrPrimitiveClassId: ClassId?,
     )
 
     private class CjmpArgumentProbe : CommonCompilerArguments() {
@@ -117,7 +145,42 @@ class CjmpTwoPhaseCompilationTest {
         return word and (1uL shl (attribute.ordinal % 64)) != 0uL
     }
 
-    private fun compile(source: Path, configure: CompilerConfiguration.() -> Unit): CompileResult {
+    private fun assertCjoFunctionParameterUsesOwnerGeneric(
+        pkg: Package,
+        owner: PackageFormat.Decl,
+        function: PackageFormat.Decl,
+    ) {
+        val functionInfo = function.info(PackageFormat.FuncInfo()) as PackageFormat.FuncInfo
+        val functionBody = checkNotNull(functionInfo.funcBody)
+        val parameterIndex = functionBody.paramLists(0)!!.params(0).toInt() - 1
+        val parameter = checkNotNull(pkg.allDecls(parameterIndex))
+        val parameterTypeIndex = parameter.type.toInt() - 1
+        val parameterType = checkNotNull(pkg.allTypes(parameterTypeIndex))
+        assertEquals(
+            PackageFormat.TypeKind.Generic,
+            parameterType.kind,
+            "${function.identifier}.${parameter.identifier} type index ${parameter.type} must retain its generic parameter type",
+        )
+        assertEquals(PackageFormat.SemaTyInfo.GenericTyInfo, parameterType.infoType)
+
+        val genericTypeInfo = parameterType.info(PackageFormat.GenericTyInfo()) as PackageFormat.GenericTyInfo
+        val genericParameterReference = checkNotNull(genericTypeInfo.declPtr)
+        val ownerGeneric = checkNotNull(owner.generic)
+        assertEquals(ownerGeneric.typeParameters(0), genericParameterReference.index)
+        assertEquals(
+            DeclKind.GenericParamDecl,
+            checkNotNull(pkg.allDecls(genericParameterReference.index.toInt() - 1)).kind,
+        )
+    }
+
+    private fun compile(source: Path, configure: CompilerConfiguration.() -> Unit): CompileResult =
+        compile(source, captureDeserializedExtendFacts = false, configure = configure)
+
+    private fun compile(
+        source: Path,
+        captureDeserializedExtendFacts: Boolean,
+        configure: CompilerConfiguration.() -> Unit,
+    ): CompileResult {
         val disposable = Disposer.newDisposable("cjmp-two-phase")
         try {
             val collector = RecordingMessageCollector()
@@ -147,12 +210,41 @@ class CjmpTwoPhaseCompilationTest {
                     }
                 }
             }
+            val deserializedExtendFacts = if (captureDeserializedExtendFacts) {
+                artifact?.frontendOutput?.outputs.orEmpty().flatMap { output ->
+                    val session = output.session
+                    session.extendProvider.getAllExtends().mapNotNull { extend ->
+                        val packageName = session.extendProvider.getPackageFqName(extend)?.asString()
+                            ?: return@mapNotNull null
+                        DeserializedExtendFact(
+                            packageName = packageName,
+                            targetType = extend.extendedTypeRef.coneTypeOrNull?.toString().orEmpty(),
+                            superTypes = extend.superTypeRefs.map { it.coneTypeOrNull?.toString().orEmpty() },
+                            typeParameterUpperBounds = extend.typeParameters.map { parameter ->
+                                parameter.bounds.map { bound ->
+                                    val coneType = bound.coneTypeOrNull
+                                    DeserializedTypeFact(
+                                        renderedType = coneType?.toString().orEmpty(),
+                                        classIdOrPrimitiveClassId = coneType?.classIdOrPrimitiveClassId,
+                                    )
+                                }
+                            },
+                            privateFunctionNames = extend.declarations.filterIsInstance<CfirFunction>()
+                                .filter { it.status.visibility == Visibilities.Private }
+                                .map { it.symbol.name.asString() },
+                        )
+                    }
+                }
+            } else {
+                emptyList()
+            }
             return CompileResult(
                 diagnostics = diagnostics.diagnostics,
                 messages = collector.messages.toList(),
                 completed = artifact != null,
                 locations = collector.locations.toList(),
                 cjmpNominalMappings = cjmpNominalMappings,
+                deserializedExtendFacts = deserializedExtendFacts,
             )
         } finally {
             Disposer.dispose(disposable)
@@ -193,7 +285,17 @@ class CjmpTwoPhaseCompilationTest {
             cjoOutputDirectory = outputRoot.toString()
         }
         assertTrue(result.completed, "ordinary library frontend completes: ${result.messages}")
-        assertTrue(result.diagnostics.none { it.severity.isError }, "ordinary library compiles: ${result.diagnostics}")
+        val diagnosticLocations = result.diagnostics.joinToString { diagnostic ->
+            val psi = ((diagnostic as? CjDiagnosticWithSource)?.element as? CjPsiSourceElement)?.psi
+            val line = psi?.let { element ->
+                element.containingFile.text.take(element.textRange.startOffset).count { it == '\n' } + 1
+            }
+            "${diagnostic.factoryName}@$line '${psi?.text ?: "<no PSI>"}'"
+        }
+        assertTrue(
+            result.diagnostics.none { it.severity.isError },
+            "ordinary library compiles: $diagnosticLocations",
+        )
         val cjo = outputRoot.resolve(CjoConstants.packageNameToPath(packageName))
         assertTrue(Files.isRegularFile(cjo), "ordinary library writes the package cjo: $cjo")
         return outputRoot
@@ -208,7 +310,7 @@ class CjmpTwoPhaseCompilationTest {
         val sourceRoot = Files.createDirectories(tempDir.resolve("consumer-source-$packageName"))
         val source = sourceRoot.resolve("consumer.cj")
         Files.writeString(source, "package $packageName\n\n$content")
-        return compile(source) {
+        return compile(source, captureDeserializedExtendFacts = true) {
             addClasspathRoot(classpathRoot.toString())
         }
     }
@@ -268,10 +370,18 @@ class CjmpTwoPhaseCompilationTest {
 
     private val commonMetadataSource = commonSource + """
 
+        public common func identity<T>(value: T): T { value }
+
         public common class Defaulted {
             public common init() {}
             public common func value(): Int64 { 1 }
         }
+
+        public common class GenericBox<T> {
+            public common init() {}
+        }
+
+        public type GenericAlias<U> = GenericBox<U>
 
         public common extend Defaulted {
             public common func extensionValue(): Int64 { 1 }
@@ -294,10 +404,16 @@ class CjmpTwoPhaseCompilationTest {
         }
         val platform = declarations.single { it.kind == DeclKind.FuncDecl && it.identifier == "platform" }
         val withDefault = declarations.single { it.kind == DeclKind.FuncDecl && it.identifier == "withDefault" }
-        val defaultedConstructor =
-            declarations.single { it.kind == DeclKind.FuncDecl && it.identifier == SpecialNames.INIT.asString() }
+        val identity = declarations.single { it.kind == DeclKind.FuncDecl && it.identifier == "identity" }
         val defaultedClass = declarations.single { it.kind == DeclKind.ClassDecl && it.identifier == "Defaulted" }
+        val genericBox = declarations.single { it.kind == DeclKind.ClassDecl && it.identifier == "GenericBox" }
+        val genericAlias = declarations.single { it.kind == DeclKind.TypeAliasDecl && it.identifier == "GenericAlias" }
         val defaultedExtend = declarations.single { it.kind == DeclKind.ExtendDecl }
+        val defaultedClassInfo = defaultedClass.info(ClassInfo()) as ClassInfo
+        val defaultedConstructor = (0 until defaultedClassInfo.bodyLength)
+            .map { defaultedClassInfo.body(it).toInt() - 1 }
+            .map { pkg.allDecls(it)!! }
+            .single { it.kind == DeclKind.FuncDecl && it.identifier == SpecialNames.INIT.asString() }
 
         assertTrue(has(platform, Attribute.COMMON))
         assertTrue(has(platform, Attribute.FROM_COMMON_PART))
@@ -307,7 +423,12 @@ class CjmpTwoPhaseCompilationTest {
         assertTrue(has(defaultedClass, Attribute.COMMON_WITH_DEFAULT), "nominal default is derived from its common members")
         assertTrue(has(defaultedExtend, Attribute.COMMON_WITH_DEFAULT), "extend default is derived from its common members")
         assertTrue(has(defaultedConstructor, Attribute.CONSTRUCTOR), "CJO preserves the constructor declaration kind")
-        assertTrue(has(defaultedConstructor, Attribute.PRIMARY_CONSTRUCTOR), "CJO preserves primary constructor identity")
+        assertTrue(has(identity, Attribute.GENERIC), "CJO marks generic function owners")
+        assertTrue(has(genericBox, Attribute.GENERIC), "CJO marks generic class owners")
+        assertTrue(has(genericAlias, Attribute.GENERIC), "CJO marks generic type alias owners")
+        assertNotNull(identity.generic, "CJO preserves generic function parameters")
+        assertNotNull(genericBox.generic, "CJO preserves generic class parameters")
+        assertNotNull(genericAlias.generic, "CJO preserves generic type alias parameters")
         assertTrue(has(defaultedConstructor, Attribute.FROM_COMMON_PART))
         assertTrue(has(defaultedClass, Attribute.FROM_COMMON_PART))
         assertTrue(has(defaultedExtend, Attribute.FROM_COMMON_PART))
@@ -334,6 +455,7 @@ class CjmpTwoPhaseCompilationTest {
         val cjo = compileCommon(
             """
             public common enum Box<T> {
+                | Empty
                 | Value(T)
             }
             """.trimIndent(),
@@ -341,12 +463,27 @@ class CjmpTwoPhaseCompilationTest {
         val commonPackage = Package.getRootAsPackage(ByteBuffer.wrap(Files.readAllBytes(cjo)))
         val commonDeclarations = (0 until commonPackage.allDeclsLength).map { commonPackage.allDecls(it)!! }
         val commonEnum = commonDeclarations.single { it.kind == DeclKind.EnumDecl && it.identifier == "Box" }
+        val commonEmpty = commonDeclarations.single { it.identifier == "Empty" }
         val commonValue = commonDeclarations.single { it.identifier == "Value" }
+        val commonEnumInfo = commonEnum.info(EnumInfo()) as EnumInfo
+        assertEquals(
+            listOf("Empty", "Value"),
+            (0 until commonEnumInfo.bodyLength).map { index ->
+                commonPackage.allDecls(commonEnumInfo.body(index).toInt() - 1)!!.identifier
+            },
+            "CJO enum body contains the variants and excludes the synthesized CFIR primary constructor",
+        )
+        assertTrue(hasCjoAttribute(commonEnum, Attribute.COMMON), "CJO preserves the enum owner's common status")
         assertTrue(hasCjoAttribute(commonEnum, Attribute.GENERIC), "CJO marks a generic enum owner")
+        assertEquals(DeclKind.VarDecl, commonEmpty.kind, "CJO stores a payload-free enum constructor as VarDecl")
+        assertTrue(hasCjoAttribute(commonEmpty, Attribute.ENUM_CONSTRUCTOR), "CJO preserves payload-free enum constructor identity")
+        assertEquals(DeclKind.FuncDecl, commonValue.kind, "CJO stores a payload enum constructor as FuncDecl")
         assertTrue(hasCjoAttribute(commonValue, Attribute.ENUM_CONSTRUCTOR), "CJO preserves enum constructor identity")
+        assertCjoFunctionParameterUsesOwnerGeneric(commonPackage, commonEnum, commonValue)
         val result = compileSpecific(
             """
             public specific enum Box<U> {
+                | Empty
                 | Value(U)
             }
             """.trimIndent(),
@@ -356,7 +493,7 @@ class CjmpTwoPhaseCompilationTest {
         assertTrue(
             result.completed,
             "specific enum compilation consumes common constructor identities from CJO: " +
-                "messages=${result.messages}, diagnostics=${result.diagnostics}",
+                "mappings=${result.cjmpNominalMappings}, messages=${result.messages}, diagnostics=${result.diagnostics}",
         )
         assertEquals(emptyList<String>(), result.diagnostics.map { it.factoryName.removePrefix("CFIR_") })
         assertEquals(
@@ -376,6 +513,15 @@ class CjmpTwoPhaseCompilationTest {
             }
             """.trimIndent(),
         )
+        val commonPackage = Package.getRootAsPackage(ByteBuffer.wrap(Files.readAllBytes(cjo)))
+        val commonBox = (0 until commonPackage.allDeclsLength)
+            .map { commonPackage.allDecls(it)!! }
+            .single { it.kind == DeclKind.ClassDecl && it.identifier == "Box" }
+        assertTrue(hasCjoAttribute(commonBox, Attribute.GENERIC), "CJO marks a generic nominal owner")
+        val commonFunction = (0 until commonPackage.allDeclsLength)
+            .map { commonPackage.allDecls(it)!! }
+            .single { it.kind == DeclKind.FuncDecl && it.identifier == "f" }
+        assertCjoFunctionParameterUsesOwnerGeneric(commonPackage, commonBox, commonFunction)
         val result = compileSpecific(
             """
             public specific class Box<U> {
@@ -383,7 +529,7 @@ class CjmpTwoPhaseCompilationTest {
                 public func f(value: U): Unit { }
             }
 
-            public extend<U> Box<U> {
+            extend<U> Box<U> {
                 public func g(value: U): Unit { }
             }
 
@@ -394,19 +540,74 @@ class CjmpTwoPhaseCompilationTest {
             cjo,
         )
 
-        assertTrue(
-            result.completed,
-            "specific compilation consumes the serialized common cjo: messages=${result.messages}, diagnostics=${result.diagnostics}",
-        )
-        assertEquals(
-            "Box" to mapOf("T" to "U"),
-            result.cjmpNominalMappings["Box"],
-            "the specific nominal declaration is bound to the deserialized common nominal and type parameter",
-        )
         assertEquals(
             listOf("CONFLICTING_OVERLOADS"),
             result.diagnostics.map { it.factoryName.removePrefix("CFIR_") },
             "the unmarked specific declaration is diagnosed once; its nominal common counterpart must not reappear in the extend owner group",
+        )
+    }
+
+    @Test
+    fun `specific secondary constructor conflicts with unmarked common primary constructor`() {
+        val cjo = compileCommon(
+            """
+            public common class P {
+                public P(x: Int64) {}
+            }
+            """.trimIndent(),
+        )
+
+        val result = compileSpecific(
+            """
+            public specific class P {
+                public specific init(x: Int64) {}
+            }
+            """.trimIndent(),
+            cjo,
+        )
+
+        assertEquals(
+            2,
+            result.diagnostics.size,
+            result.diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}: ${diagnostic.renderMessage()}" },
+        )
+        assertEquals(
+            setOf("CONFLICTING_OVERLOADS", "NOT_MATCHED"),
+            result.diagnostics.map { it.factoryName.removePrefix("CFIR_") }.toSet(),
+            "the primary constructor participates in overload checking but remains ineligible as a CJMP counterpart",
+        )
+        val overload = result.diagnostics.single { it.factoryName.removePrefix("CFIR_") == "CONFLICTING_OVERLOADS" }
+        val note = overload.relatedInformation.single()
+        assertEquals("conflict with the declaration", note.message)
+        assertNotNull(note.sourceLocation, "the CJO peer note keeps its source location after deserialization")
+        assertTrue(note.sourceLocation!!.filePath.endsWith("common.cj"))
+        assertEquals(4, note.sourceLocation!!.line)
+        assertEquals(12, note.sourceLocation!!.column, "the note points to the primary constructor identifier")
+        assertTrue(overload.renderMessage().contains("note: conflict with the declaration"))
+    }
+
+    @Test
+    fun `body inferred return types are checked after common cjo matching`() {
+        val cjo = compileCommon(
+            """
+            public common func inferredSame() { 1 }
+            public common func inferredMismatch() { 1 }
+            """.trimIndent(),
+        )
+
+        val result = compileSpecific(
+            """
+            public specific func inferredSame() { 1 }
+            public specific func inferredMismatch() { "wrong" }
+            """.trimIndent(),
+            cjo,
+        )
+
+        assertTrue(result.completed, "specific compilation consumes the common CJO: ${result.messages}")
+        assertEquals(
+            listOf("RETURN_TYPE_INCOMPATIBLE"),
+            result.diagnostics.map { it.factoryName.removePrefix("CFIR_") },
+            "the equal inferred return binds; the unequal inferred return keeps its pair and reports the post-check",
         )
     }
 
@@ -499,11 +700,11 @@ class CjmpTwoPhaseCompilationTest {
                 public init() { }
             }
 
-            public extend<T> OwnerBox<T> <: Child<T> {
+            extend<T> OwnerBox<T> <: Child<T> {
                 public func f(value: T): Unit { }
             }
 
-            public extend<U> OwnerBox<U> where U <: Bound {
+            extend<U> OwnerBox<U> where U <: Bound {
                 private func f(value: Int64): Unit { }
             }
 
@@ -511,7 +712,7 @@ class CjmpTwoPhaseCompilationTest {
                 public init() { }
             }
 
-            public extend<T> ChainOnlyBox<T> <: Child<T> {
+            extend<T> ChainOnlyBox<T> <: Child<T> {
                 public func f(value: T): Unit { }
             }
         """.trimIndent()
@@ -534,9 +735,17 @@ class CjmpTwoPhaseCompilationTest {
             },
             "the private peer whose where-bound is unsatisfied is absent after CJO deserialization",
         )
-
+        val loadedBoundedPeer = unsatisfiedConsumer.deserializedExtendFacts.singleOrNull { fact ->
+            fact.packageName == "ownermatrixlib" &&
+                    fact.typeParameterUpperBounds.flatten().any { "Bound" in it.renderedType }
+        }
+        assertNotNull(loadedBoundedPeer, "the consumer recovers the bounded CJO extend: ${unsatisfiedConsumer.deserializedExtendFacts}")
+        assertTrue(
+            loadedBoundedPeer!!.privateFunctionNames.contains("f"),
+            "the deserialized bounded owner retains its private direct member",
+        )
         val satisfiedLibrary = compileNormalCjoLibrary(
-            ownerLibrary + "\n\npublic extend Int64 <: Bound { }\n",
+            ownerLibrary + "\n\nextend Int64 <: Bound { }\n",
             "ownermatrixlib",
         )
         val ownerPackagePath = satisfiedLibrary.resolve(CjoConstants.packageNameToPath("ownermatrixlib"))
@@ -546,29 +755,64 @@ class CjmpTwoPhaseCompilationTest {
             .filter { it.kind == DeclKind.ExtendDecl && (it.generic?.typeParametersLength ?: 0) > 0 }
         assertEquals(3, genericExtends.size, "the ordinary CJO retains all generic owner declarations")
         assertTrue(genericExtends.all { hasCjoAttribute(it, Attribute.GENERIC) }, "CJO marks generic extend owners")
+        val indexedDeclarations = (0 until ownerPackage.allDeclsLength)
+            .map { index -> index to ownerPackage.allDecls(index)!! }
+        val (privatePeerFunctionIndex, privatePeerFunction) = indexedDeclarations
+            .single { (_, declaration) -> declaration.identifier == "f" && hasCjoAttribute(declaration, Attribute.PRIVATE) }
+        assertTrue(hasCjoAttribute(privatePeerFunction, Attribute.PRIVATE), "ordinary CJO preserves private members")
+        val boundedGenericExtend = genericExtends.single { declaration ->
+            val extendInfo = declaration.info(ExtendInfo()) as ExtendInfo
+            (0 until extendInfo.bodyLength).any { childIndex ->
+                extendInfo.body(childIndex).toInt() - 1 == privatePeerFunctionIndex
+            }
+        }
+        val boundedConstraint = boundedGenericExtend.generic!!.constraints(0)!!
+        assertEquals(1, boundedGenericExtend.generic!!.constraintsLength)
+        assertTrue(boundedConstraint.uppersLength >= 1, "ordinary CJO retains the bounded extend's upper types")
+        val boundedParameterType = checkNotNull(ownerPackage.allTypes(boundedConstraint.type.toInt() - 1))
+        assertEquals(PackageFormat.TypeKind.Generic, boundedParameterType.kind)
+        val boundedParameterInfo = boundedParameterType.info(GenericTyInfo()) as GenericTyInfo
+        val boundedParameterReference = checkNotNull(boundedParameterInfo.declPtr)
+        assertEquals(
+            "U",
+            ownerPackage.allDecls(boundedParameterReference.index.toInt() - 1)!!.identifier,
+            "CJO attaches the where-bound to the bounded extend's own type parameter",
+        )
+        val upperBoundNames = (0 until boundedConstraint.uppersLength).map { upperIndex ->
+            val upperType = checkNotNull(ownerPackage.allTypes(boundedConstraint.uppers(upperIndex).toInt() - 1))
+            if (upperType.infoType != PackageFormat.SemaTyInfo.CompositeTyInfo) return@map "<${upperType.kind}>"
+            val compositeInfo = upperType.info(CompositeTyInfo()) as CompositeTyInfo
+            val boundReference = checkNotNull(compositeInfo.declPtr)
+            boundReference.decl?.takeIf(String::isNotBlank)
+                ?: checkNotNull(ownerPackage.allDecls(boundReference.index.toInt() - 1)).identifier
+        }
+        val ownerPackageImports = (0 until ownerPackage.importsLength).map(ownerPackage::imports)
+        val upperBoundFullIds = (0 until boundedConstraint.uppersLength).mapNotNull { upperIndex ->
+            val upperType = checkNotNull(ownerPackage.allTypes(boundedConstraint.uppers(upperIndex).toInt() - 1))
+            if (upperType.infoType != PackageFormat.SemaTyInfo.CompositeTyInfo) return@mapNotNull null
+            val fullId = checkNotNull((upperType.info(CompositeTyInfo()) as CompositeTyInfo).declPtr)
+            val packageName = ownerPackageImports.getOrNull(fullId.pkgId)
+            "pkgId=${fullId.pkgId} package=$packageName decl=${fullId.decl} index=${fullId.index}"
+        }
+        assertTrue("Bound" in upperBoundNames, "ordinary CJO retains the actual interface bound: $upperBoundNames")
+        assertTrue(
+            loadedBoundedPeer!!.typeParameterUpperBounds.flatten().any { bound ->
+                bound.classIdOrPrimitiveClassId == StdlibClassIds.Any
+            },
+            "CJO resolves the standard library Any default bound by ClassId without a separate std.core CJO: " +
+                "bounds=${loadedBoundedPeer!!.typeParameterUpperBounds}, imports=$ownerPackageImports, " +
+                "fullIds=$upperBoundFullIds",
+        )
         val satisfiedConsumer = compileClasspathSource(consumerSource, "ownermatrixclient", satisfiedLibrary)
         assertTrue(
             satisfiedConsumer.completed,
-            "consumer pipeline completes with a satisfied generic extend bound: " +
-                "messages=${satisfiedConsumer.messages}, diagnostics=${satisfiedConsumer.diagnostics}",
+            "consumer frontend completes: messages=${satisfiedConsumer.messages}, extends=${satisfiedConsumer.deserializedExtendFacts}",
         )
-        assertEquals(
-            listOf("GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS"),
-            satisfiedConsumer.diagnostics
-                .filter { it.factoryName.removePrefix("CFIR_") == "GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS" }
-                .map { it.factoryName.removePrefix("CFIR_") },
-            "the applicable private peer conflicts once; matching Child<W> -> Parent<V> parameters do not add a duplicate",
-        )
-        val ambiguity = satisfiedConsumer.diagnostics.single {
-            it.factoryName.removePrefix("CFIR_") == "GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS"
-        }
-        assertEquals(2, ambiguity.relatedInformation.size, "both effective overload candidates retain their CJO positions")
         assertTrue(
-            ambiguity.relatedInformation.all { candidate ->
-                val location = candidate.sourceLocation ?: return@all false
-                location.filePath.endsWith("library.cj") && location.line > 0 && location.column > 0
+            satisfiedConsumer.diagnostics.none {
+                it.factoryName.removePrefix("CFIR_") == "GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS"
             },
-            "the peer notes point back to the source file and range serialized in the ordinary CJO",
+            "the satisfied private peer remains invisible to a cross-package CJO consumer",
         )
     }
 

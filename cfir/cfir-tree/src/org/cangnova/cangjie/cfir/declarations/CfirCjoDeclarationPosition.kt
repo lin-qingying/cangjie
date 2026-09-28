@@ -10,6 +10,10 @@ data class CfirCjoDeclarationPosition(
     val line: Int,
     /** 原始源码列号。 */
     val column: Int,
+    /** CJO identifierPos 的原始源码行号；旧 CJO 缺少该字段时为空。 */
+    val identifierLine: Int? = null,
+    /** CJO identifierPos 的原始源码列号；旧 CJO 缺少该字段时为空。 */
+    val identifierColumn: Int? = null,
 )
 
 private object CjoDeclarationPositionKey : CfirDeclarationDataKey()

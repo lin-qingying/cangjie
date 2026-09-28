@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.tests
 
+import PackageFormat.DeclKind
 import com.intellij.lang.LighterASTNode
 import com.intellij.lang.PsiBuilderFactory
 import com.intellij.util.diff.FlyweightCapableTreeStructure
@@ -9,6 +10,8 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.cfir.DependencyListForCliModule
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.buildFileCopy
@@ -20,6 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
+import org.cangnova.cangjie.cfir.serialization.cjo.CfirCjoPackageMetadataProducer
 import org.cangnova.cangjie.cfir.pipeline.CfirSessionConstructionUtils
 import org.cangnova.cangjie.cfir.pipeline.CfirSessionProducer
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
@@ -37,6 +41,9 @@ import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.phaseResolverRegistry
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.lexer.CangJieLexer
@@ -137,20 +144,7 @@ class CfirMacroAnnotationSourceModuleTest : AbstractCfirAnalysisTestCase() {
                 symbol = CfirFileSymbol()
                 declarations.add(generated)
             }
-            val pre = buildPreMacroRawFiles(
-                session,
-                listOf(combined),
-                listOf(sourceSurfaces + generatedSurfaces),
-            )
-            val result = MacroConstructionService.Identity.expandWithDefaultContext(
-                pre = pre,
-                mode = MacroConstructionService.Mode.STRICT,
-            ) as MacroConstructionResult.Success
-            recordExpandedRawFilesOnce(
-                session.cfirProvider as CfirProviderImpl,
-                result.recordableFiles,
-                result.registry,
-            )
+            recordRawCfirFile(combined, session, sourceSurfaces + generatedSurfaces)
             val resolved = resolveThroughTypes(combined, session)
             val functions = resolved.declarations.filterIsInstance<CfirNamedFunction>().associateBy { it.name.asString() }
             val resolvedDirect = checkNotNull(functions["direct"])
@@ -171,6 +165,84 @@ class CfirMacroAnnotationSourceModuleTest : AbstractCfirAnalysisTestCase() {
             assertFalse(generatedAnnotation.annotationIdentity is CangjieAnnotationIdentity.LanguageBuiltIn)
             assertTrue(generatedAnnotation.annotationResolveState != CfirAnnotationResolveState.UNRESOLVED)
         }
+    }
+
+    @Test
+    fun lightTreeCommonClassConstructorKeepsCjoIdentifierPosition() {
+        val session = createResolveSession()
+        val sourceText = "package cjmp_p\npublic common class P(x: Int64) {}"
+        val sourceFile = CjInMemoryTextSourceFile("common.cj", null, sourceText)
+        val (rawFile, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider).buildCfirFileWithSurfaces(
+            parseLightTree(sourceText),
+            sourceFile,
+            sourceText.toSourceLinesMapping(),
+        )
+        recordRawCfirFile(rawFile, session, surfaces)
+
+        val resolvedFile = resolveThroughTypes(rawFile, session)
+        val primaryConstructor = resolvedFile.declarations.filterIsInstance<CfirClass>().single()
+            .declarations.filterIsInstance<CfirConstructor>().single { it.isPrimary }
+        val metadata = CfirCjoPackageMetadataProducer.produce(listOf(resolvedFile))
+        val constructorMetadata = metadata.declarations.single {
+            it.kind == DeclKind.FuncDecl && it.identifier == primaryConstructor.symbol.name.asString()
+        }
+        val identifierPosition = checkNotNull(constructorMetadata.identifierPosition)
+
+        assertEquals(2, identifierPosition.line)
+        assertEquals(sourceText.lineSequence().elementAt(1).indexOf("P") + 1, identifierPosition.column)
+    }
+
+    @Test
+    fun lightTreeSecondaryConstructorKeepsCjoIdentifierPosition() {
+        val session = createResolveSession()
+        val sourceText = "package cjmp_p\npublic common class P {\n    public init(y: Int64) {}\n}"
+        val sourceFile = CjInMemoryTextSourceFile("common.cj", null, sourceText)
+        val (rawFile, surfaces) = LightTree2Cfir(session, session.cangjieScopeProvider).buildCfirFileWithSurfaces(
+            parseLightTree(sourceText),
+            sourceFile,
+            sourceText.toSourceLinesMapping(),
+        )
+        recordRawCfirFile(rawFile, session, surfaces)
+
+        val resolvedFile = resolveThroughTypes(rawFile, session)
+        val classDeclaration = resolvedFile.declarations.filterIsInstance<CfirClass>().single()
+        val constructors = classDeclaration.declarations.filterIsInstance<CfirConstructor>()
+        val secondaryConstructor = constructors.firstOrNull { !it.isPrimary }
+            ?: error("LightTree failed to retain secondary constructor: ${constructors.map { it.isPrimary }}")
+        val metadata = CfirCjoPackageMetadataProducer.produce(listOf(resolvedFile))
+        val constructorMetadata = metadata.declarations.singleOrNull {
+            it.kind == DeclKind.FuncDecl &&
+                    it.identifier == secondaryConstructor.symbol.name.asString() &&
+                    it.identifierPosition?.line == 3
+        } ?: error("CJO metadata omitted LightTree secondary init position: ${metadata.declarations.map { Triple(it.identifier, it.kind, it.identifierPosition) }}")
+        val identifierPosition = checkNotNull(constructorMetadata.identifierPosition)
+
+        assertEquals(3, identifierPosition.line)
+        assertEquals(sourceText.lineSequence().elementAt(2).indexOf("init") + 1, identifierPosition.column)
+    }
+
+    @Test
+    fun invalidExplicitReturnDoesNotPoisonAValidInferredBodyTail() {
+        val session = createResolveSession()
+        val sourceText = """
+            package inferred_return_error
+            public func inferred(flag: Bool) {
+                if (flag) {
+                    return missing
+                }
+                1
+            }
+        """.trimIndent()
+        val builder = PsiRawCfirBuilder(session)
+        val rawFile = builder.buildCfirFile(createCjFile("inferredReturnError", sourceText))
+        recordRawCfirFile(rawFile, session, builder.consumeCollectedMacroSurfaces())
+
+        val typedFile = resolveThroughTypes(rawFile, session)
+        val resolvedFile = resolveThroughBody(typedFile, session)
+        val function = resolvedFile.declarations.filterIsInstance<CfirNamedFunction>().single()
+        val inferredReturnType = function.returnTypeRef.coneTypeOrNull as? ConePrimitiveType
+
+        assertEquals(PrimitiveTypeKind.INT64, inferredReturnType?.kind)
     }
 
     /** 与 frontend 使用同一工厂完整创建 shared/library/source 会话，不逐项拼装解析组件。 */
@@ -229,6 +301,41 @@ class CfirMacroAnnotationSourceModuleTest : AbstractCfirAnalysisTestCase() {
             }
         }
         return files.single()
+    }
+
+    /** 在正式 TYPES 之后继续执行隐式签名与函数体解析，读取函数体返回类型推断结果。 */
+    private fun resolveThroughBody(file: CfirFile, session: CfirSession): CfirFile {
+        var files = listOf(file)
+        for (phase in listOf(
+            CfirResolvePhase.STATUS,
+            CfirResolvePhase.EXTENSIONS,
+            CfirResolvePhase.CJMP_MATCHING,
+            CfirResolvePhase.IMPLICIT_TYPES,
+            CfirResolvePhase.BODY_RESOLVE,
+        )) {
+            val processor = checkNotNull(session.phaseResolverRegistry.getProcessor(phase))
+            processor.beforePhase()
+            try {
+                when (processor) {
+                    is CfirFileReplacingResolveProcessor -> files = processor.processAndReplace(files)
+                    is CfirGlobalResolveProcessor -> processor.process(files)
+                    is CfirTransformerBasedResolveProcessor -> files.forEach(processor::processFile)
+                }
+            } finally {
+                processor.afterPhase()
+            }
+        }
+        return files.single()
+    }
+
+    private fun recordRawCfirFile(file: CfirFile, session: CfirSession, surfaces: List<MacroSurface>) {
+        val provider = session.cfirProvider as CfirProviderImpl
+        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(surfaces))
+        val result = MacroConstructionService.Identity.expandWithDefaultContext(
+            pre = pre,
+            mode = MacroConstructionService.Mode.STRICT,
+        ) as MacroConstructionResult.Success
+        recordExpandedRawFilesOnce(provider, result.recordableFiles, result.registry)
     }
 
     private fun annotation(function: CfirNamedFunction): CfirAnnotationCall =

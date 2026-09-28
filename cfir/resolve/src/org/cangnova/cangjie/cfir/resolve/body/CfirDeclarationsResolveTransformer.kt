@@ -1285,10 +1285,18 @@ dataFlowAnalyzer.enterFunction(constructor)
         }
 
         val expressionTypes = returnTypeInputs.expressions.map { expression ->
-            expression.coneTypeOrNull ?: ConeErrorType(
+            val expressionType = expression.coneTypeOrNull ?: ConeErrorType(
                 ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
             )
-        }.filterNotTo(mutableListOf()) { type -> type.containsRecursiveImplicitReturnType() }
+            // 官方 CheckBodyRetType 在 Join 前对 body/return expression 执行 ReplaceIdealTy；
+            // 否则 `{ 1 }` 会把 IDEAL_INT 错误保留为函数声明返回类型。
+            expression to IdealTypeResolver.replaceIdealTypes(expressionType)
+        }.filterNot { (expression, type) ->
+            expression in returnTypeInputs.explicitReturnExpressions &&
+                    expression !== returnTypeInputs.bodyTailReturnExpression &&
+                    type is ConeErrorType
+        }.filterNot { (_, type) -> type.containsRecursiveImplicitReturnType() }
+            .mapTo(mutableListOf()) { (_, type) -> type }
         if (returnTypeInputs.hasUnitTail) {
             expressionTypes += session.builtinTypes.unitType
         }
@@ -1299,8 +1307,8 @@ dataFlowAnalyzer.enterFunction(constructor)
             return session.builtinTypes.unitType
         }
 
-        // 返回表达式已经携带结构化错误时，函数返回类型必须保留该根因。
-        // 错误类型不能参与正常类型的公共父类型合并，否则会被改写成函数级推断失败并产生级联诊断。
+        // 官方 CalcFuncRetTyFromBody 只把 IsTyCorrect 的显式 return expression 加入 Join；
+        // 错误 return 分支不污染仍有效的 body 尾表达式。尾表达式自身错误时仍保留其根因。
         expressionTypes.firstOrNull { type -> type is ConeErrorType }?.let { return it }
 
         if (expressionTypes.size == 1) {
@@ -1311,7 +1319,9 @@ dataFlowAnalyzer.enterFunction(constructor)
 
         val commonType = session.typeContext.commonVisibleSuperTypeOrNull(expressionTypes)
         if (commonType != null && commonType !is ConeErrorType) {
-            return commonType
+            // 官方 `CalcFuncRetTyFromBody` 收尾经 JoinAsVisibleTy/ReplaceIdealTy；函数签名必须
+            // 暴露用户可见的默认 primitive 类型，而不能把字面量的 IDEAL_INT/IDEAL_FLOAT 写进 CJO。
+            return IdealTypeResolver.replaceIdealTypes(commonType)
         }
 
         val message = expressionTypes.joinToString(
@@ -1335,10 +1345,17 @@ dataFlowAnalyzer.enterFunction(constructor)
      * 尾语句为声明时按 `Unit` 处理。嵌套函数/lambda 的 return 属于各自 owner，必须跳过。
      */
     private fun CfirFunction.collectReturnTypeInputsFromBody(): FunctionReturnTypeInputs {
-        val functionBody = body ?: return FunctionReturnTypeInputs(emptyList(), hasUnitTail = false)
+        val functionBody = body ?: return FunctionReturnTypeInputs(
+            expressions = emptyList(),
+            explicitReturnExpressions = emptySet(),
+            bodyTailReturnExpression = null,
+            hasUnitTail = false,
+        )
         val functionSymbol = symbol
         val expressions = linkedSetOf<CfirExpression>()
+        val explicitReturnExpressions = linkedSetOf<CfirExpression>()
         val lastStatement = functionBody.statements.lastOrNull()
+        val bodyTailReturnExpression = (lastStatement as? CfirReturnExpression)?.result
         val hasUnitTail = lastStatement is CfirDeclaration
 
         (lastStatement as? CfirExpression)
@@ -1349,6 +1366,7 @@ dataFlowAnalyzer.enterFunction(constructor)
             override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
                 if (returnExpression.target.labeledElement.symbol == functionSymbol) {
                     expressions += returnExpression.result
+                    explicitReturnExpressions += returnExpression.result
                 }
             }
 
@@ -1371,12 +1389,19 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
         }, null)
 
-        return FunctionReturnTypeInputs(expressions.toList(), hasUnitTail)
+        return FunctionReturnTypeInputs(
+            expressions = expressions.toList(),
+            explicitReturnExpressions = explicitReturnExpressions,
+            bodyTailReturnExpression = bodyTailReturnExpression,
+            hasUnitTail = hasUnitTail,
+        )
     }
 
     /** 函数 body 为隐式返回类型提供的表达式与声明尾部 Unit 输入。 */
     private data class FunctionReturnTypeInputs(
         val expressions: List<CfirExpression>,
+        val explicitReturnExpressions: Set<CfirExpression>,
+        val bodyTailReturnExpression: CfirExpression?,
         val hasUnitTail: Boolean,
     )
 

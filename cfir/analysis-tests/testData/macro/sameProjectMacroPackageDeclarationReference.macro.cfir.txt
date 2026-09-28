@@ -1,4 +1,3 @@
-
 // FILE: macros.cj
 // MACRO_PACKAGE: true
 FILE: macros.cj
@@ -11,12 +10,12 @@ FILE: macros.cj
 // MACRO_PACKAGE: false
 FILE: main.cj
     import macros.local.DeclareGenerated
-    internal? func generatedValue(): R|kotlin.Unit| {
+    internal? func generatedValue(): R|Int64| {
         RETURN {
             INT(43)
         }
     }
-    internal? func useGeneratedDeclaration(): R|kotlin.Unit| {
+    internal? func useGeneratedDeclaration(): R|Int64| {
         RETURN {
             FUNCTION_CALL(generatedValue -> CfirNamedFunctionSymbol(generatedValue)) {
             }

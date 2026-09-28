@@ -11,6 +11,7 @@ import PackageFormat.Package
 import PackageFormat.StructInfo
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.serialization.cjo.PackageIndex
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -104,8 +105,28 @@ internal class CjoFullIdResolver(
 
     /** 将 [FullId] 解析为 class-like 声明的 [ClassId]；非 class-like 或非法引用返回 null。 */
     fun resolveClassId(fullId: FullId): ClassId? {
+        resolveStandardLibraryClassId(fullId)?.let { return it }
         val resolved = resolve(fullId) as? ResolvedFullId.Declaration ?: return null
         return resolved.packageIndex.resolveClassId(resolved.declaration.zeroBasedIndex)
+    }
+
+    /**
+     * 仅恢复官方确认的 std.core.Any exportId；运行时不保证另有可加载的 std.core CJO。
+     * 其他声明和导入包仍须通过包索引加载并验证具体声明。
+     */
+    private fun resolveStandardLibraryClassId(fullId: FullId): ClassId? {
+        if (!PackageIndex.isImportedPackage(fullId.pkgId)) return null
+        val packageName = context.header.imports.getOrNull(fullId.pkgId)?.takeIf(String::isNotBlank) ?: return null
+        if (packageName != StdlibClassIds.Any.packageFqName.asString()) return null
+        val declarationKey = fullId.decl?.takeIf(String::isNotBlank) ?: return null
+        return standardLibraryExportIds[declarationKey]
+    }
+
+    private companion object {
+        /** cjc exportId 形式の FullId key for standard-library declarations without a loadable CJO. */
+        val standardLibraryExportIds: Map<String, ClassId> = mapOf(
+            "_CNat3AnyE" to StdlibClassIds.Any,
+        )
     }
 
     /** 将 [FullId] 解析为声明名称；非法或非声明引用返回 null。 */

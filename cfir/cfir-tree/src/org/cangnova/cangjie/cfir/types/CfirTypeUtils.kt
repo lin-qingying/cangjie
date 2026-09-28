@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.types.impl.ResolvedImplicitTypeRef
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import kotlin.contracts.ExperimentalContracts
@@ -15,7 +16,7 @@ val CfirExpression.hasResolvedType: Boolean get() = coneTypeOrNull != null
 /**
  * 类型引用上的可空 cone type 视图。
  *
- * 未解析类型引用返回 `null`，已解析类型引用返回其 [CfirResolvedTypeRef.coneType]。
+ * 未解析类型引用返回 `null`；显式类型和已成功推断的隐式类型均返回解析后的 cone type。
  */
 val CfirTypeRef.coneTypeOrNull: ConeCangJieType?
     get() = coneTypeSafe()
@@ -34,14 +35,20 @@ val CfirTypeRef.coneType: ConeCangJieType
 /**
  * 安全读取指定 cone type 子类型。
  *
- * 返回非空值时，Kotlin contract 会把接收者收窄为 [CfirResolvedTypeRef]。
+ * 返回非空值时，Kotlin contract 会把接收者收窄为已解析类型引用（显式或隐式）。
  */
 @OptIn(ExperimentalContracts::class)
 inline fun <reified T : ConeCangJieType> CfirTypeRef.coneTypeSafe(): T? {
     contract {
-        returnsNotNull() implies (this@coneTypeSafe is CfirResolvedTypeRef)
+        returnsNotNull() implies (
+            this@coneTypeSafe is CfirResolvedTypeRef || this@coneTypeSafe is ResolvedImplicitTypeRef
+        )
     }
-    return (this as? CfirResolvedTypeRef)?.coneType as? T
+    return when (this) {
+        is CfirResolvedTypeRef -> coneType as? T
+        is ResolvedImplicitTypeRef -> typeRef.coneType as? T
+        else -> null
+    }
 }
 
 /**

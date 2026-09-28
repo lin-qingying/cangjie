@@ -1,4 +1,3 @@
-
 // FILE: macros.cj
 // MACRO_PACKAGE: true
 FILE: macros.cj
@@ -13,16 +12,16 @@ FILE: macros.cj
 FILE: main.cj
     import macros.local.EchoInput
     import macros.local.MakeInt64
-    internal? func useSameProjectMacroPackage(): R|kotlin.Unit| {
-        local? let value: R|kotlin.Unit| = ...
+    internal? func useSameProjectMacroPackage(): R|Int64| {
+        local? let value: R|Int64| = ...
             initializer:
                 INT(41)
         RETURN {
             NAMED_ACCESS(value -> CfirPatternBindingSymbol(value))
         }
     }
-    internal? func useSameProjectMacroPackageInput(): R|kotlin.Unit| {
-        local? let value: R|kotlin.Unit| = ...
+    internal? func useSameProjectMacroPackageInput(): R|Int64| {
+        local? let value: R|Int64| = ...
             initializer:
                 INT(42)
         RETURN {
