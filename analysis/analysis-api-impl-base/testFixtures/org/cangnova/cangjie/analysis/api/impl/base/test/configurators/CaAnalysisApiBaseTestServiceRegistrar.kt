@@ -16,6 +16,8 @@ import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieSta
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
+import org.cangnova.cangjie.analysis.api.impl.base.packages.CangJiePsiFacadeImpl
+import org.cangnova.cangjie.psi.CangJiePsiFacade
 import org.cangnova.cangjie.analysis.test.framework.services.configuration.AnalysisApiBinaryLibraryIndexingMode
 import org.cangnova.cangjie.analysis.test.framework.services.configuration.libraryIndexingConfiguration
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
@@ -36,6 +38,7 @@ object CaAnalysisApiBaseTestServiceRegistrar : AnalysisApiTestServiceRegistrar()
      */
     override fun registerProjectServices(project: MockProject, testServices: TestServices) {
         project.registerPlatformSettings(testServices)
+        project.registerService(CangJiePsiFacade::class.java, CangJiePsiFacadeImpl(project))
     }
 
     /**

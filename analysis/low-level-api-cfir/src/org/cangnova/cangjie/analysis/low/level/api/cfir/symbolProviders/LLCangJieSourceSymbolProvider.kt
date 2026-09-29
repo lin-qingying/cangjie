@@ -54,6 +54,10 @@ internal class LLCangJieSourceSymbolProvider(
     private val searchScope: GlobalSearchScope
         get() = moduleComponents.module.contentScope
 
+    /** 将 PSI 精确多声明查询接入编译器公共候选 API，组织过滤前不选择首项。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        getAllClassLikeSymbolsByClassId(classId)
+
     /**
      * 聚合当前内容范围内可用的仓颉声明索引。
      */

@@ -10277,3 +10277,15 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 不新增任何源码；`CfirDiagnosticsList.kt` / `ConeDiagnostic.kt` / `coneDiagnosticToCfirDiagnostic.kt` 均不引入这两个条目。
 - golden `DiagnosticNameMapper.kt` 亦不注册对应 `sema_*` 名称（避免误导为已实现）。
 - 回归语料 `interopMutabilityProbe.cj` 的 `probePointer` 仅覆盖可触达的 `POINTER_UNKNOW_GENERIC_TYPE`（裸 `CPointer()` 泛型无法推导），不涉及上述两项。
+
+## 2026-09-29：导入分组路径、可见性与解析事实一致性
+
+- problem type: 分组导入的名称父链、包级共享导入、未解析星号导入的主诊断与级联抑制。
+- root cause: `FqName.child(FqName)` 拼接多段名称后把直接父级缓存为整个共享前缀，导致 `std.collection.ArrayList` 的字符串正确而 `parent()` 错误；checker 又以子包存在性重新解释 IMPORTS 已解析的目标，使失败的星号导入被误认为有效。
+- official Cangjie evidence: `external/cangjie_compiler/src/Parse/ParseImports.cpp:159-185` 复制语句修饰符并逐段拼接分组路径；`ParserModifierRules.cpp:347-364` 为 IMPORT_SPEC 设置默认 private。无效包导入由 ImportManager 报告，级联抑制证据沿用本日志“Extend unresolved star import cascade”条目。
+- Kotlin counterpart: `external/kotlin/core/compiler.common/src/org/jetbrains/kotlin/name/FqName.kt` 的单段 child/parent 缓存契约；`external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirImportsChecker.kt` 的导入诊断所有权。
+- CFIR owners: 公共 `FqName` 按单段 child 组合完整路径；`CfirImport.visibility` 由两套 raw builder 填入，resolved import 委托保留；`CfirImportBindingResolver` 区分实际包与前缀查询；`CfirImportsChecker` 只消费绑定目标，不在缺少 binding 时回退查询。
+- repair principle: 修复名称模型和导入绑定这两个共享事实源，不按测试文件补条件，不更改原诊断期望。
+- fixtures covered: PSI/LightTree 的 `Linkage.testAccess01/testAccess02/testAccessErr`、`UnusedImport004.testUnused004/testUnused005`，以及双宏入口 `DefaultParameterPkg02.G1.testTest2`；新增 `FqNamePathCompositionTest`、双源 `CfirOrganizationReexportTest` 验证父链、包可见性及别名。
+- verification: 12 项定向回归通过；最终执行 `gradlew-queue.bat :cfir:analysis-tests:test`（聚合任务、单 worker、关闭构建缓存写入），生成 `cfir/analysis-tests/build/ffi-annotation-verification/import-group-20260929-final`。
+- outcome: 8,930 个 XML testcase-key，8,543 passed、387 skipped、0 failed；相对首轮 `import-group-20260928-v1` 修复 10 项，0 regressed，0 new，0 removed。其它导入 PSI、Analysis/低层 API 与独立 IDE 验收见 `docs/import-psi-group-verification-20260928.md`。

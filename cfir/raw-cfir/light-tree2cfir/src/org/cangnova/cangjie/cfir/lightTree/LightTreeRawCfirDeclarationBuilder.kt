@@ -79,6 +79,8 @@ import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.ImportPathPrefix
+import org.cangnova.cangjie.resolveImportPath
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjLightSourceElement
@@ -213,7 +215,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     }
                 }
             }
-        }
+        }.also { it.initContainingClassAttr() }
     }
 
     /** 从 LightTree 声明节点构建 raw CFIR 声明。 */
@@ -717,7 +719,7 @@ class LightTreeRawCfirDeclarationBuilder(
         return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
             buildPrimaryConstructor {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = ownerNode.toSource()
+                source = ownerNode.toSource().fakeElement(CjFakeSourceElementKind.ImplicitConstructor)
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
@@ -830,7 +832,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.body = body
                 isMut = modifiers.isMut
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+        }.also {
+            it.initContainingClassAttr()
+            bindFunctionTarget(functionTarget, it)
+        }
     }
 
     /** 转换仓颉入口 main 函数声明。 */
@@ -1237,6 +1242,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 name = enumName
             }
         }
+        enumConstructor.initContainingClassAttr()
         return enumConstructor
     }
 
@@ -2300,12 +2306,28 @@ class LightTreeRawCfirDeclarationBuilder(
         tree.forEachChildren(file) { child ->
             if (child.tokenType == CjNodeTypes.IMPORT_LIST) {
                 tree.forEachChildren(child) { directive ->
-                    if (directive.tokenType == CjNodeTypes.IMPORT_DIRECTIVE) {
-                        val directiveBasePath = directive.extractImportDirectiveBasePath()
+                    if (directive.tokenType == CjNodeTypes.IMPORT_DIRECTIVE && !directive.hasImportContainerErrors()) {
                         val condition = directive.whenConditionExpressionOrNull()
-                        tree.forEachChildren(directive) { item ->
-                            if (item.tokenType == CjNodeTypes.IMPORT_ITEM) {
-                                convertImportItem(item, directiveBasePath, condition)?.let { imports.add(it) }
+                        val visibility = when {
+                            tree.findChildByType(directive, CjTokens.PUBLIC_KEYWORD) != null -> Visibilities.Public
+                            tree.findChildByType(directive, CjTokens.PROTECTED_KEYWORD) != null -> Visibilities.Protected
+                            tree.findChildByType(directive, CjTokens.INTERNAL_KEYWORD) != null -> Visibilities.Internal
+                            else -> Visibilities.Private
+                        }
+                        tree.forEachChildren(directive) contentLoop@{ content ->
+                            when (content.tokenType) {
+                                CjNodeTypes.IMPORT_ITEM ->
+                                    convertImportItem(content, null, condition, visibility)?.let(imports::add)
+                                CjNodeTypes.IMPORT_GROUP -> {
+                                    if (content.hasImportContainerErrors()) return@contentLoop
+                                    val prefix = content.extractImportPath(allowOrganizationOnly = true)
+                                    if (prefix == null && content.hasImportPathExpression()) return@contentLoop
+                                    tree.forEachChildren(content) { item ->
+                                        if (item.tokenType == CjNodeTypes.IMPORT_ITEM) {
+                                            convertImportItem(item, prefix, condition, visibility)?.let(imports::add)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -2315,49 +2337,83 @@ class LightTreeRawCfirDeclarationBuilder(
         return imports
     }
 
-    /**
-     * 提取 `import a.{b, c}` 中位于 IMPORT_DIRECTIVE 直接子层的共享前缀 `a`。
-     *
-     * 单项导入和 `import {a.b, c.d}` 的路径位于 IMPORT_ITEM 内部，这里只读取
-     * directive 直接子节点，保持与 PSI `CjImportItem.importedFqName` 的组合语义一致。
-     */
-    private fun LighterASTNode.extractImportDirectiveBasePath(): OrganizationQualifiedPath? {
-        var baseText: String? = null
-        var hasBareOrganizationSeparator = false
+    /** 只读取当前 group/item 的路径，组织引用与包路径由真实 `::` token 分隔。 */
+    private fun LighterASTNode.extractImportPath(allowOrganizationOnly: Boolean = false): ImportPathPrefix? {
+        val expressions = mutableListOf<LighterASTNode>()
+        var hasOrganizationSeparator = false
         tree.forEachChildren(this) { child ->
             when (child.tokenType) {
                 CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
-                CjNodeTypes.REFERENCE_EXPRESSION -> baseText = child.asText()
-                CjTokens.DOUBLE_COLON -> hasBareOrganizationSeparator = true
+                CjNodeTypes.REFERENCE_EXPRESSION -> expressions += child
+                CjTokens.DOUBLE_COLON -> hasOrganizationSeparator = true
             }
         }
-        return baseText?.takeIf { it.isNotBlank() }?.let { text ->
-            if (hasBareOrganizationSeparator && !text.contains("::")) {
-                OrganizationQualifiedPath(
-                    fqName = FqName.ROOT,
-                    organizationName = Name.identifier(text),
-                )
-            } else {
-                organizationQualifiedPath(text)
+        if (expressions.isEmpty()) return null
+        val organizationName = if (hasOrganizationSeparator) {
+            expressions.removeAt(0).importPathSegments()?.singleOrNull() ?: return null
+        } else null
+        val fqName = when (expressions.size) {
+            0 -> if (allowOrganizationOnly && organizationName != null) FqName.ROOT else return null
+            1 -> {
+                val segments = expressions.single().importPathSegments() ?: return null
+                segments.fold(FqName.ROOT) { path, segment -> path.child(segment) }
+            }
+            else -> return null
+        }
+        return ImportPathPrefix(organizationName, fqName)
+    }
+
+    private fun LighterASTNode.hasImportPathExpression(): Boolean {
+        tree.forEachChildren(this) { child ->
+            if (child.tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
+                child.tokenType == CjNodeTypes.DOT_QUALIFIED_EXPRESSION
+            ) return true
+        }
+        return false
+    }
+
+    /** 与 PSI 的容器校验一致：列表错误影响整组，兄弟 item 内错误只影响该项。 */
+    private fun LighterASTNode.hasImportContainerErrors(): Boolean {
+        tree.forEachChildren(this) { child ->
+            if (child.tokenType == TokenType.ERROR_ELEMENT) return true
+            if (child.tokenType != CjNodeTypes.IMPORT_ITEM && child.tokenType != CjNodeTypes.IMPORT_GROUP &&
+                child.hasImportContainerErrors()
+            ) return true
+        }
+        return false
+    }
+
+    /** 按标识符叶子构造路径；错误表达式不转换成前缀或源码文本路径。 */
+    private fun LighterASTNode.importPathSegments(): List<Name>? {
+        val segments = mutableListOf<Name>()
+        tree.forEachChildren(this) { child ->
+            when (child.tokenType) {
+                CjTokens.IDENTIFIER -> segments += Name.identifier(child.asText().removeSurrounding("`"))
+                CjNodeTypes.REFERENCE_EXPRESSION,
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
+                    segments += child.importPathSegments() ?: return null
+                }
+                CjTokens.DOT, TokenType.WHITE_SPACE -> Unit
+                else -> if (!CjTokens.COMMENTS.contains(child.tokenType)) return null
             }
         }
+        return segments.takeIf { it.isNotEmpty() }
     }
 
     /** 转换单个 import item。 */
     private fun convertImportItem(
         item: LighterASTNode,
-        directiveBasePath: OrganizationQualifiedPath?,
+        groupPrefix: ImportPathPrefix?,
         condition: CfirExpression?,
+        visibility: org.cangnova.cangjie.descriptors.Visibility,
     ): CfirImport? {
-        // 提取导入的 FQN（从 DOT_QUALIFIED_EXPRESSION 或 REFERENCE_EXPRESSION）
-        var fqNameText: String? = null
+        if (item.hasImportContainerErrors()) return null
+        val itemPath = item.extractImportPath() ?: return null
         var isAllUnder = false
         var aliasName: Name? = null
 
         tree.forEachChildren(item) { child ->
             when (child.tokenType) {
-                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
-                CjNodeTypes.REFERENCE_EXPRESSION -> fqNameText = child.asText()
                 CjTokens.MUL -> isAllUnder = true
                 CjNodeTypes.IMPORT_ALIAS -> {
                     val idNode = tree.findChildByType(child, CjTokens.IDENTIFIER)
@@ -2366,23 +2422,15 @@ class LightTreeRawCfirDeclarationBuilder(
             }
         }
 
-        val itemPath = fqNameText?.let(::organizationQualifiedPath)
-        val fqName = when {
-            directiveBasePath != null && itemPath != null -> {
-                if (itemPath.fqName.startsWith(directiveBasePath.fqName)) itemPath.fqName
-                else directiveBasePath.fqName.child(itemPath.fqName)
-            }
-            itemPath != null -> itemPath.fqName
-            directiveBasePath != null -> directiveBasePath.fqName
-            else -> null
-        } ?: return null
+        val resolvedPath = groupPrefix.resolveImportPath(itemPath.fqName, itemPath.organizationName)
         return buildImport {
             source = item.toSource()
-            importedFqName = fqName
-            organizationName = itemPath?.organizationName ?: directiveBasePath?.organizationName
+            importedFqName = resolvedPath.fqName
+            organizationName = resolvedPath.organizationName
             this.isAllUnder = isAllUnder
             this.aliasName = aliasName
             this.condition = condition
+            this.visibility = visibility
         }
     }
 

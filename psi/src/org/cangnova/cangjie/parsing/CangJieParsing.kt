@@ -1090,233 +1090,174 @@ class CangJieParsing private constructor(
      * - a.b.*
      * - a.b as AB
      */
+    /** 组织分隔符只允许出现在最外层首段后，包路径始终是独立表达式。 */
     context(parseContext: ParsingContext)
-    private fun parseImportItem() {
-        val item = mark()
-
-        if (!at(IDENTIFIER)) {
-            error(
-                CangJieParsingBundle.message(
-                    "parsing.error.package.name.after.dot",
-                    builder.tokenText ?: "<unknown>"
-                )
-            )
-            item.done(IMPORT_ITEM)
-            return
+    private fun parseImportPath(allowOrganization: Boolean): Boolean {
+        if (allowOrganization && at(IDENTIFIER) && lookahead(1) == DOUBLE_COLON) {
+            val organization = mark()
+            advance()
+            organization.done(REFERENCE_EXPRESSION)
+            advance() // ::
+            if (at(LBRACE)) return true
         }
-
-        var qualifiedName = mark()
+        if (!at(IDENTIFIER)) {
+            error("Expecting qualified name")
+            return false
+        }
+        var qualified = mark()
         var reference = mark()
-        advance() // IDENTIFIER
+        advance()
         reference.done(REFERENCE_EXPRESSION)
-
-        // 多项导入中的 item 不允许再声明组织名；组织分隔符只属于最外层路径。
         while (at(DOT) && lookahead(1) != MUL && lookahead(1) != LBRACE) {
-            advance() // DOT
-
+            advance()
             reference = mark()
-            if (expect(
-                    IDENTIFIER,
-                    "Qualified name must be a '.'-separated identifier list",
-                    IMPORT_RECOVERY_SET
-                )
-            ) {
+            val hasName = !atImportDeclarationBoundary() && at(IDENTIFIER)
+            if (hasName) {
+                advance()
                 reference.done(REFERENCE_EXPRESSION)
             } else {
                 reference.drop()
+                error("Expecting identifier")
             }
-
-            val precede = qualifiedName.precede()
-            qualifiedName.done(DOT_QUALIFIED_EXPRESSION)
-            qualifiedName = precede
+            val preceding = qualified.precede()
+            qualified.done(DOT_QUALIFIED_EXPRESSION)
+            qualified = preceding
+            if (!hasName) break
         }
+        qualified.drop()
+        return false
+    }
 
-        qualifiedName.drop()
-
-        // 处理通配符或别名
-        when {
-            at(DOT) && lookahead(1) == MUL -> {
-                advance() // DOT
-                advance() // MUL
-
-                if (at(AS_KEYWORD)) {
-                    errorAndAdvance(
-                        CangJieParsingBundle.message("parsing.error.aliases.not.allowed.for.all.imports")
-                    )
-                }
+    context(parseContext: ParsingContext)
+    private fun parseImportItemSuffix() {
+        if (at(DOT) && lookahead(1) == MUL) {
+            advance()
+            advance()
+            if (at(AS_KEYWORD)) {
+                val invalidAlias = mark()
+                advance()
+                if (at(IDENTIFIER)) advance()
+                invalidAlias.error(CangJieParsingBundle.message("parsing.error.aliases.not.allowed.for.all.imports"))
             }
-
-            at(AS_KEYWORD) -> {
-                val alias = mark()
-                advance() // AS_KEYWORD
-                expect(IDENTIFIER, "Expecting identifier", SEMICOLON_SET)
-                alias.done(IMPORT_ALIAS)
-            }
+        } else if (at(AS_KEYWORD)) {
+            val alias = mark()
+            advance()
+            if (!atImportDeclarationBoundary() && at(IDENTIFIER)) advance() else error("Expecting identifier")
+            alias.done(IMPORT_ALIAS)
         }
+    }
 
+    /** 跳过非法项尾部时配平非法嵌套花括号，不消耗外层组的结束符。 */
+    context(parseContext: ParsingContext)
+    private fun recoverImportItem() {
+        val invalid = mark()
+        var depth = 0
+        while (!eof()) {
+            if (depth == 0 && (at(COMMA) || at(RBRACE) || at(SEMICOLON) || builder.newlineBeforeCurrentToken())) break
+            if (at(LBRACE)) depth++
+            if (at(RBRACE)) depth--
+            advance()
+        }
+        invalid.error("Unexpected token in import item")
+    }
+
+    context(parseContext: ParsingContext)
+    private fun parseImportItem() {
+        val item = mark()
+        parseImportPath(allowOrganization = false)
+        parseImportItemSuffix()
+        if (!eof() && !at(COMMA) && !at(RBRACE) && !at(SEMICOLON) && !builder.newlineBeforeCurrentToken()) {
+            recoverImportItem()
+        }
         item.done(IMPORT_ITEM)
     }
 
-    /**
-     * 解析导入项列表 (逗号分隔)
-     *
-     * 用于:
-     * - import {a.b, c.d, ...}
-     * - import a.{b, c, ...}
-     */
+    /** 在不重映射软关键字的前提下识别下一条声明，保留合法的软关键字路径。 */
     context(parseContext: ParsingContext)
-    private fun parseImportItemList() {
-        parseImportItem()
-
-        while (at(COMMA)) {
-            advance() // COMMA
-            parseImportItem()
+    private fun atImportDeclarationBoundary(): Boolean {
+        if (!builder.newlineBeforeCurrentToken()) return false
+        fun startsDeclaration(token: IElementType?): Boolean =
+            token == PACKAGE_KEYWORD || token == IMPORT_KEYWORD ||
+                (token as? org.cangnova.cangjie.lexer.CjToken)?.tokenId in declarationParsers
+        // 软关键字可能尚未被 lexer 重映射。沿用 modifier parser 的 atSet 识别协议，
+        // 在事务式前瞻结束后回到原位，不能只检查 lookAhead 返回的原始 IDENTIFIER。
+        val preview = mark()
+        return try {
+            while (!startsDeclaration(tt()) && (atSet(MODIFIER_KEYWORDS) || atSet(SPECIAL_MODIFIER_KEYWORDS))) advance()
+            startsDeclaration(tt())
+        } finally {
+            preview.rollbackTo()
         }
     }
 
-    /**
-     * 解析导入指令
-     *
-     * 支持的语法形式:
-     * 1. import a.b
-     * 2. import a.{b, c}
-     * 3. import {a.b, a.c}
-     * 4. import {a.*, b.c}
-     * 5. import {a.*, b.c as BC}
-     * 6. import a.*
-     * 7. public/internal/protected import ...
-     *
-     * Grammar:
-     * ```
-     * importDirective
-     *   : modifier* "import" (importItem | "{" importItemList "}" | qualifiedName "." "{" importItemList "}") (";")?
-     *   ;
-     * ```
-     */
+    /** 空组非法；逗号后遇到右括号是尾逗号，不创建空导入项。 */
+    context(parseContext: ParsingContext)
+    private fun parseImportItemList() {
+        if (at(RBRACE)) {
+            error("Expecting import item")
+            return
+        }
+        while (!eof() && !at(RBRACE) && !at(SEMICOLON)) {
+            if (at(COMMA)) {
+                errorAndAdvance("Expecting import item")
+                continue
+            }
+            // 保留下一条顶层声明，缺失右括号由调用方报告。
+            if (builder.newlineBeforeCurrentToken()) {
+                if (atImportDeclarationBoundary() || !at(IDENTIFIER)) break
+            }
+            val position = builder.currentOffset
+            parseImportItem()
+            if (at(COMMA)) {
+                advance()
+                if (at(RBRACE)) break
+            } else {
+                if (!at(RBRACE) && !eof()) error("Expecting ',' or '}'")
+                break
+            }
+            if (builder.currentOffset == position) break
+        }
+    }
+
+    /** 语句体只包含一个单项或一个真正的花括号分组。 */
     context(parseContext: ParsingContext)
     private fun parseImportDirective(): Boolean {
         assert(_at(IMPORT_KEYWORD) || _atSet(IMPORT_ACCESS_MODIFIER_SET) || isWhenAnnotation())
-
-        val importDirective = mark()
-
-        // 1. 解析注解 (when annotation)
-        if (isWhenAnnotation()) {
-            parseWhenAnnotation(true)
-        }
-
-        // 2. 解析访问修饰符 (public/internal/protected/private)
-        if (_atSet(IMPORT_ACCESS_MODIFIER_SET)) {
-            advance() // 访问修饰符
-        }
-
-        // 3. 检查 import 关键字
+        val directive = mark()
+        if (isWhenAnnotation()) parseWhenAnnotation(true)
+        if (_atSet(IMPORT_ACCESS_MODIFIER_SET)) advance()
         if (!at(IMPORT_KEYWORD)) {
             error(CangJieParsingBundle.message("parsing.error.expecting.keyword", "import"))
-            importDirective.rollbackTo()
+            directive.rollbackTo()
             return false
         }
+        advance()
+        if (closeImportWithErrorIfNewline(directive, null, "Expecting qualified name")) return true
 
-        advance() // IMPORT_KEYWORD
-
-        // 4. 检查换行错误
-        if (closeImportWithErrorIfNewline(importDirective, null, "Expecting qualified name")) {
-            return true
-        }
-
-        // 5. 解析导入项
-        if (at(LBRACE)) {
-            // 形式: import {a.b, c.d, ...}
-            advance() // LBRACE
+        val body = mark()
+        val unprefixedGroup = at(LBRACE)
+        val organizationOnlyGroup = !unprefixedGroup && parseImportPath(allowOrganization = true)
+        val grouped = unprefixedGroup || organizationOnlyGroup || (at(DOT) && lookahead(1) == LBRACE)
+        if (grouped) {
+            if (at(DOT)) advance()
+            advance() // {
             parseImportItemList()
             expect(RBRACE, "Expecting '}'")
-        } else {
-            // 需要先解析限定名，然后判断是单项导入还是同包多项导入
-            // 解析限定名
-            if (!at(IDENTIFIER)) {
-                error("Expecting qualified name")
-                importDirective.done(IMPORT_DIRECTIVE)
-                importDirective.setCustomEdgeTokenBinders(null, TrailingCommentsBinder)
-                return true
-            }
-
-            var qualifiedName = mark()
-            var reference = mark()
-            advance() // IDENTIFIER
-            reference.done(REFERENCE_EXPRESSION)
-
-            // `::` 只能出现在路径首段之后，表示组织名与包名的边界。
-            var allowOrganizationSeparator = true
-            while (
-                (at(DOT) || (allowOrganizationSeparator && at(DOUBLE_COLON))) &&
-                (lookahead(1).let { it == IDENTIFIER || (it is CjKeywordToken && it.isSoft) })
-            ) {
-                advance() // DOT or the one organization DOUBLE_COLON
-
-                reference = mark()
-                // 限定名允许 internal 等软关键字；消费前统一重映射为标识符。
-                expect(IDENTIFIER, "Expecting identifier")
-                reference.done(REFERENCE_EXPRESSION)
-
-                val precede = qualifiedName.precede()
-                qualifiedName.done(DOT_QUALIFIED_EXPRESSION)
-                qualifiedName = precede
-                allowOrganizationSeparator = false
-            }
-
-            // `a::{c, d}` is the organization-only multi-import form. The
-            // separator is kept in IMPORT_DIRECTIVE so PSI/LightTree can recover
-            // the organization metadata, while the item paths remain relative.
-            val organizationOnlyMultiImport =
-                allowOrganizationSeparator && at(DOUBLE_COLON) && lookahead(1) == LBRACE
-
-            if (at(DOUBLE_COLON) && !organizationOnlyMultiImport) {
-                error("Organization separator is only allowed after the first identifier")
+            if (at(AS_KEYWORD)) {
+                val alias = mark()
                 advance()
+                if (at(IDENTIFIER)) advance()
+                alias.error("Aliases are only allowed for individual imports")
             }
-
-            // 检查是否为同包多项导入 import a.{b, c}
-            if (
-                (at(DOT) && lookahead(1) == LBRACE) ||
-                organizationOnlyMultiImport
-            ) {
-                // 保留 qualifiedName 作为基础路径，让 CjImportDirective.importedReference 可以访问
-                qualifiedName.drop()  // 虽然 drop，但表达式已经在 AST 中
-                if (organizationOnlyMultiImport) advance() // organization DOUBLE_COLON
-                else advance() // DOT
-                advance() // LBRACE
-                parseImportItemList()
-                expect(RBRACE, "Expecting '}'")
-            } else {
-                // 单项导入: import a.b 或 import a.b.*
-                // 需要将表达式放入 IMPORT_ITEM 中
-                val item = qualifiedName.precede()
-                qualifiedName.drop()
-
-                // 处理通配符
-                if (at(DOT) && lookahead(1) == MUL) {
-                    advance() // DOT
-                    advance() // MUL
-
-                    if (at(AS_KEYWORD)) {
-                        errorAndAdvance(
-                            CangJieParsingBundle.message("parsing.error.aliases.not.allowed.for.all.imports")
-                        )
-                    }
-                } else if (at(AS_KEYWORD)) {
-                    // 处理别名
-                    val alias = mark()
-                    advance() // AS_KEYWORD
-                    expect(IDENTIFIER, "Expecting identifier", SEMICOLON_SET)
-                    alias.done(IMPORT_ALIAS)
-                }
-
-                item.done(IMPORT_ITEM)
-            }
+            body.done(IMPORT_GROUP)
+        } else {
+            parseImportItemSuffix()
+            if (!eof() && !at(SEMICOLON) && !builder.newlineBeforeCurrentToken()) recoverImportItem()
+            body.done(IMPORT_ITEM)
         }
-
         consumeIf(SEMICOLON)
-        importDirective.done(IMPORT_DIRECTIVE)
-        importDirective.setCustomEdgeTokenBinders(null, TrailingCommentsBinder)
+        directive.done(IMPORT_DIRECTIVE)
+        directive.setCustomEdgeTokenBinders(null, TrailingCommentsBinder)
         return true
     }
 

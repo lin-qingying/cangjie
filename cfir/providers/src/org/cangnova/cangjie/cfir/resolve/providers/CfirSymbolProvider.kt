@@ -25,6 +25,10 @@ annotation class CfirSymbolProviderInternals
  * 该层只负责 symbol lookup 与热路径查询，不承载 owner/container 元信息。
  */
 abstract class CfirSymbolProvider(val session: CfirSession) : CfirSessionComponent {
+    /** 在导入命名空间中查询成员；有重导出能力的 provider 必须按导出边解释组织限定。 */
+    open fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace =
+        CfirDirectImportNamespace(this, context)
+
     /**
      * 当前符号源的名称索引。
      *

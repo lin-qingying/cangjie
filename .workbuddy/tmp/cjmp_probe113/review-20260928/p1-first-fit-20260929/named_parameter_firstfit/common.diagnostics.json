@@ -1,0 +1,145 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_param_named_mismatched",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "parameter name mismatched",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 4,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 4,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 4,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [
+                    {
+                        "Content": "the corresponding parameter in the supertype is named 'selected'",
+                        "Range": {
+                            "Begin": {
+                                "File": "common.cj",
+                                "Line": 4,
+                                "Column": 29
+                            },
+                            "End": {
+                                "File": "common.cj",
+                                "Line": 4,
+                                "Column": 38
+                            }
+                        }
+                    }
+                ],
+                "Notes": [
+                    {
+                        "Message": "the corresponding function of the supertype is",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "common.cj",
+                                    "Line": 7,
+                                    "Column": 24
+                                },
+                                "End": {
+                                    "File": "common.cj",
+                                    "Line": 7,
+                                    "Column": 28
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_param_named_mismatched",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "parameter name mismatched",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 7,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 7,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 7,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [
+                    {
+                        "Content": "the corresponding parameter in the supertype is named 'candidate'",
+                        "Range": {
+                            "Begin": {
+                                "File": "common.cj",
+                                "Line": 7,
+                                "Column": 29
+                            },
+                            "End": {
+                                "File": "common.cj",
+                                "Line": 7,
+                                "Column": 37
+                            }
+                        }
+                    }
+                ],
+                "Notes": [
+                    {
+                        "Message": "the corresponding function of the supertype is",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "common.cj",
+                                    "Line": 4,
+                                    "Column": 24
+                                },
+                                "End": {
+                                    "File": "common.cj",
+                                    "Line": 4,
+                                    "Column": 28
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 2,
+        "PrintedErrors": 2,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+

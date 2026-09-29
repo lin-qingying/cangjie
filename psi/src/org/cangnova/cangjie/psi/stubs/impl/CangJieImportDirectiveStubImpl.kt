@@ -40,9 +40,9 @@ class CangJieImportDirectiveStubImpl(
      */
     private val packageFqName: FqName?,
     /**
-     * 保存 `importItems` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
+     * 语句自身的语法状态；子项及分组分别保存自己的状态。
      */
-    private val importItems: List<CangJieImportDirectiveStub.ImportItemInfo>
+    override val isValidSyntax: Boolean,
 ) : CangJieStubBaseImpl<CjImportDirective>(parent, CjStubElementTypes.IMPORT_DIRECTIVE),
     CangJieImportDirectiveStub {
 
@@ -57,7 +57,9 @@ class CangJieImportDirectiveStubImpl(
      * 实现 `getImportItems` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getImportItems(): List<CangJieImportDirectiveStub.ImportItemInfo> {
-        return importItems
+        return psi.importItems.map { item ->
+            CangJieImportDirectiveStub.ImportItemInfo(item.importedFqName, item.isAllUnder, item.aliasName, item.organizationName)
+        }
     }
 
     /**
@@ -66,6 +68,6 @@ class CangJieImportDirectiveStubImpl(
     override fun copyInto(newParent: StubElement<*>?): CangJieImportDirectiveStubImpl = CangJieImportDirectiveStubImpl(
         parent = requireNotNull(newParent),
         packageFqName = packageFqName,
-        importItems = importItems,
+        isValidSyntax = isValidSyntax,
     )
 }

@@ -401,7 +401,13 @@ object LightTreePositioningStrategies {
                 }
 
                 CjNodeTypes.CALL_EXPRESSION -> tree.referenceExpression(node, locateReferencedName) ?: node
-                CjNodeTypes.IMPORT_DIRECTIVE -> tree.findLastDescendantByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: node
+                CjNodeTypes.IMPORT_ITEM, CjNodeTypes.IMPORT_GROUP -> {
+                    val separator = tree.findChildByType(node, CjTokens.DOUBLE_COLON)
+                    tree.getChildrenArray(node).filterNotNull().lastOrNull {
+                        (it.tokenType == CjNodeTypes.REFERENCE_EXPRESSION || it.tokenType == CjNodeTypes.DOT_QUALIFIED_EXPRESSION) &&
+                            (separator == null || it.startOffset > separator.startOffset)
+                    } ?: node
+                }
                 CjNodeTypes.TYPE_REFERENCE -> tree.findDescendantByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: node
                 CjNodeTypes.BINARY_EXPRESSION,
                 CjNodeTypes.BINARY_WITH_TYPE,

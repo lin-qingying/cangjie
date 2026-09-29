@@ -54,6 +54,9 @@ import com.intellij.psi.PsiElementVisitor
  */
 open class CjVisitor<R, D> : PsiElementVisitor() {
 
+    /** 访问拥有共享前缀的花括号导入分组。 */
+    open fun visitImportGroup(importGroup: CjImportGroup, data: D): R? = visitCjElement(importGroup, data)
+
     /**
      * 访问仓颉语言的 PSI 元素
      *

@@ -37,6 +37,7 @@ import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
 import org.cangnova.cangjie.annotations.PlatformAnnotationDescriptor
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
@@ -189,6 +190,11 @@ class CfirDeclDeserializer(
 
     /** 普通声明与直接构造的 pattern binding 共用唯一的 pre-publication 接缝。 */
     private fun publishDeclarationMetadata(index: Int, decl: Decl, result: CfirDeclaration) {
+        if (result is CfirCallableDeclaration &&
+            (result.status.isStatic || result is CfirConstructor || result is CfirEnumConstructor)
+        ) {
+            result.initContainingClassAttr()
+        }
         result.serializedDeclarationAttributes = CfirSerializedDeclarationAttributes(
             words = (0 until decl.attributesLength).map(decl::attributes),
         )
@@ -232,6 +238,12 @@ class CfirDeclDeserializer(
         }
     }
     // ---- 属性位域解析 ----
+
+    /** 从反序列化结构上下文恢复 constructor/static callable 的名义 owner，保留声明站点身份。 */
+    private fun CfirCallableDeclaration.initContainingClassAttr() {
+        containingClassForStaticMemberAttr =
+            (currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>)?.toLookupTag()
+    }
 
     /**
      * common-part `.cjo` 的 Decl.attributes 直接序列化自 AST AttributePack。
@@ -1660,7 +1672,7 @@ class CfirDeclDeserializer(
             this.symbol = symbol
             this.propertySymbol = propertySymbol
             this.isGetter = isGetter
-        }
+        }.also { it.initContainingClassAttr() }
     }
 
     /** VarDecl → CfirVariable */

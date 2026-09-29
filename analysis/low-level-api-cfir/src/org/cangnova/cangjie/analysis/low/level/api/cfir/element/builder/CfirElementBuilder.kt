@@ -110,6 +110,11 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
             return null
         }
 
+        // 文件头的语法容器没有声明级 CFIR，不能依赖普通声明映射或 BODY_RESOLVE 短路。
+        if (element.fileHeaderAnchorElement() != null) {
+            return getCfirForElementInsideFileHeader(element)
+        }
+
         val nonLocalContainer = element.getNonLocalContainingOrThisElement()
         tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
 
@@ -251,32 +256,33 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
     /**
      * 在文件头 package/import 区域内恢复 PSI 元素对应的 CFIR 元素。
      */
-    private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? = getCfirForNonBodyElement<CjElement, PsiElement>(
-        element = element,
-        nonLocalDeclaration = null,
-        anchorElementProvider = { it.fileHeaderAnchorElement() },
-        elementOwnerProvider = { it.containingCjFile },
-        resolveAndFindCfirForAnchor = { declaration, anchor ->
-            declaration.requireTypeIntersectionWith<CfirFile>()
-
-            when (anchor) {
-                is CjPackageDirective -> declaration.packageDirective
-                is CjImportDirective -> {
-                    declaration.lazyResolveToPhase(CfirResolvePhase.IMPORTS)
-                    declaration.imports.find { it.psi == anchor }
-                }
-                else -> errorWithAttachment("Unexpected element type: ${anchor::class.simpleName}") {
-                    withPsiEntry("anchor", anchor)
-                }
+    private fun getCfirForElementInsideFileHeader(element: CjElement): CfirElement? {
+        val anchor = element.fileHeaderAnchorElement() ?: return null
+        val file = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(element.containingCjFile)
+        return when (anchor) {
+            is CjPackageDirective -> file.packageDirective
+            is CjImportItem -> {
+                file.lazyResolveToPhase(CfirResolvePhase.IMPORTS)
+                file.imports.find { it.psi == anchor }
             }
-        },
-    )
+            // 语句和分组没有独立的语义导入，文件是其共同的 CFIR 容器。
+            is CjImportGroup -> file
+            is CjImportDirective -> {
+                if (element === anchor) file else findElementInside(file, element)
+            }
+            else -> errorWithAttachment("Unexpected element type: ${anchor::class.simpleName}") {
+                withPsiEntry("anchor", anchor)
+            }
+        }
+    }
 
     /**
      * 返回文件头中的 package 或 import 锚点元素。
      */
     private fun CjElement.fileHeaderAnchorElement(): CjElement? {
-        return parentsWithSelf.find { it is CjPackageDirective || it is CjImportDirective } as? CjElement
+        return parentsWithSelf.find {
+            it is CjPackageDirective || it is CjImportItem || it is CjImportGroup || it is CjImportDirective
+        } as? CjElement
     }
 
     /**

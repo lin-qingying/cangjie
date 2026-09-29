@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
 
 /**
  * CJMP common 候选查找（对齐 Kotlin `FirExpectActualResolver.findExpectForActual`）。
@@ -51,7 +52,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
  *   名称唯一前提下语义等价）。
  *
  * 成员查找对位 Kotlin `expectContainingClass.getCallablesForExpectClass(name)`：
- * 先经 ClassId 找到 common 容器，再在容器成员中按名筛选。
+ * 先从 specific 声明的真实 owner 取得已配对 common 容器，再按名筛选其成员。
  */
 object CfirCjmpResolver {
     /**
@@ -63,19 +64,10 @@ object CfirCjmpResolver {
     fun findSpecificCallablesInMatchOrder(
         specific: CfirCallableDeclaration,
         session: CfirSession,
-        containingContainer: CfirDeclaration? = null,
     ): List<CfirCallableDeclaration> {
         if (!specific.status.isSpecific || specific is CfirEnumConstructor) return listOf(specific)
 
-        val containingExtend = session.extendProvider.getContainingExtend(specific.symbol)
-        val containingClassId = specific.symbol.callableId.classId
-        val specificContainer = containingContainer ?: when {
-            containingExtend != null -> containingExtend
-            containingClassId != null ->
-                session.symbolProvider.getClassLikeSymbolByClassId(containingClassId)?.cfir as? CfirClassLikeDeclaration
-
-            else -> null
-        }
+        val specificContainer = specific.getContainingCjmpDeclaration()
         val declarations = when (specificContainer) {
             is CfirClassLikeDeclaration -> specificContainer.declarations
             is CfirExtend -> specificContainer.declarations
@@ -89,7 +81,6 @@ object CfirCjmpResolver {
                 }
             return (matchingMembers + specific).distinctBy { it.symbol }
         }
-        if (containingClassId != null || containingExtend != null) return listOf(specific)
         return findSpecificTopLevelCallablesInMatchOrder(specific, session)
     }
 
@@ -207,18 +198,11 @@ object CfirCjmpResolver {
 
             is CfirCallableDeclaration -> {
                 val callableId = specific.symbol.callableId
-                val containingClassId = callableId.classId
-                if (containingClassId == null) {
-                    provider.getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
-                        .map { it.cfir }
-                } else {
-                    val commonContainer = provider.getClassLikeSymbolByClassId(containingClassId)?.cfir
-                    (commonContainer as? CfirClassLikeDeclaration)
-                        ?.declarations
-                        .orEmpty()
-                        .filterIsInstance<CfirCallableDeclaration>()
-                        .filter { it.symbol.name == specific.symbol.name }
+                check(callableId.classId == null) {
+                    "Member common candidates must be queried through the matched containing declaration"
                 }
+                provider.getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
+                    .map { it.cfir }
             }
 
             else -> emptyList()
@@ -261,4 +245,14 @@ object CfirCjmpResolver {
                     candidate.status.isCommon && candidate.symbol.name == specific.symbol.name
         }
     }.distinctBy { it.symbol }
+}
+
+/**
+ * CJMP 成员唯一的结构归属入口。extend 是独立 owner，其余名义成员服从声明站点 provider；
+ * common 候选只能从该 specific owner 的配对结果取得，不能用相同 ClassId 重查依赖侧容器。
+ */
+internal fun CfirCallableDeclaration.getContainingCjmpDeclaration(): CfirDeclaration? {
+    val declarationSession = moduleData.session
+    return declarationSession.extendProvider.getContainingExtend(symbol)
+        ?: symbol.getContainingClassSymbol()?.cfir
 }

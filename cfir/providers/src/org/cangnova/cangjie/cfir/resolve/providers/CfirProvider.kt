@@ -1,11 +1,10 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.containingClassLookupTag
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.resolve.toClassSymbol
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -111,17 +110,12 @@ abstract class CfirProvider : CfirSessionComponent {
     /**
      * 返回声明所属的外层 class-like 符号。
      *
-     * 仓颉当前公开 `ClassId` 只覆盖顶层 class-like，因此默认实现只处理 callable owner。
-     * source/IDE provider 可在需要时覆写更精确的宿主判定。
+     * 使用声明携带的 owner lookup tag，而不是从 callable 名字重新查找一个同名类型。
+     * 仓颉不支持嵌套名义类型；源码/IDE provider 通过精确声明归属处理重声明。
      */
     open fun getContainingClass(symbol: CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         return when (symbol) {
-            is CfirCallableSymbol<*> -> {
-                val session = symbol.cfir.moduleData.session
-                symbol.callableId.classId?.let(session.symbolProvider::getClassLikeSymbolByClassId)
-                    ?: (symbol.cfir as? CfirCallableDeclaration)?.containingClassLookupTag()?.toClassSymbol(session)
-            }
-
+            is CfirCallableSymbol<*> -> symbol.containingClassLookupTag()?.toSymbol(symbol.cfir.moduleData.session)
             is CfirClassLikeSymbol<*> -> null
             else -> null
         }

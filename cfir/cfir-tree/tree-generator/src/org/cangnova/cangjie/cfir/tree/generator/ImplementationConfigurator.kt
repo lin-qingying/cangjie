@@ -151,7 +151,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         impl(resolvedImportDirective) {
             publicImplementation()
             // organizationName、aliasName、aliasSource、importedFqName、isAllUnder 全部委托给原始节点
-            delegateFields(listOf("organizationName", "aliasName", "aliasSource", "importedFqName", "isAllUnder"), "delegate")
+            delegateFields(listOf("organizationName", "aliasName", "aliasSource", "importedFqName", "isAllUnder", "visibility"), "delegate")
             // source 也委托给原始节点
             default("source") {
                 delegate = "delegate"

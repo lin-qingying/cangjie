@@ -1153,7 +1153,10 @@ class PsiRawCfirBuilder(
                     this.body = body
                     isMut = psi.isMut
                 }
-            }.also { bindFunctionTarget(functionTarget, it) }
+            }.also {
+                it.initContainingClassAttr()
+                bindFunctionTarget(functionTarget, it)
+            }
         }
 
         /** 转换属性声明；无有效名称时显式构造 invalid declaration。 */
@@ -1195,7 +1198,7 @@ class PsiRawCfirBuilder(
             return buildSourceDeclaration(propertySymbol) { symbol ->
                 buildProperty {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement()
+                    source = psi.toCjPsiSourceElement().fakeElement(CjFakeSourceElementKind.ImplicitConstructor)
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
@@ -1513,6 +1516,7 @@ class PsiRawCfirBuilder(
                     name = enumConstructorName
                 }
             }
+            enumConstructor.initContainingClassAttr()
             return enumConstructor
         }
 
@@ -1532,7 +1536,7 @@ class PsiRawCfirBuilder(
                     returnTypeRef = buildImplicitTypeRef()
                     body = null
                 }
-            }
+            }.also { it.initContainingClassAttr() }
         }
 
         // ===== 参数转换 =====
@@ -4093,12 +4097,19 @@ class PsiRawCfirBuilder(
     private fun buildImports(file: CjFile): List<CfirImport> {
         val importDirectives = file.importDirectives
         return importDirectives.flatMap { directive ->
+            val importVisibility = when {
+                directive.hasModifier(CjTokens.PUBLIC_KEYWORD) -> Visibilities.Public
+                directive.hasModifier(CjTokens.PROTECTED_KEYWORD) -> Visibilities.Protected
+                directive.hasModifier(CjTokens.INTERNAL_KEYWORD) -> Visibilities.Internal
+                else -> Visibilities.Private
+            }
             directive.importItems.mapNotNull { item ->
                 val fqName = item.importedFqName ?: return@mapNotNull null
                 buildImport {
                     source = item.toCjPsiSourceElement()
                     importedFqName = fqName
                     organizationName = item.organizationName
+                    visibility = importVisibility
                     isAllUnder = item.isAllUnder
                     aliasName = item.aliasName?.let { Name.identifier(it) }
                     condition = PsiTreeUtil.findChildrenOfType(directive, CjAnnotation::class.java)

@@ -156,6 +156,7 @@ public interface CjNodeTypes {
 
     IElementType IMPORT_ALIAS = CjStubElementTypes.IMPORT_ALIAS;
     IElementType IMPORT_ITEM = CjStubElementTypes.IMPORT_ITEM;
+    IElementType IMPORT_GROUP = CjStubElementTypes.IMPORT_GROUP;
     IElementType IMPORT_DIRECTIVE = CjStubElementTypes.IMPORT_DIRECTIVE;
 
     //    IElementType IMPORT_DIRECTIVE_ITEM = CjStubElementTypes.IMPORT_DIRECTIVE_ITEM;

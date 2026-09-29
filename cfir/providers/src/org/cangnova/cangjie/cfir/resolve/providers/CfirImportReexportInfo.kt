@@ -1,15 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
-import com.intellij.lang.LighterASTNode
-import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.noSubPackage
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.CjLightSourceElement
-import org.cangnova.cangjie.source.CjPsiSourceElement
-import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.descriptors.Visibilities
 
 /**
  * source import 的重导出视图。
@@ -27,6 +23,8 @@ internal data class CfirReexportImportInfo(
      * 被重导出声明真实所在的包名。
      */
     val importedPackageFqName: FqName,
+    /** 被导入包的组织限定，与普通包路径分开传递。 */
+    val organizationName: Name?,
     /**
      * 被重导出的具体短名；星号导入会保持为 `null`，由目标包名称集合决定。
      */
@@ -46,7 +44,7 @@ internal data class CfirReexportImportInfo(
  * 默认 `import` 等价于 `private import`，不参与重导出。
  */
 fun CfirImport.isReexportingSourceImport(): Boolean =
-    source.importVisibilityKeyword() in REEXPORTING_IMPORT_VISIBILITIES
+    visibility == Visibilities.Public || visibility == Visibilities.Protected
 
 /**
  * 判断 import 是否对同包其它源码文件可见。
@@ -55,7 +53,7 @@ fun CfirImport.isReexportingSourceImport(): Boolean =
  * unused-import 检查仍需要基于包级使用情况决定是否报告。
  */
 fun CfirImport.isPackageVisibleSourceImport(): Boolean =
-    source.importVisibilityKeyword() in PACKAGE_VISIBLE_IMPORT_VISIBILITIES
+    visibility == Visibilities.Public || visibility == Visibilities.Protected || visibility == Visibilities.Internal
 
 /**
  * 判断当前 import 是否免于未使用导入检查。
@@ -64,9 +62,9 @@ fun CfirImport.isPackageVisibleSourceImport(): Boolean =
  * 编译模式下豁免。private 与未显式标注可见性的 import 始终参加文件级检查。
  */
 fun CfirImport.isUnusedImportCheckExempt(session: CfirSession): Boolean =
-    when (source.importVisibilityKeyword()) {
-        "public", "protected" -> true
-        "internal" -> !session.noSubPackage
+    when (visibility) {
+        Visibilities.Public, Visibilities.Protected -> true
+        Visibilities.Internal -> !session.noSubPackage
         else -> false
     }
 
@@ -82,78 +80,9 @@ internal fun CfirImport.reexportInfoOrNull(): CfirReexportImportInfo? {
     val exportedName = importedName?.let { aliasName ?: it }
     return CfirReexportImportInfo(
         importedPackageFqName = importedPackageFqName,
+        organizationName = organizationName,
         importedName = importedName,
         exportedName = exportedName,
         isAllUnder = isAllUnder,
     )
 }
-
-/**
- * 从 PSI 或 light tree source 中解析 import 可见性关键字。
- */
-private fun CjSourceElement?.importVisibilityKeyword(): String? {
-    val directiveText = when (this) {
-        is CjPsiSourceElement -> psi.findImportDirectiveText()
-        is CjLightSourceElement -> lighterASTNode.findImportDirectiveText(this)
-        else -> null
-    } ?: return null
-
-    val normalized = directiveText.trimStart()
-    val match = IMPORT_VISIBILITY_PATTERN.find(normalized) ?: return null
-    return match.groupValues[1]
-}
-
-/**
- * 沿 PSI 父链查找 import directive 源文本。
- */
-private fun PsiElement.findImportDirectiveText(): String? {
-    var current: PsiElement? = this
-    while (current != null) {
-        if (current.node?.elementType.toString() == IMPORT_DIRECTIVE_DEBUG_NAME) {
-            return current.text
-        }
-        current = current.parent
-    }
-    return null
-}
-
-/**
- * 沿 light tree 父链查找 import directive 源文本。
- */
-private fun LighterASTNode.findImportDirectiveText(source: CjLightSourceElement): String? {
-    var current: LighterASTNode? = this
-    while (current != null) {
-        if (current.tokenType.toString() == IMPORT_DIRECTIVE_DEBUG_NAME) {
-            return source.treeStructure.toString(current).toString()
-        }
-        current = source.treeStructure.getParent(current)
-    }
-    return null
-}
-
-/**
- * 匹配显式 import 可见性关键字的正则。
- */
-private val IMPORT_VISIBILITY_PATTERN = Regex("^(public|protected|internal|private)\\s+import\\b")
-
-/**
- * 会产生 reexport 的 import 可见性集合。
- */
-private val REEXPORTING_IMPORT_VISIBILITIES = setOf(
-    "public",
-    "protected",
-)
-
-/**
- * 对同包其它源码文件可见的 import 可见性集合。
- */
-private val PACKAGE_VISIBLE_IMPORT_VISIBILITIES = setOf(
-    "public",
-    "protected",
-    "internal",
-)
-
-/**
- * PSI/light tree 中 import directive 节点的调试名。
- */
-private const val IMPORT_DIRECTIVE_DEBUG_NAME = "IMPORT_DIRECTIVE"

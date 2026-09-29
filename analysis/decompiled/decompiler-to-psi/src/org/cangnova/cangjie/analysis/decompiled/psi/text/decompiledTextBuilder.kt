@@ -218,6 +218,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
     fun renderImportItem(importItem: CangJieImportDirectiveStub.ImportItemInfo): String? {
         val importedFqName = importItem.importedFqName ?: return null
         return buildString {
+            importItem.organizationName?.let { append(renderIdentifier(it.asString())); append("::") }
             append(renderFqName(importedFqName))
             if (importItem.isAllUnder) {
                 append(".*")

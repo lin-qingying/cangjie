@@ -39,7 +39,6 @@ import org.cangnova.cangjie.resolve.calls.mpp.CjmpMatchResult
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpMismatchKind
 import org.cangnova.cangjie.resolve.calls.mpp.CjmpTypeCompatibility
 import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 /**
@@ -65,11 +64,9 @@ object CfirCjmpMatchRunner {
         declaration: CfirDeclaration,
         session: CfirSession,
         storage: CfirCjmpMappingStorage,
-        containingContainer: CfirDeclaration? = null,
     ) {
         val member = declaration as? CfirMemberDeclaration ?: return
-        val specificContainer = containingContainer ?:
-                (declaration as? CfirCallableDeclaration)?.containingCjmpContainer(session)
+        val specificContainer = (declaration as? CfirCallableDeclaration)?.getContainingCjmpDeclaration()
 
         if (declaration is CfirEnumConstructor) {
             val specificEnum = specificContainer as? CfirEnum ?: return
@@ -320,13 +317,6 @@ object CfirCjmpMatchRunner {
 
     private fun CfirDeclaration.resolveCjmpSignatureTypes() {
         if (this is CfirMemberDeclaration) lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
-    }
-
-    /** specific member 的父容器；common 候选只从该容器的已配对 common 声明中读取。 */
-    private fun CfirCallableDeclaration.containingCjmpContainer(session: CfirSession): CfirDeclaration? {
-        session.extendProvider.getContainingExtend(symbol)?.let { return it }
-        val containingClassId = symbol.callableId.classId ?: return null
-        return session.symbolProvider.getClassLikeSymbolByClassId(containingClassId)?.cfir as? CfirClassLikeDeclaration
     }
 
     /**

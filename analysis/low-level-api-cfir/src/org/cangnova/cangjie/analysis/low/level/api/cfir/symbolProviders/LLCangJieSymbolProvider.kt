@@ -8,6 +8,8 @@ import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvide
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -45,6 +47,21 @@ internal abstract class LLCangJieSymbolProvider(session: CfirSession) :
      * 包存在性查询通过该索引与 [declarationProvider] 协同完成，用于包作用域构建和顶层声明查找。
      */
     abstract val packageProvider: CangJiePackageProvider
+
+    /** 包存在性属于当前 provider 的内容域；依赖与 dangling wrapper 只聚合/转发该命名空间。 */
+    override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace {
+        val direct = super.getImportNamespace(context)
+        return object : CfirImportNamespace by direct {
+            override fun hasPackage(includeSubpackages: Boolean): Boolean {
+                val organization = context.organizationName
+                if (organization == null) return direct.hasPackage(includeSubpackages)
+                if (organization != null && context.packageFqName.asString().endsWith("@${organization.asString()}")) {
+                    return direct.hasPackage(includeSubpackages)
+                }
+                return declarationProvider.getPackageFiles(context.packageFqName, organization, includeSubpackages).isNotEmpty()
+            }
+        }
+    }
 
     /**
      * 物化当前提供器需要额外公开的顶层扩展文件。

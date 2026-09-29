@@ -686,6 +686,8 @@ interface CangJiePackageDirectiveStub : StubElement<CjPackageDirective> {
  * 定义 `CangJieImportDirectiveStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
 interface CangJieImportDirectiveStub : StubElement<CjImportDirective> {
+    /** 当前语句自身（不含项和组）的语法有效性。 */
+    val isValidSyntax: Boolean
     /**
      * 获取包的完全限定名
      */
@@ -715,7 +717,8 @@ interface CangJieImportDirectiveStub : StubElement<CjImportDirective> {
         /**
          * 保存 `aliasName`，供PSI Stub流程读取节点结构或语义信息。
          */
-        val aliasName: String?
+        val aliasName: String?,
+        val organizationName: org.cangnova.cangjie.name.Name? = null,
     )
 }
 

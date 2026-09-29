@@ -24,6 +24,7 @@ internal data class CaCfirPackageSymbolCacheKey(
      * 包的完全限定名。
      */
     val fqName: FqName,
+    val organizationName: Name?,
 ) : CaCfirPublicSymbolCacheKey
 
 /**

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.psi.CangJiePsiFacade
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPackageSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -26,6 +28,8 @@ internal class CaCfirPackageSymbol(
      * 包的完全限定名。
      */
     override val fqName: FqName,
+    override val organizationName: Name?,
+    private val analysisSession: CaCfirSession,
     /**
      * 包符号所在模块。
      */
@@ -36,10 +40,13 @@ internal class CaCfirPackageSymbol(
     override val token: CaLifetimeToken,
 ) : CaPackageSymbol, CaNamedSymbol, CaLifetimeOwner {
     /**
-     * 包符号没有单一 PSI 声明。
+     * 包由平台目录容器表达，不任选一个文件伪装为唯一包声明。
      */
     override val psi: PsiElement?
-        get() = null
+        get() = withValidityAssertion {
+            CangJiePsiFacade.getInstance(analysisSession.project)
+                .findPackage(fqName, analysisSession.analysisScope, organizationName)
+        }
 
     /**
      * 包符号来源不对应具体声明 origin。
@@ -63,6 +70,6 @@ internal class CaCfirPackageSymbol(
      * 创建可按包名恢复当前包符号的 pointer。
      */
     override fun createPointer(): CaSymbolPointer<CaSymbol> = withValidityAssertion {
-        CaCfirPackageSymbolPointer(CaCfirPackageSymbolCacheKey(fqName))
+        CaCfirPackageSymbolPointer(CaCfirPackageSymbolCacheKey(fqName, organizationName))
     }
 }

@@ -149,10 +149,18 @@ abstract class AbstractCfirContextCollectionTest : AbstractAnalysisApiBasedTest(
             }
 
             val expectedContextStructure = context.containingDeclarations.renderStructure()
+            val sessionHolder = SessionHolderImpl(declaration.moduleData.session, ScopeSession())
+            // structure-element visitor 的初始化上下文位于声明入口，不得提前压入目标。
+            val entryContext = PersistenceContextCollector.collectContext(sessionHolder, cfirFile, declaration)
+            assertions.assertEquals(
+                context.containingDeclarations.dropLast(1).renderStructure(),
+                entryContext.containingDeclarations.renderStructure(),
+            )
             val collectedContext = PersistenceContextCollector.collectContext(
-                SessionHolderImpl(declaration.moduleData.session, ScopeSession()),
+                sessionHolder,
                 cfirFile,
                 declaration,
+                contextKind = PersistenceContextCollector.ContextKind.NESTED_DECLARATIONS,
             )
 
             assertions.assertEquals(

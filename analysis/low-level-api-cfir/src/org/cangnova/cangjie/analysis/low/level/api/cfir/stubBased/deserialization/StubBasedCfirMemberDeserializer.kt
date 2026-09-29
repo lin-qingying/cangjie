@@ -352,6 +352,7 @@ internal class StubBasedCfirMemberDeserializer(
     private fun loadPropertySetter(
         setter: CjPropertyAccessor?,
         classSymbol: CfirClassLikeSymbol<*>?,
+        propertyTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
         local: StubBasedCfirDeserializationContext,
     ): CfirPropertyAccessor? {
@@ -368,7 +369,10 @@ internal class StubBasedCfirMemberDeserializer(
             status = buildResolvedStatus(setter.visibility, setter.modality)
             this.symbol = CfirPropertyAccessorSymbol()
             dispatchReceiverType = c.dispatchReceiver
-            valueParameters += local.memberDeserializer.valueParameters(setter.valueParameters, symbol)
+            // 仓颉 setter 的参数类型由属性声明确定，反编译 PSI 合法地只保存参数名。
+            // 对齐官方 TypeChecker 对 PropDecl setter 的类型赋值，不把省略类型当作损坏参数。
+            val parameter = setter.valueParameters.single()
+            valueParameters += local.memberDeserializer.loadValueParameter(parameter, symbol, declaredTypeRef = propertyTypeRef)
             this.propertySymbol = propertySymbol
             deprecationsProvider = EmptyDeprecationsProvider
         }
@@ -416,7 +420,7 @@ internal class StubBasedCfirMemberDeserializer(
             val allAnnotations = c.annotationDeserializer.loadAnnotations(property, symbol)
             annotations += allAnnotations
             getter = loadPropertyGetter(property.getter, classSymbol, returnTypeRef, symbol)
-            setter = loadPropertySetter(property.setter, classSymbol, symbol, local)
+            setter = loadPropertySetter(property.setter, classSymbol, returnTypeRef, symbol, local)
             bodyResolveState = CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED
             deprecationsProvider = EmptyDeprecationsProvider
         }.apply {
@@ -537,6 +541,7 @@ internal class StubBasedCfirMemberDeserializer(
         parameter: CjParameter,
         containingSymbol: CfirCallableSymbol<*>,
         forceDefaultValue: Boolean = false,
+        declaredTypeRef: CfirTypeRef? = null,
     ): CfirValueParameter = buildValueParameter {
         source = CjRealPsiSourceElement(parameter)
         moduleData = c.moduleData
@@ -545,10 +550,14 @@ internal class StubBasedCfirMemberDeserializer(
         attributes = CfirDeclarationAttributes.EMPTY
         isLocal = false
         deprecationsProvider = EmptyDeprecationsProvider
-        returnTypeRef = parameter.typeReference?.toTypeRef(c)
+        returnTypeRef = declaredTypeRef?.copyWithNewSource(source!!) ?: parameter.typeReference?.toTypeRef(c)
             ?: errorWithAttachment("CjParameter doesn't have type") {
                 withPsiEntry("parameter", parameter)
-                withCfirSymbolEntry("containingSymbol", containingSymbol)
+                if (containingSymbol.isBound) {
+                    withCfirSymbolEntry("containingSymbol", containingSymbol)
+                } else {
+                    withEntry("containingSymbolKind", containingSymbol::class.java.name)
+                }
             }
         val parameterName = parameter.name
         name = if (parameterName == "_") {

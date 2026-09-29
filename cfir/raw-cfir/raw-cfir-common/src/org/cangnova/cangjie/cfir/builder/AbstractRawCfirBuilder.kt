@@ -154,6 +154,11 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         }
     }
 
+    /** 两种 raw builder 使用相同的声明归属写入入口。 */
+    protected fun CfirCallableDeclaration.initContainingClassAttr() {
+        initContainingClassAttr(context)
+    }
+
     /**
      * 仓颉只有顶层 class-like 声明具备稳定的 `ClassId`。
      * 一旦位于局部作用域或另一个 class-like 容器内，就不应再构造 `ClassId`。

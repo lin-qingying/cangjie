@@ -26,6 +26,9 @@ import org.cangnova.cangjie.psi.CjTypeStatement
  */
 @CaPlatformInterface
 interface CangJieDeclarationProvider : CangJieComposableProvider {
+    /** 查询包的全部源码/反编译文件；显式组织必须匹配，includeSubpackages 用于祖先包聚合。 */
+    fun getPackageFiles(packageFqName: FqName, organizationName: Name? = null, includeSubpackages: Boolean = false): Collection<CjFile>
+
     /**
      * 按 class id 查找首个类状声明。
      */

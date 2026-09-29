@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.tower
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.services.CfirDefaultImportPriority
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
@@ -21,7 +22,6 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -124,31 +124,31 @@ private class CfirTypeVariableReceiverMemberScopeProvider(
         val importStore = components.session.importBindingStore
         val bindings = importStore.requireBindings(components.file).imports +
                 CfirDefaultImportPriority.entries.flatMap(importStore::requireDefaultImportBindings)
-        val packageNames = linkedSetOf(components.file.packageDirective.packageFqName)
-        val classSymbols = linkedMapOf<ClassId, CfirClassLikeSymbol<*>>()
+        val packages = linkedSetOf(CfirResolvedImportTarget.Package(components.file.packageDirective.packageFqName))
+        val classSymbols = linkedSetOf<CfirClassLikeSymbol<*>>()
         for (binding in bindings) {
             for (target in binding.targets) {
                 when (target) {
                     is CfirResolvedImportTarget.Package ->
-                        if (binding.importDirective.isAllUnder) packageNames += target.fqName
-                    is CfirResolvedImportTarget.ClassLike -> classSymbols[target.classId] = target.symbol
+                        if (binding.importDirective.isAllUnder) packages += target
+                    is CfirResolvedImportTarget.ClassLike -> classSymbols += target.symbol
                     is CfirResolvedImportTarget.Callable -> Unit
                 }
             }
         }
         val result = mutableListOf<CfirTypeScope>()
 
-        for (packageFqName in packageNames) {
+        for (target in packages) {
             val classifierNames = components.symbolProvider.symbolNamesProvider
-                .getTopLevelClassifierNamesInPackage(packageFqName)
+                .getTopLevelClassifierNamesInPackage(target.fqName)
                 .orEmpty()
             for (classifierName in classifierNames) {
-                val classId = ClassId(packageFqName, classifierName)
-                val classSymbol = components.symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
-                classSymbols.putIfAbsent(classId, classSymbol)
+                classSymbols += components.symbolProvider
+                    .getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                    .classifiers(classifierName)
             }
         }
-        for (classSymbol in classSymbols.values) {
+        for (classSymbol in classSymbols) {
             val scope = createUseSiteMemberScope(classSymbol) ?: continue
             if (name in scope.getCallableNames()) {
                 result += scope

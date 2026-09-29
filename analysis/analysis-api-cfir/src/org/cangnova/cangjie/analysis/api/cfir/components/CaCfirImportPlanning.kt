@@ -4,6 +4,7 @@ import com.intellij.openapi.util.TextRange
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.components.createUseSiteVisibilityChecker
@@ -15,6 +16,9 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.symbols.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
@@ -184,6 +188,7 @@ internal fun CaCfirSession.checkCompletionCandidate(
  */
 internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaReferenceShorteningPlan {
     val operations = PsiTreeUtil.collectElementsOfType(file, CjDotQualifiedExpression::class.java)
+        .filter { it.getStrictParentOfType<CjImportDirective>() == null }
         .mapNotNull { expression ->
             val target = resolveShorteningTarget(expression) ?: return@mapNotNull null
             if (!target.canBeShortenedAsStandaloneReference()) return@mapNotNull null
@@ -304,17 +309,25 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
 
 /**
  * 判断符号是否已经可通过文件作用域或当前包作用域以短名直接访问。
+ *
+ * 使用 resolver 共用的 `CfirFileLookupScopes`，使显式、星号和默认导入与名字解析采用同一组绑定。
  */
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
     val shortName = symbol.shortNameOrNull() ?: return false
+    val currentCfirSession = cfirSession
+    val cfirFile = file.getOrBuildCfirFile(resolutionFacade)
+    val lookupScopes = currentCfirSession.createFileLookupScopes(
+        file = cfirFile,
+        scopeSession = getScopeSessionFor(currentCfirSession),
+    ).typeResolutionScopes
     val visibleSymbols = buildList<CaSymbol> {
-        with(this@isDirectlyReachable) {
-            file.getFileScope().classifiers(shortName).forEach(::add)
-            file.getFileScope().callables(shortName).forEach(::add)
-        }
-        getPackageScope(file.packageFqName)?.let { packageScope ->
-            packageScope.classifiers(shortName).forEach(::add)
-            packageScope.callables(shortName).forEach(::add)
+        for (scope in lookupScopes) {
+            scope.processClassifiersByName(shortName) { classifier ->
+                add(cfirSymbolBuilder.buildSymbol(classifier))
+            }
+            scope.processCallablesByName(shortName) { callable ->
+                add(cfirSymbolBuilder.buildSymbol(callable))
+            }
         }
     }
     return visibleSymbols
@@ -334,12 +347,16 @@ private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
 /**
  * 将可独立导入的顶层符号转换为精确导入路径。
  */
-private fun CaSymbol.asTopLevelImportPath(): ImportPath? = when (this) {
-    is CaClassLikeSymbol -> classId?.let { ImportPath(it.asSingleFqName(), false) }
-    is CaCallableSymbol -> callableId
-        ?.takeIf { it.classId == null }
-        ?.let { ImportPath(it.asSingleFqName(), false) }
-    else -> null
+private fun CaSymbol.asTopLevelImportPath(): ImportPath? {
+    val organizationName = (this as? CaCfirSymbol<*>)?.cfirSymbol
+        ?.getContainingFile()?.packageDirective?.organizationName
+    return when (this) {
+        is CaClassLikeSymbol -> classId?.let { ImportPath(it.asSingleFqName(), false, organizationName = organizationName) }
+        is CaCallableSymbol -> callableId
+            ?.takeIf { it.classId == null }
+            ?.let { ImportPath(it.asSingleFqName(), false, organizationName = organizationName) }
+        else -> null
+    }
 }
 
 /**
@@ -348,6 +365,6 @@ private fun CaSymbol.asTopLevelImportPath(): ImportPath? = when (this) {
 private fun CjImportInfo.importPathOrNull(): ImportPath? {
     return when (this) {
         is org.cangnova.cangjie.psi.CjImportItem -> importPath
-        else -> importedFqName?.let { ImportPath(it, isAllUnder, aliasName?.let(Name.Companion::identifier)) }
+        else -> importedFqName?.let { ImportPath(it, isAllUnder, aliasName?.let(Name.Companion::identifier), organizationName) }
     }
 }

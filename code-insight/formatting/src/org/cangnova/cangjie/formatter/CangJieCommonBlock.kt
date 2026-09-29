@@ -330,7 +330,7 @@ internal val QUALIFIED_EXPRESSIONS = TokenSet.create(DOT_QUALIFIED_EXPRESSION)
 /** Elvis 表达式 token 集合。 */
 internal val ELVIS_SET = TokenSet.create()
 /** 不需要链式 wrap 的限定表达式类型集合。 */
-internal val QUALIFIED_EXPRESSIONS_WITHOUT_WRAP = TokenSet.create(IMPORT_DIRECTIVE, PACKAGE_DIRECTIVE)
+internal val QUALIFIED_EXPRESSIONS_WITHOUT_WRAP = TokenSet.create(IMPORT_DIRECTIVE, IMPORT_GROUP, IMPORT_ITEM, PACKAGE_DIRECTIVE)
 /** formatter 识别的注释 token 集合。 */
 internal val COMMENTS = TokenSet.create(BLOCK_COMMENT, DOC_COMMENT)
 

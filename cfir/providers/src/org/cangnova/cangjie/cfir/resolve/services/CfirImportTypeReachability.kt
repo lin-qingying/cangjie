@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -32,10 +33,9 @@ fun CfirResolvedImportBinding.reachesClassId(session: CfirSession, classId: Clas
     when (target) {
         is CfirResolvedImportTarget.ClassLike -> target.classId == classId
         is CfirResolvedImportTarget.Package -> {
-            target.fqName == classId.packageFqName ||
-                session.symbolProvider
-                    .getClassLikeSymbolByClassId(ClassId(target.fqName, classId.shortClassName))
-                    ?.classId == classId
+            (target.organizationName == null && target.fqName == classId.packageFqName) || session.symbolProvider
+                .getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .classifiers(classId.shortClassName).any { it.classId == classId }
         }
         is CfirResolvedImportTarget.Callable -> false
     }

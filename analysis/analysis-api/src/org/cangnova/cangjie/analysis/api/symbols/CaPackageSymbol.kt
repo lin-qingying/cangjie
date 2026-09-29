@@ -17,6 +17,9 @@ interface CaPackageSymbol : CaSymbol, CaNamedSymbol {
      */
     val fqName: FqName
 
+    /** 显式组织限定；不编码进包路径，null 表示未限定组织的包空间。 */
+    val organizationName: Name?
+
     /**
      * 包名的短名，默认从 [fqName] 推导。
      *

@@ -2,6 +2,10 @@
   <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"/>
 
   <extensions defaultExtensionNs="com.intellij">
+    <projectService
+        serviceInterface="org.cangnova.cangjie.psi.CangJiePsiFacade"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.packages.CangJiePsiFacadeImpl"
+    />
     <applicationService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.permissions.CaStandaloneAnalysisPermissionOptions"

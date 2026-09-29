@@ -131,7 +131,7 @@ internal fun CfirCallableSymbol<*>.publicSymbolCacheKeyOrNull(session: CaCfirSes
  */
 internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? = when (this) {
     is CaCfirFileSymbol -> CaCfirFileSymbolCacheKey(file)
-    is CaCfirPackageSymbol -> CaCfirPackageSymbolCacheKey(fqName)
+    is CaCfirPackageSymbol -> CaCfirPackageSymbolCacheKey(fqName, organizationName)
     is CaClassLikeSymbol -> classId?.let(::CaCfirClassLikeSymbolCacheKey)
     is CaCfirExtendSymbol -> CaCfirExtendSymbolCacheKey(stableIdentity)
     is CaPropertyGetterSymbol,

@@ -26,6 +26,14 @@ class CfirCompositeSymbolProvider(
      */
     val providers: List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
+    override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace {
+        val namespace = compositeImportNamespace(providers, context)
+        return object : CfirImportNamespace by namespace {
+            override fun classifiers(name: Name): List<CfirClassLikeSymbol<*>> =
+                namespace.classifiers(name).withoutBuiltinFallbackDuplicates().withoutCjmpShadowedCommon().distinct()
+        }
+    }
+
     /**
      * 聚合后的名称过滤 provider。
      */

@@ -31,6 +31,7 @@ abstract class AbstractImportOptimizationPlanTest : AbstractAnalysisApiComponent
             val actualRetained = plan.retainedImports.mapNotNull { importInfo ->
                 importInfo.importedFqName?.asString()?.let { fqName ->
                     buildString {
+                        importInfo.organizationName?.let { append(it.asString()).append("::") }
                         append(fqName)
                         if (importInfo.isAllUnder) append(".*")
                         importInfo.aliasName?.let { alias -> append(" as ").append(alias) }
@@ -40,6 +41,7 @@ abstract class AbstractImportOptimizationPlanTest : AbstractAnalysisApiComponent
             val actualDuplicates = plan.duplicateImports.mapNotNull { importInfo ->
                 importInfo.importedFqName?.asString()?.let { fqName ->
                     buildString {
+                        importInfo.organizationName?.let { append(it.asString()).append("::") }
                         append(fqName)
                         if (importInfo.isAllUnder) append(".*")
                         importInfo.aliasName?.let { alias -> append(" as ").append(alias) }
@@ -49,6 +51,7 @@ abstract class AbstractImportOptimizationPlanTest : AbstractAnalysisApiComponent
             val actualUnused = plan.unusedImports.mapNotNull { importInfo ->
                 importInfo.importedFqName?.asString()?.let { fqName ->
                     buildString {
+                        importInfo.organizationName?.let { append(it.asString()).append("::") }
                         append(fqName)
                         if (importInfo.isAllUnder) append(".*")
                         importInfo.aliasName?.let { alias -> append(" as ").append(alias) }

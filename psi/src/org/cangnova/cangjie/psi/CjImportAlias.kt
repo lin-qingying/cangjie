@@ -59,7 +59,10 @@ class CjImportAlias : CjElementImplStub<CangJieImportAliasStub>, PsiNameIdentifi
     /**
      * 实现 `getName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
-    override fun getName() = stub?.getName() ?: nameIdentifier?.text
+    override fun getName(): String? {
+        stub?.let { return it.getName() }
+        return nameIdentifier?.text?.let(CjPsiUtil::unquoteIdentifier)
+    }
 
     /**
      * 实现 `setName` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

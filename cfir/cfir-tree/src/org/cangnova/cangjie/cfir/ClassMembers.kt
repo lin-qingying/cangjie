@@ -8,7 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 
 /**
@@ -212,10 +212,13 @@ fun CfirCallableDeclaration.dispatchReceiverClassLookupTagOrNull(): ConeClassLik
     dispatchReceiverClassTypeOrNull()?.lookupTag
 
 /**
- * 从 callable 声明的 dispatch receiver 中提取 class-like 类型。
+ * 从 callable 声明的 dispatch receiver 中提取名义类型。
+ *
+ * 仓颉 class/interface、struct、enum 共享 [ConeClassifierType] 的 owner lookup tag；
+ * 不能仅接受引用语义的 class 类型，否则值类型成员会失去其声明归属。
  */
-fun CfirCallableDeclaration.dispatchReceiverClassTypeOrNull(): ConeClassLikeType? =
+fun CfirCallableDeclaration.dispatchReceiverClassTypeOrNull(): ConeClassifierType? =
     if (dispatchReceiverType is ConeIntersectionType && isIntersectionOverride)
         baseForIntersectionOverride!!.dispatchReceiverClassTypeOrNull()
     else
-        dispatchReceiverType as? ConeClassLikeType
+        dispatchReceiverType as? ConeClassifierType

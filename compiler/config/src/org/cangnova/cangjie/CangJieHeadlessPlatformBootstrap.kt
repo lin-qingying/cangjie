@@ -151,6 +151,8 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.metaLanguage", MetaLanguage::class.java)
         registerExtensionPoint(area, "com.intellij.smartPointer.anchorProvider", SmartPointerAnchorProvider::class.java)
         registerExtensionPoint(area, TreeCopyHandler.EP_NAME.name, TreeCopyHandler::class.java)
+        // PSI 重命名提交到 Document 时使用平台写入检查，headless 同样注册真实扩展点。
+        registerExtensionPoint(area, "com.intellij.documentWriteAccessGuard", com.intellij.openapi.editor.impl.DocumentWriteAccessGuard::class.java)
 
         // References / Symbol / Target 提取链路直接依赖的 IntelliJ 平台扩展点。
         registerExtensionPoint(area, PsiReferenceContributor.EP_NAME.name, PsiReferenceContributorEP::class.java)

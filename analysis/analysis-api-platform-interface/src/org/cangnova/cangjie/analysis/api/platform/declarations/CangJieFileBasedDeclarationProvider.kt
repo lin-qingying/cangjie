@@ -230,6 +230,13 @@ class CangJieFileBasedDeclarationProvider private constructor(
     /**
      * 按包名查找当前文件是否参与 facade。
      */
+    override fun getPackageFiles(packageFqName: FqName, organizationName: Name?, includeSubpackages: Boolean): Collection<CjFile> {
+        if (filePackageFqName != packageFqName && !(includeSubpackages && filePackageFqName.startsWith(packageFqName))) return emptyList()
+        val file = currentCangJieFile
+        if (organizationName != null && file.packageDirective?.organizationName != organizationName) return emptyList()
+        return listOf(file)
+    }
+
     override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile> {
         if (filePackageFqName != packageFqName) {
             return emptyList()

@@ -26,7 +26,6 @@ package org.cangnova.cangjie.psi.stubs.elements
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import com.intellij.lang.ASTNode
-import org.jetbrains.annotations.NonNls
 
 /**
  * 表示 `CjDotQualifiedExpressionElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
@@ -38,6 +37,18 @@ class CjDotQualifiedExpressionElementType(debugName: String) :
      */
     override fun shouldCreateStub(node: ASTNode): Boolean {
         val treeParent = node.treeParent ?: return false
+
+        // 导入路径的每一层限定表达式都是源码结构；注释及缺失 selector 的错误节点
+        // 不得使其被压平成名称列表，语法有效性由所属 import 的 Stub 数据记录。
+        var pathOwner = treeParent
+        while (pathOwner.elementType === CjStubElementTypes.DOT_QUALIFIED_EXPRESSION) {
+            pathOwner = pathOwner.treeParent ?: return false
+        }
+        if (pathOwner.elementType === CjStubElementTypes.IMPORT_ITEM ||
+            pathOwner.elementType === CjStubElementTypes.IMPORT_GROUP
+        ) {
+            return super.shouldCreateStub(node)
+        }
 
         val parentElementType = treeParent.elementType
         if (parentElementType === CjStubElementTypes.PACKAGE_DIRECTIVE ||

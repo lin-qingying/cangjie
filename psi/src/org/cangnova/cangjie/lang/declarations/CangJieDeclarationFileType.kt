@@ -48,6 +48,9 @@ object CangJieDeclarationFileType : CangJieFileType() {
      */
     override fun getName(): String = "CangJieDeclaration"
 
+    /** 同一语言的不同文件类型也必须拥有独立的显示名称。 */
+    override fun getDisplayName(): String = "CangJie declaration"
+
     override fun getDescription(): String = "CangJie declaration file"
 
     override fun getDefaultExtension(): String = DECLARATION_EXTENSION

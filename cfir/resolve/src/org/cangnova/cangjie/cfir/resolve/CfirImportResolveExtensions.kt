@@ -36,7 +36,7 @@ internal fun FqName.shortNameAsIdentifier(): Name {
 internal fun CfirResolvedImportBinding.stableTargetSignature(): String {
     val targetSignatures = targets.map { target ->
         when (target) {
-            is CfirResolvedImportTarget.Package -> "pkg:${target.fqName.asString()}"
+            is CfirResolvedImportTarget.Package -> "pkg:${target.organizationName}:${target.fqName.asString()}"
             is CfirResolvedImportTarget.ClassLike -> "class:${target.classId.asString()}"
             is CfirResolvedImportTarget.Callable -> {
                 val callableOwner = "${target.packageFqName.asString()}.${target.name.asString()}"

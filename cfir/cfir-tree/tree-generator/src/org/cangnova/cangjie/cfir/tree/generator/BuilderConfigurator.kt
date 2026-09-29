@@ -106,6 +106,9 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             withCopy()
         }
         // resolvedImportDirective 单独配置
+        builder(importDirective) {
+            default("visibility", "org.cangnova.cangjie.descriptors.Visibilities.Private")
+        }
         builder(resolvedImportDirective) {
             withCopy()
         }

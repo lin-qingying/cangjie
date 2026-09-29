@@ -1,0 +1,101 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_undeclared_type_name",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "undeclared type name 'Missing'",
+                "Location": {
+                    "File": "specific.cj",
+                    "Line": 3,
+                    "Column": 31
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "specific.cj",
+                            "Line": 3,
+                            "Column": 31
+                        },
+                        "End": {
+                            "File": "specific.cj",
+                            "Line": 3,
+                            "Column": 32
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_not_matched",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'specific' function 'value' can not find 'common' match",
+                "Location": {
+                    "File": "specific.cj",
+                    "Line": 3,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "specific.cj",
+                            "Line": 3,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "specific.cj",
+                            "Line": 3,
+                            "Column": 41
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_not_matched",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'common' function 'value' can not find 'specific' match",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 3,
+                    "Column": 1
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 3,
+                            "Column": 1
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 3,
+                            "Column": 34
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 3,
+        "PrintedErrors": 3,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+
