@@ -8,7 +8,7 @@
 package sample.symbol.relation.overrides
 
 open class Root {
-    prop state: Int64 {
+    public open prop state: Int64 {
         get() {
             1
         }
@@ -16,7 +16,7 @@ open class Root {
 }
 
 open class Parent <: Root {
-    prop state: Int64 {
+    public open override prop state: Int64 {
         get() {
             2
         }
@@ -24,7 +24,7 @@ open class Parent <: Root {
 }
 
 class Child <: Parent {
-    prop state: Int64 {
+    public override prop state: Int64 {
         get() {
             3
         }

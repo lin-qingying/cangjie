@@ -82,4 +82,27 @@ class CjoSearchPathTest {
             libraryDir.toFile().deleteRecursively()
         }
     }
+
+    /**
+     * 验证 binary library 模块显式提供的根目录可参与普通 CJO 包搜索。
+     */
+    @Test
+    fun `library package loads from explicit module search root`() {
+        val libraryDir = Files.createTempDirectory("cjo-explicit-lib-")
+        try {
+            val fullPkgName = "vendor.api"
+            val cjoFile = libraryDir.resolve(CjoConstants.packageNameToPath(fullPkgName))
+            cjoFile.parent?.createDirectories()
+            cjoFile.outputStream().use { it.write(byteArrayOf(1, 2, 3)) }
+
+            val searchPath = CjoSearchPath(
+                additionalLibrarySearchPaths = listOf(libraryDir.toFile()),
+                envProvider = { null },
+            )
+
+            assertEquals(cjoFile.toFile().absolutePath, searchPath.findCjoFile(fullPkgName)?.absolutePath)
+        } finally {
+            libraryDir.toFile().deleteRecursively()
+        }
+    }
 }

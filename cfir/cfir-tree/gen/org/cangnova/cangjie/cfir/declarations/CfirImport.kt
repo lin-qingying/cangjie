@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirPureAbstractElement
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -22,6 +23,7 @@ abstract class CfirImport : CfirPureAbstractElement(), CfirElement {
     abstract val importedFqName: FqName?
     abstract val organizationName: Name?
     abstract val isAllUnder: Boolean
+    abstract val visibility: Visibility
     abstract val aliasName: Name?
     abstract val aliasSource: CjSourceElement?
     abstract val condition: CfirExpression?

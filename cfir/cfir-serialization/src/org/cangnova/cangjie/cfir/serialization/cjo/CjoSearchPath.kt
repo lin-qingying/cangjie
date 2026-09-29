@@ -14,13 +14,18 @@ import java.util.concurrent.ConcurrentHashMap
  * 2. 回退到遗留路径约定
  */
 class CjoSearchPath(
+    /** 当前 binary library 模块显式提供的 CJO 搜索根目录。 */
+    private val additionalLibrarySearchPaths: List<File> = emptyList(),
     /** 环境变量读取函数，测试可注入以隔离宿主环境。 */
     private val envProvider: (String) -> String? = System::getenv,
 ) {
     /** 标准库 `.cjo` 搜索根目录，来自 `CANGJIE_STDLIB_MODULE`。 */
     private val stdlibSearchPaths: List<File> by lazy { readPaths("CANGJIE_STDLIB_MODULE") }
-    /** 普通库 `.cjo` 搜索根目录，来自 `CANGJIE_LIBRARY`。 */
-    private val librarySearchPaths: List<File> by lazy { readPaths("CANGJIE_LIBRARY") }
+    /** 普通库 `.cjo` 搜索根目录，来自环境变量及当前 binary library 模块。 */
+    private val librarySearchPaths: List<File> by lazy {
+        (readPaths("CANGJIE_LIBRARY") + additionalLibrarySearchPaths.filter(File::isDirectory))
+            .distinctBy(File::getAbsolutePath)
+    }
 
     /** 每个根目录按包头 fullPkgName 建出的索引缓存。 */
     private val directoryIndexCache = ConcurrentHashMap<File, Map<String, File>>()

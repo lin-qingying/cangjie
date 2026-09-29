@@ -12,6 +12,6 @@ public class Second {
 }
 
 @First
-@Second[3]
+@Second[level: 3]
 struct <caret>Record {
 }

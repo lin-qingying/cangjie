@@ -1,8 +1,4 @@
 
-    /** 悬空文件的 class-like 候选视图与原依赖 provider 保持一致。 */
-    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        delegate.getClassLikeSymbolsByClassId(classId)
-
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
@@ -45,6 +41,10 @@ class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolP
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         return delegate.getClassLikeSymbolByClassId(classId)
     }
+
+    /** 悬空文件的 class-like 候选视图与原依赖 provider 保持一致。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        delegate.getClassLikeSymbolsByClassId(classId)
 
 
     /**

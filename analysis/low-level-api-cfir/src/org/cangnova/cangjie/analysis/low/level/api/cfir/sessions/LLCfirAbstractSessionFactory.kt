@@ -156,8 +156,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
                     addMerged(session, computeDependencySymbolProviders(module))
-                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
-                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
+                    // `--no-prelude` 只关闭隐式默认导入，标准库符号仍须供显式 import 解析。
+                    add(builtinsSession.symbolProvider)
                 }
             }
 
@@ -252,8 +252,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
                     addMerged(session, computeDependencySymbolProviders(session.dependencies))
-                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
-                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
+                    // `--no-prelude` 只关闭隐式默认导入，标准库符号仍须供显式 import 解析。
+                    add(builtinsSession.symbolProvider)
                 }
             }
 
@@ -352,8 +352,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
-                    if (module !is CaBuiltinsModule && !this@apply.noPrelude) {
-                        // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
+                    if (module !is CaBuiltinsModule) {
+                        // Builtins session 不能依赖自身；其它库仍需标准库符号解析其显式引用。
                         add(builtinsSession.symbolProvider)
                     }
 
@@ -432,8 +432,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 LLDependenciesSymbolProvider(this) {
                     // A binary library session should not have any dependencies (apart from fallback builtins), as library module
                     // dependencies only apply to *resolvable* sessions, including fallback dependencies.
-                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
-                    if (this@apply.noPrelude) emptyList() else listOf(builtinsSession.symbolProvider)
+                    // `--no-prelude` 不移除标准库符号；它只会关闭默认导入 provider。
+                    listOf(builtinsSession.symbolProvider)
                 },
             )
 
@@ -549,8 +549,8 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                         }
                     }
 
-                    // prelude 关闭时不注入 builtins 符号，对齐官方 --no-prelude 只禁隐式导入、保留显式 import 的语义
-                    if (!this@apply.noPrelude) add(builtinsSession.symbolProvider)
+                    // `--no-prelude` 只关闭隐式默认导入，标准库符号仍须供显式 import 解析。
+                    add(builtinsSession.symbolProvider)
                 }
             }
 

@@ -18,7 +18,7 @@ async function prepare(offset=0,maxChars=100000) {
     if(value===null)body='*** Delete File: '+absolute;
     else if(old===null)body='*** Add File: '+absolute+'\n'+value.replace(/\n$/,'').split('\n').map(x=>'+'+x).join('\n');
     else {
-      const diff=cp.spawnSync('git',['diff','--no-index','--no-ext-diff','--no-color','--text','--ignore-space-at-eol','--unified=3','--',absolute,'-'],{cwd:root,input:value,encoding:'utf8',maxBuffer:20000000});
+      const diff=cp.spawnSync('git',['diff','--no-index','--no-ext-diff','--no-color','--text','--ignore-space-at-eol','--unified=15','--',absolute,'-'],{cwd:root,input:value,encoding:'utf8',maxBuffer:20000000});
       if(diff.status>1)throw Error(diff.stderr);
       const start=diff.stdout.indexOf('@@ ');
       if(start<0)throw Error('Nonidentical text without diff: '+file);

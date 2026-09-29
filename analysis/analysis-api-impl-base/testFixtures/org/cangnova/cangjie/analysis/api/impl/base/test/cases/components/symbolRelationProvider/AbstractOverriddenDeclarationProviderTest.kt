@@ -68,8 +68,8 @@ abstract class AbstractOverriddenDeclarationProviderTest : AbstractAnalysisApiCo
                 else -> error("Unsupported override target PSI: ${targetDeclaration::class.simpleName}")
             } ?: error("Override target `${directives.targetNameText}` cannot be restored to a callable symbol.")
 
-            val actualAll = symbol.allOverriddenSymbols.map { overridden -> renderCallableSignature(overridden) }.toList()
             val actualDirect = symbol.directlyOverriddenSymbols.map { overridden -> renderCallableSignature(overridden) }.toList()
+            val actualAll = symbol.allOverriddenSymbols.map { overridden -> renderCallableSignature(overridden) }.toList()
 
             assertEquals(directives.expectedAllOverridden, actualAll, "allOverriddenSymbols 输出不符合预期。")
             assertEquals(directives.expectedDirectOverridden, actualDirect, "directlyOverriddenSymbols 输出不符合预期。")

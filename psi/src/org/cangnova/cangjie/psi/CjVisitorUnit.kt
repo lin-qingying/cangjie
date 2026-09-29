@@ -22,12 +22,6 @@
  *
  */
 
-    /** 无数据参数的导入组及叶项访问入口。 */
-    open fun visitImportGroup(importGroup: CjImportGroup) { super.visitImportGroup(importGroup, Unit) }
-    open fun visitImportItem(importItem: CjImportItem) { super.visitImportItem(importItem, Unit) }
-    override fun visitImportGroup(importGroup: CjImportGroup, data: Unit?) { visitImportGroup(importGroup) }
-    override fun visitImportItem(importItem: CjImportItem, data: Unit?) { visitImportItem(importItem) }
-
 package org.cangnova.cangjie.psi
 
 /**
@@ -295,6 +289,12 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
     open fun visitImportDirective(importDirective: CjImportDirective) {
         super.visitImportDirective(importDirective, Unit)
     }
+
+    /** 无数据参数的导入组及叶项访问入口。 */
+    open fun visitImportGroup(importGroup: CjImportGroup) { super.visitImportGroup(importGroup, Unit) }
+    open fun visitImportItem(importItem: CjImportItem) { super.visitImportItem(importItem, Unit) }
+    override fun visitImportGroup(importGroup: CjImportGroup, data: Unit?) { visitImportGroup(importGroup) }
+    override fun visitImportItem(importItem: CjImportItem, data: Unit?) { visitImportItem(importItem) }
 
 
     /**

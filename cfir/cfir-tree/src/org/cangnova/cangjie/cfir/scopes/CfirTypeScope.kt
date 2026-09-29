@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.Name
@@ -91,6 +92,60 @@ abstract class CfirTypeScope : CfirContainingNamesAwareScope() {
          */
         override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirTypeScope? {
             return null
+        }
+    }
+}
+
+/** 单条直接覆盖边的回调形状；回调同时给出继续遍历祖先声明所需的作用域。 */
+typealias ProcessOverriddenWithBaseScope<S> =
+    CfirTypeScope.(S, (S, CfirTypeScope) -> ProcessorAction) -> ProcessorAction
+
+/**
+ * 遍历函数的完整覆盖链，并沿每条覆盖边返回的 base scope 继续查询祖先声明。
+ *
+ * 同一个 CFIR 符号可能经不同替换路径到达，因此访问身份同时包含作用域和符号，
+ * 使泛型 use-site 上下文在遍历父声明的祖先时仍然有效。
+ */
+fun CfirTypeScope.processOverriddenFunctions(
+    functionSymbol: CfirNamedFunctionSymbol,
+    processor: (CfirNamedFunctionSymbol) -> ProcessorAction,
+): ProcessorAction = doProcessAllOverriddenCallables(
+    callableSymbol = functionSymbol,
+    processor = processor,
+    processDirectOverriddenCallablesWithBaseScope = CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope,
+    visited = mutableSetOf(),
+)
+
+/** 遍历属性的完整覆盖链，并保留每条直接覆盖边对应的 base scope。 */
+fun CfirTypeScope.processOverriddenProperties(
+    propertySymbol: CfirPropertySymbol,
+    processor: (CfirPropertySymbol) -> ProcessorAction,
+): ProcessorAction = doProcessAllOverriddenCallables(
+    callableSymbol = propertySymbol,
+    processor = processor,
+    processDirectOverriddenCallablesWithBaseScope = CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope,
+    visited = mutableSetOf(),
+)
+
+/** 函数与属性覆盖图共用的递归遍历。 */
+private fun <S : CfirCallableSymbol<*>> CfirTypeScope.doProcessAllOverriddenCallables(
+    callableSymbol: S,
+    processor: (S) -> ProcessorAction,
+    processDirectOverriddenCallablesWithBaseScope: ProcessOverriddenWithBaseScope<S>,
+    visited: MutableSet<Pair<CfirTypeScope, S>>,
+): ProcessorAction {
+    if (!visited.add(this to callableSymbol)) return ProcessorAction.NONE
+
+    return processDirectOverriddenCallablesWithBaseScope(this, callableSymbol) { overridden, baseScope ->
+        if (processor(overridden).stop()) {
+            ProcessorAction.STOP
+        } else {
+            baseScope.doProcessAllOverriddenCallables(
+                callableSymbol = overridden,
+                processor = processor,
+                processDirectOverriddenCallablesWithBaseScope = processDirectOverriddenCallablesWithBaseScope,
+                visited = visited,
+            )
         }
     }
 }

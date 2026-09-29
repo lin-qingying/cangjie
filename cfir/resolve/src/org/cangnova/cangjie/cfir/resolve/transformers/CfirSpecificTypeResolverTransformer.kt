@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -245,7 +246,7 @@ class CfirSpecificTypeResolverTransformer(
 
         while (packageSegmentsToTry.size > 1) {
             packageSegmentsToTry.removeLast()
-            if (session.symbolProvider.hasPackage(FqName.fromSegments(packageSegmentsToTry))) {
+            if (session.symbolProvider.hasPackageOrSubpackages(FqName.fromSegments(packageSegmentsToTry))) {
                 return packageSegmentsToTry.size
             }
         }

@@ -24,6 +24,13 @@ open class CfirPatternRenderer(
      */
     protected val inlineExpressionRenderer: CfirInlineExpressionRenderer,
 ) {
+    /** 模式中 resolved type ref 的局部输出缓冲区。 */
+    private val typeRendererBuilder = StringBuilder()
+
+    init {
+        typeRenderer.builder = typeRendererBuilder
+    }
+
     /**
      * 将模式渲染为单行调试文本。
      */

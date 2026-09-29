@@ -12,6 +12,6 @@ public class Second {
 }
 
 @First
-@Second[2]
+@Second[level: 2]
 class <caret>User {
 }

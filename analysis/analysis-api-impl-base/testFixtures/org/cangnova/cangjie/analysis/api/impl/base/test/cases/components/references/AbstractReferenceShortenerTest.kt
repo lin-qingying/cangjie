@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiShorteningCommandTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetExpressionText
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
@@ -39,6 +40,14 @@ abstract class AbstractReferenceShortenerTest : AbstractAnalysisApiComponentTest
 
         analyzeForTest(targetExpression) {
             val command = targetExpression.collectReferenceShorteningsInElement()
+            val targetCall = targetExpression.selectorExpression as? CjCallExpression
+            val resolvedTargets = targetCall?.referenceExpression?.resolveToSymbols()
+                ?.joinToString { symbol -> symbol.toString() }
+            val callInfoClass = targetCall?.resolveToCall()?.let { it::class.simpleName }
+            val qualifiedCallInfoClass = targetExpression.resolveToCall()?.let { it::class.simpleName }
+            val callResolution =
+                "selector=${targetExpression.selectorExpression?.javaClass?.simpleName}:${targetExpression.selectorExpression?.text}, " +
+                    "callInfo=$callInfoClass, qualifiedCallInfo=$qualifiedCallInfoClass, targets=$resolvedTargets"
             val actualOperations = command.operations.map { operation ->
                 listOf(
                     operation.expression.text,
@@ -48,7 +57,7 @@ abstract class AbstractReferenceShortenerTest : AbstractAnalysisApiComponentTest
                 ).joinToString("|")
             }.sorted()
 
-            assertEquals(expectedOperations, actualOperations)
+            assertEquals(expectedOperations, actualOperations, "目标调用解析结果：$callResolution")
         }
     }
 }

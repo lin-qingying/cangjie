@@ -8,19 +8,19 @@
 package sample.symbol.relation.overrides
 
 open class Box<T> {
-    public func convert(value: T): T {
+    public open func convert(value: T): T {
         return value
     }
 }
 
 open class IntBox <: Box<Int64> {
-    public func convert(value: Int64): Int64 {
+    public open override func convert(value: Int64): Int64 {
         return value
     }
 }
 
 class FancyIntBox <: IntBox {
-    public func convert(value: Int64): Int64 {
+    public override func convert(value: Int64): Int64 {
         return value
     }
 }

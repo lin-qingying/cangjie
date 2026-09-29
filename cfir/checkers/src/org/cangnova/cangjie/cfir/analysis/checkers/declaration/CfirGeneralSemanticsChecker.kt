@@ -51,6 +51,7 @@ import org.cangnova.cangjie.cfir.session.requiredLanguageFeature
 import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -111,7 +112,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         for (declaration in file.declarations) {
             val declName = declaration.declarationName() ?: continue
             val childPackageFqName = packageFqName.child(declName)
-            if (context.session.symbolProvider.hasPackage(childPackageFqName)) {
+            if (context.session.symbolProvider.hasPackageOrSubpackages(childPackageFqName)) {
                 reporter.reportOn(
                     source = declaration.source,
                     factory = CfirErrors.CONFLICT_WITH_SUB_PACKAGE,

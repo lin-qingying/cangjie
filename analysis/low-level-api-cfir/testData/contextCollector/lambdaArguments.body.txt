@@ -2,7 +2,7 @@ Tower Data Context:
     Element 0
         Scope: CfirLocalScope
             Variables:
-                CfirValueParameterSymbol offset: R|kotlin.Unit|
+                CfirValueParameterSymbol offset: R|Int64|
     Element 1
         Scope: CfirLocalScope
     Element 2
@@ -14,7 +14,7 @@ Tower Data Context:
 
 FILE: lambdaArguments.cj
     package sample.lowlevel.contextcollector.generated
-    internal? func makePrinter(offset: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func makePrinter(offset: R|Int64|): R|(Int64) -> Int64| {
         RETURN {
             LAMBDA(value: R|Int64|) {
                 RETURN {

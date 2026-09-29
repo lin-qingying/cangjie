@@ -4,6 +4,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factori
 
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.openapi.vfs.VirtualFile
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
@@ -54,13 +55,21 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
     /**
      * 创建普通 library `.cjo` 反序列化 symbol provider。
      */
-    private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider =
-        CfirDeserializedSymbolProvider(
+    private fun createDeserializedLibrarySymbolProvider(session: LLCfirSession): CfirSymbolProvider {
+        val librarySearchPaths = (session.caModule as? CaLibraryModule)
+            ?.binaryRoots
+            .orEmpty()
+            .mapNotNull { item -> item.virtualFile }
+            .mapNotNull(VirtualFile::asCjoSearchRoot)
+            .distinctBy(File::getAbsolutePath)
+
+        return CfirDeserializedSymbolProvider(
             session = session,
-            cjoManager = CjoManager(CjoSearchPath()),
+            cjoManager = CjoManager(CjoSearchPath(additionalLibrarySearchPaths = librarySearchPaths)),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
         )
+    }
 
     /**
      * 仓颉的 builtins session 需要同时覆盖两类符号：
@@ -105,4 +114,11 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             parent
         }
     }
+}
+
+/** 将 library 二进制根统一为 CJO 搜索目录。 */
+private fun VirtualFile.asCjoSearchRoot(): File? {
+    val path = File(path)
+    val root = if (isDirectory) path else path.parentFile
+    return root?.takeIf(File::isDirectory)
 }

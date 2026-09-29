@@ -7,6 +7,6 @@ public class Named {
     public const init(value!: String, level!: Int64) {}
 }
 
-@Named["demo", level: 2]
+@Named[value: "demo", level: 2]
 class <caret>User {
 }

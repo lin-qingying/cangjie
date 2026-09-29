@@ -1,0 +1,42 @@
+{
+  "phase": "P1 red before production changes",
+  "date": "2026-09-29",
+  "command": "gradlew-queue.bat :cfir:analysis-tests:test --tests '*CommonSpecific*' :analysis:low-level-api-cfir:test --tests '*CfirCjmpCallerFirstDiagnosticsTest' --continue --console=plain --max-workers=1",
+  "exitCode": 1,
+  "groups": [
+    {
+      "root": "cfir/analysis-tests/build/test-results/test",
+      "total": 240,
+      "failed": 2,
+      "failures": [
+        {
+          "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$CommonSpecific$E2e#testCjmpSpecificShadowingBeforeImplicitTypes()",
+          "status": "failed",
+          "failure": "org.opentest4j.AssertionFailedError: Actual data differs from file content: cjmpSpecificShadowingBeforeImplicitTypes.cj \n=====预期======\n// LANGUAGE_VERSION: 1.1.0\n// RUN_PIPELINE_TILL: FRONTEND\n// P1/A1 回归：官方 v1.1.3 TypeChecker.cpp:2027–2047 在函数体前配对；\n// 已配对的 specific 调用替代 common。无返回类型的函数由末项调用推断 Int64。cjc 1.1.3 精确探针见 review-20260928/p1-cjc-20260929。\n// MODULE: common\n// CJMP_MODE: COMMON\n// FILE: common.cj\npackage cjmp_shadow_before_implicit\n\npublic common func platform(): Int64\n\n// MODULE: specific()()(common)\n// CJMP_MODE: SPECIFIC\n// MAIN_MODULE\n// FILE: specific.cj\npackage cjmp_shadow_before_implicit\n\npublic specific func platform(): Int64 { 2 }\n\n// 保留省略返回类型；common 与 specific 不得同时存活为歧义候选。\npublic func use4() { platform() }\n\n=====得到======\n// LANGUAGE_VERSION: 1.1.0\n// RUN_PIPELINE_TILL: FRONTEND\n// P1/A1 回归：官方 v1.1.3 TypeChecker.cpp:2027–2047 在函数体前配对；\n// 已配对的 specific 调用替代 common。无返回类型的函数由末项调用推断 Int64。cjc 1.1.3 精确探针见 review-20260928/p1-cjc-20260929。\n// MODULE: common\n// CJMP_MODE: COMMON\n// FILE: common.cj\npackage cjmp_shadow_before_implicit\n\npublic common func platform(): Int64\n\n// MODULE: specific()()(common)\n// CJMP_MODE: SPECIFIC\n// MAIN_MODULE\n// FILE: specific.cj\npackage cjmp_shadow_before_implicit\n\npublic specific func platform(): Int64 { 2 }\n\n// 保留省略返回类型；common 与 specific 不得同时存活为歧义候选。\npublic func use4() { <!AMBIGUOUS_FUNCTION_CALL!>platform<!>() }\n\n"
+        },
+        {
+          "key": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2TestGenerated$CommonSpecific$E2e#testCjmpSpecificShadowingBeforeImplicitTypes()",
+          "status": "failed",
+          "failure": "org.opentest4j.AssertionFailedError: Actual data differs from file content: cjmpSpecificShadowingBeforeImplicitTypes.cj \n=====预期======\n// LANGUAGE_VERSION: 1.1.0\n// RUN_PIPELINE_TILL: FRONTEND\n// P1/A1 回归：官方 v1.1.3 TypeChecker.cpp:2027–2047 在函数体前配对；\n// 已配对的 specific 调用替代 common。无返回类型的函数由末项调用推断 Int64。cjc 1.1.3 精确探针见 review-20260928/p1-cjc-20260929。\n// MODULE: common\n// CJMP_MODE: COMMON\n// FILE: common.cj\npackage cjmp_shadow_before_implicit\n\npublic common func platform(): Int64\n\n// MODULE: specific()()(common)\n// CJMP_MODE: SPECIFIC\n// MAIN_MODULE\n// FILE: specific.cj\npackage cjmp_shadow_before_implicit\n\npublic specific func platform(): Int64 { 2 }\n\n// 保留省略返回类型；common 与 specific 不得同时存活为歧义候选。\npublic func use4() { platform() }\n\n=====得到======\n// LANGUAGE_VERSION: 1.1.0\n// RUN_PIPELINE_TILL: FRONTEND\n// P1/A1 回归：官方 v1.1.3 TypeChecker.cpp:2027–2047 在函数体前配对；\n// 已配对的 specific 调用替代 common。无返回类型的函数由末项调用推断 Int64。cjc 1.1.3 精确探针见 review-20260928/p1-cjc-20260929。\n// MODULE: common\n// CJMP_MODE: COMMON\n// FILE: common.cj\npackage cjmp_shadow_before_implicit\n\npublic common func platform(): Int64\n\n// MODULE: specific()()(common)\n// CJMP_MODE: SPECIFIC\n// MAIN_MODULE\n// FILE: specific.cj\npackage cjmp_shadow_before_implicit\n\npublic specific func platform(): Int64 { 2 }\n\n// 保留省略返回类型；common 与 specific 不得同时存活为歧义候选。\npublic func use4() { <!AMBIGUOUS_FUNCTION_CALL!>platform<!>() }\n\n"
+        }
+      ]
+    },
+    {
+      "root": "analysis/low-level-api-cfir/build/test-results/test",
+      "total": 2,
+      "failed": 2,
+      "failures": [
+        {
+          "key": "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest#shadowedCommonCallerFirst(CjFile, CjTestModule, TestServices)",
+          "status": "failed",
+          "failure": "org.opentest4j.AssertionFailedError: expected: <[]> but was: <[CFIR_AMBIGUOUS_FUNCTION_CALL, CFIR_NOT_MATCHED]>"
+        },
+        {
+          "key": "org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.CfirCjmpCallerFirstDiagnosticsTest#defaultArgumentCallerFirst(CjFile, CjTestModule, TestServices)",
+          "status": "failed",
+          "failure": "org.opentest4j.AssertionFailedError: expected: <[]> but was: <[CFIR_NOT_MATCHED]>"
+        }
+      ]
+    }
+  ]
+}

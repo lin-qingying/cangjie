@@ -8,8 +8,11 @@ package org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.session.bui
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
+import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -18,7 +21,9 @@ import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApi
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneSourceModule
 import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionBuilder
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
@@ -27,6 +32,8 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -147,6 +154,12 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
                 directRegularDependencies += builtinsModule
             }
 
+            assertEquals(
+                CaDeserializedDeclarationsOrigin.BINARIES,
+                CaPlatformSettings.getInstance(mainFile.project).deserializedDeclarationsOrigin,
+                "Standalone sessions must resolve CJO libraries through the binary provider.",
+            )
+
             action(sourceFile, sourceModule, builtinsModule)
         } finally {
             Files.walk(tempRoot)
@@ -164,11 +177,65 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
     ) {
         assertBuiltinsBinaryVisible(context.project)
         val diagnosticsText = collectDiagnosticsText(sourceFile, context)
+        val importItem = sourceFile.importDirectives.single().importItems.single()
+        assertEquals(
+            "std.objectpool.ObjectPool",
+            importItem.importedFqName?.asString(),
+            "A single import path must not be concatenated with itself as a directive prefix.",
+        )
+        val importedReferenceSegments = PsiTreeUtil
+            .findChildrenOfType(
+                checkNotNull(importItem.importedReference),
+                CjSimpleNameExpression::class.java,
+            )
+            .sortedBy { it.textOffset }
+        val importedReferenceTargets = context.analyze(sourceFile) {
+            importedReferenceSegments.map { segment ->
+                segment.resolveToSymbols().map { symbol ->
+                    when (symbol) {
+                        is CaPackageSymbol -> symbol.fqName.asString()
+                        is CaClassLikeSymbol -> symbol.classId?.asString()
+                        else -> null
+                    }
+                }
+            }
+        }
+        val directLookupInImportSession = context.analyze(sourceFile) {
+            getClassLikeSymbol(ClassId.fromString("std/objectpool/ObjectPool"))?.classId?.asString()
+        }
+        val importReferenceDebug = importedReferenceSegments.map { segment ->
+            val providerReferences = CangJieReferenceProvidersService.getReferencesFromProviders(segment)
+            "${segment.referencedName}: providers=${providerReferences.map { it::class.qualifiedName }}"
+        }
+        assertEquals(
+            listOf(listOf("std"), listOf("std.objectpool"), listOf("std/objectpool/ObjectPool")),
+            importedReferenceTargets,
+            "Every import segment must resolve to its package or terminal class; " +
+                "import=${importItem.importedFqName}; directLookup=$directLookupInImportSession; " +
+                "diagnostics=$diagnosticsText; references=$importReferenceDebug",
+        )
         val function = sourceFile.declarations.filterIsInstance<CjNamedFunction>().single { declaration ->
             declaration.name == "useStdlib"
         }
 
         context.analyze(function) {
+            val objectPoolClassId = ClassId.fromString("std/objectpool/ObjectPool")
+            val objectPoolSymbol = getClassLikeSymbol(objectPoolClassId)
+            val stdPackageSymbol = getPackageSymbol(FqName("std"))
+            val objectPoolPackageSymbol = getPackageSymbol(objectPoolClassId.packageFqName)
+            val sameNameCandidates = getTopLevelClassLikeSymbols(
+                objectPoolClassId.packageFqName,
+                objectPoolClassId.shortClassName,
+            )
+            assertTrue(
+                objectPoolSymbol != null && stdPackageSymbol != null && objectPoolPackageSymbol != null,
+                "Builtins CFIR lookup failed: std=$stdPackageSymbol, " +
+                    "std.objectpool=$objectPoolPackageSymbol, ObjectPool candidates=$sameNameCandidates",
+            )
+            val packageLookupDebug =
+                "direct ObjectPool origin=${objectPoolSymbol?.origin}, std=$stdPackageSymbol, " +
+                    "std.objectpool=$objectPoolPackageSymbol, candidates=$sameNameCandidates"
+
             val functionSymbol = function.symbol as? CaNamedFunctionSymbol
                 ?: error("Declaration `${function.text}` does not resolve to a named function symbol.")
             val parameterType = functionSymbol.valueParameters.single().returnType
@@ -177,18 +244,18 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
             val objectPoolType = assertTypeClassId(
                 actualType = parameterType,
                 expectedClassId = ClassId.fromString("std/objectpool/ObjectPool"),
-                debugText = parameterType.debugText(diagnosticsText),
+                debugText = "${parameterType.debugText(diagnosticsText)}; $packageLookupDebug",
             )
             assertEquals(1, objectPoolType.typeArguments.size, objectPoolType.debugText(diagnosticsText))
             assertTypeClassId(
                 actualType = objectPoolType.typeArguments.single(),
                 expectedClassId = ClassId.fromString("std/core/String"),
-                debugText = objectPoolType.typeArguments.single().debugText(diagnosticsText),
+                debugText = "${objectPoolType.typeArguments.single().debugText(diagnosticsText)}; $packageLookupDebug",
             )
             assertTypeClassId(
                 actualType = returnType,
                 expectedClassId = ClassId.fromString("std/core/String"),
-                debugText = returnType.debugText(diagnosticsText),
+                debugText = "${returnType.debugText(diagnosticsText)}; $packageLookupDebug",
             )
         }
     }
@@ -197,6 +264,11 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
      * 断言 standalone project 中的 builtins binary index 能暴露 stdlib 包。
      */
     private fun assertBuiltinsBinaryVisible(project: com.intellij.openapi.project.Project) {
+        assertEquals(
+            CaDeserializedDeclarationsOrigin.BINARIES,
+            CaPlatformSettings.getInstance(project).deserializedDeclarationsOrigin,
+            "Standalone must use the binary-origin CFIR provider for CJO libraries.",
+        )
         val binaryIndex = project.getService(CaDecompiledBinaryIndex::class.java)
         val objectPoolBinary = binaryIndex.findBuiltinsBinaryFile(FqName("std.objectpool"))
         val stringBinary = binaryIndex.findBuiltinsBinaryFile(FqName("std.core"))

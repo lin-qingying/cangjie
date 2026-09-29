@@ -1,0 +1,60 @@
+{
+  "restoredAtUtc": "2026-09-29T06:09:04.967Z",
+  "root": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/intellij-ide",
+  "sourceRoot": "D:/code/intellij/cangjie/intellij-ide",
+  "branch": "codex/recover-uncommitted",
+  "baseHead": "681597beca201eb7296d58686bff115210b93c84",
+  "checkpointHead": "0fc0c73107f961eb2fc6ca2466b4d46bcd908e94",
+  "files": [
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt",
+      "sourceSha256Lf": "d06ce5aab87f3c46950d720ea9b580be01064825164ba83c7fe09e7708a19e56",
+      "restoredSha256Lf": "d06ce5aab87f3c46950d720ea9b580be01064825164ba83c7fe09e7708a19e56",
+      "identical": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt",
+      "sourceSha256Lf": "da64edf348f16d3d388a55de03fa2da3b25e7449f17cf3fb670b59561e250e3f",
+      "restoredSha256Lf": "da64edf348f16d3d388a55de03fa2da3b25e7449f17cf3fb670b59561e250e3f",
+      "identical": true
+    },
+    {
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt",
+      "sourceSha256Lf": "1ffd6862996ae5d57da3b93264090e14ebd3e8c537c7d7a92a632ea00bc4818d",
+      "restoredSha256Lf": "1ffd6862996ae5d57da3b93264090e14ebd3e8c537c7d7a92a632ea00bc4818d",
+      "identical": true
+    },
+    {
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+      "sourceSha256Lf": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+      "restoredSha256Lf": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+      "identical": true
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml",
+      "sourceSha256Lf": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+      "restoredSha256Lf": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+      "identical": true
+    },
+    {
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+      "sourceSha256Lf": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+      "restoredSha256Lf": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+      "identical": true
+    }
+  ],
+  "fileCount": 6,
+  "allHashesMatchAfterLfNormalization": true,
+  "workingTreeClean": true,
+  "diffCheckPassed": true,
+  "historicalMove": {
+    "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+    "to": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+    "sourceEvidence": "B-main:2918",
+    "oldPathTrackedAtBase": false,
+    "oldPathExistsInRecoveryCheckout": false,
+    "action": "Restored final product path only; no deletion was necessary."
+  },
+  "buildsRun": false,
+  "originalWorkspaceWrites": false
+}

@@ -4,6 +4,17 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationResolveState
@@ -21,6 +32,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpressio
 import org.cangnova.cangjie.cfir.expressions.impl.CfirAnnotationArgumentMappingImpl
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.annotations.CangjieAnnotationTarget
 import org.cangnova.cangjie.annotations.CangjieAnnotationIdentity
 import org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
@@ -28,7 +40,6 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.declarations.annotationTargetFor
 import org.cangnova.cangjie.cfir.symbols.constructClassType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -44,6 +55,7 @@ import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjStringTemplateExpression
 import org.cangnova.cangjie.psi.CjTypeElement
 import org.cangnova.cangjie.psi.CjUserType
+import org.cangnova.cangjie.psi.stubs.CangJieAnnotationStub
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
@@ -63,7 +75,8 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
                 withPsiEntry("annotationEntry", annotation)
             }
 
-            return userType.classId()
+            return (annotation.stub as? CangJieAnnotationStub)?.getClassId()
+                ?: userType.classId()
         }
 
         val TYPE_ANNOTATIONS_FILTER: (AnnotationUseSiteTarget?) -> Boolean = { target ->
@@ -111,7 +124,7 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         val classId = getAnnotationClassId(annotation)
         val sourceSpelling = annotation.typeReference?.text?.trim()?.takeIf(String::isNotEmpty)
         val shortName = classId.shortClassName
-        val moduleName = owner.cfir.moduleData.name.asString().removeSurrounding("<", ">")
+        val moduleName = session.moduleData.name.asString().removeSurrounding("<", ">")
         val builtin = sourceSpelling?.let {
             BuiltInAnnotationRegistry.resolveLanguageBuiltIn(
                 sourceName = it,
@@ -154,7 +167,7 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
             coneTypeOrNull = typeRef.coneType
             annotationClassId = classId
             annotationSourceName = sourceSpelling
-            annotationTarget = owner.cfir.annotationTargetFor()
+            annotationTarget = owner.annotationTargetForStub()
             forcedCustom = annotation.isCompileTimeVisible
             annotationKind = builtin?.kind
             isCompileTimeVisible = annotation.isCompileTimeVisible
@@ -306,4 +319,22 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
             )
         }
     }
+}
+
+/** 未绑定 owner 的 compiled stub 反序列化按稳定符号身份恢复官方注解目标。 */
+private fun CfirBasedSymbol<*>.annotationTargetForStub(): CangjieAnnotationTarget? = when (this) {
+    is CfirClassLikeSymbol<*> -> CangjieAnnotationTarget.TYPE
+    is CfirValueParameterSymbol -> CangjieAnnotationTarget.PARAMETER
+    is CfirConstructorSymbol -> CangjieAnnotationTarget.INIT
+    is CfirEnumConstructorSymbol -> CangjieAnnotationTarget.ENUM_CONSTRUCTOR
+    is CfirPropertySymbol -> CangjieAnnotationTarget.MEMBER_PROPERTY
+    is CfirFieldVariableSymbol ->
+        if (callableId.classId == null) CangjieAnnotationTarget.GLOBAL_VARIABLE else CangjieAnnotationTarget.MEMBER_VARIABLE
+    is CfirMainFunctionSymbol -> CangjieAnnotationTarget.GLOBAL_FUNCTION
+    is CfirMacroDeclarationSymbol ->
+        if (callableId.classId == null) CangjieAnnotationTarget.GLOBAL_FUNCTION else CangjieAnnotationTarget.MEMBER_FUNCTION
+    is CfirNamedFunctionSymbol ->
+        if (callableId.classId == null) CangjieAnnotationTarget.GLOBAL_FUNCTION else CangjieAnnotationTarget.MEMBER_FUNCTION
+    is CfirExtendSymbol -> CangjieAnnotationTarget.EXTEND
+    else -> null
 }

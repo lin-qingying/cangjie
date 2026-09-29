@@ -239,12 +239,6 @@ class CfirDeclDeserializer(
     }
     // ---- 属性位域解析 ----
 
-    /** 从反序列化结构上下文恢复 constructor/static callable 的名义 owner，保留声明站点身份。 */
-    private fun CfirCallableDeclaration.initContainingClassAttr() {
-        containingClassForStaticMemberAttr =
-            (currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>)?.toLookupTag()
-    }
-
     /**
      * common-part `.cjo` 的 Decl.attributes 直接序列化自 AST AttributePack。
      *
@@ -1502,6 +1496,12 @@ class CfirDeclDeserializer(
         val owner = checkNotNull(currentClassLikeOwner)
         check(owner.classId == ownerSymbol.classId)
         return ownerSymbol.constructType(owner.typeParameters.map { it.symbol.constructType() }) as ConeSimpleCangJieType
+    }
+
+    /** 从反序列化结构上下文恢复 constructor/static callable 的名义 owner，保留声明站点身份。 */
+    private fun CfirCallableDeclaration.initContainingClassAttr() {
+        containingClassForStaticMemberAttr =
+            (currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>)?.toLookupTag()
     }
 
     /**

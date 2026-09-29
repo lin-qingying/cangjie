@@ -4,3 +4,10 @@ origin: SOURCE
 location: CLASS
 psi: CjNamedFunction
 callableId: sample.scope.User.rename
+
+CaCfirConstructorSymbol
+name: <anonymous>
+origin: SOURCE
+location: CLASS
+psi: CjClass
+callableId: sample.scope.User.<init>

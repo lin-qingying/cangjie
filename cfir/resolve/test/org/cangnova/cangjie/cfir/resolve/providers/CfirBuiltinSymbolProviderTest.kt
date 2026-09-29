@@ -19,8 +19,10 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -98,6 +100,19 @@ class CfirBuiltinSymbolProviderTest {
                 .getTopLevelClassifierNamesInPackage(StandardNames.STD_CORE_PACKAGE_FQ_NAME),
         )
         assertTrue(provider.hasPackage(StandardNames.STD_CORE_PACKAGE_FQ_NAME))
+    }
+
+    /**
+     * 验证限定名解析能从 `std.core` 声明包推导出 `std` 命名空间前缀。
+     */
+    @Test
+    fun `builtin provider exposes parent package namespace from package index`() {
+        val (session, _) = newSession()
+        val provider = CfirBuiltinSymbolProvider(session)
+
+        assertFalse(provider.hasPackage(FqName("std")))
+        assertTrue(provider.hasPackageOrSubpackages(FqName("std")))
+        assertFalse(provider.hasPackageOrSubpackages(FqName("std.objectpool")))
     }
 
     /**

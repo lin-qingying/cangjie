@@ -78,11 +78,6 @@ internal class LLModuleWithDependenciesSymbolProvider(
         )
     }
 
-    /** 枚举身份候选时透传所有模块与依赖结果，不能复用首项查询后再做组织过滤。 */
-    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        (providers.flatMap { it.getClassLikeSymbolsByClassId(classId) } +
-            dependencyProvider.getClassLikeSymbolsByClassId(classId)).distinct()
-
     /**
      * 先在当前模块自身内容中查找 [classId]，未命中时再查找依赖。
      */
@@ -90,9 +85,10 @@ internal class LLModuleWithDependenciesSymbolProvider(
         getClassLikeSymbolByClassIdWithoutDependencies(classId)
             ?: dependencyProvider.getClassLikeSymbolByClassId(classId)
 
-    /** 与普通单结果查询分离，保留跨依赖同名声明供组织和可用性判定。 */
+    /** 枚举身份候选时透传所有模块与依赖结果，不能复用首项查询后再做组织过滤。 */
     override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        providers.flatMap { it.getClassLikeSymbolsByClassId(classId) }.distinct()
+        (providers.flatMap { it.getClassLikeSymbolsByClassId(classId) } +
+            dependencyProvider.getClassLikeSymbolsByClassId(classId)).distinct()
 
     /**
      * 仅在当前模块自身 [providers] 中查找 [classId]，不读取依赖符号。
@@ -251,6 +247,10 @@ internal class LLDependenciesSymbolProvider(
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         providers.firstNotNullOfOrNull { it.getClassLikeSymbolByClassId(classId) }
+
+    /** 与普通单结果查询分离，保留跨依赖同名声明供组织和可用性判定。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        providers.flatMap { it.getClassLikeSymbolsByClassId(classId) }.distinct()
 
     /**
      * 按依赖顺序追加匹配 [packageFqName]/[name] 的顶层 callable 符号。

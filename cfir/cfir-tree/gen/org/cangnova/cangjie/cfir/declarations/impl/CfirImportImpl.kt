@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -21,6 +22,7 @@ class CfirImportImpl @CfirImplementationDetail constructor(
     override val importedFqName: FqName?,
     override val organizationName: Name?,
     override val isAllUnder: Boolean,
+    override val visibility: Visibility,
     override val aliasName: Name?,
     override val aliasSource: CjSourceElement?,
     override var condition: CfirExpression?,

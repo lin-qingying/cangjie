@@ -19,7 +19,7 @@ function patch(file,change) {
   if(change.type==='add')body='*** Add File: '+file+'\n'+change.content.replace(/\r\n/g,'\n').replace(/\n$/,'').split('\n').map(x=>'+'+x).join('\n');
   else if(change.type==='delete')body='*** Delete File: '+file;
   else if(change.type==='update') {
-    body='*** Update File: '+file+'\n'+(change.move_path?'*** Move to: '+change.move_path+'\n':'')+change.unified_diff.replace(/^@@[^\n]*$/gm,'@@').trimEnd();
+    body='*** Update File: '+file+'\n'+(change.move_path?'*** Move to: '+change.move_path+'\n':'')+change.unified_diff.trimEnd();
   } else throw Error('Unknown FileChange '+change.type);
   return '*** Begin Patch\n'+body+'\n*** End Patch';
 }

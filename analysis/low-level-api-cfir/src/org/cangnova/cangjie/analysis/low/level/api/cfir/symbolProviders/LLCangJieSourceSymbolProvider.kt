@@ -54,10 +54,6 @@ internal class LLCangJieSourceSymbolProvider(
     private val searchScope: GlobalSearchScope
         get() = moduleComponents.module.contentScope
 
-    /** 将 PSI 精确多声明查询接入编译器公共候选 API，组织过滤前不选择首项。 */
-    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-        getAllClassLikeSymbolsByClassId(classId)
-
     /**
      * 聚合当前内容范围内可用的仓颉声明索引。
      */
@@ -169,6 +165,10 @@ internal class LLCangJieSourceSymbolProvider(
         @OptIn(LLModuleSpecificSymbolProviderAccess::class)
         return declarations.mapNotNull { getClassLikeSymbolByPsi(classId, it) }
     }
+
+    /** 将 PSI 精确多声明查询接入编译器公共候选 API，组织过滤前不选择首项。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        getAllClassLikeSymbolsByClassId(classId)
 
     /**
      * 根据 [classId] 与可选 PSI 上下文计算 class-like 符号。
