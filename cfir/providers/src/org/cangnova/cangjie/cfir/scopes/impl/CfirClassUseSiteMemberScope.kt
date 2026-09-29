@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
@@ -1905,6 +1906,9 @@ private fun CfirNamedFunctionSymbol.overridesFunctionCandidate(
     ownerSubstitutor: ConeSubstitutor = ConeSubstitutor.Empty,
 ): Boolean {
     if (this == candidate) return true
+    // 函数签名中的类型引用到 TYPES 阶段才稳定；先完成两侧签名，再比较 override 身份。
+    lazyResolveToPhase(CfirResolvePhase.TYPES)
+    candidate.lazyResolveToPhase(CfirResolvePhase.TYPES)
     if (isStaticMemberForOverride() != candidate.isStaticMemberForOverride()) return false
     return overrideSignatureKey(ownerSubstitutor) == candidate.overrideSignatureKey()
 }

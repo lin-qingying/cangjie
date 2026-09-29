@@ -115,8 +115,14 @@ async function replay() {
   require('./snapshots.cjs').seed(read,state,history,apply);
   if(process.env.RECOVERY_LITERAL_MODE!=='1') {
     const {events,patch}=require('./events.cjs');
-    const recorded=[...events(),...await require('./prehistory.cjs').prehistory()].sort((a,b)=>a.time.localeCompare(b.time)||a.line-b.line);
+    const recorded=[...events(),...await require('./prehistory.cjs').prehistory(),...require('./diff-snapshots.cjs').snapshots()].sort((a,b)=>a.time.localeCompare(b.time)||a.line-b.line);
     for(const e of recorded) {
+      if(e.snapshot) {
+        const file=relative(e.snapshot.file);if(excluded(file))continue;
+        read(file);state.set(file,e.snapshot.content);
+        history.set(file,[...(history.get(file)||[]),{session:e.session,line:e.line,time:e.time,reason:'verified historical git blob',blob:e.snapshot.blob}]);
+        continue;
+      }
       for(const [file,change]of Object.entries(e.changes)) {
         const meta={session:e.session,line:e.line,time:e.time};
         try{apply(patch(file,change),meta);}catch(error){issues.push({...meta,file,reason:error.message});}

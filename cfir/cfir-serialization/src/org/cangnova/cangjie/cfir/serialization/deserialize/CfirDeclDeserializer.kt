@@ -94,12 +94,18 @@ import java.math.BigInteger
  * 所有反序列化声明的 origin 为 Library，resolveState 初始化为 BODY_RESOLVE。
  */
 @OptIn(CfirImplementationDetail::class)
-class CfirDeclDeserializer(
+class CfirDeclDeserializer private constructor(
     /** 当前 `.cjo` 包的反序列化上下文、缓存与跨包解析入口。 */
     private val context: CfirDeserializationContext,
     /** 与当前声明反序列化器配套的类型反序列化器。 */
     private val typeDeserializer: CfirTypeDeserializer,
+    /** compiled-file stub 只需要声明签名，不物化字段初始化表达式。 */
+    private val loadFieldVariableInitializers: Boolean,
 ) {
+    /** 为 CFIR 符号解析创建完整的声明反序列化器。 */
+    constructor(context: CfirDeserializationContext, typeDeserializer: CfirTypeDeserializer) :
+        this(context, typeDeserializer, loadFieldVariableInitializers = true)
+
     /** 当前正在反序列化的 enum owner 上下文。 */
     private data class EnumOwnerContext(
         /** enum 声明的 classId，用于构造 enum constructor callable id 与返回类型。 */
@@ -615,7 +621,17 @@ class CfirDeclDeserializer(
      * values remain hard errors; they must never be silently reclassified as
      * custom annotations.
      */
-    private companion object {
+    companion object {
+        /** 从 `.cjo` 构建 PSI stub 时只物化声明形状，保留声明式常量元数据。 */
+        fun forCompiledFileStub(
+            context: CfirDeserializationContext,
+            typeDeserializer: CfirTypeDeserializer,
+        ): CfirDeclDeserializer = CfirDeclDeserializer(
+            context,
+            typeDeserializer,
+            loadFieldVariableInitializers = false,
+        )
+
         private val supportedAnnotationKinds = setOf(
             AnnoKind.Deprecated,
             AnnoKind.TestRegistration,
@@ -1696,6 +1712,7 @@ class CfirDeclDeserializer(
         // expression reader; do not synthesize a value from the declaration
         // name or from raw source text.
         val initializer = varInfo?.initializer
+            ?.takeIf { loadFieldVariableInitializers }
             ?.takeIf { it != 0u && it != UInt.MAX_VALUE }
             ?.let { raw ->
                 if (varInfo.isConst && varInfo.valueType != ConstValue.NONE) {

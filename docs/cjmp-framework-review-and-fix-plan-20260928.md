@@ -1876,6 +1876,7 @@ val standardLibraryExportIds: Map<String, ClassId> = mapOf("_CNat3AnyE" to Stdli
 - **风险**
   - 阶段前移会改变 IMPLICIT_TYPES 阶段能看到的信息。
   - 由于门关闭时 CJMP_MATCHING 是空操作，非 CJMP 模块理论上不受影响；但门关闭时仍需推进阶段，这要等 P7 修正，因此 P1 和 P7 的阶段门改动要一起验证。
+  - 2026-09-29 补充：STATUS 已经通过 override 查询构建 class/extend use-site scope；IMPORTS/SUPER_TYPES/TYPES 也会查询 composite provider。不能把这些早期查询机械替换成惰性 CJMP getter。P3/C4 的 actualizing scope 与配对前后独立的 scope 缓存边界须随 P1 一起集成；P3/C1 nominal 合并仍待 P2。按名称选择 specific 类型是官方 PreCheck 的规则，与是否成功配对不同，不能移入配对结果判据或新增 phase 兜底。
 
 #### P2　反序列化的 common 语义与共享候选谓词（B1）
 
@@ -2232,6 +2233,7 @@ val standardLibraryExportIds: Map<String, ClassId> = mapOf("_CNat3AnyE" to Stdli
 - **P1 框架复核**：除了阶段位置，还必须一并处理 matcher 内的 IMPLICIT_TYPES 请求、声明结果属性、第二绑定诊断聚合、LL 固定模式和关闭门时的阶段推进。复现草稿位于 `.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/`；LL 草稿首次语义请求为 caller 文件诊断，并检查最终 call 的 specific 符号身份。
 - **P1 红测试已复现（尚未修改生产实现）**：正式添加两个 LLT fixture 和两个 LL caller-first 用例。CommonSpecific 切片共 240 testcase-key，PSI/LightTree 的 `testCjmpSpecificShadowingBeforeImplicitTypes` 各因 `AMBIGUOUS_FUNCTION_CALL` 失败；LL 两项分别得到 `CFIR_AMBIGUOUS_FUNCTION_CALL + CFIR_NOT_MATCHED` 和 `CFIR_NOT_MATCHED`，均应无诊断。默认参数纯诊断 fixture 通过不能证明绑定正确，LL 测试另有 specific 符号身份断言。命令与原始失败消息保存于 `p1-tests/red-results-20260929.json`。这些红例随 P1 修复一起提交，不修改期望来消除失败。
 - **接续入口**：`P1-FRAMEWORK-MAPPING.md` 已完成 Kotlin 对位及锁链预审；下一步落实其 §8：声明级不可变配对事实、matcher 单目标写入、checker 重放有序候选推导第二绑定、公共 containing-owner 路径、LL 模式装配与锁外 common 签名准备，再迁移全部消费点。P0 宿主复现欠项按各阶段补齐；阶段和总目标均未标记完成。
+- **P1/C4 联动边界**：进一步追踪确认 STATUS 的 override 查询已构建并缓存 class/extend scope；早期 scope 不得读惰性配对属性。P1 要同时前移 C4 的 actualizing scope 边界及独立缓存，不以阶段判断分支保留旧的反向查询。精确调用链及缓存所有权追加到 `P1-FRAMEWORK-MAPPING.md`。
 - **文档校验**：已运行 `gradlew-queue.bat validateDocumentation --console=plain --max-workers=1`。本次 CJMP 文档未报错；聚合任务因既有的两处 CJD `#c5-v3--v31复核报告的处置` 锚点和 module-catalog 缺少 `:compiler:cli`/`:compiler:cli:cli-base` 共 3 条错误失败，尚未宣称文档聚合全绿。
 
 ---
