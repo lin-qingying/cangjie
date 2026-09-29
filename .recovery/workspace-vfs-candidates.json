@@ -1,0 +1,681 @@
+{
+  "file": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/caches/content.dat",
+  "scannedAtUtc": "2026-09-29T09:15:47.366Z",
+  "physicalBytes": 469762048,
+  "committedUpTo": 438275792,
+  "minContentBytes": 51200,
+  "maxContentBytes": 307200,
+  "records": 82595,
+  "padding": 6,
+  "sizeCandidates": 1922,
+  "hashVerified": 1922,
+  "decodeFailures": [],
+  "workspaceXmlRecords": 52,
+  "unrelatedWorkspaceXmlCount": 1,
+  "candidates": [
+    {
+      "contentId": 21990545,
+      "recordOffset": 87962240,
+      "bytes": 83119,
+      "sha256": "2d205333a00ea2814812523bca2f92f61e06c8ef9b3c7a0279eb1d28816eebc6",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 24105473,
+      "recordOffset": 96421952,
+      "bytes": 83573,
+      "sha256": "787975209932869420510ac6e3fe22365002c3ca95d73ae3989c60fe2c612bca",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 25220100,
+      "recordOffset": 100880460,
+      "bytes": 83000,
+      "sha256": "6d93116f5d3e7e5b46281c7d0b511521ec115f0a448d211cb68ca76b285d4f2f",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 38739075,
+      "recordOffset": 154956360,
+      "bytes": 84325,
+      "sha256": "8ff6dd67b5162f14eef14599f79e02f46e29a9f5d4e63ba84a06082b394b1a98",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 77853260,
+      "recordOffset": 311413100,
+      "bytes": 84651,
+      "sha256": "d9cf9271cc6b6e09b57742ee7b8f35e55c9abfeaf4897efc49014e208bc96294",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 77858653,
+      "recordOffset": 311434672,
+      "bytes": 86086,
+      "sha256": "5127bb540e00b57be2dcb264b37976e16b2f2120229a8cc6b88912c7a1e1d382",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 77905140,
+      "recordOffset": 311620620,
+      "bytes": 86806,
+      "sha256": "17b26606366fc4242395a0a47177a6628764df28ebad7c1d1db6d9474e09e633",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 77910588,
+      "recordOffset": 311642412,
+      "bytes": 85526,
+      "sha256": "e11d9112de2b8e66819ebc1696200de24816ba9ed9b677880fa6bf6b32ba18ac",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 79081174,
+      "recordOffset": 316324756,
+      "bytes": 93645,
+      "sha256": "2d9e2a5e54db5cd3d94ec4a109f72d81f42db49def78d2423b3ce0b47a278670",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 79086814,
+      "recordOffset": 316347316,
+      "bytes": 86757,
+      "sha256": "cd5c648fce53f232284b54292e8662d2152435f9d1dbc34649f0e0ce6bce929d",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 79097248,
+      "recordOffset": 316389052,
+      "bytes": 86491,
+      "sha256": "de38374c90a531f15fd1a44220d46733a60c7d5c32d6f36d503f350de87af4c6",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 81147131,
+      "recordOffset": 324588584,
+      "bytes": 91113,
+      "sha256": "18b3896427a0eca26a6a73854f88d5cfd35c396322e6750c93905cc24ecfcccb",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 82173498,
+      "recordOffset": 328694052,
+      "bytes": 117106,
+      "sha256": "974541542d6dc7c44243b62212fb6313c97a6a7435f81940265d3fddda0e654e",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 82179731,
+      "recordOffset": 328718984,
+      "bytes": 115354,
+      "sha256": "b5f92a895a7125e056e64fb7a9bd09f7ac2bb3b629bac1a8ef0c8761f0b8e15c",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 82600855,
+      "recordOffset": 330403480,
+      "bytes": 117634,
+      "sha256": "b3b8d000c51a323bac40890b02d307d704c9bb2ac8d75544e37c575041fe07e7",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 83170570,
+      "recordOffset": 332682340,
+      "bytes": 127569,
+      "sha256": "f55f7f6c23a7056fe7c49e375e702e8713b3f4845fa06a388297692edade23d8",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 83610865,
+      "recordOffset": 334443520,
+      "bytes": 180245,
+      "sha256": "a1b7a5df597c462886694c79b6e07244d7e75c989e99e585e9ff74cd72f63d3a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 97026868,
+      "recordOffset": 388107532,
+      "bytes": 100719,
+      "sha256": "e9b37d2ce4e0a3d8ccf520742497f418fdfdf3ca504f8112f5b9b99a3a715f55",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 97734299,
+      "recordOffset": 390937256,
+      "bytes": 113947,
+      "sha256": "05fe2e26d2dfbf2717539c5e95fffbc56a2246e5fd913ab2bfa9a193fef2725a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 97747771,
+      "recordOffset": 390991144,
+      "bytes": 115737,
+      "sha256": "4633bedd283d1526091a73fd80568bee1da01388019044cf4bcf9e5b442113eb",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 98127406,
+      "recordOffset": 392509684,
+      "bytes": 127217,
+      "sha256": "46cc16ac9484963a861fe1fa2115bd84aeeb6e70dc0b9e81a3ac8713cf249529",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99198191,
+      "recordOffset": 396792824,
+      "bytes": 120009,
+      "sha256": "748975734bdcff3eea9fd30e3bc72ca7cc43239bf67f2dadb89400e5f3a35e95",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99236056,
+      "recordOffset": 396944284,
+      "bytes": 103797,
+      "sha256": "aaae3087dfe2dae4a842da25d747f57160cb56cb69047f180749dea7c5fdd521",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99709649,
+      "recordOffset": 398838656,
+      "bytes": 108017,
+      "sha256": "9007d69b100a209ad8997432a5a5e06fbe689aaec278ec5750553f5308875aa8",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99783112,
+      "recordOffset": 399132508,
+      "bytes": 114305,
+      "sha256": "252ae86ab654636c6f4d99b7af796be440af3255672b4c93db152e7f28f15cd1",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99817444,
+      "recordOffset": 399269836,
+      "bytes": 85101,
+      "sha256": "ee912b9df81ac5c40cc240bab060c90d25dce27ad53d2eb46c559982ebb82fe2",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 99825671,
+      "recordOffset": 399302744,
+      "bytes": 86129,
+      "sha256": "47c53c87dedb73e6a030182e1eaa591860066cfbf147065c13748851fcf4bce0",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 100219851,
+      "recordOffset": 400879464,
+      "bytes": 85799,
+      "sha256": "255c49495374768d1c82371f313e62fa8a57439d1dcac4c75f8f05a72d222f36",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 100351204,
+      "recordOffset": 401404876,
+      "bytes": 86523,
+      "sha256": "c14e09a152293673f523e87f635839c7654435567a9cf73ff455bb31891e432f",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 100694241,
+      "recordOffset": 402777024,
+      "bytes": 88783,
+      "sha256": "563ad9830ef99fb2a2a0b7a09d0eb90618d311c8eedf45488f8b09ccaa3e470b",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 100746688,
+      "recordOffset": 402986812,
+      "bytes": 85247,
+      "sha256": "4955c2ed4ab0a299bd4c0de981cffaee2f3ddaf882ee5f873d121f51baa59c4b",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 100752084,
+      "recordOffset": 403008396,
+      "bytes": 85707,
+      "sha256": "6b9d1ce71e8ee542842d2b97db0f4ccbe012235af37383a08a1dc778fd9c814a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 101622225,
+      "recordOffset": 406488960,
+      "bytes": 86101,
+      "sha256": "911c46c5aaeb51fd3c191ac6e008304557ffccf6778954a9777fa1d8d11dd5d5",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 101627651,
+      "recordOffset": 406510664,
+      "bytes": 92155,
+      "sha256": "356cc79c049ad88196d22311b276c0f7e55d0c8dee64981c7690820a0d6ce802",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 101758827,
+      "recordOffset": 407035368,
+      "bytes": 92087,
+      "sha256": "e69d70b37fb187bbb584f0e1d869dc44922d975c0cf2444bf9c1b582f5d4645f",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 101980012,
+      "recordOffset": 407920108,
+      "bytes": 94249,
+      "sha256": "5787245b26498d7a69c87bbc7b3c06c85159be4285b554c32d3083de4c16b03b",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 101985708,
+      "recordOffset": 407942892,
+      "bytes": 93335,
+      "sha256": "6dfb305841e869d91c061b6f7942afae47ab9faaa81ba26ae59b1d8d5f23ddfb",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 102130659,
+      "recordOffset": 408522696,
+      "bytes": 93941,
+      "sha256": "e4c0068a3b1cdd5a631ca0d12e2f5fbd45ce3f1b7a4bed0ab9cccd1254e29ac8",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 105915501,
+      "recordOffset": 423662064,
+      "bytes": 134879,
+      "sha256": "a1bab205cd98b5f3bde899ec9a143bb0aab160eb564aa46e9363f229cf38d78a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 106348750,
+      "recordOffset": 425395060,
+      "bytes": 84513,
+      "sha256": "70715808d7b5af4fdfb10277814fb64940717ac67bcd641c6c709b62add4e31a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 106367512,
+      "recordOffset": 425470108,
+      "bytes": 85269,
+      "sha256": "001677f304f90dfb9bfe7e6931256d1c19fb4e432b9f73bf2621366e2301f9ba",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 106859681,
+      "recordOffset": 427438784,
+      "bytes": 118541,
+      "sha256": "d21c8560d515032104f18d5301e6028936a5b4525042fe67aeb839fbeb731bd4",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 107186515,
+      "recordOffset": 428746120,
+      "bytes": 133650,
+      "sha256": "a9d7a751195678a96538547eee804a9ce0c49710c1c9d12873a70f7aae462f6a",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 107748337,
+      "recordOffset": 430993408,
+      "bytes": 134662,
+      "sha256": "8190f6af122169c43fc7c02a47a7689fdf2959e76a3c5a8fd0a81399367d6d34",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 107826278,
+      "recordOffset": 431305172,
+      "bytes": 134956,
+      "sha256": "1c0c7bc1f044b59d826ec7ed97e1f4d8b8fbf240eb92259bb8003199a21f18e0",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 107838139,
+      "recordOffset": 431352616,
+      "bytes": 135162,
+      "sha256": "66d92ec7f0c659bcc404a9389da18b80b94c3f7aa0f2d0a5d489508bd49efc18",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 108574997,
+      "recordOffset": 434300048,
+      "bytes": 135354,
+      "sha256": "ebcb88f9e4533038b0440f9a87dc63e72b85d05210d7429bba9e399c44d67f8b",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 108730680,
+      "recordOffset": 434922780,
+      "bytes": 139738,
+      "sha256": "e93ef2f6ec1d63553558fdd2e5349135167d0aeb2c9304d68accdf0b4171736c",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 109077572,
+      "recordOffset": 436310348,
+      "bytes": 90562,
+      "sha256": "d568b875a1e138ef7da98304ec33d0b326b69199b5e7b912c506835600b2fca2",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 109130681,
+      "recordOffset": 436522784,
+      "bytes": 90704,
+      "sha256": "f5870002e6def8c4c2112cebc33c9ba168672d4a5fcfdcf370aaf4af918a2757",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    },
+    {
+      "contentId": 109198520,
+      "recordOffset": 436794140,
+      "bytes": 153187,
+      "sha256": "e27c84124522a733bf656fea75d111b64f5acdacc35a35575ff59f21b1888cff",
+      "matchedProjectMarkers": [
+        "changeListUuid",
+        "absoluteProjectPath",
+        "absoluteProjectWindowsPath",
+        "projectAnalysisPath"
+      ],
+      "finalPreResetVersionVerified": false
+    }
+  ],
+  "warning": "Content records do not provide a file path or timestamp; matching project markers establish a candidate only, not the final pre-reset revision."
+}
