@@ -1,0 +1,360 @@
+{
+  "targetCount": 23,
+  "recoveredSnapshots": 0,
+  "sourceLog": "C:/Users/lin17/.codex/sessions/2026/09/28/rollout-2026-09-28T12-07-34-01a0e632-5901-7050-b92f-28301bb5767b.jsonl",
+  "findings": [
+    {
+      "line": 1495,
+      "kind": "attempted automatic update",
+      "detail": "Unquoted -Dupdate.test.data=true command failed with task .test.data=true not found; not evidence of a successful update."
+    },
+    {
+      "line": 1521,
+      "kind": "automatic update invocation",
+      "callId": "call_BfdcyTwiDAdwMti4zlnKgVw6",
+      "detail": "Quoted -Dupdate.test.data=true invocation ran selected low-level suites. Console reports include suite status and failures, but do not contain complete final golden text for the 23 targets."
+    },
+    {
+      "line": 1547,
+      "kind": "workspace status",
+      "detail": "Recorded output lists all 23 target golden files as modified after automatic update."
+    },
+    {
+      "line": 1556,
+      "kind": "complete but out-of-scope text read",
+      "detail": "Only full contextCollector golden reads found here are lambdaArguments variants; those have other recorded sources and are outside this sources=[] target set."
+    },
+    {
+      "line": 1602,
+      "kind": "workspace status",
+      "detail": "All 23 target paths again recorded as modified."
+    },
+    {
+      "line": 1690,
+      "kind": "git diff stat and status",
+      "callId": "call_Wi2UnjNkAfPd3gQUJrvbQiiW",
+      "detail": "Recorded final diff statistics include all target files, but contain only counts and paths, not final contents or replayable hunks."
+    }
+  ],
+  "searchedLocations": [
+    {
+      "path": "D:/code/intellij/cangjie/analysis/low-level-api-cfir/build",
+      "result": "No target .txt, actual/expected files or zip snapshots found. Only unrelated test-idea-home/build.txt matched text-file search."
+    },
+    {
+      "path": "D:/code/intellij/cangjie/analysis/low-level-api-cfir/build/test-results/test",
+      "result": "Only retained CfirCjmpMatchingTestGenerated XML found; original golden-updating suites and failure actual blocks no longer present."
+    },
+    {
+      "path": "D:/code/intellij/cangjie/analysis/low-level-api-cfir/build/reports/tests/test/classes",
+      "result": "No retained class HTML reports found."
+    },
+    {
+      "path": "D:/code/intellij/cangjie/.workbuddy/tmp",
+      "result": "No matching named golden/contextCollector/fakeOverrideScope/libraryBinaryDeclarations/simpleClass/interfaceStatus/resolveTargetByCall snapshot paths or zip archives found by filename search."
+    }
+  ],
+  "currentOldWorkspaceEvidence": "22 of 23 current old-workspace target files still contain R|kotlin.Unit|, while the historical final log asserted no such markers remained. These current files are not accepted as recovered updated golden snapshots.",
+  "files": [
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/class.body.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "B277439DB0665527FA28826FF06A76335E24ECC7AAC70BAA871C81F341BCA8B4",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/class.body.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EAE54E0EC0FCB6C560ED150E0839DFB99455DBB48F6ABB5160F28F61D782139B",
+      "oldUnitMarkerCount": 6,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/class.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "B277439DB0665527FA28826FF06A76335E24ECC7AAC70BAA871C81F341BCA8B4",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/class.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EAE54E0EC0FCB6C560ED150E0839DFB99455DBB48F6ABB5160F28F61D782139B",
+      "oldUnitMarkerCount": 6,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.body.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "D02BFC34566CD21005748D869D0AA12F22F697EB8D4E4EA809DA11443800C36F",
+      "oldUnitMarkerCount": 3,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.body.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "D02BFC34566CD21005748D869D0AA12F22F697EB8D4E4EA809DA11443800C36F",
+      "oldUnitMarkerCount": 3,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "D02BFC34566CD21005748D869D0AA12F22F697EB8D4E4EA809DA11443800C36F",
+      "oldUnitMarkerCount": 3,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "D02BFC34566CD21005748D869D0AA12F22F697EB8D4E4EA809DA11443800C36F",
+      "oldUnitMarkerCount": 3,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/simple.body.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EC7C2ED9EF0959F8B02E737568658DED51B3AA2C400898A9F917C3CEA027EB45",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/simple.body.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EC7C2ED9EF0959F8B02E737568658DED51B3AA2C400898A9F917C3CEA027EB45",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/simple.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EC7C2ED9EF0959F8B02E737568658DED51B3AA2C400898A9F917C3CEA027EB45",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/simple.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "EC7C2ED9EF0959F8B02E737568658DED51B3AA2C400898A9F917C3CEA027EB45",
+      "oldUnitMarkerCount": 4,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.body.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "FE8D5ACD794B47C00B50E183C07E9C630A241E02396BB33FB5D97D584FBF52AA",
+      "oldUnitMarkerCount": 2,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.body.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "FE8D5ACD794B47C00B50E183C07E9C630A241E02396BB33FB5D97D584FBF52AA",
+      "oldUnitMarkerCount": 2,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.copy.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "FE8D5ACD794B47C00B50E183C07E9C630A241E02396BB33FB5D97D584FBF52AA",
+      "oldUnitMarkerCount": 2,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "FE8D5ACD794B47C00B50E183C07E9C630A241E02396BB33FB5D97D584FBF52AA",
+      "oldUnitMarkerCount": 2,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/fileStructure/interfaceStatus.lazy.resolve.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "85F43643A18B277A16E02A9CC226B2D55AC760E578ED48036046D16D7F5945CB",
+      "oldUnitMarkerCount": 1,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/getOrBuildCfirBinary/libraryBinaryDeclarations.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "8076A55D928CD93F8D3E63271009EC420E1982E6F272760AC2F777E2315B4082",
+      "oldUnitMarkerCount": 23,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/lazyResolve/simpleClass.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "26B7967573E6413400D579ECD9015949277C7826D73EF3D9373B6E00D261350E",
+      "oldUnitMarkerCount": 8,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/lazyResolveByReference/resolveTargetByCall.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "697E5D79D9F40B0D0957E419586DD0716FDF6B1FCD52046AEC74CBF358F05D13",
+      "oldUnitMarkerCount": 13,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/lazyResolveScopes/fakeOverrideScope.after.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "DB0C98466104C6E303F96AE21B9A46C2F8BC655A39F3C31A928CEF411675F532",
+      "oldUnitMarkerCount": 2,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/lazyResolveScopes/fakeOverrideScope.before.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "C20A1E0D2EF3086BF2CEA739F356AAB1B0FB20A359CF321AB8D06CE863FCE1C1",
+      "oldUnitMarkerCount": 0,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    },
+    {
+      "path": "analysis/low-level-api-cfir/testData/resolveToCfirSymbol/declarations.txt",
+      "oldWorkspaceExists": true,
+      "oldWorkspaceSHA256": "87318A8EF1DA86718E8D9E1CFA7E5A30D662BAC1FBDBE56D3D3A8DFEC898191B",
+      "oldUnitMarkerCount": 6,
+      "status": "exact_updated_content_not_found",
+      "sources": [
+        {
+          "logLine": 1690,
+          "type": "modified-file-stat-only"
+        }
+      ]
+    }
+  ],
+  "limitations": "No new tests or renderers were run. No formal source or expected test data was changed. Missing values were not inferred from implementation or replaced by manually designed expectations. Sources without complete exact text remain unresolved."
+}
