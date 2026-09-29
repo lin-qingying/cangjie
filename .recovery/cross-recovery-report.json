@@ -1,0 +1,266 @@
+{
+  "ours": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie",
+  "other": "D:/code/intellij/cangjie-recovery-B",
+  "gitSnapshot": "fe00a71778dd2be6f2eece4ce5d537eb6681fba1\nb5aba936025ea30c1c230d1f3faefa8adfa828ac\n\r\nCount             : 26\r\nAverage           : \r\nSum               : \r\nMaximum           : \r\nMinimum           : \r\nStandardDeviation : \r\nProperty          : \r\n\r\n{\"manifestEntries\":185,\"dynamicCalls\":16}\r\n",
+  "comparisonBasis": "Union of .recovery/verified-files.json, all 134 scratch-report paths, and the other checkout git diff HEAD --name-only. Excluded nested repositories external/intellij-ide/deveco. Other checkout had no non-ignored untracked files.",
+  "comparedPaths": 348,
+  "exactContentMatchesLF": 344,
+  "sameDeletedPaths": 1,
+  "differences": [
+    {
+      "path": ".workbuddy/tmp/cjmp_probe113/private_function_instantiation.cj",
+      "oursExists": false,
+      "otherExists": true,
+      "oursSHA256LF": null,
+      "otherSHA256LF": "D1F0D347C01DC6FA508CD6CDD866233770D33976E4AAC37D44630DDE40526E64",
+      "matches": false,
+      "coveredByVerified": false,
+      "otherChanged": true,
+      "classification": "verified_missing_scratch_candidate",
+      "evidence": {
+        "log": "C:/Users/lin17/.codex/sessions/2026/09/25/rollout-2026-09-25T11-19-03-01a0d692-d864-7360-a0b6-bc99d91085e7.jsonl",
+        "line": 30271,
+        "eventType": "FileChange",
+        "status": "completed",
+        "operation": "add",
+        "characters": 591,
+        "sourceSHA256": "D1F0D347C01DC6FA508CD6CDD866233770D33976E4AAC37D44630DDE40526E64",
+        "matchesOtherContent": true
+      },
+      "action": "Do not copy blindly; original event supplies exact recoverable content. No source was written during this audit."
+    },
+    {
+      "path": ".workbuddy/tmp/cjmp_probe113/review-20260928/VERSION-EVIDENCE-20260929.md",
+      "oursExists": true,
+      "otherExists": true,
+      "oursSHA256LF": "9A04EF582E5777C7194E7D3380E3AABA5C54E219AA3E93C0A44665C3BBF94C25",
+      "otherSHA256LF": "B4860BC24BA3265EB3EB6B761B0F0E282E9B3D68D4DB78DB314AC9B8A8D71B77",
+      "matches": false,
+      "coveredByVerified": false,
+      "otherChanged": true,
+      "classification": "trailing_blank_lines_only",
+      "detail": "Other copy lacks two final blank lines. Our content already matched original FileChange replay SHA-256; retain our version."
+    },
+    {
+      "path": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolProvider.kt",
+      "oursExists": true,
+      "otherExists": true,
+      "oursSHA256LF": "E6820F72C3920DCC18EAD109B98CC30E787171C00048E0DC569C6B925F1D7EBE",
+      "otherSHA256LF": "21BC7A7A2004EB67875D628D6AB6424C18C284D27FD5B7D1A2D4D2A862832A7F",
+      "matches": false,
+      "coveredByVerified": true,
+      "otherChanged": true,
+      "classification": "trailing_blank_line_only",
+      "detail": "Other copy lacks one final blank line. No code/API difference found."
+    },
+    {
+      "path": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/ContainingClassUtils.kt",
+      "oursExists": false,
+      "otherExists": false,
+      "oursSHA256LF": null,
+      "otherSHA256LF": null,
+      "matches": false,
+      "coveredByVerified": true,
+      "otherChanged": false,
+      "classification": "same_deletion",
+      "detail": "Absent in both copies; not a recovery gap."
+    }
+  ],
+  "evidenceLocations": [
+    {
+      "path": "C:/Users/lin17/.workbuddy/tmp/recover-20260929/manifest.json",
+      "entries": 185,
+      "note": "Read manifest schema and searched missing-test/golden names; not treated as authoritative file contents."
+    },
+    {
+      "path": "C:/Users/lin17/.workbuddy/tmp/dyna/manifest.json",
+      "dynamicCalls": 16,
+      "note": "Read schema; all content decisions still require original logs."
+    },
+    {
+      "path": "C:/Users/lin17/.workbuddy/tmp/bca_cmp",
+      "note": "Contains comparison source files and lambdaArguments golden copies, but no 23 unresolved target goldens or CjoStubAstConsistencyDiagnosticTest."
+    },
+    {
+      "path": "D:/code/intellij/cangjie-recovery-B/tmp",
+      "note": "Read-only filename inventory/search found no CjoStubAstConsistencyDiagnosticTest, contextCollector class/body, fakeOverrideScope, libraryBinaryDeclarations, simpleClass or interfaceStatus target snapshots."
+    }
+  ],
+  "diagnosticTest": {
+    "path": "analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt",
+    "oursExists": false,
+    "otherExists": false,
+    "evidenceSearch": "No exact name found in inspected recovery manifests/scripts/comparison files or other tmp paths.",
+    "status": "not_found"
+  },
+  "goldens": {
+    "count": 23,
+    "otherComparedToCurrentOurs": "All 23 differ. Current ours has separate ongoing uncommitted golden changes; this audit does not assign historical authority to them.",
+    "otherWithLegacyKotlinUnitMarkers": 22,
+    "status": "Other copy is not a source for the missing updated golden values. 22 still contain legacy R|kotlin.Unit|; fakeOverrideScope.before is the old IMPORTS/overridden layout, not the updated one.",
+    "files": [
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/class.body.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "5736860B2511659902FD4F79A2078443C03BC1D914D0CA24435A242EBEC76DEE",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/class.body.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "2593B334FA2FAE3D96571E7E1E5BDF7583182415867BF6B7822C27593A1EE78F",
+        "oldUnitMarkers": 6
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/class.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "5736860B2511659902FD4F79A2078443C03BC1D914D0CA24435A242EBEC76DEE",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/class.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "2593B334FA2FAE3D96571E7E1E5BDF7583182415867BF6B7822C27593A1EE78F",
+        "oldUnitMarkers": 6
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.body.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "90627EE49D871C9DB33A73230F2712255C5C1F837616A9EB0BC59A1D17F723F7",
+        "oldUnitMarkers": 3
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.body.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "90627EE49D871C9DB33A73230F2712255C5C1F837616A9EB0BC59A1D17F723F7",
+        "oldUnitMarkers": 3
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "90627EE49D871C9DB33A73230F2712255C5C1F837616A9EB0BC59A1D17F723F7",
+        "oldUnitMarkers": 3
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/propertyAccessor.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "90627EE49D871C9DB33A73230F2712255C5C1F837616A9EB0BC59A1D17F723F7",
+        "oldUnitMarkers": 3
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/simple.body.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "23D4E2EF379D01C90377F54CD829FED96088D6BEBBCBCDF7D1823DF8853E4FB1",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/simple.body.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "23D4E2EF379D01C90377F54CD829FED96088D6BEBBCBCDF7D1823DF8853E4FB1",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/simple.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "23D4E2EF379D01C90377F54CD829FED96088D6BEBBCBCDF7D1823DF8853E4FB1",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/simple.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "23D4E2EF379D01C90377F54CD829FED96088D6BEBBCBCDF7D1823DF8853E4FB1",
+        "oldUnitMarkers": 4
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.body.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "F203C1DCA8BD8EFB2693DCE711770882A2645D62809616654B5B734109BE5CBD",
+        "oldUnitMarkers": 2
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.body.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "F203C1DCA8BD8EFB2693DCE711770882A2645D62809616654B5B734109BE5CBD",
+        "oldUnitMarkers": 2
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.copy.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "F203C1DCA8BD8EFB2693DCE711770882A2645D62809616654B5B734109BE5CBD",
+        "oldUnitMarkers": 2
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/contextCollector/typeParameter.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "F203C1DCA8BD8EFB2693DCE711770882A2645D62809616654B5B734109BE5CBD",
+        "oldUnitMarkers": 2
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/fileStructure/interfaceStatus.lazy.resolve.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "218DAA7B62BF3994B97708C7B8D309A90541AB4553E4D3433D067BC84CD17E11",
+        "oldUnitMarkers": 1
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/getOrBuildCfirBinary/libraryBinaryDeclarations.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "362C888FD88A4C7AF80152139D00B2805748B5BAD7BA04F5FEEA14D6D9D6310A",
+        "oldUnitMarkers": 23
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/lazyResolve/simpleClass.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "1F0A7C65E9A688A3C61FB1F80729458C250E50988F2641CE7C9624F80A3DD828",
+        "oldUnitMarkers": 8
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/lazyResolveByReference/resolveTargetByCall.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "82BF9827BA33F8515E236B537BDE96574FE93B3C2D02D2947E0859C40E5C6626",
+        "oldUnitMarkers": 13
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/lazyResolveScopes/fakeOverrideScope.after.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "8DE49EFF1448E3253509E23EE2454777EE49CFEFCE4BC068AF185E8466EBBA9B",
+        "oldUnitMarkers": 2
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/lazyResolveScopes/fakeOverrideScope.before.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "B598218CB033E9B170F24BFF7C8F84FAEA6184206E13F6372653E4084B3B1D2C",
+        "oldUnitMarkers": 0
+      },
+      {
+        "file": "analysis/low-level-api-cfir/testData/resolveToCfirSymbol/declarations.txt",
+        "otherExists": true,
+        "sameContent": false,
+        "otherSHA256LF": "191AD1B7C96672D68DD7D97E16CB08F30FF81E31C7F12F5364EAB566AC537435",
+        "oldUnitMarkers": 6
+      }
+    ]
+  },
+  "writeScope": "Only this .recovery/cross-recovery-report.json was written. Neither source tree was modified; no tests, historical shell, or other recovery scripts were executed."
+}

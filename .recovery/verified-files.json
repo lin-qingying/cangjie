@@ -36,8 +36,8 @@
     },
     {
       "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportBindingResolver.kt",
-      "expected": "4bebcfc367f97893455946b5efe5438e6e9eccb00a797e373d015c67819849c4",
-      "actual": "4bebcfc367f97893455946b5efe5438e6e9eccb00a797e373d015c67819849c4",
+      "expected": "47f56afb2dabfd0781d930fcb4d376a507d549f0038e69f1ee281d712532355c",
+      "actual": "47f56afb2dabfd0781d930fcb4d376a507d549f0038e69f1ee281d712532355c",
       "matches": true,
       "history": [
         {
@@ -117,8 +117,8 @@
     },
     {
       "file": "psi/src/org/cangnova/cangjie/psi/CjImportDirectiveItem.kt",
-      "expected": "44f96729dc411bed0e2f0ae058b46dc0a187d006538214d51c4752770c33d919",
-      "actual": "44f96729dc411bed0e2f0ae058b46dc0a187d006538214d51c4752770c33d919",
+      "expected": "86ac9d0995f99d09b4a1148c2339e9e7ffe2119420a86dc0aff44c77da737db2",
+      "actual": "86ac9d0995f99d09b4a1148c2339e9e7ffe2119420a86dc0aff44c77da737db2",
       "matches": true,
       "history": [
         {
@@ -159,6 +159,13 @@
           "session": "B-sub3",
           "line": 258,
           "time": "2026-09-28T08:19:23.334Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 274,
+          "time": "2026-09-28T08:21:16.556Z",
+          "reason": "verified historical git blob",
+          "blob": "7cbee5e1c80c7fac985a0fedcf00624b617b2d32"
         }
       ]
     },
@@ -1002,6 +1009,13 @@
           "session": "prior:rollout-2026-09-25T15-29-33-01a0d778-31e8-7762-bad1-57c106ddc2f9.jsonl",
           "line": 43770,
           "time": "2026-09-28T06:18:14.460Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 80,
+          "time": "2026-09-28T23:11:42.637Z",
+          "reason": "verified historical git blob",
+          "blob": "565534d9dd2db18c3d55552e478ea545bd9fa4d5"
         }
       ]
     },
@@ -1194,6 +1208,13 @@
           "session": "B-main",
           "line": 869,
           "time": "2026-09-28T09:17:15.865Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 48,
+          "time": "2026-09-28T23:10:40.838Z",
+          "reason": "verified historical git blob",
+          "blob": "152f715397553a3450875b2ec7a0776ef383f168"
         },
         {
           "session": "A-main",
@@ -1740,6 +1761,13 @@
           "session": "B-main",
           "line": 463,
           "time": "2026-09-28T08:23:56.174Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 80,
+          "time": "2026-09-28T23:11:42.637Z",
+          "reason": "verified historical git blob",
+          "blob": "81ab8740095759ddc75a805c5a5aee9b03e0f033"
         }
       ]
     },
@@ -1839,6 +1867,13 @@
           "session": "A-main",
           "line": 862,
           "time": "2026-09-29T00:31:56.920Z"
+        },
+        {
+          "session": "A-sub1",
+          "line": 546,
+          "time": "2026-09-29T00:40:16.420Z",
+          "reason": "verified historical git blob",
+          "blob": "2374f34c4b51b1252539d715433908906552ee86"
         }
       ]
     },
@@ -2105,6 +2140,13 @@
           "session": "B-main",
           "line": 707,
           "time": "2026-09-28T08:55:21.320Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 80,
+          "time": "2026-09-28T23:11:42.637Z",
+          "reason": "verified historical git blob",
+          "blob": "01451a6092096c7e37a6efd3ea1b862675c18974"
         }
       ]
     },
@@ -2213,6 +2255,13 @@
           "session": "B-main",
           "line": 869,
           "time": "2026-09-28T09:17:15.865Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 48,
+          "time": "2026-09-28T23:10:40.838Z",
+          "reason": "verified historical git blob",
+          "blob": "788a82c36cb30f4f581fc183bead1e568d91aa26"
         },
         {
           "session": "A-main",
@@ -2334,6 +2383,13 @@
           "session": "B-sub1",
           "line": 907,
           "time": "2026-09-28T10:50:22.469Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 48,
+          "time": "2026-09-28T23:10:40.838Z",
+          "reason": "verified historical git blob",
+          "blob": "a558d0da895f8c1edca523ac683333dcbc388166"
         }
       ]
     },
@@ -2795,6 +2851,20 @@
           "session": "B-main",
           "line": 2529,
           "time": "2026-09-28T15:35:50.290Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 80,
+          "time": "2026-09-28T23:11:42.637Z",
+          "reason": "verified historical git blob",
+          "blob": "309fb0262f26970645ef9ecfdb2254b7afee7373"
+        },
+        {
+          "session": "A-main",
+          "line": 220,
+          "time": "2026-09-28T23:19:29.756Z",
+          "reason": "verified historical git blob",
+          "blob": "309fb0262f26970645ef9ecfdb2254b7afee7373"
         }
       ]
     },
@@ -2808,6 +2878,13 @@
           "session": "B-main",
           "line": 2404,
           "time": "2026-09-28T14:59:13.596Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 80,
+          "time": "2026-09-28T23:11:42.637Z",
+          "reason": "verified historical git blob",
+          "blob": "acb81e22676462946ea5423b76588280fc41a538"
         }
       ]
     },
@@ -2836,6 +2913,21 @@
           "session": "B-main",
           "line": 3174,
           "time": "2026-09-28T18:51:49.749Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/fileStructure/interfaceStatus.lazy.resolve.txt",
+      "expected": "c815afee3f17fe8f24838eb4256a6e73bcf37ff178f4160714b25e1419bbba4f",
+      "actual": "c815afee3f17fe8f24838eb4256a6e73bcf37ff178f4160714b25e1419bbba4f",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2541,
+          "time": "2026-09-28T15:40:42.077Z",
+          "reason": "verified historical git blob",
+          "blob": "ea70ffdc345eb6fb255a88eb03fbf2cb8973d336"
         }
       ]
     },
@@ -2903,6 +2995,13 @@
           "session": "B-sub2",
           "line": 929,
           "time": "2026-09-28T16:15:50.355Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2642,
+          "time": "2026-09-28T16:23:01.841Z",
+          "reason": "verified historical git blob",
+          "blob": "4b5d2e59fa1c53aefe8de99afc4acc5b7ab850a9"
         }
       ]
     },
@@ -2973,6 +3072,68 @@
           "session": "B-main",
           "line": 2974,
           "time": "2026-09-28T18:06:21.556Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt",
+      "expected": "13ed14b41cf73cac8208d924efe2a80c815e021867b838bf09762270728d1d8a",
+      "actual": "13ed14b41cf73cac8208d924efe2a80c815e021867b838bf09762270728d1d8a",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 48,
+          "time": "2026-09-28T23:10:40.838Z",
+          "reason": "verified historical git blob",
+          "blob": "74ff0d77fd5a32d1ab93a088a6956906f935a852"
+        },
+        {
+          "session": "A-main",
+          "line": 220,
+          "time": "2026-09-28T23:19:29.756Z",
+          "reason": "verified historical git blob",
+          "blob": "74ff0d77fd5a32d1ab93a088a6956906f935a852"
+        },
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/cjmp/CfirCjmpResolver.kt",
+      "expected": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
+      "actual": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 89,
+          "time": "2026-09-28T23:12:15.396Z",
+          "reason": "verified historical git blob",
+          "blob": "aa571695be565cd5b2bc1c46cdbc0e06fdfc5d55"
+        },
+        {
+          "session": "A-main",
+          "line": 925,
+          "time": "2026-09-29T00:43:03.442Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirClassUseSiteMemberScope.kt",
+      "expected": "48f90e002823a0c0d531fa9ce64fb5b9c5e801b56df7a757683f1300f52c7242",
+      "actual": "48f90e002823a0c0d531fa9ce64fb5b9c5e801b56df7a757683f1300f52c7242",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 220,
+          "time": "2026-09-28T23:19:29.756Z",
+          "reason": "verified historical git blob",
+          "blob": "51d884a5a191d7baba532050bac0bbc3d7eecf93"
         }
       ]
     },
@@ -3212,6 +3373,13 @@
           "session": "A-main",
           "line": 795,
           "time": "2026-09-29T00:20:12.463Z"
+        },
+        {
+          "session": "A-sub1",
+          "line": 546,
+          "time": "2026-09-29T00:40:16.420Z",
+          "reason": "verified historical git blob",
+          "blob": "32d8dfb962c56d6c65b6066c616546c64266c743"
         }
       ]
     },
@@ -3225,6 +3393,13 @@
           "session": "A-main",
           "line": 795,
           "time": "2026-09-29T00:20:12.463Z"
+        },
+        {
+          "session": "A-sub1",
+          "line": 546,
+          "time": "2026-09-29T00:40:16.420Z",
+          "reason": "verified historical git blob",
+          "blob": "a0fe5e7e27d61b3728fd8cffbb72f29ff512f5ce"
         }
       ]
     },
@@ -3248,19 +3423,6 @@
           "session": "A-sub3",
           "line": 526,
           "time": "2026-09-29T00:46:00.682Z"
-        }
-      ]
-    },
-    {
-      "file": "cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt",
-      "expected": "96d2b6c42c1f0b1deca0b5668428a09284df1d7895af2bc38cab0ba47c813460",
-      "actual": "96d2b6c42c1f0b1deca0b5668428a09284df1d7895af2bc38cab0ba47c813460",
-      "matches": true,
-      "history": [
-        {
-          "session": "A-main",
-          "line": 844,
-          "time": "2026-09-29T00:29:18.137Z"
         }
       ]
     },
@@ -3315,6 +3477,13 @@
           "time": "2026-09-29T00:35:35.880Z"
         },
         {
+          "session": "A-sub1",
+          "line": 546,
+          "time": "2026-09-29T00:40:16.420Z",
+          "reason": "verified historical git blob",
+          "blob": "477f90b938d2440458804a10f96ae19bbd04cc0b"
+        },
+        {
           "session": "A-main",
           "line": 962,
           "time": "2026-09-29T00:52:58.565Z"
@@ -3325,19 +3494,6 @@
       "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/cjmp/CfirCjmpMatchRunner.kt",
       "expected": "b173b393c8cd488fe5f248294ddbd4c1766427383372ab90ed58885ca0515b95",
       "actual": "b173b393c8cd488fe5f248294ddbd4c1766427383372ab90ed58885ca0515b95",
-      "matches": true,
-      "history": [
-        {
-          "session": "A-main",
-          "line": 925,
-          "time": "2026-09-29T00:43:03.442Z"
-        }
-      ]
-    },
-    {
-      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/cjmp/CfirCjmpResolver.kt",
-      "expected": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
-      "actual": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
       "matches": true,
       "history": [
         {

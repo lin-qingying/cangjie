@@ -147,4 +147,3 @@ data class CangJieImportField(
     override val aliasName: String?,
     override val organizationName: Name? = null,
 ) : CjImportInfo
-

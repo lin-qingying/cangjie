@@ -14,11 +14,11 @@ FILE: libraryBinaryDeclarations.cj
     internal? class Box<T> {
         internal? let value: R|T|
         internal? let count: R|Int64|
-        init(value: R|kotlin.Unit|) {
+        init(value: R|T|) {
             <element: CfirLazyBlock>
         }
     }
-    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func wrap(value: R|Int64|): R|Box<Int64>| {
         RETURN {
             FUNCTION_CALL(Box -> CfirConstructorSymbol) {
                 NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
@@ -50,20 +50,20 @@ CFIR FILE:
 FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
-        internal? let value: R|kotlin.Unit|
+        internal? let value: R|T|
         internal? let count: R|Int64|
-        init(value: R|kotlin.Unit|) {
+        init(value: R|T|) {
             <element: CfirLazyBlock>
         }
     }
-    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func wrap(value: R|Int64|): R|Box<Int64>| {
         RETURN {
             FUNCTION_CALL(Box -> CfirConstructorSymbol) {
                 NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
             }
         }
     }
-    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func unwrap(box: R|Box<Int64>|): R|Int64| {
         RETURN {
             NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
                 receiver:
@@ -92,20 +92,20 @@ CFIR FILE:
 FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
-        internal? let value: R|kotlin.Unit|
+        internal? let value: R|T|
         internal? let count: R|Int64|
-        init(value: R|kotlin.Unit|) {
+        init(value: R|T|) {
             <element: CfirLazyBlock>
         }
     }
-    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func wrap(value: R|Int64|): R|Box<Int64>| {
         RETURN {
             FUNCTION_CALL(Box -> CfirConstructorSymbol) {
                 NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
             }
         }
     }
-    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func unwrap(box: R|Box<Int64>|): R|Int64| {
         RETURN {
             NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
                 receiver:
@@ -126,26 +126,26 @@ CFIR element: CfirResolvedTypeRefImpl
 CFIR source kind: CjRealSourceElementKind
 
 CFIR element rendered:
-R|kotlin.Unit|
+R|Int64|
 
 CFIR FILE:
 FILE: libraryBinaryDeclarations.cj
     package lowlevel.getorbuild.binary
     internal? class Box<T> {
-        internal? let value: R|kotlin.Unit|
-        internal? let count: R|kotlin.Unit|
-        init(value: R|kotlin.Unit|) {
+        internal? let value: R|T|
+        internal? let count: R|Int64|
+        init(value: R|T|) {
             <element: CfirLazyBlock>
         }
     }
-    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func wrap(value: R|Int64|): R|Box<Int64>| {
         RETURN {
             FUNCTION_CALL(Box -> CfirConstructorSymbol) {
                 NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
             }
         }
     }
-    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func unwrap(box: R|Box<Int64>|): R|Int64| {
         RETURN {
             NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
                 receiver:

@@ -25,7 +25,8 @@ function seed(read,state,history,apply) {
   if(tailAt<0||resolverStart<0||psiStart<0)throw Error('Invalid baseline snapshot markers');
   state.set(helper,text.slice(0,resolverStart).trimEnd()+original.slice(tailAt+tail.length));
   const resolver='cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportBindingResolver.kt';
-  read(resolver);state.set(resolver,text.slice(resolverStart,psiStart).trimEnd()+'\n');
+  const resolverBom=read(resolver).startsWith('\uFEFF')?'\uFEFF':'';
+  state.set(resolver,resolverBom+text.slice(resolverStart,psiStart).trimEnd()+'\n');
   const psi='psi/src/org/cangnova/cangjie/psi/psiUtil/CjPsiUtil.kt';
   const oldPsi=read(psi);
   const start=oldPsi.lastIndexOf('/**',oldPsi.indexOf('fun CjSimpleNameExpression.isImportDirectiveExpression'));
@@ -40,7 +41,7 @@ function seed(read,state,history,apply) {
   const itemFile='psi/src/org/cangnova/cangjie/psi/CjImportDirectiveItem.kt';
   const raw=events.find(e=>e.payload?.item?.type==='CommandExecution'&&e.payload.item.status==='completed'&&e.timestamp<'2026-09-28T08:00:52Z'&&e.payload.item.command?.at(-1)==='Get-Content -Raw -Encoding UTF8 '+itemFile);
   if(!raw)throw Error('Missing original import PSI snapshot');
-  read(itemFile);state.set(itemFile,raw.payload.item.stdout.replace(/\r\n/g,'\n'));
+  read(itemFile);state.set(itemFile,raw.payload.item.stdout.replace(/\r\n/g,'\n').trimEnd()+'\n');
   history.set(itemFile,[{session:'B-main',time:raw.timestamp,reason:'historical raw file snapshot'}]);
   const planning='analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt';
   const headerOutput=outputAt('B-sub3',181);

@@ -1,24 +1,8 @@
-RAW_CFIR:
-[ResolvedTo(RAW_CFIR)] FILE: simpleClass.cj
-    package sample.lowlevel.lazy
-    [ResolvedTo(RAW_CFIR)] internal? class Box<T> {
-        [ResolvedTo(RAW_CFIR)] public prop value: R|T|
-        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
-            <element: CfirLazyBlock>
-        }
-        [ResolvedTo(RAW_CFIR)] public func unwrap(): R|T| {
-            <element: CfirLazyBlock>
-        }
-    }
-    [ResolvedTo(RAW_CFIR)] internal? func consume([ResolvedTo(RAW_CFIR)] box: R|Box<R|Int64|>|): R|Int64| {
-        <element: CfirLazyBlock>
-    }
-
 IMPORTS:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(IMPORTS)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -34,7 +18,7 @@ SUPER_TYPES:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(SUPER_TYPES)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -50,7 +34,7 @@ TYPES:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(TYPES)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -66,7 +50,7 @@ STATUS:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(STATUS)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -82,7 +66,7 @@ EXTENSIONS:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(EXTENSIONS)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -98,7 +82,23 @@ IMPLICIT_TYPES:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(IMPLICIT_TYPES)] internal? class Box<T> {
-        [ResolvedTo(IMPORTS)] public prop value: R|T|
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
+        [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(IMPORTS)] public func unwrap(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    [ResolvedTo(IMPORTS)] internal? func consume([ResolvedTo(IMPORTS)] box: R|Box<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+
+CJMP_MATCHING:
+[ResolvedTo(IMPORTS)] FILE: simpleClass.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPLICIT_TYPES)] internal? class Box<T> {
+        [ResolvedTo(IMPORTS)] public abstract? prop value: R|T|
         [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -114,21 +114,21 @@ BODY_RESOLVE:
 [ResolvedTo(IMPORTS)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(BODY_RESOLVE)] internal? class Box<T> {
-        [ResolvedTo(BODY_RESOLVE)] public prop value: R|kotlin.Unit|
-        [ResolvedTo(BODY_RESOLVE)] init([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|) {
+        [ResolvedTo(BODY_RESOLVE)] public abstract? prop value: R|T|
+        [ResolvedTo(BODY_RESOLVE)] init([ResolvedTo(BODY_RESOLVE)] value: R|T|) {
             ASSIGNMENT {
                 lValue:
-                    NAMED_ACCESS(value) {
+                    NAMED_ACCESS(value -> CfirPropertySymbol(value)) {
                         receiver:
                             <element: CfirThisReceiverExpression>
                     }
                 rValue:
-                    NAMED_ACCESS(value)
+                    NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
             }
         }
-        [ResolvedTo(BODY_RESOLVE)] public func unwrap(): R|kotlin.Unit| {
+        [ResolvedTo(BODY_RESOLVE)] public func unwrap(): R|T| {
             RETURN {
-                NAMED_ACCESS(value)
+                NAMED_ACCESS(value -> CfirPropertySymbol(value))
             }
         }
     }
@@ -140,29 +140,29 @@ FILE RAW TO BODY:
 [ResolvedTo(BODY_RESOLVE)] FILE: simpleClass.cj
     package sample.lowlevel.lazy
     [ResolvedTo(BODY_RESOLVE)] internal? class Box<T> {
-        [ResolvedTo(BODY_RESOLVE)] public prop value: R|kotlin.Unit|
-        [ResolvedTo(BODY_RESOLVE)] init([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|) {
+        [ResolvedTo(BODY_RESOLVE)] public abstract? prop value: R|T|
+        [ResolvedTo(BODY_RESOLVE)] init([ResolvedTo(BODY_RESOLVE)] value: R|T|) {
             ASSIGNMENT {
                 lValue:
-                    NAMED_ACCESS(value) {
+                    NAMED_ACCESS(value -> CfirPropertySymbol(value)) {
                         receiver:
                             <element: CfirThisReceiverExpression>
                     }
                 rValue:
-                    NAMED_ACCESS(value)
+                    NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
             }
         }
-        [ResolvedTo(BODY_RESOLVE)] public func unwrap(): R|kotlin.Unit| {
+        [ResolvedTo(BODY_RESOLVE)] public func unwrap(): R|T| {
             RETURN {
-                NAMED_ACCESS(value)
+                NAMED_ACCESS(value -> CfirPropertySymbol(value))
             }
         }
     }
-    [ResolvedTo(BODY_RESOLVE)] internal? func consume([ResolvedTo(BODY_RESOLVE)] box: R|kotlin.Unit|): R|kotlin.Unit| {
+    [ResolvedTo(BODY_RESOLVE)] internal? func consume([ResolvedTo(BODY_RESOLVE)] box: R|Box<Int64>|): R|Int64| {
         RETURN {
-            FUNCTION_CALL(unwrap) {
+            FUNCTION_CALL(unwrap -> CfirNamedFunctionSymbol(unwrap)) {
                 receiver:
-                    NAMED_ACCESS(box)
+                    NAMED_ACCESS(box -> CfirValueParameterSymbol(box))
             }
         }
     }

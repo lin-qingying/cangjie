@@ -1,4 +1,4 @@
-package org.cangnova.cangjie.cfir.resolve
+﻿package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
