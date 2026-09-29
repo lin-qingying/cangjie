@@ -39,17 +39,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="update action">
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/tests-gen/org/cangnova/cangjie/analysis/low/level/api/cfir/resolve/CfirCjmpMatchingTestGenerated.java" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/tests-gen/org/cangnova/cangjie/analysis/low/level/api/cfir/resolve/CfirCjmpMatchingTestGenerated.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirImport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirImport.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedImport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/CfirResolvedImport.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirImportBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/builder/CfirImportBuilder.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirImportImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirImportImpl.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedImportImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/gen/org/cangnova/cangjie/cfir/declarations/impl/CfirResolvedImportImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-29.md" beforeDir="false" afterPath="$PROJECT_DIR$/.workbuddy/memory/2026-09-29.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDataFlowPlanning.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirDataFlowPlanning.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirReferenceResolveHelper.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirReferenceResolveHelper.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiReferenceServiceTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiReferenceServiceTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/type/int64max.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/type/int64max.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirConstEvalArithmeticChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirConstEvalArithmeticChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirLiteralNumericOverflowChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirLiteralNumericOverflowChecker.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" afterDir="false" />
@@ -72,6 +69,7 @@
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProviderService.kt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt" afterDir="false" />
@@ -80,6 +78,7 @@
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-product.xml" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/resources/META-INF/cangjie-product.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt" afterDir="false" />
@@ -238,9 +237,13 @@
         </map>
       </branch-storage>
     </excluded-from-favorite>
+    <branch-grouping>
+      <option value="directory" />
+      <option value="repository" />
+    </branch-grouping>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="temp-recovery-branch-2" />
+        <entry key="$PROJECT_DIR$" value="codex/cjmp-framework-review-fixes-20260929" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
