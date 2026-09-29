@@ -1,6 +1,8 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.containingFileText
+import org.cangnova.cangjie.cfir.analysis.checkers.context.lastNonWhitespaceIndexBefore
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -19,7 +21,6 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.name.Name
@@ -255,28 +256,17 @@ private data class UnarySign(val char: Char, val offset: Int)
  */
 private fun CheckerContext.unarySignBefore(source: AbstractCjSourceElement?): UnarySign? {
     source ?: return null
-    val text: CharSequence = containingFileSymbol?.sourceFile?.let { sourceFile ->
-        when (sourceFile) {
-            is CjInMemoryTextSourceFile -> sourceFile.text
-            else -> sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use { it.readText() }
-        }
-    } ?: return null
-    var signOffset = source.startOffset - 1
-    while (signOffset >= 0 && text[signOffset].isWhitespace()) {
-        signOffset--
-    }
-    if (signOffset < 0) return null
+    val text = containingFileText() ?: return null
+    val signOffset = text.lastNonWhitespaceIndexBefore(source.startOffset) ?: return null
     val sign = text[signOffset]
     if (sign != '-' && sign != '+') return null
 
-    var previousOffset = signOffset - 1
-    while (previousOffset >= 0 && text[previousOffset].isWhitespace()) {
-        previousOffset--
-    }
-    if (previousOffset < 0) return UnarySign(sign, signOffset)
+    val previous = text.lastNonWhitespaceIndexBefore(signOffset)
+    if (previous == null) return UnarySign(sign, signOffset)
 
-    val previous = text[previousOffset]
-    if (previous.isLetterOrDigit() || previous == '_' || previous == ')' || previous == ']' || previous == '}') {
+    val previousChar = text[previous]
+    if (previousChar.isLetterOrDigit() || previousChar == '_' || previousChar == ')' || previousChar == ']' ||
+        previousChar == '}') {
         return null
     }
     return UnarySign(sign, signOffset)
