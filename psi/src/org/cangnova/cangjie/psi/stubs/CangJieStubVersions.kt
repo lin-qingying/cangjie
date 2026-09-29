@@ -58,7 +58,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 210
+    const val SOURCE_STUB_VERSION = 211
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。

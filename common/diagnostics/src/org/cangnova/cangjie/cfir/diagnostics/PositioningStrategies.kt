@@ -15,7 +15,7 @@ import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjForExpression
 import org.cangnova.cangjie.psi.CjFunction
 import org.cangnova.cangjie.psi.CjImportAlias
-import org.cangnova.cangjie.psi.CjImportDirective
+import org.cangnova.cangjie.psi.CjImportPathOwner
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjModifierListOwner
@@ -310,7 +310,7 @@ object PositioningStrategies {
                     val userType = element.typeElement as? CjUserType
                     userType?.referenceExpression ?: element
                 }
-                is CjImportDirective -> element.importedReference ?: element
+                is CjImportPathOwner -> element.importedReference ?: element
                 is CjImportAlias -> element.nameIdentifier ?: element
                 else -> element
             }

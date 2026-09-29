@@ -2,7 +2,6 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
-import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjFakeSourceElementKind.*
 import org.cangnova.cangjie.source.CjPsiSourceElement
@@ -10,16 +9,14 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.descriptors.Visibilities
-import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.isLazyResolvable
-import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.psi.*
@@ -44,16 +41,20 @@ internal object LLContainingClassCalculator {
             return null
         }
 
-        if (symbol is CfirCallableSymbol<*>) {
-            val containingClassLookupTag = symbol.containingClassLookupTag()
-            if (containingClassLookupTag != null) {
-                return containingClassLookupTag.toClassSymbol(symbol.cfir.moduleData.session) as? CfirClassLikeSymbol<*>
-            }
-        }
-
+        // 仓颉没有局部名义类型；源码 owner 按 PSI 身份定位，不能让同 ClassId 的首个符号抢先命中。
         val source = symbol.cfir.source as? CjPsiSourceElement ?: return null
         when (val kind = source.kind) {
             is CjFakeSourceElementKind -> {
+                if (symbol is CfirPropertyAccessorSymbol && kind == DefaultAccessor) {
+                    val propertyOrParameter = source.psi as? CjDeclaration
+                    return computeContainingClass(symbol, propertyOrParameter?.containingTypeStatement)
+                }
+
+                if (symbol is CfirPropertyAccessorSymbol && kind == PropertyFromParameter) {
+                    val containingParameter = source.psi as? CjParameter
+                    return computeContainingClass(symbol, containingParameter?.containingTypeStatement)
+                }
+
                 if (symbol is CfirConstructorSymbol && kind == ImplicitConstructor) {
                     return computeContainingClass(symbol, source.psi as? CjTypeStatement)
                 }
@@ -66,6 +67,7 @@ internal object LLContainingClassCalculator {
             else -> if (symbol is CfirCallableSymbol<*>) {
                 return when (val selfCallable = source.psi) {
                     is CjCallableDeclaration -> computeContainingClass(symbol, selfCallable.containingTypeStatement)
+                    is CjEnumConstructor -> computeContainingClass(symbol, selfCallable.parentEnum)
                     is CjPropertyAccessor -> computeContainingClass(symbol, selfCallable.property.containingTypeStatement)
                     else -> null
                 }

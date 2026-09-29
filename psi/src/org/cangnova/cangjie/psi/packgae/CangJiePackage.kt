@@ -39,6 +39,7 @@ import com.intellij.util.Processors
 import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.CangJiePsiFacade
+import org.cangnova.cangjie.name.Name
 
 /**
  * Represents a CangJie package.
@@ -48,7 +49,10 @@ interface CangJiePackage :
     NavigationItem,
 
     PsiDirectoryContainer,
-    PsiQualifiedNamedElement
+    PsiQualifiedNamedElement {
+    /** 包的组织限定，不属于 qualifiedName 的组成部分。 */
+    val organizationName: Name?
+}
 
 
 /**

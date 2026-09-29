@@ -102,9 +102,6 @@ private class LLCfirCjmpMatchingTargetResolver(
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         if (!isCjmpMatchingEnabled()) return true
         target.lazyResolveToPhase(resolverPhase.previous)
-        val containingContainer = containingDeclarations.lastOrNull { declaration ->
-            declaration is CfirClassLikeDeclaration || declaration is org.cangnova.cangjie.cfir.declarations.CfirExtend
-        }
         when (target) {
             is CfirPatternVariable ->
                 CfirCjmpResolver.findSpecificTopLevelPatternVariablesInMatchOrder(target, resolveTargetSession)
@@ -112,7 +109,7 @@ private class LLCfirCjmpMatchingTargetResolver(
                     .forEach { it.lazyResolveToPhase(resolverPhase.previous) }
 
             is CfirCallableDeclaration ->
-            CfirCjmpResolver.findSpecificCallablesInMatchOrder(target, resolveTargetSession, containingContainer)
+            CfirCjmpResolver.findSpecificCallablesInMatchOrder(target, resolveTargetSession)
                 .asSequence()
                 .filter { it !== target }
                 .forEach { it.lazyResolveToPhase(resolverPhase.previous) }
@@ -129,11 +126,7 @@ private class LLCfirCjmpMatchingTargetResolver(
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         if (isCjmpMatchingEnabled() && target is CfirMemberDeclaration) {
             if (CfirCjmpMatchRunner.canHaveCommonCounterpart(target)) {
-                val containingContainer = containingDeclarations.lastOrNull { declaration ->
-                    declaration is CfirClassLikeDeclaration ||
-                            declaration is org.cangnova.cangjie.cfir.declarations.CfirExtend
-                }
-                matcherTransformer.transformMemberDeclaration(target, containingContainer)
+                matcherTransformer.transformMemberDeclaration(target)
             }
         }
         if (target.resolvePhase < CfirResolvePhase.CJMP_MATCHING) {

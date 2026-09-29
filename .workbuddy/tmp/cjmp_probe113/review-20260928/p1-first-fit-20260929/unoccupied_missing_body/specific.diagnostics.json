@@ -1,0 +1,41 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_specific_member_must_have_implementation",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "the member pick must have body in 'specific' A",
+                "Location": {
+                    "File": "specific.cj",
+                    "Line": 4,
+                    "Column": 5
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "specific.cj",
+                            "Line": 4,
+                            "Column": 5
+                        },
+                        "End": {
+                            "File": "specific.cj",
+                            "Line": 4,
+                            "Column": 48
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 1,
+        "PrintedErrors": 1,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+

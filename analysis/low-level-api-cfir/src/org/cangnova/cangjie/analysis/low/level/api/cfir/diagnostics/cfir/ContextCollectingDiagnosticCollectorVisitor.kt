@@ -26,10 +26,12 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  */
 private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     sessionHolder: SessionAndScopeSessionHolder,
-    designation: CfirDesignation,
+    private val designation: CfirDesignation,
+    private val contextKind: PersistenceContextCollector.ContextKind,
 ) : AbstractDiagnosticCollectorVisitor(
     PersistentCheckerContextFactory.createEmptyPersistenceCheckerContext(sessionHolder)
 ) {
+    private var nestedDeclarationsContext: CheckerContextForProvider? = null
     /**
      * 根据 designation 路径推进 visitor 并在目标位置快照 checker context。
      */
@@ -48,6 +50,12 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
      */
     override fun visitNestedElements(element: CfirElement) {
         if (element is CfirDeclaration) {
+            // 声明入口快照不包含自身；内部快照必须在 withDeclaration 压栈后采集，
+            // 不能依赖是否有子声明，否则空 interface/class 会丢失这一层。
+            if (element === designation.target && contextKind == PersistenceContextCollector.ContextKind.NESTED_DECLARATIONS) {
+                check(nestedDeclarationsContext == null)
+                nestedDeclarationsContext = context
+            }
             contextCollector.nextStep()
         } else {
             element.accept(this, null)
@@ -66,16 +74,25 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
         // Trigger the collector
         contextCollector.nextStep()
 
-        return contextCollector.getCollectedContext()
+        return when (contextKind) {
+            PersistenceContextCollector.ContextKind.DECLARATION_ENTRY -> contextCollector.getCollectedContext()
+            PersistenceContextCollector.ContextKind.NESTED_DECLARATIONS -> checkNotNull(nestedDeclarationsContext) {
+                "Target declaration nested context was not visited"
+            }
+        }
     }
 
     companion object {
-        fun collect(sessionHolder: SessionAndScopeSessionHolder, designation: CfirDesignation): CheckerContextForProvider {
+        fun collect(
+            sessionHolder: SessionAndScopeSessionHolder,
+            designation: CfirDesignation,
+            contextKind: PersistenceContextCollector.ContextKind,
+        ): CheckerContextForProvider {
             requireWithAttachment(designation.fileOrNull != null, { "${CfirFile::class.simpleName} is missed" }) {
                 withCfirDesignationEntry("designation", designation)
             }
 
-            return ContextCollectingDiagnosticCollectorVisitor(sessionHolder, designation).collect()
+            return ContextCollectingDiagnosticCollectorVisitor(sessionHolder, designation, contextKind).collect()
         }
     }
 }
@@ -84,6 +101,14 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
  * 对外提供持久 checker context 收集能力的入口。
  */
 internal object PersistenceContextCollector {
+    /** 与 diagnostic visitor 生命周期一致的两种采样边界。 */
+    enum class ContextKind {
+        /** 进入目标声明前，供 structure-element diagnostics 初始化 visitor。 */
+        DECLARATION_ENTRY,
+        /** 目标声明已经压栈、即将遍历其内部，包含目标本身及其上下文。 */
+        NESTED_DECLARATIONS,
+    }
+
     /**
      * 收集指定非局部声明在给定 CFIR 文件中的 checker context。
      */
@@ -91,6 +116,7 @@ internal object PersistenceContextCollector {
         sessionHolder: SessionAndScopeSessionHolder,
         cfirFile: CfirFile,
         declaration: CfirDeclaration,
+        contextKind: ContextKind = ContextKind.DECLARATION_ENTRY,
     ): CheckerContextForProvider {
         val isLocal = when (declaration) {
             is CfirClassLikeDeclaration -> false
@@ -114,6 +140,6 @@ internal object PersistenceContextCollector {
             it.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
         }
 
-        return ContextCollectingDiagnosticCollectorVisitor.collect(sessionHolder, designation)
+        return ContextCollectingDiagnosticCollectorVisitor.collect(sessionHolder, designation, contextKind)
     }
 }

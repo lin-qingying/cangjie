@@ -25,8 +25,11 @@
 package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.psi.tree.IElementType
+import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -37,6 +40,17 @@ import org.cangnova.cangjie.name.OperatorNameConventions
  * 包含运算符映射、表达式构建等工具，由 PSI 和 LightTree 两种构建器共享。
  * 不包含任何 PSI 节点类型引用（CjExpression, CjTypeReference 等）。
  */
+
+/**
+ * 从 raw builder 的名义类型上下文记录不依赖 dispatch receiver 的声明归属。
+ *
+ * 对位 Kotlin ConversionUtils.initContainingClassAttr；仓颉 enum constructor
+ * 没有接收者表达式，普通构造器和静态声明也不能通过 callable 名称猜测 owner。
+ */
+fun <T> CfirCallableDeclaration.initContainingClassAttr(context: Context<T>) {
+    containingClassForStaticMemberAttr =
+        (context.currentDispatchReceiverType() as? ConeClassifierType)?.lookupTag ?: return
+}
 
 // ===== 运算符 → 函数名映射（对齐 Kotlin 的 OperatorConventions） =====
 

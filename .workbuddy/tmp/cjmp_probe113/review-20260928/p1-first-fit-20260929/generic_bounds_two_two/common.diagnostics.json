@@ -1,0 +1,145 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_generic_constraint_not_looser",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "the constraint of type parameter is not looser than parent's constraint",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 6,
+                    "Column": 44
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 6,
+                            "Column": 44
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 6,
+                            "Column": 56
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "parent constraint is 'Interface-B'",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_extend_member_cannot_shadow",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "extend member 'pick' is not allowed to shadow members of 'extend Int64'",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 6,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 6,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 6,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_generic_constraint_not_looser",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "the constraint of type parameter is not looser than parent's constraint",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 9,
+                    "Column": 44
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 9,
+                            "Column": 44
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 9,
+                            "Column": 56
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "parent constraint is 'Interface-A'",
+                        "MainHint": null,
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_extend_member_cannot_shadow",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "extend member 'pick' is not allowed to shadow members of 'extend Int64'",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 9,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 9,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 9,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 4,
+        "PrintedErrors": 4,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+

@@ -166,7 +166,7 @@ internal class LLCfirProvider(
     /**
      * 查询 [symbol] 的包含类 symbol。
      *
-     * 先使用 low-level PSI 计算器处理源码符号；失败时回退到基类的 CFIR 结构查询。
+     * 源码符号按 PSI 结构保留重声明身份；其余声明使用基类的 owner lookup tag 契约。
      */
     override fun getContainingClass(symbol: CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         val psiResult = LLContainingClassCalculator.getContainingClassSymbol(symbol)

@@ -1,0 +1,154 @@
+{
+  "recordedAtUtc": "2026-09-28 23:30:12 UTC",
+  "localDate": "2026-09-29",
+  "compilerVersion": "Cangjie Compiler: 1.1.3 (cjnative)\nTarget: x86_64-w64-mingw32",
+  "environment": {
+    "CANGJIE_HOME": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie",
+    "pathPrepend": "$CANGJIE_HOME/bin",
+    "shell": "PowerShell 7"
+  },
+  "runs": [
+    {
+      "case": "use3",
+      "package": "cjmp_default_before_implicit",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "specific.cj common_out/cjmp_default_before_implicit.chir --experimental --common-part-cjo=common_out/cjmp_default_before_implicit.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use3"
+    },
+    {
+      "case": "use4",
+      "package": "cjmp_shadow_before_implicit",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "specific.cj common_out/cjmp_shadow_before_implicit.chir --experimental --common-part-cjo=common_out/cjmp_shadow_before_implicit.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use4"
+    },
+    {
+      "case": "both_implicit_good",
+      "package": "p1_both_implicit_good",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "specific.cj common_out/p1_both_implicit_good.chir --experimental --common-part-cjo=common_out/p1_both_implicit_good.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_good"
+    },
+    {
+      "case": "both_implicit_bad",
+      "package": "p1_both_implicit_bad",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_both_implicit_bad.chir --experimental --common-part-cjo=common_out/p1_both_implicit_bad.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_return_type_incompatible\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"return type of 'value' is not identical or not a subtype of the overridden/redefined/implement function\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 39\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 1,\n        \"PrintedErrors\": 1,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad"
+    },
+    {
+      "case": "common_implicit_specific_explicit_bad",
+      "package": "p1_common_implicit_explicit_bad",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_common_implicit_explicit_bad.chir --experimental --common-part-cjo=common_out/p1_common_implicit_explicit_bad.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_not_matched\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"'specific' function 'value' can not find 'common' match\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 47\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 1,\n        \"PrintedErrors\": 1,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad"
+    },
+    {
+      "case": "both_empty_unit",
+      "package": "p1_both_empty_unit",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "specific.cj common_out/p1_both_empty_unit.chir --experimental --common-part-cjo=common_out/p1_both_empty_unit.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_empty_unit"
+    },
+    {
+      "case": "common_empty_specific_implicit_value",
+      "package": "p1_empty_common_value",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_empty_common_value.chir --experimental --common-part-cjo=common_out/p1_empty_common_value.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_return_type_incompatible\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"return type of 'value' is not identical or not a subtype of the overridden/redefined/implement function\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 35\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 1,\n        \"PrintedErrors\": 1,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value"
+    },
+    {
+      "case": "common_value_specific_empty",
+      "package": "p1_value_common_empty",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_value_common_empty.chir --experimental --common-part-cjo=common_out/p1_value_common_empty.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_not_matched\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"'specific' function 'value' can not find 'common' match\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 32\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 1,\n        \"PrintedErrors\": 1,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty"
+    },
+    {
+      "case": "specific_error_type",
+      "package": "p1_specific_error_type",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_specific_error_type.chir --experimental --common-part-cjo=common_out/p1_specific_error_type.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_undeclared_type_name\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"undeclared type name 'Missing'\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 31\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 31\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 32\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            },\n            {\n                \"DiagKind\": \"sema_not_matched\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"'specific' function 'value' can not find 'common' match\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 41\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            },\n            {\n                \"DiagKind\": \"sema_not_matched\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"'common' function 'value' can not find 'specific' match\",\n                \"Location\": {\n                    \"File\": \"common.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"common.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"common.cj\",\n                            \"Line\": 3,\n                            \"Column\": 34\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 3,\n        \"PrintedErrors\": 3,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type"
+    },
+    {
+      "case": "common_bodyless_untyped",
+      "package": "p1_common_bodyless_untyped",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 1,
+      "commonLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"parse_common_function_must_have_return_type\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"parse\",\n                \"Message\": \"'common' function return type must be specified\",\n                \"Location\": {\n                    \"File\": \"common.cj\",\n                    \"Line\": 3,\n                    \"Column\": 15\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"common.cj\",\n                            \"Line\": 3,\n                            \"Column\": 15\n                        },\n                        \"End\": {\n                            \"File\": \"common.cj\",\n                            \"Line\": 3,\n                            \"Column\": 16\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 1,\n        \"PrintedErrors\": 1,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped"
+    },
+    {
+      "case": "specific_bodyless_untyped",
+      "package": "p1_specific_bodyless_untyped",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_specific_bodyless_untyped.chir --experimental --common-part-cjo=common_out/p1_specific_bodyless_untyped.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"parse_specific_function_must_have_return_type\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"parse\",\n                \"Message\": \"'specific' function return type must be specified\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 17\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 17\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 18\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            },\n            {\n                \"DiagKind\": \"parse_missing_body\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"parse\",\n                \"Message\": \"body of function 'value' is missing\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 29\n                },\n                \"MainHint\": {\n                    \"Content\": \"missing function body here\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 29\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 30\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 2,\n        \"PrintedErrors\": 2,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped"
+    },
+    {
+      "case": "specific_implicit_error",
+      "package": "p1_specific_implicit_error",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 1,
+      "specificCommand": "specific.cj common_out/p1_specific_implicit_error.chir --experimental --common-part-cjo=common_out/p1_specific_implicit_error.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "{\n    \"Diags\":[\n            {\n                \"DiagKind\": \"sema_undeclared_identifier\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"undeclared identifier 'absent'\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 32\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 32\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 33\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            },\n            {\n                \"DiagKind\": \"sema_return_type_incompatible\",\n                \"Severity\": \"error\",\n                \"WarnGroup\": \"none\",\n                \"DiagCategory\": \"sema\",\n                \"Message\": \"return type of 'value' is not identical or not a subtype of the overridden/redefined/implement function\",\n                \"Location\": {\n                    \"File\": \"specific.cj\",\n                    \"Line\": 3,\n                    \"Column\": 1\n                },\n                \"MainHint\": {\n                    \"Content\": \"\",\n                    \"Range\": {\n                        \"Begin\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 1\n                        },\n                        \"End\": {\n                            \"File\": \"specific.cj\",\n                            \"Line\": 3,\n                            \"Column\": 40\n                        }\n                    }\n                },\n                \"OtherHints\": [],\n                \"Notes\": [],\n                \"Helps\": []\n            }\n    ],\n    \"Num\":{\n        \"Errors\": 2,\n        \"PrintedErrors\": 2,\n        \"Warnings\": 0,\n        \"PrintedWarnings\": 0\n    }\n}",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error"
+    }
+  ]
+}
+

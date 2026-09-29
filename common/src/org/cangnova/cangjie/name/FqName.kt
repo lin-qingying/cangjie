@@ -81,8 +81,9 @@ class FqName {
 
     /**
      * 在当前限定名下追加另一个限定名的所有片段。
+     * 每一步复用单段 child 的父链契约，不能把多段结果的直接父级缓存为整个前缀。
      */
-    fun child(name: FqName): FqName = FqName(fqName.child(name), this)
+    fun child(name: FqName): FqName = name.pathSegments().fold(this) { parent, segment -> parent.child(segment) }
 
     /**
      * 返回最后一个名称片段。

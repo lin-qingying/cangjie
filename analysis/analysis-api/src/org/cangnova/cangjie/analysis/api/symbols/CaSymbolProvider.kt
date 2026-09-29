@@ -132,7 +132,7 @@ interface CaSymbolProvider : CaLifetimeOwner {
     /**
      * 按包名查询包符号。
      */
-    fun getPackageSymbol(fqName: FqName): CaPackageSymbol?
+    fun getPackageSymbol(fqName: FqName, organizationName: Name? = null): CaPackageSymbol?
 
     /**
      * 按稳定 `ClassId` 查询任意 class-like 符号。

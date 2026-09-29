@@ -56,6 +56,9 @@ internal class LLModuleWithDependenciesSymbolProvider(
      */
     val dependencyProvider: LLDependenciesSymbolProvider,
 ) : CfirSymbolProvider(session) {
+    override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace =
+        compositeImportNamespace(providers + dependencyProvider.providers, context)
+
     /**
      * 组合当前模块与依赖的缓存名称提供器。
      *
@@ -75,12 +78,21 @@ internal class LLModuleWithDependenciesSymbolProvider(
         )
     }
 
+    /** 枚举身份候选时透传所有模块与依赖结果，不能复用首项查询后再做组织过滤。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        (providers.flatMap { it.getClassLikeSymbolsByClassId(classId) } +
+            dependencyProvider.getClassLikeSymbolsByClassId(classId)).distinct()
+
     /**
      * 先在当前模块自身内容中查找 [classId]，未命中时再查找依赖。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
         getClassLikeSymbolByClassIdWithoutDependencies(classId)
             ?: dependencyProvider.getClassLikeSymbolByClassId(classId)
+
+    /** 与普通单结果查询分离，保留跨依赖同名声明供组织和可用性判定。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        providers.flatMap { it.getClassLikeSymbolsByClassId(classId) }.distinct()
 
     /**
      * 仅在当前模块自身 [providers] 中查找 [classId]，不读取依赖符号。
@@ -211,6 +223,9 @@ internal class LLDependenciesSymbolProvider(
      */
     computeProviders: () -> List<CfirSymbolProvider>,
 ) : CfirSymbolProvider(session) {
+    override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace =
+        compositeImportNamespace(providers, context)
+
     /**
      * 依赖符号提供器列表。
      *

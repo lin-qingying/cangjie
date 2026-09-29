@@ -1,0 +1,71 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_extend_member_cannot_shadow",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "extend member 'pick' is not allowed to shadow members of 'extend Box'",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 7,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 7,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 7,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_extend_member_cannot_shadow",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "extend member 'pick' is not allowed to shadow members of 'extend Box'",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 10,
+                    "Column": 24
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 10,
+                            "Column": 24
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 10,
+                            "Column": 28
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 2,
+        "PrintedErrors": 2,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+

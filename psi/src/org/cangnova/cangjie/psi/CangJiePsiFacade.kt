@@ -30,6 +30,7 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.Processor
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.packgae.CangJiePackage
 
 
@@ -37,6 +38,8 @@ import org.cangnova.cangjie.psi.packgae.CangJiePackage
  * 表示 `CangJiePsiFacade`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
 abstract class CangJiePsiFacade {
+    /** 在给定可见域内查找包聚合 PSI，并保留显式组织限定。 */
+    abstract fun findPackage(fqName: FqName, searchScope: GlobalSearchScope, organizationName: Name?): CangJiePackage?
 
     /**
      * 提供 `findPackage` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。

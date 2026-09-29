@@ -29,6 +29,9 @@ import org.cangnova.cangjie.name.*
  * CjImportInfo接口定义了导入信息的数据结构，用于在代码中表示和操作导入语句。
  */
 interface CjImportInfo {
+    /** 完整导入的组织限定符，不属于 importedFqName 的包层级。 */
+    val organizationName: Name?
+
     /**
      * 导入内容的密封类，表示导入语句的两种不同形式。
      */

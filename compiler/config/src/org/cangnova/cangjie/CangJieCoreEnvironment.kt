@@ -2,6 +2,7 @@ package org.cangnova.cangjie
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -64,8 +65,12 @@ class CangJieCoreEnvironment private constructor(
             mode: CangJieCoreEnvironmentMode,
         ): CangJieCoreEnvironment {
             ensureIdeaStandaloneProperties()
+            // Application 必须晚于所有 project 服务关闭。使用独立的生命周期根，避免
+            // IntelliJ ObjectTree 在项目 dispose 回调前就把 application 标记为已销毁。
+            val applicationDisposable = Disposer.newDisposable("Cangjie core application")
+            Disposer.register(parentDisposable) { Disposer.dispose(applicationDisposable) }
             val applicationEnvironment = CangjieCoreApplicationEnvironment.create(
-                parentDisposable = parentDisposable,
+                parentDisposable = applicationDisposable,
                 environmentMode = mode,
             )
             val projectEnvironment = CangjieCoreProjectEnvironment(parentDisposable, applicationEnvironment)

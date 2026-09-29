@@ -18,6 +18,7 @@ import org.cangnova.cangjie.psi.CjImportList
 import org.cangnova.cangjie.psi.CjTypeParameterList
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
+import org.cangnova.cangjie.psi.stubs.ImportPathStubData
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.impl.*
 
@@ -99,14 +100,17 @@ private fun createImportDirectiveStubs(
         }
     }
     importItems.forEach { item ->
-        val importDirectiveStub = CangJieImportDirectiveStubImpl(parent, packageFqName, listOf(item))
-        createImportNameExpressionStubs(
+        val importDirectiveStub = CangJieImportDirectiveStubImpl(parent, packageFqName, isValidSyntax = true)
+        val itemStub = CangJieImportItemStubImpl(
             importDirectiveStub,
-            item.importedFqName?.pathSegments().orEmpty(),
-            item.isAllUnder,
+            ImportPathStubData(item.organizationName, item.importedFqName,
+                item.organizationName != null, item.organizationName != null, item.importedFqName != null, true),
+            item.isAllUnder, item.aliasName,
         )
+        item.organizationName?.let { createNameReferenceStub(itemStub, it) }
+        createPackageNameExpressionStubs(itemStub, item.importedFqName?.pathSegments().orEmpty())
         item.aliasName?.takeIf(String::isNotBlank)?.let { aliasName ->
-            CangJieImportAliasStubImpl(importDirectiveStub, StringRef.fromString(aliasName))
+            CangJieImportAliasStubImpl(itemStub, StringRef.fromString(aliasName))
         }
     }
 }
@@ -127,31 +131,6 @@ private fun createPackageNameExpressionStubs(parent: StubElement<*>, segments: L
             createNameReferenceStub(dotQualifiedExpressionStub, segments.last())
         }
     }
-}
-
-/**
- * 直接在父 stub 下创建一组扁平名称引用。
- */
-private fun createFlatNameReferenceStubs(parent: StubElement<*>, segments: List<Name>) {
-    segments.forEach { segment ->
-        createNameReferenceStub(parent, segment)
-    }
-}
-
-/**
- * 为 import 路径创建名称表达式 stub。
- *
- * 短路径保持扁平结构，较长路径使用 dot-qualified package 前缀加末尾名称引用，
- * 以匹配现有 PSI import stub 的结构预期。
- */
-private fun createImportNameExpressionStubs(parent: StubElement<*>, segments: List<Name>, isAllUnder: Boolean) {
-    if (segments.size <= 2) {
-        createFlatNameReferenceStubs(parent, segments)
-        return
-    }
-
-    createPackageNameExpressionStubs(parent, segments.dropLast(1))
-    createNameReferenceStub(parent, segments.last())
 }
 
 /**
@@ -286,19 +265,17 @@ internal fun createCallableModifierMask(
     )
 }
 
-/**
- * 当前 PSI import stub 只能稳定承载 dot-qualified import。
- *
- * `org::pkg` 这类组织名双冒号语义当前仍保留在 decompiled text 中，
- * 这里不强行折叠成错误的 `FqName`，避免把协议层信息错误映射到 PSI 层。
- */
+/** 按 CJO 的组织分隔标记和路径段构造单项，不经过文本渲染再解析。 */
 private fun toStubImportItemInfo(entry: CjoImportEntry): CangJieImportDirectiveStub.ImportItemInfo? {
-    if (entry.hasDoubleColon) return null
-    val importedPath = entry.renderImportedPath().takeIf(String::isNotBlank) ?: return null
+    val organization = if (entry.hasDoubleColon) entry.prefixPaths.firstOrNull()?.let(Name::identifier) ?: return null else null
+    val prefix = if (entry.hasDoubleColon) entry.prefixPaths.drop(1) else entry.prefixPaths
+    val segments = if (entry.isAllUnder) prefix else prefix + entry.identifier
+    if (segments.isEmpty() || segments.any(String::isBlank)) return null
     return CangJieImportDirectiveStub.ImportItemInfo(
-        importedFqName = FqName(importedPath.removeSuffix(".*")),
+        importedFqName = FqName.fromSegments(segments),
         isAllUnder = entry.isAllUnder,
         aliasName = entry.aliasName,
+        organizationName = organization,
     )
 }
 

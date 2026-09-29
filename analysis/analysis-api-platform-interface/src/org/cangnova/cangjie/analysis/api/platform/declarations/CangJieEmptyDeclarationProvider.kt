@@ -66,6 +66,7 @@ object CangJieEmptyDeclarationProvider : CangJieDeclarationProvider {
     /**
      * 空 provider 不返回 facade 包文件。
      */
+    override fun getPackageFiles(packageFqName: FqName, organizationName: Name?, includeSubpackages: Boolean): List<CjFile> = emptyList()
     override fun findFilesForFacadeByPackage(packageFqName: FqName): List<CjFile> = emptyList()
     /**
      * 空 provider 不返回 facade 文件。

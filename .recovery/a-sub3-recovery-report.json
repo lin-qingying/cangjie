@@ -1,0 +1,756 @@
+{
+  "sourceLog": "C:/Users/lin17/.codex/sessions/2026/09/29/rollout-2026-09-29T07-09-21-01a0ea47-ad30-7192-80bc-4bf5479628d2.jsonl",
+  "recoveryRoot": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie",
+  "restoredCount": 58,
+  "verification": "All 58 UTF-8 files match final in-memory replay content after CRLF normalization; 0 mismatches. All seven original calls have successful tool results.",
+  "files": [
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/cjmpDefaultReadThroughBeforeImplicitTypes.cj",
+      "characters": 571,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/cjmpSpecificShadowingBeforeImplicitTypes.cj",
+      "characters": 559,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/defaultArgumentCallerFirst.cj",
+      "characters": 481,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/shadowedCommonCallerFirst.cj",
+      "characters": 481,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/CfirCjmpCallerFirstDiagnosticsTest.kt.draft",
+      "characters": 6002,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/README.md",
+      "characters": 2850,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 174,
+          "callId": "call_f8XHpx369vTBgwvmkpVGM99e",
+          "timestamp": "2026-09-28T23:19:06.357Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_helper/common.cj",
+      "characters": 89,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_helper/specific.cj",
+      "characters": 69,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_unmarked/common.cj",
+      "characters": 53,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_unmarked/specific.cj",
+      "characters": 62,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c1_default_member/common.cj",
+      "characters": 131,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c1_default_member/specific.cj",
+      "characters": 105,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c2_unpaired_subtype/common.cj",
+      "characters": 109,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c2_unpaired_subtype/specific.cj",
+      "characters": 206,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c4_callable_reference/common.cj",
+      "characters": 71,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c4_callable_reference/specific.cj",
+      "characters": 191,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c5_implicit_super/common.cj",
+      "characters": 105,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c5_implicit_super/specific.cj",
+      "characters": 196,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d1_public_owner/main.cj",
+      "characters": 632,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d1_owner_interface/main.cj",
+      "characters": 324,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d2_concrete_holder/specific.cj",
+      "characters": 313,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e1_marked_abstract_members/common.cj",
+      "characters": 133,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e1_marked_abstract_members/specific.cj",
+      "characters": 148,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e3_same_count_interfaces/common.cj",
+      "characters": 138,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e3_same_count_interfaces/specific.cj",
+      "characters": 100,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_function_parameter/common.cj",
+      "characters": 103,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_function_parameter/specific.cj",
+      "characters": 130,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_tuple_parameter/common.cj",
+      "characters": 85,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_tuple_parameter/specific.cj",
+      "characters": 90,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_tuple_pattern/common.cj",
+      "characters": 83,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_tuple_pattern/specific.cj",
+      "characters": 101,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_partial_pattern/common.cj",
+      "characters": 58,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_partial_pattern/specific.cj",
+      "characters": 67,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/common.cj",
+      "characters": 63,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/specific.cj",
+      "characters": 71,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/caller.cj",
+      "characters": 66,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h1_full_id/library.cj",
+      "characters": 235,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h1_full_id/client.cj",
+      "characters": 225,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/common.cj",
+      "characters": 58,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/specific.cj",
+      "characters": 66,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/stale.cj",
+      "characters": 64,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/wrong_package.cj",
+      "characters": 61,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/neighbor.cj",
+      "characters": 64,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/specific_imports_neighbor.cj",
+      "characters": 104,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h3_cli_output/common.cj",
+      "characters": 58,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h3_cli_output/specific.cj",
+      "characters": 66,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 246,
+          "callId": "call_kJuq3DULoO5y33yhPqYjpdz1",
+          "timestamp": "2026-09-28T23:24:59.067Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/P0-HIGH-SEVERITY-FIXTURE-INDEX.md",
+      "characters": 13287,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 265,
+          "callId": "call_yEdiGtBWM3c1tT4iuWgt8lK9",
+          "timestamp": "2026-09-28T23:27:51.037Z"
+        },
+        {
+          "operation": "Update",
+          "line": 272,
+          "callId": "call_RKZIG6VYkJYLpSrwz2lTAUaq",
+          "timestamp": "2026-09-28T23:28:47.841Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpBothImplicitReturnTypesMatch.cj",
+      "characters": 490,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpCommonImplicitSpecificExplicitReturnMismatch.cj",
+      "characters": 554,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpEmptyBodiesMatchAsUnit.cj",
+      "characters": 487,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpEmptyCommonImplicitSpecificValuePostCheck.cj",
+      "characters": 518,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpCommonValueSpecificEmptyBodyMismatch.cj",
+      "characters": 491,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpImplicitSpecificBodyErrorPreservesMatch.cj",
+      "characters": 547,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpExplicitSpecificErrorTypeDoesNotMatch.cj",
+      "characters": 544,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/ll/defaultArgumentInferredCallerFirst.cj",
+      "characters": 482,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/ll/shadowedCommonInferredCallerFirst.cj",
+      "characters": 481,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/CfirCjmpCallerFirstDiagnosticsTest.methods.kt.fragment",
+      "characters": 509,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/INDEX.md",
+      "characters": 4266,
+      "evidence": [
+        {
+          "operation": "Add",
+          "line": 327,
+          "callId": "call_HWTEi7mB9nlXDU3kUHvosN6C",
+          "timestamp": "2026-09-28T23:56:33.695Z"
+        },
+        {
+          "operation": "Update",
+          "line": 334,
+          "callId": "call_vpxu5GMYjfwCaiMi4yzDmCDn",
+          "timestamp": "2026-09-28T23:57:35.522Z"
+        },
+        {
+          "operation": "Update",
+          "line": 349,
+          "callId": "call_IAQBkY5sCiQKtfTCcvzvaS6Y",
+          "timestamp": "2026-09-28T23:58:57.055Z"
+        }
+      ]
+    }
+  ],
+  "dynamic": {
+    "file": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.recovery/a-sub3-dynamic.json",
+    "catalogIndex": 166,
+    "logCallLine": 372,
+    "readResultLine": 374,
+    "patchResultLine": 375,
+    "callId": "call_Yuag4fL08e3fY7o2GS4R5hMv",
+    "patchCount": 1,
+    "addFiles": 9,
+    "updateFiles": 1,
+    "validation": "Reconstructed from logged JSON stdout rows and literal update-tail data, compared each added file against both restored scratch and logged PatchApply changes; no historical shell executed."
+  },
+  "formalPatchesNotApplied": [
+    {
+      "path": "cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirDeclarationOwnerTest.kt",
+      "line": 447,
+      "callId": "call_liTgYWXZaWsYsDVyIY8Cw6UL",
+      "operation": "Add"
+    },
+    {
+      "path": "cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirDeclarationOwnerTest.kt",
+      "line": 517,
+      "callId": "call_WAXWl7MbK8K2vC4Z0g0HEG0n",
+      "operation": "Update"
+    },
+    {
+      "path": "cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirDeclarationOwnerTest.kt",
+      "line": 524,
+      "callId": "call_bMMJ0ARN9evYItC5N0S1beaW",
+      "operation": "Update"
+    }
+  ],
+  "unrecoverableAuthoredArtifacts": [],
+  "notClaimedRecovered": "Pre-existing probe binaries, cjc diagnostic outputs, snapshots, and files merely read or linked by this session. Other agents may recover those from their originating logs. Historical absolute paths inside restored document bodies are preserved verbatim."
+}

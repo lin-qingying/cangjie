@@ -23,7 +23,7 @@ internal class CaCfirPackageSymbolPointer(
      * 在目标 CFIR session 中按包名恢复包符号。
      */
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaPackageSymbol? =
-        restoreSession(session)?.getPackageSymbol(cacheKey.fqName)
+        restoreSession(session)?.getPackageSymbol(cacheKey.fqName, cacheKey.organizationName)
 }
 
 /**

@@ -35,6 +35,8 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.psi.impl.PsiFileFactoryImpl
 import com.intellij.util.LocalTimeCounter
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.ImportPathPrefix
+import org.cangnova.cangjie.render
 import org.cangnova.cangjie.annotations.BuiltInAnnotationRegistry
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lexer.CjKeywordToken
@@ -506,9 +508,25 @@ class CjPsiFactory private constructor(
         return file.importDirectives.first()
     }
 
-    /**
-     * 执行 `appendImport` 内部辅助逻辑，支撑仓颉 PSI节点的结构解析与访问。
-     */
+    /** 通过真实 parser 构造分组语句；items 中的路径只表示花括号内局部路径。 */
+    fun createImportDirective(prefix: ImportPathPrefix?, items: List<ImportPath>): CjImportDirective {
+        require(items.isNotEmpty()) { "An import group must contain at least one item" }
+        require(items.all { it.organizationName == null && !it.fqName.isRoot && (!it.isAllUnder || it.alias == null) }) {
+            "Grouped import items require non-empty local paths without organization qualifiers or wildcard aliases"
+        }
+        val source = buildString {
+            append("import ")
+            prefix?.organizationName?.let { append(it.render()).append("::") }
+            prefix?.fqName?.takeUnless { it.isRoot }?.let { append(it.toUnsafe().render()).append('.') }
+            append(items.joinToString(prefix = "{", postfix = "}", separator = ", "))
+        }
+        val directive = createFile(source).importDirectives.single()
+        require(directive.isValidSyntax && directive.importItems.size == items.size && directive.importItems.all { it.isValidImport }) {
+            "Invalid grouped import syntax: $source"
+        }
+        return directive
+    }
+
     private fun StringBuilder.appendImport(importPath: ImportPath) {
         if (importPath.fqName.isRoot) {
             throw IllegalArgumentException("import path must not be empty")
@@ -519,7 +537,7 @@ class CjPsiFactory private constructor(
 
         val alias = importPath.alias
         if (alias != null) {
-            append(" as ").append(alias.asString())
+            append(" as ").append(alias.render())
         }
     }
 

@@ -25,6 +25,9 @@ import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.getCjFilesForSourceFiles
 import org.cangnova.cangjie.test.services.sourceFileProvider
+import org.cangnova.cangjie.test.services.getOrCreateTempDirectory
+import org.cangnova.cangjie.test.services.isCjFile
+import java.nio.file.Files
 import java.nio.file.Path
 
 /**
@@ -309,6 +312,17 @@ private fun createSourcePsiFiles(
     testServices: TestServices,
     project: Project,
 ): List<PsiFile> {
+    if (AnalysisApiTestDirectives.PHYSICAL_SOURCE_FILES in testModule.directives) {
+        val root = testServices.getOrCreateTempDirectory("source-${testModule.name}").toPath().toAbsolutePath().normalize()
+        return testModule.files.filter { it.isCjFile }.map { testFile ->
+            val path = root.resolve(testFile.relativePath).normalize()
+            require(path.startsWith(root)) { "Source fixture must stay inside its module root: $path" }
+            Files.createDirectories(path.parent)
+            Files.writeString(path, testServices.sourceFileProvider.getContentOfSourceFile(testFile), Charsets.UTF_8)
+            val virtualFile = requireNotNull(StandardFileSystems.local().refreshAndFindFileByPath(path.toString().replace('\\', '/')))
+            requireNotNull(PsiManager.getInstance(project).findFile(virtualFile))
+        }
+    }
     return testServices.sourceFileProvider
         .getCjFilesForSourceFiles(testModule.files, project)
         .values

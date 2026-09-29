@@ -24,6 +24,8 @@ sealed interface CfirResolvedImportTarget {
          * 被 import 暴露的包名。
          */
         val fqName: FqName,
+        /** 显式组织限定；源码包的 FqName 本身不编码组织身份。 */
+        val organizationName: Name? = null,
     ) : CfirResolvedImportTarget
 
     /**
@@ -263,6 +265,7 @@ class CfirImportBindingStore : CfirSessionComponent {
      */
     private fun CfirResolvedImportBinding.signature(): ImportSignature = ImportSignature(
         importedFqName = importDirective.importedFqName?.asString(),
+        organizationName = importDirective.organizationName?.asString(),
         isAllUnder = importDirective.isAllUnder,
         aliasName = importDirective.aliasName?.asString(),
         lookupOrigin = lookupOrigin,
@@ -281,6 +284,8 @@ class CfirImportBindingStore : CfirSessionComponent {
          * 导入 FQN 的字符串表示。
          */
         val importedFqName: String?,
+        /** 组织限定参与规范缓存身份，不能把不同组织的相同路径合并。 */
+        val organizationName: String?,
         /**
          * 是否为 all-under import。
          */

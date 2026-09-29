@@ -175,6 +175,23 @@ class CjdSidecarParserTest : CjParsingTestCase("", "cj.d", CangJieDeclarationFil
         assertEquals(listOf("Hot", "\"Cold\""), annotations[1].arguments.map { it.expressionText })
     }
 
+    @Test fun testGroupedImportsKeepOrganizationAndRelativeSegments() {
+        val index = parseBoth("""
+            package demo
+            import org1::a.{a.B as C, c.*,}
+            import org2::{a.B,}
+            import {a.D,}
+            func f(): Unit
+        """.trimIndent())
+        assertTrue(index.isUsable, index.diagnostics.toString())
+        assertEquals(listOf(
+            CjdAnnotationImport("a.a.B", alias = "C", organizationName = "org1"),
+            CjdAnnotationImport("a.c", isAllUnder = true, organizationName = "org1"),
+            CjdAnnotationImport("a.B", organizationName = "org2"),
+            CjdAnnotationImport("a.D"),
+        ), index.annotationContext.imports)
+    }
+
     @Test fun testConfiguredSdk() {
         val directory = System.getenv("CANGJIE_CJD_SDK_DIR")
         assumeTrue(!directory.isNullOrBlank(), "Set CANGJIE_CJD_SDK_DIR to enable real SDK validation")

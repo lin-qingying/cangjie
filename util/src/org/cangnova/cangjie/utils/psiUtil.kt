@@ -78,7 +78,7 @@ fun getElementTextWithContext(psiElement: PsiElement): String {
     val containingFile = psiElement.containingFile
 
     // 按优先级查找最近的上下文容器
-    val context = psiElement.parentOfType("CjImportDirectiveItem")
+    val context = psiElement.parentOfType("CjImportDirective")
         ?: psiElement.parentOfType("CjPackageDirective")
         ?: psiElement.parentOfType("CjDeclarationWithBody")
         ?: psiElement.parentOfType("CjProperty")
@@ -104,5 +104,4 @@ fun getElementTextWithContext(psiElement: PsiElement): String {
         append(elementTextInContext)
     }
 }
-
 

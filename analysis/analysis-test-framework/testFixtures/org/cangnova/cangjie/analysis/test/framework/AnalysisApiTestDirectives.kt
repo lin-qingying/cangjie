@@ -15,6 +15,11 @@ import org.cangnova.cangjie.test.model.TestModule
  * 3. 测试框架是否需要切换运行模式或依赖建模方式。
  */
 object AnalysisApiTestDirectives : SimpleDirectivesContainer() {
+    /** 目录、导航与文件移动测试使用真实 VFS 源文件，保留 FILE 指令的目录结构。 */
+    val PHYSICAL_SOURCE_FILES by directive(
+        description = "在受测试生命周期管理的物理目录中创建源码 PSI。",
+        applicability = DirectiveApplicability.Module,
+    )
     /**
      * 显式指定测试模块映射到的 Analysis API 模块种类。
      */

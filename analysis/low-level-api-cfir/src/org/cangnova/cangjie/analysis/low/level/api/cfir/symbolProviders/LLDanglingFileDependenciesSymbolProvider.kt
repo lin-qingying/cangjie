@@ -1,4 +1,8 @@
 
+    /** 悬空文件的 class-like 候选视图与原依赖 provider 保持一致。 */
+    override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+        delegate.getClassLikeSymbolsByClassId(classId)
+
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
@@ -7,6 +11,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSi
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
@@ -24,6 +30,9 @@ import org.cangnova.cangjie.psi.CjFile
  * @property delegate 被包装的真实依赖符号提供器。
  */
 class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolProvider) : CfirSymbolProvider(delegate.session) {
+    override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace =
+        delegate.getImportNamespace(context)
+
     /**
      * 依赖提供器的名称索引，保持与被包装 [delegate] 完全一致。
      */

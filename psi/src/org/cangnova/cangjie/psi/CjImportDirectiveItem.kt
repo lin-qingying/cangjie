@@ -23,327 +23,128 @@
  */
 
 package org.cangnova.cangjie.psi
-import org.cangnova.cangjie.name.*
 
-import org.cangnova.cangjie.lexer.CjKeywordToken
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.FqName.Companion.topLevel
-import org.cangnova.cangjie.name.Name.Companion.identifier
-
-import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
-import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.ImportPathPrefix
+import org.cangnova.cangjie.resolveImportPath
+import org.cangnova.cangjie.lexer.CjKeywordToken
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
+import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
+import org.cangnova.cangjie.psi.stubs.CangJieImportItemStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
-/**
- * 表示 `CjImportDirective`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
- */
+/** 导入语句容器；共享路径由分组拥有，语句只拥有修饰符和条件。 */
 class CjImportDirective : CjDeclarationStub<CangJieImportDirectiveStub> {
     constructor(node: ASTNode) : super(node)
+    constructor(stub: CangJieImportDirectiveStub) : super(stub, CjStubElementTypes.IMPORT_DIRECTIVE)
 
-    constructor(stub: CangJieImportDirectiveStub) : super(
-        stub,
-        CjStubElementTypes.IMPORT_DIRECTIVE,
-    )
+    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitImportDirective(this, data)
 
-    /**
-     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
-        return visitor.visitImportDirective(this, data)
-    }
-
-    /**
-     * 获取所有导入项
-     *
-     * 新实现：直接获取 IMPORT_ITEM 类型的子元素
-     */
+    /** 仅展开导入结构，按源码顺序返回所有叶项；Stub 模式不访问 AST。 */
     val importItems: List<CjImportItem>
-        get() = findChildrenByClass(CjImportItem::class.java).toList()
-
-
-
-
-    /**
-     * 提供 `getModifier` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
-     */
-    fun getModifier(tokenType: CjKeywordToken): PsiElement? {
-        return findChildByType(tokenType)
-    }
-
-    /**
-     * 获取导入的引用表达式（用于同包多项导入的基础路径）
-     * 例如: import a.b.{c, d} -> 返回 a.b
-     */
-    @get:IfNotParsed
-    val importedReference: CjExpression?
         get() {
-            val references =
-                getStubOrPsiChildren(
-                    CjTokenSets.INSIDE_DIRECTIVE_EXPRESSIONS,
-                    CjExpression.ARRAY_FACTORY,
-                )
-            if (references.isNotEmpty()) {
-                return references[0]
-            }
-            return null
-        }
-
-    /** 共享 import 前缀中的组织名，例如 `org1::a.{X, Y}` 的 `org1`。 */
-    val organizationName: Name?
-        get() {
-            val reference = importedReference
-            return organizationNameFromExpression(reference)
-                ?: if (text.contains("::") && reference is CjSimpleNameExpression) {
-                    reference.referencedNameAsName
-                } else {
-                    null
-                }
-        }
-
-    /**
-     * 实现 `hasModifier` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun hasModifier(modifier: CjKeywordToken): Boolean {
-        return getModifier(modifier) != null
-    }
-
-    companion object {
-        fun fqNameFromExpression(expression: CjExpression?): FqName? {
-            if (expression == null) {
-                return null
-            }
-
-            // `organization::package.member` is one import path. The organization is
-            // metadata for package lookup, not another FqName segment.
-            val expressionText = expression.text
-            val organizationSeparator = expressionText.indexOf("::")
-            if (organizationSeparator >= 0) {
-                return FqName(expressionText.substring(organizationSeparator + 2).replace("::", "."))
-            }
-
-            when (expression) {
-                is CjDotQualifiedExpression -> {
-                    val parentFqn = fqNameFromExpression(expression.receiverExpression)
-                    val child =
-                        nameFromExpression(expression.selectorExpression) ?: return parentFqn
-                    if (parentFqn != null) {
-                        return parentFqn.child(child)
-                    }
-                    return null
-                }
-
-
-                is CjSimpleNameExpression -> {
-                    return topLevel(expression.referencedNameAsName)
-                }
-
-                else -> {
-                    throw IllegalArgumentException("Can't construct fqn for: " + expression.javaClass)
+            val elements = stub?.childrenStubs?.map { it.psi } ?: children.toList()
+            return elements.flatMap {
+                when (it) {
+                    is CjImportItem -> listOf(it)
+                    is CjImportGroup -> it.importItems
+                    else -> emptyList()
                 }
             }
         }
 
-        fun organizationNameFromExpression(expression: CjExpression?): Name? {
-            val expressionText = expression?.text.orEmpty()
-            val organizationSeparator = expressionText.indexOf("::")
-            return organizationSeparator
-                .takeIf { it > 0 }
-                ?.let { identifier(expressionText.substring(0, it).trim()) }
-        }
+    val isValidSyntax: Boolean
+        get() = stub?.isValidSyntax ?: !hasImportContainerErrors(this)
 
-        private fun nameFromExpression(expression: CjExpression?): Name? {
-            if (expression == null) {
-                return null
-            }
-
-            if (expression is CjSimpleNameExpression) {
-                return expression.referencedNameAsName
-            } else {
-                throw IllegalArgumentException("Can't construct name for: " + expression.javaClass)
-            }
-        }
-    }
+    fun getModifier(tokenType: CjKeywordToken): PsiElement? = findChildByType(tokenType)
+    override fun hasModifier(modifier: CjKeywordToken): Boolean = getModifier(modifier) != null
 }
 
+/** 单个源码导入项；完整路径由局部路径和所属组组合，不构造虚拟表达式。 */
+class CjImportItem : CjElementImplStub<CangJieImportItemStub>, CjImportInfo, CjImportPathOwner {
+    constructor(node: ASTNode) : super(node)
+    constructor(stub: CangJieImportItemStub) : super(stub, CjStubElementTypes.IMPORT_ITEM)
 
-/**
- * 新的导入项类（轻量级，不使用 Stub）
- *
- * 用于表示单个导入项，例如:
- * - import a.b       -> 一个 CjImportItem
- * - import {a.b, c.d} -> 两个 CjImportItem
- * - import a.{b, c}  -> 两个 CjImportItem
- */
-class CjImportItem(node: ASTNode) : CjElementImpl(node), CjImportInfo {
-    /**
-     * 实现 `accept` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? {
-        return visitor.visitImportItem(this, data)
-    }
-
-    /**
-     * 保存 `_importedFqName` 的内部状态，供仓颉 PSI实现维护节点缓存或解析上下文。
-     */
-    @Volatile
-    private var _importedFqName: FqName? = null
-
-    /**
-     * 实现 `subtreeChanged` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun subtreeChanged() {
-        super.subtreeChanged()
-        _importedFqName = null
-    }
-
-    /**
-     * 获取导入的引用表达式
-     */
-    val importedReference: CjExpression?
-        get() = findChildByType(CjTokenSets.INSIDE_DIRECTIVE_EXPRESSIONS)
-
-    /**
-     * 获取导入的完全限定名
-     *
-     * 对于同包多项导入 (import a.{b, c})，需要组合基础路径和项路径
-     */
-    override val importedFqName: FqName?
-        get() {
-            _importedFqName?.let { return it }
-
-            val reference = importedReference
-            val fqName = if (reference != null) {
-                // 项自身有表达式，直接从表达式构建 FqName
-                CjImportDirective.fqNameFromExpression(reference)
-            } else {
-                // 项没有表达式，可能是通配符导入
-                null
-            }
-
-            // 检查父级 ImportDirective 是否有基础路径
-            val directive = getStrictParentOfType<CjImportDirective>()
-            val basePath = directive?.importedReference?.let { expression ->
-                CjImportDirective.fqNameFromExpression(expression)
-                    ?.takeUnless {
-                        directive.organizationName != null &&
-                            expression is CjSimpleNameExpression &&
-                            expression.referencedNameAsName == directive.organizationName
-                    }
-            }
-
-            // 组合基础路径和项路径
-            val finalFqName = when {
-                basePath != null && fqName != null -> {
-                    // 有基础路径，组合: a + b.C = a.b.C
-                    basePath.child(fqName)
-                }
-                fqName != null -> {
-                    // 只有项路径，直接使用
-                    fqName
-                }
-                basePath != null -> {
-                    // 只有基础路径（通配符导入: a.*）
-                    basePath
-                }
-                else -> null
-            }
-
-            _importedFqName = finalFqName
-            return finalFqName
-        }
-
-    /** 官方 `organization::package` 语法中的组织名。 */
-    val organizationName: Name?
-        get() = CjImportDirective.organizationNameFromExpression(importedReference)
-            ?: importDirective.organizationName
-
-    /**
-     * 是否为通配符导入 (a.b.*)
-     */
-    override val isAllUnder: Boolean
-        get() = node.findChildByType(CjTokens.MUL) != null
-
-    /**
-     * 获取别名
-     */
-    val alias: CjImportAlias?
-        get() = findChildByClass(CjImportAlias::class.java)
-
-    /**
-     * 获取别名名称
-     */
-    override val aliasName: String?
-        get() = alias?.name
-
-    /**
-     * 导入内容
-     */
-    override val importContent: CjImportInfo.ImportContent?
-        get() {
-            val reference = importedReference ?: return null
-            return CjImportInfo.ImportContent.ExpressionBased(reference)
-        }
-
-    /**
-     * 导入的名称
-     */
-    override val importedName: Name?
-        get() = importedFqName?.shortName()
-
-    /**
-     * 是否为有效导入（无语法错误）
-     */
-    val isValidImport: Boolean
-        get() = !PsiTreeUtil.hasErrorElements(this)
-
-    /**
-     * 获取父导入指令
-     */
+    override fun <R, D> accept(visitor: CjVisitor<R, D>, data: D): R? = visitor.visitImportItem(this, data)
+    override val organizationReference: CjSimpleNameExpression?
+        get() = importOrganizationReference(stub?.path)
+    override val importedReference: CjExpression?
+        get() = importLocalReference(stub?.path)
+    val localFqName: FqName?
+        get() { stub?.let { return it.path.localFqName }; return importFqName(importedReference) }
+    val hasOrganizationQualifier: Boolean
+        get() = stub?.path?.hasOrganizationQualifier ?: (node.findChildByType(CjTokens.DOUBLE_COLON) != null)
+    val importGroup: CjImportGroup?
+        get() = parent as? CjImportGroup
     val importDirective: CjImportDirective
-        get() = getStrictParentOfType<CjImportDirective>()
-            ?: throw IllegalStateException("CjImportItem must have a parent CjImportDirective")
+        get() = requireNotNull(getStrictParentOfType<CjImportDirective>())
 
-    /**
-     * 转换为 ImportPath（兼容性方法）
-     */
-    val importPath: ImportPath?
+    override val organizationName: Name?
         get() {
-            val importFqn = importedFqName ?: return null
-            val identifier = if (aliasName != null) {
-                identifier(aliasName!!)
-            } else {
-                null
-            }
-
-            return ImportPath(importFqn, isAllUnder, identifier)
+            importGroup?.let { return it.organizationName }
+            stub?.let { return it.path.organizationName }
+            return organizationReference?.referencedNameAsName
         }
+
+    private val resolvedPath: ImportPathPrefix?
+        get() {
+            if (!isValidImport) return null
+            val local = localFqName ?: return null
+            val group = importGroup
+            val prefix = group?.let { ImportPathPrefix(it.organizationName, it.localFqName ?: FqName.ROOT) }
+            return prefix.resolveImportPath(local, if (group == null) organizationName else null)
+        }
+
+    override val importedFqName: FqName?
+        get() = resolvedPath?.fqName
+    override val isAllUnder: Boolean
+        get() = stub?.isAllUnder ?: (node.findChildByType(CjTokens.MUL) != null)
+    val alias: CjImportAlias?
+        get() = getStubOrPsiChild(CjStubElementTypes.IMPORT_ALIAS)
+    override val aliasName: String?
+        get() { stub?.let { return it.aliasName }; return alias?.name }
+    override val importContent: CjImportInfo.ImportContent?
+        get() = importedFqName?.let { CjImportInfo.ImportContent.FqNameBased(it) }
+    override val importedName: Name?
+        get() = if (isAllUnder) null else aliasName?.let(Name::identifier) ?: importedFqName?.shortName()
+
+    /** 兄弟项错误不污染本项；组的列表/前缀错误和语句错误则使本项无效。 */
+    val isValidImport: Boolean
+        get() = (stub?.path?.isValidSyntax ?: !hasImportContainerErrors(this)) &&
+            (importGroup?.isValidSyntax != false) && importDirective.isValidSyntax
+
+    val importPath: ImportPath?
+        get() = resolvedPath?.let { ImportPath(it.fqName, isAllUnder, aliasName?.let(Name::identifier), it.organizationName) }
+
+    /** 删除叶项时同时维护列表分隔符，组内其余空白和注释保留原位。 */
+    override fun delete() {
+        val group = importGroup
+        if (group == null || group.importItems.size == 1) {
+            importDirective.delete()
+            return
+        }
+        val followingComma = generateSequence(nextSibling) { it.nextSibling }
+            .takeWhile { it !is CjImportItem && it.node.elementType != CjTokens.RBRACE }
+            .firstOrNull { it.node.elementType == CjTokens.COMMA }
+        val comma = followingComma ?: generateSequence(prevSibling) { it.prevSibling }
+            .takeWhile { it !is CjImportItem && it.node.elementType != CjTokens.LBRACE }
+            .firstOrNull { it.node.elementType == CjTokens.COMMA }
+        comma?.delete()
+        super.delete()
+    }
 }
 
-
-
-/**
- * 表示 `CangJieImportField`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
- */
+/** 无 PSI 的单项导入信息，同样保留组织限定。 */
 data class CangJieImportField(
-    /**
-     * 暴露 `isAllUnder`，实现仓颉 PSI节点对上层接口的属性契约。
-     */
     override val isAllUnder: Boolean,
-    /**
-     * 暴露 `importContent`，实现仓颉 PSI节点对上层接口的属性契约。
-     */
     override val importContent: CjImportInfo.ImportContent?,
-    /**
-     * 暴露 `importedFqName`，实现仓颉 PSI节点对上层接口的属性契约。
-     */
     override val importedFqName: FqName?,
-    /**
-     * 暴露 `aliasName`，实现仓颉 PSI节点对上层接口的属性契约。
-     */
-    override val aliasName: String?
+    override val aliasName: String?,
+    override val organizationName: Name? = null,
 ) : CjImportInfo
+

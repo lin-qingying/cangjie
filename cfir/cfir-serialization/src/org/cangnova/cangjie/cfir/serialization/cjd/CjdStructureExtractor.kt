@@ -3,6 +3,10 @@ package org.cangnova.cangjie.cfir.serialization.cjd
 import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.ImportPathPrefix
+import org.cangnova.cangjie.resolveImportPath
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.ANNOTATIONS
 import java.nio.file.Path
@@ -35,19 +39,36 @@ internal class CjdStructureExtractor(private val source: String) {
             return organization to (if (organization == null) names else names.drop(1)).joinToString(".")
         }
         val pkg = path(root.child(PACKAGE_DIRECTIVE))
+        fun invalidContainer(node: CjdSyntaxNode): Boolean = node.children.any {
+            it.kind == TokenType.ERROR_ELEMENT ||
+                (it.kind != IMPORT_ITEM && it.kind != IMPORT_GROUP && invalidContainer(it))
+        }
+        fun localPath(node: CjdSyntaxNode): ImportPathPrefix {
+            val expressions = node.children.filter { it.kind == DOT_QUALIFIED_EXPRESSION || it.kind == REFERENCE_EXPRESSION }
+            val hasOrganization = node.child(CjTokens.DOUBLE_COLON) != null
+            val organization = if (hasOrganization) Name.identifier(identifier(expressions.first())) else null
+            val reference = expressions.getOrNull(if (hasOrganization) 1 else 0)
+            val segments = reference?.let(::leaves).orEmpty().filter { it.kind == CjTokens.IDENTIFIER }.map(::identifier)
+            return ImportPathPrefix(organization, FqName.fromSegments(segments))
+        }
+        fun importItem(item: CjdSyntaxNode, prefix: ImportPathPrefix?): CjdAnnotationImport? {
+            if (invalidContainer(item)) return null
+            val local = localPath(item)
+            if (local.fqName.isRoot) return null
+            val resolved = prefix.resolveImportPath(local.fqName, local.organizationName)
+            return CjdAnnotationImport(resolved.fqName.asString(), item.child(CjTokens.MUL) != null,
+                item.child(IMPORT_ALIAS)?.child(CjTokens.IDENTIFIER)?.let(::identifier), resolved.organizationName?.asString())
+        }
         val imports = root.child(IMPORT_LIST)?.children(IMPORT_DIRECTIVE).orEmpty().flatMap { directive ->
-            val baseNodes = directive.children.filter { it.kind == DOT_QUALIFIED_EXPRESSION || it.kind == REFERENCE_EXPRESSION }
-            val base = baseNodes.singleOrNull()?.let(::path) ?: (null to "")
-            val organizationOnly = directive.child(CjTokens.DOUBLE_COLON) != null
-            directive.children(IMPORT_ITEM).map { item ->
-                val reference = item.children.firstOrNull { it.kind == DOT_QUALIFIED_EXPRESSION || it.kind == REFERENCE_EXPRESSION }
-                val local = path(reference)
-                CjdAnnotationImport(
-                    listOf(if (organizationOnly) "" else base.second, local.second).filter(String::isNotEmpty).joinToString("."),
-                    item.child(CjTokens.MUL) != null,
-                    item.child(IMPORT_ALIAS)?.child(CjTokens.IDENTIFIER)?.let(::identifier),
-                    local.first ?: base.first ?: base.second.takeIf { organizationOnly },
-                )
+            if (invalidContainer(directive)) emptyList() else directive.children.flatMap { content ->
+                when (content.kind) {
+                    IMPORT_ITEM -> listOfNotNull(importItem(content, null))
+                    IMPORT_GROUP -> if (invalidContainer(content)) emptyList() else {
+                        val prefix = localPath(content)
+                        content.children(IMPORT_ITEM).mapNotNull { importItem(it, prefix) }
+                    }
+                    else -> emptyList()
+                }
             }
         }
         return CjdAnnotationContext(pkg.second, pkg.first, imports, declarations.map { it.key.identifier }.filter(String::isNotEmpty).toSet())

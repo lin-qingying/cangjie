@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
@@ -10,8 +11,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -35,7 +34,7 @@ class CfirExplicitStarImportingScope(
     /**
      * 所有星号导入的目标包名。
      */
-    private val starImportPackages: List<FqName>
+    private val starImportPackages: List<CfirResolvedImportTarget.Package>
 
     init {
         require(resolvedImports.all { it.importDirective.isAllUnder }) {
@@ -45,7 +44,7 @@ class CfirExplicitStarImportingScope(
             .asSequence()
             .flatMap { binding ->
             binding.targets.asSequence().mapNotNull { target ->
-                (target as? CfirResolvedImportTarget.Package)?.fqName
+                target as? CfirResolvedImportTarget.Package
             }
         }
             .distinct()
@@ -56,10 +55,9 @@ class CfirExplicitStarImportingScope(
      * 在所有星号导入包内处理 classifier。
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
-        for (packageFqName in starImportPackages) {
-            val classId = ClassId(packageFqName, FqName.topLevel(name))
-            val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
-            if (symbol != null) processor(symbol)
+        for (target in starImportPackages) {
+            symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .classifiers(name).forEach(processor)
         }
     }
 
@@ -67,8 +65,9 @@ class CfirExplicitStarImportingScope(
      * 在所有星号导入包内处理函数。
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        for (packageFqName in starImportPackages) {
-            symbolProvider.getTopLevelFunctionSymbols(packageFqName, name).forEach(processor)
+        for (target in starImportPackages) {
+            symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .functions(name).forEach(processor)
         }
     }
 
@@ -76,8 +75,9 @@ class CfirExplicitStarImportingScope(
      * 在所有星号导入包内处理 callable。
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        for (packageFqName in starImportPackages) {
-            symbolProvider.getTopLevelCallableSymbols(packageFqName, name).forEach(processor)
+        for (target in starImportPackages) {
+            symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .callables(name).forEach(processor)
         }
     }
 
@@ -85,8 +85,9 @@ class CfirExplicitStarImportingScope(
      * 在所有星号导入包内处理属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
-        for (packageFqName in starImportPackages) {
-            symbolProvider.getTopLevelPropertySymbols(packageFqName, name).forEach(processor)
+        for (target in starImportPackages) {
+            symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .properties(name).forEach(processor)
         }
     }
 }

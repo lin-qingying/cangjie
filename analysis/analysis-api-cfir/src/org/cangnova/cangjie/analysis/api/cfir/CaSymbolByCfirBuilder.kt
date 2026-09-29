@@ -140,6 +140,7 @@ import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
@@ -242,19 +243,22 @@ companion object{
      * 仅当包真实存在时构造公开包符号。
      */
     @OptIn(CaPlatformInterface::class)
-    fun createPackageSymbolIfOneExists(packageFqName: FqName): CaPackageSymbol? {
+    fun createPackageSymbolIfOneExists(packageFqName: FqName, organizationName: Name? = null): CaPackageSymbol? {
         if (!packageProvider.doesPackageExist(packageFqName)) {
             return null
         }
 
-        return createPackageSymbol(packageFqName)
+        if (organizationName != null && org.cangnova.cangjie.psi.CangJiePsiFacade.getInstance(analysisSession.project)
+                .findPackage(packageFqName, analysisSession.analysisScope, organizationName) == null
+        ) return null
+        return createPackageSymbol(packageFqName, organizationName)
     }
 
     /**
      * 为指定包名构造公开包符号。
      */
-    fun createPackageSymbol(packageFqName: FqName): CaPackageSymbol =
-        CaCfirPackageSymbol(packageFqName, analysisSession.useSiteModule, token)
+    fun createPackageSymbol(packageFqName: FqName, organizationName: Name? = null): CaPackageSymbol =
+        CaCfirPackageSymbol(packageFqName, organizationName, analysisSession, analysisSession.useSiteModule, token)
 
     /**
      * 从 CFIR extend 符号构造公开 extend 符号，并附带稳定身份信息。

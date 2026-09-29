@@ -16,7 +16,8 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.resolve.resolveImportBinding
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -26,10 +27,11 @@ import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.abbreviatedTypeOrSelf
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportItem
+import org.cangnova.cangjie.psi.CjImportGroup
+import org.cangnova.cangjie.psi.CjImportPathOwner
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
@@ -54,6 +56,10 @@ internal object CfirReferenceResolveHelper {
     ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
         val expression = ref.expression
         val symbolBuilder = analysisSession.cfirSymbolBuilder
+
+        // 组织限定符不是包名，没有对应的声明符号；不得进入普通名称解析。
+        val pathOwner = expression.getStrictParentOfType<CjImportPathOwner>()
+        if (pathOwner?.organizationReference === expression) return emptyList()
 
         if (expression.isImportDirectiveExpression()) {
             return getSymbolsByImportDirective(expression, analysisSession, symbolBuilder)
@@ -127,21 +133,20 @@ internal object CfirReferenceResolveHelper {
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
     ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
-        val importItem = expression.getStrictParentOfType<CjImportItem>() ?: return emptyList()
-        val importedFqName = importItem.importedFqName ?: return emptyList()
-        val selectedFqName = importItem.selectedFqNameFor(expression) ?: return emptyList()
+        val owner = expression.getStrictParentOfType<CjImportPathOwner>() ?: return emptyList()
+        val selectedFqName = owner.selectedFqNameFor(expression) ?: return emptyList()
         val bindingTargets = resolveImportTargets(
             analysisSession = analysisSession,
-            importItem = importItem,
+            owner = owner,
+            expression = expression,
             selectedFqName = selectedFqName,
-            fullImportedFqName = importedFqName,
         )
 
         return buildList {
             bindingTargets.forEach { target ->
                 when (target) {
                     is CfirResolvedImportTarget.Package -> {
-                        symbolBuilder.createPackageSymbolIfOneExists(target.fqName)?.let(::add)
+                        symbolBuilder.createPackageSymbolIfOneExists(target.fqName, target.organizationName)?.let(::add)
                     }
 
                     is CfirResolvedImportTarget.ClassLike -> {
@@ -161,65 +166,42 @@ internal object CfirReferenceResolveHelper {
      */
     private fun resolveImportTargets(
         analysisSession: CaCfirSession,
-        importItem: CjImportItem,
+        owner: CjImportPathOwner,
+        expression: CjSimpleNameExpression,
         selectedFqName: FqName,
-        fullImportedFqName: FqName,
     ): List<CfirResolvedImportTarget> {
-        val symbolProvider = analysisSession.cfirSession.symbolProvider
-        val importDirective = org.cangnova.cangjie.cfir.declarations.builder.buildImport {
+        // 前缀及路径中间段只能表示包。用 all-under 的绑定查询禁止把它们解析为成员。
+        val isPackagePath = owner !is CjImportItem || owner.isAllUnder ||
+            collectSimpleNames(owner.importedReference).lastOrNull() !== expression
+        val importDirective = buildImport {
             importedFqName = selectedFqName
-            aliasName = importItem.aliasName?.let(Name::identifier)
-            isAllUnder = false
+            organizationName = when (owner) {
+                is CjImportItem -> owner.organizationName
+                is CjImportGroup -> owner.organizationName
+                else -> error("Unexpected import path owner: ${owner::class}")
+            }
+            isAllUnder = isPackagePath
         }
-
-        val targets = mutableListOf<CfirResolvedImportTarget>()
-        if (symbolProvider.hasPackage(selectedFqName)) {
-            targets += CfirResolvedImportTarget.Package(selectedFqName)
-        }
-
-        if (selectedFqName != fullImportedFqName || importDirective.isAllUnder) {
-            return targets
-        }
-
-        val importedName = fullImportedFqName.shortName()
-        val packageFqName = fullImportedFqName.parent()
-        val classId = org.cangnova.cangjie.name.ClassId(packageFqName, importedName)
-
-        symbolProvider.getClassLikeSymbolByClassId(classId)?.let { classLike ->
-            targets += CfirResolvedImportTarget.ClassLike(
-                classId = classId,
-                symbol = classLike,
-            )
-        }
-
-        val callableSymbols = symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName)
-        if (callableSymbols.isNotEmpty()) {
-            targets += CfirResolvedImportTarget.Callable(
-                packageFqName = packageFqName,
-                name = importedName,
-                symbols = callableSymbols,
-            )
-        }
-
-        return targets
+        return analysisSession.cfirSession.resolveImportBinding(
+            importDirective,
+            CfirLookupOrigin.EXPLICIT_IMPORT,
+            allowPackagePrefix = isPackagePath,
+        ).targets
     }
 
     /**
      * 计算 import 路径中当前 simple-name 对应的 FQ name。
      */
-    private fun CjImportItem.selectedFqNameFor(expression: CjSimpleNameExpression): FqName? {
-        val importedFqName = importedFqName ?: return null
-        val segments = collectSimpleNames(importedReference).map(CjSimpleNameExpression::referencedName)
-        val currentIndex = collectSimpleNames(importedReference).indexOf(expression)
+    private fun CjImportPathOwner.selectedFqNameFor(expression: CjSimpleNameExpression): FqName? {
+        val segments = collectSimpleNames(importedReference)
+        val currentIndex = segments.indexOf(expression)
         if (currentIndex < 0) return null
-
-        val importedSegments = importedFqName.pathSegments().map(Name::asString)
-        if (currentIndex >= importedSegments.size) return null
-
-        val selectedSegments = importedSegments.take(currentIndex + 1)
-        if (selectedSegments.lastOrNull() != expression.referencedName) return null
-
-        return FqName.fromSegments(selectedSegments)
+        val localPath = FqName.fromSegments(segments.take(currentIndex + 1).map { it.referencedName })
+        val group = (this as? CjImportItem)?.importGroup ?: return localPath
+        // 裸花括号分组不添加路径；已出现但损坏的前缀不能被当成空前缀。
+        val prefix = group.localFqName
+        if (prefix == null && group.importedReference != null) return null
+        return if (prefix == null) localPath else prefix.child(localPath)
     }
 
     /**

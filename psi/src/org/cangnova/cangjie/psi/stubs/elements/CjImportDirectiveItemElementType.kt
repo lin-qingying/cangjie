@@ -23,134 +23,84 @@
  */
 package org.cangnova.cangjie.psi.stubs.elements
 
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.psi.CjImportDirective
-import org.cangnova.cangjie.psi.CjImportItem
-import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
-import org.cangnova.cangjie.psi.stubs.elements.StubIndexService.Companion.getInstance
-import org.cangnova.cangjie.psi.stubs.impl.CangJieImportDirectiveStubImpl
 import com.intellij.psi.stubs.IndexSink
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
-import org.cangnova.cangjie.psi.CjNodeType
-import org.jetbrains.annotations.NonNls
-import java.io.IOException
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.stubs.*
+import org.cangnova.cangjie.psi.stubs.impl.*
 
-/**
- * 表示 `CjImportDirectiveElementType`，承载PSI Stub中的语法节点、索引桩或辅助模型。
- */
+/** 语句 Stub 不再保存重复的扁平导入列表。 */
 class CjImportDirectiveElementType(debugName: String) :
     CjStubElementType<CangJieImportDirectiveStub, CjImportDirective>(
-        debugName,
-        CjImportDirective::class.java,
-        CangJieImportDirectiveStub::class.java,
+        debugName, CjImportDirective::class.java, CangJieImportDirectiveStub::class.java,
     ) {
-    /**
-     * 实现 `createStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun createStub(psi: CjImportDirective, parentStub: StubElement<*>?): CangJieImportDirectiveStub {
-        // 从 PSI 收集所有导入项信息
-        val importItems = psi.importItems.map { item ->
-            CangJieImportDirectiveStub.ImportItemInfo(
-                importedFqName = item.importedFqName,
-                isAllUnder = item.isAllUnder,
-                aliasName = item.aliasName
-            )
-        }
+    override fun createStub(psi: CjImportDirective, parentStub: StubElement<*>?): CangJieImportDirectiveStub =
+        CangJieImportDirectiveStubImpl(requireNotNull(parentStub), psi.containingCjFile.packageFqName, psi.isValidSyntax)
 
-        return CangJieImportDirectiveStubImpl(
-            parentStub!!,
-            psi.containingCjFile.packageFqName,
-            importItems
-        )
-    }
-
-    /**
-     * 实现 `serialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    @Throws(IOException::class)
     override fun serialize(stub: CangJieImportDirectiveStub, dataStream: StubOutputStream) {
-        val packageFqName = stub.getPackageFqName()?.asString()
-        dataStream.writeBoolean(packageFqName != null)
-        if (packageFqName != null) {
-            dataStream.writeName(packageFqName)
-        }
-
-        val items = stub.getImportItems()
-        dataStream.writeInt(items.size)
-
-        for (item in items) {
-            // 序列化 FqName (可能为 null)
-            val fqName = item.importedFqName?.asString()
-            dataStream.writeBoolean(fqName != null)
-            if (fqName != null) {
-                dataStream.writeName(fqName)
-            }
-
-            // 序列化 isAllUnder
-            dataStream.writeBoolean(item.isAllUnder)
-
-            // 序列化 aliasName (可能为 null)
-            dataStream.writeBoolean(item.aliasName != null)
-            if (item.aliasName != null) {
-                dataStream.writeName(item.aliasName)
-            }
-        }
+        dataStream.writeName(stub.getPackageFqName()?.asString())
+        dataStream.writeBoolean(stub.isValidSyntax)
     }
+    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportDirectiveStub =
+        CangJieImportDirectiveStubImpl(parentStub, dataStream.readNameString()?.let(::FqName), dataStream.readBoolean())
 
-    /**
-     * 实现 `indexStub` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
     override fun indexStub(stub: CangJieImportDirectiveStub, sink: IndexSink) {
-        getInstance().indexImports(stub, sink)
-    }
-
-    /**
-     * 实现 `deserialize` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    @Throws(IOException::class)
-    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportDirectiveStub {
-        val packageFqName = if (dataStream.readBoolean()) {
-            dataStream.readNameString()?.let(::FqName)
-        } else {
-            null
-        }
-        val itemCount = dataStream.readInt()
-        val items = mutableListOf<CangJieImportDirectiveStub.ImportItemInfo>()
-
-        for (i in 0 until itemCount) {
-            // 反序列化 FqName
-            val hasFqName = dataStream.readBoolean()
-            val fqName = if (hasFqName) {
-                val fqNameStr = dataStream.readNameString()
-                if (fqNameStr != null) org.cangnova.cangjie.name.FqName(fqNameStr) else null
-            } else {
-                null
-            }
-
-            // 反序列化 isAllUnder
-            val isAllUnder = dataStream.readBoolean()
-
-            // 反序列化 aliasName
-            val hasAlias = dataStream.readBoolean()
-            val aliasName = if (hasAlias) dataStream.readNameString() else null
-
-            items.add(CangJieImportDirectiveStub.ImportItemInfo(fqName, isAllUnder, aliasName))
-        }
-
-        return CangJieImportDirectiveStubImpl(
-            parentStub,
-            packageFqName,
-            items
-        )
+        StubIndexService.getInstance().indexImports(stub, sink)
     }
 }
 
-/**
- * 导入项元素类型（轻量级，不使用 Stub）
- *
- * CjImportItem 不需要索引，因为索引由父 CjImportDirective 处理
- */
+/** 花括号分组与单项都是真实 Stub 节点，局部路径协议由两者共享。 */
+class CjImportGroupElementType(debugName: String) :
+    CjStubElementType<CangJieImportGroupStub, CjImportGroup>(
+        debugName, CjImportGroup::class.java, CangJieImportGroupStub::class.java,
+    ) {
+    override fun createStub(psi: CjImportGroup, parentStub: StubElement<*>?): CangJieImportGroupStub =
+        CangJieImportGroupStubImpl(parentStub, pathData(psi, psi.hasOrganizationQualifier))
+    override fun serialize(stub: CangJieImportGroupStub, dataStream: StubOutputStream) = writePath(dataStream, stub.path)
+    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportGroupStub =
+        CangJieImportGroupStubImpl(parentStub, readPath(dataStream))
+}
+
 class CjImportItemElementType(debugName: String) :
-    CjNodeType(debugName, CjImportItem::class.java)
+    CjStubElementType<CangJieImportItemStub, CjImportItem>(
+        debugName, CjImportItem::class.java, CangJieImportItemStub::class.java,
+    ) {
+    override fun createStub(psi: CjImportItem, parentStub: StubElement<*>?): CangJieImportItemStub =
+        CangJieImportItemStubImpl(parentStub, pathData(psi, psi.hasOrganizationQualifier), psi.isAllUnder, psi.aliasName)
+    override fun serialize(stub: CangJieImportItemStub, dataStream: StubOutputStream) {
+        writePath(dataStream, stub.path)
+        dataStream.writeBoolean(stub.isAllUnder)
+        dataStream.writeName(stub.aliasName)
+    }
+    override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJieImportItemStub =
+        CangJieImportItemStubImpl(parentStub, readPath(dataStream), dataStream.readBoolean(), dataStream.readNameString())
+}
+
+private fun pathData(psi: CjImportPathOwner, hasQualifier: Boolean): ImportPathStubData = ImportPathStubData(
+    psi.organizationReference?.referencedNameAsName,
+    importFqName(psi.importedReference),
+    psi.organizationReference != null,
+    hasQualifier,
+    psi.importedReference != null,
+    !hasImportContainerErrors(psi),
+)
+
+/** 名称与存在位独立编码，损坏路径仍能保留其原始角色。 */
+private fun writePath(stream: StubOutputStream, path: ImportPathStubData) {
+    stream.writeName(path.organizationName?.asString())
+    stream.writeName(path.localFqName?.asString())
+    stream.writeBoolean(path.hasOrganizationReference)
+    stream.writeBoolean(path.hasOrganizationQualifier)
+    stream.writeBoolean(path.hasPathReference)
+    stream.writeBoolean(path.isValidSyntax)
+}
+
+private fun readPath(stream: StubInputStream): ImportPathStubData = ImportPathStubData(
+    stream.readNameString()?.let(Name::identifier),
+    stream.readNameString()?.let(::FqName),
+    stream.readBoolean(), stream.readBoolean(), stream.readBoolean(), stream.readBoolean(),
+)

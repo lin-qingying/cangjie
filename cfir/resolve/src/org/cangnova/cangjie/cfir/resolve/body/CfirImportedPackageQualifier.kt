@@ -25,7 +25,7 @@ internal data class CfirImportedPackageQualifier(
     /**
      * 该短名可解析到的包限定名集合。
      */
-    val packageFqNames: List<FqName>,
+    val packages: List<CfirResolvedImportTarget.Package>,
     /**
      * 是否存在同名但未成功解析目标的导入。
      */
@@ -34,15 +34,15 @@ internal data class CfirImportedPackageQualifier(
     /**
      * 当前包限定符是否同时命中多个包。
      */
-    val isAmbiguous: Boolean get() = packageFqNames.size > 1
+    val isAmbiguous: Boolean get() = packages.size > 1
     /**
      * 当前包限定符是否只来自未解析导入。
      */
-    val isUnresolved: Boolean get() = packageFqNames.isEmpty() && hasUnresolvedImport
+    val isUnresolved: Boolean get() = packages.isEmpty() && hasUnresolvedImport
     /**
      * 唯一解析成功的包限定名；歧义或未解析时为空。
      */
-    val packageFqName: FqName? get() = packageFqNames.singleOrNull()
+    val packageFqName: FqName? get() = packages.singleOrNull()?.fqName
 }
 
 /**
@@ -57,20 +57,20 @@ internal fun CfirFile.resolveImportedPackageQualifier(
         .asSequence()
         .filter { binding -> binding.effectiveName == name && !binding.importDirective.isAllUnder }
         .toList()
-    val packageFqNames = matchingBindings
+    val packages = matchingBindings
         .asSequence()
         .flatMap { binding ->
             binding.targets.asSequence().mapNotNull { target ->
-                (target as? CfirResolvedImportTarget.Package)?.fqName
+                target as? CfirResolvedImportTarget.Package
             }
         }
         .distinct()
         .toList()
     val hasUnresolvedImport = matchingBindings.any { binding -> binding.targets.isEmpty() }
-    if (packageFqNames.isEmpty() && !hasUnresolvedImport) return null
+    if (packages.isEmpty() && !hasUnresolvedImport) return null
     return CfirImportedPackageQualifier(
         name = name,
-        packageFqNames = packageFqNames,
+        packages = packages,
         hasUnresolvedImport = hasUnresolvedImport,
     )
 }
@@ -97,6 +97,6 @@ internal fun CfirExpression.importedPackageQualifierScopeOrNull(
     file: CfirFile,
     session: CfirSession,
 ): CfirPackageMemberScope? {
-    val packageFqName = importedPackageQualifierOrNull(file, session)?.packageFqName ?: return null
-    return CfirPackageMemberScope(packageFqName, session)
+    val target = importedPackageQualifierOrNull(file, session)?.packages?.singleOrNull() ?: return null
+    return CfirPackageMemberScope(target.fqName, session, organizationName = target.organizationName)
 }

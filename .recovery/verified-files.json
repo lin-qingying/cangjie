@@ -1,0 +1,2481 @@
+{
+  "issues": [],
+  "files": [
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/references/CfirReferenceResolveHelper.kt",
+      "expected": "9e83468feaf349c2aca9cb7aec2c579394cb1902ed4d92a675ab050b11f348c8",
+      "actual": "9e83468feaf349c2aca9cb7aec2c579394cb1902ed4d92a675ab050b11f348c8",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 108,
+          "reason": "historical pre-change snapshot"
+        },
+        {
+          "session": "B-sub1",
+          "line": 137,
+          "time": "2026-09-28T07:57:18.986Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 168,
+          "time": "2026-09-28T07:59:03.505Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1042,
+          "time": "2026-09-28T11:34:12.115Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportBindingResolver.kt",
+      "expected": "4bebcfc367f97893455946b5efe5438e6e9eccb00a797e373d015c67819849c4",
+      "actual": "4bebcfc367f97893455946b5efe5438e6e9eccb00a797e373d015c67819849c4",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 108,
+          "reason": "historical pre-change snapshot"
+        },
+        {
+          "session": "B-sub1",
+          "line": 146,
+          "time": "2026-09-28T07:57:41.055Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 265,
+          "time": "2026-09-28T08:10:19.851Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 306,
+          "time": "2026-09-28T08:15:15.627Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 455,
+          "time": "2026-09-28T08:52:43.685Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 864,
+          "time": "2026-09-28T10:41:01.447Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 886,
+          "time": "2026-09-28T10:45:31.089Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1042,
+          "time": "2026-09-28T11:34:12.115Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1008,
+          "time": "2026-09-28T16:39:35.536Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1011,
+          "time": "2026-09-28T16:39:36.050Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/psiUtil/CjPsiUtil.kt",
+      "expected": "f82136e87f2cb31ba885f2093c97f7de083b1d202b6315b116c6f6c27af0575a",
+      "actual": "f82136e87f2cb31ba885f2093c97f7de083b1d202b6315b116c6f6c27af0575a",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 108,
+          "reason": "historical pre-change snapshot"
+        },
+        {
+          "session": "B-sub1",
+          "line": 132,
+          "time": "2026-09-28T07:56:54.359Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjImportDirectiveItem.kt",
+      "expected": "44f96729dc411bed0e2f0ae058b46dc0a187d006538214d51c4752770c33d919",
+      "actual": "44f96729dc411bed0e2f0ae058b46dc0a187d006538214d51c4752770c33d919",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "time": "2026-09-28T08:00:16.148Z",
+          "reason": "historical raw file snapshot"
+        },
+        {
+          "session": "B-main",
+          "line": 267,
+          "time": "2026-09-28T08:00:52.901Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 344,
+          "time": "2026-09-28T08:53:40.455Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirImportPlanning.kt",
+      "expected": "95c00f8ffd7f18a70433e80a662b7c4f014f875d963dd28d9ef51e74bc143786",
+      "actual": "95c00f8ffd7f18a70433e80a662b7c4f014f875d963dd28d9ef51e74bc143786",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 274,
+          "time": "2026-09-28T07:42:00Z",
+          "reason": "pre-existing dirty scope lookup from recorded git diff"
+        },
+        {
+          "session": "B-sub3",
+          "line": 134,
+          "time": "2026-09-28T08:00:47.315Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 258,
+          "time": "2026-09-28T08:19:23.334Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/element/builder/CfirElementBuilder.kt",
+      "expected": "91e9232d631f6dd8c108e3512b710353338e71f5f1a473bb795e166b0e3132f8",
+      "actual": "91e9232d631f6dd8c108e3512b710353338e71f5f1a473bb795e166b0e3132f8",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 132,
+          "time": "2026-09-28T07:56:54.359Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 168,
+          "time": "2026-09-28T07:59:03.505Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 504,
+          "time": "2026-09-28T08:57:22.625Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt",
+      "expected": "d91cebcd82901a68668f880e277b66911f2f341895678d2f418d3a8e524a1208",
+      "actual": "d91cebcd82901a68668f880e277b66911f2f341895678d2f418d3a8e524a1208",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 146,
+          "time": "2026-09-28T07:58:46.599Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 161,
+          "time": "2026-09-28T07:59:37.754Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 237,
+          "time": "2026-09-28T08:06:24.699Z"
+        },
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        },
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        },
+        {
+          "session": "A-main",
+          "line": 892,
+          "time": "2026-09-29T00:35:35.880Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/test/org/cangnova/cangjie/psi/ImportGroupParsingTest.kt",
+      "expected": "51d7b0914195601cf47f979276396ad4f2f3fd481f796ac9bf51fabce27aa4f9",
+      "actual": "51d7b0914195601cf47f979276396ad4f2f3fd481f796ac9bf51fabce27aa4f9",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 175,
+          "time": "2026-09-28T08:00:34.053Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 238,
+          "time": "2026-09-28T08:06:24.722Z"
+        },
+        {
+          "session": "B-main",
+          "line": 568,
+          "time": "2026-09-28T08:39:48.316Z"
+        },
+        {
+          "session": "B-main",
+          "line": 804,
+          "time": "2026-09-28T09:07:13.940Z"
+        },
+        {
+          "session": "B-main",
+          "line": 883,
+          "time": "2026-09-28T09:20:40.286Z"
+        },
+        {
+          "session": "B-main",
+          "line": 917,
+          "time": "2026-09-28T09:25:10.651Z"
+        },
+        {
+          "session": "B-main",
+          "line": 950,
+          "time": "2026-09-28T09:34:46.670Z"
+        },
+        {
+          "session": "B-main",
+          "line": 1152,
+          "time": "2026-09-28T10:15:33.054Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/ImportGroupRawCfirTest.kt",
+      "expected": "7dfaee69273376a09960124444d10557e2a0dd594eb7880598d06b98c1239b45",
+      "actual": "7dfaee69273376a09960124444d10557e2a0dd594eb7880598d06b98c1239b45",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 175,
+          "time": "2026-09-28T08:00:34.053Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 244,
+          "time": "2026-09-28T08:06:54.759Z"
+        },
+        {
+          "session": "B-main",
+          "line": 752,
+          "time": "2026-09-28T08:59:10.616Z"
+        },
+        {
+          "session": "B-main",
+          "line": 1061,
+          "time": "2026-09-28T09:52:42.796Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1042,
+          "time": "2026-09-28T11:34:12.115Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjImportInfo.kt",
+      "expected": "06e19749a07eca925c8faee4699b39de8cbf30b968f8d44fa2aeb40823c53f56",
+      "actual": "06e19749a07eca925c8faee4699b39de8cbf30b968f8d44fa2aeb40823c53f56",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 134,
+          "time": "2026-09-28T08:00:47.315Z"
+        }
+      ]
+    },
+    {
+      "file": "common/src/org/cangnova/cangjie/ImportPath.kt",
+      "expected": "2ac46059c83f9210eb4da094a4eac48c80c23be7ee88a649aeeee8287edcd6ec",
+      "actual": "2ac46059c83f9210eb4da094a4eac48c80c23be7ee88a649aeeee8287edcd6ec",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 134,
+          "time": "2026-09-28T08:00:47.315Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 404,
+          "time": "2026-09-28T09:03:07.300Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 645,
+          "time": "2026-09-28T11:09:19.589Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjImportPathOwner.kt",
+      "expected": "eda2c752323504fb25cfd6da2169c2a20bcecb5ebcb0eb72b79b9f6c30afb942",
+      "actual": "eda2c752323504fb25cfd6da2169c2a20bcecb5ebcb0eb72b79b9f6c30afb942",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 271,
+          "time": "2026-09-28T08:01:23.486Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjImportGroup.kt",
+      "expected": "310a7f796809c26f00b77f585d203ce6ec43eedb2d575e2f2030ff4d51d5ca0e",
+      "actual": "310a7f796809c26f00b77f585d203ce6ec43eedb2d575e2f2030ff4d51d5ca0e",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 271,
+          "time": "2026-09-28T08:01:23.486Z"
+        }
+      ]
+    },
+    {
+      "file": "common/test/org/cangnova/cangjie/ImportPathTest.kt",
+      "expected": "9630b0f00d2c787ec8c3944efb278cb8c369f0e5d97b977cd66daa1ff1b6ad1f",
+      "actual": "9630b0f00d2c787ec8c3944efb278cb8c369f0e5d97b977cd66daa1ff1b6ad1f",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 156,
+          "time": "2026-09-28T08:02:15.171Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 413,
+          "time": "2026-09-28T09:03:27.022Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 652,
+          "time": "2026-09-28T11:09:58.191Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2303,
+          "time": "2026-09-28T14:28:36.497Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjDotQualifiedExpression.kt",
+      "expected": "78b8b06814f0e375908423f2eeaa97b3e6edf7db6bf8d8127ffcc3b0cc892abe",
+      "actual": "78b8b06814f0e375908423f2eeaa97b3e6edf7db6bf8d8127ffcc3b0cc892abe",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 924,
+          "time": "2026-09-28T12:29:39.342Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjVisitor.kt",
+      "expected": "0fd895f0763aa1317f43634c1542c7b1a695c6e1a0230ac58ebb432d84f65e93",
+      "actual": "0fd895f0763aa1317f43634c1542c7b1a695c6e1a0230ac58ebb432d84f65e93",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieImportPathStubImpl.kt",
+      "expected": "ff6904b5f202436db8c1db940ac57e0ea13e5d1206a9fb9b22928c57519b0d36",
+      "actual": "ff6904b5f202436db8c1db940ac57e0ea13e5d1206a9fb9b22928c57519b0d36",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/ImportPathStubData.kt",
+      "expected": "35360668f5041914195130f8b57fbfe4b0b6442a6e3efa1feb7bc396c8d720e9",
+      "actual": "35360668f5041914195130f8b57fbfe4b0b6442a6e3efa1feb7bc396c8d720e9",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjNodeTypes.java",
+      "expected": "351ac7196b05c9676676a0b031651e8b8c6e174f7cbb4af72ebbd97d20a6d3c7",
+      "actual": "351ac7196b05c9676676a0b031651e8b8c6e174f7cbb4af72ebbd97d20a6d3c7",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjVisitorUnit.kt",
+      "expected": "5f52506479f6c83ab3df674bb77764ce271dbbc526306a44025b6dc70fea0d08",
+      "actual": "5f52506479f6c83ab3df674bb77764ce271dbbc526306a44025b6dc70fea0d08",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/impl/CangJieImportDirectiveStubImpl.kt",
+      "expected": "1385973577a0b9037f43355095efbbf5331df7b48f9b1f259fc4910488b95afb",
+      "actual": "1385973577a0b9037f43355095efbbf5331df7b48f9b1f259fc4910488b95afb",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        },
+        {
+          "session": "B-main",
+          "line": 917,
+          "time": "2026-09-28T09:25:10.651Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/CangJieStubVersions.kt",
+      "expected": "bbca5df59e3390966f3e1c21261094e2ed0b1afc75ca50686d9a282528389c05",
+      "actual": "bbca5df59e3390966f3e1c21261094e2ed0b1afc75ca50686d9a282528389c05",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/StubInterfaces.kt",
+      "expected": "116e9a31c1974ea27608cb5aab17d7777a71e9fb7868b186f10a1be54e9f255d",
+      "actual": "116e9a31c1974ea27608cb5aab17d7777a71e9fb7868b186f10a1be54e9f255d",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/elements/CjStubElementTypes.java",
+      "expected": "92f3afbca18e0981e557ddaa42ae4758eecf0d2368581177d95b0a03f6daa385",
+      "actual": "92f3afbca18e0981e557ddaa42ae4758eecf0d2368581177d95b0a03f6daa385",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 293,
+          "time": "2026-09-28T08:02:24.894Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/elements/CjImportDirectiveItemElementType.kt",
+      "expected": "301ba8404fb356c694026311cdde9be3270a48577edacd0cf21df64b6fcd45eb",
+      "actual": "301ba8404fb356c694026311cdde9be3270a48577edacd0cf21df64b6fcd45eb",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 312,
+          "time": "2026-09-28T08:03:59.000Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/testData/importGroupReferences/organizationQualifiedPaths.cj",
+      "expected": "4b42ea3f55dbd2d86b36cc0e120616ead52fa834c00356482b611cca1309874f",
+      "actual": "4b42ea3f55dbd2d86b36cc0e120616ead52fa834c00356482b611cca1309874f",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 273,
+          "time": "2026-09-28T08:10:55.204Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiImportGroupReferenceTest.kt",
+      "expected": "ea44109be48f84e2c9c7eafddd4b2a9be5b5067ff9287eee77be7bb0ed18b8f9",
+      "actual": "ea44109be48f84e2c9c7eafddd4b2a9be5b5067ff9287eee77be7bb0ed18b8f9",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 273,
+          "time": "2026-09-28T08:10:55.204Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        },
+        {
+          "session": "B-main",
+          "line": 578,
+          "time": "2026-09-28T08:40:38.526Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 497,
+          "time": "2026-09-28T08:56:39.474Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 668,
+          "time": "2026-09-28T10:02:00.798Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 1195,
+          "time": "2026-09-28T17:32:54.649Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/testData/importGroupReferences/groupedPaths.cj",
+      "expected": "2cec15001e5b1ee825a0c247a2ae7ccb6363fd2a72e7d0b5001e48641056fcc4",
+      "actual": "2cec15001e5b1ee825a0c247a2ae7ccb6363fd2a72e7d0b5001e48641056fcc4",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 273,
+          "time": "2026-09-28T08:10:55.204Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt",
+      "expected": "2de6e8f8bc58b6024d9e3d46d19379195fbb43737fde9fec57480ee44a430a07",
+      "actual": "2de6e8f8bc58b6024d9e3d46d19379195fbb43737fde9fec57480ee44a430a07",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 369,
+          "time": "2026-09-28T08:13:04.979Z"
+        },
+        {
+          "session": "B-main",
+          "line": 804,
+          "time": "2026-09-28T09:07:13.940Z"
+        },
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        },
+        {
+          "session": "B-main",
+          "line": 917,
+          "time": "2026-09-28T09:25:10.651Z"
+        },
+        {
+          "session": "B-main",
+          "line": 950,
+          "time": "2026-09-28T09:34:46.670Z"
+        },
+        {
+          "session": "B-main",
+          "line": 1152,
+          "time": "2026-09-28T10:15:33.054Z"
+        },
+        {
+          "session": "B-main",
+          "line": 1227,
+          "time": "2026-09-28T10:32:39.107Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirOrganizationImportBindingTest.kt",
+      "expected": "39c9f1c52a11f590c833afed01255ae32beaccde6da647b3ef55014cde819f49",
+      "actual": "39c9f1c52a11f590c833afed01255ae32beaccde6da647b3ef55014cde819f49",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 306,
+          "time": "2026-09-28T08:15:15.627Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 516,
+          "time": "2026-09-28T08:59:01.713Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 577,
+          "time": "2026-09-28T09:05:35.981Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1042,
+          "time": "2026-09-28T11:34:12.115Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/test/org/cangnova/cangjie/psi/ImportGroupStubTest.kt",
+      "expected": "4aa87faed99724a9347b06431af158958dbb89d8e60ed60f4cb0a5c6a0b81d60",
+      "actual": "4aa87faed99724a9347b06431af158958dbb89d8e60ed60f4cb0a5c6a0b81d60",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 298,
+          "time": "2026-09-28T08:17:22.070Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 899,
+          "time": "2026-09-28T12:27:34.830Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 924,
+          "time": "2026-09-28T12:29:39.342Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/decompiled/decompiler-to-stubs/src/org/cangnova/cangjie/analysis/decompiler/stub/cjoStubBuilding.kt",
+      "expected": "b09c2c126f4450d232a62e3f717ac8a25b009f771300a9da107aad41eea00ac4",
+      "actual": "b09c2c126f4450d232a62e3f717ac8a25b009f771300a9da107aad41eea00ac4",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 446,
+          "time": "2026-09-28T08:22:22.495Z"
+        },
+        {
+          "session": "B-main",
+          "line": 529,
+          "time": "2026-09-28T08:34:51.180Z"
+        }
+      ]
+    },
+    {
+      "file": "common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/PositioningStrategies.kt",
+      "expected": "8921db8731d4c35293efc80b19c9dc44ba73ae58a8db76ccc89d54fb793f7512",
+      "actual": "8921db8731d4c35293efc80b19c9dc44ba73ae58a8db76ccc89d54fb793f7512",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 446,
+          "time": "2026-09-28T08:22:22.495Z"
+        },
+        {
+          "session": "B-main",
+          "line": 463,
+          "time": "2026-09-28T08:23:56.174Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/decompiled/decompiler-to-psi/src/org/cangnova/cangjie/analysis/decompiled/psi/text/decompiledTextBuilder.kt",
+      "expected": "c08f8cd30fbaa3584f1458e1dda83d3322728f9f2a24bb10cbc7321fd1f0b884",
+      "actual": "c08f8cd30fbaa3584f1458e1dda83d3322728f9f2a24bb10cbc7321fd1f0b884",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 446,
+          "time": "2026-09-28T08:22:22.495Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/test/org/cangnova/cangjie/psi/ImportPathFactoryTest.kt",
+      "expected": "e0e1e52c943f701ad734be89ad250f8e13a56488ca22e7d94ab8ed89eaf239f3",
+      "actual": "e0e1e52c943f701ad734be89ad250f8e13a56488ca22e7d94ab8ed89eaf239f3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 287,
+          "time": "2026-09-28T08:22:30.210Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 356,
+          "time": "2026-09-28T08:54:27.703Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 362,
+          "time": "2026-09-28T08:55:20.128Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 413,
+          "time": "2026-09-28T09:03:27.022Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 463,
+          "time": "2026-09-28T09:27:57.435Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 576,
+          "time": "2026-09-28T10:48:49.549Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 652,
+          "time": "2026-09-28T11:09:58.191Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirSourceSymbolProvider.kt",
+      "expected": "c1f6649c4bac062231891ca8294b7cfbc319a9644efcaab8c15a26d902d226cb",
+      "actual": "c1f6649c4bac062231891ca8294b7cfbc319a9644efcaab8c15a26d902d226cb",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 763,
+          "time": "2026-09-28T10:25:26.443Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 771,
+          "time": "2026-09-28T10:26:25.363Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 857,
+          "time": "2026-09-28T10:40:15.624Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1008,
+          "time": "2026-09-28T16:39:35.536Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1017,
+          "time": "2026-09-28T16:40:36.253Z"
+        },
+        {
+          "session": "A-main",
+          "line": 862,
+          "time": "2026-09-29T00:31:56.920Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSourceSymbolProvider.kt",
+      "expected": "301ce0b728205beab51418758bafb34623b4ba6516e2f8e39d20fde5c449423b",
+      "actual": "301ce0b728205beab51418758bafb34623b4ba6516e2f8e39d20fde5c449423b",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/combined/LLCombinedSymbolProvider.kt",
+      "expected": "1313743df0cd7d8b8d5ce9b3b8f23ea853fa45057d109058c9806636735a0444",
+      "actual": "1313743df0cd7d8b8d5ce9b3b8f23ea853fa45057d109058c9806636735a0444",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 402,
+          "time": "2026-09-28T08:28:13.582Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 864,
+          "time": "2026-09-28T10:41:01.447Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/cjd/CjdStructureExtractor.kt",
+      "expected": "2ba6b187ddc018a6af77a27d27a997dc65bc09f6b1ce6117627b4d619955681e",
+      "actual": "2ba6b187ddc018a6af77a27d27a997dc65bc09f6b1ce6117627b4d619955681e",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 551,
+          "time": "2026-09-28T08:36:36.317Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-serialization/test/org/cangnova/cangjie/cfir/serialization/cjd/CjdSidecarParserTest.kt",
+      "expected": "5b967efd73ae82ea6671777e8cba06dbf758bc4a9386b1f8a7639fc96988a9ff",
+      "actual": "5b967efd73ae82ea6671777e8cba06dbf758bc4a9386b1f8a7639fc96988a9ff",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 578,
+          "time": "2026-09-28T08:40:38.526Z"
+        }
+      ]
+    },
+    {
+      "file": "compiler/config/src/org/cangnova/cangjie/CangJieHeadlessPlatformBootstrap.kt",
+      "expected": "33ecf4829db3485ba4db8e2588bafa523b3470a39a37c109e84b368eb5a9b308",
+      "actual": "33ecf4829db3485ba4db8e2588bafa523b3470a39a37c109e84b368eb5a9b308",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 652,
+          "time": "2026-09-28T08:47:57.638Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/services/CfirImportBindingStore.kt",
+      "expected": "1cfb3c2509c00e9551984d2cd31d241ea35288e9f9d597c6bbedda3ab9745a55",
+      "actual": "1cfb3c2509c00e9551984d2cd31d241ea35288e9f9d597c6bbedda3ab9745a55",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 455,
+          "time": "2026-09-28T08:52:43.685Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 561,
+          "time": "2026-09-28T09:03:01.278Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirExplicitStarImportingScope.kt",
+      "expected": "d641dfa5cb5e323e0d366e2c2d136fd70022d0390f9941b7fb1f70fc8b24e8c0",
+      "actual": "d641dfa5cb5e323e0d366e2c2d136fd70022d0390f9941b7fb1f70fc8b24e8c0",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 455,
+          "time": "2026-09-28T08:52:43.685Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 872,
+          "time": "2026-09-28T10:42:00.436Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 886,
+          "time": "2026-09-28T10:45:31.089Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirImportOrganization.kt",
+      "expected": "1e78cdef4af59d65939785fab04c209b2ef5889b84b9b46896df331c53a86f14",
+      "actual": "1e78cdef4af59d65939785fab04c209b2ef5889b84b9b46896df331c53a86f14",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 455,
+          "time": "2026-09-28T08:52:43.685Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/scopes/impl/CfirPackageMemberScope.kt",
+      "expected": "8399afa4ea7f8e3ebf149b9a87500c499a4276870b97733c0b032b45021414f2",
+      "actual": "8399afa4ea7f8e3ebf149b9a87500c499a4276870b97733c0b032b45021414f2",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 455,
+          "time": "2026-09-28T08:52:43.685Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 872,
+          "time": "2026-09-28T10:42:00.436Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/CfirImportResolveExtensions.kt",
+      "expected": "acdaa354150eb27728f250c91e2094a29cd271b271d03b7afd74af4dd935acf0",
+      "actual": "acdaa354150eb27728f250c91e2094a29cd271b271d03b7afd74af4dd935acf0",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 461,
+          "time": "2026-09-28T08:53:28.611Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/body/CfirImportedPackageQualifier.kt",
+      "expected": "e99566c11ada33883eff8d86ebed863a6b3bac5ddf3ab333d91e98e8a6a29f90",
+      "actual": "e99566c11ada33883eff8d86ebed863a6b3bac5ddf3ab333d91e98e8a6a29f90",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 461,
+          "time": "2026-09-28T08:53:28.611Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/imports/AbstractImportOptimizationPlanTest.kt",
+      "expected": "f237e6f43304129f640fae1b13aa61fd9ca6b38aba1c2208875edc30b97ac1a1",
+      "actual": "f237e6f43304129f640fae1b13aa61fd9ca6b38aba1c2208875edc30b97ac1a1",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 344,
+          "time": "2026-09-28T08:53:40.455Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/tower/CfirTypeVariableReceiverMemberScopeTowerLevel.kt",
+      "expected": "aac980208cdf1bb37bb9ad30f4a8f4405d3c76179d97b046e9ac7d7c527fc7be",
+      "actual": "aac980208cdf1bb37bb9ad30f4a8f4405d3c76179d97b046e9ac7d7c527fc7be",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 476,
+          "time": "2026-09-28T08:54:37.681Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 872,
+          "time": "2026-09-28T10:42:00.436Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 886,
+          "time": "2026-09-28T10:45:31.089Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/services/CfirImportTypeReachability.kt",
+      "expected": "4e42f7a9b4e54e6b682ea82f1a761e32a5d65d1a120e788a0865c3b273cc09a2",
+      "actual": "4e42f7a9b4e54e6b682ea82f1a761e32a5d65d1a120e788a0865c3b273cc09a2",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 476,
+          "time": "2026-09-28T08:54:37.681Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 516,
+          "time": "2026-09-28T08:59:01.713Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 872,
+          "time": "2026-09-28T10:42:00.436Z"
+        }
+      ]
+    },
+    {
+      "file": "util/src/org/cangnova/cangjie/utils/psiUtil.kt",
+      "expected": "fdd1959fa4823e1afe609ca5458f917b27d90b914d94b630d962a55cf2cf983b",
+      "actual": "fdd1959fa4823e1afe609ca5458f917b27d90b914d94b630d962a55cf2cf983b",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 362,
+          "time": "2026-09-28T08:55:20.128Z"
+        }
+      ]
+    },
+    {
+      "file": "code-insight/formatting/src/org/cangnova/cangjie/formatter/CangJieCommonBlock.kt",
+      "expected": "53f93eede76fb63e5b2f29e974acf3dc5caa10653eaef8eaf82a0ced93738ffb",
+      "actual": "53f93eede76fb63e5b2f29e974acf3dc5caa10653eaef8eaf82a0ced93738ffb",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 707,
+          "time": "2026-09-28T08:55:21.320Z"
+        }
+      ]
+    },
+    {
+      "file": "common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/LightTreePositioningStrategies.kt",
+      "expected": "5abf968098a81efbaf421fd880065781e07278a463b873f742d8678a206fa5b7",
+      "actual": "5abf968098a81efbaf421fd880065781e07278a463b873f742d8678a206fa5b7",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 707,
+          "time": "2026-09-28T08:55:21.320Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/testData/importGroupReferences/organizationQualifiedScopes.cj",
+      "expected": "a2f67fbc0b7f08ce447f81c11d64fb4d02a56498d53a2ab9b0d182811c10d0d1",
+      "actual": "a2f67fbc0b7f08ce447f81c11d64fb4d02a56498d53a2ab9b0d182811c10d0d1",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 497,
+          "time": "2026-09-28T08:56:39.474Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirImportReexportInfo.kt",
+      "expected": "b01ced01f54e820e35de4f37f4f0b00da8c1a8b420c279ce92c8284e2cf1d17b",
+      "actual": "b01ced01f54e820e35de4f37f4f0b00da8c1a8b420c279ce92c8284e2cf1d17b",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 751,
+          "time": "2026-09-28T08:59:10.599Z"
+        },
+        {
+          "session": "B-main",
+          "line": 821,
+          "time": "2026-09-28T09:09:50.172Z"
+        },
+        {
+          "session": "B-main",
+          "line": 872,
+          "time": "2026-09-28T09:17:16.382Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 763,
+          "time": "2026-09-28T10:25:26.443Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjPsiFactory.kt",
+      "expected": "dfb2c34e6854ad83b5d922860e44f2f2144bf65ede4a0ea9a7b78cb20c4cc31c",
+      "actual": "dfb2c34e6854ad83b5d922860e44f2f2144bf65ede4a0ea9a7b78cb20c4cc31c",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 404,
+          "time": "2026-09-28T09:03:07.300Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 419,
+          "time": "2026-09-28T09:03:42.604Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 463,
+          "time": "2026-09-28T09:27:57.435Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 645,
+          "time": "2026-09-28T11:09:19.589Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/CfirTree.kt",
+      "expected": "c095d37b9038e7eadf59b3ca2328aa34f87649e1a29944a86124c4b7ded22fad",
+      "actual": "c095d37b9038e7eadf59b3ca2328aa34f87649e1a29944a86124c4b7ded22fad",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/ImplementationConfigurator.kt",
+      "expected": "f5843736ee94365858d1c50186b1f600bd60ef9a554138b31a677c9c855de2c3",
+      "actual": "f5843736ee94365858d1c50186b1f600bd60ef9a554138b31a677c9c855de2c3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt",
+      "expected": "1bb6eb27a829cbe10a005dfaad039305befa1578dbffe6837a445405256dbe5b",
+      "actual": "1bb6eb27a829cbe10a005dfaad039305befa1578dbffe6837a445405256dbe5b",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        },
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        },
+        {
+          "session": "A-main",
+          "line": 892,
+          "time": "2026-09-29T00:35:35.880Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-tree/tree-generator/src/org/cangnova/cangjie/cfir/tree/generator/BuilderConfigurator.kt",
+      "expected": "30bcbae2a6cd1af3afe482ac82fd99f897ffb655b3195c53661eac6bd633a56f",
+      "actual": "30bcbae2a6cd1af3afe482ac82fd99f897ffb655b3195c53661eac6bd633a56f",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 869,
+          "time": "2026-09-28T09:17:15.865Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/test/org/cangnova/cangjie/cfir/resolve/CfirImportVisibilityModelTest.kt",
+      "expected": "79dc63698cc2b6487128676f101820ca0991e92f4f4c64f47cf6cad7af563de7",
+      "actual": "79dc63698cc2b6487128676f101820ca0991e92f4f4c64f47cf6cad7af563de7",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 636,
+          "time": "2026-09-28T09:19:43.574Z"
+        }
+      ]
+    },
+    {
+      "file": "compiler/config/src/org/cangnova/cangjie/CangJieCoreEnvironment.kt",
+      "expected": "ee09d149442576f2b23337ed3f47aceb75ab47b9ab00bb3108c8f6ea395a68dd",
+      "actual": "ee09d149442576f2b23337ed3f47aceb75ab47b9ab00bb3108c8f6ea395a68dd",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 1128,
+          "time": "2026-09-28T10:08:43.613Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLModuleWithDependenciesSymbolProvider.kt",
+      "expected": "e8f6f26c23538ff5ee446b6554fb7c0821fe47e9f18010bed9155983c65e6aa6",
+      "actual": "e8f6f26c23538ff5ee446b6554fb7c0821fe47e9f18010bed9155983c65e6aa6",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 707,
+          "time": "2026-09-28T10:09:09.619Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 864,
+          "time": "2026-09-28T10:41:01.447Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLDanglingFileDependenciesSymbolProvider.kt",
+      "expected": "8904be874af0f37bee837f439f03463c6bb2c94bd6f68ec2d78e310a599dc39c",
+      "actual": "8904be874af0f37bee837f439f03463c6bb2c94bd6f68ec2d78e310a599dc39c",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 707,
+          "time": "2026-09-28T10:09:09.619Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 864,
+          "time": "2026-09-28T10:41:01.447Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirSymbolProvider.kt",
+      "expected": "1687f6bad2c1e97e6fda214fa7a45b399e40c9b9b050a757dcc833154883e513",
+      "actual": "1687f6bad2c1e97e6fda214fa7a45b399e40c9b9b050a757dcc833154883e513",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 849,
+          "time": "2026-09-28T10:39:41.842Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirImportNamespace.kt",
+      "expected": "e79a6c3c7623b7f0d0baf9e572afdca970644fbefb5358ff1ddbcaf008709c32",
+      "actual": "e79a6c3c7623b7f0d0baf9e572afdca970644fbefb5358ff1ddbcaf008709c32",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 849,
+          "time": "2026-09-28T10:39:41.842Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1008,
+          "time": "2026-09-28T16:39:35.536Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirCompositeSymbolProvider.kt",
+      "expected": "29729cd0a5398390726a614aa8266de48c37d61a3cd4ffa88118c66646729338",
+      "actual": "29729cd0a5398390726a614aa8266de48c37d61a3cd4ffa88118c66646729338",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 857,
+          "time": "2026-09-28T10:40:15.624Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 907,
+          "time": "2026-09-28T10:50:22.469Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CjImportAlias.kt",
+      "expected": "590824836f079b31490bf81065935e3de1042c7032607799e2c341a9ba6ddce9",
+      "actual": "590824836f079b31490bf81065935e3de1042c7032607799e2c341a9ba6ddce9",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 645,
+          "time": "2026-09-28T11:09:19.589Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/light-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/CfirOrganizationReexportTest.kt",
+      "expected": "a96d17b8c4dae769281779c28133ed08cd4813c0c070472ffb99e3740ef63ddd",
+      "actual": "a96d17b8c4dae769281779c28133ed08cd4813c0c070472ffb99e3740ef63ddd",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 982,
+          "time": "2026-09-28T11:18:41.162Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1124,
+          "time": "2026-09-28T12:36:26.196Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2132,
+          "time": "2026-09-28T13:43:24.842Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2188,
+          "time": "2026-09-28T14:03:24.352Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2195,
+          "time": "2026-09-28T14:05:00.511Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/light-tree2cfir/build.gradle.kts",
+      "expected": "56c06b92903d49f2e86833f74fc81e8cfba3a014731351bb908a08badac2c131",
+      "actual": "56c06b92903d49f2e86833f74fc81e8cfba3a014731351bb908a08badac2c131",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 982,
+          "time": "2026-09-28T11:18:41.162Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/decompiled/decompiler-to-psi/test/org/cangnova/cangjie/analysis/decompiled/psi/text/CompiledStubShapeTest.kt",
+      "expected": "0914658387c64391831c89d12b2f6e685a350acb8ae2474623ce6c8184ed0d12",
+      "actual": "0914658387c64391831c89d12b2f6e685a350acb8ae2474623ce6c8184ed0d12",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 736,
+          "time": "2026-09-28T11:47:15.708Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 773,
+          "time": "2026-09-28T11:54:42.268Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 899,
+          "time": "2026-09-28T12:27:34.830Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-standalone/testFixtures/org/cangnova/cangjie/analysis/api/standalone/cfir/test/configurators/CaStandaloneModeTestServiceRegistrar.kt",
+      "expected": "c4360760bf59f81b5789405251041bc0560dec61da84f9cfb481a67c01e673ca",
+      "actual": "c4360760bf59f81b5789405251041bc0560dec61da84f9cfb481a67c01e673ca",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 863,
+          "time": "2026-09-28T12:22:10.222Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 786,
+          "time": "2026-09-28T13:11:11.318Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/test/org/cangnova/cangjie/analysis/api/cfir/test/AnalysisApiImportPackageNavigationTest.kt",
+      "expected": "c5731b6ca8b9fecdd28bb10cfd0bf81b15a76e4c03d928623e95b0798db72f7a",
+      "actual": "c5731b6ca8b9fecdd28bb10cfd0bf81b15a76e4c03d928623e95b0798db72f7a",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 863,
+          "time": "2026-09-28T12:22:10.222Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 1023,
+          "time": "2026-09-28T15:22:42.134Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 1117,
+          "time": "2026-09-28T15:44:32.453Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2617,
+          "time": "2026-09-28T16:15:20.149Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2838,
+          "time": "2026-09-28T17:22:34.412Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/testData/importPackageNavigation/organizationDirectoriesAndRename.cj",
+      "expected": "7c2fbe36eb404cf9115cb06ad68d9d8b9484a385974db3944132ef1b84308ed8",
+      "actual": "7c2fbe36eb404cf9115cb06ad68d9d8b9484a385974db3944132ef1b84308ed8",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 863,
+          "time": "2026-09-28T12:22:10.222Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2404,
+          "time": "2026-09-28T14:59:13.596Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirSymbolProvider.kt",
+      "expected": "6033fe9402857d967c13ee50de2b28f6cb00cb82de6ba0c5d1415e0677818086",
+      "actual": "6033fe9402857d967c13ee50de2b28f6cb00cb82de6ba0c5d1415e0677818086",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/CaSymbolByCfirBuilder.kt",
+      "expected": "b8dc7bc5a5380042ad85bfa0df67240190e6c4aa70d4f71884ad0d56a0a996a1",
+      "actual": "b8dc7bc5a5380042ad85bfa0df67240190e6c4aa70d4f71884ad0d56a0a996a1",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 709,
+          "time": "2026-09-28T12:33:31.580Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPackageSymbol.kt",
+      "expected": "78ddda39b6a3beaddb4620268ef328b95918e2166c391bc833aa0a765d96fe11",
+      "actual": "78ddda39b6a3beaddb4620268ef328b95918e2166c391bc833aa0a765d96fe11",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaSymbolProvider.kt",
+      "expected": "e6820f72c3920dcc18ead109b98cc30e787171c00048e0dc569c6b925f1d7ebe",
+      "actual": "e6820f72c3920dcc18ead109b98cc30e787171c00048e0dc569c6b925f1d7ebe",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPublicSymbolKeys.kt",
+      "expected": "c7535976bf44e9ca78c7da75b738a2f474ebc8378d0c725097bc16ba482dcc54",
+      "actual": "c7535976bf44e9ca78c7da75b738a2f474ebc8378d0c725097bc16ba482dcc54",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/CaCfirPublicSymbolKeyMapping.kt",
+      "expected": "a4b67c7f913c6cb573ffaeb1b51c91cac6e4847018308c79de147c40a77a2182",
+      "actual": "a4b67c7f913c6cb573ffaeb1b51c91cac6e4847018308c79de147c40a77a2182",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api/src/org/cangnova/cangjie/analysis/api/symbols/CaPackageSymbol.kt",
+      "expected": "0b7c6d3cd7b9a1137df4066eee0678c88956d648ee798cd374a7f13cd4af530e",
+      "actual": "0b7c6d3cd7b9a1137df4066eee0678c88956d648ee798cd374a7f13cd4af530e",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/pointers/CaCfirClassifierSymbolPointers.kt",
+      "expected": "95c37185a733f45f9adca63db1535b428d24f01d8fbe985cde4be2d4926a3863",
+      "actual": "95c37185a733f45f9adca63db1535b428d24f01d8fbe985cde4be2d4926a3863",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 626,
+          "time": "2026-09-28T12:22:36.064Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieEmptyDeclarationProvider.kt",
+      "expected": "a8eb48102a117dad6328438bc9c9f3e675fcc3d7c7531d00488ec624c0c09c61",
+      "actual": "a8eb48102a117dad6328438bc9c9f3e675fcc3d7c7531d00488ec624c0c09c61",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 771,
+          "time": "2026-09-28T13:09:47.372Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/CangJiePsiFacade.kt",
+      "expected": "259905ad8dd19628d7ddf78d44dd8ea56579435321b87985a65a359a7d32f414",
+      "actual": "259905ad8dd19628d7ddf78d44dd8ea56579435321b87985a65a359a7d32f414",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieCompositeDeclarationProvider.kt",
+      "expected": "7d531c0a6f8c477cb550b43594fc4d8aac7f165c8bcdc0eea1fd7287f1e9e47e",
+      "actual": "7d531c0a6f8c477cb550b43594fc4d8aac7f165c8bcdc0eea1fd7287f1e9e47e",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 771,
+          "time": "2026-09-28T13:09:47.372Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt",
+      "expected": "38908d9e8494fe878df610add030b9c74061ccc8a151ad00ffa51c3a9c7a43ee",
+      "actual": "38908d9e8494fe878df610add030b9c74061ccc8a151ad00ffa51c3a9c7a43ee",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 771,
+          "time": "2026-09-28T13:09:47.372Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-platform-interface/src/org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDeclarationProvider.kt",
+      "expected": "eb92e3e838ff647abe39976689c7de6301fa5028964d9813df4375a2b371bde7",
+      "actual": "eb92e3e838ff647abe39976689c7de6301fa5028964d9813df4375a2b371bde7",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 771,
+          "time": "2026-09-28T13:09:47.372Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 796,
+          "time": "2026-09-28T13:12:38.435Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/packgae/CangJiePackage.kt",
+      "expected": "d6188ea14f2571af7613b879f1582d5ee47ba17e70a708545a8116383e9715bc",
+      "actual": "d6188ea14f2571af7613b879f1582d5ee47ba17e70a708545a8116383e9715bc",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 635,
+          "time": "2026-09-28T12:23:35.690Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/psi/stubs/elements/CjDotQualifiedExpressionElementType.kt",
+      "expected": "37c9171f39d9bee2e0d32c5a852ff6502bdd164e65ae2f25f2c0bfba5b1fd98c",
+      "actual": "37c9171f39d9bee2e0d32c5a852ff6502bdd164e65ae2f25f2c0bfba5b1fd98c",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 899,
+          "time": "2026-09-28T12:27:34.830Z"
+        },
+        {
+          "session": "B-sub3",
+          "line": 916,
+          "time": "2026-09-28T12:28:52.065Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-standalone/resources/META-INF/analysis-api/cangjie-analysis-api-standalone.xml",
+      "expected": "a09b1d4ef2d882192ed2ce6e9f08b50b62350dc0e5ab4042a52617c4696597e6",
+      "actual": "a09b1d4ef2d882192ed2ce6e9f08b50b62350dc0e5ab4042a52617c4696597e6",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 683,
+          "time": "2026-09-28T12:28:47.434Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 782,
+          "time": "2026-09-28T13:11:09.723Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/configurators/CaAnalysisApiBaseTestServiceRegistrar.kt",
+      "expected": "4299e2313da02df9acf4ea3433bb47b8ad2023d17ec0842e415a33bb88c0ba77",
+      "actual": "4299e2313da02df9acf4ea3433bb47b8ad2023d17ec0842e415a33bb88c0ba77",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 719,
+          "time": "2026-09-28T12:34:50.114Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 784,
+          "time": "2026-09-28T13:11:10.494Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-impl-base/src/org/cangnova/cangjie/analysis/api/impl/base/packages/CangJiePsiFacadeImpl.kt",
+      "expected": "4000ef14f24dc1d902c0b590862cb62e81d3852d809ecfb2d1aafb655be95676",
+      "actual": "4000ef14f24dc1d902c0b590862cb62e81d3852d809ecfb2d1aafb655be95676",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 773,
+          "time": "2026-09-28T13:09:58.108Z"
+        }
+      ]
+    },
+    {
+      "file": "common/src/org/cangnova/cangjie/name/FqName.kt",
+      "expected": "03a7ece5c468fb848446765d6b9b8eea784afbad891d8526e83347a11843d5b5",
+      "actual": "03a7ece5c468fb848446765d6b9b8eea784afbad891d8526e83347a11843d5b5",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2294,
+          "time": "2026-09-28T14:25:06.988Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2303,
+          "time": "2026-09-28T14:28:36.497Z"
+        }
+      ]
+    },
+    {
+      "file": "common/test/org/cangnova/cangjie/name/FqNamePathCompositionTest.kt",
+      "expected": "533940cd7afdcf0b615f6be2f7e2c9b48724ea1fb629039242d9e243e8d943ec",
+      "actual": "533940cd7afdcf0b615f6be2f7e2c9b48724ea1fb629039242d9e243e8d943ec",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2294,
+          "time": "2026-09-28T14:25:06.988Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirImportsChecker.kt",
+      "expected": "c5ffee3a903fbaaaedbf32aa51cc8694eaf0a36664065af651630b58f1b880a3",
+      "actual": "c5ffee3a903fbaaaedbf32aa51cc8694eaf0a36664065af651630b58f1b880a3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2337,
+          "time": "2026-09-28T14:35:40.400Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2339,
+          "time": "2026-09-28T14:35:41.194Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/projectStructure/CjTestModuleStructureFactory.kt",
+      "expected": "0d87c15b62b4732b25baf764448597211beaaaec0dda943ab3cb9895b7ff1935",
+      "actual": "0d87c15b62b4732b25baf764448597211beaaaec0dda943ab3cb9895b7ff1935",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2404,
+          "time": "2026-09-28T14:59:13.596Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2529,
+          "time": "2026-09-28T15:35:50.290Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/framework/AnalysisApiTestDirectives.kt",
+      "expected": "4781288a5e910f5e8aaf9db8472437233c9d644bc1f11db4f6dff720901a9efe",
+      "actual": "4781288a5e910f5e8aaf9db8472437233c9d644bc1f11db4f6dff720901a9efe",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2404,
+          "time": "2026-09-28T14:59:13.596Z"
+        }
+      ]
+    },
+    {
+      "file": "docs/import-psi-group-verification-20260928.md",
+      "expected": "09f58676567992fb4b63abb04a618eec8bbebda268acbd75a1be37ec1714b8c6",
+      "actual": "09f58676567992fb4b63abb04a618eec8bbebda268acbd75a1be37ec1714b8c6",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2471,
+          "time": "2026-09-28T15:23:07.659Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2801,
+          "time": "2026-09-28T17:11:08.442Z"
+        },
+        {
+          "session": "B-main",
+          "line": 2975,
+          "time": "2026-09-28T18:06:21.578Z"
+        },
+        {
+          "session": "B-main",
+          "line": 3174,
+          "time": "2026-09-28T18:51:49.749Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/stubBased/deserialization/StubBasedCfirMemberDeserializer.kt",
+      "expected": "84639a6c3cb4d447ad5983942a11da5c6928ed635b3f6a00a8624123bc934b7f",
+      "actual": "84639a6c3cb4d447ad5983942a11da5c6928ed635b3f6a00a8624123bc934b7f",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1253,
+          "time": "2026-09-28T15:51:48.044Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/decompiledLibraries/decompiledSetterParameter.cj",
+      "expected": "c8a9d38bd69e30d703c096dc69b3964f27ad20493c296574db73e103772eecb8",
+      "actual": "c8a9d38bd69e30d703c096dc69b3964f27ad20493c296574db73e103772eecb8",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1346,
+          "time": "2026-09-28T16:08:22.085Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1439,
+          "time": "2026-09-28T16:36:22.726Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/DecompiledPropertySetterTest.kt",
+      "expected": "afc20d9572d190d55652aa2e06c80a5fc21b30490aece4df77df428a9921bfca",
+      "actual": "afc20d9572d190d55652aa2e06c80a5fc21b30490aece4df77df428a9921bfca",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1346,
+          "time": "2026-09-28T16:08:22.085Z"
+        },
+        {
+          "session": "B-sub1",
+          "line": 1439,
+          "time": "2026-09-28T16:36:22.726Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testFixtures/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/AbstractCfirContextCollectionTest.kt",
+      "expected": "8ee0d7868e70eb5ecb16ad5f58a7e8be9369fed47b05f2db35a64965617d1b22",
+      "actual": "8ee0d7868e70eb5ecb16ad5f58a7e8be9369fed47b05f2db35a64965617d1b22",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 921,
+          "time": "2026-09-28T16:15:24.929Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 929,
+          "time": "2026-09-28T16:15:50.355Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/cfir/ContextCollectingDiagnosticCollectorVisitor.kt",
+      "expected": "bf088001670933dde2cfd1337fcd41a17c1bd7517b269d6412c0b59b8c8727e2",
+      "actual": "bf088001670933dde2cfd1337fcd41a17c1bd7517b269d6412c0b59b8c8727e2",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 921,
+          "time": "2026-09-28T16:15:24.929Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/contextCollector/lambdaArguments.txt",
+      "expected": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "actual": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1429,
+          "time": "2026-09-28T16:36:01.066Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/contextCollector/lambdaArguments.body.txt",
+      "expected": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "actual": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1430,
+          "time": "2026-09-28T16:36:01.077Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/contextCollector/lambdaArguments.copy.txt",
+      "expected": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "actual": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1431,
+          "time": "2026-09-28T16:36:01.083Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/contextCollector/lambdaArguments.body.copy.txt",
+      "expected": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "actual": "53c1e42704c94c75e16eedbd763438b01e33ee2759acdd8d8de91ffbcb0f98a3",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub1",
+          "line": 1432,
+          "time": "2026-09-28T16:36:01.096Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/symbolProviders/LLCangJieSymbolProvider.kt",
+      "expected": "78d64082e239c985ff55a4c1391a07456eb8ddd01b9451a86a3b56a1c2286465",
+      "actual": "78d64082e239c985ff55a4c1391a07456eb8ddd01b9451a86a3b56a1c2286465",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub2",
+          "line": 1008,
+          "time": "2026-09-28T16:39:35.536Z"
+        },
+        {
+          "session": "B-sub2",
+          "line": 1017,
+          "time": "2026-09-28T16:40:36.253Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/analysis-api-cfir/testData/importGroupReferences/organizationAwarePlanning.cj",
+      "expected": "147005297fdd3cb75ff6c12086d6d0bfab484d75e3a9f9522832e982dc13f8d5",
+      "actual": "147005297fdd3cb75ff6c12086d6d0bfab484d75e3a9f9522832e982dc13f8d5",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-sub3",
+          "line": 1195,
+          "time": "2026-09-28T17:32:54.649Z"
+        }
+      ]
+    },
+    {
+      "file": "psi/src/org/cangnova/cangjie/lang/declarations/CangJieDeclarationFileType.kt",
+      "expected": "b2902a491542dce5d4986c7b0e3cd5d3a3b208d4654d9e2a52d1e8ad11ca24e7",
+      "actual": "b2902a491542dce5d4986c7b0e3cd5d3a3b208d4654d9e2a52d1e8ad11ca24e7",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2968,
+          "time": "2026-09-28T18:03:29.525Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/REPAIR_LOG.md",
+      "expected": "20ac83055319101be0f93034cf2da47a98fc1f0f9948bb297492f5beb7086915",
+      "actual": "20ac83055319101be0f93034cf2da47a98fc1f0f9948bb297492f5beb7086915",
+      "matches": true,
+      "history": [
+        {
+          "session": "B-main",
+          "line": 2974,
+          "time": "2026-09-28T18:06:21.556Z"
+        }
+      ]
+    },
+    {
+      "file": "docs/cjmp-framework-review-and-fix-plan-20260928.md",
+      "expected": "5f37149f7b3ac01063c5cdfec552b77ac5e82d5f5092fd719fa350337b02ebea",
+      "actual": "5f37149f7b3ac01063c5cdfec552b77ac5e82d5f5092fd719fa350337b02ebea",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 669,
+          "time": "2026-09-29T00:04:43.039Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst/defaultArgumentCallerFirst.cj",
+      "expected": "c8d5fdf90f97e7fe8d27b5f3ad4c6e1c46bd01084e7ae8d151ede39c590e52e8",
+      "actual": "c8d5fdf90f97e7fe8d27b5f3ad4c6e1c46bd01084e7ae8d151ede39c590e52e8",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 487,
+          "time": "2026-09-28T23:40:44.232Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/test/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostic/CfirCjmpCallerFirstDiagnosticsTest.kt",
+      "expected": "dccf992b0bad9734464c9aed34bb1385d9305a1c5711d4e68a51ab6f8dd7ba2d",
+      "actual": "dccf992b0bad9734464c9aed34bb1385d9305a1c5711d4e68a51ab6f8dd7ba2d",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 487,
+          "time": "2026-09-28T23:40:44.232Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificShadowingBeforeImplicitTypes.cj",
+      "expected": "23fb1a9177fa50d06eb2c4a025d48922c06dfd923b2b5dda41c12a10e562cf25",
+      "actual": "23fb1a9177fa50d06eb2c4a025d48922c06dfd923b2b5dda41c12a10e562cf25",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 487,
+          "time": "2026-09-28T23:40:44.232Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst/shadowedCommonCallerFirst.cj",
+      "expected": "433e89ea61236d6c1968ff938fa403ba1d24de1956c96e01143c35963c8f9d2e",
+      "actual": "433e89ea61236d6c1968ff938fa403ba1d24de1956c96e01143c35963c8f9d2e",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 487,
+          "time": "2026-09-28T23:40:44.232Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDefaultReadThroughBeforeImplicitTypes.cj",
+      "expected": "e03135f6d65b1b53c81220262c9a869329acfc9b3f80d3ab0ad7096c31154e2a",
+      "actual": "e03135f6d65b1b53c81220262c9a869329acfc9b3f80d3ab0ad7096c31154e2a",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 487,
+          "time": "2026-09-28T23:40:44.232Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonImplicitSpecificExplicitReturnMismatch.cj",
+      "expected": "5cb9cc5d216c96c7f49cdf506dd89de5f95e7702fadea2ceb5128b35d72c752a",
+      "actual": "5cb9cc5d216c96c7f49cdf506dd89de5f95e7702fadea2ceb5128b35d72c752a",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEmptyBodiesMatchAsUnit.cj",
+      "expected": "268f1ab1cafa582178cf19793fb7d83d9d7adbcd424043d07d591c02e14c9582",
+      "actual": "268f1ab1cafa582178cf19793fb7d83d9d7adbcd424043d07d591c02e14c9582",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst/defaultArgumentInferredCallerFirst.cj",
+      "expected": "d6466d418158d2dfde37a245c3e1c2e829a2a18bbb23b7dd642777d7aa1b6f75",
+      "actual": "d6466d418158d2dfde37a245c3e1c2e829a2a18bbb23b7dd642777d7aa1b6f75",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpImplicitSpecificBodyErrorPreservesMatch.cj",
+      "expected": "be4ed9d58d6f45d87dbd06f1af741c74c15fd84972c78c4a98d83802ddbe292a",
+      "actual": "be4ed9d58d6f45d87dbd06f1af741c74c15fd84972c78c4a98d83802ddbe292a",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpExplicitSpecificErrorTypeDoesNotMatch.cj",
+      "expected": "11b543ad0bff7c02fc3e0699a933870b60dacaf3af04856d5fa335661293c36f",
+      "actual": "11b543ad0bff7c02fc3e0699a933870b60dacaf3af04856d5fa335661293c36f",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpBothImplicitReturnTypesMatch.cj",
+      "expected": "797cecf68b8da17d603aef6143e0453fdd019bb582658867ea8b7acdb2e26a26",
+      "actual": "797cecf68b8da17d603aef6143e0453fdd019bb582658867ea8b7acdb2e26a26",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst/shadowedCommonInferredCallerFirst.cj",
+      "expected": "9e28646d51b505b66cf3a897a9ccf75819431b0f0ace7a01b0a7c8135b588846",
+      "actual": "9e28646d51b505b66cf3a897a9ccf75819431b0f0ace7a01b0a7c8135b588846",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonValueSpecificEmptyBodyMismatch.cj",
+      "expected": "abd3ea3a07c51176bd0cb4621b3cbafeb932940d2a052849462bc9692ed6b3aa",
+      "actual": "abd3ea3a07c51176bd0cb4621b3cbafeb932940d2a052849462bc9692ed6b3aa",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEmptyCommonImplicitSpecificValuePostCheck.cj",
+      "expected": "6adb00bd12ea0055d5f390ac5fdef715bf5e51b14ea31e41b8c9e9ff5646b802",
+      "actual": "6adb00bd12ea0055d5f390ac5fdef715bf5e51b14ea31e41b8c9e9ff5646b802",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 375,
+          "time": "2026-09-29T00:12:41.178Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/ContainingClassUtils.kt",
+      "expected": null,
+      "actual": null,
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 795,
+          "time": "2026-09-29T00:20:12.463Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/ContainingClassUtils.kt",
+      "expected": "682b2810602a09a3d5a9b1db1337c3a737b314c8e438e36463016ee6578b3a0c",
+      "actual": "682b2810602a09a3d5a9b1db1337c3a737b314c8e438e36463016ee6578b3a0c",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 795,
+          "time": "2026-09-29T00:20:12.463Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/CfirProvider.kt",
+      "expected": "2b31559dc43f6b6b5aff0c3b51d03901b1397df194b1585a28c6cb51e4b27a80",
+      "actual": "2b31559dc43f6b6b5aff0c3b51d03901b1397df194b1585a28c6cb51e4b27a80",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 795,
+          "time": "2026-09-29T00:20:12.463Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-tree/src/org/cangnova/cangjie/cfir/ClassMembers.kt",
+      "expected": "7e76c60d6aa6f993ff83bb5a06def2b1b184374db83db6c8df05fc9421a6bdcb",
+      "actual": "7e76c60d6aa6f993ff83bb5a06def2b1b184374db83db6c8df05fc9421a6bdcb",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 795,
+          "time": "2026-09-29T00:20:12.463Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/analysis-tests/tests/org/cangnova/cangjie/cfir/analysis/tests/CfirDeclarationOwnerTest.kt",
+      "expected": "e2da7da20df74189521e39bffe0f6757256cd9a9c60dd49210455b8480edece4",
+      "actual": "e2da7da20df74189521e39bffe0f6757256cd9a9c60dd49210455b8480edece4",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-sub3",
+          "line": 448,
+          "time": "2026-09-29T00:26:29.258Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 519,
+          "time": "2026-09-29T00:44:27.559Z"
+        },
+        {
+          "session": "A-sub3",
+          "line": 526,
+          "time": "2026-09-29T00:46:00.682Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/cfir-serialization/src/org/cangnova/cangjie/cfir/serialization/deserialize/CfirDeclDeserializer.kt",
+      "expected": "b8d2738679ac21566f0ef2143b24d135dcee11b43771d65e7bf0cd557a8acda1",
+      "actual": "b8d2738679ac21566f0ef2143b24d135dcee11b43771d65e7bf0cd557a8acda1",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/raw-cfir-common/src/org/cangnova/cangjie/cfir/builder/ConversionUtils.kt",
+      "expected": "29fefd15f684fe8a8d2fecdd552deb79350694a0bb035d746da4f4e65337e272",
+      "actual": "29fefd15f684fe8a8d2fecdd552deb79350694a0bb035d746da4f4e65337e272",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/raw-cfir/raw-cfir-common/src/org/cangnova/cangjie/cfir/builder/AbstractRawCfirBuilder.kt",
+      "expected": "cde4d70ab396b0ee0c632c339b1812b70905c461524d2a1284d9ae881101e681",
+      "actual": "cde4d70ab396b0ee0c632c339b1812b70905c461524d2a1284d9ae881101e681",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 844,
+          "time": "2026-09-29T00:29:18.137Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirProvider.kt",
+      "expected": "4933877e14415b6678fd44a26a79ec9fcb767028872024332b2f9a602ce05970",
+      "actual": "4933877e14415b6678fd44a26a79ec9fcb767028872024332b2f9a602ce05970",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 892,
+          "time": "2026-09-29T00:35:35.880Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/util/LLContainingClassCalculator.kt",
+      "expected": "5dc2e4b6186490a5e7b9772a7b7977e7d3df3856febef9e6c8b9c4375f8a34b2",
+      "actual": "5dc2e4b6186490a5e7b9772a7b7977e7d3df3856febef9e6c8b9c4375f8a34b2",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 892,
+          "time": "2026-09-29T00:35:35.880Z"
+        },
+        {
+          "session": "A-main",
+          "line": 962,
+          "time": "2026-09-29T00:52:58.565Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/cjmp/CfirCjmpMatchRunner.kt",
+      "expected": "b173b393c8cd488fe5f248294ddbd4c1766427383372ab90ed58885ca0515b95",
+      "actual": "b173b393c8cd488fe5f248294ddbd4c1766427383372ab90ed58885ca0515b95",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 925,
+          "time": "2026-09-29T00:43:03.442Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/cjmp/CfirCjmpResolver.kt",
+      "expected": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
+      "actual": "3c52aa79ea194affd868590749f14c786b412be757ce6b24d843f91c089861ca",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 925,
+          "time": "2026-09-29T00:43:03.442Z"
+        }
+      ]
+    },
+    {
+      "file": "cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirCjmpMatchingProcessor.kt",
+      "expected": "747f1a2d35c7806abdc876f19fa7c7645172267c898ea7f1478e365ce39bbb85",
+      "actual": "747f1a2d35c7806abdc876f19fa7c7645172267c898ea7f1478e365ce39bbb85",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 925,
+          "time": "2026-09-29T00:43:03.442Z"
+        }
+      ]
+    },
+    {
+      "file": "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirCjmpMatchingLazyResolver.kt",
+      "expected": "1b83c490366e4d1e65a2ee560f3c8e0474bf59e708ea1b2aef5bc8ee7fa5dec8",
+      "actual": "1b83c490366e4d1e65a2ee560f3c8e0474bf59e708ea1b2aef5bc8ee7fa5dec8",
+      "matches": true,
+      "history": [
+        {
+          "session": "A-main",
+          "line": 925,
+          "time": "2026-09-29T00:43:03.442Z"
+        }
+      ]
+    }
+  ]
+}

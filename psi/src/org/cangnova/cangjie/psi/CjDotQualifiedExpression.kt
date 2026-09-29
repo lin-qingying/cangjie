@@ -77,8 +77,9 @@ class CjDotQualifiedExpression :
             val stub = stub
             if (stub != null) {
                 val childExpressionsByStub = getChildExpressionsByStub(stub)
-                if (childExpressionsByStub != null && childExpressionsByStub.size == 2) {
-                    return childExpressionsByStub[1]
+                if (childExpressionsByStub != null) {
+                    // 单个子表达式明确表示缺失 selector；不能因此访问 AST。
+                    return childExpressionsByStub.getOrNull(1)
                 }
             }
             return super.selectorExpression
@@ -89,6 +90,7 @@ class CjDotQualifiedExpression :
      */
     private fun getChildExpressionsByStub(stub: CangJiePlaceHolderStub<CjDotQualifiedExpression>): Array<out CjExpression?>? {
         if (stub.getParentStubOfType(CjImportItem::class.java) == null &&
+            stub.getParentStubOfType(CjImportGroup::class.java) == null &&
             stub.getParentStubOfType(CjPackageDirective::class.java) == null &&
             stub.getParentStubOfType(CjValueArgument::class.java) == null
         ) {

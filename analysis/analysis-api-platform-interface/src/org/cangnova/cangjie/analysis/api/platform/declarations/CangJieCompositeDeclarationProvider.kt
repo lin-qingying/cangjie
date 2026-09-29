@@ -107,6 +107,9 @@ class CangJieCompositeDeclarationProvider private constructor(
     /**
      * 按包名汇总 facade 文件。
      */
+    override fun getPackageFiles(packageFqName: FqName, organizationName: Name?, includeSubpackages: Boolean): Collection<CjFile> =
+        providers.flatMap { it.getPackageFiles(packageFqName, organizationName, includeSubpackages) }.distinct()
+
     override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile> {
         return providers.flatMapTo(mutableListOf()) { it.findFilesForFacadeByPackage(packageFqName) }
     }

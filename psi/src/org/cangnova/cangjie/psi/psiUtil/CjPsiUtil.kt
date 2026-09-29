@@ -178,12 +178,19 @@ fun CjSimpleNameExpression.isPackageDirectiveExpression(): Boolean {
 }
 
 /**
- * 提供 `isImportDirectiveExpression` 操作，封装PSI 工具节点的访问、构造或判断逻辑。
+ * 判断简单名是否属于导入项或分组前缀的实际包路径。
+ *
+ * 限定名中的简单名会嵌套在多个 qualified-expression 节点下，不能用固定的父级深度判断；
+ * 同时还要排除 alias 名称等非导入路径子节点。
  */
 fun CjSimpleNameExpression.isImportDirectiveExpression(): Boolean {
-    val parent = parent
-    return parent is CjImportItem ||
-            parent!!.parent is CjImportItem
+    var importPathRoot: PsiElement = this
+    while (importPathRoot.parent != null && importPathRoot.parent !is CjImportPathOwner) {
+        importPathRoot = importPathRoot.parent
+    }
+
+    val owner = importPathRoot.parent as? CjImportPathOwner ?: return false
+    return importPathRoot === owner.importedReference
 }
 
 /**

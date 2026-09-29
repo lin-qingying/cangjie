@@ -485,6 +485,8 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("importedFqName", fqNameType, nullable = true)
         +field("organizationName", nameType, nullable = true)
         +field("isAllUnder", booleanType)
+        // 语句级可见性在 raw 构建时传给每个叶项，后续阶段不得反查源码 token。
+        +field("visibility", visibilityType)
         +field("aliasName", nameType, nullable = true)
         +field("aliasSource", sourceElementType, nullable = true)
         /** `@When[...] import` 在 raw-CFIR 裁剪前保留的条件表达式。 */

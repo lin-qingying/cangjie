@@ -23,7 +23,6 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -105,9 +104,6 @@ open class CfirCjmpMatcherTransformer(
     override val session: CfirSession,
     private val scopeSession: ScopeSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.CJMP_MATCHING) {
-    /** eager 遍历的外围声明上下文；ThreadLocal 允许不同文件并行驱动同一阶段 visitor。 */
-    private val matchingContainer = ThreadLocal<CfirDeclaration?>()
-
     /** 当前 specific session 的配对结果存储。 */
     val storage: CfirCjmpMappingStorage get() = session.cjmpMappingStorage
 
@@ -119,28 +115,25 @@ open class CfirCjmpMatcherTransformer(
     override fun transformFile(file: CfirFile, data: Nothing?): CfirFile {
         checkSessionConsistency(file)
         return withFileAnalysisExceptionWrapping(file) {
-            withMatchingContainer(null) {
-                file.transformDeclarations(this, data)
-                file
-            }
+            file.transformDeclarations(this, data)
+            file
         }
     }
 
     /** eager 与 LL 共同使用的声明级匹配入口。 */
     fun transformMemberDeclaration(
         memberDeclaration: CfirMemberDeclaration,
-        containingContainer: CfirDeclaration? = matchingContainer.get(),
     ) {
         when (memberDeclaration) {
             is CfirPatternVariable ->
                 CfirCjmpCallableResolver.findSpecificTopLevelPatternVariablesInMatchOrder(memberDeclaration, session)
-                    .forEach { matchDeclaration(it, null, containingContainer) }
+                    .forEach { matchDeclaration(it) }
 
             is CfirCallableDeclaration ->
-                CfirCjmpCallableResolver.findSpecificCallablesInMatchOrder(memberDeclaration, session, containingContainer)
-                    .forEach { matchDeclaration(it, null, containingContainer) }
+                CfirCjmpCallableResolver.findSpecificCallablesInMatchOrder(memberDeclaration, session)
+                    .forEach { matchDeclaration(it) }
 
-            else -> matchDeclaration(memberDeclaration, null, containingContainer)
+            else -> matchDeclaration(memberDeclaration)
         }
     }
 
@@ -152,37 +145,29 @@ open class CfirCjmpMatcherTransformer(
     /** 转换 class 声明前执行配对。 */
     override fun transformClass(klass: CfirClass, data: Nothing?): CfirClass {
         transformMemberDeclaration(klass)
-        return withMatchingContainer(klass) {
-            klass.transformDeclarations(this, data)
-            klass
-        }
+        klass.transformDeclarations(this, data)
+        return klass
     }
 
     /** 转换 struct 声明前执行配对。 */
     override fun transformStruct(struct: CfirStruct, data: Nothing?): CfirStruct {
         transformMemberDeclaration(struct)
-        return withMatchingContainer(struct) {
-            struct.transformDeclarations(this, data)
-            struct
-        }
+        struct.transformDeclarations(this, data)
+        return struct
     }
 
     /** 转换 interface 声明前执行配对。 */
     override fun transformInterface(`interface`: CfirInterface, data: Nothing?): CfirInterface {
         transformMemberDeclaration(`interface`)
-        return withMatchingContainer(`interface`) {
-            `interface`.transformDeclarations(this, data)
-            `interface`
-        }
+        `interface`.transformDeclarations(this, data)
+        return `interface`
     }
 
     /** 转换 enum 声明前执行配对。 */
     override fun transformEnum(enum: CfirEnum, data: Nothing?): CfirEnum {
         transformMemberDeclaration(enum)
-        return withMatchingContainer(enum) {
-            enum.transformDeclarations(this, data)
-            enum
-        }
+        enum.transformDeclarations(this, data)
+        return enum
     }
 
     /** 转换 extend 前执行配对（官方 `MergeCJMPExtensions`：扩展类型 + 接口集为键）。 */
@@ -191,10 +176,8 @@ open class CfirCjmpMatcherTransformer(
         data: Nothing?,
     ): org.cangnova.cangjie.cfir.declarations.CfirExtend {
         transformMemberDeclaration(extend)
-        return withMatchingContainer(extend) {
-            extend.transformDeclarations(this, data)
-            extend
-        }
+        extend.transformDeclarations(this, data)
+        return extend
     }
 
     /** 转换命名函数前执行配对。 */
@@ -247,29 +230,7 @@ open class CfirCjmpMatcherTransformer(
      * 只处理标记为 specific 的声明（官方：配对由 common/specific 标记驱动；成员独立进入此入口，
      * 并通过已配对父容器查找 common 候选）。写入方向恒为 specific 侧（C25 单侧存储）。
      */
-    protected open fun matchDeclaration(
-        declaration: CfirDeclaration,
-        data: Nothing?,
-        containingContainer: CfirDeclaration? = matchingContainer.get(),
-    ) {
-        CfirCjmpMatchRunner.matchDeclaration(declaration, session, storage, containingContainer)
-    }
-
-    private inline fun <T> withMatchingContainer(container: CfirDeclaration?, action: () -> T): T {
-        val previous = matchingContainer.get()
-        if (container == null) {
-            matchingContainer.remove()
-        } else {
-            matchingContainer.set(container)
-        }
-        return try {
-            action()
-        } finally {
-            if (previous == null) {
-                matchingContainer.remove()
-            } else {
-                matchingContainer.set(previous)
-            }
-        }
+    protected open fun matchDeclaration(declaration: CfirDeclaration) {
+        CfirCjmpMatchRunner.matchDeclaration(declaration, session, storage)
     }
 }

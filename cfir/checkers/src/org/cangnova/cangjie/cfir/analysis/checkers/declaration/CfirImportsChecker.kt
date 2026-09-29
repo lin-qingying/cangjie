@@ -223,6 +223,9 @@ object CfirImportsChecker : CfirFileChecker() {
         // symbol provider，就把合法的平台 annotation import 误报为 unresolved。
         if (declaration.hasPlatformAnnotationUsage(import)) return
 
+        // IMPORTS 已经按精确包身份解析目标；合法导入不再由 checker 重新解释父路径。
+        if (hasResolvedTerminalImportTarget(import, importBindingsByImport)) return
+
         val pathSegments = importedFqName.pathSegments()
         if (pathSegments.isEmpty()) return
 
@@ -234,10 +237,7 @@ object CfirImportsChecker : CfirFileChecker() {
             return
         }
 
-        if (!import.isAllUnder && !hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) {
-            reporter.reportOn(import.source, CfirErrors.UNRESOLVED_IMPORT, importedFqName.shortName().asString())
-            return
-        }
+        reporter.reportOn(import.source, CfirErrors.UNRESOLVED_IMPORT, importedFqName.shortName().asString())
     }
 
     /**
@@ -267,7 +267,7 @@ object CfirImportsChecker : CfirFileChecker() {
             if (import.isUnusedImportCheckExempt(context.session)) continue
 
             val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: continue
-            if (!hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) continue
+            if (!hasResolvedTerminalImportTarget(import, importBindingsByImport)) continue
 
             // 官方语义：import macro package 是宏注册（external ImportManager 允许导入宏包且不报 unused）。
             // 普通成员导入的导入名可能是宏包成员，故同时核对父包身份。
@@ -450,20 +450,16 @@ object CfirImportsChecker : CfirFileChecker() {
 
     /**
      * IMPORTS 阶段已经产出的 binding 是本文件 import 可解析性的唯一事实来源。
-     * checker 仅在缺失 binding 时才回退到 symbolProvider 直接查询，避免与宏导入、
-     * re-export 等已解析目标再次脱节。
+     * 缺少 binding 是阶段契约错误，不能绕过宏导入、组织限定和重导出规则重新查询。
      */
     context(context: CheckerContext)
     private fun hasResolvedTerminalImportTarget(
         import: CfirImport,
-        importedFqName: FqName,
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
     ): Boolean {
-        val resolvedBinding = importBindingsByImport[import]
-        if (resolvedBinding != null) {
-            return resolvedBinding.targets.isNotEmpty()
-        }
-        return canResolveTerminalImportTarget(importedFqName)
+        return checkNotNull(importBindingsByImport[import]) {
+            "Import bindings must be available before diagnostics: ${import.importedFqName}"
+        }.targets.isNotEmpty()
     }
 
     /**

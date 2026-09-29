@@ -1,0 +1,122 @@
+{
+    "Diags":[
+            {
+                "DiagKind": "sema_overload_conflicts",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "function 'pick' has overload conflicts",
+                "Location": {
+                    "File": "specific.cj",
+                    "Line": 5,
+                    "Column": 26
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "specific.cj",
+                            "Line": 5,
+                            "Column": 26
+                        },
+                        "End": {
+                            "File": "specific.cj",
+                            "Line": 5,
+                            "Column": 30
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [
+                    {
+                        "Message": "conflict with the declaration",
+                        "MainHint": {
+                            "Content": "",
+                            "Range": {
+                                "Begin": {
+                                    "File": "specific.cj",
+                                    "Line": 4,
+                                    "Column": 26
+                                },
+                                "End": {
+                                    "File": "specific.cj",
+                                    "Line": 4,
+                                    "Column": 30
+                                }
+                            }
+                        },
+                        "OtherHints": [],
+                        "Help": null
+                    }
+                ],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_multiple_common_implementations",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'common' function has several specific implementations",
+                "Location": {
+                    "File": "common.cj",
+                    "Line": 4,
+                    "Column": 5
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "common.cj",
+                            "Line": 4,
+                            "Column": 5
+                        },
+                        "End": {
+                            "File": "common.cj",
+                            "Line": 4,
+                            "Column": 51
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            },
+            {
+                "DiagKind": "sema_not_matched",
+                "Severity": "error",
+                "WarnGroup": "none",
+                "DiagCategory": "sema",
+                "Message": "'specific' function 'pick' can not find 'common' match",
+                "Location": {
+                    "File": "specific.cj",
+                    "Line": 5,
+                    "Column": 5
+                },
+                "MainHint": {
+                    "Content": "",
+                    "Range": {
+                        "Begin": {
+                            "File": "specific.cj",
+                            "Line": 5,
+                            "Column": 5
+                        },
+                        "End": {
+                            "File": "specific.cj",
+                            "Line": 5,
+                            "Column": 58
+                        }
+                    }
+                },
+                "OtherHints": [],
+                "Notes": [],
+                "Helps": []
+            }
+    ],
+    "Num":{
+        "Errors": 3,
+        "PrintedErrors": 3,
+        "Warnings": 0,
+        "PrintedWarnings": 0
+    }
+}
+

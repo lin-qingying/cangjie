@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOriginScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -47,7 +48,11 @@ class CfirPackageMemberScope(
     /** 当前 package scope 是本包词法查询还是显式包限定查询。 */
     override val lookupOrigin: CfirLookupOrigin = CfirLookupOrigin.PACKAGE,
 
+    /** 导入包限定符保留的组织身份；本包普通 scope 不额外施加组织限制。 */
+    private val organizationName: Name? = null,
+
 ) : CfirPackageScope(), CfirLookupOriginScope {
+    private val namespace = symbolProvider.getImportNamespace(CfirImportNamespaceContext(packageFqName, organizationName))
 
     /**
      * classifier 查询缓存。
@@ -90,7 +95,7 @@ class CfirPackageMemberScope(
             if (name !in knownNames) {
                 emptyList()
             } else {
-                listOfNotNull(symbolProvider.getClassLikeSymbolByClassId(org.cangnova.cangjie.name.ClassId(packageFqName, name)))
+                namespace.classifiers(name)
             }
         }
         symbols.forEach(processor)
@@ -101,7 +106,7 @@ class CfirPackageMemberScope(
      */
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         val symbols = functionCache.getOrPut(name) {
-            symbolProvider.getTopLevelFunctionSymbols(packageFqName, name)
+            namespace.functions(name)
         }
         symbols.forEach(processor)
     }
@@ -111,7 +116,7 @@ class CfirPackageMemberScope(
      */
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         val symbols = callableCache.getOrPut(name) {
-            symbolProvider.getTopLevelCallableSymbols(packageFqName, name)
+            namespace.callables(name)
         }
         symbols.forEach(processor)
     }
@@ -121,7 +126,7 @@ class CfirPackageMemberScope(
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
         val symbols = propertyCache.getOrPut(name) {
-            symbolProvider.getTopLevelPropertySymbols(packageFqName, name)
+            namespace.properties(name)
         }
         symbols.forEach(processor)
     }

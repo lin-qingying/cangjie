@@ -216,8 +216,8 @@ internal class CaCfirSymbolProvider(
     /**
      * 按包名查询公开包符号。
      */
-    override fun getPackageSymbol(fqName: FqName): CaPackageSymbol? = withValidityAssertion {
-        analysisSession.cfirSymbolBuilder.createPackageSymbolIfOneExists(fqName)
+    override fun getPackageSymbol(fqName: FqName, organizationName: Name?): CaPackageSymbol? = withValidityAssertion {
+        analysisSession.cfirSymbolBuilder.createPackageSymbolIfOneExists(fqName, organizationName)
     }
 
     /**

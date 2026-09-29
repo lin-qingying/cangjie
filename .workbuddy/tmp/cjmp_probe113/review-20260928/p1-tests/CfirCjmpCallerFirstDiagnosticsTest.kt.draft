@@ -1,0 +1,109 @@
+package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic
+
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.collectDiagnosticsForFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
+import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
+import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.resolvePhase
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.CfirCjmpSettingsComponent
+import org.cangnova.cangjie.cfir.session.cjmpMappingStorage
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
+import org.cangnova.cangjie.test.services.TestServices
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+
+/**
+ * P1/A2 草稿：首个语义请求必须经过真实 LL 文件诊断入口，并最终绑定跨文件 specific 声明。
+ *
+ * 测试用例生命周期、模块图、参数注入复用 SourcePostSemaDiagnosticsTest 的执行基座。
+ * 此文件只在 scratch 保存，尚未编译或执行。
+ */
+class CfirCjmpCallerFirstDiagnosticsTest : AbstractAnalysisApiExecutionTest(
+    "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst",
+) {
+    override val configurator = analysisApiCfirSourceTestConfigurator(analyseInDependentSession = false)
+
+    override val additionalDirectives = super.additionalDirectives + CfirDiagnosticsDirectives
+
+    @Test
+    fun defaultArgumentCallerFirst(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
+        assertCallerFirst(mainFile, mainModule, testServices)
+    }
+
+    @Test
+    fun shadowedCommonCallerFirst(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
+        assertCallerFirst(mainFile, mainModule, testServices)
+    }
+
+    private fun assertCallerFirst(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
+        // P1 的测试环境准备：明确从已声明的 CJMP_MODE 读取模式，不按模块名分支。
+        // 此处只构建 raw 文件，禁止任何 declaration lazyResolveToPhase 调用。
+        // P7 把模式接入生产 session 工厂后，应删除这段测试注入并验证同一测试继续通过。
+        for (module in testServices.cjTestModuleStructure.mainModules) {
+            val mode = module.testModule.directives[CfirDiagnosticsDirectives.CJMP_MODE].single()
+            val sourceFile = module.cjFiles.first()
+            val rawFile = sourceFile.getOrBuildCfirFile(sourceFile.getResolutionFacadeForTest())
+            rawFile.moduleData.session.register(
+                CfirCjmpSettingsComponent::class,
+                CfirCjmpSettingsComponent(explicitMode = mode),
+            )
+        }
+
+        val facade = mainFile.getResolutionFacadeForTest()
+        val callerFile = mainFile.getOrBuildCfirFile(facade)
+        val calleePsi = mainModule.cjFiles.single { it !== mainFile }
+        val calleeFile = calleePsi.getOrBuildCfirFile(calleePsi.getResolutionFacadeForTest())
+        val callee = calleeFile.declarations.filterIsInstance<CfirNamedFunction>().single()
+        val storage = callerFile.moduleData.session.cjmpMappingStorage
+
+        assertTrue(callee.resolvePhase < CfirResolvePhase.CJMP_MATCHING, "callee must start unmatched")
+        assertTrue(storage.isEmpty, "test preparation must not populate CJMP mappings")
+
+        // 第一个语义操作只请求调用者诊断：不能先解析被调函数、收集被调文件诊断，或全模块遍历。
+        val diagnostics = mainFile.collectDiagnosticsForFile(facade, DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS)
+        assertEquals(emptyList<String>(), diagnostics.map { it.factoryName }.sorted())
+
+        val caller = callerFile.declarations.filterIsInstance<CfirNamedFunction>().single()
+        val calls = mutableListOf<CfirFunctionCall>()
+        requireNotNull(caller.body).accept(object : CfirVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this)
+            }
+
+            override fun visitFunctionCall(functionCall: CfirFunctionCall) {
+                calls += functionCall
+                functionCall.acceptChildren(this)
+            }
+        })
+        val call = calls.single()
+        val reference = call.calleeReference as CfirResolvedNamedReference
+        // 仅断言零诊断会漏掉“缺默认参数后静默选中 common”的错误，必须核对最终符号 identity。
+        assertSame(callee.symbol, reference.resolvedSymbol, "caller must bind the specific declaration")
+        assertEquals(ConePrimitiveType.INT64, call.coneTypeOrNull)
+        assertEquals(ConePrimitiveType.INT64, caller.returnTypeRef.coneTypeOrNull)
+        assertTrue(callee.resolvePhase >= CfirResolvePhase.CJMP_MATCHING)
+        assertNotNull(storage.commonFor(callee), "the production caller path must establish the counterpart")
+
+        // 相同诊断请求再次执行，检查缓存读取也不改变目标；这里不做额外的 callee 预热。
+        val repeatedDiagnostics = mainFile.collectDiagnosticsForFile(facade, DiagnosticCheckerFilter.ONLY_DEFAULT_CHECKERS)
+        assertEquals(emptyList<String>(), repeatedDiagnostics.map { it.factoryName }.sorted())
+        assertSame(callee.symbol, (call.calleeReference as CfirResolvedNamedReference).resolvedSymbol)
+    }
+}
