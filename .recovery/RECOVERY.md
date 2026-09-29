@@ -26,6 +26,8 @@
 
 LocalHistory 的 ContentChange/DeleteChange 已解码到 VFS 内容记录，正文经过 VFS SHA-1 校验。找回 CjoStubAstConsistencyDiagnosticTest.kt（16,678 字节、原始 SHA-256 完全一致）以及 compiler.xml、kotlinc.xml、project dictionary、Run All Test 四份配置的重置前内容。后两份配置保留了换行规范化后的相同文本，其原始字节以 Base64 附在 `localhistory-recovered.json`。前两份配置本就在恢复基线中，与真实历史字节相同。
 
-不能宣称所有磁盘文件逐字节完整恢复：`.idea/workspace.xml` 被 IntelliJ LocalHistory 明确排除，未找到可信的重置前快照；旧探针的少量临时可执行文件/编译缓存没有可验证正文。它们不被伪造为已恢复源码。新工作区自身生成的 `.idea/workspace.xml`、`.idea/vcs.xml` 属于本机工作状态，未作为历史恢复提交。
+不能宣称所有磁盘文件逐字节完整恢复：`.idea/workspace.xml` 被 IntelliJ LocalHistory 明确排除，但从 VFS 找到 51 份匹配原项目 UUID、路径的完整 XML 候选，均通过内容哈希验证。缺少时间绑定，不能唯一确认重置前最终版本，因此未覆盖现有 workspace。51 份原始字节全部无损保存于 `workspace-candidates.br.b64`（Base64 解码后用 Brotli 解压得到 JSON，每条 contentBase64 即原文件字节）；归档 SHA-256 为 `e1a3b8f22e9232f6d73381eabd598f8063bb2b2e44336481f5e5a6118305b5ad`，所有候选二次验 hash 通过。索引见 `workspace-vfs-candidates.json`。
+
+旧探针的少量临时可执行文件/编译缓存没有可验证正文，没有伪造为已恢复源码。新工作区自身生成的 `.idea/workspace.xml`、`.idea/vcs.xml` 属于本机工作状态，未作为历史恢复提交。所有确认的 import/CJMP 源码、测试、方案文档及恢复证据均已提交在恢复分支；没有合并或推送到原主分支。
 
 `CjImportDirectiveItem.kt` 的末尾已按历史整文件替换的 trimEnd 语义恢复；CfirImportBindingResolver 的原 BOM 也已保留。当前差异通过 `git diff --check`。
