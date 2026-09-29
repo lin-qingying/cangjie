@@ -11,6 +11,7 @@ import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -88,6 +89,28 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
         val resolvedDeclaration = references.singleOrNull()?.resolve() as? CjNamedDeclaration
         assertNotNull(resolvedDeclaration, "type-position 引用未解析成功")
         assertEquals("Box", resolvedDeclaration?.name)
+    }
+
+    /**
+     * 验证未解析的简单名不会触发符号构造异常，也不会解析到任何目标。
+     *
+     * 解析失败时候选符号是 `CfirErrorNamedValueSymbol` 等错误占位符号，它们没有公开符号形态，
+     * 导航目标必须为空；该规则由 `CfirReference.toCaTargetSymbols` 统一执行。
+     */
+    @Test
+    fun unresolvedNameReferencesHaveNoTarget(mainFile: CjFile) {
+        for (unresolvedName in listOf("missingValue", "missingFunction")) {
+            val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+                .firstOrNull { it.referencedName == unresolvedName }
+                ?: error("Cannot locate usage simple-name `$unresolvedName` in `${mainFile.name}`")
+
+            val references = CangJieReferenceProvidersService.getReferencesFromProviders(referenceExpression)
+            assertFalse(references.isEmpty(), "未解析的简单名 `$unresolvedName` 也应拿到引用实现")
+
+            val reference = referenceExpression.mainReference
+            assertNull(reference.resolve(), "未解析的简单名 `$unresolvedName` 不应解析到任何目标")
+            assertTrue(reference.multiResolve(false).isEmpty(), "未解析的简单名 `$unresolvedName` 不应有多目标解析结果")
+        }
     }
 
     /**
