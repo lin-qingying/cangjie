@@ -1,0 +1,19 @@
+{
+  "completed": true,
+  "mainMergeTarget": "a04b6bb23cf1abd2c588ba4f7b3aac60fcbe3407",
+  "preMergeMain": "157b3c282b56a12b46e860305fa7055e2d6604e0",
+  "worktreeBackupRef": "refs/heads/codex/main-worktree-before-merge-1790680444840",
+  "worktreeBackupCommit": "d45e05d14036369f4ac063ae066c080f951ef43c",
+  "stashBackup": "02091074696c0e9317c93d526fcb77fdb95a2454",
+  "expectedWorkingTree": "741d8101f84ba99d13693c4337407e2d8712a4be",
+  "actualWorkingTree": "741d8101f84ba99d13693c4337407e2d8712a4be",
+  "unresolvedConflicts": 0,
+  "remainingUncommitted": [
+    ".idea/workspace.xml"
+  ],
+  "automation": {
+    "id": "cjo",
+    "status": "PAUSED"
+  },
+  "pushed": false
+}
