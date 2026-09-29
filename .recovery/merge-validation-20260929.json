@@ -1,0 +1,131 @@
+{
+  "testedMerge": "613e122b982f25f5b90523e600fb1b952977ab42 plus explicit FlatBuffers test dependency",
+  "tests": 24,
+  "failures": 0,
+  "suites": [
+    {
+      "Suite": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest",
+      "Tests": 4,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:39:50.133Z",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationQualifiedScopes(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationAwarePlanning(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationQualifiedPaths(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#groupedPaths(CjFile)"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:40:24.432Z",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest#organizationDirectoriesAndRename(CjFile)"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest",
+      "Tests": 5,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:40:25.800Z",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest#declarationNamesDoNotProduceReferences(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest#typePositionReference(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest#unresolvedNameReferencesHaveNoTarget(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest#simpleReference(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiReferenceServiceTest#simpleReferenceMainReference(CjFile)"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Operator",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:43.458Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Operator#testModOverflow()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Type",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:53.889Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Type#testInt64max()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Varray",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:54.800Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Varray#testVarrayIndex03()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Varray#testVarrayIndex05()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Operator",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:56.185Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Operator#testModOverflow()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Type",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:56.992Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Type#testInt64max()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Varray",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:57.423Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Varray#testVarrayIndex03()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Varray#testVarrayIndex05()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest",
+      "Tests": 6,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T10:47:58.040Z",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#lightTreeSameFileRedeclarationsKeepDistinctOwners()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#lightTreeMembersKeepTheirDeclarationSiteOwners()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#psiMembersKeepTheirDeclarationSiteOwners()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#lightTreeCjoMembersKeepTheirDeserializedDeclarationOwners()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#psiCjoMembersKeepTheirDeserializedDeclarationOwners()",
+        "org.cangnova.cangjie.cfir.analysis.tests.CfirDeclarationOwnerTest#psiSameFileRedeclarationsKeepDistinctOwners()"
+      ]
+    }
+  ]
+}
