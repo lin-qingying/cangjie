@@ -1,0 +1,33 @@
+{
+  "testCount": 5,
+  "failures": 0,
+  "suites": [
+    {
+      "Suite": "org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest",
+      "Tests": 4,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T09:00:10.957Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\intellij-ide\\modules\\ide\\base\\build\\test-results\\test\\TEST-org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest#testBuildsDecompiledImportDescriptorsInsideDocumentRange",
+        "org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest#testBuildsImportsAndCommentDescriptorsFromSharedCollector",
+        "org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest#testSkipsSingleLineBlockAndCallDescriptors",
+        "org.cangnova.cangjie.ide.editor.folding.CangJieFoldingBuilderTest#testBuildsMultilineCallDescriptorWithSharedPlaceholder"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.ide.references.CangJieImportGroupNavigationTest",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T09:01:18.617Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\intellij-ide\\product\\idea-plugin\\build\\test-results\\test\\TEST-org.cangnova.cangjie.ide.references.CangJieImportGroupNavigationTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.ide.references.CangJieImportGroupNavigationTest#testOrganizationQualifiedGroupNavigatesToItsOwnPackageAndClass"
+      ]
+    }
+  ]
+}

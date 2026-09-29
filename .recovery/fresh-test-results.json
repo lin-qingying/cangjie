@@ -1,0 +1,297 @@
+{
+  "testCount": 71,
+  "failures": 0,
+  "suites": [
+    {
+      "Suite": "org.cangnova.cangjie.psi.DoubleColonParsingTest",
+      "Tests": 3,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:13.004Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\psi\\build\\test-results\\test\\TEST-org.cangnova.cangjie.psi.DoubleColonParsingTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.psi.DoubleColonParsingTest#testDoubleColonIsOneLexerToken()",
+        "org.cangnova.cangjie.psi.DoubleColonParsingTest#testPackageAndImportKeepOrganizationSeparateFromPackageName()",
+        "org.cangnova.cangjie.psi.DoubleColonParsingTest#testOrganizationSeparatorCannotAppearAfterPackagePath()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.psi.ImportGroupParsingTest",
+      "Tests": 6,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:14.979Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\psi\\build\\test-results\\test\\TEST-org.cangnova.cangjie.psi.ImportGroupParsingTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testIllegalGroupsReportErrorsWithoutConsumingNextDirective()",
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testContextualKeywordSegmentsAndComments()",
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testOrganizationAndPackageReferencesAreSeparate()",
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testMissingBraceDoesNotConsumeModifiedDeclaration()",
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testGroupsKeepSourceItemsAndOrderedFlatView()",
+        "org.cangnova.cangjie.psi.ImportGroupParsingTest#testEditingSharedPrefixUpdatesEveryExistingItem()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.psi.ImportGroupStubTest",
+      "Tests": 4,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:15.492Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\psi\\build\\test-results\\test\\TEST-org.cangnova.cangjie.psi.ImportGroupStubTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.psi.ImportGroupStubTest#testMissingSelectorKeepsQualifiedReferenceAndInvalidityWithoutAst()",
+        "org.cangnova.cangjie.psi.ImportGroupStubTest#testLocalAndGroupQualifiedReferencesKeepTheirTreeAfterSerialization()",
+        "org.cangnova.cangjie.psi.ImportGroupStubTest#testRoundTripKeepsInvalidItemAndGroupBoundaries()",
+        "org.cangnova.cangjie.psi.ImportGroupStubTest#testRoundTripKeepsReferencesAndPathsWithoutSourceAst()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.psi.ImportPathFactoryTest",
+      "Tests": 8,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:15.810Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\psi\\build\\test-results\\test\\TEST-org.cangnova.cangjie.psi.ImportPathFactoryTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testMovingItemBetweenGroupsUsesItsNewPrefix()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testFactoriesPreserveEscapedOrganizationPackageAndAliasNames()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testOrganizationQualifiedFactoryRoundTrip()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testDeletingFinalGroupItemWithoutTrailingCommaPreservesComment()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testUnitVisitorReachesGroupsAndAllLeafItemsInSourceOrder()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testDeletingGroupItemsPreservesRemainingCommentsAndValidSeparators()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testGroupFactoryPreservesLocalAndCombinedPaths()",
+        "org.cangnova.cangjie.psi.ImportPathFactoryTest#testDeletingLastItemRemovesItsStatement()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.ImportPathTest",
+      "Tests": 7,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:18.040Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\common\\build\\test-results\\test\\TEST-org.cangnova.cangjie.ImportPathTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.ImportPathTest#incompletePathsAndMalformedAliasesAreRejected()",
+        "org.cangnova.cangjie.ImportPathTest#emptyRelativePathDoesNotAlterItsNamespacePrefix()",
+        "org.cangnova.cangjie.ImportPathTest#nestedOrganizationQualifierCannotBeCombined()",
+        "org.cangnova.cangjie.ImportPathTest#escapedNamesRoundTripWithoutKeepingSourceQuotesInTheirIdentity()",
+        "org.cangnova.cangjie.ImportPathTest#organizationOnlyPrefixAndAbsentPrefixRemainDifferent()",
+        "org.cangnova.cangjie.ImportPathTest#repeatedLocalSegmentsAreNotMistakenForAnAlreadyQualifiedPath()",
+        "org.cangnova.cangjie.ImportPathTest#organizationSurvivesRenderingParsingAndIdentityComparison()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.name.FqNamePathCompositionTest",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:22:18.179Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\common\\build\\test-results\\test\\TEST-org.cangnova.cangjie.name.FqNamePathCompositionTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.name.FqNamePathCompositionTest#emptySuffixDoesNotCreateAFalseParent()",
+        "org.cangnova.cangjie.name.FqNamePathCompositionTest#composedPathsHaveTheSameParentsAsParsedPaths()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest",
+      "Tests": 4,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:54:27.403Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\cfir\\raw-cfir\\light-tree2cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest#testPsiPackageVisibleGroupedImports",
+        "org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest#testLightTreeOrganizationReexports",
+        "org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest#testLightTreePackageVisibleGroupedImports",
+        "org.cangnova.cangjie.cfir.lightTree.CfirOrganizationReexportTest#testPsiOrganizationReexports"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest",
+      "Tests": 7,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:54:32.260Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\cfir\\raw-cfir\\light-tree2cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testInvalidGroupsAgreeAcrossBuilders",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testConditionalVisibilityBelongsToStatementInBothBuilders",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testPsiImportGroups",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testLightTreeEmptyGroupDoesNotImportPrefix",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testInternalGroupVisibilityInBothBuilders",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testLightTreeImportGroups",
+        "org.cangnova.cangjie.cfir.lightTree.ImportGroupRawCfirTest#testPsiEmptyGroupDoesNotImportPrefix"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.resolve.CfirImportVisibilityModelTest",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:55:04.406Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\cfir\\resolve\\build\\test-results\\test\\TEST-org.cangnova.cangjie.cfir.resolve.CfirImportVisibilityModelTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.resolve.CfirImportVisibilityModelTest#resolved import and copy retain visibility without source syntax()",
+        "org.cangnova.cangjie.cfir.resolve.CfirImportVisibilityModelTest#synthetic imports are private and do not become package exports()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.cfir.resolve.CfirOrganizationImportBindingTest",
+      "Tests": 3,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T06:55:04.659Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\cfir\\resolve\\build\\test-results\\test\\TEST-org.cangnova.cangjie.cfir.resolve.CfirOrganizationImportBindingTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.cfir.resolve.CfirOrganizationImportBindingTest#organization qualifier isolates canonical library identities()",
+        "org.cangnova.cangjie.cfir.resolve.CfirOrganizationImportBindingTest#organization package prefix uses organization after full package name()",
+        "org.cangnova.cangjie.cfir.resolve.CfirOrganizationImportBindingTest#binding cache does not merge the same path across organizations()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest",
+      "Tests": 4,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T07:09:36.904Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\analysis-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationQualifiedScopes(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationAwarePlanning(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#organizationQualifiedPaths(CjFile)",
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportGroupReferenceTest#groupedPaths(CjFile)"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest",
+      "Tests": 1,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T07:10:08.168Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\analysis-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.api.cfir.test.AnalysisApiImportPackageNavigationTest#organizationDirectoriesAndRename(CjFile)"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceLazyDeclarationResolveScopeBasedTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:24.540Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-o-5436UQJ8K86K4.cangjie.analysis.low.level.api.cfir.resolve.SourceLazyDeclarationResolveScopeBasedTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceLazyDeclarationResolveScopeBasedTestGenerated#testAllFilesPresentInLazyResolveScopes()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceLazyDeclarationResolveScopeBasedTestGenerated#testFakeOverrideScope()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveByReferenceTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:03.404Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.-QJUIDK4GDLGRE.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveByReferenceTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveByReferenceTestGenerated#testAllFilesPresentInLazyResolveByReference()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveByReferenceTestGenerated#testResolveTargetByCall()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.api.ResolveToCfirSymbolTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:23.184Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.api.ResolveToCfirSymbolTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.api.ResolveToCfirSymbolTestGenerated#testDeclarations()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.api.ResolveToCfirSymbolTestGenerated#testAllFilesPresentInResolveToCfirSymbol()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:13.346Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveTestGenerated#testSimpleClass()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.CfirSourceLazyDeclarationResolveTestGenerated#testAllFilesPresentInLazyResolve()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated",
+      "Tests": 6,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:16.670Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testTypeParameter()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testLambdaArguments()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testClass()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testAllFilesPresentInContextCollector()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testPropertyAccessor()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.ContextCollectorSourceTestGenerated#testSimple()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.SourceFileStructureTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:24.413Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.SourceFileStructureTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.SourceFileStructureTestGenerated#testAllFilesPresentInFileStructure()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.SourceFileStructureTestGenerated#testInterfaceStatus()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.GetOrBuildCfirBinaryTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:22.414Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.GetOrBuildCfirBinaryTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.GetOrBuildCfirBinaryTestGenerated#testAllFilesPresentInGetOrBuildCfirBinary()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.GetOrBuildCfirBinaryTestGenerated#testLibraryBinaryDeclarations()"
+      ]
+    },
+    {
+      "Suite": "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceWholeFileResolvePhaseTestGenerated",
+      "Tests": 2,
+      "Failures": 0,
+      "Errors": 0,
+      "Skipped": 0,
+      "Timestamp": "2026-09-29T08:46:25.417Z",
+      "Result": "C:\\Users\\lin17\\.codex\\worktrees\\recover-uncommitted\\cangjie\\analysis\\low-level-api-cfir\\build\\test-results\\test\\TEST-org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceWholeFileResolvePhaseTestGenerated.xml",
+      "Cases": [
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceWholeFileResolvePhaseTestGenerated#testAllFilesPresentInFileStructure()",
+        "org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.SourceWholeFileResolvePhaseTestGenerated#testInterfaceStatus()"
+      ]
+    }
+  ]
+}

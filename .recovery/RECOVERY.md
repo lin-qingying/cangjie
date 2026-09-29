@@ -18,6 +18,10 @@
 
 新工作区执行 `gradlew-queue.bat` 的新结果（2026-09-29）：PSI import 21/21、common 路径组合 9/9、双源 raw import/reexport 11/11、组织绑定/可见性 5/5、Analysis API 导入引用/目录导航 5/5。相关 compiler/raw/provider、Analysis API 和低层 API 模块编译通过。
 
+独立 IDE 的最终新结果：折叠 4/4、产品导入导航 1/1，构建成功。主仓 71 个定向测试加独立 IDE 5 个，共 76 个通过；这不是全仓全量测试的声明。结果与 testcase-key 见 `fresh-test-results.json`、`fresh-ide-test-results.json`。
+
+此前独立 IDE 首轮因 VFS 初始化时磁盘空间不足失败，重试发现缺少原 IDE 子仓保留的工作状态。补齐该状态后最终两项 suite 全部通过。清理失败缓存的工具调用被自动审批以 `blocked by policy` 拒绝；没有执行清理，也没有换工具绕过拒绝，采用直接重试和补齐已保留文件完成验证。
+
 22 份旧日志没有保留全文的 golden 已由恢复后的实现重新生成，20 个相关低层测试随后在 `update.test.data=false` 模式再次通过。另 1 份 interfaceStatus golden 从历史 Git diff 原样恢复。LocalHistory 对 class.txt、declarations.txt 的真实旧正文与重新生成结果完全一致，其余重新生成文件不宣称获得逐字节历史快照。CFIR tests-gen 已重新生成，补回 9 个新增 CJMP fixture 在三个测试入口中的索引。
 
 LocalHistory 的 ContentChange/DeleteChange 已解码到 VFS 内容记录，正文经过 VFS SHA-1 校验。找回 CjoStubAstConsistencyDiagnosticTest.kt（16,678 字节、原始 SHA-256 完全一致）以及 compiler.xml、kotlinc.xml、project dictionary、Run All Test 四份配置的重置前内容。后两份配置保留了换行规范化后的相同文本，其原始字节以 Base64 附在 `localhistory-recovered.json`。前两份配置本就在恢复基线中，与真实历史字节相同。
