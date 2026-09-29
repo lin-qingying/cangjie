@@ -1,13 +1,11 @@
 CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
-[ResolvedTo(BODY_RESOLVE)] public func render(): R|kotlin.Unit| {
+[ResolvedTo(BODY_RESOLVE)] public func render(): R|struct String| {
     RETURN {
         STRING("document")
     }
 }
 overridden:
-  CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
+  CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Printable.render
 
-CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Printable.render
-[ResolvedTo(BODY_RESOLVE)] public? func render(): R|kotlin.Unit|
-overridden:
-  CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
+CfirConstructorSymbol: sample/lowlevel/lazy/scopes/PrettyDocument.<init>
+[ResolvedTo(BODY_RESOLVE)] init()

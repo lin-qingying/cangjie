@@ -1,46 +1,52 @@
 TYPES:
 TARGET:
-[ResolvedTo(TYPES)] internal? func identity([ResolvedTo(TYPES)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+[ResolvedTo(TYPES)] internal? func identity([ResolvedTo(TYPES)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 
 STATUS:
 TARGET:
-[ResolvedTo(STATUS)] internal? func identity([ResolvedTo(STATUS)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+[ResolvedTo(STATUS)] internal? func identity([ResolvedTo(STATUS)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 
 EXTENSIONS:
 TARGET:
-[ResolvedTo(EXTENSIONS)] internal? func identity([ResolvedTo(EXTENSIONS)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+[ResolvedTo(EXTENSIONS)] internal? func identity([ResolvedTo(EXTENSIONS)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 
 IMPLICIT_TYPES:
 TARGET:
-[ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+[ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|Int64|): R|Int64| {
+    <element: CfirLazyBlock>
+}
+
+CJMP_MATCHING:
+TARGET:
+[ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|Int64|): R|Int64| {
     <element: CfirLazyBlock>
 }
 
 BODY_RESOLVE:
 TARGET:
-[ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+[ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|Int64|): R|Int64| {
     RETURN {
-        NAMED_ACCESS(value)
+        NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
     }
 }
 
 FILE RAW TO BODY:
 [ResolvedTo(BODY_RESOLVE)] FILE: resolveTargetByCall.cj
     package sample.lowlevel.lazy.ref
-    [ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    [ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|Int64|): R|Int64| {
         RETURN {
-            NAMED_ACCESS(value)
+            NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
         }
     }
-    [ResolvedTo(BODY_RESOLVE)] internal? func consume(): R|kotlin.Unit| {
+    [ResolvedTo(BODY_RESOLVE)] internal? func consume(): R|Int64| {
         RETURN {
-            FUNCTION_CALL(identity) {
+            FUNCTION_CALL(identity -> CfirNamedFunctionSymbol(identity)) {
                 INT(1)
             }
         }

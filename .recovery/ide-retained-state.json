@@ -1,0 +1,822 @@
+{
+  "recordedAtUtc": "2026-09-29T08:50:43.485Z",
+  "sourceRoot": "D:/code/intellij/cangjie/intellij-ide",
+  "recoveryRoot": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/intellij-ide",
+  "sourceHead": "681597beca201eb7296d58686bff115210b93c84",
+  "previousRecoveryHead": "0fc0c73107f961eb2fc6ca2466b4d46bcd908e94",
+  "checkpointHead": "8ea96a596a01d820bd40f65a65174426a621ff32",
+  "branch": "codex/recover-uncommitted",
+  "provenance": "Snapshot of the original IDE repository's currently retained uncommitted text state; not reconstructed or inferred historical content.",
+  "originalStatus": [
+    {
+      "status": " M",
+      "path": "AGENTS.md"
+    },
+    {
+      "status": " M",
+      "path": "CLAUDE.md"
+    },
+    {
+      "status": " M",
+      "path": "PROJECT_STRUCTURE.md"
+    },
+    {
+      "status": " M",
+      "path": "README.md"
+    },
+    {
+      "status": " D",
+      "path": "README_zh.md"
+    },
+    {
+      "status": " M",
+      "path": "build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts"
+    },
+    {
+      "status": " M",
+      "path": "docs/architecture-host-plugin.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/design/binary-stub-building-design.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/design/cjo-service-module-design.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/host-upstream-responsibility-matrix.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/macro-psi-replacement-design.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/type/06-special-types.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/type/07-implementation-details.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/type/README.md"
+    },
+    {
+      "status": " M",
+      "path": "docs/type/type-system-refactoring-plan.md"
+    },
+    {
+      "status": " M",
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt"
+    },
+    {
+      "status": " D",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProviderService.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-product.xml"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt"
+    },
+    {
+      "status": " M",
+      "path": "modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md"
+    },
+    {
+      "status": " M",
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt"
+    },
+    {
+      "status": "??",
+      "path": "README.zh-CN.md"
+    },
+    {
+      "status": "??",
+      "path": "hs_err_pid80244.log"
+    },
+    {
+      "status": "??",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieFileIconProviderService.kt"
+    },
+    {
+      "status": "??",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsListener.kt"
+    },
+    {
+      "status": "??",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsTracker.kt"
+    },
+    {
+      "status": "??",
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt"
+    },
+    {
+      "status": "??",
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/CangJieFileIconRegistrationTest.kt"
+    },
+    {
+      "status": "??",
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt"
+    },
+    {
+      "status": "??",
+      "path": "replay_pid80244.log"
+    }
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "6ed4ce1446e5dbd1d2f02d56f48ae6929b771bac8ecac34efdd774ffb0faeae4",
+        "sha256Lf": "6ed4ce1446e5dbd1d2f02d56f48ae6929b771bac8ecac34efdd774ffb0faeae4",
+        "bytes": 10157
+      },
+      "restored": {
+        "sha256": "500dd257a9c836d84dc0dfaed3b1f682e2cd9d0a5eb2dd4ea089a1577219c878",
+        "sha256Lf": "6ed4ce1446e5dbd1d2f02d56f48ae6929b771bac8ecac34efdd774ffb0faeae4",
+        "bytes": 10406
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "CLAUDE.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "458962feb24eb2a159f826d845cd097d4a45650c5d92d9cfd20116b14bd8aef5",
+        "sha256Lf": "458962feb24eb2a159f826d845cd097d4a45650c5d92d9cfd20116b14bd8aef5",
+        "bytes": 10165
+      },
+      "restored": {
+        "sha256": "41e4834d67f2733fc42e55ca27bc6c3c5dc1fa5e6e07db5df11517afa8d5cc28",
+        "sha256Lf": "458962feb24eb2a159f826d845cd097d4a45650c5d92d9cfd20116b14bd8aef5",
+        "bytes": 10414
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "PROJECT_STRUCTURE.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "8472e896d5e1b0544b5b4bb8661c86c1f240a06f84286e54fc4d75ecc6f8be33",
+        "sha256Lf": "8472e896d5e1b0544b5b4bb8661c86c1f240a06f84286e54fc4d75ecc6f8be33",
+        "bytes": 8881
+      },
+      "restored": {
+        "sha256": "260785efe99dff03dddc6e67ca952a5db682fdd49e91729c650f980ad6822cc3",
+        "sha256Lf": "8472e896d5e1b0544b5b4bb8661c86c1f240a06f84286e54fc4d75ecc6f8be33",
+        "bytes": 9083
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "README.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "43f86e4cc17f8a0acc934ef29c96a5c9e42e7ea26e1685e7529ee620de7091f5",
+        "sha256Lf": "be1fb81441a8b2bc2c4425ec9e8354c546f9f1c93701465172ad3c87979ab70d",
+        "bytes": 4313
+      },
+      "restored": {
+        "sha256": "6eb4159594f390a3acb38e5962d50ad0852799daf9a899b56cf9ba7928c435eb",
+        "sha256Lf": "be1fb81441a8b2bc2c4425ec9e8354c546f9f1c93701465172ad3c87979ab70d",
+        "bytes": 4333
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "README_zh.md",
+      "originalStatus": " D",
+      "action": "delete-as-source-status",
+      "source": null,
+      "restored": null,
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "3a7d929cf6c3d6a614575a66c9f95ebb3cef57e3031d1a996ce878d5273492e0",
+        "sha256Lf": "3a7d929cf6c3d6a614575a66c9f95ebb3cef57e3031d1a996ce878d5273492e0",
+        "bytes": 2657
+      },
+      "restored": {
+        "sha256": "ff0eff430f830a61e896fd273c19c893c179b8d3c5b79ae1dfbf5644a78cc9fc",
+        "sha256Lf": "3a7d929cf6c3d6a614575a66c9f95ebb3cef57e3031d1a996ce878d5273492e0",
+        "bytes": 2737
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/architecture-host-plugin.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "73767bf985e0929360223495374e1e4ed51749f1372c8ee26c062c5ba81f9ab5",
+        "sha256Lf": "73767bf985e0929360223495374e1e4ed51749f1372c8ee26c062c5ba81f9ab5",
+        "bytes": 2319
+      },
+      "restored": {
+        "sha256": "1a2d82593879204dbcab9414a8ddeb13f29472c54786394642201554a41b3162",
+        "sha256Lf": "73767bf985e0929360223495374e1e4ed51749f1372c8ee26c062c5ba81f9ab5",
+        "bytes": 2351
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/design/binary-stub-building-design.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "32744fb71220eb310e0bd78ae160b1ed025c389fbc0f3de380306ea4de371246",
+        "sha256Lf": "32744fb71220eb310e0bd78ae160b1ed025c389fbc0f3de380306ea4de371246",
+        "bytes": 1343
+      },
+      "restored": {
+        "sha256": "2046897b0c5b529dd29a2128a8903466985bae4ef641c9450c91df0a053413c0",
+        "sha256Lf": "32744fb71220eb310e0bd78ae160b1ed025c389fbc0f3de380306ea4de371246",
+        "bytes": 1374
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/design/cjo-service-module-design.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "8b985d87397c03f3b3fd6f96532711e163d8c0dda17673b0822b8167c07c2cd4",
+        "sha256Lf": "8b985d87397c03f3b3fd6f96532711e163d8c0dda17673b0822b8167c07c2cd4",
+        "bytes": 1525
+      },
+      "restored": {
+        "sha256": "1d67c3362fad035bdebcdd28269870a2d827499d9e23cd1e3582454a9c322a3d",
+        "sha256Lf": "8b985d87397c03f3b3fd6f96532711e163d8c0dda17673b0822b8167c07c2cd4",
+        "bytes": 1551
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/host-upstream-responsibility-matrix.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "54d473df1a61db9943aef0e29ac3df7422778bcffdd1cad8760ddc75a2be6176",
+        "sha256Lf": "54d473df1a61db9943aef0e29ac3df7422778bcffdd1cad8760ddc75a2be6176",
+        "bytes": 1601
+      },
+      "restored": {
+        "sha256": "33ae46f7151c46a270f28369ae68184f563bf47d5ff9ffed78d897e9dee1a938",
+        "sha256Lf": "54d473df1a61db9943aef0e29ac3df7422778bcffdd1cad8760ddc75a2be6176",
+        "bytes": 1619
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/macro-psi-replacement-design.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "d06e5cd90bc2ffeae5e442fac8b5b88ec0c38987149a2c250921c58221606f87",
+        "sha256Lf": "d06e5cd90bc2ffeae5e442fac8b5b88ec0c38987149a2c250921c58221606f87",
+        "bytes": 1296
+      },
+      "restored": {
+        "sha256": "59a83b24120773276fb21345b42129fae4a8bfc748bc51dcd29814a4b5cda9cf",
+        "sha256Lf": "d06e5cd90bc2ffeae5e442fac8b5b88ec0c38987149a2c250921c58221606f87",
+        "bytes": 1313
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/type/06-special-types.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "d83edbff02ced74c6f86572db995038fd8434e8bf8f1f60ce46b5ed34672e0c3",
+        "sha256Lf": "d83edbff02ced74c6f86572db995038fd8434e8bf8f1f60ce46b5ed34672e0c3",
+        "bytes": 245
+      },
+      "restored": {
+        "sha256": "d83edbff02ced74c6f86572db995038fd8434e8bf8f1f60ce46b5ed34672e0c3",
+        "sha256Lf": "d83edbff02ced74c6f86572db995038fd8434e8bf8f1f60ce46b5ed34672e0c3",
+        "bytes": 245
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/type/07-implementation-details.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "deb4b3497b38cefc97c7bf0dbb03eb7fdc2b7d753e7767929b1c6edc4d8fa4b6",
+        "sha256Lf": "deb4b3497b38cefc97c7bf0dbb03eb7fdc2b7d753e7767929b1c6edc4d8fa4b6",
+        "bytes": 260
+      },
+      "restored": {
+        "sha256": "deb4b3497b38cefc97c7bf0dbb03eb7fdc2b7d753e7767929b1c6edc4d8fa4b6",
+        "sha256Lf": "deb4b3497b38cefc97c7bf0dbb03eb7fdc2b7d753e7767929b1c6edc4d8fa4b6",
+        "bytes": 260
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/type/README.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "dd848144dd5f5c3d3154d3cd3fe8e97246a72493f0a08ca12ed825000e892f1d",
+        "sha256Lf": "a846bdb57e711183fe6ea53aa9c036c418ea889f95cc1adebf995a5d907c9ff5",
+        "bytes": 4749
+      },
+      "restored": {
+        "sha256": "f4ec57baee2d953dcc426e21b2922b9fc4cf7214fbb10fa4eece8f50a5a72036",
+        "sha256Lf": "a846bdb57e711183fe6ea53aa9c036c418ea889f95cc1adebf995a5d907c9ff5",
+        "bytes": 4756
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "docs/type/type-system-refactoring-plan.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "5af6a257633e150ee6ec4c780b09b45085086e06fa22d43bda9e0631eb178b0b",
+        "sha256Lf": "5af6a257633e150ee6ec4c780b09b45085086e06fa22d43bda9e0631eb178b0b",
+        "bytes": 840
+      },
+      "restored": {
+        "sha256": "b7258843a5d5df7376369eb4c3f0d075666aa223e6428fed66a1380dd51deec3",
+        "sha256Lf": "5af6a257633e150ee6ec4c780b09b45085086e06fa22d43bda9e0631eb178b0b",
+        "bytes": 858
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "b3a3f9d7bd6ae5b824f4c80bfe6a0f067cf708133f55c88484984c5abdad43b8",
+        "sha256Lf": "b3a3f9d7bd6ae5b824f4c80bfe6a0f067cf708133f55c88484984c5abdad43b8",
+        "bytes": 1347
+      },
+      "restored": {
+        "sha256": "15f8d5b8cb852e5f94eaccf48d8d23ce48d4023dd102abc7f4e932e92e0e3e22",
+        "sha256Lf": "b3a3f9d7bd6ae5b824f4c80bfe6a0f067cf708133f55c88484984c5abdad43b8",
+        "bytes": 1387
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "d63c6068a6b8266a8672be29e2fa1b40e59a9ef8e4369c0af919427dc502e573",
+        "sha256Lf": "dd6f1124b4da3e5e1e50bdebce068eebdd6d399320f86e848312414b42f9e38f",
+        "bytes": 6372
+      },
+      "restored": {
+        "sha256": "d63c6068a6b8266a8672be29e2fa1b40e59a9ef8e4369c0af919427dc502e573",
+        "sha256Lf": "dd6f1124b4da3e5e1e50bdebce068eebdd6d399320f86e848312414b42f9e38f",
+        "bytes": 6372
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProviderService.kt",
+      "originalStatus": " D",
+      "action": "delete-as-source-status",
+      "source": null,
+      "restored": null,
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "ae7bc3858dc87d8b3c6584719b9ba48992e3b95fca68ef61cc8c8bbdfaaf6088",
+        "sha256Lf": "ae7bc3858dc87d8b3c6584719b9ba48992e3b95fca68ef61cc8c8bbdfaaf6088",
+        "bytes": 4541
+      },
+      "restored": {
+        "sha256": "9a16455d9a9764476895a64c851804bc412bbbbe59b87d6d18c93dfbc8547ebd",
+        "sha256Lf": "ae7bc3858dc87d8b3c6584719b9ba48992e3b95fca68ef61cc8c8bbdfaaf6088",
+        "bytes": 4643
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "c09452d54f19250a5c5d918d2797ffeda097c411c3bc42b058bc89603bffe2b4",
+        "sha256Lf": "c09452d54f19250a5c5d918d2797ffeda097c411c3bc42b058bc89603bffe2b4",
+        "bytes": 10870
+      },
+      "restored": {
+        "sha256": "2ac4c44fa5222c68435bc177d6fea8a42cedac338cf558382c3cf7a600320986",
+        "sha256Lf": "c09452d54f19250a5c5d918d2797ffeda097c411c3bc42b058bc89603bffe2b4",
+        "bytes": 11093
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "dc204b50e8ede1f1a483703fedcbd96a1e1ff925773efecfc5bb79ad49b950bd",
+        "sha256Lf": "dc204b50e8ede1f1a483703fedcbd96a1e1ff925773efecfc5bb79ad49b950bd",
+        "bytes": 12134
+      },
+      "restored": {
+        "sha256": "8f23531bdd91cbc308386fc9a64ad80371d4b3994486c4f5684653e2363d75be",
+        "sha256Lf": "dc204b50e8ede1f1a483703fedcbd96a1e1ff925773efecfc5bb79ad49b950bd",
+        "bytes": 12486
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "1388e27dde1b2103e6b7c87ed8ff4f87b0b7966c5ae484ab78a01aa705ec9370",
+        "sha256Lf": "1388e27dde1b2103e6b7c87ed8ff4f87b0b7966c5ae484ab78a01aa705ec9370",
+        "bytes": 2146
+      },
+      "restored": {
+        "sha256": "e9ea5f5b8af4acd5e351a02c2457ca99f72f7a5625b44fe96b18f1fd7bf1c3c2",
+        "sha256Lf": "1388e27dde1b2103e6b7c87ed8ff4f87b0b7966c5ae484ab78a01aa705ec9370",
+        "bytes": 2183
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "73850b9260e4f2b6976c5b34c5cd37cd9a332c300ce2e47a07be413552538f07",
+        "sha256Lf": "4b5a266195751f433e75eece2f251adb1d1c22fb30509a2b00dc27f66394e3a2",
+        "bytes": 3647
+      },
+      "restored": {
+        "sha256": "ef4db7f82ab1771d029234aea1314fb076f4eceedd2dcda30ce5beb36a733299",
+        "sha256Lf": "4b5a266195751f433e75eece2f251adb1d1c22fb30509a2b00dc27f66394e3a2",
+        "bytes": 3676
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-product.xml",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "976621c4734f6e828ec117e563c104864d3f2182d3af402e5e446016a123e1a9",
+        "sha256Lf": "9d33b911b9e307fa6d805c0d895023503d46d9c646f180fccec329f63ce59d7f",
+        "bytes": 1808
+      },
+      "restored": {
+        "sha256": "976621c4734f6e828ec117e563c104864d3f2182d3af402e5e446016a123e1a9",
+        "sha256Lf": "9d33b911b9e307fa6d805c0d895023503d46d9c646f180fccec329f63ce59d7f",
+        "bytes": 1808
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "57926ab273427d42cf4de18b2a2ae2b8e84d5c33063f8728ee2eb8bea4538e9d",
+        "sha256Lf": "57926ab273427d42cf4de18b2a2ae2b8e84d5c33063f8728ee2eb8bea4538e9d",
+        "bytes": 1733
+      },
+      "restored": {
+        "sha256": "3a197f2d41333fa7f779856759a1388adab4eaa10b9b78b1e987a8cffc5dda98",
+        "sha256Lf": "57926ab273427d42cf4de18b2a2ae2b8e84d5c33063f8728ee2eb8bea4538e9d",
+        "bytes": 1766
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt",
+      "originalStatus": " M",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "de2cf90ba27020b9a908b5662446bee8fc3c9ea54c727e588a51afb71bebfac5",
+        "sha256Lf": "de2cf90ba27020b9a908b5662446bee8fc3c9ea54c727e588a51afb71bebfac5",
+        "bytes": 36614
+      },
+      "restored": {
+        "sha256": "b0a960d3a2eccd4f9419a0fa71f89414c6a795722c24acd0e5d5399735da9ee8",
+        "sha256Lf": "de2cf90ba27020b9a908b5662446bee8fc3c9ea54c727e588a51afb71bebfac5",
+        "bytes": 37399
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "README.zh-CN.md",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "8c1cdf07ade8766df328c96a1be624f0ad98e21ecdb64df726757a062a321909",
+        "sha256Lf": "34c3116ba120f249350ba61ca4f5d50e4a42b4eccc637cb5248164914f21eb73",
+        "bytes": 5043
+      },
+      "restored": {
+        "sha256": "34c3116ba120f249350ba61ca4f5d50e4a42b4eccc637cb5248164914f21eb73",
+        "sha256Lf": "34c3116ba120f249350ba61ca4f5d50e4a42b4eccc637cb5248164914f21eb73",
+        "bytes": 4915
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieFileIconProviderService.kt",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "2d10576e0a9872cfea2f93fd3764b2639eba736cc4322197dd34d81c17e39148",
+        "sha256Lf": "2d10576e0a9872cfea2f93fd3764b2639eba736cc4322197dd34d81c17e39148",
+        "bytes": 2198
+      },
+      "restored": {
+        "sha256": "2d10576e0a9872cfea2f93fd3764b2639eba736cc4322197dd34d81c17e39148",
+        "sha256Lf": "2d10576e0a9872cfea2f93fd3764b2639eba736cc4322197dd34d81c17e39148",
+        "bytes": 2198
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsListener.kt",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "7faaec8b1df95f0dac9fa56ee17168af464dd385a352a4be982a67db72047985",
+        "sha256Lf": "7faaec8b1df95f0dac9fa56ee17168af464dd385a352a4be982a67db72047985",
+        "bytes": 1770
+      },
+      "restored": {
+        "sha256": "7faaec8b1df95f0dac9fa56ee17168af464dd385a352a4be982a67db72047985",
+        "sha256Lf": "7faaec8b1df95f0dac9fa56ee17168af464dd385a352a4be982a67db72047985",
+        "bytes": 1770
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsTracker.kt",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "6baefd9d9894743b3da4ebb2a4886123559d45718b4ddf1489cabc5d31270149",
+        "sha256Lf": "6baefd9d9894743b3da4ebb2a4886123559d45718b4ddf1489cabc5d31270149",
+        "bytes": 2990
+      },
+      "restored": {
+        "sha256": "6baefd9d9894743b3da4ebb2a4886123559d45718b4ddf1489cabc5d31270149",
+        "sha256Lf": "6baefd9d9894743b3da4ebb2a4886123559d45718b4ddf1489cabc5d31270149",
+        "bytes": 2990
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "acc34549b637ceacad3cc641e1526b73c52b5967dc1dc496008691e2ce69e490",
+        "sha256Lf": "acc34549b637ceacad3cc641e1526b73c52b5967dc1dc496008691e2ce69e490",
+        "bytes": 8326
+      },
+      "restored": {
+        "sha256": "acc34549b637ceacad3cc641e1526b73c52b5967dc1dc496008691e2ce69e490",
+        "sha256Lf": "acc34549b637ceacad3cc641e1526b73c52b5967dc1dc496008691e2ce69e490",
+        "bytes": 8326
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/CangJieFileIconRegistrationTest.kt",
+      "originalStatus": "??",
+      "action": "copied-current-text-snapshot",
+      "source": {
+        "sha256": "2c27dc9125f5b68d11a7ea1e7336ac6b41c2ad37205b24243a96107980a7a7d1",
+        "sha256Lf": "2c27dc9125f5b68d11a7ea1e7336ac6b41c2ad37205b24243a96107980a7a7d1",
+        "bytes": 2852
+      },
+      "restored": {
+        "sha256": "2c27dc9125f5b68d11a7ea1e7336ac6b41c2ad37205b24243a96107980a7a7d1",
+        "sha256Lf": "2c27dc9125f5b68d11a7ea1e7336ac6b41c2ad37205b24243a96107980a7a7d1",
+        "bytes": 2852
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt",
+      "originalStatus": " M",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "fd0a73458ae2169883f1f38d60dca236427115ac4719e6775cfb8555ff02fc15",
+        "sha256Lf": "d06ce5aab87f3c46950d720ea9b580be01064825164ba83c7fe09e7708a19e56",
+        "bytes": 7810
+      },
+      "restored": {
+        "sha256": "14c107ad098cdb3761d69e61cbcbc27d1ce562042a771dbaddadf2b176bf920f",
+        "sha256Lf": "d06ce5aab87f3c46950d720ea9b580be01064825164ba83c7fe09e7708a19e56",
+        "bytes": 7812
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt",
+      "originalStatus": " M",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "5c20e73262248e5489907a5ef163faa953d59388697760460f3a324b5d8c590d",
+        "sha256Lf": "da64edf348f16d3d388a55de03fa2da3b25e7449f17cf3fb670b59561e250e3f",
+        "bytes": 7390
+      },
+      "restored": {
+        "sha256": "88a945b8d10824e695c1f55f5bd6b5a4acace5455f9f4befae3bd137b6617399",
+        "sha256Lf": "da64edf348f16d3d388a55de03fa2da3b25e7449f17cf3fb670b59561e250e3f",
+        "bytes": 7391
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt",
+      "originalStatus": " M",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "9810b2f1113beb8122d0e4f8ecf80ba441919178962ac57036cfa03f45ae6f34",
+        "sha256Lf": "1ffd6862996ae5d57da3b93264090e14ebd3e8c537c7d7a92a632ea00bc4818d",
+        "bytes": 4063
+      },
+      "restored": {
+        "sha256": "2dabf3ff4cf7a1c8de7ff150e37fd43b4fec30451149985ef75650cddae9d26d",
+        "sha256Lf": "1ffd6862996ae5d57da3b93264090e14ebd3e8c537c7d7a92a632ea00bc4818d",
+        "bytes": 4064
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+      "originalStatus": " M",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+        "sha256Lf": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+        "bytes": 12636
+      },
+      "restored": {
+        "sha256": "50a737d305bd320b9f1f001d382d05f2fe410e9be0198077440f45b03bc9f1e1",
+        "sha256Lf": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+        "bytes": 12913
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml",
+      "originalStatus": " M",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+        "sha256Lf": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+        "bytes": 5205
+      },
+      "restored": {
+        "sha256": "3c08bcbb0d9f68a90884dc0fe118452b9f9319140d70b70915cf2a2a69c73688",
+        "sha256Lf": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+        "bytes": 5290
+      },
+      "contentMatchesAfterLfNormalization": true
+    },
+    {
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+      "originalStatus": "??",
+      "action": "already-restored-import-file-left-unchanged",
+      "source": {
+        "sha256": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+        "sha256Lf": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+        "bytes": 4138
+      },
+      "restored": {
+        "sha256": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+        "sha256Lf": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+        "bytes": 4138
+      },
+      "contentMatchesAfterLfNormalization": true
+    }
+  ],
+  "copiedPaths": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "PROJECT_STRUCTURE.md",
+    "README.md",
+    "README_zh.md",
+    "build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts",
+    "docs/architecture-host-plugin.md",
+    "docs/design/binary-stub-building-design.md",
+    "docs/design/cjo-service-module-design.md",
+    "docs/host-upstream-responsibility-matrix.md",
+    "docs/macro-psi-replacement-design.md",
+    "docs/type/06-special-types.md",
+    "docs/type/07-implementation-details.md",
+    "docs/type/README.md",
+    "docs/type/type-system-refactoring-plan.md",
+    "modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieIconProviderService.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt",
+    "modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml",
+    "modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml",
+    "modules/ide/base/src/main/resources/META-INF/cangjie-product.xml",
+    "modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md",
+    "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt",
+    "README.zh-CN.md",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/CangJieFileIconProviderService.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsListener.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsTracker.kt",
+    "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt",
+    "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/CangJieFileIconRegistrationTest.kt"
+  ],
+  "restoredPathCount": 32,
+  "deletedPathCount": 2,
+  "protectedImportFileCount": 6,
+  "excluded": [
+    {
+      "status": "??",
+      "path": "hs_err_pid80244.log",
+      "reason": "Crash/runtime replay log; excluded by task scope."
+    },
+    {
+      "status": "??",
+      "path": "replay_pid80244.log",
+      "reason": "Crash/runtime replay log; excluded by task scope."
+    }
+  ],
+  "sourceChangedDuringSnapshot": false,
+  "newWorkspaceCleanAfterCommit": true,
+  "cachedDiffCheckPassed": true,
+  "buildsOrTestsRun": false,
+  "originalWorkspaceWrites": false,
+  "encoding": "All source files verified as valid UTF-8 text with no NUL; CRLF normalized to LF by apply_patch. Source byte SHA-256 and restored byte/LF SHA-256 recorded per path.",
+  "note": "Git's rename display is heuristic; manifest records actual source path deletions and additions independently."
+}

@@ -1,32 +1,32 @@
 CjTypeAlias 'TitleDoc' in declarations.cj:152:
-  internal? typealias TitleDoc = R|kotlin.Unit|
+  internal? typealias TitleDoc = R|Document|
 
 CjPatternVariable '<anonymous>' in declarations.cj:178:
-  internal? let defaultTitle: R|kotlin.Unit| = ...
+  internal? let defaultTitle: R|struct String| = ...
       initializer:
           STRING("analysis")
 
 CjNamedFunction 'buildDocument' in declarations.cj:217:
-  internal? func buildDocument(title: R|kotlin.Unit|): R|kotlin.Unit| {
+  internal? func buildDocument(title: R|struct String|): R|Document| {
       RETURN {
-          FUNCTION_CALL(Document) {
-              NAMED_ACCESS(title)
+          FUNCTION_CALL(Document -> CfirConstructorSymbol) {
+              NAMED_ACCESS(title -> CfirValueParameterSymbol(title))
           }
       }
   }
 
 CjClass 'Document' in declarations.cj:51:
   internal? class Document {
-      internal? let title: R|kotlin.Unit|
-      init(title: R|kotlin.Unit|) {
+      internal? let title: R|struct String|
+      init(title: R|struct String|) {
           ASSIGNMENT {
               lValue:
-                  NAMED_ACCESS(title) {
+                  NAMED_ACCESS(title -> CfirFieldVariableSymbol(title)) {
                       receiver:
                           <element: CfirThisReceiverExpression>
                   }
               rValue:
-                  NAMED_ACCESS(title)
+                  NAMED_ACCESS(title -> CfirValueParameterSymbol(title))
           }
       }
   }

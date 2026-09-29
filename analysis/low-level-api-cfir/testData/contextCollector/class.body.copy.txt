@@ -3,17 +3,16 @@ Tower Data Context:
         Scope: CfirClassStaticScope
     Element 1
         Scope: CfirTypeParameterScopeImpl
-            Opaque scope
     Element 2
         Implicit receiver:
             CfirClassSymbol internal? class Box<T> {
-    public prop value: R|kotlin.Unit|
-    init(value: R|kotlin.Unit|) {
+    public abstract? prop value: R|T|
+    init(value: R|T|) {
         <element: CfirLazyBlock>
     }
-    public func unwrap(): R|kotlin.Unit| {
+    public func unwrap(): R|T| {
         RETURN {
-            NAMED_ACCESS(value)
+            NAMED_ACCESS(value -> CfirPropertySymbol(value))
         }
     }
 }
@@ -26,13 +25,13 @@ Tower Data Context:
 FILE: class.cj
     package sample.lowlevel.contextcollector.generated
     internal? class Box<T> {
-        public prop value: R|T|
+        public abstract? prop value: R|T|
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
-        public func unwrap(): R|kotlin.Unit| {
+        public func unwrap(): R|T| {
             RETURN {
-                NAMED_ACCESS(value)
+                NAMED_ACCESS(value -> CfirPropertySymbol(value))
             }
         }
     }

@@ -1,0 +1,75 @@
+{
+  "source": "IntelliJ LocalHistory ContentChange/DeleteChange and hash-verified VFS content.dat records",
+  "records": [
+    {
+      "file": ".idea/compiler.xml",
+      "historyOffset": 17793474,
+      "changeType": 3,
+      "changeId": 234767,
+      "contentId": 106358398,
+      "oldTimestamp": "2026-09-29T00:54:08.666Z",
+      "bytes": 471481,
+      "sha256": "470fed20daf7ffbbc95d1f7ab22358a43507d64fa108f0b91dca117e8fb8fd04",
+      "actualSHA256": "470fed20daf7ffbbc95d1f7ab22358a43507d64fa108f0b91dca117e8fb8fd04",
+      "equalRaw": true,
+      "equalText": true
+    },
+    {
+      "file": ".idea/dictionaries/project.xml",
+      "historyOffset": 17713890,
+      "changeType": 3,
+      "changeId": 234188,
+      "contentId": 106822940,
+      "oldTimestamp": "2026-09-28T05:40:23.167Z",
+      "bytes": 200,
+      "sha256": "92e40a8c6cf6b6ee458ab0b84c3cde3ed991222cbb6f86a042461465ce228d52",
+      "actualSHA256": "c2bae2d126848e34b1f25ab776f8199eba4862bf8e16f1a2d24903f57f807b4b",
+      "equalRaw": false,
+      "equalText": true,
+      "originalBytes": "PGNvbXBvbmVudCBuYW1lPSJQcm9qZWN0RGljdGlvbmFyeVN0YXRlIj4KICA8ZGljdGlvbmFyeSBuYW1lPSJwcm9qZWN0Ij4KICAgIDx3b3Jkcz4KICAgICAgPHc+Q2Zpcjwvdz4KICAgICAgPHc+VkFycmF5PC93PgogICAgICA8dz5jZmlyPC93PgogICAgICA8dz5jZnVuYzwvdz4KICAgIDwvd29yZHM+CiAgPC9kaWN0aW9uYXJ5Pgo8L2NvbXBvbmVudD4="
+    },
+    {
+      "file": ".idea/kotlinc.xml",
+      "historyOffset": 17793641,
+      "changeType": 3,
+      "changeId": 234769,
+      "contentId": 97026802,
+      "oldTimestamp": "2026-09-29T00:54:08.679Z",
+      "bytes": 236,
+      "sha256": "60daf1d88d67db2fa9c7c821a269b38e4659ce944baf901246d9bbb1463c505a",
+      "actualSHA256": "60daf1d88d67db2fa9c7c821a269b38e4659ce944baf901246d9bbb1463c505a",
+      "equalRaw": true,
+      "equalText": true
+    },
+    {
+      "file": ".idea/runConfigurations/Run_All_Test.xml",
+      "historyOffset": 17724041,
+      "changeType": 3,
+      "changeId": 234271,
+      "contentId": 107845484,
+      "oldTimestamp": "2026-09-28T11:33:53.150Z",
+      "bytes": 1138,
+      "sha256": "135312ceb193ef6873ef7ea3318fb8e4f6fc88204136132e35ebfcdef07c5a35",
+      "actualSHA256": "b498eabab306e9ba415f1f164836bca1b221f2d847ad4b2b72fb1bf20ba230a8",
+      "equalRaw": false,
+      "equalText": true,
+      "originalBytes": "PGNvbXBvbmVudCBuYW1lPSJQcm9qZWN0UnVuQ29uZmlndXJhdGlvbk1hbmFnZXIiPgogIDxjb25maWd1cmF0aW9uIGRlZmF1bHQ9ImZhbHNlIiBuYW1lPSJSdW4gQWxsIFRlc3QiIHR5cGU9IkdyYWRsZVJ1bkNvbmZpZ3VyYXRpb24iIGZhY3RvcnlOYW1lPSJHcmFkbGUiPgogICAgPEV4dGVybmFsU3lzdGVtU2V0dGluZ3M+CiAgICAgIDxvcHRpb24gbmFtZT0iZXhlY3V0aW9uTmFtZSIgLz4KICAgICAgPG9wdGlvbiBuYW1lPSJleHRlcm5hbFByb2plY3RQYXRoIiB2YWx1ZT0iJFBST0pFQ1RfRElSJCIgLz4KICAgICAgPG9wdGlvbiBuYW1lPSJleHRlcm5hbFN5c3RlbUlkU3RyaW5nIiB2YWx1ZT0iR1JBRExFIiAvPgogICAgICA8b3B0aW9uIG5hbWU9InNjcmlwdFBhcmFtZXRlcnMiIHZhbHVlPSItLWNvbnRpbnVlIiAvPgogICAgICA8b3B0aW9uIG5hbWU9InRhc2tEZXNjcmlwdGlvbnMiPgogICAgICAgIDxsaXN0IC8+CiAgICAgIDwvb3B0aW9uPgogICAgICA8b3B0aW9uIG5hbWU9InRhc2tOYW1lcyI+CiAgICAgICAgPGxpc3Q+CiAgICAgICAgICA8b3B0aW9uIHZhbHVlPSJ0ZXN0IiAvPgogICAgICAgIDwvbGlzdD4KICAgICAgPC9vcHRpb24+CiAgICAgIDxvcHRpb24gbmFtZT0idm1PcHRpb25zIiAvPgogICAgPC9FeHRlcm5hbFN5c3RlbVNldHRpbmdzPgogICAgPEV4dGVybmFsU3lzdGVtRGVidWdTZXJ2ZXJQcm9jZXNzPnRydWU8L0V4dGVybmFsU3lzdGVtRGVidWdTZXJ2ZXJQcm9jZXNzPgogICAgPEV4dGVybmFsU3lzdGVtUmVhdHRhY2hEZWJ1Z1Byb2Nlc3M+dHJ1ZTwvRXh0ZXJuYWxTeXN0ZW1SZWF0dGFjaERlYnVnUHJvY2Vzcz4KICAgIDxFeHRlcm5hbFN5c3RlbURlYnVnRGlzYWJsZWQ+ZmFsc2U8L0V4dGVybmFsU3lzdGVtRGVidWdEaXNhYmxlZD4KICAgIDxEZWJ1Z0FsbEVuYWJsZWQ+ZmFsc2U8L0RlYnVnQWxsRW5hYmxlZD4KICAgIDxSdW5Bc1Rlc3Q+ZmFsc2U8L1J1bkFzVGVzdD4KICAgIDxHcmFkbGVQcm9maWxpbmdEaXNhYmxlZD5mYWxzZTwvR3JhZGxlUHJvZmlsaW5nRGlzYWJsZWQ+CiAgICA8R3JhZGxlQ292ZXJhZ2VEaXNhYmxlZD5mYWxzZTwvR3JhZGxlQ292ZXJhZ2VEaXNhYmxlZD4KICAgIDxtZXRob2Qgdj0iMiIgLz4KICA8L2NvbmZpZ3VyYXRpb24+CjwvY29tcG9uZW50Pg=="
+    },
+    {
+      "file": "analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt",
+      "historyOffset": 17547181,
+      "changeType": 7,
+      "changeId": 232940,
+      "contentId": 108391507,
+      "oldTimestamp": "2026-09-28T13:35:42.761Z",
+      "bytes": 16678,
+      "sha256": "7e66ab657bedd116b8856705b36c14d484de3d74c8b1d6af1c882cc2b51182c5",
+      "actualSHA256": "7e66ab657bedd116b8856705b36c14d484de3d74c8b1d6af1c882cc2b51182c5",
+      "equalRaw": true,
+      "equalText": true
+    }
+  ],
+  "notRecovered": [
+    ".idea/workspace.xml: excluded by IntelliJ LocalHistory; no authenticated pre-reset snapshot"
+  ]
+}

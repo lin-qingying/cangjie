@@ -1,12 +1,11 @@
 Tower Data Context:
     Element 0
         Scope: CfirTypeParameterScopeImpl
-            Opaque scope
 
 FILE: typeParameter.cj
     package sample.lowlevel.contextcollector.generated
-    internal? func <T>identity(value: R|kotlin.Unit|): R|kotlin.Unit| {
+    internal? func <T>identity(value: R|T|): R|T| {
         RETURN {
-            NAMED_ACCESS(value)
+            NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
         }
     }

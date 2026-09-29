@@ -1,0 +1,394 @@
+{
+  "auditedAtUtc": "2026-09-29T07:25:19.307Z",
+  "originalRoot": "D:/code/intellij/cangjie",
+  "scope": "Read-only inspection of five reset-before modified project configuration files, one LocalHistory data file, targeted .idea backups/shelf, and matching JetBrains roaming workspace file; no historical shell replay or IDE rollback.",
+  "currentHead": "0b576b7309435726ec609908d1c472ff966b967f",
+  "currentStatusForRequestedFiles": "",
+  "currentFiles": [
+    {
+      "file": ".idea/compiler.xml",
+      "bytes": 471481,
+      "headBlob": "c6462c9e1bd342da74cfe1fd56bb4cb002fdb7da",
+      "currentBlob": "c6462c9e1bd342da74cfe1fd56bb4cb002fdb7da",
+      "matchesCurrentHead": true,
+      "indexFlag": "H"
+    },
+    {
+      "file": ".idea/dictionaries/project.xml",
+      "bytes": 188,
+      "headBlob": "a3cd1765790aada297a7d4c7153921649ca74c84",
+      "currentBlob": "a3cd1765790aada297a7d4c7153921649ca74c84",
+      "matchesCurrentHead": true,
+      "indexFlag": "H"
+    },
+    {
+      "file": ".idea/kotlinc.xml",
+      "bytes": 235,
+      "headBlob": "739bc36583e2b50a41b5f8cf2b113b292477ebab",
+      "currentBlob": "739bc36583e2b50a41b5f8cf2b113b292477ebab",
+      "matchesCurrentHead": true,
+      "indexFlag": "H"
+    },
+    {
+      "file": ".idea/runConfigurations/Run_All_Test.xml",
+      "bytes": 1154,
+      "headBlob": "8585daac03081d8e41049252b26e94e58f42b871",
+      "currentBlob": "8585daac03081d8e41049252b26e94e58f42b871",
+      "matchesCurrentHead": true,
+      "indexFlag": "H"
+    },
+    {
+      "file": ".idea/workspace.xml",
+      "bytes": 90950,
+      "headBlob": "95d41a0974363ec28560f78740dbc44ba10ce827",
+      "currentBlob": "95d41a0974363ec28560f78740dbc44ba10ce827",
+      "matchesCurrentHead": true,
+      "indexFlag": "H"
+    }
+  ],
+  "laterCommitNotHistoricalRecovery": {
+    "commit": "1e80434188fd84715d0c49682063cba9ee2d27db",
+    "committedAt": "2026-09-29T13:33:47+08:00",
+    "files": [
+      ".idea/kotlinc.xml",
+      ".idea/workspace.xml"
+    ],
+    "title": "chore(ide): 同步 IntelliJ 工程配置（Kotlin 插件版本 2.3.0 与 workspace 状态）",
+    "classification": "Post-reset AtomCode edit, not proof of reset-before content."
+  },
+  "localHistory": {
+    "path": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/LocalHistory/changes.storageData",
+    "bytes": 18186278,
+    "hits": [
+      {
+        "name": "compiler.xml",
+        "byteOffset": 2366070,
+        "contextStart": 2365890,
+        "context": "....................................................................................................................n,...ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml.......M.....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml....M.."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 6626990,
+        "contextStart": 6626810,
+        "context": ".............................................................N$..ExternalChange..Common.....*D:/code/intellij/cangjie/.idea/modules.xml...].a.......+D:/code/intellij/cangjie/.idea/compiler.xml.....a.......cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml......."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 10127990,
+        "contextStart": 10127810,
+        "context": "t..[...............................................................................................................[.@...ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...O.R.......cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml..[...."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 10150413,
+        "contextStart": 10150233,
+        "context": "e.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main.iml..R.......*D:/code/intellij/cangjie/.idea/modules.xml..R.......+D:/code/intellij/cangjie/.idea/compiler.xml...O.[.=C....*D:/code/intellij/cangjie/.idea/kotlinc.xml.....R.........................................................."
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 10150470,
+        "contextStart": 10150290,
+        "context": "is-api-cfir-for-ide.main.iml..R.......*D:/code/intellij/cangjie/.idea/modules.xml..R.......+D:/code/intellij/cangjie/.idea/compiler.xml...O.[.=C....*D:/code/intellij/cangjie/.idea/kotlinc.xml.....R.................................................................................................................."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 11205750,
+        "contextStart": 11205570,
+        "context": "...................................................................................................................a.X...ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...T.[.......cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml..`&.n."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 11516429,
+        "contextStart": 11516249,
+        "context": "e.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main.iml..[..N....*D:/code/intellij/cangjie/.idea/modules.xml..[.......+D:/code/intellij/cangjie/.idea/compiler.xml...T.a.V.....eC:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea2026.2/workspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml..a.W"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 11527542,
+        "contextStart": 11527362,
+        "context": "...................................................................................................................a.....ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...T.a.......cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml..a...."
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 11527821,
+        "contextStart": 11527641,
+        "context": "e.e026dc00/cache-state.xml..a.......eC:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea2026.2/workspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml..a.......*D:/code/intellij/cangjie/.idea/kotlinc.xml...T.[.................................................................................................................."
+      },
+      {
+        "name": "dictionaries/project.xml",
+        "byteOffset": 13694227,
+        "contextStart": 13694047,
+        "context": ".........ExternalChange..Common.....eC:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea2026.2/workspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml.....P....7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...]....>.......................c{..ExternalChange..Common......D:/code/intellij/cangjie/analysis/analysis-api-standalon"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 15230849,
+        "contextStart": 15230669,
+        "context": "e/repo/gradle-settings-conventions/.kotlin/sessions/kotlin-compiler-6968345906032564237.salive.......................p...ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...e..n,.....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml......."
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 15618245,
+        "contextStart": 15618065,
+        "context": "are.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main.iml...].a..C....*D:/code/intellij/cangjie/.idea/modules.xml...]...M.....+D:/code/intellij/cangjie/.idea/compiler.xml...e...b.....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml....b.."
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 15618412,
+        "contextStart": 15618232,
+        "context": "angjie/.idea/compiler.xml...e...b.....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml....b.....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\.a..............................ExternalChange..Common.....eC:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea202"
+      },
+      {
+        "name": "Run_All_Test.xml",
+        "byteOffset": 15619514,
+        "contextStart": 15619334,
+        "context": "nerated-sources/kotlin-dsl-plugins/kotlin/CommonConfigurationPlugin.kt.....P...........................ExternalChange..Common.....AD:/code/intellij/cangjie/.idea/runConfigurations/Run_All_Test.xml...]..<..........................>..ExternalChange..Common......D:/code/intellij/cangjie/repo/gradle-build-conventions/a"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 15635435,
+        "contextStart": 15635255,
+        "context": "in/dsl/accessors/_806ac75fc397c01f437e622345dff5ac/KoverEmptyArtifactConfigurationAccessors.kt...........................ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...e....R....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\....~........................(..ExternalChange..Common......"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 15635492,
+        "contextStart": 15635312,
+        "context": "mptyArtifactConfigurationAccessors.kt...........................ExternalChange..Common.....+D:/code/intellij/cangjie/.idea/compiler.xml...e....R....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\....~........................(..ExternalChange..Common......iD:/code/intellij/cangjie/cfir/cfir-tree/gen/org/cangnov"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16035414,
+        "contextStart": 16035234,
+        "context": "ht-tree2cfir/test/org/cangnova/cangjie/cfir/lightTree/CfirOrganizationReexportTest.kt...f..._.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt......................8ut..ExternalChange..Common.....TD:/code/intellij/cangjie/.kotlin/sessions/kotlin-compiler-7504"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16275421,
+        "contextStart": 16275241,
+        "context": "salive..<FILE_ID_AND_HASH>.X.j.4.......-4.........................XO...ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt....I.......................X....ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnov"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16275601,
+        "contextStart": 16275421,
+        "context": "CjoStubAstConsistencyDiagnosticTest.kt....I.......................X....ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt...XK.......................X....ExternalChange..Common.....SD:/code/intellij/cangjie/.kotlin/sessions/kotlin-compile"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16276257,
+        "contextStart": 16276077,
+        "context": "kspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml...V|r......................c....ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt...Xp.......................c....ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnov"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16276437,
+        "contextStart": 16276257,
+        "context": "CjoStubAstConsistencyDiagnosticTest.kt...Xp.......................c....ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt...c........................d.@..ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnov"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 16276617,
+        "contextStart": 16276437,
+        "context": "CjoStubAstConsistencyDiagnosticTest.kt...c........................d.@..ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt...c`:......................d....ExternalChange..Common.....TD:/code/intellij/cangjie/.kotlin/sessions/kotlin-compile"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 16893013,
+        "contextStart": 16892833,
+        "context": "......o[2..ExternalChange..Common.....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml...x.v....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\...........................r....ExternalChange..Common.....UD:/code/intellij/cangjie/.kotlin/sessions/kotlin-compile"
+      },
+      {
+        "name": "CjoStubAstConsistencyDiagnosticTest",
+        "byteOffset": 17547267,
+        "contextStart": 17547087,
+        "context": ".md..<FILE_ID_AND_HASH>.X../..!.....z].....g........................T..ExternalChange..Common.....wD:/code/intellij/cangjie/analysis/stubs/test/org/cangnova/cangjie/analysis/stubs/CjoStubAstConsistencyDiagnosticTest.kt..<FILE_ID_AND_HASH>.X..l6.......:~.....g...........................ExternalChange..Common.....cC:/Users/lin17/AppDat"
+      },
+      {
+        "name": "dictionaries/project.xml",
+        "byteOffset": 17601197,
+        "contextStart": 17601017,
+        "context": "/intellij/cangjie/analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/symbols/pointers/CaCfirClassifierSymbolPointers.kt... ......7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...e.........AD:/code/intellij/cangjie/.idea/runConfigurations/Run_All_Test.xml...f...I~....FD:/code/intellij/cangjie/co"
+      },
+      {
+        "name": "Run_All_Test.xml",
+        "byteOffset": 17601284,
+        "contextStart": 17601104,
+        "context": "/symbols/pointers/CaCfirClassifierSymbolPointers.kt... ......7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...e.........AD:/code/intellij/cangjie/.idea/runConfigurations/Run_All_Test.xml...f...I~....FD:/code/intellij/cangjie/common/src/org/cangnova/cangjie/ImportPath.kt...f....]....jD:/code/intellij/cangj"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17610100,
+        "contextStart": 17609920,
+        "context": "onProvider/AbstractOverriddenDeclarationProviderTest.kt...e....U....BD:/code/intellij/cangjie/docs/cjmp-implementation-plan-20260923.md...g.........*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........GD:/code/intellij/cangjie/cfir/raw-cfir/light-tree"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 17610156,
+        "contextStart": 17609976,
+        "context": "..e....U....BD:/code/intellij/cangjie/docs/cjmp-implementation-plan-20260923.md...g.........*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........GD:/code/intellij/cangjie/cfir/raw-cfir/light-tree2cfir/build.gradle.kts...f..._.....lD:/code/intellij/cang"
+      },
+      {
+        "name": "Run_All_Test.xml",
+        "byteOffset": 17621922,
+        "contextStart": 17621742,
+        "context": "Fixtures/org/cangnova/cangjie/analysis/api/impl/base/test/cases/components/imports/AbstractImportOptimizationPlanTest.kt...a......AD:/code/intellij/cangjie/.idea/runConfigurations/Run_All_Test.xml...f...I~....bD:/code/intellij/cangjie/analysis/low-level-api-cfir/testData/resolveToCfirSymbol/declarations.txt...f...."
+      },
+      {
+        "name": "dictionaries/project.xml",
+        "byteOffset": 17637403,
+        "contextStart": 17637223,
+        "context": "nalysis-api-impl-base/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/configurators/CaAnalysisApiBaseTestServiceRegistrar.kt...M[.....7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...e.........lD:/code/intellij/cangjie/cfir/analysis-tests/testData/macro/sameProjectMacroPackageExpression.macro.cfir.t"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17679145,
+        "contextStart": 17678965,
+        "context": "components/references/AbstractReferenceShortenerTest.kt...U....d....BD:/code/intellij/cangjie/docs/cjmp-implementation-plan-20260923.md...g.........*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........:D:/code/intellij/cangjie/cfir/analysis-tests/REPA"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 17679201,
+        "contextStart": 17679021,
+        "context": "..U....d....BD:/code/intellij/cangjie/docs/cjmp-implementation-plan-20260923.md...g.........*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........:D:/code/intellij/cangjie/cfir/analysis-tests/REPAIR_LOG.md...[.r....VD:/code/intellij/cangjie/analysis/low"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17713813,
+        "contextStart": 17713633,
+        "context": "..D:/code/intellij/cangjie/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirProvider.kt...K....C....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........7D:/code/intellij/cangjie/.idea/dictionaries/proje"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 17713869,
+        "contextStart": 17713689,
+        "context": "rc/org/cangnova/cangjie/analysis/low/level/api/cfir/providers/LLCfirProvider.kt...K....C....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...e.........\\D:/code/intellij/cangjie/analysis/ana"
+      },
+      {
+        "name": "dictionaries/project.xml",
+        "byteOffset": 17713926,
+        "contextStart": 17713746,
+        "context": "ders/LLCfirProvider.kt...K....C....*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\..o['....+D:/code/intellij/cangjie/.idea/compiler.xml...e.........7D:/code/intellij/cangjie/.idea/dictionaries/project.xml...e.........\\D:/code/intellij/cangjie/analysis/analysis-api-cfir/testData/findUsages/importAliasUsages.cj...T......kD:/"
+      },
+      {
+        "name": "Run_All_Test.xml",
+        "byteOffset": 17724095,
+        "contextStart": 17723915,
+        "context": "ase/testFixtures/org/cangnova/cangjie/analysis/api/impl/base/test/configurators/CaAnalysisApiBaseTestServiceRegistrar.kt...M[.....AD:/code/intellij/cangjie/.idea/runConfigurations/Run_All_Test.xml...f...I~.....D:/code/intellij/cangjie/cfir/analysis-tests/testData/macro/diagnostics2/interop/objcInitMethodBoundaryPla"
+      },
+      {
+        "name": "compiler.xml",
+        "byteOffset": 17793510,
+        "contextStart": 17793330,
+        "context": "ngjie/.idea/modules.xml...].... ....eC:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea2026.2/workspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml..........+D:/code/intellij/cangjie/.idea/compiler.xml...e.........cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml......."
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17793677,
+        "contextStart": 17793497,
+        "context": "angjie/.idea/compiler.xml...e.........cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.e026dc00/cache-state.xml..........*D:/code/intellij/cangjie/.idea/kotlinc.xml...\\....'.......................K`..ExternalChange..Common......C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026."
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17794643,
+        "contextStart": 17794463,
+        "context": "...........]...ExternalChange..Common.....8D:/code/intellij/cangjie/.workbuddy/memory/2026-09-29.md............Git checkout.......Checkout..Git,....*D:/code/intellij/cangjie/.idea/kotlinc.xml...T....a.....D:/code/intellij/cangjie/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/"
+      },
+      {
+        "name": "kotlinc.xml",
+        "byteOffset": 17801029,
+        "contextStart": 17800849,
+        "context": ".....cC:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/projects/cangjie.32aeb3b4/cache-state.xml......Git checkout...7...Checkout..Git,....*D:/code/intellij/cangjie/.idea/kotlinc.xml...T..........D:/code/intellij/cangjie/analysis/analysis-test-framework/testFixtures/org/cangnova/cangjie/analysis/test/"
+      }
+    ],
+    "dataReadIsLiveSnapshot": true,
+    "recordIndex": {
+      "path": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/LocalHistory/changes.storageRecordIndex",
+      "observedBytes": 111584
+    },
+    "counts": {
+      "compiler.xml": 14,
+      "dictionaries/project.xml": 4,
+      "kotlinc.xml": 11,
+      "Run_All_Test.xml": 4,
+      "workspace.xml": 0,
+      "CjoStubAstConsistencyDiagnosticTest": 7
+    },
+    "pathOwnership": "All listed hits for requested configuration basenames include the exact D:/code/intellij/cangjie/.idea/... path in the readable adjacent bytes. No workspace.xml hit was found.",
+    "timestampBinding": "Record timestamps/content IDs were not decoded. Filename hits alone do not prove which stored bytes are the final pre-reset revision.",
+    "contentStorage": "StoredContent serializes a content ID; full bytes are read from PersistentFS, not the filename text in changes.storageData.",
+    "persistentFsCandidates": [
+      {
+        "path": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/caches/content.dat",
+        "bytes": 469762048
+      },
+      {
+        "path": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/caches/records.dat",
+        "bytes": 134217728
+      },
+      {
+        "path": "C:/Users/lin17/AppData/Local/JetBrains/IntelliJIdea2026.2/caches/content.dat.hashToId",
+        "bytes": 3145728
+      }
+    ],
+    "persistentFsContentsNotRead": true
+  },
+  "upstreamEvidence": [
+    {
+      "file": "D:/code/intellij/intellij-community/platform/lvcs-impl/src/com/intellij/history/integration/IdeaGateway.java",
+      "lines": "75-80",
+      "finding": "isVersioned explicitly excludes files named workspace.xml."
+    },
+    {
+      "file": "D:/code/intellij/intellij-community/platform/lvcs-impl/testSrc/com/intellij/history/integration/IdeaGatewayTest.java",
+      "lines": "221-231",
+      "finding": "testFileNotVersionedWhenHasSpecificName asserts workspace.xml is not versioned."
+    },
+    {
+      "file": "D:/code/intellij/intellij-community/platform/lvcs-impl/src/com/intellij/history/core/StoredContent.java",
+      "lines": "51-66",
+      "finding": "Serializes content ID and obtains historical bytes with PersistentFS.contentsToByteArray(contentId)."
+    }
+  ],
+  "backupInspection": {
+    "ideaBackupFilesFound": [],
+    "shelf": [
+      {
+        "path": "D:/code/intellij/cangjie/.idea/shelf/在变基之前未提交的更改_[更改]/shelved.patch",
+        "bytes": 0,
+        "usable": false
+      }
+    ],
+    "roamingWorkspaceCandidate": {
+      "path": "C:/Users/lin17/AppData/Roaming/JetBrains/IntelliJIdea2026.2/workspace/3AbcvUVBWnpR76PlkOJlbcffRI3.xml",
+      "bytes": 457533,
+      "lastWriteTimeUtc": "2026-09-29T05:37:49Z",
+      "finding": "Separate live IDE workspace-state file, not established as an exact backup of project .idea/workspace.xml; not substituted."
+    },
+    "fileHistoryFinding": "Only per-project ngram indexes found among direct files; no XML backup snapshots found."
+  },
+  "restoredFiles": [],
+  "unrecovered": [
+    {
+      "file": ".idea/compiler.xml",
+      "reason": "Exact project-path LocalHistory records exist, but no timestamp-bound pre-reset content snapshot has been extracted or verified."
+    },
+    {
+      "file": ".idea/dictionaries/project.xml",
+      "reason": "Exact project-path LocalHistory records exist, but no timestamp-bound pre-reset content snapshot has been extracted or verified."
+    },
+    {
+      "file": ".idea/kotlinc.xml",
+      "reason": "Exact project-path LocalHistory records exist, but no timestamp-bound pre-reset content snapshot has been extracted or verified."
+    },
+    {
+      "file": ".idea/runConfigurations/Run_All_Test.xml",
+      "reason": "Exact project-path LocalHistory records exist, but no timestamp-bound pre-reset content snapshot has been extracted or verified."
+    },
+    {
+      "file": ".idea/workspace.xml",
+      "reason": "No verified pre-reset snapshot; LocalHistory has no matching filename record and upstream explicitly excludes workspace.xml."
+    }
+  ],
+  "writes": "Only this evidence JSON under recovery checkout .recovery; original workspace and IDE storage untouched."
+}

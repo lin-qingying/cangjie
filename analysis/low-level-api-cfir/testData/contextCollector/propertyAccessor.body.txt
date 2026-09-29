@@ -5,13 +5,13 @@ Tower Data Context:
         Implicit receiver:
             CfirClassSymbol internal? class Counter {
     init()
-    internal? mut prop state: R|kotlin.Unit|
+    internal? mut prop state: R|Int64|
 }
             Type: sample/lowlevel/contextcollector/generated/Counter.This
     Element 2
         Scope: CfirLocalScope
             Variables:
-                CfirValueParameterSymbol value: R|kotlin.Unit|
+                CfirValueParameterSymbol value: R|Int64|
     Element 3
         Scope: CfirLocalScope
 
@@ -19,5 +19,5 @@ FILE: propertyAccessor.cj
     package sample.lowlevel.contextcollector.generated
     internal? class Counter {
         init()
-        internal? mut prop state: R|kotlin.Unit|
+        internal? mut prop state: R|Int64|
     }
