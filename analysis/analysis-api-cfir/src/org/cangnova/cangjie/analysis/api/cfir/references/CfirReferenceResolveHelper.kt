@@ -7,7 +7,6 @@ import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
-import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
@@ -70,8 +69,8 @@ internal object CfirReferenceResolveHelper {
             is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
             is CfirTypeParameter -> listOf(symbolBuilder.buildSymbol(cfir.symbol))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)
-            is CfirResolvedNamedReference -> cfir.toTargetSymbol(symbolBuilder)
-            is CfirErrorNamedReference -> cfir.toTargetSymbol(symbolBuilder)
+            is CfirResolvedNamedReference -> cfir.toCaTargetSymbols(symbolBuilder)
+            is CfirErrorNamedReference -> cfir.toCaTargetSymbols(symbolBuilder)
             else -> emptyList()
         }
     }
@@ -244,7 +243,7 @@ internal object CfirReferenceResolveHelper {
         cfir: CfirResolvable,
         symbolBuilder: CaSymbolByCfirBuilder,
     ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
-        return cfir.calleeReference.toTargetSymbol(symbolBuilder)
+        return cfir.calleeReference.toCaTargetSymbols(symbolBuilder)
     }
 
     /**
@@ -280,23 +279,4 @@ internal object CfirReferenceResolveHelper {
         return symbol?.buildSymbol(symbolBuilder)
     }
 
-    /**
-     * 从 CFIR reference 恢复公开 Analysis API 符号集合。
-     */
-    private fun CfirReference.toTargetSymbol(
-        symbolBuilder: CaSymbolByCfirBuilder,
-    ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
-        return when (this) {
-            is CfirResolvedNamedReference -> listOf(symbolBuilder.buildSymbol(resolvedSymbol))
-            is org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate ->
-                listOf(symbolBuilder.buildSymbol(candidateSymbol))
-            is CfirErrorNamedReference -> {
-                val diagnostic = diagnostic as? ConeDiagnosticWithCandidates ?: return emptyList()
-                diagnostic.candidateSymbols.map(symbolBuilder::buildSymbol)
-            }
-            is CfirThisReference -> listOfNotNull(boundSymbol?.buildSymbol(symbolBuilder))
-            is CfirSuperReference -> emptyList()
-            else -> emptyList()
-        }
-    }
 }
