@@ -195,6 +195,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpAnnotationSpecificOnly.cj")
             }
 
+            @TestMetadata("cjmpBothImplicitReturnTypesMatch.cj")
+            @Test
+            fun testCjmpBothImplicitReturnTypesMatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpBothImplicitReturnTypesMatch.cj")
+            }
+
             @TestMetadata("cjmpClassModifierMismatch.cj")
             @Test
             fun testCjmpClassModifierMismatch() {
@@ -205,6 +211,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             @Test
             fun testCjmpCommonDefaultOmitted() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonDefaultOmitted.cj")
+            }
+
+            @TestMetadata("cjmpCommonImplicitSpecificExplicitReturnMismatch.cj")
+            @Test
+            fun testCjmpCommonImplicitSpecificExplicitReturnMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonImplicitSpecificExplicitReturnMismatch.cj")
+            }
+
+            @TestMetadata("cjmpCommonValueSpecificEmptyBodyMismatch.cj")
+            @Test
+            fun testCjmpCommonValueSpecificEmptyBodyMismatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpCommonValueSpecificEmptyBodyMismatch.cj")
             }
 
             @TestMetadata("cjmpCommonWithDefaultEnumNoSpecificImplementation.cj")
@@ -225,6 +243,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDefaultReadThrough.cj")
             }
 
+            @TestMetadata("cjmpDefaultReadThroughBeforeImplicitTypes.cj")
+            @Test
+            fun testCjmpDefaultReadThroughBeforeImplicitTypes() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDefaultReadThroughBeforeImplicitTypes.cj")
+            }
+
             @TestMetadata("cjmpDeprecatedOnSpecific.cj")
             @Test
             fun testCjmpDeprecatedOnSpecific() {
@@ -241,6 +265,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             @Test
             fun testCjmpDuplicateSpecific() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpDuplicateSpecific.cj")
+            }
+
+            @TestMetadata("cjmpEmptyBodiesMatchAsUnit.cj")
+            @Test
+            fun testCjmpEmptyBodiesMatchAsUnit() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEmptyBodiesMatchAsUnit.cj")
+            }
+
+            @TestMetadata("cjmpEmptyCommonImplicitSpecificValuePostCheck.cj")
+            @Test
+            fun testCjmpEmptyCommonImplicitSpecificValuePostCheck() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEmptyCommonImplicitSpecificValuePostCheck.cj")
             }
 
             @TestMetadata("cjmpEnumConstructorExtra.cj")
@@ -277,6 +313,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             @Test
             fun testCjmpEnumNonExhaustive() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpEnumNonExhaustive.cj")
+            }
+
+            @TestMetadata("cjmpExplicitSpecificErrorTypeDoesNotMatch.cj")
+            @Test
+            fun testCjmpExplicitSpecificErrorTypeDoesNotMatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpExplicitSpecificErrorTypeDoesNotMatch.cj")
             }
 
             @TestMetadata("cjmpExtendMissingMember.cj")
@@ -319,6 +361,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             @Test
             fun testCjmpGenericOuterTypeParameterMembers() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpGenericOuterTypeParameterMembers.cj")
+            }
+
+            @TestMetadata("cjmpImplicitSpecificBodyErrorPreservesMatch.cj")
+            @Test
+            fun testCjmpImplicitSpecificBodyErrorPreservesMatch() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpImplicitSpecificBodyErrorPreservesMatch.cj")
             }
 
             @TestMetadata("cjmpInferredReturnTypePostCheck.cj")
@@ -481,6 +529,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             @Test
             fun testCjmpSpecificMarkedPrimaryConstructor() {
                 runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificMarkedPrimaryConstructor.cj")
+            }
+
+            @TestMetadata("cjmpSpecificShadowingBeforeImplicitTypes.cj")
+            @Test
+            fun testCjmpSpecificShadowingBeforeImplicitTypes() {
+                runTest("cfir/analysis-tests/testData/diagnostics2/common-specific/e2e/cjmpSpecificShadowingBeforeImplicitTypes.cj")
             }
 
             @TestMetadata("cjmpSuperTypeMismatch.cj")
