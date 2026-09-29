@@ -24,6 +24,8 @@ dependencies {
 
     testImplementation(testFixtures(project(":cfir:analysis-tests")))
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
+    // CJO 所有权测试直接读取生成的 FlatBuffers 表，显式声明其基础库。
+    testImplementation(libs.flatbuffers.java)
     testCompileOnly(intellijTestFramework()) { isTransitive = false }
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
