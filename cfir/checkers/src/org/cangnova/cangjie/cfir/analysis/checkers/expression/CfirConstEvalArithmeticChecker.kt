@@ -1,9 +1,11 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
-import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.containingFileText
+import org.cangnova.cangjie.cfir.analysis.checkers.context.lastIndexBefore
+import org.cangnova.cangjie.cfir.analysis.checkers.context.lastNonWhitespaceIndexBefore
 import org.cangnova.cangjie.cfir.analysis.checkers.context.effectiveOverflowStrategy
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -340,15 +342,10 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
  * `[` 来避免重复诊断。
  */
 private fun CheckerContext.isSubscriptIndexExpression(source: AbstractCjSourceElement): Boolean {
-    val text: CharSequence = containingFileSymbol?.sourceFile?.let { sourceFile ->
-        when (sourceFile) {
-            is CjInMemoryTextSourceFile -> sourceFile.text
-            else -> sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use { it.readText() }
-        }
-    } ?: return false
+    val text = containingFileText() ?: return false
 
     var bracketDepth = 0
-    var offset = source.startOffset - 1
+    var offset = text.lastIndexBefore(source.startOffset) ?: return false
     while (offset >= 0) {
         when (text[offset]) {
             ']' -> bracketDepth++
@@ -400,11 +397,7 @@ private fun CjSourceElement?.contains(source: AbstractCjSourceElement): Boolean 
  * 判断 `[` 前方是否存在可作为下标接收者的源码片段。
  */
 private fun CharSequence.hasSubscriptReceiverBefore(leftBracketOffset: Int): Boolean {
-    var offset = leftBracketOffset - 1
-    while (offset >= 0 && this[offset].isWhitespace()) {
-        offset--
-    }
-    if (offset < 0) return false
+    val offset = lastNonWhitespaceIndexBefore(leftBracketOffset) ?: return false
 
     val previous = this[offset]
     return previous.isLetterOrDigit() || previous == '_' || previous == ')' || previous == ']'
