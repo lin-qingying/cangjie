@@ -311,16 +311,16 @@ class CfirProviderImpl(
                 resolveSourcePackageTopLevelNames(packageFqName).callableNames
         }
 
-        /** 在组织或可用性过滤之前保留同一 ClassId 的所有真实声明。 */
-        override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
-            state.classifierCandidates[classId]?.toList()
-                ?: listOfNotNull(resolveSourcePackageTopLevelClassSymbol(classId))
-
         /**
          * 按 [classId] 加载 source 或 reexport 后可见的 class-like symbol。
          */
         override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
             resolveSourcePackageTopLevelClassSymbol(classId)
+
+        /** 在组织或可用性过滤之前保留同一 ClassId 的所有真实声明。 */
+        override fun getClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> =
+            state.classifierCandidates[classId]?.toList()
+                ?: listOfNotNull(resolveSourcePackageTopLevelClassSymbol(classId))
 
         /**
          * 将 source 或 reexport 后可见的顶层 callable symbol 追加到 [destination]。
@@ -960,9 +960,6 @@ class CfirProviderImpl(
          */
         val fileMap: MutableMap<FqName, MutableList<CfirFile>> = hashMapOf()
 
-        /** 按源码登记顺序保存全部声明，避免首项选择提前丢失组织和文件归属。 */
-        val classifierCandidates: MutableMap<ClassId, LinkedHashSet<CfirClassLikeSymbol<*>>> = hashMapOf()
-
         /**
          * 本 provider 中**由源码文件直接声明**的包集合。
          *
@@ -979,6 +976,9 @@ class CfirProviderImpl(
          * ClassId 到 class-like symbol 的索引。
          */
         val classifierMap: MutableMap<ClassId, CfirClassLikeSymbol<*>> = hashMapOf()
+
+        /** 按源码登记顺序保存全部声明，避免首项选择提前丢失组织和文件归属。 */
+        val classifierCandidates: MutableMap<ClassId, LinkedHashSet<CfirClassLikeSymbol<*>>> = hashMapOf()
 
         /**
          * ClassId 到声明所在文件的索引。

@@ -298,6 +298,11 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     ): CfirDeclaration {
         // 对齐 Kotlin K2：declaration-content 钩子只负责继续向下遍历当前声明的 children，
         // 让 designated body resolve 可以在“容器已选定”的前提下接管后续子树，而不是重新走一遍具体 transformXxx 分发。
+        // Annotation calls 属于当前 declaration 自身而不是其 children；在同一 owner context
+        // 里显式推进它们，确保 class-like/extend 等走通用 content 路径的声明也完成参数绑定。
+        if (!implicitTypeOnly) {
+            declaration.transformAnnotations(this, data)
+        }
         @Suppress("UNCHECKED_CAST")
         val transformed = transformElement(declaration, data) as CfirDeclaration
         if (!implicitTypeOnly) {

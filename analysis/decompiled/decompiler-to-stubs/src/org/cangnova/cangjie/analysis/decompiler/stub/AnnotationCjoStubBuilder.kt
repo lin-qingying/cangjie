@@ -19,7 +19,11 @@ internal fun createAnnotationChildrenStubs(parent: StubElement<*>, annotation: C
     fun userType(parent: StubElement<*>, segments: List<String>) {
         val stub = CangJieUserTypeStubImpl(parent)
         if (segments.size > 1) userType(stub, segments.dropLast(1))
-        CangJieNameReferenceExpressionStubImpl(stub, StringRef.fromString(segments.last()))
+        CangJieNameReferenceExpressionStubImpl(
+            stub,
+            StringRef.fromString(segments.last()),
+            myClassRef = true,
+        )
     }
     userType(type, sourceName.split('.'))
 

@@ -8,6 +8,6 @@ public class Payload {
     public const init(shape!: (Int64, String), label!: String, level!: Int64) {}
 }
 
-@Payload[(1, "hello"), "demo", 2i64]
+@Payload[shape: (1, "hello"), label: "demo", level: 2i64]
 class Main {
 }

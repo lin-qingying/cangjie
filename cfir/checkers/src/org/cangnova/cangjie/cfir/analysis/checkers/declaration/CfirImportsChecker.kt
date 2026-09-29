@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.isPackageVisibleSourceImport
 import org.cangnova.cangjie.cfir.resolve.providers.isUnusedImportCheckExempt
+import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
@@ -897,26 +898,6 @@ object CfirImportsChecker : CfirFileChecker() {
         return if (declaredPrefixLength < packageSegmentCount) declaredPrefixLength else null
     }
 
-    /**
-     * 判断普通 import 的终端目标是否可以解析。
-     *
-     * 终端目标可以是类符号、顶层可调用符号或包。`import m1.p1` 的终端名称本身就是被导入的包，
-     * 此时父段不必是包（官方按被导入的包名整体查找）；否则父包不存在时直接返回 false，
-     * 避免把不存在路径上的终端名称误判为可解析。
-     */
-    context(context: CheckerContext)
-    private fun canResolveTerminalImportTarget(importedFqName: FqName): Boolean {
-        val symbolProvider = context.session.symbolProvider
-        if (symbolProvider.hasPackage(importedFqName)) return true
-
-        val packageFqName = importedFqName.parent()
-        val importedName = importedFqName.shortName()
-        if (!packageFqName.isRoot && !symbolProvider.hasPackage(packageFqName)) return false
-
-        val classLike = symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName))
-        val callableSymbols = symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName)
-        return classLike != null || callableSymbols.isNotEmpty()
-    }
 
     /**
      * 取得 import 路径中从末尾倒数指定位置的源码元素。

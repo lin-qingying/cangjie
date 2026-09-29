@@ -1153,10 +1153,7 @@ class PsiRawCfirBuilder(
                     this.body = body
                     isMut = psi.isMut
                 }
-            }.also {
-                it.initContainingClassAttr()
-                bindFunctionTarget(functionTarget, it)
-            }
+            }.also { bindFunctionTarget(functionTarget, it) }
         }
 
         /** 转换属性声明；无有效名称时显式构造 invalid declaration。 */
@@ -1198,7 +1195,7 @@ class PsiRawCfirBuilder(
             return buildSourceDeclaration(propertySymbol) { symbol ->
                 buildProperty {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement().fakeElement(CjFakeSourceElementKind.ImplicitConstructor)
+                    source = psi.toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
@@ -1450,7 +1447,10 @@ class PsiRawCfirBuilder(
                         this.body = body
                     }
                 }
-            }.also { bindFunctionTarget(functionTarget, it) }
+            }.also {
+                it.initContainingClassAttr()
+                bindFunctionTarget(functionTarget, it)
+            }
         }
 
         /** 转换 typealias 声明；非法嵌套时显式构造 invalid declaration。 */
@@ -1525,7 +1525,7 @@ class PsiRawCfirBuilder(
             return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
                 buildPrimaryConstructor {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement()
+                    source = psi.toCjPsiSourceElement().fakeElement(CjFakeSourceElementKind.ImplicitConstructor)
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData

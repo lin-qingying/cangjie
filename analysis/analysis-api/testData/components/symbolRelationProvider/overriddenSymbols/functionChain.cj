@@ -5,13 +5,13 @@
 package sample.symbol.relation.overrides
 
 open class Root {
-    public func render(value: Int64): Int64 {
+    public open func render(value: Int64): Int64 {
         return value
     }
 }
 
 open class Parent <: Root {
-    public func render(value: Int64): Int64 {
+    public open override func render(value: Int64): Int64 {
         return value
     }
 }
@@ -26,7 +26,7 @@ open class Parent <: Root {
 package sample.symbol.relation.overrides
 
 class Child <: Parent {
-    public func render(value: Int64): Int64 {
+    public override func render(value: Int64): Int64 {
         return value
     }
 }

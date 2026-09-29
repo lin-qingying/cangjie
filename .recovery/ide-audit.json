@@ -1,0 +1,381 @@
+{
+  "auditedAtUtc": "2026-09-29T05:31:49.722Z",
+  "originalRoot": "D:/code/intellij/cangjie/intellij-ide",
+  "method": "Read-only reverse verification of every successful B-session FileChange hunk against current final paths; historical add content checked exactly after later updates reversed in memory. CRLF/LF normalized only for content comparison. No historical shell executed.",
+  "cutoff": "2026-09-29T00:54:10.000Z",
+  "head": "681597beca201eb7296d58686bff115210b93c84",
+  "status": " M AGENTS.md\n M CLAUDE.md\n M PROJECT_STRUCTURE.md\n M README.md\n D README_zh.md\n M build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts\n M docs/architecture-host-plugin.md\n M docs/design/binary-stub-building-design.md\n M docs/design/cjo-service-module-design.md\n M docs/host-upstream-responsibility-matrix.md\n M docs/macro-psi-replacement-design.md\n M docs/type/06-special-types.md\n M docs/type/07-implementation-details.md\n M docs/type/README.md\n M docs/type/type-system-refactoring-plan.md\n M modules/foundation/src/main/kotlin/org/cangnova/cangjie/facet/CangJieFacetFields.kt\n M modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/highlighter/CangJieIdeDeclarationRenderer.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/modules/source/CaIdeSourceModuleBase.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureProvider.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/documentation/CangJieDocumentationTarget.kt\n M modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt\n M modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml\n M modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml\n M modules/ide/base/src/main/resources/META-INF/cangjie-jps.xml\n M modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt\n M modules/ide/run/src/main/kotlin/org/cangnova/cangjie/run/README.md\n M product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/highlighter/CangJieCompiledFilesHighlightingTest.kt\n?? README.zh-CN.md\n?? hs_err_pid80244.log\n?? modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsListener.kt\n?? modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/CangJieCompilerSettingsTracker.kt\n?? modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt\n?? product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt\n?? replay_pid80244.log",
+  "historicalChanges": 16,
+  "finalFiles": 6,
+  "preservedFiles": 6,
+  "unresolvedFiles": [],
+  "files": [
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt",
+      "exists": true,
+      "sha256": "fd0a73458ae2169883f1f38d60dca236427115ac4719e6775cfb8555ff02fc15",
+      "bytes": 7810,
+      "preserved": true,
+      "historicalChanges": 1,
+      "checkedChanges": 1,
+      "checks": [
+        {
+          "session": "B-sub3",
+          "line": 134,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T08:00:47.315Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt",
+          "to": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/codeInsight/template/template/CangJiePostfixTemplatesProvider.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 185,
+              "matchedCurrentLine": 185,
+              "afterLines": 2
+            },
+            {
+              "expectedNewLine": 142,
+              "matchedCurrentLine": 142,
+              "afterLines": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt",
+      "exists": true,
+      "sha256": "5c20e73262248e5489907a5ef163faa953d59388697760460f3a324b5d8c590d",
+      "bytes": 7390,
+      "preserved": true,
+      "historicalChanges": 1,
+      "checkedChanges": 1,
+      "checks": [
+        {
+          "session": "B-sub3",
+          "line": 134,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T08:00:47.315Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt",
+          "to": "modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/liveTemplates/CangJieTemplateContextType.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 70,
+              "matchedCurrentLine": 70,
+              "afterLines": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt",
+      "exists": true,
+      "sha256": "9810b2f1113beb8122d0e4f8ecf80ba441919178962ac57036cfa03f45ae6f34",
+      "bytes": 4063,
+      "preserved": true,
+      "historicalChanges": 1,
+      "checkedChanges": 1,
+      "checks": [
+        {
+          "session": "B-sub3",
+          "line": 344,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T08:53:40.455Z",
+          "changeType": "update",
+          "from": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt",
+          "to": "modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 80,
+              "matchedCurrentLine": 80,
+              "afterLines": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+      "exists": true,
+      "sha256": "3454ed29c606d0d12484b519742fbfa583185c00c51e3ede347e35383284b4aa",
+      "bytes": 12636,
+      "preserved": true,
+      "historicalChanges": 6,
+      "checkedChanges": 6,
+      "checks": [
+        {
+          "session": "B-main",
+          "line": 2415,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T15:02:02.745Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 113,
+              "matchedCurrentLine": 113,
+              "afterLines": 4
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 1654,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T12:12:24.550Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 118,
+              "matchedCurrentLine": 118,
+              "afterLines": 6
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 1641,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T12:09:48.939Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 118,
+              "matchedCurrentLine": 118,
+              "afterLines": 8
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 1406,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T11:10:31.443Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 227,
+              "matchedCurrentLine": 227,
+              "afterLines": 4
+            }
+          ]
+        },
+        {
+          "session": "B-sub3",
+          "line": 475,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T09:28:42.396Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 162,
+              "matchedCurrentLine": 162,
+              "afterLines": 10
+            }
+          ]
+        },
+        {
+          "session": "B-sub3",
+          "line": 469,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T09:28:31.866Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/editor/folding/CangJieFoldingBuilderTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 158,
+              "matchedCurrentLine": 158,
+              "afterLines": 20
+            },
+            {
+              "expectedNewLine": 40,
+              "matchedCurrentLine": 40,
+              "afterLines": 3
+            },
+            {
+              "expectedNewLine": 35,
+              "matchedCurrentLine": 35,
+              "afterLines": 4
+            },
+            {
+              "expectedNewLine": 26,
+              "matchedCurrentLine": 26,
+              "afterLines": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml",
+      "exists": true,
+      "sha256": "31d6097445fe7a38a9598a8331866803a87c14c37ca7614d8d6fcb073e4ef539",
+      "bytes": 5205,
+      "preserved": true,
+      "historicalChanges": 1,
+      "checkedChanges": 1,
+      "checks": [
+        {
+          "session": "B-sub2",
+          "line": 796,
+          "log": "28/rollout-2026-09-28T15-42-17-01a0e6f6-ee4a-7d20-97b6-41aa36424a83.jsonl",
+          "time": "2026-09-28T13:12:38.435Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml",
+          "to": "modules/ide/base/src/main/resources/META-INF/cangjie-analysis-entry.xml",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 44,
+              "matchedCurrentLine": 44,
+              "afterLines": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+      "exists": true,
+      "sha256": "7bff2e795d293498a5b6cd5df40e0dc9c2e7de80b9267bfa29a8f3ef15ad2a07",
+      "bytes": 4138,
+      "preserved": true,
+      "historicalChanges": 6,
+      "checkedChanges": 6,
+      "checks": [
+        {
+          "session": "B-main",
+          "line": 3022,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T18:17:01.360Z",
+          "changeType": "update",
+          "from": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 43,
+              "matchedCurrentLine": 43,
+              "afterLines": 24
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 3019,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T18:17:00.847Z",
+          "changeType": "update",
+          "from": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 65,
+              "matchedCurrentLine": 65,
+              "afterLines": 4
+            },
+            {
+              "expectedNewLine": 40,
+              "matchedCurrentLine": 40,
+              "afterLines": 5
+            },
+            {
+              "expectedNewLine": 3,
+              "matchedCurrentLine": 3,
+              "afterLines": 5
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 2918,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T17:51:23.158Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 18,
+              "matchedCurrentLine": 18,
+              "afterLines": 4
+            },
+            {
+              "expectedNewLine": 10,
+              "matchedCurrentLine": 10,
+              "afterLines": 5
+            }
+          ]
+        },
+        {
+          "session": "B-main",
+          "line": 2843,
+          "log": "28/rollout-2026-09-28T15-41-00-01a0e6f5-c134-79c0-bcb8-6fc99b3adab5.jsonl",
+          "time": "2026-09-28T17:25:31.079Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 46,
+              "matchedCurrentLine": 46,
+              "afterLines": 3
+            }
+          ]
+        },
+        {
+          "session": "B-sub3",
+          "line": 1169,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T17:10:54.538Z",
+          "changeType": "update",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "evidence": [
+            {
+              "expectedNewLine": 43,
+              "matchedCurrentLine": 43,
+              "afterLines": 6
+            }
+          ]
+        },
+        {
+          "session": "B-sub3",
+          "line": 1161,
+          "log": "28/rollout-2026-09-28T15-42-26-01a0e6f7-105c-7922-b5ff-47ff21da81e3.jsonl",
+          "time": "2026-09-28T17:09:47.592Z",
+          "changeType": "add",
+          "from": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "to": "modules/ide/base/src/test/kotlin/org/cangnova/cangjie/ide/references/CangJieImportGroupNavigationTest.kt",
+          "ok": true,
+          "kind": "full added content after reversing later updates"
+        }
+      ]
+    }
+  ]
+}

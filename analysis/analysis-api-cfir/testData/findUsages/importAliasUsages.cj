@@ -4,7 +4,7 @@
 // FILE: provider.cj
 package sample.provider
 
-func greet() {
+public func greet() {
 }
 
 // FILE: importAliasUsages.cj

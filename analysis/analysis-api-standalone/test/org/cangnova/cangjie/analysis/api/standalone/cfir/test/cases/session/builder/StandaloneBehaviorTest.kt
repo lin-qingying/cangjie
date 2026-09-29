@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.api.standalone.cfir.test.cases.session.builder
 
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationValue
 import org.cangnova.cangjie.analysis.api.annotations.CaConstantValue
 import org.cangnova.cangjie.analysis.api.components.analysisScope
@@ -16,7 +17,9 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModul
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMacroExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.psiUtil.findDescendantOfType
@@ -65,7 +68,7 @@ class StandaloneBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertTrue(packageProvider.doesPackageExist(FqName("sample.standalone.packages")))
             assertTrue(packageProvider.doesPackageExist(FqName("sample.standalone.packages.app")))
             assertTrue(packageProvider.doesPackageExist(FqName("sample.standalone.packages.helper")))
-            assertFalse(packageProvider.doesPackageExist(FqName("std")))
+            assertTrue(packageProvider.doesPackageExist(FqName("std")))
 
             assertEquals(
                 setOf(Name.identifier("app"), Name.identifier("helper")),
@@ -114,7 +117,29 @@ class StandaloneBehaviorTest : AbstractAnalysisApiExecutionTest(
 
         context.analyze(annotatedClass) {
             val annotation = annotatedClass.symbol.annotations.single()
-            assertEquals(3, annotation.arguments.size)
+            val annotationPsi = annotation.psi as? CjAnnotation
+            val fileAnnotationDebug = PsiTreeUtil
+                .findChildrenOfType(mainFile, CjAnnotation::class.java)
+                .map { psi ->
+                    "${psi.text}: stub=${psi.stub?.javaClass?.simpleName}, " +
+                        "hasValueArguments=${psi.stub?.hasValueArguments()}, " +
+                        "psiValueArguments=${psi.valueArguments.size}, " +
+                        "valueArgumentList=${psi.valueArgumentList?.arguments?.size}"
+                }
+            val macroDebug = PsiTreeUtil
+                .findChildrenOfType(mainFile, CjMacroExpression::class.java)
+                .map { macro -> "${macro.text}: attr=${macro.attr?.text}, declaration=${macro.hasDeclarationInput}" }
+            assertEquals(
+                3,
+                annotation.arguments.size,
+                "annotationPsi=${annotationPsi?.text}, " +
+                    "stub=${annotationPsi?.stub?.javaClass?.name}, " +
+                    "hasValueArguments=${annotationPsi?.stub?.hasValueArguments()}, " +
+                    "psiArguments=${annotationPsi?.valueArgumentList?.arguments?.size}, " +
+                    "fileAnnotationDebug=$fileAnnotationDebug, macroDebug=$macroDebug, " +
+                    "classId=${annotation.classId}, status=${annotation.resolutionStatus}, " +
+                    "constructor=${annotation.constructorSymbol}",
+            )
 
             val shapeArgument = annotation.arguments[0]
             val shapeValue = shapeArgument.expression

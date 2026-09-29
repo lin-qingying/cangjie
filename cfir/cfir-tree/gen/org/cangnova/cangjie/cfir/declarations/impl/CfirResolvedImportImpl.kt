@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvedImport
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.CjSourceElement
@@ -30,6 +31,8 @@ class CfirResolvedImportImpl @CfirImplementationDetail constructor(
         get() = delegate.organizationName
     override val isAllUnder: Boolean
         get() = delegate.isAllUnder
+    override val visibility: Visibility
+        get() = delegate.visibility
     override val aliasName: Name?
         get() = delegate.aliasName
     override val aliasSource: CjSourceElement?

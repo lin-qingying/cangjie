@@ -28,10 +28,12 @@ function read(file) {
 function matchesAt(lines, chunk, at, trim=false) {
   return chunk.every((line,i)=>at+i<lines.length && (trim ? lines[at+i].trimEnd()===line.trimEnd() : lines[at+i]===line));
 }
-function locate(lines,chunk,start) {
-  if(chunk.length===0) return {at:lines.length-(lines.at(-1)===''?1:0),mode:'append'};
+function locate(lines,chunk,start,hint=null) {
+  if(chunk.length===0) return {at:hint??lines.length-(lines.at(-1)===''?1:0),mode:'append'};
   for(const trim of [false,true]) {
-    for(let at=start;at<=lines.length-chunk.length;at++)if(matchesAt(lines,chunk,at,trim))return{at,mode:trim?'trailing-space':'exact'};
+    const matches=[];
+    for(let at=start;at<=lines.length-chunk.length;at++)if(matchesAt(lines,chunk,at,trim))matches.push(at);
+    if(matches.length){if(hint!==null)matches.sort((a,b)=>Math.abs(a-hint)-Math.abs(b-hint));return{at:matches[0],mode:trim?'trailing-space':'exact'};}
   }
   return null;
 }
@@ -50,7 +52,9 @@ function parse(patch) {
       op.content=content.join('\n')+'\n';
     } else if(op.kind==='Update') {
       while(i<lines.length&&!/^\*\*\* (?:Update|Add|Delete|End Patch)/.test(lines[i])) {
-        const anchor=lines[i].startsWith('@@ ')?lines[i].slice(3):null;
+        const numeric=/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(lines[i]);
+        const oldStart=numeric?+numeric[1]:null;
+        const anchor=!numeric&&lines[i].startsWith('@@ ')?lines[i].slice(3):null;
         if(lines[i].startsWith('@@'))i++;
         const before=[],after=[];
         while(i<lines.length&&!lines[i].startsWith('@@')&&!lines[i].startsWith('*** ')) {
@@ -62,7 +66,7 @@ function parse(patch) {
           else throw Error('Bad hunk line '+line);
         }
         const eof=lines[i]==='*** End of File';if(eof)i++;
-        op.hunks.push({anchor,before,after,eof});
+        op.hunks.push({anchor,before,after,eof,oldStart});
       }
     }
     ops.push(op);
@@ -86,16 +90,18 @@ function apply(patch,call) {
     } else if(op.kind==='Delete') pending.push([op.file,null]);
     else {
       if(old===null)throw Error('Missing file: '+op.file);
-      let lines=old.split('\n'), cursor=0;
+      let lines=old.split('\n'), cursor=0, offset=0;
       for(const [index,hunk] of op.hunks.entries()) {
         if(hunk.anchor){const anchor=lines.findIndex((s,i)=>i>=cursor && s===hunk.anchor);if(anchor>=0)cursor=anchor+1;}
-        let match=locate(lines,hunk.before,cursor);
+        const hint=hunk.oldStart===null||hunk.oldStart===undefined?null:hunk.oldStart-(hunk.before.length?1:0)+offset;
+        let match=locate(lines,hunk.before,cursor,hint);
         if(!match) {
-          const done=locate(lines,hunk.after,0);
+          const done=hunk.after.some(x=>x.trim())?locate(lines,hunk.after,0,hint):null;
           if(done){cursor=done.at+hunk.after.length;continue;}
           throw Error('Missing hunk '+index+' in '+op.file+' :: '+hunk.before.slice(0,5).join(' / '));
         }
         lines.splice(match.at,hunk.before.length,...hunk.after);cursor=match.at+hunk.after.length;
+        offset+=hunk.after.length-hunk.before.length;
       }
       pending.push([op.move||op.file,lines.join('\n')]);
       if(op.move){read(op.move);pending.push([op.file,null]);}
@@ -109,7 +115,8 @@ async function replay() {
   require('./snapshots.cjs').seed(read,state,history,apply);
   if(process.env.RECOVERY_LITERAL_MODE!=='1') {
     const {events,patch}=require('./events.cjs');
-    for(const e of events()) {
+    const recorded=[...events(),...await require('./prehistory.cjs').prehistory()].sort((a,b)=>a.time.localeCompare(b.time)||a.line-b.line);
+    for(const e of recorded) {
       for(const [file,change]of Object.entries(e.changes)) {
         const meta={session:e.session,line:e.line,time:e.time};
         try{apply(patch(file,change),meta);}catch(error){issues.push({...meta,file,reason:error.message});}

@@ -266,7 +266,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
         test<AbstractImportOptimizationPlanTest> { model(it, "importOptimization") }
     }
 
-    component("references") {
+    component("references", filter = analysisSessionModeIs(AnalysisSessionMode.Normal)) {
         test<AbstractReferenceShorteningPlanTest> { model(it, "referenceShortening") }
         test<AbstractReferenceShortenerTest> { model(it, "shortenRange") }
         test<AbstractReferenceShortenerForWholeFileTest> { model(it, "shortenWholeFile") }

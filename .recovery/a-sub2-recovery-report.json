@@ -1,0 +1,1011 @@
+{
+  "sourceLog": "C:/Users/lin17/.codex/sessions/2026/09/29/rollout-2026-09-29T07-09-03-01a0ea47-677d-7192-9a2c-42e0ad39f53d.jsonl",
+  "recoveryRoot": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie",
+  "source": "event_msg payload.item.type=FileChange and status=completed",
+  "completedEvents": 11,
+  "fileChanges": 73,
+  "restoredFiles": 70,
+  "verification": "Final contents reconstructed independently from logged add content and unified_diff line coordinates. Exact UTF-8 byte SHA-256 matched for all 70 files; no newline normalization was required for hash comparison.",
+  "files": [
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_empty_unit/common.cj",
+      "expectedSHA256": "4B83ADB6CA63E3A94EFC37F62CE078DC229E56DA5FD3A3D1E3C4C1A7F9C44B83",
+      "actualSHA256": "4B83ADB6CA63E3A94EFC37F62CE078DC229E56DA5FD3A3D1E3C4C1A7F9C44B83",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_empty_unit/specific.cj",
+      "expectedSHA256": "42871009B912BD8693CB988EB08B68F4B4B823E7D81FAF880017D5337D7B45D1",
+      "actualSHA256": "42871009B912BD8693CB988EB08B68F4B4B823E7D81FAF880017D5337D7B45D1",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/common.cj",
+      "expectedSHA256": "1D0E28C48E9C671B97868DBB95AA31913AB13A68235E88285505E31EF5F2D574",
+      "actualSHA256": "1D0E28C48E9C671B97868DBB95AA31913AB13A68235E88285505E31EF5F2D574",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/specific.cj",
+      "expectedSHA256": "C3041921918051F1B4518242EA2D98CD57AC8845B869BB76A4589BE40CCB0F7F",
+      "actualSHA256": "C3041921918051F1B4518242EA2D98CD57AC8845B869BB76A4589BE40CCB0F7F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/specific.diagnostics.json",
+      "expectedSHA256": "D739FF8B3C1C8F685921F8B66607B849AF3288DE812308D6BB277774FBCBE2D0",
+      "actualSHA256": "D739FF8B3C1C8F685921F8B66607B849AF3288DE812308D6BB277774FBCBE2D0",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_good/common.cj",
+      "expectedSHA256": "319D8E00EA7096BA912098B56B70B95A19D94115843643A1949846231E7ACDC3",
+      "actualSHA256": "319D8E00EA7096BA912098B56B70B95A19D94115843643A1949846231E7ACDC3",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_good/specific.cj",
+      "expectedSHA256": "937565E7770A60D963C60C313C7D5C7329A5C4BB3FB26326F9CC64BCDD04E221",
+      "actualSHA256": "937565E7770A60D963C60C313C7D5C7329A5C4BB3FB26326F9CC64BCDD04E221",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/common.cj",
+      "expectedSHA256": "E9EB0FD0AB88B51173EF27F43119CEDF97A1EF8F2AEBB409FE3EF75128DD7B19",
+      "actualSHA256": "E9EB0FD0AB88B51173EF27F43119CEDF97A1EF8F2AEBB409FE3EF75128DD7B19",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/common.diagnostics.json",
+      "expectedSHA256": "B628FA64E86CEA8E9B7CF67D2F20FFA6D631DD8B0B4AD9B5AAD5D49A4D80ED71",
+      "actualSHA256": "B628FA64E86CEA8E9B7CF67D2F20FFA6D631DD8B0B4AD9B5AAD5D49A4D80ED71",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/specific.cj",
+      "expectedSHA256": "D30FE018719F151F04556F76582E2ADD806410D371938BB17DF9868C30F20AC1",
+      "actualSHA256": "D30FE018719F151F04556F76582E2ADD806410D371938BB17DF9868C30F20AC1",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/common.cj",
+      "expectedSHA256": "9A69CDC5D94855E814B159B86157B65452C9D1B5D2DB615793BB01BF4B710FD7",
+      "actualSHA256": "9A69CDC5D94855E814B159B86157B65452C9D1B5D2DB615793BB01BF4B710FD7",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/specific.cj",
+      "expectedSHA256": "27C4D69335CB4441C548775BD75F9FA8B362E2C782BC901CD54C46C57C096F3D",
+      "actualSHA256": "27C4D69335CB4441C548775BD75F9FA8B362E2C782BC901CD54C46C57C096F3D",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/specific.diagnostics.json",
+      "expectedSHA256": "0BDB895BA0FC4D325C4D8ABA29F948656236A2B3206FC432D7943C82067F2D0F",
+      "actualSHA256": "0BDB895BA0FC4D325C4D8ABA29F948656236A2B3206FC432D7943C82067F2D0F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/common.cj",
+      "expectedSHA256": "D46D080515F2303D8FA024A155E9AB6642A3C9F2FB18E840C0614498CFE51E71",
+      "actualSHA256": "D46D080515F2303D8FA024A155E9AB6642A3C9F2FB18E840C0614498CFE51E71",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/specific.cj",
+      "expectedSHA256": "8B639AB20A4A1243BCCF5C9F7ED3F59E6D94B24B4413369725B97788F91B7A5F",
+      "actualSHA256": "8B639AB20A4A1243BCCF5C9F7ED3F59E6D94B24B4413369725B97788F91B7A5F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/specific.diagnostics.json",
+      "expectedSHA256": "61AE2546B5FFFFD20B8EDA24B1E83E74B17B1047B9EF3DBC8A38320F07D7B142",
+      "actualSHA256": "61AE2546B5FFFFD20B8EDA24B1E83E74B17B1047B9EF3DBC8A38320F07D7B142",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/common.cj",
+      "expectedSHA256": "BA909088D9CCC81AAF072F335DB2CE107787BA187BE92CF769DFE8423576CB7F",
+      "actualSHA256": "BA909088D9CCC81AAF072F335DB2CE107787BA187BE92CF769DFE8423576CB7F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/specific.cj",
+      "expectedSHA256": "92B8E895AD4830E3A722BB691BDA15387EFF522617F3958CA1E96723FF4F63DA",
+      "actualSHA256": "92B8E895AD4830E3A722BB691BDA15387EFF522617F3958CA1E96723FF4F63DA",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/specific.diagnostics.json",
+      "expectedSHA256": "5401DCFD49B4DF05249CFAADF9D369482E84486E1F561F94FE6794126C54929B",
+      "actualSHA256": "5401DCFD49B4DF05249CFAADF9D369482E84486E1F561F94FE6794126C54929B",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/README.md",
+      "expectedSHA256": "124DB6019A6E12A95798F96582A09EC1EF33E35F4D8CFDC25416F009780B57BC",
+      "actualSHA256": "124DB6019A6E12A95798F96582A09EC1EF33E35F4D8CFDC25416F009780B57BC",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/run-results.json",
+      "expectedSHA256": "CDE636BBAC59EEFC249CD03D291693A72ABA77283EA5538BE18231978BFC8C1F",
+      "actualSHA256": "CDE636BBAC59EEFC249CD03D291693A72ABA77283EA5538BE18231978BFC8C1F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/common.cj",
+      "expectedSHA256": "10FD2309B491F836F98CA42E46B6F5BCF38FD2F59D5D69FE64FA440E8BA4D4B7",
+      "actualSHA256": "10FD2309B491F836F98CA42E46B6F5BCF38FD2F59D5D69FE64FA440E8BA4D4B7",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/specific.cj",
+      "expectedSHA256": "DB70209A2F3424DA73530C7E60653EEFEC03064C1512E1D2ABA8E1A04DB86B3A",
+      "actualSHA256": "DB70209A2F3424DA73530C7E60653EEFEC03064C1512E1D2ABA8E1A04DB86B3A",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/specific.diagnostics.json",
+      "expectedSHA256": "8D17B6FFF68E827C58C42E59511102BF6187086A25FB9157763BF90E0FEC7BEC",
+      "actualSHA256": "8D17B6FFF68E827C58C42E59511102BF6187086A25FB9157763BF90E0FEC7BEC",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/common.cj",
+      "expectedSHA256": "7335DC86FD70A3F41DBBE4BF7B91FC74947EC0EF71D2A11CAAE946A32633F28F",
+      "actualSHA256": "7335DC86FD70A3F41DBBE4BF7B91FC74947EC0EF71D2A11CAAE946A32633F28F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/specific.cj",
+      "expectedSHA256": "9953799CDA209E95EB05DCD7673F959B5178CC4F0EFA5F063A5BFB6974D81848",
+      "actualSHA256": "9953799CDA209E95EB05DCD7673F959B5178CC4F0EFA5F063A5BFB6974D81848",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/specific.diagnostics.json",
+      "expectedSHA256": "E86949CABC24C24FD12DCF7C0CAE791BF30571169AF4564E79214D3048DD35F6",
+      "actualSHA256": "E86949CABC24C24FD12DCF7C0CAE791BF30571169AF4564E79214D3048DD35F6",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/common.cj",
+      "expectedSHA256": "127154682C9C0D27F275303D8727F4DF93F4D11FA961CDD9537B2F98E03A5524",
+      "actualSHA256": "127154682C9C0D27F275303D8727F4DF93F4D11FA961CDD9537B2F98E03A5524",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 374,
+          "id": "exec-b61f1fac-b4e4-4cc0-ae96-08b0721eefa1",
+          "time": "2026-09-28T23:30:10.897Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/specific.cj",
+      "expectedSHA256": "A32461D08E1729A26C87579D95CE50D13BAF3ABEF6A5ADB4F26DB56874C8C9C3",
+      "actualSHA256": "A32461D08E1729A26C87579D95CE50D13BAF3ABEF6A5ADB4F26DB56874C8C9C3",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 374,
+          "id": "exec-b61f1fac-b4e4-4cc0-ae96-08b0721eefa1",
+          "time": "2026-09-28T23:30:10.897Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/specific.diagnostics.json",
+      "expectedSHA256": "BAC93A97CEFF3154F7B97F4D86A4134D2B49892706887F0C7127C2B567331506",
+      "actualSHA256": "BAC93A97CEFF3154F7B97F4D86A4134D2B49892706887F0C7127C2B567331506",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 389,
+          "id": "exec-b839077b-bdb0-4409-affb-dd94400fdf5a",
+          "time": "2026-09-28T23:31:47.399Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use3/common.cj",
+      "expectedSHA256": "E38A933A457BAE095AD33C48C442F29CC1E3267B0AEDE70BE9EE72800BCAB697",
+      "actualSHA256": "E38A933A457BAE095AD33C48C442F29CC1E3267B0AEDE70BE9EE72800BCAB697",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use3/specific.cj",
+      "expectedSHA256": "73249D82B4E9E272C3DF2FF2E367436DFBF7924EFA9F497FD924770B687F553C",
+      "actualSHA256": "73249D82B4E9E272C3DF2FF2E367436DFBF7924EFA9F497FD924770B687F553C",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use4/common.cj",
+      "expectedSHA256": "704895AD78DB5E4873C9823E0E4FCFF4F2370239BCCED4250047888B4405DF4A",
+      "actualSHA256": "704895AD78DB5E4873C9823E0E4FCFF4F2370239BCCED4250047888B4405DF4A",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use4/specific.cj",
+      "expectedSHA256": "0FB80FCDF782A93B0CF74C08AD53AC3A60A0572CD1C31E1D6432AB1A89526FA9",
+      "actualSHA256": "0FB80FCDF782A93B0CF74C08AD53AC3A60A0572CD1C31E1D6432AB1A89526FA9",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 337,
+          "id": "exec-f86881f2-e1b7-4c67-ad21-bd683d734906",
+          "time": "2026-09-28T23:27:58.337Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/common.cj",
+      "expectedSHA256": "3E305502D8211C07478AFF77DCB083139887CAD5094ABA8F0A8A2B4C62BF1438",
+      "actualSHA256": "3E305502D8211C07478AFF77DCB083139887CAD5094ABA8F0A8A2B4C62BF1438",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/common.diagnostics.json",
+      "expectedSHA256": "CD5061B84DCD628E207596A68136B2DB83E0568530DD2149B45F9B2F28FF6828",
+      "actualSHA256": "CD5061B84DCD628E207596A68136B2DB83E0568530DD2149B45F9B2F28FF6828",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/specific.cj",
+      "expectedSHA256": "A9678AC9A6A281BC13424B1AC1B164FF300D665C59194BEB8B8F0B499AD4290B",
+      "actualSHA256": "A9678AC9A6A281BC13424B1AC1B164FF300D665C59194BEB8B8F0B499AD4290B",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/common.cj",
+      "expectedSHA256": "E921D797B66AEA9B67AD8445D50EA41B144E3875354FD55D9BEF7B51E7DCBB6B",
+      "actualSHA256": "E921D797B66AEA9B67AD8445D50EA41B144E3875354FD55D9BEF7B51E7DCBB6B",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/common.diagnostics.json",
+      "expectedSHA256": "D2C74505357965CD762DD7B5ABB2D5D9A79B50AE2F16E6F1FDFF7F38D9058045",
+      "actualSHA256": "D2C74505357965CD762DD7B5ABB2D5D9A79B50AE2F16E6F1FDFF7F38D9058045",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/specific.cj",
+      "expectedSHA256": "CBCDC011FFC8BD60552153AC4B1ABFC9BCE362628095F668CD8C0F9EB6A688BC",
+      "actualSHA256": "CBCDC011FFC8BD60552153AC4B1ABFC9BCE362628095F668CD8C0F9EB6A688BC",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/common.cj",
+      "expectedSHA256": "3F1FF5864954D3DD46EAC6E68A44B814496A5A6862FE802BD3097CD83F9E8D78",
+      "actualSHA256": "3F1FF5864954D3DD46EAC6E68A44B814496A5A6862FE802BD3097CD83F9E8D78",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/common.diagnostics.json",
+      "expectedSHA256": "CDEBC14457D456229A2F8FF485D8743C168DA19A1758BF31873AFD43C74DCE10",
+      "actualSHA256": "CDEBC14457D456229A2F8FF485D8743C168DA19A1758BF31873AFD43C74DCE10",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/specific.cj",
+      "expectedSHA256": "8B855B0A3763D05017986DF1C747DDFBD425C2EDACE999693475542AFFA09498",
+      "actualSHA256": "8B855B0A3763D05017986DF1C747DDFBD425C2EDACE999693475542AFFA09498",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/common.cj",
+      "expectedSHA256": "657AA9A8613BEE414A9AB5A9AC9320C70A74DFC9F5CA65BD9E9434740EF21256",
+      "actualSHA256": "657AA9A8613BEE414A9AB5A9AC9320C70A74DFC9F5CA65BD9E9434740EF21256",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/common.diagnostics.json",
+      "expectedSHA256": "CDEBC14457D456229A2F8FF485D8743C168DA19A1758BF31873AFD43C74DCE10",
+      "actualSHA256": "CDEBC14457D456229A2F8FF485D8743C168DA19A1758BF31873AFD43C74DCE10",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/specific.cj",
+      "expectedSHA256": "CB3E2A726769382F0F422A58FBF18114A0A3A07C4E04BA7D7E2AC0FA289D8A02",
+      "actualSHA256": "CB3E2A726769382F0F422A58FBF18114A0A3A07C4E04BA7D7E2AC0FA289D8A02",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 525,
+          "id": "exec-29ae7097-fe1b-4842-9839-2e203bd5d02c",
+          "time": "2026-09-29T00:02:06.244Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/common.cj",
+      "expectedSHA256": "5BC456ADA67D1D2DA822FB34E3EAFD88FEBBFE51633EECE1DDC7C822B6380990",
+      "actualSHA256": "5BC456ADA67D1D2DA822FB34E3EAFD88FEBBFE51633EECE1DDC7C822B6380990",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/common.diagnostics.json",
+      "expectedSHA256": "B3E5CA49ACAA2153D033FB8DA16571AAA3D582D197EEC1FB7A98DFB7A16480C8",
+      "actualSHA256": "B3E5CA49ACAA2153D033FB8DA16571AAA3D582D197EEC1FB7A98DFB7A16480C8",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/specific.cj",
+      "expectedSHA256": "D2D0D777C75893C08A6F5A5978CED6B95D3025027CA999A45F7F832DDF04370C",
+      "actualSHA256": "D2D0D777C75893C08A6F5A5978CED6B95D3025027CA999A45F7F832DDF04370C",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/common.cj",
+      "expectedSHA256": "419D7020BCA12E3AEC8141CDA1DF35DC54AA5979BE284CB46C75070C0B68A064",
+      "actualSHA256": "419D7020BCA12E3AEC8141CDA1DF35DC54AA5979BE284CB46C75070C0B68A064",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/specific.cj",
+      "expectedSHA256": "C223F081A9EEB656A92034354DF4A52F9EA7EC036BDFDAB1502E475F21E42897",
+      "actualSHA256": "C223F081A9EEB656A92034354DF4A52F9EA7EC036BDFDAB1502E475F21E42897",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/specific.diagnostics.json",
+      "expectedSHA256": "94E7BB177AFC5A1D4EAF15512F6B1725A5476B3331D907F9C0785494C67DECC7",
+      "actualSHA256": "94E7BB177AFC5A1D4EAF15512F6B1725A5476B3331D907F9C0785494C67DECC7",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/common.cj",
+      "expectedSHA256": "49AD91B6EFC76D57C4C29970A99042A9AFA3C9F654952DF2F9264F74CC7F479A",
+      "actualSHA256": "49AD91B6EFC76D57C4C29970A99042A9AFA3C9F654952DF2F9264F74CC7F479A",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/specific.cj",
+      "expectedSHA256": "E6B0D6D2350440DC7E340F02642F37971B584CF14D342CAE7457663692222CB7",
+      "actualSHA256": "E6B0D6D2350440DC7E340F02642F37971B584CF14D342CAE7457663692222CB7",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/specific.diagnostics.json",
+      "expectedSHA256": "48A9789A281879F3459E9063EBE9F482F0E7F90C643E65D265175C69BBC28503",
+      "actualSHA256": "48A9789A281879F3459E9063EBE9F482F0E7F90C643E65D265175C69BBC28503",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/README.md",
+      "expectedSHA256": "7199ED97446C8E325D6A5DC20D68498687FDEFA43BFEEB433AC0F24ACB150A11",
+      "actualSHA256": "7199ED97446C8E325D6A5DC20D68498687FDEFA43BFEEB433AC0F24ACB150A11",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/run-results.json",
+      "expectedSHA256": "9DECE95DAC5591A8A8AC804C4C775B32095327D00F59E8DCA754588AF35795C5",
+      "actualSHA256": "9DECE95DAC5591A8A8AC804C4C775B32095327D00F59E8DCA754588AF35795C5",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/common.cj",
+      "expectedSHA256": "B846126782E64D0AC4D852099671FD647A8508F227530AF771F564C49BA53BDC",
+      "actualSHA256": "B846126782E64D0AC4D852099671FD647A8508F227530AF771F564C49BA53BDC",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/common.diagnostics.json",
+      "expectedSHA256": "816122BA7756D1446D9DE71C147D883D625FA2675862D06BE9E4326D6307862A",
+      "actualSHA256": "816122BA7756D1446D9DE71C147D883D625FA2675862D06BE9E4326D6307862A",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/specific.cj",
+      "expectedSHA256": "3BC88FEDABAD98397FE5DA8CA843F432FF1C92B0566EB22542CBA747C5CA2D19",
+      "actualSHA256": "3BC88FEDABAD98397FE5DA8CA843F432FF1C92B0566EB22542CBA747C5CA2D19",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/common.cj",
+      "expectedSHA256": "77FC948FD2B68319EA47E7EF2B5F1727A35759E47ED9D5D28138875201ECBE2F",
+      "actualSHA256": "77FC948FD2B68319EA47E7EF2B5F1727A35759E47ED9D5D28138875201ECBE2F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/common.diagnostics.json",
+      "expectedSHA256": "41055CEF01F121737DD9ED5251BF75000BF27F989DC0536DF58CACB3D3DE96BD",
+      "actualSHA256": "41055CEF01F121737DD9ED5251BF75000BF27F989DC0536DF58CACB3D3DE96BD",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/specific.cj",
+      "expectedSHA256": "A7F12F562BCA5B755983D82F277D0EAF916D5EC7BD7651A7DF45BFAE4FF04BE3",
+      "actualSHA256": "A7F12F562BCA5B755983D82F277D0EAF916D5EC7BD7651A7DF45BFAE4FF04BE3",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/common.cj",
+      "expectedSHA256": "279F94F5F203A0591DA076C3B9F87535CD51011417AEF1C9F67585079301EF40",
+      "actualSHA256": "279F94F5F203A0591DA076C3B9F87535CD51011417AEF1C9F67585079301EF40",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/common.diagnostics.json",
+      "expectedSHA256": "816122BA7756D1446D9DE71C147D883D625FA2675862D06BE9E4326D6307862A",
+      "actualSHA256": "816122BA7756D1446D9DE71C147D883D625FA2675862D06BE9E4326D6307862A",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/specific.cj",
+      "expectedSHA256": "21748850DB811A695009AF02686071C2A5CB7A45CAEBD493B47A6CD561CE1442",
+      "actualSHA256": "21748850DB811A695009AF02686071C2A5CB7A45CAEBD493B47A6CD561CE1442",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 441,
+          "id": "exec-d0720aa5-f1a6-4c15-ad76-f1c1be0bfba4",
+          "time": "2026-09-28T23:54:39.565Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/common.cj",
+      "expectedSHA256": "D32BBE4EEA978B6875DCF3BD2EB4F50A8A259F3D7D5F4789156412EE6FF04B09",
+      "actualSHA256": "D32BBE4EEA978B6875DCF3BD2EB4F50A8A259F3D7D5F4789156412EE6FF04B09",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/specific.cj",
+      "expectedSHA256": "2519A632E20A544A6353E957E6043CBE9C362CC18DCE235DE5D659FEFEE30A1C",
+      "actualSHA256": "2519A632E20A544A6353E957E6043CBE9C362CC18DCE235DE5D659FEFEE30A1C",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 463,
+          "id": "exec-2bbf2aa6-e6f6-4661-9f64-dc28c954d4cc",
+          "time": "2026-09-28T23:56:51.198Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/specific.diagnostics.json",
+      "expectedSHA256": "6BDB12C60123736B85499E665B36324227037212CFAB2864F82257D2013DC37F",
+      "actualSHA256": "6BDB12C60123736B85499E665B36324227037212CFAB2864F82257D2013DC37F",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 541,
+          "id": "exec-767302e2-92dd-4b7f-b78b-1cfe300761de",
+          "time": "2026-09-29T00:04:13.871Z",
+          "type": "add"
+        }
+      ]
+    },
+    {
+      "path": "C:/Users/lin17/.codex/worktrees/recover-uncommitted/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/VERSION-EVIDENCE-20260929.md",
+      "expectedSHA256": "9A04EF582E5777C7194E7D3380E3AABA5C54E219AA3E93C0A44665C3BBF94C25",
+      "actualSHA256": "9A04EF582E5777C7194E7D3380E3AABA5C54E219AA3E93C0A44665C3BBF94C25",
+      "matches": true,
+      "evidence": [
+        {
+          "line": 260,
+          "id": "exec-f1b59930-26b9-4d77-b5c7-2cf115837a3e",
+          "time": "2026-09-28T23:23:19.19Z",
+          "type": "add"
+        },
+        {
+          "line": 283,
+          "id": "exec-555508ce-f6c8-4e8a-90b8-2d9cdedb7164",
+          "time": "2026-09-28T23:24:16.746Z",
+          "type": "update"
+        },
+        {
+          "line": 390,
+          "id": "exec-26e0f912-7495-4c2b-811a-6169409b9ad5",
+          "time": "2026-09-28T23:31:47.41Z",
+          "type": "update"
+        },
+        {
+          "line": 550,
+          "id": "exec-dca5749e-a27d-49d4-840f-a1a90693b3c4",
+          "time": "2026-09-29T00:05:21.002Z",
+          "type": "update"
+        }
+      ]
+    }
+  ],
+  "unrecoverableFileChangeArtifacts": [],
+  "limitations": "Only contents explicitly present in successful FileChange events were restored. cjc-generated binary/object/output artifacts without recorded bytes are not reconstructed or claimed restored. Historical shell commands were never executed. All writes were under recovery .workbuddy or .recovery; no formal source or original workspace was changed."
+}

@@ -33,7 +33,7 @@ object CjoDeclarationLoader {
             sourcePath = loadedPackage.sourcePath,
         )
         val typeDeserializer = CfirTypeDeserializer(context)
-        val declDeserializer = CfirDeclDeserializer(context, typeDeserializer)
+        val declDeserializer = CfirDeclDeserializer.forCompiledFileStub(context, typeDeserializer)
         val declarationIndices = buildList {
             loadedPackage.header.topLevelNameToIndices.values.forEach(::addAll)
             addAll(loadedPackage.header.topLevelExtendIndices)

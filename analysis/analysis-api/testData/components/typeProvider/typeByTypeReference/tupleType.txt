@@ -1,2 +1,2 @@
 CjTypeReference: (Int64, String)
-CaType: (Int64, String)
+CaType: (Int64, std.core.String)

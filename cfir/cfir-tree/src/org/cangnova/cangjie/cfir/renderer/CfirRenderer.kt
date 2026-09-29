@@ -296,7 +296,7 @@ class CfirRenderer(
     /**
      * 输出文本 builder。
      */
-    builder: StringBuilder = StringBuilder(),
+    private val builder: StringBuilder = StringBuilder(),
     /**
      * 注解渲染器。
      */
@@ -369,6 +369,8 @@ class CfirRenderer(
     override val printer: CfirPrinter = CfirPrinter(builder)
 
     init {
+        // 对齐 Kotlin FirRenderer：Cone 类型与 CFIR 节点写入同一个缓冲区。
+        typeRenderer.builder = builder
         // 所有子 renderer 都共享同一组 components。
         // 这里必须一次性完成装配，否则异常附加信息在调用独立 renderer 时会触发未初始化访问。
         annotationRenderer?.components = this
@@ -445,10 +447,7 @@ class CfirRenderer(
      */
     private fun renderType(typeRef: CfirTypeRef?) {
         annotationRenderer?.render(typeRef ?: return)
-        val rendered = renderTypeRefForDebug(typeRef, typeRenderer)
-        if (rendered.isNotEmpty()) {
-            print(rendered)
-        }
+        appendTypeRefForDebug(typeRef, typeRenderer, builder)
     }
 
     /**

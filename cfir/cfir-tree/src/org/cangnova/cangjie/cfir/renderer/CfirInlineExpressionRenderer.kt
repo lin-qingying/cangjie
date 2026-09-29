@@ -22,6 +22,13 @@ open class CfirInlineExpressionRenderer(
      */
     protected val typeRenderer: ConeTypeRenderer = ConeTypeRendererForDebugging(),
 ) {
+    /** 单行表达式中 resolved type ref 的局部输出缓冲区。 */
+    private val typeRendererBuilder = StringBuilder()
+
+    init {
+        typeRenderer.builder = typeRendererBuilder
+    }
+
     /**
      * 将表达式渲染为单行文本。
      */

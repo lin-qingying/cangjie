@@ -1,0 +1,8 @@
+chore(cjmp): checkpoint verified matching and LL baseline
+
+按框架修复计划 §11 / §12 决策 2 保存开工前已有的匹配、构造器诊断及 LL 测试修改。
+这是临时基线，A1/B1/C3/G1/G3/G6 等问题仍由 P1/P2/P3/P7 替换；不宣称已完成框架修复。
+同一文件内与 import 物理源码导航相关的修改未纳入。
+
+当前完整工作树验证：matcher 7/7、LL CJMP 7/7、两段式 17/17；CommonSpecific 159 passed、75 skipped。
+全量 CFIR：8543 passed、387 skipped、0 failed；20260929-cjmp-framework-baseline 对 v10 无增删和回归。

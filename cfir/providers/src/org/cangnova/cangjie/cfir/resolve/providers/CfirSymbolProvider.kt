@@ -113,3 +113,19 @@ abstract class CfirSymbolProvider(val session: CfirSession) : CfirSessionCompone
      */
     abstract fun hasPackage(fqName: FqName): Boolean
 }
+
+/**
+ * 判断 [fqName] 是否是已知包，或是某个已知子包的命名空间前缀。
+ *
+ * 包符号源的 [CfirSymbolProvider.hasPackage] 保留精确包查询语义；限定名解析则需要接受
+ * Kotlin FIR `allSubPackages` 所代表的父级命名空间视图。包名索引保存的是声明包，因此可从
+ * 已知完整包名构造这些前缀，而不把任意名字前缀误当作包。
+ */
+fun CfirSymbolProvider.hasPackageOrSubpackages(fqName: FqName): Boolean {
+    if (fqName.isRoot || hasPackage(fqName)) return true
+
+    val subpackagePrefix = "${fqName.asString()}."
+    return symbolNamesProvider.getPackageNames()
+        ?.any { packageName -> packageName.startsWith(subpackagePrefix) }
+        ?: false
+}

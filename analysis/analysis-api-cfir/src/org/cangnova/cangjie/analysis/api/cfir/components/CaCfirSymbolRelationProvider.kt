@@ -36,6 +36,8 @@ import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.processOverriddenFunctions
+import org.cangnova.cangjie.cfir.scopes.processOverriddenProperties
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -50,6 +52,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
@@ -313,7 +316,6 @@ internal class CaCfirSymbolRelationProvider(
             analysisSession.collectDirectlyOverriddenCallableSymbols(backingSymbol)
                 .map { symbol -> analysisSession.cfirSymbolBuilder.buildSymbol(symbol) }
                 .filterIsInstance<CaCallableSymbol>()
-                .distinctStableCallables()
                 .asSequence()
         }
 
@@ -332,19 +334,14 @@ internal class CaCfirSymbolRelationProvider(
                 return@withValidityAssertion emptySequence()
             }
 
-            val visited = linkedSetOf<String>()
-            val result = mutableListOf<CaCallableSymbol>()
-            val queue = ArrayDeque(this@allOverriddenSymbols.directlyOverriddenSymbols.toList())
+            val backingSymbol = (this@allOverriddenSymbols as? CaCfirSymbol<*>)
+                ?.cfirSymbol as? CfirCallableSymbol<*>
+                ?: return@withValidityAssertion emptySequence()
 
-            while (queue.isNotEmpty()) {
-                val current = queue.removeFirst()
-                val key = current.stableCallableIdentity() ?: continue
-                if (!visited.add(key)) continue
-                result += current
-                queue.addAll(current.directlyOverriddenSymbols)
-            }
-
-            result.asSequence()
+            analysisSession.collectAllOverriddenCallableSymbols(backingSymbol)
+                .map { symbol -> analysisSession.cfirSymbolBuilder.buildSymbol(symbol) }
+                .filterIsInstance<CaCallableSymbol>()
+                .asSequence()
         }
 
     /**
@@ -374,22 +371,6 @@ internal class CaCfirSymbolRelationProvider(
     private fun CaCallableSymbol.mayHaveOverriddenSymbols(): Boolean {
         return this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol ||
             this is org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-    }
-
-    /**
-     * 使用公开缓存键或 callableId 对覆盖结果做稳定去重。
-     */
-    private fun List<CaCallableSymbol>.distinctStableCallables(): List<CaCallableSymbol> {
-        return distinctBy { callable ->
-            callable.stableCallableIdentity() ?: "${callable::class.qualifiedName}@${System.identityHashCode(callable)}"
-        }
-    }
-
-    /**
-     * 生成 callable 在覆盖关系中可复用的稳定身份字符串。
-     */
-    private fun CaCallableSymbol.stableCallableIdentity(): String? {
-        return publicSymbolCacheKeyOrNull()?.toString() ?: callableId?.toString()
     }
 
     /**
@@ -471,23 +452,49 @@ internal class CaCfirSymbolRelationProvider(
             ?: return emptyList()
         memberScope.processCallableByName(backingSymbol.cfir)
 
-        return when (backingSymbol) {
-            is CfirNamedFunctionSymbol -> buildList {
+        val result = linkedSetOf<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>>()
+        when (backingSymbol) {
+            is CfirNamedFunctionSymbol -> {
                 memberScope.processDirectOverriddenFunctionsWithBaseScope(backingSymbol) { overridden, _ ->
-                    add(overridden)
+                    result += overridden.unwrapFakeOverridesOrDelegated()
                     ProcessorAction.NEXT
                 }
             }
 
-            is CfirPropertySymbol -> buildList {
+            is CfirPropertySymbol -> {
                 memberScope.processDirectOverriddenPropertiesWithBaseScope(backingSymbol) { overridden, _ ->
-                    add(overridden)
+                    result += overridden.unwrapFakeOverridesOrDelegated()
                     ProcessorAction.NEXT
                 }
             }
 
-            else -> emptyList()
+            else -> Unit
         }
+        return result.toList()
+    }
+
+    /** Traverse full overridden edges in CFIR scope order and normalize only the collected public targets. */
+    private fun CaCfirSession.collectAllOverriddenCallableSymbols(
+        backingSymbol: CfirCallableSymbol<*>,
+    ): List<CfirCallableSymbol<*>> {
+        val memberScope = overrideOwnerScope(backingSymbol) ?: return emptyList()
+        memberScope.processCallableByName(backingSymbol.cfir)
+
+        val result = linkedSetOf<CfirCallableSymbol<*>>()
+        when (backingSymbol) {
+            is CfirNamedFunctionSymbol -> memberScope.processOverriddenFunctions(backingSymbol) { overridden ->
+                result += overridden.unwrapFakeOverridesOrDelegated()
+                ProcessorAction.NEXT
+            }
+
+            is CfirPropertySymbol -> memberScope.processOverriddenProperties(backingSymbol) { overridden ->
+                result += overridden.unwrapFakeOverridesOrDelegated()
+                ProcessorAction.NEXT
+            }
+
+            else -> Unit
+        }
+        return result.toList()
     }
 
     /**

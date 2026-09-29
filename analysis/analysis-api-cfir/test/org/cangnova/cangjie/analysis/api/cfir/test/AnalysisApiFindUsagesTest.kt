@@ -76,7 +76,7 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
-     * 验证 import alias 自身和原始被导入声明都能覆盖 alias 引入的使用点。
+     * 分别验证 import alias PSI 与原始被导入声明的 usages。
      */
     @Test
     fun importAliasUsages(mainFile: CjFile, testServices: TestServices) {
@@ -84,7 +84,7 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             .single { it.name == "welcome" }
 
         val aliasReferences = findUsages(alias)
-        assertEquals(2, aliasReferences.size, "import alias usages 数量不正确")
+        assertEquals(2, aliasReferences.size, "import alias PSI usages 数量不正确")
         assertReferencesStayInsideLocalScope(alias, aliasReferences)
 
         val providerFile = testServices.cjTestModuleStructure.allCjFiles

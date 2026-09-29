@@ -215,7 +215,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     }
                 }
             }
-        }.also { it.initContainingClassAttr() }
+        }
     }
 
     /** 从 LightTree 声明节点构建 raw CFIR 声明。 */
@@ -730,7 +730,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 returnTypeRef = buildImplicitTypeRef()
                 body = null
             }
-        }
+        }.also { it.initContainingClassAttr() }
     }
 
     // ===== Extend =====
@@ -832,10 +832,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.body = body
                 isMut = modifiers.isMut
             }
-        }.also {
-            it.initContainingClassAttr()
-            bindFunctionTarget(functionTarget, it)
-        }
+        }.also { bindFunctionTarget(functionTarget, it) }
     }
 
     /** 转换仓颉入口 main 函数声明。 */
@@ -1161,7 +1158,10 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.body = body
                 }
             }
-        }.also { bindFunctionTarget(functionTarget, it) }
+        }.also {
+            it.initContainingClassAttr()
+            bindFunctionTarget(functionTarget, it)
+        }
     }
 
     // ===== 类型别名 =====

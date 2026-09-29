@@ -117,6 +117,7 @@ import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
@@ -608,8 +609,9 @@ companion object{
          * 从 Cone 类型构造公开 Analysis API 类型。
          */
         fun buildType(coneType: ConeCangJieType): CaType {
-            val publicConeType = coneType
-                .fullyExpandedType(analysisSession.cfirSession)
+            val expandedConeType = coneType.fullyExpandedType(analysisSession.cfirSession)
+            // 与 Kotlin TypeBuilder 的 integer-literal 近似保持同一投影边界；公开 API 不暴露推断期 Ideal 标记。
+            val publicConeType = IdealTypeResolver.resolveIfIdeal(expandedConeType)
                 .withoutAbbreviation()
 
             return when (publicConeType) {
