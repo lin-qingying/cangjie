@@ -16,6 +16,8 @@ FILE: specialExpressionsPreserve.cj
         local? let q: <implicit> = ...
             initializer:
                 QUOTE("quote(hello $(lock))") {
+                    interpolations:
+                        NAMED_ACCESS(lock)
                 }
         local? let m: <implicit> = ...
             initializer:

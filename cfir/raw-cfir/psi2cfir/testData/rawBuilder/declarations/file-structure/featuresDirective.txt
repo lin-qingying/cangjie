@@ -1,5 +1,5 @@
 FILE: featuresDirective.cj
-    @R|NonProduct|()
+    @R|NonProduct|() 
     features {
         sample.api,
         sample.detail
