@@ -5,7 +5,10 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factori
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
-import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
+import org.cangnova.cangjie.analysis.decompiler.stub.file.cjoSearchPathStringOf
+import org.cangnova.cangjie.analysis.decompiler.stub.file.distinctCjoSearchRoots
+import org.cangnova.cangjie.analysis.decompiler.stub.file.normalizeCjoSearchRoot
+import org.cangnova.cangjie.analysis.decompiler.stub.file.toCjoSearchRoot
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -61,7 +64,7 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             .orEmpty()
             .mapNotNull { item -> item.virtualFile }
             .mapNotNull(VirtualFile::asCjoSearchRoot)
-            .distinctBy(File::getAbsolutePath)
+            .distinctCjoSearchRoots()
 
         return CfirDeserializedSymbolProvider(
             session = session,
@@ -81,10 +84,9 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
      * builtins `.cjo` 搜索根对应的反序列化 provider。
      */
     private fun createBuiltinsDeserializedSymbolProvider(session: LLCfirSession): CfirSymbolProvider {
-        val rootPathString = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project)
-            .map(::toBuiltinsSearchRoot)
-            .distinctBy(File::getAbsolutePath)
-            .joinToString(File.pathSeparator) { root -> root.absolutePath }
+        val rootPathString = cjoSearchPathStringOf(
+            BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project).map(::toCjoSearchRoot)
+        )
 
         return CfirDeserializedSymbolProvider(
             session = session,
@@ -100,25 +102,8 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             libraryModuleData = session.moduleData,
         )
     }
-
-    /**
-     * 从 builtins virtual file 推断 `.cjo` 搜索根目录。
-     */
-    private fun toBuiltinsSearchRoot(virtualFile: VirtualFile): File {
-        val file = File(virtualFile.path)
-        val parent = file.parentFile ?: return file
-        val firstPackageSegment = CjoBinaryFileReader.readPackageFqName(virtualFile)?.pathSegments()?.firstOrNull()
-        return if (firstPackageSegment != null && parent.name == firstPackageSegment.asString()) {
-            parent.parentFile ?: parent
-        } else {
-            parent
-        }
-    }
 }
 
 /** 将 library 二进制根统一为 CJO 搜索目录。 */
-private fun VirtualFile.asCjoSearchRoot(): File? {
-    val path = File(path)
-    val root = if (isDirectory) path else path.parentFile
-    return root?.takeIf(File::isDirectory)
-}
+private fun VirtualFile.asCjoSearchRoot(): File? =
+    normalizeCjoSearchRoot(File(path)).takeIf(File::isDirectory)

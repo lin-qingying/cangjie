@@ -83,8 +83,8 @@ class DecompiledPackageDataFinder(
         val roots = module.binaryRoots
             .mapNotNull { it.virtualFile }
             .map(::toRootFile)
-            .map(::normalizeRoot)
-            .distinctBy(File::getAbsolutePath)
+            .map(::normalizeCjoSearchRoot)
+            .distinctCjoSearchRoots()
         return repositoryFor(module.stableModuleName ?: module.moduleDescription, roots)
             .loadPackageData(packageFqName, binaryFile)
     }
@@ -120,8 +120,8 @@ class DecompiledPackageDataFinder(
     ): LoadedCjoPackage? {
         val roots = rootFiles
             .map(::toRootFile)
-            .map(::normalizeRoot)
-            .distinctBy(File::getAbsolutePath)
+            .map(::normalizeCjoSearchRoot)
+            .distinctCjoSearchRoots()
         return repositoryFor(moduleKey, roots).loadPackageData(packageFqName, binaryFile)
     }
 
@@ -143,26 +143,14 @@ class DecompiledPackageDataFinder(
      * builtins（SDK）搜索根，目录层级按官方仓颉 SDK 布局折叠：`<root>/std.cjo` 与 `<root>/std/` 下的各包 `.cjo` 归到同一个根。
      *
      * 对齐 Kotlin `LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsDeserializedSymbolProvider`：
-     * 它用相同的 `toBuiltinsSearchRoot` 折叠逻辑，使得反序化期间的符号查找与那个提供器看到同一套 stdlib 包。
+     * 它用相同的 [toCjoSearchRoot] 折叠逻辑，使得反序化期间的符号查找与那个提供器看到同一套 stdlib 包。
      */
     private fun builtinsSearchRoots(): List<File> =
         CaModuleProvider.getInstance(project).allModules
             .filterIsInstance<CaBuiltinsModule>()
             .flatMap { module -> binaryIndex.getBinaryFiles(module) }
-            .map(::toBuiltinsSearchRoot)
-            .distinctBy(File::getAbsolutePath)
-
-    /** 从 builtins virtual file 推断 `.cjo` 搜索根目录。 */
-    private fun toBuiltinsSearchRoot(virtualFile: VirtualFile): File {
-        val file = toRootFile(virtualFile)
-        val parent = file.parentFile ?: return file
-        val firstPackageSegment = CjoBinaryFileReader.readPackageFqName(virtualFile)?.pathSegments()?.firstOrNull()
-        return if (firstPackageSegment != null && parent.name == firstPackageSegment.asString()) {
-            parent.parentFile ?: parent
-        } else {
-            parent
-        }
-    }
+            .map(::toCjoSearchRoot)
+            .distinctCjoSearchRoots()
 
     /**
      * 在项目结构发生变化时清空 `.cjo` 仓库缓存。
@@ -181,14 +169,4 @@ class DecompiledPackageDataFinder(
      * 将 IntelliJ 虚拟文件转换为用于 [CjoSearchPath] 的物理文件路径。
      */
     private fun toRootFile(virtualFile: VirtualFile): File = File(virtualFile.path)
-
-    /**
-     * 将文件路径规范化为可作为 `.cjo` 搜索根的目录。
-     *
-     * 如果传入值本身是目录则直接使用；如果是具体 `.cjo` 文件，则使用其父目录，
-     * 使 [CjoManager] 能按包名在该目录下定位对应 binary。
-     */
-    private fun normalizeRoot(file: File): File {
-        return if (file.isDirectory) file else file.parentFile ?: file
-    }
 }

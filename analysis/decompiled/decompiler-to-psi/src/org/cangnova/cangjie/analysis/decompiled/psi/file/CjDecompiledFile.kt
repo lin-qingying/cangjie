@@ -16,6 +16,7 @@ import org.cangnova.cangjie.analysis.decompiled.psi.text.buildDecompiledText
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImplementationDetail
 import org.cangnova.cangjie.psi.CjParserLanguageModuleNameProvider
+import org.cangnova.cangjie.psi.stubs.CangJieCompiledFileErrors
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.deepCopy
 import org.cangnova.cangjie.utils.concurrent.block.LockedClearableLazyValue
@@ -140,11 +141,7 @@ private object CompiledStubBuilder : StubBuilder {
             } else {
                 "unexpected CangJie stub tree (${stubTree.root::class.simpleName})"
             }
-            val text = """
-                // Could not decompile the file: $cause
-                // Please report an issue: https://github.com/lin-qingying/cangjie/issues
-            """.trimIndent()
-
+            val text = CangJieCompiledFileErrors.decompileFailureText(cause)
             CangJieFileStubImpl.forInvalid(text)
         }
     }
