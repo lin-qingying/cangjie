@@ -82,11 +82,13 @@ class CjdSdkDeclarationBoundaryAuditTest :
                 manager.loadPackageSnapshot(sidecar.annotationContext.packageFqName),
                 "$path: no CJO for ${sidecar.annotationContext.packageFqName}",
             )
+            val module = Module()
             val context = CfirDeserializationContext(
                 loaded.pkg,
                 loaded.header,
-                Module(),
+                module,
                 manager,
+                manager.deserializedSymbolLookups.forModuleData(module),
                 loaded.sourcePath,
                 setOf(FqName("ohos.labels.APILevel")),
             )

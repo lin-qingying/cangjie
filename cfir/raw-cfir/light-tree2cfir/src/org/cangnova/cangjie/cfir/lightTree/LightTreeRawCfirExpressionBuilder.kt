@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
@@ -244,7 +245,12 @@ class LightTreeRawCfirExpressionBuilder(
         return buildLiteralExpression {
             source = node.toSource()
             this.kind = kind
-            this.value = text
+            // 浮点 value 存数值载荷；后缀语义由 `CfirNumericLiteralTypes` 从源码文本读取。
+            this.value = if (kind == CfirLiteralKind.FLOAT) {
+                CfirFloatConstantEvalUtils.parseFloatLiteral(text)
+            } else {
+                text
+            }
         }
     }
 
@@ -598,6 +604,27 @@ class LightTreeRawCfirExpressionBuilder(
                     }
                 }
                 else -> if (isExpressionToken(child.tokenType)) { operandNode = child }
+            }
+        }
+
+        // 与 psi2cfir、官方 `ParseNegativeLiteral` 一致：`-` 与整数字面量、浮点字面量都折叠成带符号字面量。
+        if (opToken == CjTokens.MINUS && operandNode != null) {
+            if (operandNode.tokenType == CjNodeTypes.INTEGER_CONSTANT) {
+                return buildLiteralExpression {
+                    source = node.toSource()
+                    kind = CfirLiteralKind.INT
+                    value = "-${operandNode.asText()}"
+                }
+            }
+            if (operandNode.tokenType == CjNodeTypes.FLOAT_CONSTANT) {
+                val parsed = CfirFloatConstantEvalUtils.parseFloatLiteral(operandNode.asText())
+                if (parsed != null) {
+                    return buildLiteralExpression {
+                        source = node.toSource()
+                        kind = CfirLiteralKind.FLOAT
+                        value = -parsed
+                    }
+                }
             }
         }
 

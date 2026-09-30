@@ -223,6 +223,7 @@ class CjoFullIdResolverTest {
                         header = header,
                         moduleData = TestModuleData,
                         cjoManager = cjoManager,
+                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forModuleData(TestModuleData),
                     ),
                 )
             }
@@ -286,6 +287,7 @@ class CjoFullIdResolverTest {
                         header = header,
                         moduleData = TestModuleData,
                         cjoManager = cjoManager,
+                        classSymbolLookup = cjoManager.deserializedSymbolLookups.forModuleData(TestModuleData),
                     ),
                 )
             }
