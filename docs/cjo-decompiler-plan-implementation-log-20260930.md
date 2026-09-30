@@ -20,6 +20,10 @@
    只有 `getInstance(project)`。本次改动只使用带 `project` 的重载。
 5. 两个 Gradle 进程不能同时写同一个工作树的 `build/` 目录：本次曾因主仓测试与 IDE 复合构建并发而出现
    “`.class` 文件找不到 / 依赖类不可见”的假失败。验证必须串行执行。
+6. 主检出目录的 `build/` 产物曾处于不完整状态（`.class` 缺失）导致 IDE 复合构建编译报
+   `FileNotFoundException`；重新执行 `:psi:classes`、`:analysis:analysis-api:classes` 后恢复。
+7. 主检出目录已快进到本 worktree 的实现提交（`11d298847`、`f989a4bff`）；被取代的旧未提交 P0 改动
+   备份在 `tmp/parallel-wip-20260930.patch`。`.idea/*` 的既有本地修改未动。
 
 ## 改动组 1（P0 改动 1/2/4/5：文件类型层诊断与 null-safe、搜索根折叠、过期产物清理）
 
@@ -93,8 +97,9 @@
 - 修复原则：把“建 session”与“用 session 查符号”之间的求值推迟到第一次真实查询（lazy 代理组件），
   使 session 构造不再遍历 SDK 目录、不触碰 `.cjo` stub；枚举结果按“根集合 + 修改计数”缓存并补 `checkCanceled`；
   builtins 候选改为根路径包含判断；索引键并入根列表摘要，修改计数缺失时退回 PSI 计数而非常量 0。
-- 12b（`getBuiltinsSession` 重入守卫 / 半成品 session）：**未实施**。12a 落地后，构造期求值链
-  （`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，重入边不再存在；
+- 主仓测试补充：`CangJieMetadataStubBuilderTest.invalidFileIsRejectedWithoutHeaderRead`
+  （`!isValid` 的 `.cjo` 不触发头部读）。
+  （`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，重入边不再存在；
   此时再加“半成品 session”只会引入一个任何误用都会 `error(...)` 的中间态。依据是代码推导，未在运行期复核。
 - 验证：主仓全部生产代码编译通过（含 IDE 复合构建）；`:analysis:decompiled:*`、``:analysis:stubs`、`cfir:cfir-serialization` 如上。
 
@@ -102,10 +107,18 @@
 
 - 验证：`:modules:ide:base:compileKotlin` 通过（复合构建指向 worktree）。
 
-## 剩余项
-
-- 改动 13/16/18（IDE 约束测试、启动恢复测试、事件发布测试）：未实施。IDE 仓复合构建读取主检出目录，
-  其测试只有在主仓改动合入主检出后才能稳定运行；本次仅做编译级验证。
-- 改动 15 的 `!isValid` 分支：`decompiler-to-file-stubs` 测试类路径没有 `VirtualFileWrapper`，未覆盖。
-- 既有失败（与本次无关）：`BuiltinsStubsTest` / `std.argopt.cjo.stubs.txt` 侧 car 注解缺失，HEAD 上同样失败。
+## 剩余项- 改动 13（描述符防漂移约束）：已实施，`CangJieDecompiledDescriptorParityTest` 3 个用例通过。
+  描述符集合从测试宿主 `org.cangnova.cangjie.testSupport.xml` 声明的模块出发取 include 闭包，
+  不用类路径全扫描（后者会混进主仓描述符与第三方 maven 元数据）。
+- 改动 16/18（启动恢复、事件发布）：代码已写入 `CjWorkspaceModelSyncStdlibTest`，但该类在
+  本环境**整类无法运行**：HEAD 源码上同样 10 条全部失败于项目创建阶段
+  （`Cannot find service CangJieProjectStructureProviderService`）。根因是测试宿主用 `<module>`
+  依赖拉起各模块，而模块描述符（`org.cangnova.cangjie.ide.base.xml` 等）位于类路径根而非
+  `META-INF/`，`<module>` 依赖解析不到；属既有测试宿主缺口，未在本轮修复。
+- 改动 15 的 `!isValid` 分支：已实施（覆写 `LightVirtualFile.isValid` 为 false，断言
+  `contentsToByteArray` 从未被调用），`decompiler-to-file-stubs` 6 个用例通过。
+- 12b（`getBuiltinsSession` 重入守卫 / 半成品 session）：仍未实施，理由同改动组 4。
 - §2 崩溃根因：仍未定位；改动 1 提供的两层日志是取证手段，需要跑一次沙箱 IDE 读数。
+- 既有失败（与本次无关）：
+  - `BuiltinsStubsTest` / `std.argopt.cjo.stubs.txt` 侧车注解缺失，HEAD 上同样失败。
+  - `CjWorkspaceModelSyncStdlibTest` 整类在 HEAD 上同样失败于项目创建阶段（见上）。
