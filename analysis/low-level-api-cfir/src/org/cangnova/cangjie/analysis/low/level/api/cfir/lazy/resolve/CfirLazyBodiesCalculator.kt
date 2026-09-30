@@ -31,13 +31,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
+import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
@@ -155,10 +158,41 @@ private fun replaceLazyValueParameters(target: CfirFunction, copy: CfirFunction)
 
 /**
  * 当 [target] 的 body 仍是 [CfirLazyBlock] 时，用 [copy] 的真实 body 替换它。
+ *
+ * [copy] 是按同一 PSI 重新 raw build 出来的声明，它 body 里每个 `return` 的
+ * `CfirFunctionTarget` 都绑在 [copy] 自己的符号上。直接搬运 body 会让这些 target 继续
+ * 指向被丢弃的副本，而 `CfirBasedSymbol` 不重写 `equals`，于是
+ * `returnExpression.target.labeledElement.symbol == functionSymbol` 这类引用相等判定会全部
+ * 失配：隐式返回类型收集不到任何 return 输入而塌成 Unit，CFG 的 return 出口表同样错位。
+ * 这里在搬运后把指向 [copy] 的 return target 重新绑回 [target]，恢复“return 的 target
+ * 指向宿主函数”这一不变式。嵌套函数的 return 指向嵌套声明自身，身份自洽，无需处理。
  */
 private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
     if (target.body !is CfirLazyBlock) return
-    target.replaceBody(copy.body)
+    val transplantedBody = copy.body
+    target.replaceBody(transplantedBody)
+    transplantedBody?.rebindReturnTargetsTo(target, copy)
+}
+
+/**
+ * 把 [block] 内所有指向 [staleOwner] 的 `return` target 重新绑到 [newOwner]。
+ *
+ * 只重绑 target 槽位本身，不替换 `CfirReturnExpression.target` 引用：target 对象是搬运前
+ * 就已存在的稳定句柄，rebind 之后 body 与宿主函数重新共享同一身份。
+ */
+private fun CfirBlock.rebindReturnTargetsTo(newOwner: CfirFunction, staleOwner: CfirFunction) {
+    acceptChildren(object : CfirVisitorVoid() {
+        override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
+            val returnTarget = returnExpression.target
+            if (returnTarget.isBound && returnTarget.labeledElement === staleOwner) {
+                returnTarget.bind(newOwner)
+            }
+        }
+
+        override fun visitElement(element: CfirElement) {
+            element.acceptChildren(this, null)
+        }
+    }, null)
 }
 
 /**
