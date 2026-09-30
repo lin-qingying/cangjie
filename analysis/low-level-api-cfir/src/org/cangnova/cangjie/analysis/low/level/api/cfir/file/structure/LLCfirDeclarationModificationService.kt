@@ -626,9 +626,12 @@ private fun isElementInsideBody(declaration: CjDeclarationWithBody, child: PsiEl
 /**
  * 判断命名函数是否具备稳定签名，使函数体变化可以按块内修改处理。
  *
- * 块体函数或显式返回类型函数的 body 修改不会改变对外类型契约，因此可以只失效 body。
+ * 仓颉具名函数体一律是块体，`hasBlockBody()` 对具名函数恒真，不构成"返回类型已固定"的证据；
+ * 该判据是从 Kotlin 的块体函数规则照搬来的，在本仓颉前端不成立。省略返回类型的函数，其返回类型
+ * 由函数体推导，改 body 就等于改签名，必须升级为块外修改；只有源码显式声明返回类型的函数，body
+ * 变化才不改变对外类型契约，可以只失效 body。
  */
-private fun CjNamedFunction.isReanalyzableContainer(): Boolean = hasBlockBody() || typeReference != null
+private fun CjNamedFunction.isReanalyzableContainer(): Boolean = typeReference != null
 
 /**
  * 判断属性访问器是否具备可局部重分析的边界。
