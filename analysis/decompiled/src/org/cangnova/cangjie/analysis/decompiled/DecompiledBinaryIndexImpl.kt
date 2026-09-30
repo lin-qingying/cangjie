@@ -12,6 +12,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
+import com.intellij.psi.util.PsiModificationTracker
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
@@ -50,9 +51,12 @@ class DecompiledBinaryIndexImpl(
     private val libraryIndexes = ConcurrentHashMap<String, ModuleBinaryIndex>()
 
     /**
-     * Builtins 目标平台对应的 `.cjo` binary index 缓存。
+     * Builtins 目标平台与根列表摘要对应的 `.cjo` binary index 缓存。
+     *
+     * 键必须带根：SDK 目录整体换掉（例如切换 toolchain）时修改计数未必先变，
+     * 只按平台缓存会把旧 SDK 的包名索引留给新 SDK。
      */
-    private val builtinsIndexes = ConcurrentHashMap<TargetPlatform, ModuleBinaryIndex>()
+    private val builtinsIndexes = ConcurrentHashMap<BuiltinsIndexKey, ModuleBinaryIndex>()
 
     /**
      * 返回指定 library module 可见的 `.cjo` 二进制文件列表。
@@ -69,6 +73,7 @@ class DecompiledBinaryIndexImpl(
         refreshIfNeeded()
         return builtinsIndex(module.targetPlatform).files
     }
+
 
     /** 返回指定 builtins platform 在搜索作用域内的缓存 package 文件映射。 */
     override fun getBuiltinsPackages(
@@ -225,10 +230,21 @@ class DecompiledBinaryIndexImpl(
     /**
      * 返回或构建指定目标平台的 builtins binary index。
      */
-    private fun builtinsIndex(targetPlatform: TargetPlatform): ModuleBinaryIndex =
-        builtinsIndexes.computeIfAbsent(targetPlatform) {
-            buildIndex(BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(project).toList())
+    private fun builtinsIndex(targetPlatform: TargetPlatform): ModuleBinaryIndex {
+        val builtinsFiles = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(project)
+        val key = BuiltinsIndexKey(targetPlatform, builtinsRootUrls(builtinsFiles))
+        // 同一平台换了根列表时丢弃旧根的索引条目。
+        builtinsIndexes.entries.removeIf { it.key.targetPlatform == targetPlatform && it.key != key }
+        return builtinsIndexes.computeIfAbsent(key) {
+            buildIndex(builtinsFiles.toList())
         }
+    }
+
+    /**
+     * builtins 文件所在目录的 URL 摘要，作为索引缓存键的一部分。
+     */
+    private fun builtinsRootUrls(builtinsFiles: Collection<VirtualFile>): List<String> =
+        builtinsFiles.mapTo(sortedSetOf()) { file -> file.parent?.url ?: file.url }.toList()
 
     /**
      * 返回项目结构中按目标平台去重后的 builtins modules。
@@ -284,13 +300,22 @@ class DecompiledBinaryIndexImpl(
      * 项目结构发生变化时清理 library 与 builtins binary index 缓存。
      */
     private fun refreshIfNeeded() {
-        val modificationCount = project.getService(CaModificationTracker::class.java)?.modificationCount ?: 0L
+        val modificationCount = CaModificationTracker.getInstance(project)?.modificationCount
+            ?: PsiModificationTracker.getInstance(project).modificationCount
         if (knownModificationCount == modificationCount) return
         libraryIndexes.clear()
         builtinsIndexes.clear()
         knownModificationCount = modificationCount
     }
 }
+
+/**
+ * builtins binary index 的缓存键：目标平台 + 根列表摘要。
+ */
+private data class BuiltinsIndexKey(
+    val targetPlatform: TargetPlatform,
+    val rootUrls: List<String>,
+)
 
 /**
  * 单个 module 或 builtins 平台的 `.cjo` binary index 快照。

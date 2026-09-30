@@ -5,7 +5,6 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factori
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
-import org.cangnova.cangjie.analysis.decompiler.stub.file.cjoSearchPathStringOf
 import org.cangnova.cangjie.analysis.decompiler.stub.file.distinctCjoSearchRoots
 import org.cangnova.cangjie.analysis.decompiler.stub.file.normalizeCjoSearchRoot
 import org.cangnova.cangjie.analysis.decompiler.stub.file.toCjoSearchRoot
@@ -84,20 +83,15 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
      * builtins `.cjo` 搜索根对应的反序列化 provider。
      */
     private fun createBuiltinsDeserializedSymbolProvider(session: LLCfirSession): CfirSymbolProvider {
-        val rootPathString = cjoSearchPathStringOf(
-            BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project).map(::toCjoSearchRoot)
-        )
+        // 搜索根显式来自 builtins provider，不再回退到 CANGJIE_STDLIB_MODULE / CANGJIE_LIBRARY 环境变量：
+        // IDE 里 SDK 由项目设置决定，按环境变量解析会查到另一份 SDK 的目录。
+        val builtinsRoots = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project)
+            .map(::toCjoSearchRoot)
+            .distinctCjoSearchRoots()
 
         return CfirDeserializedSymbolProvider(
             session = session,
-            cjoManager = CjoManager(
-                CjoSearchPath { key ->
-                    when (key) {
-                        "CANGJIE_LIBRARY", "CANGJIE_STDLIB_MODULE" -> rootPathString
-                        else -> null
-                    }
-                },
-            ),
+            cjoManager = CjoManager(CjoSearchPath.forRoots(builtinsRoots)),
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
         )

@@ -16,11 +16,20 @@ import java.util.concurrent.ConcurrentHashMap
 class CjoSearchPath(
     /** 当前 binary library 模块显式提供的 CJO 搜索根目录。 */
     private val additionalLibrarySearchPaths: List<File> = emptyList(),
+    /**
+     * 宿主解析出的标准库搜索根目录；为 `null` 时才回退到 `CANGJIE_STDLIB_MODULE` 环境变量。
+     *
+     * SDK 路径由项目设置决定，不能在宿主已给出根之后仍按进程环境变量解析，否则同一 IDE
+     * 会按另一份 SDK 的目录查找 `std.*` 包。
+     */
+    private val explicitStdlibSearchPaths: List<File>? = null,
     /** 环境变量读取函数，测试可注入以隔离宿主环境。 */
     private val envProvider: (String) -> String? = System::getenv,
 ) {
-    /** 标准库 `.cjo` 搜索根目录，来自 `CANGJIE_STDLIB_MODULE`。 */
-    private val stdlibSearchPaths: List<File> by lazy { readPaths("CANGJIE_STDLIB_MODULE") }
+    /** 标准库 `.cjo` 搜索根目录，来自宿主显式根或 `CANGJIE_STDLIB_MODULE`。 */
+    private val stdlibSearchPaths: List<File> by lazy {
+        (explicitStdlibSearchPaths ?: readPaths("CANGJIE_STDLIB_MODULE")).filter(File::isDirectory)
+    }
     /** 普通库 `.cjo` 搜索根目录，来自环境变量及当前 binary library 模块。 */
     private val librarySearchPaths: List<File> by lazy {
         (readPaths("CANGJIE_LIBRARY") + additionalLibrarySearchPaths.filter(File::isDirectory))
@@ -41,6 +50,22 @@ class CjoSearchPath(
             ?.map(::File)
             ?.filter { it.isDirectory }
             .orEmpty()
+    }
+
+    companion object {
+        /**
+         * 按宿主解析出的根构造搜索路径：标准库根与普通库根都显式给出，不再读环境变量。
+         *
+         * builtins / library 根由 [BuiltinsVirtualFileProvider] 与 library module 的 binary roots 折叠而来，
+         * 是当前进程唯一的 SDK 真相。
+         */
+        fun forRoots(
+            builtinsRoots: List<File>,
+            libraryRoots: List<File> = emptyList(),
+        ): CjoSearchPath = CjoSearchPath(
+            additionalLibrarySearchPaths = libraryRoots.distinctBy(File::getAbsolutePath),
+            explicitStdlibSearchPaths = builtinsRoots.distinctBy(File::getAbsolutePath),
+        )
     }
 
     /** 根据包名选择搜索根目录；标准库包优先查标准库路径。 */

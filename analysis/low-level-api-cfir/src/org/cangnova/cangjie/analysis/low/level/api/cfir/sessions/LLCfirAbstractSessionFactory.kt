@@ -417,7 +417,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         return session.apply {
             val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
             registerModuleData(moduleData)
-            registerIdeComponents(project, languageVersionSettings, contentScope)
+            registerIdeComponents(project, languageVersionSettings)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
             registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
@@ -721,7 +721,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         module: CaModule,
         annotationSearchScope: GlobalSearchScope,
     ) {
-        registerIdeComponents(project, languageVersionSettings, annotationSearchScope)
+        registerIdeComponents(project, languageVersionSettings)
         registerCommonComponents(languageVersionSettings)
         register(
             CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(

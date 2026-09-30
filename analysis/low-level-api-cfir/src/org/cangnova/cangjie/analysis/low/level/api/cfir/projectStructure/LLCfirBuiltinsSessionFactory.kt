@@ -117,7 +117,9 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
 
         return session.apply {
             val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
-            registerIdeComponents(project, languageVersionSettings, builtinsModule.contentScope)
+            // 不再传 builtinsModule.contentScope：IDE 宿主下它每次访问都会重新遍历 SDK 目录，
+            // session 构造期求值会把搜索根烤死，并让构造同线程重入 `.cjo` stub 构建。
+            registerIdeComponents(project, languageVersionSettings)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
             registerCommonComponents(languageVersionSettings)
             registerCommonComponentsAfterExtensionsAreConfigured()
