@@ -7,7 +7,7 @@ import std.core.*
 import std.collection.ArrayList
 
 @Annotation
-let NUM_SPACES: UInt16 = COMPILED_CODE /* compiled code */
+let NUM_SPACES: UInt16
 
 enum NodeFormat_AnyExpr {
     | AnyExpr_NONE

@@ -6,35 +6,49 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.abs, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=abs]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random.Random, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.filter, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=filter]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.prop_test]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.abs, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.math.abs, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=abs]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random.Random, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.random.Random, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.math, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.filter, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.filter, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=filter]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.prop_test]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
   CangJieStub$INTERFACE[classId=std/unittest/prop_test/RandomSource, fqName=std.unittest.prop_test.RandomSource, name=RandomSource, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]

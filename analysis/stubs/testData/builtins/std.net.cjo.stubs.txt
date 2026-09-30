@@ -4,71 +4,103 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.SwapEndianOrder, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=SwapEndianOrder]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.HashSet, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=HashSet]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort.sort, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow.CheckedOp, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=CheckedOp]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow.WrappingOp, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=WrappingOp]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.BigEndianOrder, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=BigEndianOrder]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.LittleEndianOrder, isAllUnder=false, aliasName=null)], packageFqName=std.net]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=LittleEndianOrder]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.io, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=io]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null)], packageFqName=std.net]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.SwapEndianOrder, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.binary.SwapEndianOrder, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=SwapEndianOrder]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.HashSet, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.HashSet, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=HashSet]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort.sort, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sort.sort, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.binary, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.convert, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow.CheckedOp, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.overflow.CheckedOp, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=CheckedOp]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow.WrappingOp, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.overflow.WrappingOp, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=WrappingOp]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Parsable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.BigEndianOrder, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.binary.BigEndianOrder, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=BigEndianOrder]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.LittleEndianOrder, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.binary.LittleEndianOrder, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=LittleEndianOrder]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.sync, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.overflow, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.overflow, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.io, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.io, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=io]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.time, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.net]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.math, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -80,8 +112,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=AI_PASSIVE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -93,8 +124,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=AI_ALL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -106,8 +136,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DOMAIN_MAX_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -119,8 +148,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SUB_DOMAIN_LIST_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -132,8 +160,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPV4_ADDRESS_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -145,8 +172,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPV6_ADDRESS_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -158,8 +184,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_ADDR_IPV4_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -171,8 +196,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_ADDR_IPV6_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -184,7 +208,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_ADDR_DOMAIN_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -209,7 +232,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_WRITE_BUFFER_SIZE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -226,8 +249,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -239,8 +261,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPV4_ADDR_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -252,8 +273,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPV6_ADDR_LEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -265,8 +285,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=AF_INET]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int16]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -278,8 +297,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=AF_UNIX]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int16]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -291,8 +309,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=AF_INET6]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int16]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -304,8 +321,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_IP]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -317,8 +333,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_ICMP]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -330,8 +345,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_IPV4]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -343,8 +357,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_TCP]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -356,8 +369,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_UDP]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -369,8 +381,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_IPV6]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -382,8 +393,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPROTO_RAW]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -395,8 +405,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOL_SOCKET]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -408,8 +417,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_DEBUG]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -421,8 +429,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_ACCEPTCONN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -434,8 +441,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_REUSEADDR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -447,8 +453,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_KEEPALIVE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -460,8 +465,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_DONTROUTE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -473,8 +477,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_BROADCAST]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -486,8 +489,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_OOBINLINE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -499,8 +501,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_LINGER]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -512,8 +513,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_SNDBUF]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -525,8 +525,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_RCVBUF]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -538,8 +537,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_SNDTIMEO]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -551,8 +549,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_RCVTIMEO]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -564,8 +561,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_ERROR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -577,8 +573,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TYPE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -590,8 +585,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_REUSEPORT]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -603,8 +597,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_BINDTODEVICE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -616,8 +609,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TCP_NODELAY]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -629,8 +621,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TCP_KEEPIDLE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -642,8 +633,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TCP_KEEPCNT]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -655,8 +645,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TCP_KEEPINTVL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -668,8 +657,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_TCP_QUICKACK]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -681,8 +669,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_IP_HDRINCL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -694,8 +681,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_IP_TOS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -707,8 +693,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_IP_TTL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -720,8 +705,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCKET_DEFAULT_BACKLOG]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -733,8 +717,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_STREAM]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -746,8 +729,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_DGRAM]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -759,8 +741,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_RDM]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -772,8 +753,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_SEQPACKET]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -785,8 +765,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_ARG_INVALID]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -798,8 +777,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_NOT_SUPPORTED]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -811,8 +789,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_NOT_REGISTERED]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -824,8 +801,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_HANDLE_INVALID]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -837,8 +813,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_FD_NUM_OVER_LIMIT]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -850,8 +825,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_TIMEOUT]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -863,8 +837,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_CREATE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -876,8 +849,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_EAGAIN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -889,8 +861,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_SOCK_CLOSED]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -902,8 +873,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=ERRNO_EINVAL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -915,8 +885,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SOCK_LEN_MAX]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -933,8 +902,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -951,8 +919,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -969,8 +936,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -982,8 +948,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_TIMEOUT_NS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -1000,7 +965,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$STRUCT[classId=std/net/AddressFamily, fqName=std.net.AddressFamily, name=AddressFamily, superNames=[ToString, Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -1668,7 +1632,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
       CangJieStub$TYPE_PARAMETER[fqName=null, name=Arg]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1688,7 +1652,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[mut]
@@ -5969,7 +5932,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=size]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=size]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -5979,7 +5942,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[static]
@@ -6099,7 +6061,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ToString]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=readTimeout_]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=readTimeout_]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6123,8 +6085,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=writeTimeout_]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=writeTimeout_]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6148,8 +6109,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=bindToDevice_]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=bindToDevice_]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6173,8 +6133,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=keepAlive_]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=keepAlive_]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6198,7 +6157,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketKeepAliveConfig]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=addressLock]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -9262,7 +9220,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Self]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=address]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=address]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -9286,8 +9244,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SockAddr]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=isIPv6]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=isIPv6]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -9297,7 +9254,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=handle]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -10385,7 +10341,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SOL_SOCKET]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SOL_SOCKET]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10406,8 +10362,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IPPROTO_TCP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IPPROTO_TCP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10428,8 +10383,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IPPROTO_UDP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IPPROTO_UDP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=DEPRECATED, classId=null, hasValueArguments=true, isCompileTimeVisible=false, shortName=Deprecated]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10450,8 +10404,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_KEEPALIVE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_KEEPALIVE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10461,8 +10414,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_NODELAY]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_NODELAY]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10472,8 +10424,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_QUICKACK]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_QUICKACK]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10483,8 +10434,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_LINGER]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_LINGER]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10494,8 +10444,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDBUF]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDBUF]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10505,8 +10454,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVBUF]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVBUF]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10516,8 +10464,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEADDR]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEADDR]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10527,8 +10474,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEPORT]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEPORT]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10538,8 +10484,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_BINDTODEVICE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_BINDTODEVICE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10549,7 +10494,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$CLASS[classId=std/net/RawSocket, fqName=std.net.RawSocket, name=RawSocket, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -11751,7 +11695,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11761,8 +11705,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11772,8 +11715,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=UDP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=UDP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11783,8 +11725,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=ICMP]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=ICMP]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11794,8 +11735,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RAW]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RAW]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11805,8 +11745,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SOCKET]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SOCKET]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11816,7 +11755,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=OptionLevel]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -11825,7 +11763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_HDRINCL]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_HDRINCL]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11835,8 +11773,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_TOS]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_TOS]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11846,8 +11783,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_TTL]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=IP_TTL]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11857,8 +11793,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPCNT]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPCNT]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11868,8 +11803,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPIDLE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPIDLE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11879,8 +11813,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPINTVL]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_KEEPINTVL]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11890,8 +11823,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_NODELAY]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=TCP_NODELAY]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11901,8 +11833,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_DEBUG]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_DEBUG]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11912,8 +11843,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_ACCEPTCONN]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_ACCEPTCONN]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11923,8 +11853,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEADDR]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_REUSEADDR]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11934,8 +11863,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_KEEPALIVE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_KEEPALIVE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11945,8 +11873,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_DONTROUTE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_DONTROUTE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11956,8 +11883,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_BROADCAST]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_BROADCAST]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11967,8 +11893,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_LINGER]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_LINGER]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11978,8 +11903,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_OOBINLINE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_OOBINLINE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -11989,8 +11913,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDBUF]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDBUF]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12000,8 +11923,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVBUF]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVBUF]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12011,8 +11933,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDTIMEO]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_SNDTIMEO]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12022,8 +11943,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVTIMEO]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_RCVTIMEO]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12033,8 +11953,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_ERROR]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=SO_ERROR]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12044,7 +11963,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=OptionName]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

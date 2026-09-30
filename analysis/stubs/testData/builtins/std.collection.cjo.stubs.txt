@@ -4,12 +4,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null)], packageFqName=std.collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.collection]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.collection]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.math, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
@@ -276,7 +280,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myVersion]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myVersion]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -286,8 +290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=DEFAULT_CAPACITY]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=DEFAULT_CAPACITY]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -297,7 +300,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=capacity]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
@@ -1800,7 +1802,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=MAX_BUCKET_SIZE]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=MAX_BUCKET_SIZE]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1810,8 +1812,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=LOAD_FACTOR]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=LOAD_FACTOR]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1821,8 +1822,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=DEFAULT_CAPACITY]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=DEFAULT_CAPACITY]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1832,8 +1832,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=appendIndex]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=appendIndex]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1843,8 +1842,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=freeIndex]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=freeIndex]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1854,8 +1852,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=freeSize]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=freeSize]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1865,8 +1862,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=modCount]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=modCount]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -1876,7 +1872,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=buckets]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -2620,7 +2615,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -2632,7 +2627,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DEGREE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -2657,7 +2651,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_ENTRY_SIZE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -2669,7 +2663,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_CHILD_SIZE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -2808,7 +2801,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2818,8 +2811,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_head]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_head]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2829,8 +2821,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_tail]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_tail]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2840,7 +2831,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ArrayDeque]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -3094,7 +3084,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myPosition]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=myPosition]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -3104,7 +3094,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=myData]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -3379,7 +3368,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -3389,8 +3378,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -3400,7 +3388,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ArrayStack]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4911,7 +4898,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -4921,8 +4908,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_head]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_head]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -4951,8 +4937,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_tail]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_tail]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -4981,8 +4966,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_version]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -4992,7 +4976,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LinkedList]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6172,7 +6155,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_size]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6182,8 +6165,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=modCount]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=modCount]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -6193,7 +6175,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=root]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -10174,7 +10155,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=subIt]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=subIt]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10203,7 +10184,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=it]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -10278,7 +10258,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=subIt]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=subIt]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -10307,7 +10287,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=transform]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

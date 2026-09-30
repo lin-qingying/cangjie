@@ -6,39 +6,53 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=diff]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyPrinter, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyPrinter, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.PrettyPrinter, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.ceil, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.diff]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ceil]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.ArrayList, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Formattable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.ceil, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest.diff]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.math.ceil, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ceil]
   CangJieStub$INTERFACE[classId=std/unittest/diff/AssertPrintable, fqName=std.unittest.diff.AssertPrintable, name=AssertPrintable, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]

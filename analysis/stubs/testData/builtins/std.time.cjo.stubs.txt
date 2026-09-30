@@ -4,18 +4,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null)], packageFqName=std.time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null)], packageFqName=std.time]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.time]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.time]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.convert, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.time]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.ArrayList, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -27,8 +33,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_INT64]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -40,8 +45,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_INT64]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -53,8 +57,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -66,8 +69,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -79,8 +81,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_NANOSECOND]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -92,8 +93,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MONTHS_PER_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -105,8 +105,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DAYS_PER_WEEK]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -118,8 +117,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DAYS_OF_NORMAL_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -131,7 +129,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DAYS_OF_LEAP_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -168,7 +165,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DAYS_PER_4YEARS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -180,8 +177,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOURS_PER_DAY]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -193,8 +189,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MINUTES_PER_HOUR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -206,7 +201,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SECS_PER_MINUTE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -243,7 +237,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SECS_PER_WEEK]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -255,8 +249,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MS_PER_SEC]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -268,8 +261,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=US_PER_MS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -281,7 +273,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=NS_PER_US]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -378,7 +369,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SECS_OF_LEAP_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -390,8 +381,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOUR_12_INTERVAL]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -403,8 +393,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOUR_12_START]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -416,8 +405,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOUR_12_END]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -429,8 +417,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOUR_24_START]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -442,8 +429,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HOUR_24_NOON]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -455,7 +441,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=START_AD_YEAR]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -528,7 +513,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=SECS_OF_MIN_TO_AD1]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -540,7 +525,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=DAYS_OF_JAN_TO_MARCH_LEAP]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -565,7 +549,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_OFFSET]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -582,7 +566,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -607,7 +590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_UTC_SECS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -624,8 +607,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -642,8 +624,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -660,8 +641,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -678,8 +658,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -696,8 +675,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -709,7 +687,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAXPATHLEN]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$CLASS[classId=std/time/TimeZone, fqName=std.time.TimeZone, name=TimeZone, superNames=[Object, ToString, Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -2760,7 +2737,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC1123]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC1123]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2775,8 +2752,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC3339]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC3339]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2791,8 +2767,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC822]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC822]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2807,8 +2782,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC850]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=false, isTopLevel=false, isVar=false, name=RFC850]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -2823,7 +2797,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=data]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

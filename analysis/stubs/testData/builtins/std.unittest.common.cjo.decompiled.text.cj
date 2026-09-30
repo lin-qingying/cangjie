@@ -13,7 +13,7 @@ import std.collection.enumerate
 import std.convert.Formattable
 
 @Annotation
-let NOT_PRINTABLE_PLACEHOLDER: std.core.String = COMPILED_CODE /* compiled code */
+let NOT_PRINTABLE_PLACEHOLDER: std.core.String
 
 class Configuration <: std.core.Object & std.core.ToString {
     init() { /* compiled code */ }

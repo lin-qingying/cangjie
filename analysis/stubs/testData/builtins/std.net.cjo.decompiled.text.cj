@@ -21,31 +21,31 @@ import std.time.*
 import std.math.*
 
 @Annotation
-let AI_PASSIVE: Int32 = COMPILED_CODE /* compiled code */
+let AI_PASSIVE: Int32
 
 @Annotation
-let AI_ALL: Int32 = COMPILED_CODE /* compiled code */
+let AI_ALL: Int32
 
 @Annotation
-let DOMAIN_MAX_LEN: Int64 = COMPILED_CODE /* compiled code */
+let DOMAIN_MAX_LEN: Int64
 
 @Annotation
-let SUB_DOMAIN_LIST_LEN: Int64 = COMPILED_CODE /* compiled code */
+let SUB_DOMAIN_LIST_LEN: Int64
 
 @Annotation
-let IPV4_ADDRESS_LEN: Int64 = COMPILED_CODE /* compiled code */
+let IPV4_ADDRESS_LEN: Int64
 
 @Annotation
-let IPV6_ADDRESS_LEN: Int64 = COMPILED_CODE /* compiled code */
+let IPV6_ADDRESS_LEN: Int64
 
 @Annotation
-let SOCK_ADDR_IPV4_LEN: Int64 = COMPILED_CODE /* compiled code */
+let SOCK_ADDR_IPV4_LEN: Int64
 
 @Annotation
-let SOCK_ADDR_IPV6_LEN: Int64 = COMPILED_CODE /* compiled code */
+let SOCK_ADDR_IPV6_LEN: Int64
 
 @Annotation
-let SOCK_ADDR_DOMAIN_LEN: Int64 = COMPILED_CODE /* compiled code */
+let SOCK_ADDR_DOMAIN_LEN: Int64
 
 @Annotation
 let SOCK_READ_BUFFER_SIZE: Int32
@@ -54,181 +54,181 @@ let SOCK_READ_BUFFER_SIZE: Int32
 let SOCK_WRITE_BUFFER_SIZE: Int32
 
 @Annotation
-let NULL_BYTE: std.core.String = COMPILED_CODE /* compiled code */
+let NULL_BYTE: std.core.String
 
 @Annotation
-let IPV4_ADDR_LEN: Int64 = COMPILED_CODE /* compiled code */
+let IPV4_ADDR_LEN: Int64
 
 @Annotation
-let IPV6_ADDR_LEN: Int64 = COMPILED_CODE /* compiled code */
+let IPV6_ADDR_LEN: Int64
 
 @Annotation
-let AF_INET: Int16 = COMPILED_CODE /* compiled code */
+let AF_INET: Int16
 
 @Annotation
-let AF_UNIX: Int16 = COMPILED_CODE /* compiled code */
+let AF_UNIX: Int16
 
 @Annotation
-let AF_INET6: Int16 = COMPILED_CODE /* compiled code */
+let AF_INET6: Int16
 
 @Annotation
-let IPPROTO_IP: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_IP: Int32
 
 @Annotation
-let IPPROTO_ICMP: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_ICMP: Int32
 
 @Annotation
-let IPPROTO_IPV4: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_IPV4: Int32
 
 @Annotation
-let IPPROTO_TCP: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_TCP: Int32
 
 @Annotation
-let IPPROTO_UDP: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_UDP: Int32
 
 @Annotation
-let IPPROTO_IPV6: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_IPV6: Int32
 
 @Annotation
-let IPPROTO_RAW: Int32 = COMPILED_CODE /* compiled code */
+let IPPROTO_RAW: Int32
 
 @Annotation
-let SOL_SOCKET: Int32 = COMPILED_CODE /* compiled code */
+let SOL_SOCKET: Int32
 
 @Annotation
-let SOCK_DEBUG: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_DEBUG: Int32
 
 @Annotation
-let SOCK_ACCEPTCONN: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_ACCEPTCONN: Int32
 
 @Annotation
-let SOCK_REUSEADDR: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_REUSEADDR: Int32
 
 @Annotation
-let SOCK_KEEPALIVE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_KEEPALIVE: Int32
 
 @Annotation
-let SOCK_DONTROUTE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_DONTROUTE: Int32
 
 @Annotation
-let SOCK_BROADCAST: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_BROADCAST: Int32
 
 @Annotation
-let SOCK_OOBINLINE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_OOBINLINE: Int32
 
 @Annotation
-let SOCK_LINGER: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_LINGER: Int32
 
 @Annotation
-let SOCK_SNDBUF: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_SNDBUF: Int32
 
 @Annotation
-let SOCK_RCVBUF: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_RCVBUF: Int32
 
 @Annotation
-let SOCK_SNDTIMEO: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_SNDTIMEO: Int32
 
 @Annotation
-let SOCK_RCVTIMEO: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_RCVTIMEO: Int32
 
 @Annotation
-let SOCK_ERROR: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_ERROR: Int32
 
 @Annotation
-let SOCK_TYPE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TYPE: Int32
 
 @Annotation
-let SOCK_REUSEPORT: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_REUSEPORT: Int32
 
 @Annotation
-let SOCK_BINDTODEVICE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_BINDTODEVICE: Int32
 
 @Annotation
-let SOCK_TCP_NODELAY: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TCP_NODELAY: Int32
 
 @Annotation
-let SOCK_TCP_KEEPIDLE: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TCP_KEEPIDLE: Int32
 
 @Annotation
-let SOCK_TCP_KEEPCNT: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TCP_KEEPCNT: Int32
 
 @Annotation
-let SOCK_TCP_KEEPINTVL: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TCP_KEEPINTVL: Int32
 
 @Annotation
-let SOCK_TCP_QUICKACK: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_TCP_QUICKACK: Int32
 
 @Annotation
-let SOCK_IP_HDRINCL: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_IP_HDRINCL: Int32
 
 @Annotation
-let SOCK_IP_TOS: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_IP_TOS: Int32
 
 @Annotation
-let SOCK_IP_TTL: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_IP_TTL: Int32
 
 @Annotation
-let SOCKET_DEFAULT_BACKLOG: Int32 = COMPILED_CODE /* compiled code */
+let SOCKET_DEFAULT_BACKLOG: Int32
 
 @Annotation
-let SOCK_STREAM: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_STREAM: Int32
 
 @Annotation
-let SOCK_DGRAM: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_DGRAM: Int32
 
 @Annotation
-let SOCK_RDM: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_RDM: Int32
 
 @Annotation
-let SOCK_SEQPACKET: Int32 = COMPILED_CODE /* compiled code */
+let SOCK_SEQPACKET: Int32
 
 @Annotation
-let ERRNO_SOCK_ARG_INVALID: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_ARG_INVALID: Int32
 
 @Annotation
-let ERRNO_SOCK_NOT_SUPPORTED: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_NOT_SUPPORTED: Int32
 
 @Annotation
-let ERRNO_SOCK_NOT_REGISTERED: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_NOT_REGISTERED: Int32
 
 @Annotation
-let ERRNO_SOCK_HANDLE_INVALID: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_HANDLE_INVALID: Int32
 
 @Annotation
-let ERRNO_SOCK_FD_NUM_OVER_LIMIT: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_FD_NUM_OVER_LIMIT: Int32
 
 @Annotation
-let ERRNO_SOCK_TIMEOUT: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_TIMEOUT: Int32
 
 @Annotation
-let ERRNO_SOCK_CREATE: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_CREATE: Int32
 
 @Annotation
-let ERRNO_SOCK_EAGAIN: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_EAGAIN: Int32
 
 @Annotation
-let ERRNO_SOCK_CLOSED: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_SOCK_CLOSED: Int32
 
 @Annotation
-let ERRNO_EINVAL: Int32 = COMPILED_CODE /* compiled code */
+let ERRNO_EINVAL: Int32
 
 @Annotation
-let SOCK_LEN_MAX: Int64 = COMPILED_CODE /* compiled code */
+let SOCK_LEN_MAX: Int64
 
 @Annotation
-let OS_WINDOWS: std.core.String = COMPILED_CODE /* compiled code */
+let OS_WINDOWS: std.core.String
 
 @Annotation
-let OS_MACOS: std.core.String = COMPILED_CODE /* compiled code */
+let OS_MACOS: std.core.String
 
 @Annotation
-let OS_OTHERS: std.core.String = COMPILED_CODE /* compiled code */
+let OS_OTHERS: std.core.String
 
 @Annotation
-let MAX_TIMEOUT_NS: Int64 = COMPILED_CODE /* compiled code */
+let MAX_TIMEOUT_NS: Int64
 
 @Annotation
-let OS: std.core.String = COMPILED_CODE /* compiled code */
+let OS: std.core.String
 
 struct AddressFamily <: std.core.ToString & std.core.Equatable<std.net.AddressFamily> {
     @Annotation
@@ -346,7 +346,7 @@ struct NonReentrantReadWriteMutex {
 
 struct ExternallyLockedLazy<T, Arg> {
     @Annotation
-    var value: std.core.Option<T> = COMPILED_CODE /* compiled code */
+    var value: std.core.Option<T>
 
     mut func compute(lock: std.net.NonReentrantReadWriteMutex, arg: Arg, provider: (Arg) -> T): T { /* compiled code */ }
 
@@ -972,7 +972,7 @@ struct Linger {
     init(onOff: Bool, seconds: Int64) { /* compiled code */ }
 
     @Annotation
-    const size: UIntNative = COMPILED_CODE /* compiled code */
+    const size: UIntNative
 
     static func use<R>(block: (CPointer<std.net.Linger>) -> R): R { /* compiled code */ }
 }
@@ -985,16 +985,16 @@ extend std.net.SocketCommon<ActualPlatformSocket> {
 
 class SocketCommon<NS> <: std.core.Object & std.core.Resource & std.core.ToString {
     @Annotation
-    var readTimeout_: std.core.Option<std.core.Duration> = COMPILED_CODE /* compiled code */
+    var readTimeout_: std.core.Option<std.core.Duration>
 
     @Annotation
-    var writeTimeout_: std.core.Option<std.core.Duration> = COMPILED_CODE /* compiled code */
+    var writeTimeout_: std.core.Option<std.core.Duration>
 
     @Annotation
-    var bindToDevice_: std.core.Option<std.core.String> = COMPILED_CODE /* compiled code */
+    var bindToDevice_: std.core.Option<std.core.String>
 
     @Annotation
-    var keepAlive_: std.core.Option<std.net.SocketKeepAliveConfig> = COMPILED_CODE /* compiled code */
+    var keepAlive_: std.core.Option<std.net.SocketKeepAliveConfig>
 
     @Annotation
     let addressLock: std.net.NonReentrantReadWriteMutex
@@ -1392,10 +1392,10 @@ type ActualTcpPlatformSocket = std.net.DopraOtherSocketImpl
 
 abstract class DopraSocketImpl<Self> <: std.core.Object & std.net.PlatformSocket<Self> {
     @Annotation
-    var address: std.core.Option<std.net.SockAddr> = COMPILED_CODE /* compiled code */
+    var address: std.core.Option<std.net.SockAddr>
 
     @Annotation
-    var isIPv6: Bool = COMPILED_CODE /* compiled code */
+    var isIPv6: Bool
 
     @Annotation
     mut prop handle: Int64 {
@@ -1579,42 +1579,42 @@ struct SocketState {
 struct SocketOptions {
     @Deprecated[message: "Use `public static const SOCKET: Int32` in `public struct OptionLevel` instead."]
     @Annotation
-    const SOL_SOCKET: Int32 = COMPILED_CODE /* compiled code */
+    const SOL_SOCKET: Int32
 
     @Deprecated[message: "Use `public static const TCP: Int32` in `public struct OptionLevel` instead."]
     @Annotation
-    const IPPROTO_TCP: Int32 = COMPILED_CODE /* compiled code */
+    const IPPROTO_TCP: Int32
 
     @Deprecated[message: "Use `public static const UDP: Int32` in `public struct OptionLevel` instead."]
     @Annotation
-    const IPPROTO_UDP: Int32 = COMPILED_CODE /* compiled code */
+    const IPPROTO_UDP: Int32
 
     @Annotation
-    const SO_KEEPALIVE: Int32 = COMPILED_CODE /* compiled code */
+    const SO_KEEPALIVE: Int32
 
     @Annotation
-    const TCP_NODELAY: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_NODELAY: Int32
 
     @Annotation
-    const TCP_QUICKACK: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_QUICKACK: Int32
 
     @Annotation
-    const SO_LINGER: Int32 = COMPILED_CODE /* compiled code */
+    const SO_LINGER: Int32
 
     @Annotation
-    const SO_SNDBUF: Int32 = COMPILED_CODE /* compiled code */
+    const SO_SNDBUF: Int32
 
     @Annotation
-    const SO_RCVBUF: Int32 = COMPILED_CODE /* compiled code */
+    const SO_RCVBUF: Int32
 
     @Annotation
-    const SO_REUSEADDR: Int32 = COMPILED_CODE /* compiled code */
+    const SO_REUSEADDR: Int32
 
     @Annotation
-    const SO_REUSEPORT: Int32 = COMPILED_CODE /* compiled code */
+    const SO_REUSEPORT: Int32
 
     @Annotation
-    const SO_BINDTODEVICE: Int32 = COMPILED_CODE /* compiled code */
+    const SO_BINDTODEVICE: Int32
 }
 
 class RawSocket {
@@ -1800,86 +1800,86 @@ func getOnceSendSize(size: Int64): Int64 { /* compiled code */ }
 
 struct OptionLevel {
     @Annotation
-    const IP: Int32 = COMPILED_CODE /* compiled code */
+    const IP: Int32
 
     @Annotation
-    const TCP: Int32 = COMPILED_CODE /* compiled code */
+    const TCP: Int32
 
     @Annotation
-    const UDP: Int32 = COMPILED_CODE /* compiled code */
+    const UDP: Int32
 
     @Annotation
-    const ICMP: Int32 = COMPILED_CODE /* compiled code */
+    const ICMP: Int32
 
     @Annotation
-    const RAW: Int32 = COMPILED_CODE /* compiled code */
+    const RAW: Int32
 
     @Annotation
-    const SOCKET: Int32 = COMPILED_CODE /* compiled code */
+    const SOCKET: Int32
 
     init() { /* compiled code */ }
 }
 
 struct OptionName {
     @Annotation
-    const IP_HDRINCL: Int32 = COMPILED_CODE /* compiled code */
+    const IP_HDRINCL: Int32
 
     @Annotation
-    const IP_TOS: Int32 = COMPILED_CODE /* compiled code */
+    const IP_TOS: Int32
 
     @Annotation
-    const IP_TTL: Int32 = COMPILED_CODE /* compiled code */
+    const IP_TTL: Int32
 
     @Annotation
-    const TCP_KEEPCNT: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_KEEPCNT: Int32
 
     @Annotation
-    const TCP_KEEPIDLE: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_KEEPIDLE: Int32
 
     @Annotation
-    const TCP_KEEPINTVL: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_KEEPINTVL: Int32
 
     @Annotation
-    const TCP_NODELAY: Int32 = COMPILED_CODE /* compiled code */
+    const TCP_NODELAY: Int32
 
     @Annotation
-    const SO_DEBUG: Int32 = COMPILED_CODE /* compiled code */
+    const SO_DEBUG: Int32
 
     @Annotation
-    const SO_ACCEPTCONN: Int32 = COMPILED_CODE /* compiled code */
+    const SO_ACCEPTCONN: Int32
 
     @Annotation
-    const SO_REUSEADDR: Int32 = COMPILED_CODE /* compiled code */
+    const SO_REUSEADDR: Int32
 
     @Annotation
-    const SO_KEEPALIVE: Int32 = COMPILED_CODE /* compiled code */
+    const SO_KEEPALIVE: Int32
 
     @Annotation
-    const SO_DONTROUTE: Int32 = COMPILED_CODE /* compiled code */
+    const SO_DONTROUTE: Int32
 
     @Annotation
-    const SO_BROADCAST: Int32 = COMPILED_CODE /* compiled code */
+    const SO_BROADCAST: Int32
 
     @Annotation
-    const SO_LINGER: Int32 = COMPILED_CODE /* compiled code */
+    const SO_LINGER: Int32
 
     @Annotation
-    const SO_OOBINLINE: Int32 = COMPILED_CODE /* compiled code */
+    const SO_OOBINLINE: Int32
 
     @Annotation
-    const SO_SNDBUF: Int32 = COMPILED_CODE /* compiled code */
+    const SO_SNDBUF: Int32
 
     @Annotation
-    const SO_RCVBUF: Int32 = COMPILED_CODE /* compiled code */
+    const SO_RCVBUF: Int32
 
     @Annotation
-    const SO_SNDTIMEO: Int32 = COMPILED_CODE /* compiled code */
+    const SO_SNDTIMEO: Int32
 
     @Annotation
-    const SO_RCVTIMEO: Int32 = COMPILED_CODE /* compiled code */
+    const SO_RCVTIMEO: Int32
 
     @Annotation
-    const SO_ERROR: Int32 = COMPILED_CODE /* compiled code */
+    const SO_ERROR: Int32
 
     init() { /* compiled code */ }
 }

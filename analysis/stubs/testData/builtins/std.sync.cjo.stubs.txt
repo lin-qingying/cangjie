@@ -4,20 +4,26 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.MonoTime, isAllUnder=false, aliasName=null)], packageFqName=std.sync]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=MonoTime]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.DateTime, isAllUnder=false, aliasName=null)], packageFqName=std.sync]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.sync]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.MonoTime, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.sync]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.time.MonoTime, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=MonoTime]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.DateTime, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.sync]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.time.DateTime, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -29,7 +35,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_TIMEOUT_NS]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -42,7 +47,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
       CangJieStub$REFERENCE_EXPRESSION[referencedName=TIMER_BLOCK_BUFFER_SIZE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -54,7 +59,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
       CangJieStub$REFERENCE_EXPRESSION[referencedName=TIMER_LIST_DEFAULT_CAPACITY]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$CLASS[classId=std/sync/AtomicInt8, fqName=std.sync.AtomicInt8, name=AtomicInt8, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -4364,7 +4368,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -4384,7 +4388,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sync, facadeFqName=std.sync
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=AtomicOptionReference]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]

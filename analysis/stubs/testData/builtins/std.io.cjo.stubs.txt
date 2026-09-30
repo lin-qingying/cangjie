@@ -4,10 +4,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=io]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.io]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.io]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -19,7 +21,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$REFERENCE_EXPRESSION[referencedName=HIGH_1_UInt8]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt8]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$CLASS[classId=std/io/BufferedInputStream, fqName=std.io.BufferedInputStream, name=BufferedInputStream, superNames=[Object, InputStream]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -63,7 +64,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curPos]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=curPos]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -73,8 +74,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=availLen]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=availLen]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -84,7 +84,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=BufferedInputStream]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

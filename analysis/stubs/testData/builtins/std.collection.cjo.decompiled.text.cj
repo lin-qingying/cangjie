@@ -33,10 +33,10 @@ class ArrayList<T> <: std.core.Object & std.collection.List<T> {
     var mySize: Int64
 
     @Annotation
-    var myVersion: Int64 = COMPILED_CODE /* compiled code */
+    var myVersion: Int64
 
     @Annotation
-    const DEFAULT_CAPACITY: Int64 = COMPILED_CODE /* compiled code */
+    const DEFAULT_CAPACITY: Int64
 
     @Frozen
     @Annotation
@@ -259,25 +259,25 @@ func collectHashMap<K, V>(it: std.core.Iterable<(K, V)>): std.collection.HashMap
 
 class HashMap<K, V> <: std.core.Object & std.collection.Map<K, V> {
     @Annotation
-    const MAX_BUCKET_SIZE: Int64 = COMPILED_CODE /* compiled code */
+    const MAX_BUCKET_SIZE: Int64
 
     @Annotation
-    const LOAD_FACTOR: Float32 = COMPILED_CODE /* compiled code */
+    const LOAD_FACTOR: Float32
 
     @Annotation
-    const DEFAULT_CAPACITY: Int64 = COMPILED_CODE /* compiled code */
+    const DEFAULT_CAPACITY: Int64
 
     @Annotation
-    var appendIndex: Int64 = COMPILED_CODE /* compiled code */
+    var appendIndex: Int64
 
     @Annotation
-    var freeIndex: Int64 = COMPILED_CODE /* compiled code */
+    var freeIndex: Int64
 
     @Annotation
-    var freeSize: Int64 = COMPILED_CODE /* compiled code */
+    var freeSize: Int64
 
     @Annotation
-    var modCount: Int64 = COMPILED_CODE /* compiled code */
+    var modCount: Int64
 
     var buckets: std.core.Array<Int64>
 
@@ -396,7 +396,7 @@ class HashMap<K, V> <: std.core.Object & std.collection.Map<K, V> {
 }
 
 @Annotation
-let DEGREE: Int64 = COMPILED_CODE /* compiled code */
+let DEGREE: Int64
 
 @Annotation
 let MIN_ENTRY_SIZE: Int64
@@ -405,7 +405,7 @@ let MIN_ENTRY_SIZE: Int64
 let MAX_ENTRY_SIZE: Int64
 
 @Annotation
-let MIN_CHILD_SIZE: Int64 = COMPILED_CODE /* compiled code */
+let MIN_CHILD_SIZE: Int64
 
 @Annotation
 let MAX_CHILD_SIZE: Int64
@@ -427,13 +427,13 @@ class ArrayDeque<T> <: std.core.Object & std.collection.Deque<T> {
     var _data: std.core.Array<T>
 
     @Annotation
-    var _version: Int64 = COMPILED_CODE /* compiled code */
+    var _version: Int64
 
     @Annotation
-    var _head: Int64 = COMPILED_CODE /* compiled code */
+    var _head: Int64
 
     @Annotation
-    var _tail: Int64 = COMPILED_CODE /* compiled code */
+    var _tail: Int64
 
     init() { /* compiled code */ }
 
@@ -489,7 +489,7 @@ class ConcurrentModificationException <: std.core.Exception {
 
 class ArrayListIterator<T> <: std.core.Iterator<T> {
     @Annotation
-    var myPosition: Int64 = COMPILED_CODE /* compiled code */
+    var myPosition: Int64
 
     let myData: std.collection.ArrayList<T>
 
@@ -524,10 +524,10 @@ class ArrayStack<T> <: std.core.Object & std.collection.Stack<T> {
     var _data: std.core.Array<T>
 
     @Annotation
-    var _size: Int64 = COMPILED_CODE /* compiled code */
+    var _size: Int64
 
     @Annotation
-    var _version: Int64 = COMPILED_CODE /* compiled code */
+    var _version: Int64
 
     init(capacity: Int64) { /* compiled code */ }
 
@@ -769,16 +769,16 @@ class LinkedListNode<T> {
 
 class LinkedList<T> <: std.core.Object & std.core.Collection<T> {
     @Annotation
-    var _size: Int64 = COMPILED_CODE /* compiled code */
+    var _size: Int64
 
     @Annotation
-    var _head: std.core.Option<std.collection.LinkedListNode<T>> = COMPILED_CODE /* compiled code */
+    var _head: std.core.Option<std.collection.LinkedListNode<T>>
 
     @Annotation
-    var _tail: std.core.Option<std.collection.LinkedListNode<T>> = COMPILED_CODE /* compiled code */
+    var _tail: std.core.Option<std.collection.LinkedListNode<T>>
 
     @Annotation
-    var _version: Int64 = COMPILED_CODE /* compiled code */
+    var _version: Int64
 
     init() { /* compiled code */ }
 
@@ -929,10 +929,10 @@ struct TreeMapEntryView<K, V> <: std.collection.MapEntryView<K, V> {
 
 class TreeMap<K, V> <: std.core.Object & std.collection.OrderedMap<K, V> {
     @Annotation
-    var _size: Int64 = COMPILED_CODE /* compiled code */
+    var _size: Int64
 
     @Annotation
-    var modCount: Int64 = COMPILED_CODE /* compiled code */
+    var modCount: Int64
 
     var root: std.collection.Node<K, V>
 
@@ -1395,7 +1395,7 @@ func inspect<T>(action: (T) -> Unit): std.core.Iterator<T> { /* compiled code */
 
 class FlattenIterator<T, R> <: std.core.Iterator<R> {
     @Annotation
-    var subIt: std.core.Option<std.core.Iterator<R>> = COMPILED_CODE /* compiled code */
+    var subIt: std.core.Option<std.core.Iterator<R>>
 
     let it: std.core.Iterator<T>
 
@@ -1407,7 +1407,7 @@ class FlattenIterator<T, R> <: std.core.Iterator<R> {
 
 class FlatMapIterator<T, R> <: std.core.Iterator<R> {
     @Annotation
-    var subIt: std.core.Option<std.core.Iterator<R>> = COMPILED_CODE /* compiled code */
+    var subIt: std.core.Option<std.core.Iterator<R>>
 
     let transform: (T) -> std.core.Iterable<R>
 

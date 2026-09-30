@@ -9,79 +9,79 @@ import std.core.*
 import std.fs.*
 
 @Annotation
-let constructorName: std.core.String = COMPILED_CODE /* compiled code */
+let constructorName: std.core.String
 
 @Annotation
-let FF_BYTE: UInt8 = COMPILED_CODE /* compiled code */
+let FF_BYTE: UInt8
 
 @Annotation
-let NOTHING_QN: std.core.String = COMPILED_CODE /* compiled code */
+let NOTHING_QN: std.core.String
 
 @Annotation
-let UNIT_QN: std.core.String = COMPILED_CODE /* compiled code */
+let UNIT_QN: std.core.String
 
 @Annotation
-let CHAR_QN: std.core.String = COMPILED_CODE /* compiled code */
+let CHAR_QN: std.core.String
 
 @Annotation
-let BOOL_QN: std.core.String = COMPILED_CODE /* compiled code */
+let BOOL_QN: std.core.String
 
 @Annotation
-let INT8_QN: std.core.String = COMPILED_CODE /* compiled code */
+let INT8_QN: std.core.String
 
 @Annotation
-let INT16_QN: std.core.String = COMPILED_CODE /* compiled code */
+let INT16_QN: std.core.String
 
 @Annotation
-let INT32_QN: std.core.String = COMPILED_CODE /* compiled code */
+let INT32_QN: std.core.String
 
 @Annotation
-let INT64_QN: std.core.String = COMPILED_CODE /* compiled code */
+let INT64_QN: std.core.String
 
 @Annotation
-let INT_NATIVE_QN: std.core.String = COMPILED_CODE /* compiled code */
+let INT_NATIVE_QN: std.core.String
 
 @Annotation
-let U_INT8_QN: std.core.String = COMPILED_CODE /* compiled code */
+let U_INT8_QN: std.core.String
 
 @Annotation
-let U_INT16_QN: std.core.String = COMPILED_CODE /* compiled code */
+let U_INT16_QN: std.core.String
 
 @Annotation
-let U_INT32_QN: std.core.String = COMPILED_CODE /* compiled code */
+let U_INT32_QN: std.core.String
 
 @Annotation
-let U_INT64_QN: std.core.String = COMPILED_CODE /* compiled code */
+let U_INT64_QN: std.core.String
 
 @Annotation
-let U_INT_NATIVE_QN: std.core.String = COMPILED_CODE /* compiled code */
+let U_INT_NATIVE_QN: std.core.String
 
 @Annotation
-let FLOAT16_QN: std.core.String = COMPILED_CODE /* compiled code */
+let FLOAT16_QN: std.core.String
 
 @Annotation
-let FLOAT32_QN: std.core.String = COMPILED_CODE /* compiled code */
+let FLOAT32_QN: std.core.String
 
 @Annotation
-let FLOAT64_QN: std.core.String = COMPILED_CODE /* compiled code */
+let FLOAT64_QN: std.core.String
 
 @Annotation
-let PACKAGE_LOAD_FAIL: UIntNative = COMPILED_CODE /* compiled code */
+let PACKAGE_LOAD_FAIL: UIntNative
 
 @Annotation
-let MULTI_PACKAGE_INFO: UIntNative = COMPILED_CODE /* compiled code */
+let MULTI_PACKAGE_INFO: UIntNative
 
 @Annotation
-let REPEATED_PACKAGE_LOAD: UIntNative = COMPILED_CODE /* compiled code */
+let REPEATED_PACKAGE_LOAD: UIntNative
 
 @Annotation
-let REPEATED_FILENAME_LOAD: UIntNative = COMPILED_CODE /* compiled code */
+let REPEATED_FILENAME_LOAD: UIntNative
 
 @Annotation
-let MODULE_SUFFIX: std.core.String = COMPILED_CODE /* compiled code */
+let MODULE_SUFFIX: std.core.String
 
 @Annotation
-let UUID_OFFSET: Int64 = COMPILED_CODE /* compiled code */
+let UUID_OFFSET: Int64
 
 class ClassTypeInfo <: std.reflect.TypeInfo {
     var _constructors: std.core.Option<std.core.Collection<std.reflect.ConstructorInfo>>

@@ -199,7 +199,7 @@ func releaseArrayRawData<T>(handle: std.core.CPointerHandle<T>): Unit { /* compi
 func releaseRawData<T>(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit { /* compiled code */ }
 
 @Annotation
-let ASCII_UPPER_TO_LOWER_DIFF: UInt8 = COMPILED_CODE /* compiled code */
+let ASCII_UPPER_TO_LOWER_DIFF: UInt8
 
 @Frozen
 func max<T>(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
@@ -237,10 +237,10 @@ let MS_PER_SEC: Int64
 let US_PER_SEC: Int64
 
 @Annotation
-let SECS_PER_MINUTE: Int64 = COMPILED_CODE /* compiled code */
+let SECS_PER_MINUTE: Int64
 
 @Annotation
-let MAX_NANOSECOND: UInt32 = COMPILED_CODE /* compiled code */
+let MAX_NANOSECOND: UInt32
 
 @Annotation
 let SECS_PER_HOUR: Int64
@@ -248,34 +248,34 @@ let SECS_PER_HOUR: Int64
 let SECS_PER_DAY: Int64
 
 @Annotation
-let MAX_INT64: Int64 = COMPILED_CODE /* compiled code */
+let MAX_INT64: Int64
 
 @Annotation
-let MIN_INT64: Int64 = COMPILED_CODE /* compiled code */
+let MIN_INT64: Int64
 
 @Annotation
-let FLOAT64_0: Float64 = COMPILED_CODE /* compiled code */
+let FLOAT64_0: Float64
 
 @Annotation
-let FLOAT64_1: Float64 = COMPILED_CODE /* compiled code */
+let FLOAT64_1: Float64
 
 @Annotation
-let SECS_MAX: UInt64 = COMPILED_CODE /* compiled code */
+let SECS_MAX: UInt64
 
 @Annotation
-let DUR_BASE: UInt32 = COMPILED_CODE /* compiled code */
+let DUR_BASE: UInt32
 
 @Annotation
-let SECRET0: UInt64 = COMPILED_CODE /* compiled code */
+let SECRET0: UInt64
 
 @Annotation
-let SECRET1: UInt64 = COMPILED_CODE /* compiled code */
+let SECRET1: UInt64
 
 @Annotation
-let SECRET2: UInt64 = COMPILED_CODE /* compiled code */
+let SECRET2: UInt64
 
 @Annotation
-let SECRET3: UInt64 = COMPILED_CODE /* compiled code */
+let SECRET3: UInt64
 
 @Frozen
 func print(str: std.core.String, flush: Bool): Unit { /* compiled code */ }
@@ -687,10 +687,10 @@ func println(i: UInt32): Unit { /* compiled code */ }
 func println(i: UInt64): Unit { /* compiled code */ }
 
 @Annotation
-let MAX_TIMEOUT_NS: Int64 = COMPILED_CODE /* compiled code */
+let MAX_TIMEOUT_NS: Int64
 
 @Annotation
-let UNICODE_TO_UTF8_MAX_LEN: Int64 = COMPILED_CODE /* compiled code */
+let UNICODE_TO_UTF8_MAX_LEN: Int64
 
 @Annotation
 let IS_SIMD_SUPPORTED: Bool
@@ -698,106 +698,106 @@ let IS_SIMD_SUPPORTED: Bool
 foreign func CJ_CORE_CanUseSIMD(): Bool
 
 @Annotation
-let VECTOR_OFFSET_32: Int64 = COMPILED_CODE /* compiled code */
+let VECTOR_OFFSET_32: Int64
 
 @Annotation
-let ASCII_A: UInt8 = COMPILED_CODE /* compiled code */
+let ASCII_A: UInt8
 
 @Annotation
-let ASCII_Z: UInt8 = COMPILED_CODE /* compiled code */
+let ASCII_Z: UInt8
 
 @Annotation
-let ASCII_a: UInt8 = COMPILED_CODE /* compiled code */
+let ASCII_a: UInt8
 
 @Annotation
-let ASCII_z: UInt8 = COMPILED_CODE /* compiled code */
+let ASCII_z: UInt8
 
 @Annotation
 let ASCII_UPPER_LOWER_DIFFERENCE: UInt8
 
 @Annotation
-let HIGH_1_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_1_MASK: UInt32
 
 @Annotation
-let HIGH_2_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_2_MASK: UInt32
 
 @Annotation
-let HIGH_3_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_3_MASK: UInt32
 
 @Annotation
-let HIGH_4_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_4_MASK: UInt32
 
 @Annotation
-let HIGH_5_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_5_MASK: UInt32
 
 @Annotation
-let HIGH_6_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let HIGH_6_MASK: UInt32
 
 @Annotation
-let SHIFT_30: UInt32 = COMPILED_CODE /* compiled code */
+let SHIFT_30: UInt32
 
 @Annotation
-let SHIFT_24: UInt32 = COMPILED_CODE /* compiled code */
+let SHIFT_24: UInt32
 
 @Annotation
-let SHIFT_18: UInt32 = COMPILED_CODE /* compiled code */
+let SHIFT_18: UInt32
 
 @Annotation
-let SHIFT_12: UInt32 = COMPILED_CODE /* compiled code */
+let SHIFT_12: UInt32
 
 @Annotation
-let SHIFT_6: UInt32 = COMPILED_CODE /* compiled code */
+let SHIFT_6: UInt32
 
 @Annotation
-let LOW_6_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_6_MASK: UInt32
 
 @Annotation
-let LOW_5_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_5_MASK: UInt32
 
 @Annotation
-let LOW_4_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_4_MASK: UInt32
 
 @Annotation
-let LOW_3_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_3_MASK: UInt32
 
 @Annotation
-let LOW_2_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_2_MASK: UInt32
 
 @Annotation
-let LOW_1_MASK: UInt32 = COMPILED_CODE /* compiled code */
+let LOW_1_MASK: UInt32
 
 @Annotation
-let UTF8_5_MAX: UInt32 = COMPILED_CODE /* compiled code */
+let UTF8_5_MAX: UInt32
 
 @Annotation
-let UTF8_4_MAX: UInt32 = COMPILED_CODE /* compiled code */
+let UTF8_4_MAX: UInt32
 
 @Annotation
-let UTF8_3_MAX: UInt32 = COMPILED_CODE /* compiled code */
+let UTF8_3_MAX: UInt32
 
 @Annotation
-let UTF8_2_MAX: UInt32 = COMPILED_CODE /* compiled code */
+let UTF8_2_MAX: UInt32
 
 @Annotation
-let UTF8_1_MAX: UInt32 = COMPILED_CODE /* compiled code */
+let UTF8_1_MAX: UInt32
 
 @Annotation
-let HIGH_1_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_1_UInt8: UInt8
 
 @Annotation
-let HIGH_2_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_2_UInt8: UInt8
 
 @Annotation
-let HIGH_3_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_3_UInt8: UInt8
 
 @Annotation
-let HIGH_4_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_4_UInt8: UInt8
 
 @Annotation
-let HIGH_5_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_5_UInt8: UInt8
 
 @Annotation
-let HIGH_6_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_6_UInt8: UInt8
 
 @Annotation
 let EMPTY_UINT8_ARRAY: std.core.Array<UInt8>
@@ -806,10 +806,10 @@ let EMPTY_UINT8_ARRAY: std.core.Array<UInt8>
 let EMPTY_UINT8_RAW_ARRAY: std.core.Array<UInt8>
 
 @Annotation
-let STRING_C_THRESHOLD: Int64 = COMPILED_CODE /* compiled code */
+let STRING_C_THRESHOLD: Int64
 
 @Annotation
-let INVALID_ID: Int64 = COMPILED_CODE /* compiled code */
+let INVALID_ID: Int64
 
 func zeroValue<T>(): T { /* compiled code */ }
 
@@ -829,7 +829,7 @@ class StringBuilder <: std.core.Object & std.core.ToString {
     var endIndex: Int64
 
     @Annotation
-    const defaultCapacity: Int64 = COMPILED_CODE /* compiled code */
+    const defaultCapacity: Int64
 
     @Frozen
     init() { /* compiled code */ }
@@ -1192,7 +1192,7 @@ class ZipIterator<T, R> <: std.core.Iterator<(T, R)> {
 
 class EnumerateIterator<T> <: std.core.Iterator<(Int64, T)> {
     @Annotation
-    var index: Int64 = COMPILED_CODE /* compiled code */
+    var index: Int64
 
     let it: std.core.Iterator<T>
 
@@ -1227,7 +1227,7 @@ class StepIterator<T> <: std.core.Iterator<T> {
     let it: std.core.Iterator<T>
 
     @Annotation
-    var index: Int64 = COMPILED_CODE /* compiled code */
+    var index: Int64
 
     init(it: std.core.Iterator<T>, count: Int64) { /* compiled code */ }
 
@@ -1260,7 +1260,7 @@ class ConcatIterator<T> <: std.core.Iterator<T> {
     let other: std.core.Iterator<T>
 
     @Annotation
-    var itOver: Bool = COMPILED_CODE /* compiled code */
+    var itOver: Bool
 
     init(it: std.core.Iterator<T>, other: std.core.Iterator<T>) { /* compiled code */ }
 
@@ -1279,7 +1279,7 @@ class InspectIterator<T> <: std.core.Iterator<T> {
 
 class FlatMapIterator<T, R> <: std.core.Iterator<R> {
     @Annotation
-    var subIt: std.core.Option<std.core.Iterator<R>> = COMPILED_CODE /* compiled code */
+    var subIt: std.core.Option<std.core.Iterator<R>>
 
     let transform: (T) -> std.core.Iterable<R>
 
@@ -1298,7 +1298,7 @@ class IntersperseIterator<T> <: std.core.Iterator<T> {
     var item: std.core.Option<T>
 
     @Annotation
-    var isInsert: Bool = COMPILED_CODE /* compiled code */
+    var isInsert: Bool
 
     init(it: std.core.Iterator<T>, separator: T) { /* compiled code */ }
 
@@ -1491,7 +1491,7 @@ foreign func strlen(str: CPointer<UInt8>): UIntNative
 
 class ThreadLocalKey <: std.core.Object & std.core.Hashable {
     @Annotation
-    const ALPHA: Int64 = COMPILED_CODE /* compiled code */
+    const ALPHA: Int64
 
     let CURR: std.core.AtomicInt64
 
