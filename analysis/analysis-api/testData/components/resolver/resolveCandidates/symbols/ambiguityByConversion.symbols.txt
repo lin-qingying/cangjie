@@ -1,2 +1,12 @@
-symbolsSize: 0
-NO_SYMBOLS
+symbolsSize: 2
+symbolClass: CaCfirNamedFunctionSymbol
+name: render
+callableId: sample.resolver.candidates.Printer.render
+receiverType: null
+returnType: std.core.String
+
+symbolClass: CaCfirNamedFunctionSymbol
+name: render
+callableId: sample.resolver.candidates.Printer.render
+receiverType: null
+returnType: std.core.String
