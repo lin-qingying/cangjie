@@ -549,10 +549,7 @@ class CfirRenderer(
             print("FILE: ")
             println(file.name)
             printer.pushIndent()
-            annotationRenderer?.render(file)
-            if (file.annotations.isNotEmpty()) {
-                printer.newLine()
-            }
+            annotationRenderer?.render(file, terminatesLine = true)
             file.featuresDirective?.accept(this)
             file.packageDirective.accept(this)
             file.imports.forEach { it.accept(this) }
@@ -570,12 +567,13 @@ class CfirRenderer(
             }
         }
 
-        /** 渲染文件前导 `features` metadata。 */
+        /**
+         * 渲染文件前导 `features` metadata。
+         *
+         * 注解独占一行，换行由注解渲染器发出；这里不能再补 `newLine()`。
+         */
         override fun visitFeaturesDirective(featuresDirective: CfirFeaturesDirective) {
-            annotationRenderer?.render(featuresDirective)
-            if (featuresDirective.annotations.isNotEmpty()) {
-                printer.newLine()
-            }
+            annotationRenderer?.render(featuresDirective, terminatesLine = true)
             println("features {")
             printer.pushIndent()
             featuresDirective.featureIds.forEachIndexed { index, featureId ->

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.renderer
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.builder.buildFeaturesDirective
 import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
@@ -144,6 +145,58 @@ class CfirRendererAnnotationRenderingTest {
         assertTrue(rendered.contains("@R|FuncAnn|()"))
         assertTrue(rendered.contains("@R|ParamAnn|()"))
         assertTrue(rendered.contains("input: R|Int|"))
+    }
+
+    /**
+     * 验证文件级注解与 features directive 注解各自独占一行，行尾不留下空白。
+     *
+     * 对齐 Kotlin `FirAnnotationRenderer`：`useSiteTarget == FILE` 时发 `println()`
+     * 而不是 `print(" ")`，换行由注解渲染器负责。仓颉的对应宿主是 features directive
+     * 这个独立节点，注解自身不携带 use-site target，判据由调用方按宿主传入。
+     * 这条断言是 featuresDirective golden 里那行尾随空白的护栏。
+     */
+    @Test
+    fun `line owning annotations terminate their line without trailing whitespace`() {
+        val file = buildFile {
+            source = TestBinarySourceElement("file features.cj")
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.RAW_CFIR
+            origin = CfirDeclarationOrigin.Source
+            attributes = CfirDeclarationAttributes.EMPTY
+            symbol = CfirFileSymbol()
+            name = "features.cj"
+            packageDirective = buildPackageDirective {
+                packageFqName = FqName("feature_contract")
+                isMacroPackage = false
+            }
+            annotations += annotation("FileAnn")
+            featuresDirective = buildFeaturesDirective {
+                source = TestBinarySourceElement("features")
+                annotations += annotation("NonProduct")
+                featureIds += "sample.api"
+                featureIds += "sample.detail"
+            }
+        }
+        file.symbol.bind(file)
+
+        val rendered = CfirRenderer.withGoldenCompat().renderElementAsString(file)
+        val lines = rendered.lines()
+        assertTrue(
+            lines.none { it.isNotEmpty() && it.last() == ' ' },
+            "独占一行的注解后不得留下行尾空白，实际输出：\n$rendered",
+        )
+        assertTrue(
+            lines.any { it.trim() == "@R|FileAnn|()" },
+            "文件级注解应独占一行，实际输出：\n$rendered",
+        )
+        assertTrue(
+            lines.any { it.trim() == "@R|NonProduct|()" },
+            "features directive 注解应独占一行，实际输出：\n$rendered",
+        )
+        assertTrue(
+            lines.any { it.trim() == "features {" },
+            "features 块应另起一行，实际输出：\n$rendered",
+        )
     }
 
     /**
