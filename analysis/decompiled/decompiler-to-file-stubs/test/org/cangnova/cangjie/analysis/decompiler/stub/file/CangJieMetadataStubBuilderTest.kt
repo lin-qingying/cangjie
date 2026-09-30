@@ -62,6 +62,34 @@ class CangJieMetadataStubBuilderTest {
     }
 
     /**
+     * VFS 瞬时失效的文件（`!isValid`）既不进入 stub 构建，也不会触发头部读。
+     *
+     * `readSafely` 在调用动作前检查 `isValid`，所以读取层看不到这个文件；这正是启动期打开
+     * 标签页时 `.cjo` 可能处于的状态，不能被当成“头部读失败”记日志。
+     */
+    @Test
+    fun invalidFileIsRejectedWithoutHeaderRead() {
+        val builder = HeaderOnlyStubBuilder()
+        val content = locateStdlibFixtureRoot().resolve("std").resolve("std.core.cjo").readBytes()
+        var headerReads = 0
+        val invalid = object : LightVirtualFile("std.core.cjo", CangJieBuiltInFileType, "") {
+            private val bytes: ByteArray = content
+
+            override fun isValid(): Boolean = false
+
+            override fun contentsToByteArray(): ByteArray {
+                headerReads++
+                return bytes
+            }
+        }
+
+        assertFalse(builder.isSupported(invalid) && builder.hasStub(invalid))
+        assertFalse(builder.hasStub(invalid))
+        assertNull(builder.readFileSafely(invalid))
+        assertEquals(0, headerReads, "invalid file must not reach the header read")
+    }
+
+    /**
      * 头部读在内容不是合法 `.cjo` 时返回 null 而不是抛异常。
      */
     @Test
