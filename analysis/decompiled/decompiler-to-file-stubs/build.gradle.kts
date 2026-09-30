@@ -9,6 +9,7 @@ dependencies {
     implementation(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":analysis:decompiled:decompiler-to-stubs"))
     implementation(project(":common"))
+    implementation(project(":util"))
     implementation(project(":psi"))
     implementation(project(":cfir:cfir-serialization"))
     implementation(project(":flatbuffers-gen"))

@@ -1,11 +1,15 @@
 package org.cangnova.cangjie.analysis.decompiler.stub.file
 
 import PackageFormat.Package as CjoPackage
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
 import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown
 import java.nio.ByteBuffer
+
+private val LOG = logger<CjoBinaryFileReader>()
 
 /**
  * `.cjo` 二进制轻量读取工具。
@@ -19,13 +23,41 @@ object CjoBinaryFileReader {
      *
      * 该方法只做轻量级 header 解析，不构造完整的反编译 stub 树；当文件类型不是仓颉二进制、
      * 内容无法按 package flatbuffer 读取，或包名为空时返回 `null`，由调用方继续走其它索引路径。
+     *
+     * 四条返回 `null` 的输入路径各留一条 warn 日志：头部读失败此前被 `getOrNull` 静默吞掉，
+     * 调用方只能看到一个与“文件不是 `.cjo`”无法区分的 `null`。控制流异常（取消、索引未就绪）
+     * 不属于失败输入，必须原样重抛。
      */
     fun readPackageFqName(binaryFile: VirtualFile): FqName? {
-        if (!isCjoBinaryFile(binaryFile)) return null
-        val pkg = runCatching {
+        if (!isCjoBinaryFile(binaryFile)) {
+            LOG.warn("CangJie `.cjo` header read skipped: not a CangJie binary file, path=${binaryFile.path}")
+            return null
+        }
+
+        val pkg: CjoPackage? = try {
             CjoPackage.getRootAsPackage(ByteBuffer.wrap(binaryFile.contentsToByteArray()))
-        }.getOrNull() ?: return null
-        return pkg.fullPkgName?.takeIf(String::isNotBlank)?.let(::FqName)
+        } catch (t: Throwable) {
+            if (shouldIjPlatformExceptionBeRethrown(t)) throw t
+
+            LOG.warn(
+                "CangJie `.cjo` header read failed: path=${binaryFile.path}, ${t.javaClass.name}: ${t.message}",
+                t,
+            )
+            return null
+        }
+
+        if (pkg == null) {
+            LOG.warn("CangJie `.cjo` header read produced no package root: path=${binaryFile.path}")
+            return null
+        }
+
+        val fullPkgName = pkg.fullPkgName
+        if (fullPkgName.isNullOrBlank()) {
+            LOG.warn("CangJie `.cjo` header carries an empty package name: path=${binaryFile.path}")
+            return null
+        }
+
+        return FqName(fullPkgName)
     }
 
     /**

@@ -1,6 +1,9 @@
 ### Kotlin ###
 .kotlin
 
+### IntelliJ IDEA ###
+out/
+
 ### Eclipse ###
 .apt_generated
 .classpath

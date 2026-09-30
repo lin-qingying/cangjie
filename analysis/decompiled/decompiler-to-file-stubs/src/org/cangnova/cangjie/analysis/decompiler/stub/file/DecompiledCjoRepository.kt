@@ -8,6 +8,40 @@ import org.cangnova.cangjie.name.FqName
 import java.io.File
 
 /**
+ * 把物理路径规范化为可作为 `.cjo` 搜索根的目录。
+ *
+ * 如果传入值本身是目录则直接使用；如果是具体 `.cjo` 文件，则使用其父目录，
+ * 使 [CjoManager] 能按包名在该目录下定位对应 binary。
+ */
+fun normalizeCjoSearchRoot(file: File): File = if (file.isDirectory) file else file.parentFile ?: file
+
+/**
+ * 从 builtins `.cjo` 虚拟文件推断 `.cjo` 搜索根目录，目录层级按官方仓颉 SDK 布局折叠。
+ *
+ * `<root>/std.cjo` 与 `<root>/std/<pkg>.cjo` 归到同一个 `<root>`：根包文件与子包目录必须由同一根覆盖，
+ * 否则 `CjoManager` 按包名定位 `<root>/std.cjo` 时会漏掉 `<root>/std/` 下的包。
+ * 对齐 Kotlin `LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsDeserializedSymbolProvider`
+ * 的同名折叠逻辑，使反序列化期间与 builtins 符号提供器看到同一套 stdlib 根。
+ */
+fun toCjoSearchRoot(virtualFile: VirtualFile): File {
+    val file = File(virtualFile.path)
+    val parent = file.parentFile ?: return file
+    val firstPackageSegment = CjoBinaryFileReader.readPackageFqName(virtualFile)?.pathSegments()?.firstOrNull()
+    return if (firstPackageSegment != null && parent.name == firstPackageSegment.asString()) {
+        parent.parentFile ?: parent
+    } else {
+        parent
+    }
+}
+
+/** 按绝对路径去重 `.cjo` 搜索根，保持首次出现顺序。 */
+fun Iterable<File>.distinctCjoSearchRoots(): List<File> = distinctBy(File::getAbsolutePath)
+
+/** 把 `.cjo` 搜索根折叠为 [CjoSearchPath] 使用的单条路径串。 */
+fun cjoSearchPathStringOf(roots: Iterable<File>): String =
+    roots.distinctCjoSearchRoots().joinToString(File.pathSeparator) { it.absolutePath }
+
+/**
  * 反编译 `.cjo` 仓库缓存的键。
  *
  * [moduleKey] 区分不同 library/builtins module，[roots] 描述该模块可参与搜索的物理根目录，
@@ -43,14 +77,10 @@ internal class DecompiledCjoRepository(
      * 这里把 builtins 根并入搜索路径：`std` 包先查 builtins 根，其余包查模块根 + builtins 根，与 [CjoSearchPath.searchPathsFor] 语义一致，全程不读 PSI。
      * 两个搜索根的名字（`CANGJIE_STDLIB_MODULE` / `CANGJIE_LIBRARY`）是本仓 `CjoSearchPath` 与 SDK 工具链的环境变量命名，官方 C++ 源码里对应的是上述 `importPaths` 与 `cangjiePaths` 两段路径。
      */
-    private val libraryRootPathString = (roots + builtinsRoots)
-        .distinctBy(File::getAbsolutePath)
-        .joinToString(File.pathSeparator) { it.absolutePath }
+    private val libraryRootPathString = cjoSearchPathStringOf(roots + builtinsRoots)
 
     /** builtins 搜索根；`std` 系列包先查这里。 */
-    private val builtinsRootPathString = builtinsRoots
-        .distinctBy(File::getAbsolutePath)
-        .joinToString(File.pathSeparator) { it.absolutePath }
+    private val builtinsRootPathString = cjoSearchPathStringOf(builtinsRoots)
 
     /** 负责按包名读取 `.cjo` package 与 package header 的序列化管理器。 */
     private val cjoManager = CjoManager(
