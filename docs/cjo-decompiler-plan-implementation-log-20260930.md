@@ -101,7 +101,15 @@
   （`!isValid` 的 `.cjo` 不触发头部读）。
   （`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，重入边不再存在；
   此时再加“半成品 session”只会引入一个任何误用都会 `error(...)` 的中间态。依据是代码推导，未在运行期复核。
-- 验证：主仓全部生产代码编译通过（含 IDE 复合构建）；`:analysis:decompiled:*`、``:analysis:stubs`、`cfir:cfir-serialization` 如上。
+- 回归事故与修复：第一版 `CfirLazySymbolNamesProvider` 在解析前对包名返回 null、对能力标志返回 true，
+  而 `CfirCompositeSymbolNamesProvider.flatMapToNullableSet` 里任一子 provider 返回 null 会让整个聚合为 null，
+  `CfirCachedSymbolNamesProvider` 随即按“无顶层 classifier 的包”过滤 → 包作用域、覆写链、`isSubclassOf`
+  的符号消失。表现为 `:analysis:analysis-api-cfir:test` 20 失败（基线 4）、`:analysis:low-level-api-cfir:test`
+  6 失败（基线 4）。修法：代理任何访问都先建真实索引；组合器的三个能力标志由构造期 `val` 改为 `get()`，
+  组合器构造不再触发求值。修复后两个套件与基线逐条一致。
+- 验证：以 `df71d7212` 建基线工作树对照：`:analysis:analysis-api-cfir:test` 1514 条 4 失败（注解 4 条，既有）、
+  `:analysis:low-level-api-cfir:test` 131 条 4 失败（Cjmp CallerFirst 4 条，既有），与基线逐条相同；
+  主仓全部生产代码编译通过（含 IDE 复合构建）；`:analysis:decompiled:*`、`:analysis:stubs`、`cfir:cfir-serialization` 如上。
 
 ## 改动组 5（IDE 改动 10：`CaIdeCandidateCollector` 按根判断）
 
