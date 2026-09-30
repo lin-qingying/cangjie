@@ -162,18 +162,17 @@ internal class CaCfirExpressionTypeProvider(
     }
 
     /**
-     * 对齐 Kotlin FIR provider 的做法，在进入完整符号解析前先用 PSI 做一层便宜推断。
+     * 在进入完整符号解析前先用 PSI 做一层便宜推断。
      *
-     * 这层推断只处理“语法上即可确定”的场景，避免把声明返回类型查询退化成总是触发完整解析。
+     * 仓颉的具名函数体一律是块体（没有 Kotlin `func f() = expr` 的表达式体形式），
+     * 省略返回类型表示“由函数体推导”，而不是 Kotlin 的“块体即 Unit”。
+     * 因此这里只对语法上即可确定的单表达式函数体（字面量、字符串模板）给出答案；
+     * 其余情况返回 null，交给下面的 CFIR 路径做真正的返回类型推导。
      */
     private fun CjCallableDeclaration.inferReturnTypeByPsi(): CaType? {
         val declaration = this as? CjDeclarationWithBody ?: return null
         if (declaration !is CjNamedFunction) return null
         if (declaration.hasDeclaredReturnType()) return null
-
-        if (declaration.hasBlockBody()) {
-            return analysisSession.cfirSession.builtinTypes.unitType.asCaType()
-        }
 
         val singleExpression = declaration.initializer ?: declaration.bodyExpression ?: return null
         return inferExpressionTypeByPsi(singleExpression)

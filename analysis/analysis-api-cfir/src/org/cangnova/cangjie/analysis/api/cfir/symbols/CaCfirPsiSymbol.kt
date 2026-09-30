@@ -20,7 +20,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirOfType
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.realPsi
-import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.lexer.CjTokens
@@ -222,16 +221,14 @@ internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
 
 
 /**
- * 为函数体声明创建公开返回类型，block body 且未声明返回类型时直接返回 Unit。
+ * 为函数体声明创建公开返回类型。
+ *
+ * 省略返回类型在仓颉表示“由函数体推导”，必须读 CFIR 已解析的返回类型。这里不能沿用 Kotlin
+ * “block body 即 Unit”的假设，否则省略返回类型的函数在公开符号层一律塌成 Unit，与同一次
+ * 分析里 `expressionType` 读到的调用点类型自相矛盾。
  */
-internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType {
-    val backingPsi = backingPsi
-    if (backingPsi?.hasBlockBody() == true && !backingPsi.hasDeclaredReturnType()) {
-        return builder.typeBuilder.buildType(analysisSession.cfirSession.builtinTypes.unitType)
-    }
-
-    return cfirSymbol.returnType(builder)
-}
+internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType =
+    cfirSymbol.returnType(builder)
 
 /**
  * callable 的 override 标记在源码 PSI 可直接判定。
