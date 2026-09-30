@@ -29,6 +29,10 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
 
     /**
      * 验证 common、extended、experimental 等 checker filter 对同一文件的诊断集合划分。
+     *
+     * 契约：三个集合互不重叠，`EXTENDED_AND_COMMON_CHECKERS` 恰好是 common 与 extended 的并集。
+     * fixture 里的未使用局部变量按官方语义（`chir_dce_unused_variable` warning，可用 `-Woff unused` 关闭，
+     * 属 CHIR DCE 阶段）落在扩展检查器集合，因此只能出现在 extended 一侧。
      */
     @Test
     fun collectDiagnostics(mainFile: CjFile) {
@@ -45,9 +49,19 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.ONLY_EXPERIMENTAL_CHECKERS)
         }
 
-        assertTrue(commonDiagnostics.any { it.factoryName == "UNRESOLVED_IMPORT" })
-        assertEquals(commonDiagnostics.map { it.factoryName }, allDiagnostics.map { it.factoryName })
-        assertTrue(extraDiagnostics.isEmpty())
+        val commonNames = commonDiagnostics.map { it.factoryName }
+        val extraNames = extraDiagnostics.map { it.factoryName }
+        val allNames = allDiagnostics.map { it.factoryName }
+        val unusedVariable = "UNUSED_VARIABLE"
+
+        assertTrue(commonNames.contains("UNRESOLVED_IMPORT"))
+        assertTrue(unusedVariable !in commonNames, "未使用局部变量属于扩展检查器，不应出现在 common 集合：$commonNames")
+        assertTrue(unusedVariable in extraNames, "fixture 的未使用局部变量应落在扩展检查器集合：$extraNames")
+        assertEquals(
+            (commonNames + extraNames).sorted(),
+            allNames.sorted(),
+            "EXTENDED_AND_COMMON_CHECKERS 应恰好是 common 与 extended 的并集。",
+        )
         assertTrue(experimentalDiagnostics.isEmpty())
     }
 
