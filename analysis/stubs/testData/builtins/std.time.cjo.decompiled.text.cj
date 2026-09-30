@@ -8,31 +8,31 @@ import std.convert.*
 import std.collection.ArrayList
 
 @Annotation
-let MIN_INT64: Int64 = COMPILED_CODE /* compiled code */
+let MIN_INT64: Int64
 
 @Annotation
-let MAX_INT64: Int64 = COMPILED_CODE /* compiled code */
+let MAX_INT64: Int64
 
 @Annotation
-let MAX_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let MAX_YEAR: Int64
 
 @Annotation
-let MIN_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let MIN_YEAR: Int64
 
 @Annotation
-let MAX_NANOSECOND: Int64 = COMPILED_CODE /* compiled code */
+let MAX_NANOSECOND: Int64
 
 @Annotation
-let MONTHS_PER_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let MONTHS_PER_YEAR: Int64
 
 @Annotation
-let DAYS_PER_WEEK: Int64 = COMPILED_CODE /* compiled code */
+let DAYS_PER_WEEK: Int64
 
 @Annotation
-let DAYS_OF_NORMAL_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let DAYS_OF_NORMAL_YEAR: Int64
 
 @Annotation
-let DAYS_OF_LEAP_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let DAYS_OF_LEAP_YEAR: Int64
 
 @Annotation
 let DAYS_PER_400YEARS: Int64
@@ -44,13 +44,13 @@ let DAYS_PER_100YEARS: Int64
 let DAYS_PER_4YEARS: Int64
 
 @Annotation
-let HOURS_PER_DAY: Int64 = COMPILED_CODE /* compiled code */
+let HOURS_PER_DAY: Int64
 
 @Annotation
-let MINUTES_PER_HOUR: Int64 = COMPILED_CODE /* compiled code */
+let MINUTES_PER_HOUR: Int64
 
 @Annotation
-let SECS_PER_MINUTE: Int64 = COMPILED_CODE /* compiled code */
+let SECS_PER_MINUTE: Int64
 
 @Annotation
 let SECS_PER_HOUR: Int64
@@ -62,13 +62,13 @@ let SECS_PER_DAY: Int64
 let SECS_PER_WEEK: Int64
 
 @Annotation
-let MS_PER_SEC: Int64 = COMPILED_CODE /* compiled code */
+let MS_PER_SEC: Int64
 
 @Annotation
-let US_PER_MS: Int64 = COMPILED_CODE /* compiled code */
+let US_PER_MS: Int64
 
 @Annotation
-let NS_PER_US: Int64 = COMPILED_CODE /* compiled code */
+let NS_PER_US: Int64
 
 @Annotation
 let US_PER_SEC: Int64
@@ -95,22 +95,22 @@ let SECS_OF_NORMAL_YEAR: Int64
 let SECS_OF_LEAP_YEAR: Int64
 
 @Annotation
-let HOUR_12_INTERVAL: Int64 = COMPILED_CODE /* compiled code */
+let HOUR_12_INTERVAL: Int64
 
 @Annotation
-let HOUR_12_START: Int64 = COMPILED_CODE /* compiled code */
+let HOUR_12_START: Int64
 
 @Annotation
-let HOUR_12_END: Int64 = COMPILED_CODE /* compiled code */
+let HOUR_12_END: Int64
 
 @Annotation
-let HOUR_24_START: Int64 = COMPILED_CODE /* compiled code */
+let HOUR_24_START: Int64
 
 @Annotation
-let HOUR_24_NOON: Int64 = COMPILED_CODE /* compiled code */
+let HOUR_24_NOON: Int64
 
 @Annotation
-let START_AD_YEAR: Int64 = COMPILED_CODE /* compiled code */
+let START_AD_YEAR: Int64
 
 @Annotation
 let DAYS_OF_UNIX_TO_AD1: Int64
@@ -131,7 +131,7 @@ let DAYS_OF_MIN_TO_AD1: Int64
 let SECS_OF_MIN_TO_AD1: Int64
 
 @Annotation
-let DAYS_OF_JAN_TO_MARCH_LEAP: Int64 = COMPILED_CODE /* compiled code */
+let DAYS_OF_JAN_TO_MARCH_LEAP: Int64
 
 @Annotation
 let MAX_OFFSET: Int64
@@ -140,7 +140,7 @@ let MAX_OFFSET: Int64
 let MIN_OFFSET: Int64
 
 @Annotation
-let YEAR_OUT_OF_RANGE: std.core.String = COMPILED_CODE /* compiled code */
+let YEAR_OUT_OF_RANGE: std.core.String
 
 @Annotation
 let MAX_UTC_SECS: Int64
@@ -149,22 +149,22 @@ let MAX_UTC_SECS: Int64
 let MIN_UTC_SECS: Int64
 
 @Annotation
-let SEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
+let SEPARATOR: std.core.String
 
 @Annotation
-let SLASH_CHAR: std.core.String = COMPILED_CODE /* compiled code */
+let SLASH_CHAR: std.core.String
 
 @Annotation
-let TZIF_SOUTCE_LINUX: std.core.String = COMPILED_CODE /* compiled code */
+let TZIF_SOUTCE_LINUX: std.core.String
 
 @Annotation
-let LOCALTIME_SRC: std.core.String = COMPILED_CODE /* compiled code */
+let LOCALTIME_SRC: std.core.String
 
 @Annotation
-let TZPATH: std.core.String = COMPILED_CODE /* compiled code */
+let TZPATH: std.core.String
 
 @Annotation
-let MAXPATHLEN: Int64 = COMPILED_CODE /* compiled code */
+let MAXPATHLEN: Int64
 
 class TimeZone <: std.core.Object & std.core.ToString & std.core.Equatable<std.time.TimeZone> {
     let UTC: std.time.TimeZone
@@ -498,16 +498,16 @@ enum DayOfWeek <: std.core.ToString & std.core.Equatable<std.time.DayOfWeek> {
 
 class DateTimeFormat {
     @Annotation
-    const RFC1123: std.core.String = COMPILED_CODE /* compiled code */
+    const RFC1123: std.core.String
 
     @Annotation
-    const RFC3339: std.core.String = COMPILED_CODE /* compiled code */
+    const RFC3339: std.core.String
 
     @Annotation
-    const RFC822: std.core.String = COMPILED_CODE /* compiled code */
+    const RFC822: std.core.String
 
     @Annotation
-    const RFC850: std.core.String = COMPILED_CODE /* compiled code */
+    const RFC850: std.core.String
 
     let data: std.collection.ArrayList<std.time.FormatType>
 

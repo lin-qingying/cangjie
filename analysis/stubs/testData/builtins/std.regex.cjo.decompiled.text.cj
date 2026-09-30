@@ -8,16 +8,16 @@ import std.collection.*
 import std.sync.*
 
 @Annotation
-let UNCAPTURED_GROUP_INDEX: Int64 = COMPILED_CODE /* compiled code */
+let UNCAPTURED_GROUP_INDEX: Int64
 
 @Annotation
-let REGEX_NORMAL: UInt32 = COMPILED_CODE /* compiled code */
+let REGEX_NORMAL: UInt32
 
 @Annotation
-let REGEX_IGNORECASE: UInt32 = COMPILED_CODE /* compiled code */
+let REGEX_IGNORECASE: UInt32
 
 @Annotation
-let REGEX_MULTILINE: UInt32 = COMPILED_CODE /* compiled code */
+let REGEX_MULTILINE: UInt32
 
 @Annotation
 let REGEX_UNICODE: UInt32

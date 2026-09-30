@@ -6,37 +6,51 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
         CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.api, isAllUnder=true, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.ast, isAllUnder=true, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.resolve, isAllUnder=true, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=resolve]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.ast.Token, isAllUnder=false, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Token]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.api.Identifier, isAllUnder=false, aliasName=null)], packageFqName=std.deriving.impl]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.api, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.deriving.api, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.ast, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.ast, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.resolve, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.deriving.resolve, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=resolve]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.ast.Token, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.ast.Token, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Token]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.deriving.api.Identifier, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.deriving.impl]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.deriving.api.Identifier, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Identifier]
   CangJieStub$INTERFACE[classId=std/deriving/impl/ClassLikeDecl, fqName=std.deriving.impl.ClassLikeDecl, name=ClassLikeDecl, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]

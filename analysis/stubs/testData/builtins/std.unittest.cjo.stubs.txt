@@ -4,361 +4,489 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
   CangJieStub$IMPORT_LIST
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.diff.AssertPrintable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.ArrayList, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.core, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=diff]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=AssertPrintable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.DateTime, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyText, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.diff.AssertPrintable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.diff.AssertPrintable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.abs, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=abs]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.runtime.ProcessorInfo, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=runtime]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessorInfo]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random.Random, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.Color, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=diff]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=AssertPrintable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Color]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.runtime.GC, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=runtime]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=GC]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.AtomicOptionReference, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicOptionReference]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.process.Process, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Process]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unicode, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=unicode]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.KeyTags, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.DateTime, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.time.DateTime, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyTags]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.process, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.Semaphore, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Semaphore]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.ConcurrentLinkedQueue, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyText, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.PrettyText, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.collection, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ConcurrentLinkedQueue]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.ReentrantMutex, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ReentrantMutex]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.optionsInfo, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.abs, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.math.abs, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=abs]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.runtime.ProcessorInfo, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.runtime.ProcessorInfo, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=runtime]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ProcessorInfo]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.random.Random, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.random.Random, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Random]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.Color, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.Color, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Color]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Formattable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Formattable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Formattable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.math, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=optionsInfo]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.RandomSource, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.runtime.GC, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.runtime.GC, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=runtime]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=GC]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.sort, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=RandomSource]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.round, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=round]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.regex.Regex, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Regex]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.Configuration, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.AtomicOptionReference, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sync.AtomicOptionReference, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicOptionReference]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.process.Process, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.process.Process, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Process]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unicode, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unicode, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Configuration]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.ConfigurationKey, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=unicode]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.KeyTags, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.KeyTags, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyTags]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.fs, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ConfigurationKey]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataProvider, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.process, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.process, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=DataProvider]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataStrategy, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=process]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.Semaphore, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sync.Semaphore, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Semaphore]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.ConcurrentLinkedQueue, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.concurrent.ConcurrentLinkedQueue, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ConcurrentLinkedQueue]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.ReentrantMutex, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sync.ReentrantMutex, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ReentrantMutex]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.optionsInfo, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.optionsInfo, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=optionsInfo]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.RandomSource, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.RandomSource, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=RandomSource]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.math.round, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.math.round, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=round]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.regex.Regex, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.regex.Regex, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=regex]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Regex]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.convert.Parsable, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.convert.Parsable, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Parsable]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.Configuration, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.Configuration, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Configuration]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.ConfigurationKey, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.ConfigurationKey, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ConfigurationKey]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataProvider, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.DataProvider, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=DataProvider]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataStrategy, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.DataStrategy, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=DataStrategy]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataShrinker, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.DataShrinker, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=DataShrinker]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.registerOptionValidator, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.registerOptionValidator, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=registerOptionValidator]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.setOptionInfo, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.setOptionInfo, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=setOptionInfo]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.OptionValidity, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.OptionValidity, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=OptionValidity]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.KeyFor, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.KeyFor, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyFor]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.Arbitrary, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.Arbitrary, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Arbitrary]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.Shrink, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.Shrink, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Shrink]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.random, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.random, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.KeyRandom, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.KeyRandom, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyRandom]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.mock.PrettyException, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.mock.PrettyException, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs.Path, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.fs.Path, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyPrinter, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.PrettyPrinter, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.NonBlockingQueue, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.concurrent.NonBlockingQueue, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=NonBlockingQueue]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.atExit, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.env.atExit, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=atExit]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.AtomicBool, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sync.AtomicBool, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicBool]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.MonoTime, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.time.MonoTime, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=MonoTime]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.time, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=DataStrategy]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.DataShrinker, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort.SortExtension, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.sort.SortExtension, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=SortExtension]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.sync, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=DataShrinker]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.registerOptionValidator, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.ShrinkHelpers, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.prop_test.ShrinkHelpers, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ShrinkHelpers]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.toStringOrPlaceholder, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.common.toStringOrPlaceholder, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=toStringOrPlaceholder]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.mock, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.unittest.mock, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.LinkedBlockingQueue, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.collection.concurrent.LinkedBlockingQueue, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$DOT_QUALIFIED_EXPRESSION
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=LinkedBlockingQueue]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.exit, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.env.exit, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=exit]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.getTempDirectory, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.env.getTempDirectory, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=getTempDirectory]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.BigEndianOrder, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.binary.BigEndianOrder, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=BigEndianOrder]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.io.IOException, isAllUnder=false, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.io.IOException, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=io]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=IOException]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.net, isAllUnder=true, aliasName=null, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=null, isAllUnder=true, path=ImportPathStubData(organizationName=null, localFqName=std.net, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
           CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=registerOptionValidator]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.setOptionInfo, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core.println, isAllUnder=false, aliasName=corePrintln, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=corePrintln, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.core.println, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=setOptionInfo]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.OptionValidity, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=println]
+        CangJieStub$IMPORT_ALIAS[name=corePrintln]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core.print, isAllUnder=false, aliasName=corePrint, organizationName=null)], isValidSyntax=true, packageFqName=std.unittest]
+      CangJieStub$IMPORT_ITEM[aliasName=corePrint, isAllUnder=false, path=ImportPathStubData(organizationName=null, localFqName=std.core.print, hasOrganizationReference=false, hasOrganizationQualifier=false, hasPathReference=true, isValidSyntax=true)]
         CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=OptionValidity]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.KeyFor, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyFor]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.Arbitrary, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Arbitrary]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.Shrink, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Shrink]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.random, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=random]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.KeyRandom, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyRandom]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.mock.PrettyException, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.fs.Path, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=fs]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.PrettyPrinter, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.NonBlockingQueue, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=NonBlockingQueue]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.atExit, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=atExit]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync.AtomicBool, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicBool]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time.MonoTime, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=MonoTime]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.time, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sort.SortExtension, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=sort]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=SortExtension]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.sync, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.prop_test.ShrinkHelpers, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=ShrinkHelpers]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.common.toStringOrPlaceholder, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=toStringOrPlaceholder]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.unittest.mock, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent.LinkedBlockingQueue, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$DOT_QUALIFIED_EXPRESSION
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=LinkedBlockingQueue]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.exit, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=exit]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.env.getTempDirectory, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=env]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=getTempDirectory]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.binary.BigEndianOrder, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=binary]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=BigEndianOrder]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.io.IOException, isAllUnder=false, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=io]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=IOException]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.net, isAllUnder=true, aliasName=null)], packageFqName=std.unittest]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core.println, isAllUnder=false, aliasName=corePrintln)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=println]
-      CangJieStub$IMPORT_ALIAS[name=corePrintln]
-    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core.print, isAllUnder=false, aliasName=corePrint)], packageFqName=std.unittest]
-      CangJieStub$DOT_QUALIFIED_EXPRESSION
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-      CangJieStub$REFERENCE_EXPRESSION[referencedName=print]
-      CangJieStub$IMPORT_ALIAS[name=corePrint]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+          CangJieStub$DOT_QUALIFIED_EXPRESSION
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=print]
+        CangJieStub$IMPORT_ALIAS[name=corePrint]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -370,7 +498,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MEASUREMENTS_LIMIT]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -383,7 +510,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MAX_BATCH_SIZE]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$VARIABLE[hasInitializer=true, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isConst=true, isTopLevel=true, isVar=false, patternKind=BINDING]
     CangJieStub$ANNOTATIONS
       CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
         CangJieStub$CONSTRUCTOR_CALLEE
@@ -395,7 +522,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
       CangJieStub$REFERENCE_EXPRESSION[referencedName=MIN_COLUMN_WIDTH]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
   CangJieStub$STRUCT[classId=std/unittest/ImmutableInputProvider, fqName=std.unittest.ImmutableInputProvider, name=ImmutableInputProvider, superNames=[BenchInputProvider]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -561,7 +687,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=data]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=data]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -581,7 +707,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=FROZEN, classId=null, hasValueArguments=false, isCompileTimeVisible=false, shortName=Frozen]
@@ -3678,7 +3803,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InputParameter]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=current]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=current]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -3698,7 +3823,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5571,7 +5695,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentReduction]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentReduction]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -5581,7 +5705,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -8116,7 +8239,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Executor]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=step]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=step]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -8126,7 +8249,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -12717,7 +12839,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Details]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_detailsComputed]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=_detailsComputed]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12727,8 +12849,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=finished]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=finished]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -12738,7 +12859,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isFinished]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -18600,7 +18720,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
     CangJieStub$TYPE_PARAMETER_LIST
       CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentIndex]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentIndex]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -18610,7 +18730,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -28248,7 +28367,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=strategy]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=strategy]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -28270,7 +28389,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
@@ -29491,7 +29609,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentItem]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentItem]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -29511,7 +29629,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=origLastItem]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -31154,7 +31271,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Executor]
     CangJieStub$CLASS_BODY
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=generationStep]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=generationStep]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -31164,8 +31281,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=randomSeed]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=randomSeed]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -31184,8 +31300,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=hasMoreParameters]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=hasMoreParameters]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -31195,7 +31310,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -32757,7 +32871,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FIELD[fqName=null, hasInitializer=true, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentIdx]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=currentIdx]
         CangJieStub$ANNOTATIONS
           CangJieStub$ANNOTATION[builtInKind=ANNOTATION, classId=/Annotation, hasValueArguments=false, isCompileTimeVisible=false, shortName=Annotation]
             CangJieStub$CONSTRUCTOR_CALLEE
@@ -32767,7 +32881,6 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=COMPILED_CODE]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]

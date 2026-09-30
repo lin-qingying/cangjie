@@ -6,7 +6,7 @@ package std.io
 import std.core.*
 
 @Annotation
-let HIGH_1_UInt8: UInt8 = COMPILED_CODE /* compiled code */
+let HIGH_1_UInt8: UInt8
 
 class BufferedInputStream<T> <: std.core.Object & std.io.InputStream {
     var inputStream: T
@@ -14,10 +14,10 @@ class BufferedInputStream<T> <: std.core.Object & std.io.InputStream {
     let inBuf: std.core.Array<UInt8>
 
     @Annotation
-    var curPos: Int64 = COMPILED_CODE /* compiled code */
+    var curPos: Int64
 
     @Annotation
-    var availLen: Int64 = COMPILED_CODE /* compiled code */
+    var availLen: Int64
 
     init(input: T) { /* compiled code */ }
 

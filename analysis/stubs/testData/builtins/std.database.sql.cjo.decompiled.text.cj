@@ -163,10 +163,10 @@ class Entry<T> {
     var lastAccessed: std.core.Duration
 
     @Annotation
-    var poolResetCount: Int32 = COMPILED_CODE /* compiled code */
+    var poolResetCount: Int32
 
     @Annotation
-    var isValid: Bool = COMPILED_CODE /* compiled code */
+    var isValid: Bool
 
     init(pool: std.database.sql.Pool<T>, value: T) { /* compiled code */ }
 
@@ -1078,79 +1078,79 @@ open class SqlException <: std.core.Exception {
 
 class SqlOption {
     @Annotation
-    const URL: std.core.String = COMPILED_CODE /* compiled code */
+    const URL: std.core.String
 
     @Annotation
-    const Host: std.core.String = COMPILED_CODE /* compiled code */
+    const Host: std.core.String
 
     @Annotation
-    const Username: std.core.String = COMPILED_CODE /* compiled code */
+    const Username: std.core.String
 
     @Annotation
-    const Password: std.core.String = COMPILED_CODE /* compiled code */
+    const Password: std.core.String
 
     @Annotation
-    const Driver: std.core.String = COMPILED_CODE /* compiled code */
+    const Driver: std.core.String
 
     @Annotation
-    const Database: std.core.String = COMPILED_CODE /* compiled code */
+    const Database: std.core.String
 
     @Annotation
-    const Encoding: std.core.String = COMPILED_CODE /* compiled code */
+    const Encoding: std.core.String
 
     @Annotation
-    const ConnectionTimeout: std.core.String = COMPILED_CODE /* compiled code */
+    const ConnectionTimeout: std.core.String
 
     @Annotation
-    const UpdateTimeout: std.core.String = COMPILED_CODE /* compiled code */
+    const UpdateTimeout: std.core.String
 
     @Annotation
-    const QueryTimeout: std.core.String = COMPILED_CODE /* compiled code */
+    const QueryTimeout: std.core.String
 
     @Annotation
-    const FetchRows: std.core.String = COMPILED_CODE /* compiled code */
+    const FetchRows: std.core.String
 
     @Annotation
-    const SSLMode: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLMode: std.core.String
 
     @Annotation
-    const SSLModePreferred: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLModePreferred: std.core.String
 
     @Annotation
-    const SSLModeDisabled: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLModeDisabled: std.core.String
 
     @Annotation
-    const SSLModeRequired: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLModeRequired: std.core.String
 
     @Annotation
-    const SSLModeVerifyCA: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLModeVerifyCA: std.core.String
 
     @Annotation
-    const SSLModeVerifyFull: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLModeVerifyFull: std.core.String
 
     @Annotation
-    const SSLCA: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLCA: std.core.String
 
     @Annotation
-    const SSLCert: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLCert: std.core.String
 
     @Annotation
-    const SSLKey: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLKey: std.core.String
 
     @Annotation
-    const SSLKeyPassword: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLKeyPassword: std.core.String
 
     @Annotation
-    const SSLSni: std.core.String = COMPILED_CODE /* compiled code */
+    const SSLSni: std.core.String
 
     @Annotation
-    const Tls12Ciphersuites: std.core.String = COMPILED_CODE /* compiled code */
+    const Tls12Ciphersuites: std.core.String
 
     @Annotation
-    const Tls13Ciphersuites: std.core.String = COMPILED_CODE /* compiled code */
+    const Tls13Ciphersuites: std.core.String
 
     @Annotation
-    const TlsVersion: std.core.String = COMPILED_CODE /* compiled code */
+    const TlsVersion: std.core.String
 
     init() { /* compiled code */ }
 }

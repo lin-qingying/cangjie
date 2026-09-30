@@ -8,13 +8,13 @@ import std.time.MonoTime
 import std.time.DateTime
 
 @Annotation
-let MAX_TIMEOUT_NS: Int64 = COMPILED_CODE /* compiled code */
+let MAX_TIMEOUT_NS: Int64
 
 @Annotation
 let TIMER_BLOCK_BUFFER_SIZE: Int64
 
 @Annotation
-let TIMER_LIST_DEFAULT_CAPACITY: Int64 = COMPILED_CODE /* compiled code */
+let TIMER_LIST_DEFAULT_CAPACITY: Int64
 
 class AtomicInt8 {
     var value: Int8
@@ -668,7 +668,7 @@ class AtomicReference<T> {
 
 class AtomicOptionReference<T> {
     @Annotation
-    var value: std.core.Option<T> = COMPILED_CODE /* compiled code */
+    var value: std.core.Option<T>
 
     @Frozen
     init() { /* compiled code */ }

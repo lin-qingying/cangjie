@@ -10,10 +10,10 @@ import std.time.*
 import std.io.IOException
 
 @Annotation
-let PATH_SEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
+let PATH_SEPARATOR: std.core.String
 
 @Annotation
-let PATH_LISTSEPARATOR: std.core.String = COMPILED_CODE /* compiled code */
+let PATH_LISTSEPARATOR: std.core.String
 
 func copy(sourcePath: std.fs.Path, to: std.fs.Path, overwrite: Bool): Unit { /* compiled code */ }
 
@@ -21,10 +21,10 @@ struct Path <: std.core.Equatable<std.fs.Path> & std.core.Hashable & std.core.To
     let _rawPath: std.core.String
 
     @Annotation
-    const Separator: std.core.String = COMPILED_CODE /* compiled code */
+    const Separator: std.core.String
 
     @Annotation
-    const ListSeparator: std.core.String = COMPILED_CODE /* compiled code */
+    const ListSeparator: std.core.String
 
     init(rawPath: std.core.String) { /* compiled code */ }
 

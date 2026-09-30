@@ -7,279 +7,279 @@ import std.core.*
 
 @Deprecated
 @Annotation
-let O_RDONLY: Int32 = COMPILED_CODE /* compiled code */
+let O_RDONLY: Int32
 
 @Deprecated
 @Annotation
-let O_RDWR: Int32 = COMPILED_CODE /* compiled code */
+let O_RDWR: Int32
 
 @Deprecated
 @Annotation
-let O_WRONLY: Int32 = COMPILED_CODE /* compiled code */
+let O_WRONLY: Int32
 
 @Deprecated
 @Annotation
-let O_APPEND: Int32 = COMPILED_CODE /* compiled code */
+let O_APPEND: Int32
 
 @Deprecated
 @Annotation
-let O_CREAT: Int32 = COMPILED_CODE /* compiled code */
+let O_CREAT: Int32
 
 @Deprecated
 @Annotation
-let O_EXCL: Int32 = COMPILED_CODE /* compiled code */
+let O_EXCL: Int32
 
 @Deprecated
 @Annotation
-let O_TRUNC: Int32 = COMPILED_CODE /* compiled code */
+let O_TRUNC: Int32
 
 @Deprecated
 @Annotation
-let S_IRUSR: UInt32 = COMPILED_CODE /* compiled code */
+let S_IRUSR: UInt32
 
 @Deprecated
 @Annotation
-let S_IWUSR: UInt32 = COMPILED_CODE /* compiled code */
+let S_IWUSR: UInt32
 
 @Deprecated
 @Annotation
-let S_IXUSR: UInt32 = COMPILED_CODE /* compiled code */
+let S_IXUSR: UInt32
 
 @Deprecated
 @Annotation
-let S_IRWXU: UInt32 = COMPILED_CODE /* compiled code */
+let S_IRWXU: UInt32
 
 @Deprecated
 @Annotation
-let S_IRGRP: UInt32 = COMPILED_CODE /* compiled code */
+let S_IRGRP: UInt32
 
 @Deprecated
 @Annotation
-let S_IWGRP: UInt32 = COMPILED_CODE /* compiled code */
+let S_IWGRP: UInt32
 
 @Deprecated
 @Annotation
-let S_IXGRP: UInt32 = COMPILED_CODE /* compiled code */
+let S_IXGRP: UInt32
 
 @Deprecated
 @Annotation
-let S_IRWXG: UInt32 = COMPILED_CODE /* compiled code */
+let S_IRWXG: UInt32
 
 @Deprecated
 @Annotation
-let S_IROTH: UInt32 = COMPILED_CODE /* compiled code */
+let S_IROTH: UInt32
 
 @Deprecated
 @Annotation
-let S_IWOTH: UInt32 = COMPILED_CODE /* compiled code */
+let S_IWOTH: UInt32
 
 @Deprecated
 @Annotation
-let S_IXOTH: UInt32 = COMPILED_CODE /* compiled code */
+let S_IXOTH: UInt32
 
 @Deprecated
 @Annotation
-let S_IRWXO: UInt32 = COMPILED_CODE /* compiled code */
+let S_IRWXO: UInt32
 
 @Deprecated
 @Annotation
-let SEEK_SET: Int32 = COMPILED_CODE /* compiled code */
+let SEEK_SET: Int32
 
 @Deprecated
 @Annotation
-let SEEK_CUR: Int32 = COMPILED_CODE /* compiled code */
+let SEEK_CUR: Int32
 
 @Deprecated
 @Annotation
-let SEEK_END: Int32 = COMPILED_CODE /* compiled code */
+let SEEK_END: Int32
 
 @Deprecated
 @Annotation
-let S_IFREG: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFREG: UInt32
 
 @Deprecated
 @Annotation
-let S_IFDIR: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFDIR: UInt32
 
 @Deprecated
 @Annotation
-let S_IFCHR: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFCHR: UInt32
 
 @Deprecated
 @Annotation
-let S_IFBLK: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFBLK: UInt32
 
 @Deprecated
 @Annotation
-let S_IFIFO: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFIFO: UInt32
 
 @Deprecated
 @Annotation
-let S_IFLNK: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFLNK: UInt32
 
 @Deprecated
 @Annotation
-let S_IFSOCK: UInt32 = COMPILED_CODE /* compiled code */
+let S_IFSOCK: UInt32
 
 @Deprecated
 @Annotation
-let AT_EMPTY_PATH: Int32 = COMPILED_CODE /* compiled code */
+let AT_EMPTY_PATH: Int32
 
 @Deprecated
 @Annotation
-let AT_SYMLINK_FOLLOW: Int32 = COMPILED_CODE /* compiled code */
+let AT_SYMLINK_FOLLOW: Int32
 
 @Deprecated
 @Annotation
-let AT_FDCWD: Int32 = COMPILED_CODE /* compiled code */
+let AT_FDCWD: Int32
 
 @Deprecated
 @Annotation
-let AT_REMOVEDIR: Int32 = COMPILED_CODE /* compiled code */
+let AT_REMOVEDIR: Int32
 
 @Deprecated
 @Annotation
-let SIGHUP: Int32 = COMPILED_CODE /* compiled code */
+let SIGHUP: Int32
 
 @Deprecated
 @Annotation
-let SIGINT: Int32 = COMPILED_CODE /* compiled code */
+let SIGINT: Int32
 
 @Deprecated
 @Annotation
-let SIGQUIT: Int32 = COMPILED_CODE /* compiled code */
+let SIGQUIT: Int32
 
 @Deprecated
 @Annotation
-let SIGILL: Int32 = COMPILED_CODE /* compiled code */
+let SIGILL: Int32
 
 @Deprecated
 @Annotation
-let SIGTRAP: Int32 = COMPILED_CODE /* compiled code */
+let SIGTRAP: Int32
 
 @Deprecated
 @Annotation
-let SIGABRT: Int32 = COMPILED_CODE /* compiled code */
+let SIGABRT: Int32
 
 @Deprecated
 @Annotation
-let SIGIOT: Int32 = COMPILED_CODE /* compiled code */
+let SIGIOT: Int32
 
 @Deprecated
 @Annotation
-let SIGBUS: Int32 = COMPILED_CODE /* compiled code */
+let SIGBUS: Int32
 
 @Deprecated
 @Annotation
-let SIGFPE: Int32 = COMPILED_CODE /* compiled code */
+let SIGFPE: Int32
 
 @Deprecated
 @Annotation
-let SIGKILL: Int32 = COMPILED_CODE /* compiled code */
+let SIGKILL: Int32
 
 @Deprecated
 @Annotation
-let SIGUSR1: Int32 = COMPILED_CODE /* compiled code */
+let SIGUSR1: Int32
 
 @Deprecated
 @Annotation
-let SIGSEGV: Int32 = COMPILED_CODE /* compiled code */
+let SIGSEGV: Int32
 
 @Deprecated
 @Annotation
-let SIGUSR2: Int32 = COMPILED_CODE /* compiled code */
+let SIGUSR2: Int32
 
 @Deprecated
 @Annotation
-let SIGPIPE: Int32 = COMPILED_CODE /* compiled code */
+let SIGPIPE: Int32
 
 @Deprecated
 @Annotation
-let SIGALRM: Int32 = COMPILED_CODE /* compiled code */
+let SIGALRM: Int32
 
 @Deprecated
 @Annotation
-let SIGTERM: Int32 = COMPILED_CODE /* compiled code */
+let SIGTERM: Int32
 
 @Deprecated
 @Annotation
-let SIGSTKFLT: Int32 = COMPILED_CODE /* compiled code */
+let SIGSTKFLT: Int32
 
 @Deprecated
 @Annotation
-let SIGCHLD: Int32 = COMPILED_CODE /* compiled code */
+let SIGCHLD: Int32
 
 @Deprecated
 @Annotation
-let SIGCONT: Int32 = COMPILED_CODE /* compiled code */
+let SIGCONT: Int32
 
 @Deprecated
 @Annotation
-let SIGSTOP: Int32 = COMPILED_CODE /* compiled code */
+let SIGSTOP: Int32
 
 @Deprecated
 @Annotation
-let SIGTSTP: Int32 = COMPILED_CODE /* compiled code */
+let SIGTSTP: Int32
 
 @Deprecated
 @Annotation
-let SIGTTIN: Int32 = COMPILED_CODE /* compiled code */
+let SIGTTIN: Int32
 
 @Deprecated
 @Annotation
-let SIGTTOU: Int32 = COMPILED_CODE /* compiled code */
+let SIGTTOU: Int32
 
 @Deprecated
 @Annotation
-let SIGURG: Int32 = COMPILED_CODE /* compiled code */
+let SIGURG: Int32
 
 @Deprecated
 @Annotation
-let SIGXCPU: Int32 = COMPILED_CODE /* compiled code */
+let SIGXCPU: Int32
 
 @Deprecated
 @Annotation
-let SIGXFSZ: Int32 = COMPILED_CODE /* compiled code */
+let SIGXFSZ: Int32
 
 @Deprecated
 @Annotation
-let SIGVTALRM: Int32 = COMPILED_CODE /* compiled code */
+let SIGVTALRM: Int32
 
 @Deprecated
 @Annotation
-let SIGPROF: Int32 = COMPILED_CODE /* compiled code */
+let SIGPROF: Int32
 
 @Deprecated
 @Annotation
-let SIGWINCH: Int32 = COMPILED_CODE /* compiled code */
+let SIGWINCH: Int32
 
 @Deprecated
 @Annotation
-let SIGIO: Int32 = COMPILED_CODE /* compiled code */
+let SIGIO: Int32
 
 @Deprecated
 @Annotation
-let SIGPWR: Int32 = COMPILED_CODE /* compiled code */
+let SIGPWR: Int32
 
 @Deprecated
 @Annotation
-let SIGSYS: Int32 = COMPILED_CODE /* compiled code */
+let SIGSYS: Int32
 
 @Deprecated
 @Annotation
-let R_OK: Int32 = COMPILED_CODE /* compiled code */
+let R_OK: Int32
 
 @Deprecated
 @Annotation
-let W_OK: Int32 = COMPILED_CODE /* compiled code */
+let W_OK: Int32
 
 @Deprecated
 @Annotation
-let X_OK: Int32 = COMPILED_CODE /* compiled code */
+let X_OK: Int32
 
 @Deprecated
 @Annotation
-let F_OK: Int32 = COMPILED_CODE /* compiled code */
+let F_OK: Int32
 
 @Deprecated
 func open(path: std.core.String, oflag: Int32, flag: UInt32): Int32 { /* compiled code */ }

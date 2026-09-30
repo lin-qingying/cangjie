@@ -5,7 +5,7 @@ package org.cangnova.cangjie.analysis.stubs
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.psi.PsiManager
 import com.intellij.psi.stubs.PsiFileStub
-import com.intellij.psi.stubs.IStubElementType
+import com.intellij.psi.impl.source.tree.CompositeElement
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.stubs.StubElementRegistryService
 import com.intellij.lang.ASTNode
@@ -195,11 +195,27 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
         return out
     }
 
-    /** AST 中所有 stubbed 节点（elementType 为 IStubElementType）的先序序列（含文件根）。 */
+    /**
+     * AST 中所有 stubbed 节点的先序序列（含文件根）。
+     *
+     * 与平台 `FileElement.getStubbedSpine()` 同口径：文件根无条件计入，
+     * 其余节点按 stub 注册表判定（`getStubFactory(type) != null && shouldCreateStub(node)`），
+     * 这样两侧序列（stub 展平含根 / AST stubbed 节点含根）可以逐个对账。
+     *
+     * 注意：文件 element type（`IStubFileElementType`）不是 `IStubElementType` 的子类型，
+     * 用 `elementType is IStubElementType` 判断会把文件根整体漏掉，造成恒定差一。
+     */
     private fun collectStubbedAstNodes(root: ASTNode): List<ASTNode> {
         val out = ArrayList<ASTNode>(40_000)
+        val registry = StubElementRegistryService.getInstance()
+        fun shouldCreateStub(node: ASTNode): Boolean {
+            if (node === root) return true
+            if (node !is CompositeElement) return false
+            val factory = registry.getStubFactory(node.elementType) ?: return false
+            return factory.shouldCreateStub(node)
+        }
         fun walk(node: ASTNode) {
-            if (node.elementType is IStubElementType<*, *>) {
+            if (shouldCreateStub(node)) {
                 out.add(node)
             }
             node.getChildren(null).forEach { walk(it) }

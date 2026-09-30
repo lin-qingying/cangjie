@@ -69,13 +69,13 @@ import std.core.println as corePrintln
 import std.core.print as corePrint
 
 @Annotation
-let MEASUREMENTS_LIMIT: Int64 = COMPILED_CODE /* compiled code */
+let MEASUREMENTS_LIMIT: Int64
 
 @Annotation
 let MAX_BATCH_SIZE: Int64
 
 @Annotation
-let MIN_COLUMN_WIDTH: Int64 = COMPILED_CODE /* compiled code */
+let MIN_COLUMN_WIDTH: Int64
 
 struct ImmutableInputProvider<T> <: std.unittest.BenchInputProvider<T> {
     @Frozen
@@ -103,7 +103,7 @@ interface BenchInputProvider<T> <: std.unittest.BenchmarkInputMarker {
 
 struct BatchInputProvider<T> <: std.unittest.BenchInputProvider<T> {
     @Annotation
-    var data: std.core.Array<T> = COMPILED_CODE /* compiled code */
+    var data: std.core.Array<T>
 
     @Frozen
     mut func reset(max: Int64): Unit { /* compiled code */ }
@@ -526,7 +526,7 @@ class RememberingDataProvider<T> <: std.core.Object & std.unittest.common.DataPr
     var info: std.unittest.InputParameter
 
     @Annotation
-    var current: std.core.Option<T> = COMPILED_CODE /* compiled code */
+    var current: std.core.Option<T>
 
     func provide(): std.core.Iterable<T> { /* compiled code */ }
 
@@ -752,7 +752,7 @@ abstract open class DataStrategyProcessor<T> {
     var genIterator: std.core.Iterator<T>
 
     @Annotation
-    var currentReduction: Int64 = COMPILED_CODE /* compiled code */
+    var currentReduction: Int64
 
     @Annotation
     abstract prop isInfinite: Bool
@@ -1087,7 +1087,7 @@ type BenchRawMeasurement = (Float64, Float64)
 
 class BenchExecutor<T> <: std.core.Object & std.unittest.Executor {
     @Annotation
-    var step: Int64 = COMPILED_CODE /* compiled code */
+    var step: Int64
 
     func execute(suiteInfo: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
@@ -1773,10 +1773,10 @@ abstract class ResultContainer<T> <: std.core.Object & std.unittest.Result {
     var _details: std.unittest.Details
 
     @Annotation
-    var _detailsComputed: Bool = COMPILED_CODE /* compiled code */
+    var _detailsComputed: Bool
 
     @Annotation
-    var finished: Bool = COMPILED_CODE /* compiled code */
+    var finished: Bool
 
     @Annotation
     prop isFinished: Bool {
@@ -2689,7 +2689,7 @@ class Mutator {
 
 class MutatingRandomValueStream<T> {
     @Annotation
-    var currentIndex: Int64 = COMPILED_CODE /* compiled code */
+    var currentIndex: Int64
 
     func nextUniform(random: std.random.Random): T { /* compiled code */ }
 
@@ -4394,7 +4394,7 @@ class FlatMapStrategyProcessor<T, R> <: std.unittest.DataStrategyProcessor<R> {
     var provider: std.unittest.RememberingDataProvider<R>
 
     @Annotation
-    var strategy: std.unittest.common.DataStrategy<R> = COMPILED_CODE /* compiled code */
+    var strategy: std.unittest.common.DataStrategy<R>
 
     @Annotation
     prop isInfinite: Bool {
@@ -4524,7 +4524,7 @@ class RememberingLazyIterator<T> <: std.core.Iterator<T> {
 
 class RememberingLazyIterable<T> <: std.unittest.LazyCyclicNode & std.core.Iterable<T> {
     @Annotation
-    var currentItem: std.core.Option<T> = COMPILED_CODE /* compiled code */
+    var currentItem: std.core.Option<T>
 
     var origLastItem: T
 
@@ -4725,13 +4725,13 @@ func runTestStep(caseId: std.unittest.TestCaseId, f: () -> Unit): Unit { /* comp
 
 class TestCaseExecutor<T> <: std.core.Object & std.unittest.Executor {
     @Annotation
-    var generationStep: Int64 = COMPILED_CODE /* compiled code */
+    var generationStep: Int64
 
     @Annotation
-    var randomSeed: std.core.Option<Int64> = COMPILED_CODE /* compiled code */
+    var randomSeed: std.core.Option<Int64>
 
     @Annotation
-    var hasMoreParameters: Bool = COMPILED_CODE /* compiled code */
+    var hasMoreParameters: Bool
 
     func execute(_: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
@@ -4937,7 +4937,7 @@ class ParallelOrderedMapIterator<T> <: std.core.Iterator<T> {
     var futures: std.collection.ArrayList<std.core.Future<T>>
 
     @Annotation
-    var currentIdx: Int64 = COMPILED_CODE /* compiled code */
+    var currentIdx: Int64
 
     func next(): std.core.Option<T> { /* compiled code */ }
 

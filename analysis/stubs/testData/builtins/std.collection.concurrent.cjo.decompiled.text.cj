@@ -10,7 +10,7 @@ import std.collection.MapEntryView
 import std.collection.ArrayList
 
 @Annotation
-let BUF_SIZE_BITS: Int64 = COMPILED_CODE /* compiled code */
+let BUF_SIZE_BITS: Int64
 
 @Annotation
 let BUF_SIZE: Int64
@@ -85,13 +85,13 @@ class ConcurrentHashMapIterator<K, V> <: std.core.Iterator<(K, V)> {
     let curHT: std.collection.concurrent.HNode<K, V>
 
     @Annotation
-    var curBucketIndex: Int64 = COMPILED_CODE /* compiled code */
+    var curBucketIndex: Int64
 
     @Annotation
-    var curEntries: std.core.Option<std.collection.concurrent.KVList<K, V>> = COMPILED_CODE /* compiled code */
+    var curEntries: std.core.Option<std.collection.concurrent.KVList<K, V>>
 
     @Annotation
-    var entriesIndex: Int64 = COMPILED_CODE /* compiled code */
+    var entriesIndex: Int64
 
     init(cmap: std.collection.concurrent.ConcurrentHashMap<K, V>) { /* compiled code */ }
 
@@ -106,7 +106,7 @@ class ConcurrentHashMap<K, V> <: std.core.Object & std.collection.concurrent.Con
     let counts: std.core.Array<std.sync.AtomicInt64>
 
     @Annotation
-    const COUNT_SIZE: Int64 = COMPILED_CODE /* compiled code */
+    const COUNT_SIZE: Int64
 
     @Annotation
     let curHNodeVersion: std.sync.AtomicInt64
@@ -216,7 +216,7 @@ class ConcurrentLinkedQueueIterator<E> <: std.core.Iterator<E> {
     var curIndex: Int64
 
     @Annotation
-    var hasNext: Bool = COMPILED_CODE /* compiled code */
+    var hasNext: Bool
 
     init(queue: std.collection.concurrent.ConcurrentLinkedQueue<E>, front: std.collection.concurrent.Block<E>) { /* compiled code */ }
 
