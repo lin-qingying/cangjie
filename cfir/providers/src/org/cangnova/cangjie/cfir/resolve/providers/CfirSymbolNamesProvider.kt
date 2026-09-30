@@ -228,9 +228,11 @@ open class CfirCompositeSymbolNamesProvider(
 
     /**
      * 任意子 provider 拥有专门 classifier 包计算时为 `true`。
+     *
+     * 按需读取：子 provider 可能是延迟代理，构造期读取会把它的真实索引提前拉起来。
      */
-    override val hasSpecificClassifierPackageNamesComputation: Boolean =
-        providers.any { it.hasSpecificClassifierPackageNamesComputation }
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = providers.any { it.hasSpecificClassifierPackageNamesComputation }
 
     /**
      * 合并所有包含顶层 classifier 的包名集合。
@@ -245,10 +247,10 @@ open class CfirCompositeSymbolNamesProvider(
         providers.flatMapToNullableSet { it.getTopLevelClassifierNamesInPackage(packageFqName) }
 
     /**
-     * 任意子 provider 拥有专门 callable 包计算时为 `true`。
+     * 任意子 provider 拥有专门 callable 包计算时为 `true`；按需读取，理由同上。
      */
-    override val hasSpecificCallablePackageNamesComputation: Boolean =
-        providers.any { it.hasSpecificCallablePackageNamesComputation }
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = providers.any { it.hasSpecificCallablePackageNamesComputation }
 
     /**
      * 合并所有包含顶层 callable 的包名集合。
@@ -263,10 +265,10 @@ open class CfirCompositeSymbolNamesProvider(
         providers.flatMapToNullableSet { it.getTopLevelCallableNamesInPackage(packageFqName) }
 
     /**
-     * 任意子 provider 可能拥有合成函数类型时为 `true`。
+     * 任意子 provider 可能拥有合成函数类型时为 `true`；按需读取，理由同上。
      */
-    override val mayHaveSyntheticFunctionTypes: Boolean =
-        providers.any { it.mayHaveSyntheticFunctionTypes }
+    override val mayHaveSyntheticFunctionTypes: Boolean
+        get() = providers.any { it.mayHaveSyntheticFunctionTypes }
 
     /**
      * 任意子 provider 可能提供指定合成函数类型时为 `true`。
