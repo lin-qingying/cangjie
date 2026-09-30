@@ -603,7 +603,7 @@ open class CfirExpressionsResolveTransformer(
         val parsed = CfirIntConstantEvalUtils.parseIntLiteral(this) ?: return false
         if (parsed.explicitSuffix != null) return false
         val targetType = expectedType.fullyExpandedType().arrayLiteralElementType ?: expectedType
-        val range = CfirIntConstantEvalUtils.rangeForPositiveLiteralTargetType(targetType) ?: return false
+        val range = CfirIntConstantEvalUtils.rangeForIntLiteralValueTargetType(targetType, parsed.value) ?: return false
         return !range.contains(parsed.value)
     }
 

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
+import org.cangnova.cangjie.cfir.serialization.provider.CfirClassLikeSymbolLookup
 import org.cangnova.cangjie.cfir.session.implicitSystemAnnotations
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -25,6 +26,8 @@ class CfirDeserializationContext(
     val moduleData: CfirModuleData,
     /** `.cjo` 包管理器，用于跨包声明索引和包头装载。 */
     val cjoManager: CjoManager,
+    /** 反序列化期间的 class-like 符号查找入口，只读 `.cjo` 头部与 flatbuffer，不得进 PSI。 */
+    val classSymbolLookup: CfirClassLikeSymbolLookup,
     /** 实际读取 CJO 的路径；内存/旧调用方默认不加载 sidecar。 */
     val sourcePath: java.nio.file.Path? = null,
     /** 从 session-owned 平台配置读取隐式系统注解；绝不从 sourcePath 推断。 */

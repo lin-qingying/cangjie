@@ -60,6 +60,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
@@ -79,60 +80,65 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import java.math.BigInteger
 
 /**
  * 浮点字面量范围检查器
  *
- * 对齐 C++ TypeCheckExpr/LitConstExpr.cpp:
- * - EXCEED_FLOAT_LITERAL_RANGE: NaN/Infinity
- * - FLOAT_LITERAL_TOO_LARGE: 超出目标类型最大值（警告）
- * - FLOAT_LITERAL_TOO_SMALL: 小于目标类型最小正值（警告）
+ * 对齐官方 `TypeChecker::TypeCheckerImpl::ChkFloatTypeOverflow`
+ * （`external/cangjie_compiler/src/Sema/CalcConstExpr.cpp:30-85`），它分两段：
+ * 先看 `InitializeLitConstValue` 记录的 `flowStatus`（`OVER`/`UNDER`），
+ * 再把字面量值转成目标位宽后比对 inf 位模式与"归零"位模式。
+ *
+ * 因此判据是"转成目标位宽后是否成为 inf / 是否归零"，不是"字面量值是否超出上下界"。
+ * cjc 1.0.5 探针：`var a: Float32 = 3.4028235e38` 通过而 `3.5e38` 报
+ * `sema_float_literal_too_large`，因为前者转 float32 后恰好等于 `Float.MAX_VALUE` 而非 inf。
+ * 边界文案取自官方 `GetFloatTypeInfoByKind`（`src/AST/Utils.cpp:179-191`），
+ * `IDEAL_FLOAT` 与 `FLOAT64` 共用同一行。
+ *
+ * 官方没有 NaN/Infinity 的独立字面量诊断（`sema_exceed_float_literal_range` 只有声明、
+ * 无生产者），因此这里不设该分支；浮点 NaN/Inf 统一由 `flowStatus` 的 `OVER` 覆盖。
  */
 object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
     /**
-     * 检查浮点字面量的特殊值和 Float32 目标范围。
-     *
-     * NaN/Infinity 直接按错误报告；解析类型为 Float32 时进一步区分过大和过小的 warning。
+     * 检查浮点字面量转成目标位宽后的溢出与下溢。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirLiteralExpression) {
-        val value = expression.value
-        if (value !is Double && value !is Float) return
+        val value = (expression.value as? Number)?.toDouble() ?: return
 
-        val doubleValue = (value as Number).toDouble()
         val resolvedType = expression.coneTypeOrNull
+        if (resolvedType == null || resolvedType is ConeErrorType) return
+        val primitive = resolvedType as? ConePrimitiveType ?: return
+        val targetKind = primitive.kind
+        val typeInfo = CfirFloatConstantEvalUtils.floatTypeInfoFor(targetKind) ?: return
 
-        if (doubleValue.isNaN() || doubleValue.isInfinite()) {
+        if (CfirFloatConstantEvalUtils.convertsToInfinity(value, targetKind)) {
             reporter.reportOn(
                 source = expression.source,
-                factory = CfirErrors.EXCEED_FLOAT_LITERAL_RANGE,
-                a = value.toString(),
+                factory = CfirErrors.FLOAT_LITERAL_TOO_LARGE,
+                a = primitive,
+                b = typeInfo.max,
             )
             return
         }
 
-        if (resolvedType == null || resolvedType is ConeErrorType) return
-
-        // Float32 范围检查
-        if (resolvedType is ConePrimitiveType && resolvedType.kind == PrimitiveTypeKind.FLOAT32) {
-            val absValue = kotlin.math.abs(doubleValue)
-            if (absValue > Float.MAX_VALUE.toDouble() && absValue != 0.0) {
-                reporter.reportOn(
-                    source = expression.source,
-                    factory = CfirErrors.FLOAT_LITERAL_TOO_LARGE,
-                    a = resolvedType,
-                    b = value.toString(),
-                )
-            } else if (absValue != 0.0 && absValue < Float.MIN_VALUE.toDouble()) {
-                reporter.reportOn(
-                    source = expression.source,
-                    factory = CfirErrors.FLOAT_LITERAL_TOO_SMALL,
-                    a = resolvedType,
-                    b = value.toString(),
-                )
-            }
+        // 官方下溢守卫是"高精度值非零但目标位宽为零"（`value != 0 && value == 0`），
+        // 所以字面量本身就写作 0 时不报；精确量级取自原文，因为 double 已丢失该信息。
+        if (CfirFloatConstantEvalUtils.convertsToZero(
+                value,
+                targetKind,
+                CfirFloatConstantEvalUtils.hasExactNonZeroMagnitude(expression.source?.text?.toString()),
+            )
+        ) {
+            reporter.reportOn(
+                source = expression.source,
+                factory = CfirErrors.FLOAT_LITERAL_TOO_SMALL,
+                a = primitive,
+                b = typeInfo.min,
+            )
         }
     }
 }

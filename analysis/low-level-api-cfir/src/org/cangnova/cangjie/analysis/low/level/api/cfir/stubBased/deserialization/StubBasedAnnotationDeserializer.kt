@@ -5,6 +5,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -282,6 +283,8 @@ internal class StubBasedAnnotationDeserializer(private val session: CfirSession)
         val literalValue = when (literalKind) {
             CfirLiteralKind.BOOLEAN -> expression.text == "true"
             CfirLiteralKind.UNIT -> null
+            // 浮点载荷是数值（`Double`），与两条 raw 构建路径和 `CfirConstantValue.Primitive` 的约定一致。
+            CfirLiteralKind.FLOAT -> CfirFloatConstantEvalUtils.parseFloatLiteral(expression.text)
             else -> expression.text
         }
 

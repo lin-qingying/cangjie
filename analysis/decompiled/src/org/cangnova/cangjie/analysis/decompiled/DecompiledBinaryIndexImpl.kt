@@ -111,6 +111,47 @@ class DecompiledBinaryIndexImpl(
     }
 
     /**
+     * 返回指定库模块在作用域内的缓存 package 文件映射。
+     *
+     * 复用索引构建期解析的 package header，调用点不再逐文件重读 `.cjo` 字节。
+     */
+    override fun getLibraryPackages(
+        module: CaLibraryModule,
+        searchScope: GlobalSearchScope,
+    ): Map<FqName, VirtualFile> {
+        refreshIfNeeded()
+        return buildMap {
+            indexFor(module).packageFiles.forEach { (packageName, file) ->
+                if (searchScope.contains(file)) put(packageName, file)
+            }
+        }
+    }
+
+    /**
+     * 判定指定文件是否属于该库模块已索引的 `.cjo` 集合。
+     *
+     * 这是"能否从二进制头取得包身份"的唯一判据：`.cjo` 之外的库内文件
+     * （stub-origin 源文件、宏调用文件）不在索引内，其包名来自自身 PSI。
+     */
+    override fun isIndexedLibraryBinary(module: CaLibraryModule, binaryFile: VirtualFile): Boolean {
+        refreshIfNeeded()
+        return indexFor(module).files.any { it == binaryFile }
+    }
+
+    /**
+     * 反查库内已索引 `.cjo` 文件的包名。
+     *
+     * `ModuleBinaryIndex` 以包名为键构建，反查时遍历该缓存映射，
+     * 命中即返回，因此不触碰 `CjoBinaryFileReader` 的字节读取路径。
+     */
+    override fun findLibraryPackageFqName(module: CaLibraryModule, binaryFile: VirtualFile): FqName? {
+        refreshIfNeeded()
+        return indexFor(module).packageFiles.entries
+            .firstOrNull { (_, file) -> file == binaryFile }
+            ?.key
+    }
+
+    /**
      * 从 `.cjo` 二进制头部读取包全限定名。
      */
     override fun readPackageFqName(binaryFile: VirtualFile): FqName? {

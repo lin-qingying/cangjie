@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -2237,7 +2238,7 @@ class PsiRawCfirBuilder(
             val elementType = psi.node.elementType
             val (kind, value) = when (elementType) {
                 INTEGER_CONSTANT -> CfirLiteralKind.INT to text
-                FLOAT_CONSTANT -> CfirLiteralKind.FLOAT to text
+                FLOAT_CONSTANT -> CfirLiteralKind.FLOAT to CfirFloatConstantEvalUtils.parseFloatLiteral(text)
                 RUNE_CONSTANT -> CfirLiteralKind.RUNE to text
                 CHARACTER_BYTE_CONSTANT -> CfirLiteralKind.BYTE to byteLiteralCodePointOrNull(text)
                 BOOLEAN_CONSTANT -> CfirLiteralKind.BOOLEAN to (text == "true")
@@ -2489,6 +2490,33 @@ class PsiRawCfirBuilder(
 
         /** 转换前缀一元表达式，递增/递减使用专用节点，其余转为 operator call。 */
         private fun convertPrefix(psi: CjPrefixExpression): CfirExpression {
+            if (psi.operationToken == CjTokens.MINUS) {
+                val baseLiteral = psi.baseExpression as? CjConstantExpression
+                if (baseLiteral != null) {
+                    // 官方 `ParserImpl::ParseNegativeLiteral`（`ParseAtom.cpp:154-173`）在解析期把 `-` 与
+                    // INTEGER_LITERAL、FLOAT_LITERAL 合成同一个带符号 `LitConstExpr`；Kotlin psi2fir 的
+                    // `convertUnaryPlusMinusCallOnIntegerLiteralIfNecessary`（`AbstractRawFirBuilder.kt:581-603`）
+                    // 同形。符号进入字面量的 value，不留一个需要事后回扫源码文本才能还原符号的前缀表达式。
+                    // 括号形态不折叠：官方此时把内层恢复为正字面量按其值域判断。
+                    if (baseLiteral.node.elementType == INTEGER_CONSTANT) {
+                        return buildLiteralExpression {
+                            source = psi.toCjPsiSourceElement()
+                            kind = CfirLiteralKind.INT
+                            value = "-${baseLiteral.text}"
+                        }
+                    }
+                    if (baseLiteral.node.elementType == FLOAT_CONSTANT) {
+                        val parsed = CfirFloatConstantEvalUtils.parseFloatLiteral(baseLiteral.text)
+                        if (parsed != null) {
+                            return buildLiteralExpression {
+                                source = psi.toCjPsiSourceElement()
+                                kind = CfirLiteralKind.FLOAT
+                                value = -parsed
+                            }
+                        }
+                    }
+                }
+            }
             val base = psi.baseExpression?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing prefix operand")
             val opName = psi.operationToken.toPrefixUnaryName() ?: Name.identifier("<prefix>")

@@ -86,6 +86,7 @@ class BuiltInDeclProbeTest {
                 header = header,
                 moduleData = BuiltInTestModuleData,
                 cjoManager = manager,
+                classSymbolLookup = manager.deserializedSymbolLookups.forModuleData(BuiltInTestModuleData),
             )
 
             val expectedKinds = mapOf(

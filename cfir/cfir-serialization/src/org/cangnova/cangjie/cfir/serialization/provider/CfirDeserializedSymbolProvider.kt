@@ -68,6 +68,7 @@ class CfirDeserializedSymbolProvider(
             header = header,
             moduleData = moduleDataFor(loaded.sourcePath),
             cjoManager = cjoManager,
+            classSymbolLookup = this,
             sourcePath = loaded.sourcePath,
         )
         recordLoadGateDiagnostics(header)

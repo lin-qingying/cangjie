@@ -9,6 +9,8 @@ dependencies {
     api(project(":cfir:cfir-cones"))
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:providers"))
+    // 浮点字面量载荷的解析与官方边界表由该 owner 提供。
+    api(project(":cfir:semantics"))
     implementation(project(":flatbuffers-gen"))
     implementation(project(":common"))
     implementation(project(":util"))

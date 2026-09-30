@@ -63,7 +63,7 @@ class CangJieStandalonePackageProviderFactory(
 
     /**
      * 对齐 Kotlin standalone package provider 对 binary libraries 的处理：
-     * package existence 只需要 package facts，必须直接从 `.cjo` binary header 读取，
+     * package existence 只需要 package facts，必须取自 binary index 已解析的 header，
      * 不能退回到 decompiled PSI / source-file collector。
      */
     private fun collectLibraryPackageNames(searchScope: GlobalSearchScope): Set<FqName> {
@@ -72,14 +72,12 @@ class CangJieStandalonePackageProviderFactory(
             CaModuleProvider.getInstance(project).allModules
                 .filterIsInstance<CaLibraryModule>()
                 .forEach { libraryModule ->
+                    // 只有已索引的 `.cjo` 才有 header 包名；库内 stub-origin 源文件的包名来自自身 PSI。
                     fileCollector.collectFromRoots(libraryModule.binaryRoots, searchScope)
+                        .filterNot { file -> file.virtualFile?.let { binaryIndex.isIndexedLibraryBinary(libraryModule, it) } == true }
                         .mapTo(this) { it.packageFqName }
 
-                    binaryIndex.getBinaryFiles(libraryModule)
-                        .asSequence()
-                        .filter(searchScope::contains)
-                        .mapNotNull(binaryIndex::readPackageFqName)
-                        .forEach(::add)
+                    addAll(binaryIndex.getLibraryPackages(libraryModule, searchScope).keys)
                 }
         }
     }

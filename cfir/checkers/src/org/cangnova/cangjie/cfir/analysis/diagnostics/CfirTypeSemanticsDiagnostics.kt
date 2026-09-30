@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.types.isRune
 import org.cangnova.cangjie.cfir.types.optionElementType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.text
 
 /**
  * 专门承接“通用 type mismatch 之下还能继续细分的语义”。
@@ -123,7 +124,10 @@ internal fun literalConversionMismatch(
     if (!isOptionTarget && explicitType != null && targetKind != null && explicitType.kind != targetKind &&
         (explicitType.kind.isInteger && targetKind.isInteger || explicitType.kind.isFloat && targetKind.isFloat)
     ) {
-        return CfirSpecificTypeMismatch.CannotConvertLiteral(literal.value.toString(), expectedType)
+        return CfirSpecificTypeMismatch.CannotConvertLiteral(
+            literal.source?.text?.toString() ?: literal.value.toString(),
+            expectedType,
+        )
     }
     if (target !is ConeTypeParameterType &&
         !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune

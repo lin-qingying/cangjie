@@ -8,6 +8,7 @@ import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.decompiler.stub.LoadedCjoPackage
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.platform.presentableDescription
@@ -131,9 +132,35 @@ class DecompiledPackageDataFinder(
      * 旧缓存由 [refreshIfNeeded] 根据项目修改计数清理。
      */
     private fun repositoryFor(moduleKey: String, roots: List<File>): DecompiledCjoRepository {
-        val key = RepositoryKey(moduleKey, roots)
+        val builtinsRoots = builtinsSearchRoots()
+        val key = RepositoryKey(moduleKey, roots, builtinsRoots)
         return repositories.computeIfAbsent(key) {
-            DecompiledCjoRepository(it.roots)
+            DecompiledCjoRepository(it.roots, it.builtinsRoots)
+        }
+    }
+
+    /**
+     * builtins（SDK）搜索根，目录层级按官方仓颉 SDK 布局折叠：`<root>/std.cjo` 与 `<root>/std/` 下的各包 `.cjo` 归到同一个根。
+     *
+     * 对齐 Kotlin `LLBinaryOriginLibrarySymbolProviderFactory.createBuiltinsDeserializedSymbolProvider`：
+     * 它用相同的 `toBuiltinsSearchRoot` 折叠逻辑，使得反序化期间的符号查找与那个提供器看到同一套 stdlib 包。
+     */
+    private fun builtinsSearchRoots(): List<File> =
+        CaModuleProvider.getInstance(project).allModules
+            .filterIsInstance<CaBuiltinsModule>()
+            .flatMap { module -> binaryIndex.getBinaryFiles(module) }
+            .map(::toBuiltinsSearchRoot)
+            .distinctBy(File::getAbsolutePath)
+
+    /** 从 builtins virtual file 推断 `.cjo` 搜索根目录。 */
+    private fun toBuiltinsSearchRoot(virtualFile: VirtualFile): File {
+        val file = toRootFile(virtualFile)
+        val parent = file.parentFile ?: return file
+        val firstPackageSegment = CjoBinaryFileReader.readPackageFqName(virtualFile)?.pathSegments()?.firstOrNull()
+        return if (firstPackageSegment != null && parent.name == firstPackageSegment.asString()) {
+            parent.parentFile ?: parent
+        } else {
+            parent
         }
     }
 

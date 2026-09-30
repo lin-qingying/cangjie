@@ -358,6 +358,9 @@ CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaLibraryModule): List
 CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile>
 CaDecompiledBinaryIndex.public fun getBuiltinsPackages( module: CaBuiltinsModule, searchScope: GlobalSearchScope, ): Map<FqName, VirtualFile>
 CaDecompiledBinaryIndex.public fun getBuiltinsPackages(searchScope: GlobalSearchScope): Map<FqName, VirtualFile>
+CaDecompiledBinaryIndex.public fun getLibraryPackages( module: CaLibraryModule, searchScope: GlobalSearchScope, ): Map<FqName, VirtualFile>
+CaDecompiledBinaryIndex.public fun isIndexedLibraryBinary(module: CaLibraryModule, binaryFile: VirtualFile): Boolean
+CaDecompiledBinaryIndex.public fun findLibraryPackageFqName(module: CaLibraryModule, binaryFile: VirtualFile): FqName?
 CaDecompiledBinaryIndex.public fun readPackageFqName(binaryFile: VirtualFile): FqName?
 CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaLibraryModule, packageFqName: FqName): VirtualFile?
 CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaBuiltinsModule, packageFqName: FqName): VirtualFile?

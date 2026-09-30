@@ -166,7 +166,10 @@ object CfirIntConstantEvalUtils {
             ?.groupValues
             ?.get(1)
         val core = if (suffix != null) raw.dropLast(suffix.length) else raw
-        val normalized = core.replace("_", "")
+        // 折叠后的负字面量以 `-` 开头，符号要在识别进制前剥离，否则 `-0x...`、`-0b...`、`-0o...` 会被当成十进制字符串。
+        val negative = core.startsWith('-')
+        val unsignedCore = if (negative) core.substring(1) else core
+        val normalized = unsignedCore.replace("_", "")
         if (normalized.isEmpty()) return null
 
         val (radix, digits) = when {
@@ -178,9 +181,10 @@ object CfirIntConstantEvalUtils {
         if (digits.isEmpty()) return null
 
         return try {
+            val magnitude = BigInteger(digits, radix)
             ParsedIntLiteral(
                 originalText = raw,
-                value = BigInteger(digits, radix),
+                value = if (negative) magnitude.negate() else magnitude,
                 explicitSuffix = suffix?.lowercase(),
             )
         } catch (_: NumberFormatException) {
@@ -327,6 +331,14 @@ object CfirIntConstantEvalUtils {
         }
         return rangeForLiteralTargetType(type)
     }
+
+    /**
+     * 按字面量的最终值选择有符号或无符号值域。
+     *
+     * 符号随字面量一起进入 value（官方 `ParseNegativeLiteral`、Kotlin psi2fir 折叠），调用方不再需要回扫源码文本判断符号。
+     */
+    fun rangeForIntLiteralValueTargetType(type: ConeCangJieType?, value: BigInteger): IntegerRange? =
+        if (value.signum() < 0) rangeForSignedLiteralTargetType(type) else rangeForPositiveLiteralTargetType(type)
 
     /**
      * 取得整数类型的位宽。

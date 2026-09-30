@@ -20616,6 +20616,12 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/type/err_recursive_func_02.cj")
         }
 
+        @TestMetadata("float_literal_range.cj")
+        @Test
+        fun testFloatLiteralRange() {
+            runTest("cfir/analysis-tests/testData/llt/type/float_literal_range.cj")
+        }
+
         @TestMetadata("int64max.cj")
         @Test
         fun testInt64max() {

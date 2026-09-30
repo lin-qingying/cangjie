@@ -110,7 +110,6 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = setOf(
 //            CfirArgumentTypeMismatchChecker,
-            CfirSignedLiteralNumericOverflowChecker,
             CfirConstructorDelegationCallChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAbstractClassInstantiationChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,

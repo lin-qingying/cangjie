@@ -55,6 +55,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirConstantValue
 import org.cangnova.cangjie.cfir.expressions.CfirConstantValueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
@@ -68,11 +69,9 @@ import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
-import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirInteropTarget
-import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.arrayElementType
@@ -529,7 +528,7 @@ class CfirDeclDeserializer private constructor(
         }
 
         val constructor = targetClassId
-            ?.let(context.moduleData.session.symbolProvider::getClassLikeSymbolByClassId)
+            ?.let(context.classSymbolLookup::getClassLikeSymbolByClassId)
             ?.cfir
             ?.declarations
             ?.filterIsInstance<CfirConstructor>()
@@ -707,7 +706,7 @@ class CfirDeclDeserializer private constructor(
         val name = info.reference?.takeIf(String::isNotBlank)?.let(Name::identifier) ?: return null
         val containingClassId = info.target?.let(context.fullIdResolver::resolveContainingClassId)
         val constructor = containingClassId
-            ?.let(context.moduleData.session.symbolProvider::getClassLikeSymbolByClassId)
+            ?.let(context.classSymbolLookup::getClassLikeSymbolByClassId)
             ?.let { owner ->
                 var match: CfirEnumConstructorSymbol? = null
                 CfirClassDeclaredMemberScope(owner).processCallablesByName(name) { symbol ->
@@ -741,7 +740,8 @@ class CfirDeclDeserializer private constructor(
 
         val (kind, value) = when (literal.constKind) {
             LitConstKind.Integer -> CfirLiteralKind.INT to rawValue
-            LitConstKind.Float -> CfirLiteralKind.FLOAT to rawValue
+            // 浮点载荷是数值（`Double`），与两条 raw 构建路径和 `CfirConstantValue.Primitive` 的约定一致。
+            LitConstKind.Float -> CfirLiteralKind.FLOAT to CfirFloatConstantEvalUtils.parseFloatLiteral(rawValue)
             // 官方 RUNE_BYTE 定型 UInt8，与 Rune 分开建模。
             LitConstKind.RuneByte -> CfirLiteralKind.BYTE to rawValue
             LitConstKind.Rune,
@@ -1827,7 +1827,8 @@ class CfirDeclDeserializer private constructor(
                 ?: return null
             val fields = value.fields
             val classLikeSymbol = (objectType as? ConeClassLikeType)
-                ?.toClassLikeSymbol(context.moduleData.session)
+                ?.classId
+                ?.let(context.classSymbolLookup::getClassLikeSymbolByClassId)
                 ?: return null
             val membersByName = classLikeSymbol.cfir.declarations
                 .asSequence()

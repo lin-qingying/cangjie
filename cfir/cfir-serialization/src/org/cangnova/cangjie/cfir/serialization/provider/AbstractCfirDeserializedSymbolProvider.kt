@@ -47,7 +47,7 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     protected val cangjieScopeProvider: CfirCangJieScopeProvider,
     /** 库声明归属的模块数据。 */
     protected val libraryModuleData: CfirModuleData,
-) : CfirSymbolProvider(session) {
+) : CfirSymbolProvider(session), CfirClassLikeSymbolLookup {
 
     /** 反序列化包的顶层名称索引提供器。 */
     abstract override val symbolNamesProvider: CfirSymbolNamesProvider

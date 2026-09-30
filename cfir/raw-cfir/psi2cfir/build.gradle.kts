@@ -16,6 +16,7 @@ dependencies {
     api(project(":cfir:cfir-tree"))
     api(project(":cfir:raw-cfir:raw-cfir-common"))
     api(project(":cfir:providers"))
+    api(project(":cfir:semantics"))
     implementation(project(":psi"))
 
     compileOnly(intellijCore())

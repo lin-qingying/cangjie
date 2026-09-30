@@ -180,6 +180,7 @@ class CjoSdkDeserializationIntegrationTest {
                 header = header,
                 moduleData = DiagModuleData,
                 cjoManager = manager,
+                classSymbolLookup = manager.deserializedSymbolLookups.forModuleData(DiagModuleData),
             )
 
             val indices = header.topLevelExtendIndices

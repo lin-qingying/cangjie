@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.cjo
 
 import PackageFormat.Package
+import org.cangnova.cangjie.cfir.serialization.provider.CjoDeserializedSymbolLookupHolder
 import org.cangnova.cangjie.cfir.session.CfirCjmpLoadDiagnostic
 import org.cangnova.cangjie.name.FqName
 import java.nio.ByteBuffer
@@ -21,6 +22,11 @@ class CjoManager(
         override val header: CjoPackageHeader = CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer.duplicate()))
         override val pkg: Package get() = Package.getRootAsPackage(buffer.duplicate())
     }
+
+    /**
+     * 按模块数据共享的反序列化符号查找入口；与本 manager 的包快照同生共死。
+     */
+    val deserializedSymbolLookups: CjoDeserializedSymbolLookupHolder = CjoDeserializedSymbolLookupHolder(this)
 
     private val snapshots = ConcurrentHashMap<String, CjoLoadedPackage>()
     private val missingPackages = ConcurrentHashMap.newKeySet<String>()

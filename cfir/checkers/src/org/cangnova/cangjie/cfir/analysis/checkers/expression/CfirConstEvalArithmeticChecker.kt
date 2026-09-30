@@ -47,6 +47,19 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
     private val MINUS = OperatorNameConventions.MINUS
 
     /**
+     * 一元负号 operator 名称。
+     *
+     * 仓颉没有一元正号语法（cjc 对 `+1` 报解析错误），`UNARY_PLUS` 仅为完整覆盖
+     * `OperatorNameConventions` 的一元 operator 集合而登记，实际不会由源码产生。
+     */
+    private val UNARY_MINUS = OperatorNameConventions.UNARY_MINUS
+
+    /**
+     * 一元正号 operator 名称。
+     */
+    private val UNARY_PLUS = OperatorNameConventions.UNARY_PLUS
+
+    /**
      * 乘法 operator 名称。
      */
     private val TIMES = OperatorNameConventions.TIMES
@@ -79,12 +92,22 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
     /**
      * 当前检查器可递归常量求值的 operator 集合。
      */
-    private val EVALUATABLE = setOf(PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION)
+    private val EVALUATABLE = setOf(
+        PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION,
+        UNARY_MINUS, UNARY_PLUS,
+    )
 
     /**
      * 需要检查求值结果范围的 operator 集合。
+     *
+     * 一元正负号在集合内：官方把取负溢出报在运算上
+     * （`chir_arithmetic_operator_overflow`，"operation '-Int64(-9223372036854775808)' would overflow"），
+     * 而不是报在字面量上；字面量值域由 `CfirLiteralNumericOverflowChecker` 单独负责。
      */
-    private val OVERFLOW_REPORTING = setOf(PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION)
+    private val OVERFLOW_REPORTING = setOf(
+        PLUS, MINUS, TIMES, DIV, REM, LEFT_SHIFT, RIGHT_SHIFT, EXPONENTIATION,
+        UNARY_MINUS, UNARY_PLUS,
+    )
 
     /**
      * 检查函数调用形式的整数常量算术表达式。
@@ -98,31 +121,35 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         if (operatorName !in EVALUATABLE) return
         if (expression.isPrimitiveCompoundAssignmentCall(context)) return
         if (context.isSubscriptIndexExpression(source)) return
-
-        val rightExpression = expression.argumentList.arguments.singleOrNull() ?: return
-
-        if (operatorName == LEFT_SHIFT || operatorName == RIGHT_SHIFT) {
-            checkShiftConstant(expression, source, rightExpression)
-            return
-        }
-
-        val right = evaluateIntegerConstantExpression(rightExpression) ?: return
         val isPrimitiveOperatorCall = expression.isResolvedPrimitiveOperatorCall(operatorName)
 
-        if ((operatorName == DIV || operatorName == REM) && right.value == BigInteger.ZERO) {
-            if (expression.hasUInt64LeftAndInt64ZeroRight()) {
-                reporter.reportOn(
-                    source,
-                    CfirErrors.INVALID_BINARY_OPERATOR,
-                    operatorName.asString(),
-                    "UInt64",
-                    "Int64",
-                )
+        // 一元正负号没有右操作数：除零与移位计数都不适用，直接进入结果范围检查。
+        val isUnarySign = operatorName == UNARY_MINUS || operatorName == UNARY_PLUS
+        if (!isUnarySign) {
+            val rightExpression = expression.argumentList.arguments.singleOrNull() ?: return
+
+            if (operatorName == LEFT_SHIFT || operatorName == RIGHT_SHIFT) {
+                checkShiftConstant(expression, source, rightExpression)
                 return
             }
-            if (isPrimitiveOperatorCall) {
-                reporter.reportOn(source, CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO, operatorName.asString())
-                return
+
+            val right = evaluateIntegerConstantExpression(rightExpression) ?: return
+
+            if ((operatorName == DIV || operatorName == REM) && right.value == BigInteger.ZERO) {
+                if (expression.hasUInt64LeftAndInt64ZeroRight()) {
+                    reporter.reportOn(
+                        source,
+                        CfirErrors.INVALID_BINARY_OPERATOR,
+                        operatorName.asString(),
+                        "UInt64",
+                        "Int64",
+                    )
+                    return
+                }
+                if (isPrimitiveOperatorCall) {
+                    reporter.reportOn(source, CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO, operatorName.asString())
+                    return
+                }
             }
         }
 

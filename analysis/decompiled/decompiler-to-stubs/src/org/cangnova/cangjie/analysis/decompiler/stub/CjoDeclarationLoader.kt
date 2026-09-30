@@ -30,6 +30,7 @@ object CjoDeclarationLoader {
             header = loadedPackage.header,
             moduleData = moduleData,
             cjoManager = loadedPackage.cjoManager,
+            classSymbolLookup = loadedPackage.cjoManager.deserializedSymbolLookups.forModuleData(moduleData),
             sourcePath = loadedPackage.sourcePath,
         )
         val typeDeserializer = CfirTypeDeserializer(context)

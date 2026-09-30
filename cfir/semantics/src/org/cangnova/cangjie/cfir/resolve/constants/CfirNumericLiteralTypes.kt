@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.optionElementType
+import org.cangnova.cangjie.source.text
 
 /**
  * 浮点字面量的显式类型后缀模式。
@@ -25,7 +26,8 @@ fun CfirLiteralExpression.explicitNumericLiteralType(): ConePrimitiveType? = whe
         CfirIntConstantEvalUtils.parseIntLiteral(this)?.explicitSuffix,
     )
     CfirLiteralKind.BYTE -> ConePrimitiveType.UINT8
-    CfirLiteralKind.FLOAT -> when (floatLiteralSuffix.find(value as? String ?: "")?.value?.lowercase()) {
+    // 浮点 value 是数值载荷（`Double`），后缀语义只能取自字面量源码文本。
+    CfirLiteralKind.FLOAT -> when (floatLiteralSuffix.find(source?.text?.toString() ?: "")?.value?.lowercase()) {
         "f16" -> ConePrimitiveType.FLOAT16
         "f32" -> ConePrimitiveType.FLOAT32
         "f64" -> ConePrimitiveType.FLOAT64
