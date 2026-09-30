@@ -41,7 +41,6 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 internal fun LLCfirSession.registerIdeComponents(
     project: Project,
     languageVersionSettings: LanguageVersionSettings,
-    annotationSearchScope: GlobalSearchScope
 ) {
     register(CfirCachesFactory::class, CfirThreadSafeCachesFactory(project))
     register(CfirExceptionHandler::class, LLCfirExceptionHandler)

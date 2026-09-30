@@ -27,7 +27,7 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
             LLCangJieStubBasedLibrarySymbolProvider(
                 session,
                 StubAndBuiltinsDeserializedContainerSourceProvider,
-                scope,
+                { scope },
             )
         )
     }
@@ -40,7 +40,7 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
         packagePartProvider: LLPackagePartProvider,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider> = listOf(
-        LLCangJieStubBasedLibrarySymbolProvider(session, NullDeserializedContainerSourceProvider, scope),
+        LLCangJieStubBasedLibrarySymbolProvider(session, NullDeserializedContainerSourceProvider, { scope }),
     )
 
     /**
@@ -51,7 +51,8 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
             LLCangJieStubBasedLibrarySymbolProvider(
                 session,
                 BuiltinsDeserializedContainerSourceProvider,
-                BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project),
+                // builtins 搜索作用域每次访问都会重新遍历 SDK 目录，只能在首次查询声明时创建。
+                { BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project) },
             ),
         )
     }

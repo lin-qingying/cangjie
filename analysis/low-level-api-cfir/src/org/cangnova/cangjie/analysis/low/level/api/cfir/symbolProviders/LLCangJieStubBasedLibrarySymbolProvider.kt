@@ -6,7 +6,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.util.containers.addIfNotNull
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.createDeclarationProvider
+import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.createPackageProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
@@ -24,6 +26,7 @@ import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLazySymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -74,7 +77,13 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      * 根据声明类型和 stub 来源创建反序列化 container source 的提供器。
      */
     private val deserializedContainerSourceProvider: DeserializedContainerSourceProvider,
-    scope: GlobalSearchScope,
+    /**
+     * 当前库搜索范围的提供方式。
+     *
+     * 以工厂形式接收而不是 `GlobalSearchScope`：`createBuiltinsScope` 在 IDE 宿主下会遍历整个 SDK 目录，
+     * session 构造期不得求值，否则 builtins session 创建会重入 `.cjo` stub 构建。
+     */
+    private val scope: () -> GlobalSearchScope,
 ) : LLCangJieSymbolProvider(session) {
     /**
      * 当前会话的仓颉作用域提供器，用于类和成员反序列化。
@@ -92,19 +101,27 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         get() = moduleData.caModule
 
     /**
-     * 当前库搜索范围内的仓颉声明索引。
+     * 当前库搜索范围内的仓颉声明索引；首次查询时才创建。
+     *
+     * IDE 宿主创建声明提供器会遍历搜索作用域并触碰 stub 索引（`CaIdeScopeCangJieFileCollector`），
+     * 在 builtins session 构造期求值会让该构造同线程重入 `getBuiltinsSession`。
+     * 对位 Kotlin `LLKotlinStubBasedLibrarySymbolProvider`：那里构造期求值成立，是因为
+     * Kotlin builtins 不来自 stub 索引；仓颉 `.cjo` 走 stub，必须延迟。
      */
-    final override val declarationProvider = session.project.createDeclarationProvider(
-        scope,
-        contextualModule = session.caModule,
-    )
+    final override val declarationProvider: CangJieDeclarationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        session.project.createDeclarationProvider(
+            scope(),
+            contextualModule = session.caModule,
+        )
+    }
 
     /**
-     * 基于 [declarationProvider] 的缓存名称索引。
+     * 基于 [declarationProvider] 的缓存名称索引；同样是首次查询时才创建。
      */
     @OptIn(CaPlatformInterface::class)
-    override val symbolNamesProvider: CfirSymbolNamesProvider =
+    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirLazySymbolNamesProvider {
         LLCfirCangJieSymbolNamesProvider.cached(session, declarationProvider)
+    }
 
     /**
      * typealias 符号缓存，支持按 class ID 和按 PSI 精确反序列化。
@@ -155,9 +172,11 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
     private val propertyCache = session.cfirCachesFactory.createCache(::loadPropertiesByCallableId)
 
     /**
-     * 当前库搜索范围内的包索引。
+     * 当前库搜索范围内的包索引；首次查询时才创建，原因同 [declarationProvider]。
      */
-    final override val packageProvider = session.project.createPackageProvider(scope)
+    final override val packageProvider: CangJiePackageProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        session.project.createPackageProvider(scope())
+    }
 
     /**
      * 计算 [file] 中反序列化声明的 CFIR 来源。

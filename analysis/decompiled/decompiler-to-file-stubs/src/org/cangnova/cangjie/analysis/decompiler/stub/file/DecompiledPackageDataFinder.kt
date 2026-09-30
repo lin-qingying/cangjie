@@ -4,6 +4,7 @@ package org.cangnova.cangjie.analysis.decompiler.stub.file
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.util.PsiModificationTracker
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -54,15 +55,25 @@ class DecompiledPackageDataFinder(
      *
      * 该入口用于 decompiler 从文件出发恢复声明：先通过 [binaryIndex] 找到包名和 owner module，
      * 再分派到 library 或 builtins 的 module-aware 加载路径。
+     *
+     * 结构外 `.cjo`（不属于任何 library/builtins 模块）按 `<detached:包名>` 的 module key、
+     * 以文件所在目录为搜索根加载：搜索根由 `DecompiledCjoModuleDataProvider` 解析出的 detached owner
+     * 消费，两侧必须一致。
      */
     fun loadPackageData(binaryFile: VirtualFile): LoadedCjoPackage? {
         refreshIfNeeded()
         val packageFqName = binaryIndex.readPackageFqName(binaryFile) ?: return null
-        val module = binaryIndex.findOwningModule(binaryFile) ?: return null
+        val module = binaryIndex.findOwningModule(binaryFile)
         return when (module) {
             is CaLibraryModule -> loadPackageData(module, packageFqName)
             is CaBuiltinsModule -> loadPackageData(
                 moduleKey = "<builtins:${module.targetPlatform.presentableDescription}>",
+                packageFqName = packageFqName,
+                binaryFile = binaryFile,
+                rootFiles = listOf(binaryFile),
+            )
+            null -> loadPackageData(
+                moduleKey = "<detached:${packageFqName.asString()}>",
                 packageFqName = packageFqName,
                 binaryFile = binaryFile,
                 rootFiles = listOf(binaryFile),
@@ -159,7 +170,8 @@ class DecompiledPackageDataFinder(
      * 可能已经不能代表当前项目结构。
      */
     private fun refreshIfNeeded() {
-        val modificationCount = project.getService(CaModificationTracker::class.java)?.modificationCount ?: 0L
+        val modificationCount = CaModificationTracker.getInstance(project)?.modificationCount
+            ?: PsiModificationTracker.getInstance(project).modificationCount
         if (knownModificationCount == modificationCount) return
         repositories.clear()
         knownModificationCount = modificationCount
