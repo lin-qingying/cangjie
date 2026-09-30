@@ -122,3 +122,9 @@
 - 既有失败（与本次无关）：
   - `BuiltinsStubsTest` / `std.argopt.cjo.stubs.txt` 侧车注解缺失，HEAD 上同样失败。
   - `CjWorkspaceModelSyncStdlibTest` 整类在 HEAD 上同样失败于项目创建阶段（见上）。
+  - `:modules:ide:base:test` 单独跑时 18 条中 10 条失败（图标注册 2、QuickDocumentation 7、
+    SourceHighlighting 1），HEAD 源码与本分支逐条一致；这 10 条与 `.cjo` 无关。
+    注意：`:modules:ide:base:test` 与 `:modules:ide:project:test` 放在同一次 Gradle 调用里跑时，
+    `CjStubElementType` 静态初始化会撞上 “index 初始化完成后才创建 stub element type”，额外多挂 8 条
+    （folding/formatting/decompiled-text-contract/highlighting）。这是任务顺序造成的测试宿主假象，不是代码
+    回归；核对回归时必须单独跑一个测试任务。
