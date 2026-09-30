@@ -53,6 +53,18 @@ public class CfirStandaloneNormalAnalysisSourceModuleTypeByDeclarationReturnType
   }
 
   @Test
+  @TestMetadata("inferredClassReturnType.cj")
+  public void testInferredClassReturnType() {
+    run("inferredClassReturnType.cj");
+  }
+
+  @Test
+  @TestMetadata("inferredIntegerLiteralReturnType.cj")
+  public void testInferredIntegerLiteralReturnType() {
+    run("inferredIntegerLiteralReturnType.cj");
+  }
+
+  @Test
   @TestMetadata("typeAliasReturnType.cj")
   public void testTypeAliasReturnType() {
     run("typeAliasReturnType.cj");

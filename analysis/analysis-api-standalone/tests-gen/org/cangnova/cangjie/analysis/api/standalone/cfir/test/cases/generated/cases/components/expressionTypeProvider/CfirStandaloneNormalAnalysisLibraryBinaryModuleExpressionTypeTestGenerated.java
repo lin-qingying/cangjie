@@ -51,4 +51,10 @@ public class CfirStandaloneNormalAnalysisLibraryBinaryModuleExpressionTypeTestGe
   public void testExpressionType() {
     run("expressionType.cj");
   }
+
+  @Test
+  @TestMetadata("inferredReturnTypeCall.cj")
+  public void testInferredReturnTypeCall() {
+    run("inferredReturnTypeCall.cj");
+  }
 }
