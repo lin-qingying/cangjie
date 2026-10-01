@@ -111,9 +111,43 @@
   `:analysis:low-level-api-cfir:test` 131 条 4 失败（Cjmp CallerFirst 4 条，既有），与基线逐条相同；
   主仓全部生产代码编译通过（含 IDE 复合构建）；`:analysis:decompiled:*`、`:analysis:stubs`、`cfir:cfir-serialization` 如上。
 
-## 改动组 5（IDE 改动 10：`CaIdeCandidateCollector` 按根判断）
+## 改动组 6（P2 改动 12b：builtins session 创建重入守卫）
+
+- 问题类型：建 session 期间同线程重入的唯一出口（对缓存 map 递归 → `Recursive update`，或静默拿到空 session）
+- 根因：`getBuiltinsSession` 用 `builtinsSessions.getOrPut`；映射函数内 `createBuiltinsSession` 一旦回到本入口，
+  `ConcurrentHashMap` 会抛 `Recursive update`，而方案也明确禁止换成 `computeIfAbsent`（同样的 map）。
+- 修复：新增 `BuiltinsSessionCreationGuard`（ThreadLocal 记录当前线程正在创建中的 `(平台, session)`）：
+  重入命中时返回半成品 session 并写一条 warn（线程名、平台、session 的 `toString`），登记在 `finally` 里清除；
+  同一键二次登记 `check` 失败（编程错误，应当先走重入短路）。`LLCfirBuiltinsSession` 增加
+  `isUnderConstruction` / `markConstructionCompleted()`，构造完成前才半成品，`toString` 带 `construction=`，
+  这样半成品上误读 `CfirProvider` 时 `ArrayMapAccessor` 的错误信息（`No '...' in array owner: $thisRef`）
+  能直接看出 session 还没建完。守卫只在创建期间挡在 `CfirSymbolProvider` / `CfirProvider` 注册之前，
+  12a 之后这两者本来就不在构造期求值，守卫是防御层。
+- 与 Kotlin 对位：Kotlin `LLFirBuiltinsSessionFactory` 同样是 `getOrPut` 且无守卫；Kotlin builtins 不经 stub 索引，
+  构造期不会重入（已记录为仓颉特有偏离），因此这里额外加了守卫而不是照搬。
+- 验证：`BuiltinsSessionCreationGuardTest` 5 个用例通过（重入返回同一实例、正常/异常退出都清除登记、
+  多键独立、ThreadLocal 语义、同键二次登记报错）；`:analysis:low-level-api-cfir:test` 136 条 / 4 失败，
+  4 条与基线相同（Cjmp CallerFirst 既有失败），新增 5 条全绿。
 
 - 验证：`:modules:ide:base:compileKotlin` 通过（复合构建指向 worktree）。
+
+## §2 崩溃根因：机制定案（方案 §2.4）
+
+- 机制：当时 `accepts = isSupported && readSafely { readPackageFqName != null }`，§2.2 四个 null 出口任一为假，
+  工厂 `checkNotNull` 就抛 `IllegalStateException: decompiler is not registered`，`FileManagerImpl.createFileViewProvider`
+  链路无 catch，入口是 `openFilesOnStartup` / `CodeFoldingNecromancer`。四个出口对用户是同一个表现，
+  所以当时的日志无法区分它们。
+- 出口 1/3 被字节级证据排除；出口 2（`.cjo` 正在被 cjpm 写入、读到截断内容）与出口 4（VFS 刷新瞬间 `!isValid`）
+  与“紧跟 `UnindexedFilesScanner - Reason: On project open`”“同一文件两个 file id + `Reload From Disk`”的现场一致。
+  原始日志已随沙箱重建丢失，**具体命中哪个出口无法回溯**，如实记录。
+- 关闭：改动 7 之后 `accepts` 只做类型级判断，四个出口与 `accepts` 无关；改动 1 的降级 provider + 各出口一条 warn
+  让同类现场下次能从日志区分。残留：启动瞬间 `!isValid` 的标签页停在空文本直到重载（与 Kotlin 同形）。
+- 回归覆盖：主仓 `CangJieMetadataStubBuilderTest` 的 `!isValid` 与 broken header 用例；
+  IDE `CangJieDecompiledFileViewProviderFactoryTest` 直接打工厂入口（空内容 `.cjo`、`!isValid` `.cjo` 只降级不抛），
+  放在 `modules/test-support`（`ide/base` 作为模块没有自己的 `plugin.xml`，其测试环境拿不到 `cjoFileDecompiler` 扩展点）。
+  `:modules:test-support:test` 全模块 BUILD SUCCESSFUL。
+- 沙箱读数（方案 §9.1/4/5）未做：重建后的沙箱没有项目状态与 `recentProjects.xml`，复现需要 GUI 新建带 SDK 的工程
+  并恢复 `.cjo` 标签页；等价入口由 `CjWorkspaceModelSyncStdlibTest` 的重平台用例覆盖（`PsiManager.findFile`、文档文本）。
 
 ## 剩余项- 改动 13（描述符防漂移约束）：已实施，`CangJieDecompiledDescriptorParityTest` 3 个用例通过。
   描述符集合从测试宿主 `org.cangnova.cangjie.testSupport.xml` 声明的模块出发取 include 闭包，
