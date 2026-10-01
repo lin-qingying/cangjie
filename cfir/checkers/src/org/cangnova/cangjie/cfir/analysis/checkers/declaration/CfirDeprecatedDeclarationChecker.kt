@@ -4,6 +4,11 @@ import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -44,8 +49,6 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
             is CfirProperty -> declaration.status.isRedef
             else -> false
         }
-        if (!isOverride && !isRedef) return
-
         val selfHasDeprecated = hasDeprecatedAnnotation(declaration)
         val declName = when (declaration) {
             is CfirNamedFunction -> declaration.name
@@ -62,8 +65,21 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
         val parentHasDeprecated = parentDecl?.let { hasDeprecatedAnnotation(it) } ?: false
         val parentIsError = parentDecl?.let { isDeprecatedErrorLevel(it) } ?: false
 
+        /*
+         * 官方 `DeclAttributeChecker::CheckDeprecationOfOverride` / `CheckDeprecationOfRedef` 不要求
+         * 子声明显式写 override / redef：接口成员的实现按 override 报告，遮蔽父类 static 成员按 redef
+         * 报告（cjc 1.0.5 实测 `class C <: I` 实现弃用接口函数、`class F <: E` 遮蔽弃用 static 函数）。
+         */
+        val parentIsStatic = when (val parent = parentDecl) {
+            is CfirNamedFunction -> parent.status.isStatic
+            is CfirProperty -> parent.status.isStatic
+            else -> false
+        }
+        val effectiveOverride = isOverride || (!isRedef && parentDecl != null && !parentIsStatic)
+        val effectiveRedef = isRedef || (!isOverride && parentDecl != null && parentIsStatic)
+
         if (parentHasDeprecated && !selfHasDeprecated) {
-            if (isOverride) {
+            if (effectiveOverride) {
                 val factory = if (parentIsError)
                     CfirErrors.DEPRECATION_OVERRIDE_ERROR
                 else
@@ -75,7 +91,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
                     b = declName,
                 )
             }
-            if (isRedef) {
+            if (effectiveRedef) {
                 val factory = if (parentIsError)
                     CfirErrors.DEPRECATION_REDEF_ERROR
                 else
@@ -99,6 +115,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
             }
         }
     }
+
 
     /**
      * 在父类型中查找被 override/redef 的对应声明（同名同 kind）。
@@ -144,5 +161,62 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
         val ann = declaration.findBuiltinAnnotations(BuiltInAnnotationKind.DEPRECATED)
             .firstOrNull() as? CfirAnnotationCall ?: return false
         return ann.booleanArgument("strict") == true
+    }
+}
+
+/**
+ * class-like 级弃用继承检查器
+ *
+ * 对齐 C++ `TypeChecker::CheckDeprecationLevelOnInheritors`：
+ * 弃用 class-like 的直接子声明（不含自身注解）按父级严格度报
+ * DEPRECATION_OVERRIDE_ERROR / _WARNING；子声明带非 strict 注解时报 DEPRECATION_WEAKENING。
+ */
+object CfirDeprecatedClassLikeChecker : CfirClassLikeChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirClassLikeDeclaration) {
+        val parent = declaration.deprecatedClassLikeSupertype() ?: return
+        val parentIsStrict = parent.isDeprecatedErrorLevel()
+        val declName = declaration.name
+        val kind = when (declaration) {
+            is CfirClass -> "class"
+            is CfirInterface -> "interface"
+            is CfirStruct -> "struct"
+            is CfirEnum -> "enum"
+            else -> "declaration"
+        }
+
+        val selfHasDeprecated = declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED)
+        if (selfHasDeprecated) {
+            if (parentIsStrict && !declaration.isDeprecatedErrorLevel()) {
+                reporter.reportOn(source = declaration.source, factory = CfirErrors.DEPRECATION_WEAKENING)
+            }
+            return
+        }
+
+        reporter.reportOn(
+            source = declaration.source,
+            factory = if (parentIsStrict) CfirErrors.DEPRECATION_OVERRIDE_ERROR else CfirErrors.DEPRECATION_OVERRIDE_WARNING,
+            a = kind,
+            b = declName,
+        )
+    }
+
+    /** 找出第一个带 `@Deprecated` 的父 class-like 声明。 */
+    context(context: CheckerContext)
+    private fun CfirClassLikeDeclaration.deprecatedClassLikeSupertype(): CfirClassLikeDeclaration? {
+        for (superTypeRef in superTypeRefs) {
+            val coneType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+            val superDecl = context.session.symbolProvider.getClassLikeSymbolByClassId(coneType.classId)?.cfir
+                as? CfirClassLikeDeclaration ?: continue
+            if (superDecl.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED)) return superDecl
+        }
+        return null
+    }
+
+    /** 读取 `@Deprecated(strict: true)`。 */
+    private fun CfirDeclaration.isDeprecatedErrorLevel(): Boolean {
+        val annotation = findBuiltinAnnotations(BuiltInAnnotationKind.DEPRECATED)
+            .firstOrNull() as? CfirAnnotationCall ?: return false
+        return annotation.booleanArgument("strict") == true
     }
 }

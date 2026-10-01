@@ -360,6 +360,13 @@ open class AbstractCfirStatusResolveTransformer(
             if (target is CfirMemberDeclaration) {
                 target.publishResolvedStatusIfNeeded()
                 target.publishInteropInfo(session)
+                // 弃用信息与 `@Deprecated` 注解实参绑定：实参在 BODY_RESOLVE 映射，
+                // `AnnotationDeprecationsProvider` 每次读取时重算，因此这里只需发布注解来源的 provider。
+                when (target) {
+                    is CfirCallableDeclaration -> target.replaceDeprecationsProvider(buildDeprecationsProvider(target.annotations))
+                    is CfirClassLikeDeclaration -> target.replaceDeprecationsProvider(buildDeprecationsProvider(target.annotations))
+                    else -> Unit
+                }
             }
             target.replaceResolvePhase(CfirResolvePhase.STATUS)
             statusComputationSession.endComputing(target)

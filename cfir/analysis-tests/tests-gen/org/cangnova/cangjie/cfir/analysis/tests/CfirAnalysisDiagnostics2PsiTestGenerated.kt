@@ -19,6 +19,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2")
     }
 
+    @TestMetadata("assign")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Assign : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/assign")
+        }
+
+        @TestMetadata("mismatchedTypesMultipleAssign.cj")
+        @Test
+        fun testMismatchedTypesMultipleAssign() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/assign/mismatchedTypesMultipleAssign.cj")
+        }
+    }
+
     @TestMetadata("call")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -32,6 +48,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAmbiguousFunctionCall() {
             runTest("cfir/analysis-tests/testData/diagnostics2/call/ambiguousFunctionCall.cj")
+        }
+
+        @TestMetadata("arityMismatch.cj")
+        @Test
+        fun testArityMismatch() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/call/arityMismatch.cj")
         }
 
         @TestMetadata("namedArgumentsAndArity.cj")
@@ -603,6 +625,34 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         }
     }
 
+    @TestMetadata("conditional-compilation")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class ConditionalCompilation : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/conditional-compilation")
+        }
+
+        @TestMetadata("whenConditionErrors.cj")
+        @Test
+        fun testWhenConditionErrors() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/conditional-compilation/whenConditionErrors.cj")
+        }
+
+        @TestMetadata("whenConditionValueAndDebugOp.cj")
+        @Test
+        fun testWhenConditionValueAndDebugOp() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/conditional-compilation/whenConditionValueAndDebugOp.cj")
+        }
+
+        @TestMetadata("whenNoCondition.cj")
+        @Test
+        fun testWhenNoCondition() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/conditional-compilation/whenNoCondition.cj")
+        }
+    }
+
     @TestMetadata("const-eval")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -658,6 +708,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/constraints/nameInConstraintIsNotTypeParameterExtend.cj")
         }
 
+        @TestMetadata("nameInConstraintVisibleClass.cj")
+        @Test
+        fun testNameInConstraintVisibleClass() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/constraints/nameInConstraintVisibleClass.cj")
+        }
+
+        @TestMetadata("nameInConstraintVisibleClassifier.cj")
+        @Test
+        fun testNameInConstraintVisibleClassifier() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/constraints/nameInConstraintVisibleClassifier.cj")
+        }
+
         @TestMetadata("onlyOneClassBoundAllowed.cj")
         @Test
         fun testOnlyOneClassBoundAllowed() {
@@ -684,6 +746,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/constructor")
+        }
+
+        @TestMetadata("curriedConstructor.cj")
+        @Test
+        fun testCurriedConstructor() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/constructor/curriedConstructor.cj")
         }
 
         @TestMetadata("noConstructorDirectConstruction.cj")
@@ -769,6 +837,80 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         fun testStaticCannotBeOpenAbstractOverride() {
             runTest("cfir/analysis-tests/testData/diagnostics2/declaration-status/staticCannotBeOpenAbstractOverride.cj")
         }
+
+        @TestMetadata("staticOpenAndOverload.cj")
+        @Test
+        fun testStaticOpenAndOverload() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/declaration-status/staticOpenAndOverload.cj")
+        }
+    }
+
+    @TestMetadata("deprecation")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Deprecation : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/deprecation")
+        }
+
+        @TestMetadata("callAndTypeRef.cj")
+        @Test
+        fun testCallAndTypeRef() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/deprecation/callAndTypeRef.cj")
+        }
+
+        @TestMetadata("classInheritance.cj")
+        @Test
+        fun testClassInheritance() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/deprecation/classInheritance.cj")
+        }
+
+        @TestMetadata("deprecatedConstructor.cj")
+        @Test
+        fun testDeprecatedConstructor() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/deprecation/deprecatedConstructor.cj")
+        }
+
+        @TestMetadata("overrideAndWeakening.cj")
+        @Test
+        fun testOverrideAndWeakening() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/deprecation/overrideAndWeakening.cj")
+        }
+
+        @TestMetadata("propertyAndInterfaceMember.cj")
+        @Test
+        fun testPropertyAndInterfaceMember() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/deprecation/propertyAndInterfaceMember.cj")
+        }
+    }
+
+    @TestMetadata("entry")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Entry : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/entry")
+        }
+
+        @TestMetadata("mainParameterType.cj")
+        @Test
+        fun testMainParameterType() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/entry/mainParameterType.cj")
+        }
+
+        @TestMetadata("mainSignature.cj")
+        @Test
+        fun testMainSignature() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/entry/mainSignature.cj")
+        }
+
+        @TestMetadata("missingProgramEntry.cj")
+        @Test
+        fun testMissingProgramEntry() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/entry/missingProgramEntry.cj")
+        }
     }
 
     @TestMetadata("enum")
@@ -790,6 +932,46 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testNoErrorSimpleEnum() {
             runTest("cfir/analysis-tests/testData/diagnostics2/enum/noErrorSimpleEnum.cj")
+        }
+    }
+
+    @TestMetadata("extend")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Extend : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/extend")
+        }
+
+        @TestMetadata("extendIllegalMember.cj")
+        @Test
+        fun testExtendIllegalMember() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/extend/extendIllegalMember.cj")
+        }
+
+        @TestMetadata("extendImmutableIndexAssignment.cj")
+        @Test
+        fun testExtendImmutableIndexAssignment() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/extend/extendImmutableIndexAssignment.cj")
+        }
+
+        @TestMetadata("extendImportedInterfaceOrphan.cj")
+        @Test
+        fun testExtendImportedInterfaceOrphan() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/extend/extendImportedInterfaceOrphan.cj")
+        }
+
+        @TestMetadata("extendMutInterfaceOnPrimitive.cj")
+        @Test
+        fun testExtendMutInterfaceOnPrimitive() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/extend/extendMutInterfaceOnPrimitive.cj")
+        }
+
+        @TestMetadata("extendMutMemberOnImmutable.cj")
+        @Test
+        fun testExtendMutMemberOnImmutable() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/extend/extendMutMemberOnImmutable.cj")
         }
     }
 
@@ -834,6 +1016,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/general")
+        }
+
+        @TestMetadata("conflictWithSubPackage.cj")
+        @Test
+        fun testConflictWithSubPackage() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/general/conflictWithSubPackage.cj")
+        }
+
+        @TestMetadata("coreObjectNotFoundNoPrelude.cj")
+        @Test
+        fun testCoreObjectNotFoundNoPrelude() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/general/coreObjectNotFoundNoPrelude.cj")
         }
 
         @TestMetadata("extendInterfaceParentAcrossFiles.cj")
@@ -885,6 +1079,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         }
     }
 
+    @TestMetadata("generic")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Generic : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/generic")
+        }
+
+        @TestMetadata("upperBounds.cj")
+        @Test
+        fun testUpperBounds() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/generic/upperBounds.cj")
+        }
+    }
+
     @TestMetadata("generic-access")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -916,6 +1126,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/imports")
         }
 
+        @TestMetadata("cannotRefToPackageName.cj")
+        @Test
+        fun testCannotRefToPackageName() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/imports/cannotRefToPackageName.cj")
+        }
+
         @TestMetadata("importAliasConflict.cj")
         @Test
         fun testImportAliasConflict() {
@@ -942,6 +1158,18 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/inference")
+        }
+
+        @TestMetadata("arrayLiteralAndMultipleAssign.cj")
+        @Test
+        fun testArrayLiteralAndMultipleAssign() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inference/arrayLiteralAndMultipleAssign.cj")
+        }
+
+        @TestMetadata("builderInferenceMultiLambda.cj")
+        @Test
+        fun testBuilderInferenceMultiLambda() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inference/builderInferenceMultiLambda.cj")
         }
 
         @TestMetadata("builderInferenceMultiLambdaRestriction.cj")
@@ -1000,6 +1228,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/inheritance")
+        }
+
+        @TestMetadata("cannotInheritSealedClass.cj")
+        @Test
+        fun testCannotInheritSealedClass() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/cannotInheritSealedClass.cj")
         }
 
         @TestMetadata("classAndInterfaceInheritanceBoundaries.cj")
@@ -1080,10 +1314,28 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/privateExtendOwnerGroups.cj")
         }
 
+        @TestMetadata("superAlone.cj")
+        @Test
+        fun testSuperAlone() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/superAlone.cj")
+        }
+
         @TestMetadata("superSelfAndDuplicate.cj")
         @Test
         fun testSuperSelfAndDuplicate() {
             runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/superSelfAndDuplicate.cj")
+        }
+
+        @TestMetadata("superclassMustBePlacedFirst.cj")
+        @Test
+        fun testSuperclassMustBePlacedFirst() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/superclassMustBePlacedFirst.cj")
+        }
+
+        @TestMetadata("thisAndSuperOutsideClass.cj")
+        @Test
+        fun testThisAndSuperOutsideClass() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inheritance/thisAndSuperOutsideClass.cj")
         }
     }
 
@@ -1116,6 +1368,30 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/inout")
+        }
+
+        @TestMetadata("inoutCString.cj")
+        @Test
+        fun testInoutCString() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inout/inoutCString.cj")
+        }
+
+        @TestMetadata("inoutHeapVariable.cj")
+        @Test
+        fun testInoutHeapVariable() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inout/inoutHeapVariable.cj")
+        }
+
+        @TestMetadata("inoutNonCFuncCall.cj")
+        @Test
+        fun testInoutNonCFuncCall() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCFuncCall.cj")
+        }
+
+        @TestMetadata("inoutNonCType.cj")
+        @Test
+        fun testInoutNonCType() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCType.cj")
         }
 
         @TestMetadata("inoutNonLValuePlaceholder.cj")
@@ -1174,6 +1450,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testForeignFunctionTypeAliasExpansion() {
             runTest("cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionTypeAliasExpansion.cj")
+        }
+    }
+
+    @TestMetadata("intrinsic")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Intrinsic : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/intrinsic")
+        }
+
+        @TestMetadata("intrinsicMemberAndBody.cj")
+        @Test
+        fun testIntrinsicMemberAndBody() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/intrinsic/intrinsicMemberAndBody.cj")
         }
     }
 
@@ -1524,6 +1816,24 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
             runTest("cfir/analysis-tests/testData/diagnostics2/operator/plus.cj")
         }
 
+        @TestMetadata("subscriptAssignNamedParameter.cj")
+        @Test
+        fun testSubscriptAssignNamedParameter() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/operator/subscriptAssignNamedParameter.cj")
+        }
+
+        @TestMetadata("subscriptAssignNoPositional.cj")
+        @Test
+        fun testSubscriptAssignNoPositional() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/operator/subscriptAssignNoPositional.cj")
+        }
+
+        @TestMetadata("subscriptAssignReturnType.cj")
+        @Test
+        fun testSubscriptAssignReturnType() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/operator/subscriptAssignReturnType.cj")
+        }
+
         @TestMetadata("subscriptGet.cj")
         @Test
         fun testSubscriptGet() {
@@ -1550,6 +1860,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testPatternLegality() {
             runTest("cfir/analysis-tests/testData/diagnostics2/pattern/patternLegality.cj")
+        }
+    }
+
+    @TestMetadata("property")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Property : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/property")
+        }
+
+        @TestMetadata("propertyAccessorRules.cj")
+        @Test
+        fun testPropertyAccessorRules() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/property/propertyAccessorRules.cj")
         }
     }
 
@@ -1621,6 +1947,28 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         }
     }
 
+    @TestMetadata("static-init")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class StaticInit : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/static-init")
+        }
+
+        @TestMetadata("returnInStaticInit.cj")
+        @Test
+        fun testReturnInStaticInit() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/static-init/returnInStaticInit.cj")
+        }
+
+        @TestMetadata("thisOrSuperInStaticInit.cj")
+        @Test
+        fun testThisOrSuperInStaticInit() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/static-init/thisOrSuperInStaticInit.cj")
+        }
+    }
+
     @TestMetadata("stdlib")
     @TestDataPath("${'$'}PROJECT_ROOT")
     @Nested
@@ -1656,6 +2004,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testSuperFunc() {
             runTest("cfir/analysis-tests/testData/diagnostics2/super/super_func.cj")
+        }
+    }
+
+    @TestMetadata("thread-context")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class ThreadContext : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/thread-context")
+        }
+
+        @TestMetadata("threadContextOpen.cj")
+        @Test
+        fun testThreadContextOpen() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/thread-context/threadContextOpen.cj")
         }
     }
 
@@ -1834,6 +2198,22 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         @Test
         fun testCrossPackageImportedAliasInFunctionSignature() {
             runTest("cfir/analysis-tests/testData/diagnostics2/typealias/crossPackageImportedAliasInFunctionSignature.cj")
+        }
+    }
+
+    @TestMetadata("unary")
+    @TestDataPath("${'$'}PROJECT_ROOT")
+    @Nested
+    inner class Unary : AbstractCfirPsiDiagnosticTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/unary")
+        }
+
+        @TestMetadata("invalidUnaryWithTarget.cj")
+        @Test
+        fun testInvalidUnaryWithTarget() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/unary/invalidUnaryWithTarget.cj")
         }
     }
 
