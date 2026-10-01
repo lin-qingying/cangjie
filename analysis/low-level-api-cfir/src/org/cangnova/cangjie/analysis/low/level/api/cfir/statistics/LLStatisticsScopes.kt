@@ -45,8 +45,11 @@ internal interface LLCaffeineStatisticsScope {
 
 /**
  * low-level analysis 统计指标的根 scope。
+ *
+ * 根名使用仓颉自己的命名空间 `cangjie.analysis`：所有 Analysis API 指标都以它为前缀，
+ * 导出到平台后可以直接按产品前缀区分来源。
  */
-internal object LLStatisticsScopes : LLStatisticsScope("kotlin.analysis") {
+internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
     /**
      * analysis session 相关指标 scope。
      */
