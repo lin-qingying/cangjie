@@ -1,0 +1,4 @@
+FILE: namedArgumentInFuncValueCall.cj
+    internal? func callWithNamedArgs(g: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        <element: CfirLazyBlock>
+    }

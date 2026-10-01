@@ -1,0 +1,5 @@
+FILE: finalizerWithReturn.cj
+    internal? class C {
+        init()
+        <element: CfirFinalizer>
+    }

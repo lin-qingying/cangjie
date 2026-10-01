@@ -1,0 +1,8 @@
+FILE: structMemberFunction.cj
+    internal? struct S {
+        init()
+        internal? var v: R|Int64|
+        public func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

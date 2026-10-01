@@ -1,0 +1,4 @@
+FILE: matchConstPatternKinds.cj
+    internal? func useConst(x: R|Int64|, s: R|String|, b: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,8 @@
+FILE: nothingReturn.cj
+    internal? func fail(): R|Nothing| {
+        THROW {
+            FUNCTION_CALL(Exception) {
+                STRING("x")
+            }
+        }
+    }

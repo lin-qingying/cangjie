@@ -1,0 +1,30 @@
+FILE: staticMemberForms.cj
+    internal? class Statics {
+        internal? static let A: R|Int64|
+        internal? static let B: R|String|
+        internal? static var v: R|Int64|
+        internal? static mut prop p: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface StaticProp {
+        public? static prop s: R|Int64|
+        public? abstract? prop p: R|Int64|
+    }
+    internal? enum EnumStatic {
+        A
+        init()
+        public static prop n: R|Int64|
+    }
+    internal? struct WithConst {
+        public static let A: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|WithConst| {
+        public func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

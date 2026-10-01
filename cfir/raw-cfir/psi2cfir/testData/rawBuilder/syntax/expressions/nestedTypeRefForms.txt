@@ -1,0 +1,23 @@
+FILE: nestedTypeRefForms.cj
+    internal? func nestedTypeRefForms(a: R|(R|Int64|, R|(R|String|, R|Bool|)|)|, b: R|Array<R|(R|Int64|, R|Array<R|String|>|)|>|, c: R|Array<R|Option<R|Int64|>|>|, d: R|CType|, e: R|CType|): R|Int64| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                }
+        RETURN {
+            BINARY_OP(COALESCING) {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(c)
+                    indices:
+                        INT(0)
+                }
+                INT(0)
+            }
+        }
+    }

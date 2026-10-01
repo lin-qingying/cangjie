@@ -1,0 +1,65 @@
+FILE: varDeclForms.cj
+    internal? func varDeclForms(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                INT(1)
+        local? let b: R|Int64| = ...
+            initializer:
+                INT(2)
+        local? let c: R|Int64|
+        local? var d: <implicit> = ...
+            initializer:
+                INT(3)
+        local? var e: R|Int64| = ...
+            initializer:
+                INT(4)
+        local? var f: R|String|
+        local? let (p, q): <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    INT(1)
+                    INT(2)
+                }
+        local? var (r, s): <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    INT(3)
+                    INT(4)
+                }
+        local? let (t, _): <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    INT(5)
+                    INT(6)
+                }
+        local? var _: R|Int64| = ...
+            initializer:
+                INT(7)
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(c)
+            rValue:
+                INT(8)
+        }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(f)
+            rValue:
+                STRING("x")
+        }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(f)
+                    NAMED_ACCESS(p)
+                    NAMED_ACCESS(q)
+                    NAMED_ACCESS(r)
+                    NAMED_ACCESS(s)
+                    NAMED_ACCESS(t)
+                }
+    }

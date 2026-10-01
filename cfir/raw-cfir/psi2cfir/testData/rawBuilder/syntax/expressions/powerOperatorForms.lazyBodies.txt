@@ -1,0 +1,15 @@
+FILE: powerOperatorForms.cj
+    internal? func powerOperatorForms(a: R|Int64|, b: R|UInt64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? class P {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_exponentiation(o: R|P|): R|P| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func powerOverload(x: R|P|, y: R|P|): R|P| {
+        <element: CfirLazyBlock>
+    }

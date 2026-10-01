@@ -1,0 +1,4 @@
+FILE: lambdaWithoutArrow.cj
+    internal? func lambdaWithoutArrow(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

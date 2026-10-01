@@ -1,0 +1,23 @@
+FILE: redefInstanceMember.cj
+    internal? open class RedefBase {
+        init() {
+        }
+        public func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public prop p: R|Int64|
+    }
+    internal? class RedefDerived <: R|RedefBase| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public func f(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        public prop p: R|Int64|
+    }

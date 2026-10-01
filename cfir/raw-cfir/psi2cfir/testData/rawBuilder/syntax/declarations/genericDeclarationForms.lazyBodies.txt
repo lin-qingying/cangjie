@@ -1,0 +1,34 @@
+FILE: genericDeclarationForms.cj
+    internal? class One<T> {
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Two<A, B> {
+        init(a: R|A|, b: R|B|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Three<A, B, C> {
+        init(a: R|A|, b: R|B|, c: R|C|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Constrained<T> {
+        private let v: R|T|
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        public func render(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func <T>singleConstraint(x: R|T|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T, U>doubleConstraint(a: R|T|, b: R|U|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func genericDeclarationForms(x: R|One<R|Int64|>|, y: R|Two<R|Int64|, R|String|>|, z: R|Three<R|Int64|, R|Int64|, R|Int64|>|, w: R|Constrained<R|String|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,49 @@
+FILE: constructorDelegation.cj
+    internal? open class DelegBase {
+        public var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(x: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+        }
+    }
+    internal? class DelegDerived <: R|DelegBase| {
+        internal? var w: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+            FUNCTION_CALL(super) {
+                INT(1)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(w) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    INT(2)
+            }
+        }
+        init(y: R|Int64|) {
+            FUNCTION_CALL(this) {
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(w) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }

@@ -1,0 +1,15 @@
+FILE: logicalOperatorOverload.cj
+    internal? class L {
+        init() {
+        }
+        public operator func <no name provided>(o: R|L|): R|L| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func <no name provided>(o: R|L|): R|L| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+    }

@@ -1,0 +1,7 @@
+FILE: whereWithoutTypeParams.cj
+    internal? func concreteWhere(a: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T>colonBound(a: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,7 @@
+FILE: varrayConstructorArgForm.cj
+    internal? func twoArgs(): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func lambdaArg(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

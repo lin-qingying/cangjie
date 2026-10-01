@@ -1,0 +1,10 @@
+FILE: inoutParameter.cj
+    internal? func inoutParameter(x: <implicit>): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func inoutCallSite(a: R|Array<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func takes(x: R|Int64|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

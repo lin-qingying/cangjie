@@ -1,0 +1,6 @@
+FUNCTION_CALL(*operator_times) {
+    receiver:
+        INT(2)
+    arguments:
+        INT(3)
+}

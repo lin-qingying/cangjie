@@ -1,0 +1,10 @@
+FILE: packageAndImportVariants.cj
+    package sample.feature.sub
+    import std.collection.*
+    import std.collection as col
+    import std.fs.File
+    import std.fs.Path
+    import std.fs.File as WinFile
+    internal? func importUses(xs: R|ArrayList<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

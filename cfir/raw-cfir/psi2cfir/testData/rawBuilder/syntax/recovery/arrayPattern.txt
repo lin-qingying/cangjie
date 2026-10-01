@@ -1,0 +1,21 @@
+FILE: arrayPattern.cj
+    internal? func arrayPattern(xs: R|Array<R|Int64|>|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(xs)
+                BRANCH(_) {
+                    ARRAY_LITERAL {
+                        INT(1)
+                        RANGE(..) {
+                            ERROR_EXPR(Missing range start)
+                            NAMED_ACCESS(rest)
+                        }
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }

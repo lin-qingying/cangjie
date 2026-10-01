@@ -1,0 +1,20 @@
+FILE: subscriptSetUnnamedParameter.cj
+    internal? class UnnamedValue {
+        init() {
+        }
+        public operator func *operator_get(i: R|Int64|, v: R|Int64|): R|Unit| {
+        }
+    }
+    internal? func subscriptSetUnnamedParameter(m: R|UnnamedValue|): R|Unit| {
+        ASSIGNMENT {
+            lValue:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(m)
+                    indices:
+                        INT(0)
+                }
+            rValue:
+                INT(1)
+        }
+    }

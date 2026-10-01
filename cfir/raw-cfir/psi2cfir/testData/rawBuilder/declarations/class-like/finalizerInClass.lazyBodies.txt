@@ -1,0 +1,6 @@
+FILE: finalizerInClass.cj
+    internal? class WithFinalizer {
+        init()
+        internal? var v: R|Int64|
+        <element: CfirFinalizer>
+    }

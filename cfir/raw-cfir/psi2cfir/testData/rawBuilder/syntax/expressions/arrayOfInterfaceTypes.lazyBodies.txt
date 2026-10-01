@@ -1,0 +1,18 @@
+FILE: arrayOfInterfaceTypes.cj
+    import std.collection.*
+    internal? interface I {
+        public? func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class C <: R|I| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func arrayOfInterfaceTypes(xs: R|Array<R|I|>|, m: R|HashMap<R|String|, R|Int64|>|, cs: R|Array<R|C|>|, t: R|Array<R|(R|Int64|, R|String|)|>|, o: R|Array<R|Option<R|Int64|>|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,9 @@
+FILE: hexOverflow.cj
+    internal? func hexOverflow(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                INT(0xFFFFFFFFFFFFFFFF)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

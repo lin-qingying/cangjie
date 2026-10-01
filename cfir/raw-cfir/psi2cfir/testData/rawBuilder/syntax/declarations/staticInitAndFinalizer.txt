@@ -1,0 +1,37 @@
+FILE: staticInitAndFinalizer.cj
+    internal? class WithStaticInit {
+        internal? static var counter: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static let LIMIT: R|Int64| = ...
+            initializer:
+                INT(10)
+        internal? var instance: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static prop current: R|Int64|
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(instance)
+                rValue:
+                    INT(1)
+            }
+        }
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(counter)
+                rValue:
+                    NAMED_ACCESS(LIMIT)
+            }
+        }
+        <element: CfirFinalizer>
+    }
+    internal? class OnlyFinalizer {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        <element: CfirFinalizer>
+    }

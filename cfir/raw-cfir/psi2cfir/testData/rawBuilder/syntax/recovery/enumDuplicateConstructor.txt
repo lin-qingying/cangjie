@@ -1,0 +1,11 @@
+FILE: enumDuplicateConstructor.cj
+    internal? enum SameParamCtor {
+        A(R|Int64|)
+        A(R|String|)
+        init()
+    }
+    internal? enum SamePlainCtor {
+        B
+        B
+        init()
+    }

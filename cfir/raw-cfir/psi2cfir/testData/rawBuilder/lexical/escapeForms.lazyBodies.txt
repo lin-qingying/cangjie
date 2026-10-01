@@ -1,0 +1,4 @@
+FILE: escapeForms.cj
+    internal? func escapeForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

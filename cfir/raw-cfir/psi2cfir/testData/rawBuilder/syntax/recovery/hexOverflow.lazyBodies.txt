@@ -1,0 +1,4 @@
+FILE: hexOverflow.cj
+    internal? func hexOverflow(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

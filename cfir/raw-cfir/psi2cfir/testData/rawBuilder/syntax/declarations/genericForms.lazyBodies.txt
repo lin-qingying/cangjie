@@ -1,0 +1,36 @@
+FILE: genericForms.cj
+    internal? func <T>identity(x: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? class Box<T> {
+        internal? var value: R|T|
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Pair<A, B> {
+        internal? var firstValue: R|A|
+        internal? var secondValue: R|B|
+        init(a: R|A|, b: R|B|) {
+            <element: CfirLazyBlock>
+        }
+        internal? func left(): R|A| {
+            <element: CfirLazyBlock>
+        }
+        internal? func right(): R|B| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Container<E> {
+        public? abstract? func empty(): R|Bool|
+        public? prop size: R|Int64|
+    }
+    internal? enum Opt<T> {
+        Some(R|T|)
+        None
+        init()
+    }
+    internal? typealias Alias<T> = R|Array<R|T|>|
+    internal? func genericUses(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

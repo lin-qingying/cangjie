@@ -1,0 +1,39 @@
+FILE: byteLiterals.cj
+    internal? func byteLiterals(): R|Unit| {
+        local? let plain: <implicit> = ...
+            initializer:
+                BYTE(b'120')
+        local? let digit: <implicit> = ...
+            initializer:
+                BYTE(b'48')
+        local? let newline: <implicit> = ...
+            initializer:
+                BYTE(b'10')
+        local? let tab: <implicit> = ...
+            initializer:
+                BYTE(b'9')
+        local? let slash: <implicit> = ...
+            initializer:
+                BYTE(b'92')
+        local? let singleQuote: <implicit> = ...
+            initializer:
+                BYTE(b'39')
+        local? let unicode: <implicit> = ...
+            initializer:
+                BYTE(b'120')
+        local? let unicodeUpper: <implicit> = ...
+            initializer:
+                BYTE(b'144')
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(plain)
+                    NAMED_ACCESS(digit)
+                    NAMED_ACCESS(newline)
+                    NAMED_ACCESS(tab)
+                    NAMED_ACCESS(slash)
+                    NAMED_ACCESS(singleQuote)
+                    NAMED_ACCESS(unicode)
+                    NAMED_ACCESS(unicodeUpper)
+                }
+    }

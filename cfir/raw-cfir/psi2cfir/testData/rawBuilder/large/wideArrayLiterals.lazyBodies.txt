@@ -1,0 +1,4 @@
+FILE: wideArrayLiterals.cj
+    internal? func wideArrayLiterals(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

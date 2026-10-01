@@ -1,0 +1,10 @@
+FILE: thisTypeAsParameter.cj
+    internal? class Param {
+        init() {
+        }
+        public func f(o: R|This|): R|This| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+    }

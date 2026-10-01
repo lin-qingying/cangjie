@@ -1,0 +1,11 @@
+FILE: incDecExpressions.cj
+    internal? func bump(): R|Int64| {
+        local? var x: <implicit> = ...
+            initializer:
+                INT(1)
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }

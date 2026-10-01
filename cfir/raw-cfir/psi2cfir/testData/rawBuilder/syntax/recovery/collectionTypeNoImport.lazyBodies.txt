@@ -1,0 +1,4 @@
+FILE: collectionTypeNoImport.cj
+    internal? func collectionTypeNoImport(m: R|Map<R|Int64|, R|String|>|, s: R|HashSet<R|Int64|>|, l: R|ArrayList<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

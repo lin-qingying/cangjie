@@ -1,0 +1,7 @@
+FILE: lambdaCallForms.cj
+    internal? func g2(x: R|Int64|, f: R|(R|Int64|) -> R|Int64||): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func lambdaCallForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,111 @@
+FILE: blockAndParenForms.cj
+    internal? func noArgs(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    internal? func blockAndParenForms(): R|Int64| {
+        local? var a: <implicit> = ...
+            initializer:
+                INT(1)
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        INT(1)
+                    arguments:
+                        INT(2)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        INT(1)
+                    arguments:
+                        INT(2)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    INT(1)
+                    INT(2)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(noArgs) {
+                }
+        IF {
+            condition:
+                BOOLEAN(true)
+            then:
+                local? let inner: <implicit> = ...
+                    initializer:
+                        INT(1)
+                IF {
+                    condition:
+                        BOOLEAN(true)
+                    then:
+                        local? let deeper: <implicit> = ...
+                            initializer:
+                                INT(2)
+                        <element: CfirAugmentedAssignment>
+                }
+        }
+        local? var x: <implicit> = ...
+            initializer:
+                INT(0)
+        IF {
+            condition:
+                BOOLEAN(true)
+            then:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(x)
+                    rValue:
+                        INT(1)
+                }
+            else:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(x)
+                    rValue:
+                        INT(2)
+                }
+        }
+        local? let (t0, t1): <implicit> = ...
+            initializer:
+                NAMED_ACCESS(d)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(*operator_plus) {
+                                                receiver:
+                                                    FUNCTION_CALL(*operator_plus) {
+                                                        receiver:
+                                                            NAMED_ACCESS(a)
+                                                        arguments:
+                                                            NAMED_ACCESS(b)
+                                                    }
+                                                arguments:
+                                                    NAMED_ACCESS(c)
+                                            }
+                                        arguments:
+                                            NAMED_ACCESS(t0)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(t1)
+                            }
+                        arguments:
+                            NAMED_ACCESS(e)
+                    }
+                arguments:
+                    NAMED_ACCESS(x)
+            }
+        }
+    }

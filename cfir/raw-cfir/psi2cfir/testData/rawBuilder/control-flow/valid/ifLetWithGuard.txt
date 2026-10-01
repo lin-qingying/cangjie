@@ -1,0 +1,19 @@
+FILE: ifLetWithGuard.cj
+    internal? func firstOrZero(o: R|Option<R|Int64|>|, flag: R|Bool|): R|Int64| {
+        IF {
+            condition:
+                NAMED_ACCESS(flag)
+            then:
+                IF {
+                    condition:
+                        <element: CfirLetPatternExpression>
+                    then:
+                        RETURN {
+                            NAMED_ACCESS(v)
+                        }
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }

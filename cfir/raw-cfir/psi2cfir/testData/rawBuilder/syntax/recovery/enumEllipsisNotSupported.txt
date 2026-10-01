@@ -1,0 +1,6 @@
+FILE: enumEllipsisNotSupported.cj
+    internal? enum NonExhaustive {
+        A
+        B
+        init()
+    }

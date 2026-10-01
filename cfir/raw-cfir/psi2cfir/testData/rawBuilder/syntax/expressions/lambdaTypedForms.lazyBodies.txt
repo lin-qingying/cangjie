@@ -1,0 +1,4 @@
+FILE: lambdaTypedForms.cj
+    internal? func lambdaTypedForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

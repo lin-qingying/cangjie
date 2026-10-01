@@ -1,0 +1,13 @@
+FILE: lambdaDefaultValue.cj
+    internal? func lambdaDefaultValue(): R|Unit| {
+        local? let g: <implicit> = ...
+            initializer:
+                LAMBDA() {
+                    NAMED_ACCESS(a)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(g) {
+                    INT(1)
+                }
+    }

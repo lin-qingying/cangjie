@@ -1,0 +1,5 @@
+FILE: genericTypeAliases.cj
+    internal? typealias Mapper<T> = R|(R|T|) -> R|String||
+    internal? typealias Pair<A, B> = R|(R|A|, R|B|)|
+    internal? typealias Bounded<T> = R|(R|T|) -> R|String||
+    internal? typealias Handler = R|CFunc<R|(R|Int64|) -> R|Int32||>|

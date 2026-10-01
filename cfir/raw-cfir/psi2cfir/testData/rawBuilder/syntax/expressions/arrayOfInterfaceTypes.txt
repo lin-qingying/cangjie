@@ -1,0 +1,35 @@
+FILE: arrayOfInterfaceTypes.cj
+    import std.collection.*
+    internal? interface I {
+        public? func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? class C <: R|I| {
+        init() {
+        }
+        public func f(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+    }
+    internal? func arrayOfInterfaceTypes(xs: R|Array<R|I|>|, m: R|HashMap<R|String|, R|Int64|>|, cs: R|Array<R|C|>|, t: R|Array<R|(R|Int64|, R|String|)|>|, o: R|Array<R|Option<R|Int64|>|>|): R|Int64| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(xs)
+                    NAMED_ACCESS(m)
+                    NAMED_ACCESS(cs)
+                    NAMED_ACCESS(t)
+                    NAMED_ACCESS(o)
+                }
+        RETURN {
+            NAMED_ACCESS(size) {
+                receiver:
+                    NAMED_ACCESS(xs)
+            }
+        }
+    }

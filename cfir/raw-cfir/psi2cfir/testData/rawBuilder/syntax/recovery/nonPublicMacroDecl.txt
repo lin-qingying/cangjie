@@ -1,0 +1,4 @@
+FILE: nonPublicMacroDecl.cj
+    package macropublic
+    import std.ast.*
+    <element: CfirMacroDeclaration>

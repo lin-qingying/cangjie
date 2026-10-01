@@ -1,0 +1,63 @@
+FILE: floats.cj
+    internal? func floatLiterals(): R|Unit| {
+        local? let plain: <implicit> = ...
+            initializer:
+                FLOAT(3.14)
+        local? let expOnly: <implicit> = ...
+            initializer:
+                FLOAT(2000.0)
+        local? let expNegative: <implicit> = ...
+            initializer:
+                FLOAT(0.24)
+        local? let leadingDot: <implicit> = ...
+            initializer:
+                FLOAT(12.3)
+        local? let upperExp: <implicit> = ...
+            initializer:
+                FLOAT(1500.0)
+        local? let hexFloat: <implicit> = ...
+            initializer:
+                FLOAT(1.0625)
+        local? let hexFloatNoDot: <implicit> = ...
+            initializer:
+                FLOAT(4.0)
+        local? let hexFloatLeadingDot: <implicit> = ...
+            initializer:
+                FLOAT(2.0)
+        local? let hexUpper: <implicit> = ...
+            initializer:
+                FLOAT(1.0625)
+        local? let sfxF16: <implicit> = ...
+            initializer:
+                FLOAT(1.0)
+        local? let sfxF32: <implicit> = ...
+            initializer:
+                FLOAT(3.14)
+        local? let sfxF64: <implicit> = ...
+            initializer:
+                FLOAT(2000.0)
+        local? let neg: <implicit> = ...
+            initializer:
+                FLOAT(-0.5)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(plain)
+                    NAMED_ACCESS(expOnly)
+                    NAMED_ACCESS(expNegative)
+                    NAMED_ACCESS(leadingDot)
+                    NAMED_ACCESS(upperExp)
+                    NAMED_ACCESS(hexFloat)
+                    NAMED_ACCESS(hexFloatNoDot)
+                    NAMED_ACCESS(hexFloatLeadingDot)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(hexUpper)
+                    NAMED_ACCESS(sfxF16)
+                    NAMED_ACCESS(sfxF32)
+                    NAMED_ACCESS(sfxF64)
+                    NAMED_ACCESS(neg)
+                }
+    }

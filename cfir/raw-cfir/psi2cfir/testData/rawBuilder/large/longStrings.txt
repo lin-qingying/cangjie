@@ -1,0 +1,288 @@
+FILE: longStrings.cj
+    internal? func longStrings(n: R|Int64|): R|String| {
+        local? let single: <implicit> = ...
+            initializer:
+                STRING("abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc")
+        local? let multi: <implicit> = ...
+            initializer:
+                STRING("
+line 001: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 002: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 003: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 004: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 005: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 006: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 007: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 008: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 009: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 010: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 011: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 012: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 013: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 014: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 015: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 016: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 017: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 018: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 019: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 020: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 021: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 022: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 023: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 024: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 025: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 026: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 027: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 028: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 029: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 030: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 031: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 032: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 033: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 034: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 035: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 036: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 037: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 038: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 039: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 040: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    ")
+        local? let template: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("sum ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(1)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(2)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(3)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(4)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(5)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(6)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(7)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(8)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(9)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(10)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(11)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(12)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(13)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(14)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(15)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(16)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(17)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(18)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(19)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(20)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(21)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(22)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(23)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(24)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(25)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(26)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(27)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(28)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(29)
+                    }
+                    STRING(" ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(n)
+                        arguments:
+                            INT(30)
+                    }
+                    STRING(" end")
+                }
+        local? let raw: <implicit> = ...
+            initializer:
+                STRING("
+rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+")
+        local? var acc: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(single)
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        <element: CfirAugmentedAssignment>
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            NAMED_ACCESS(acc)
+        }
+    }

@@ -1,0 +1,13 @@
+FILE: importForms.cj
+    import std.collection.*
+    import std.collection as c1
+    import std.core.*
+    import std.core as c2
+    import std.math.*
+    import std.time.*
+    import std.sort.*
+    import std.regex.*
+    import std.env.*
+    internal? func importForms(xs: R|ArrayList<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

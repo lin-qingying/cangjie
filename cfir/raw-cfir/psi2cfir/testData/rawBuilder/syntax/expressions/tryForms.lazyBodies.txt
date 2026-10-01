@@ -1,0 +1,12 @@
+FILE: tryForms.cj
+    internal? class MyError <: R|Exception| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func risky(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func tryForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

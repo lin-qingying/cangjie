@@ -1,0 +1,4 @@
+FILE: interfaceStaticProp.cj
+    internal? interface WithConst {
+        public? static prop limit: R|Int64|
+    }
