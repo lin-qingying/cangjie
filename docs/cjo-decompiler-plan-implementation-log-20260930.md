@@ -99,8 +99,8 @@
   builtins 候选改为根路径包含判断；索引键并入根列表摘要，修改计数缺失时退回 PSI 计数而非常量 0。
 - 主仓测试补充：`CangJieMetadataStubBuilderTest.invalidFileIsRejectedWithoutHeaderRead`
   （`!isValid` 的 `.cjo` 不触发头部读）。
-  （`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，重入边不再存在；
-  此时再加“半成品 session”只会引入一个任何误用都会 `error(...)` 的中间态。依据是代码推导，未在运行期复核。
+  - 关于“半成品 session”：12a 落地后构造期的求值（`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，
+  重入边不再存在；改动组 6 的 12b 因此作为**防御层**保留（ThreadLocal 守卫 + 构造状态），而不是当时计划里的必需项。
 - 回归事故与修复：第一版 `CfirLazySymbolNamesProvider` 在解析前对包名返回 null、对能力标志返回 true，
   而 `CfirCompositeSymbolNamesProvider.flatMapToNullableSet` 里任一子 provider 返回 null 会让整个聚合为 null，
   `CfirCachedSymbolNamesProvider` 随即按“无顶层 classifier 的包”过滤 → 包作用域、覆写链、`isSubclassOf`
