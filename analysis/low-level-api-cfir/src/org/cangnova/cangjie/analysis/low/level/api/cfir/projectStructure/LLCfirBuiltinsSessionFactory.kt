@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 
 import com.intellij.openapi.components.service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
@@ -42,6 +43,11 @@ import java.util.concurrent.ConcurrentHashMap
 @LLCfirInternals
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
     /**
+     * 工厂诊断日志。
+     */
+    private val log = logger<LLCfirBuiltinsSessionFactory>()
+
+    /**
      * 所有 builtins session 共享的 CFIR 内建类型集合。
      */
     private val builtInTypes = CfirBuiltinTypes()
@@ -57,6 +63,15 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * session 包装在 IntelliJ [CachedValue] 中，使其能跟随 session validity tracker 自动失效。
      */
     private val builtinsSessions = ConcurrentHashMap<TargetPlatform, CachedValue<LLCfirBuiltinsSession>>()
+
+    /**
+     * 建 session 期间的同线程重入守卫。
+     *
+     * 建 session 的过程（注册组件、建库符号提供器、解析 builtins 搜索根）可能同线程回到本入口：
+     * 对缓存 map 直接递归会抛 `Recursive update`，而静默拿到空 session 会把失败推迟到远处读组件时。
+     * 守卫命中时返回半成品 session，并把现场写进日志；不要把缓存换成 `computeIfAbsent`。
+     */
+    private val creationGuard = BuiltinsSessionCreationGuard<LLCfirBuiltinsSession, TargetPlatform>()
 
     /**
      * 当前工程的项目结构提供器，用于读取 builtins session 创建所需的语言版本设置。
@@ -77,14 +92,32 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * 返回 [targetPlatform] 对应的 builtins session。
      *
      * session 按平台懒创建，并通过其 validity tracker 绑定缓存生命周期。
+     *
+     * 建 session 期间同线程再次请求同一平台时，返回当前正在构造的**半成品 session**：
+     * 它只保证重入点之前注册的组件（IDE 公共组件、module data、作用域提供器）可读，
+     * `CfirProvider` / `CfirSymbolProvider` 在最后才注册，半成品上读它们会失败，错误信息里带
+     * `construction=IN_PROGRESS`（见 [LLCfirBuiltinsSession.toString]）。
      */
-    fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession =
-        builtinsSessions.getOrPut(targetPlatform) {
+    fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
+        creationGuard.halfBakedSessionFor(targetPlatform)?.let { halfBaked ->
+            check(halfBaked.isUnderConstruction) {
+                "Builtins session for $targetPlatform is registered as under construction but already completed; " +
+                    "the creation guard was not cleared"
+            }
+            log.warn(
+                "Reentrant builtins session creation on thread ${Thread.currentThread().name} for $targetPlatform; " +
+                    "returning the half-built session $halfBaked. Only components registered before the reentrant call are usable.",
+            )
+            return halfBaked
+        }
+
+        return builtinsSessions.getOrPut(targetPlatform) {
             CachedValuesManager.getManager(project).createCachedValue {
                 val session = createBuiltinsSession(targetPlatform)
                 CachedValueProvider.Result(session, session.createValidityTracker())
             }
         }.value
+    }
 
     /**
      * Invalidates all builtins modules and sessions.
@@ -109,34 +142,41 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      *
      * 创建流程会注册 IDE 公共组件、builtins symbol provider、CFIR provider 和模块数据；
      * builtins 使用 dummy lazy resolver，因为 builtins 声明来自库符号提供器而非源码 lazy resolve。
+     *
+     * 整个注册过程登记在 [creationGuard] 里：同线程重入时能拿到半成品 session 而不是递归炸缓存。
      */
     private fun createBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
         val builtinsModule = getBuiltinsModule(targetPlatform)
         val session = LLCfirBuiltinsSession(builtinsModule, builtInTypes)
         val moduleData = LLCfirModuleData(session)
 
-        return session.apply {
-            val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
-            // 不再传 builtinsModule.contentScope：IDE 宿主下它每次访问都会重新遍历 SDK 目录，
-            // session 构造期求值会把搜索根烤死，并让构造同线程重入 `.cjo` stub 构建。
-            registerIdeComponents(project, languageVersionSettings)
-            register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
-            registerCommonComponents(languageVersionSettings)
-            registerCommonComponentsAfterExtensionsAreConfigured()
-            registerModuleData(moduleData)
-            val cangjieScopeProvider = CfirCangJieScopeProvider()
-            register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
+        return creationGuard.withSessionUnderConstruction(targetPlatform, session) {
+            session.apply {
+                val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
+                // 不再传 builtinsModule.contentScope：IDE 宿主下它每次访问都会重新遍历 SDK 目录，
+                // session 构造期求值会把搜索根烤死，并让构造同线程重入 `.cjo` stub 构建。
+                registerIdeComponents(project, languageVersionSettings)
+                register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
+                registerCommonComponents(languageVersionSettings)
+                registerCommonComponentsAfterExtensionsAreConfigured()
+                registerModuleData(moduleData)
+                val cangjieScopeProvider = CfirCangJieScopeProvider()
+                register(CfirCangJieScopeProvider::class, cangjieScopeProvider)
 
-            val symbolProvider = createCompositeSymbolProvider(this) {
-                addAll(
-                    LLLibrarySymbolProviderFactory
-                        .fromSettings(project)
-                        .createBuiltinsSymbolProvider(session)
-                )
+                val symbolProvider = createCompositeSymbolProvider(this) {
+                    addAll(
+                        LLLibrarySymbolProviderFactory
+                            .fromSettings(project)
+                            .createBuiltinsSymbolProvider(session)
+                    )
+                }
+
+                register(CfirSymbolProvider::class, symbolProvider)
+                register(CfirProvider::class, LLCfirBuiltinsSessionProvider(symbolProvider))
+
+                // 组件齐了，半成品标记摘掉；之后的重入不再命中守卫。
+                markConstructionCompleted()
             }
-
-            register(CfirSymbolProvider::class, symbolProvider)
-            register(CfirProvider::class, LLCfirBuiltinsSessionProvider(symbolProvider))
         }
     }
 
