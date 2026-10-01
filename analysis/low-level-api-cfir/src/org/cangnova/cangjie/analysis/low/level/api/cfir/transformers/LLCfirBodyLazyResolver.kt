@@ -583,6 +583,19 @@ private class CfirPartialBodyExpressionResolveTransformer(
  */
 private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbstractBodyTargetResolver(target, CfirResolvePhase.BODY_RESOLVE) {
     /**
+     * 推进 class-like 声明自身的注解实参绑定。
+     *
+     * 对齐 Kotlin `LLFirAnnotationArgumentsLazyResolver.transformAnnotations`：Kotlin 用独立的
+     * `ANNOTATION_ARGUMENTS` 阶段承载声明注解实参；仓颉没有该阶段，实参映射只在 BODY 阶段的
+     * `CfirExpressionsResolveTransformer.transformAnnotationCall` 产生，而 class-like 容器分支
+     * 从不走声明 transformer，因此必须在这里显式转换自身注解，否则 `LLCfirPhaseUpdater`
+     * 会把容器推进到 `BODY_RESOLVE` 之后，分析层再请求该阶段只会在 `checkAnalysisReadiness` 短路。
+     */
+    private fun transformDeclarationAnnotations(target: CfirClassLikeDeclaration) {
+        target.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+    }
+
+    /**
      * BODY_RESOLVE 阶段使用的 dispatcher。
      */
     override val transformer = BodyTransformerDispatcher()
@@ -655,6 +668,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 )
 
                 performCustomResolveUnderLock(target) {
+                    transformDeclarationAnnotations(target)
                     calculateControlFlowGraph(target)
                 }
 
@@ -667,6 +681,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 performCustomResolveUnderLock(target) {
                     // 非 regular class 的 class-like 容器没有额外 CFG 入口；
                     // 这里仅推进容器自身 phase，成员仍作为独立 target 按既有路径完成 BODY_RESOLVE。
+                    transformDeclarationAnnotations(target)
                 }
 
                 return true
