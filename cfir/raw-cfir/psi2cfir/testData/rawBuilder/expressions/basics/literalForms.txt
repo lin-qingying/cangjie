@@ -1,0 +1,39 @@
+FILE: literalForms.cj
+    internal? func useLiterals(): R|Float64| {
+        local? let c: <implicit> = ...
+            initializer:
+                STRING("x")
+        local? let e: <implicit> = ...
+            initializer:
+                STRING("\n")
+        local? let a: <implicit> = ...
+            initializer:
+                INT(0x1F)
+        local? let b: <implicit> = ...
+            initializer:
+                INT(0b1010)
+        local? let d: <implicit> = ...
+            initializer:
+                FLOAT(1500.0)
+        local? let g: <implicit> = ...
+            initializer:
+                FLOAT(1.0)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(c)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(e)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(b)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(d)
+        RETURN {
+            NAMED_ACCESS(g)
+        }
+    }

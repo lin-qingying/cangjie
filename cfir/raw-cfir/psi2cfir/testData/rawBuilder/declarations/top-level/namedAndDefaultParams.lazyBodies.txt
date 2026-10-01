@@ -1,0 +1,8 @@
+FILE: namedAndDefaultParams.cj
+    internal? func f(a: R|Int64|, b: R|Int64| = INT(2)
+    ): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func use(): <implicit> {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,12 @@
+FILE: logicalOperatorOverload.cj
+    internal? class L {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func <no name provided>(o: R|L|): R|L| {
+            <element: CfirLazyBlock>
+        }
+        public operator func <no name provided>(o: R|L|): R|L| {
+            <element: CfirLazyBlock>
+        }
+    }

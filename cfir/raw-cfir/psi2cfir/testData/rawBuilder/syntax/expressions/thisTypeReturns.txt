@@ -1,0 +1,41 @@
+FILE: thisTypeReturns.cj
+    internal? class Node {
+        init() {
+        }
+        public func me(): R|This| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    extend R|Node| {
+        public func alsoMe(): R|Node| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    internal? func thisTypeReturns(): R|Unit| {
+        local? let n: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Node) {
+                }
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(me) {
+                    receiver:
+                        NAMED_ACCESS(n)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(alsoMe) {
+                    receiver:
+                        NAMED_ACCESS(n)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

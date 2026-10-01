@@ -1,0 +1,35 @@
+FILE: tryNestedFinally.cj
+    internal? class E <: R|Exception| {
+        init()
+    }
+    internal? func f(b: R|Bool|): R|Int64| {
+        TRY {
+            try:
+                TRY {
+                    try:
+                        IF {
+                            condition:
+                                NAMED_ACCESS(b)
+                            then:
+                                THROW {
+                                    FUNCTION_CALL(E) {
+                                    }
+                                }
+                        }
+                        RETURN {
+                            INT(1)
+                        }
+                    finally:
+                        local? let a: <implicit> = ...
+                            initializer:
+                                INT(1)
+                        local? let _: <implicit> = ...
+                            initializer:
+                                NAMED_ACCESS(a)
+                }
+            catch(e: R|E|):
+                RETURN {
+                    INT(2)
+                }
+        }
+    }

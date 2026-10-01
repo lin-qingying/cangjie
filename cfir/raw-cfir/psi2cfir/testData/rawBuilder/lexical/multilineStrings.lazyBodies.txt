@@ -1,0 +1,4 @@
+FILE: multilineStrings.cj
+    internal? func multilineStringLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

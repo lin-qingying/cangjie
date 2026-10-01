@@ -1,0 +1,6 @@
+FILE: cfuncNamedParam.cj
+    internal? func cfuncNamedParam(g: R|CFunc<R|(R|Int64|) -> R|Unit||>|): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(g)
+    }

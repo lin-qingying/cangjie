@@ -1,0 +1,15 @@
+FILE: thisAndSuperUsage.cj
+    internal? open class Base {
+        init()
+        internal? var v: R|Int64|
+        public open func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Child <: R|Base| {
+        init()
+        internal? var w: R|Int64|
+        internal? func read(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

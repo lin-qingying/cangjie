@@ -1,0 +1,4 @@
+FILE: synchronizedWithoutLock.cj
+    internal? func synchronizedWithoutLock(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

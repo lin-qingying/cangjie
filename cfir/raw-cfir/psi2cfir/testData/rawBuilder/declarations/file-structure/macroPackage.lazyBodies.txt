@@ -1,0 +1,4 @@
+FILE: macroPackage.cj
+    package macrotest
+    import std.ast.*
+    <element: CfirMacroDeclaration>

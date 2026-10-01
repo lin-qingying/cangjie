@@ -1,0 +1,4 @@
+FILE: emptyWhenCondition.cj
+    @R|When|() internal? func emptyWhen(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

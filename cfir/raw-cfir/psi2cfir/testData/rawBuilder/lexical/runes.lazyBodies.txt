@@ -1,0 +1,4 @@
+FILE: runes.cj
+    internal? func runeLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

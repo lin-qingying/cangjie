@@ -1,0 +1,29 @@
+FILE: ifElseIfChain.cj
+    internal? func classify(x: R|Int64|): R|Int64| {
+        local? let y: <implicit> = ...
+            initializer:
+                IF {
+                    condition:
+                        COMPARISON(GT) {
+                            NAMED_ACCESS(x)
+                            INT(10)
+                        }
+                    then:
+                        INT(2)
+                    else:
+                        IF {
+                            condition:
+                                COMPARISON(GT) {
+                                    NAMED_ACCESS(x)
+                                    INT(5)
+                                }
+                            then:
+                                INT(1)
+                            else:
+                                INT(0)
+                        }
+                }
+        RETURN {
+            NAMED_ACCESS(y)
+        }
+    }

@@ -1,0 +1,186 @@
+FILE: deepGenerics.cj
+    internal? class Box0<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap0<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box1<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap1<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box2<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap2<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box3<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap3<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box4<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap4<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box5<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap5<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box6<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap6<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box7<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap7<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box8<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap8<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box9<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap9<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box10<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap10<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box11<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Wrap11<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Leaf {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func deepGenericArgs(): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func deepGenericTypes(): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T, U>deepGenericWhere(a: R|T|, b: R|U|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T, U, V>deepGenericWhereChain(a: R|T|, b: R|U|, c: R|V|): R|V| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,4 @@
+FILE: unclosedBrace.cj
+    internal? func unclosedBrace(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,6 @@
+FILE: unclosedBrace.cj
+    internal? func unclosedBrace(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }

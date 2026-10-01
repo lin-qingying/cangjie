@@ -1,0 +1,11 @@
+FILE: macroCallForms.cj
+    package macrocalls
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    internal? func macroCalls(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    @R|echo|(1, 2) internal? func attributed(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,50 @@
+FILE: functionTypeRefs.cj
+    internal? func noArgs(f: R|() -> R|Unit||): R|Unit| {
+        FUNCTION_CALL(f) {
+        }
+    }
+    internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(f) {
+                INT(1)
+            }
+        }
+    }
+    internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(f) {
+                INT(1)
+                STRING("x")
+            }
+        }
+    }
+    internal? func namedArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(f) {
+                INT(1)
+                STRING("x")
+            }
+        }
+    }
+    internal? func returningFunction(): R|(R|Int64|) -> R|(R|String|) -> R|Int64||| {
+        RETURN {
+            LAMBDA(a: R|Int64|) {
+                LAMBDA(b: R|String|) {
+                    NAMED_ACCESS(a)
+                }
+            }
+        }
+    }
+    internal? class WithFuncProp {
+        init()
+        private var handler: R|(R|Int64|) -> R|Int64|| = ...
+            initializer:
+                LAMBDA(a: <implicit>) {
+                    NAMED_ACCESS(a)
+                }
+        internal? mut prop handlerProp: R|(R|Int64|) -> R|Int64||
+    }
+    internal? typealias Callback = R|(R|Int64|) -> R|Unit||
+    internal? typealias HigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
+    internal? typealias NamedHigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
+    internal? typealias NamedTuple = R|x|

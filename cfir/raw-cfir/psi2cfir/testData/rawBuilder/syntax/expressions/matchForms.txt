@@ -1,0 +1,232 @@
+FILE: matchForms.cj
+    internal? enum Shape {
+        Circle(R|Int64|)
+        Rect(R|Int64|, R|Int64|)
+        Empty
+        init()
+    }
+    internal? enum E2 {
+        A
+        B
+        init()
+    }
+    internal? func matchForms(x: R|Any|, n: R|Int64|, s: R|String|, r: R|Rune|, flag: R|Bool|, t: R|(R|Int64|, R|(R|String|, R|Bool|)|)|, o: R|Option<R|Int64|>|, sh: R|Shape|, e: R|E2|): R|Unit| {
+        local? let byAny: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(x)
+                    BRANCH(is R|Int64| v) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(is R|String| v) {
+                        INT(1)
+                    }
+                    BRANCH(_) {
+                        INT(0)
+                    }
+                }
+        local? let guarded: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(x)
+                    BRANCH(is R|Int64| v where v > 0) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(_) {
+                        INT(0)
+                    }
+                }
+        local? let constants: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(n)
+                    BRANCH(const(0)) {
+                        INT(0)
+                    }
+                    BRANCH(const(1) | const(2) | const(3)) {
+                        INT(1)
+                    }
+                    BRANCH(_) {
+                        INT(2)
+                    }
+                }
+        local? let strMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(s)
+                    BRANCH(const("a")) {
+                        INT(1)
+                    }
+                    BRANCH(const("b")) {
+                        INT(2)
+                    }
+                    BRANCH(_) {
+                        INT(0)
+                    }
+                }
+        local? let runeMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(r)
+                    BRANCH(const(r'a')) {
+                        INT(1)
+                    }
+                    BRANCH(_) {
+                        INT(0)
+                    }
+                }
+        local? let boolMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(flag)
+                    BRANCH(const(true)) {
+                        INT(1)
+                    }
+                    BRANCH(const(false)) {
+                        INT(0)
+                    }
+                }
+        local? let tupleMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(t)
+                    BRANCH((deferred(a), (deferred(b), deferred(c)))) {
+                        NAMED_ACCESS(a)
+                    }
+                }
+        local? let optionMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(o)
+                    BRANCH(Some(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(deferred(None)) {
+                        INT(0)
+                    }
+                }
+        local? let shapeMatch: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(sh)
+                    BRANCH(Circle(deferred(rad))) {
+                        NAMED_ACCESS(rad)
+                    }
+                    BRANCH(Rect(deferred(w), deferred(h))) {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(w)
+                            arguments:
+                                NAMED_ACCESS(h)
+                        }
+                    }
+                    BRANCH(deferred(Empty)) {
+                        INT(0)
+                    }
+                }
+        local? let enumOr: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(e)
+                    BRANCH(E2.A() | E2.B()) {
+                        INT(1)
+                    }
+                }
+        local? let noSelector: <implicit> = ...
+            initializer:
+                MATCH {
+                    BRANCH(expr(n > 10)) {
+                        INT(1)
+                    }
+                    BRANCH(expr(n > 1)) {
+                        INT(2)
+                    }
+                    BRANCH(_) {
+                        INT(3)
+                    }
+                }
+        local? let nested: <implicit> = ...
+            initializer:
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(n)
+                    BRANCH(const(0)) {
+                        MATCH {
+                            subject:
+                                NAMED_ACCESS(s)
+                            BRANCH(const("a")) {
+                                INT(1)
+                            }
+                            BRANCH(_) {
+                                INT(0)
+                            }
+                        }
+                    }
+                    BRANCH(_) {
+                        INT(0)
+                    }
+                }
+        MATCH {
+            subject:
+                NAMED_ACCESS(n)
+            BRANCH(const(1)) {
+                FUNCTION_CALL(println) {
+                    STRING("one")
+                }
+            }
+            BRANCH(_) {
+                FUNCTION_CALL(println) {
+                    STRING("other")
+                }
+            }
+        }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(byAny)
+                    NAMED_ACCESS(guarded)
+                    NAMED_ACCESS(constants)
+                    NAMED_ACCESS(strMatch)
+                    NAMED_ACCESS(runeMatch)
+                    NAMED_ACCESS(boolMatch)
+                    NAMED_ACCESS(tupleMatch)
+                    NAMED_ACCESS(optionMatch)
+                    NAMED_ACCESS(shapeMatch)
+                    NAMED_ACCESS(enumOr)
+                    NAMED_ACCESS(noSelector)
+                    NAMED_ACCESS(nested)
+                }
+    }
+    internal? class WithMatch {
+        init()
+        internal? var kind: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? func describe(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        NAMED_ACCESS(kind) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                    BRANCH(const(0)) {
+                        INT(0)
+                    }
+                    BRANCH(_) {
+                        INT(1)
+                    }
+                }
+            }
+        }
+    }

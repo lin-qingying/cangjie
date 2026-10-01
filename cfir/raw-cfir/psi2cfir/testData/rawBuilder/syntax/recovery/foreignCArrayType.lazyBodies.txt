@@ -1,0 +1,2 @@
+FILE: foreignCArrayType.cj
+    internal? foreign func native(fmt: R|CString|, args: R|CArray<R|Any|>|): R|Int64|

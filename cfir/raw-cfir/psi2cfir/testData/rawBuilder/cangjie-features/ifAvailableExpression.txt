@@ -1,0 +1,7 @@
+FILE: ifAvailableExpression.cj
+    internal? func ifAvailableDemo(): R|Int64| {
+        <element: CfirIfAvailableExpression>
+        RETURN {
+            INT(1)
+        }
+    }

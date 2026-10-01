@@ -1,0 +1,36 @@
+FILE: letPatternForms.cj
+    internal? func letPatternForms(o: R|Option<R|Int64|>|): R|Int64| {
+        local? var t: <implicit> = ...
+            initializer:
+                INT(0)
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(t)
+                    rValue:
+                        FUNCTION_CALL(getOrThrow) {
+                            receiver:
+                                NAMED_ACCESS(v)
+                        }
+                }
+        }
+        WHILE {
+            condition:
+                <element: CfirLetPatternExpression>
+            body:
+                <element: CfirAugmentedAssignment>
+                BREAK
+        }
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            NAMED_ACCESS(t)
+        }
+    }

@@ -1,0 +1,5 @@
+FILE: quoteOutsideMacroPackage.cj
+    import std.ast.*
+    internal? func quoteOutsideMacroPackage(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

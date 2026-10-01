@@ -1,0 +1,5 @@
+FILE: collectionTypeRefs.cj
+    import std.collection.*
+    internal? func collectionTypeRefs(m: R|HashMap<R|Int64|, R|String|>|, s: R|HashSet<R|Int64|>|, l: R|ArrayList<R|Int64|>|, k: R|LinkedList<R|Int64|>|, it: R|Iterator<R|Int64|>|, ie: R|Iterable<R|Int64|>|, o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

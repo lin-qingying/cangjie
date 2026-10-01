@@ -1,0 +1,39 @@
+FILE: catchTypedFinally.cj
+    internal? class E1 <: R|Exception| {
+        init()
+    }
+    internal? class E2 <: R|Exception| {
+        init()
+    }
+    internal? func f(b: R|Bool|): R|Int64| {
+        TRY {
+            try:
+                IF {
+                    condition:
+                        NAMED_ACCESS(b)
+                    then:
+                        THROW {
+                            FUNCTION_CALL(E1) {
+                            }
+                        }
+                }
+                RETURN {
+                    INT(1)
+                }
+            catch(e: R|E1|):
+                RETURN {
+                    INT(2)
+                }
+            catch(e: R|E2|):
+                RETURN {
+                    INT(3)
+                }
+            finally:
+                local? let a: <implicit> = ...
+                    initializer:
+                        INT(1)
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(a)
+        }
+    }

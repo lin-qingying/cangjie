@@ -1,0 +1,15 @@
+FILE: tryResourceWithoutResourceInterface.cj
+    internal? class NotResource {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func isClosed(): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public func close(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func tryResourceWithoutResourceInterface(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,32 @@
+FILE: annotationForms.cj
+    @R|Deprecated|("old api", <expr>, <expr>) @R|When|(os == "Windows" && arch == "x86_64") internal? class Annotated {
+        init()
+        @R|Deprecated|("field", <expr>) internal? var field: R|UInt8| = ...
+            initializer:
+                INT(0)
+        @R|OverflowWrapping|() public func wrapping(): R|UInt8| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(field)
+                    arguments:
+                        INT(1u8)
+                }
+            }
+        }
+    }
+    @R|When|(os != "Linux") @R|Deprecated|("fn", <expr>) internal? func annotatedFunc(p: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(p)
+        }
+    }
+    @R|Deprecated|("top", <expr>) public let annotatedLet: R|Int64| = ...
+        initializer:
+            INT(1)
+    internal? func packageMacro(): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)
+            }
+        }
+    }

@@ -1,0 +1,8 @@
+FILE: importForms.cj
+    package importforms
+    import std.collection.*
+    import std.collection.ArrayList
+    import std.collection as col
+    internal? func useImports(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

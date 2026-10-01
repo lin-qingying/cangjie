@@ -1,0 +1,7 @@
+FILE: nestedLoopsAndGuards.cj
+    internal? func nestedWithGuards(values: R|Array<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func loopWithLet(values: R|Array<R|Option<R|Int64|>|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

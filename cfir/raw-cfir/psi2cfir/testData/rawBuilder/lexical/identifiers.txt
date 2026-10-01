@@ -1,0 +1,42 @@
+FILE: identifiers.cj
+    internal? func ordinaryIdentifiers(): R|Unit| {
+        local? let abc: <implicit> = ...
+            initializer:
+                INT(1)
+        local? let _abc: <implicit> = ...
+            initializer:
+                INT(2)
+        local? let abc_: <implicit> = ...
+            initializer:
+                INT(3)
+        local? let a1b2c3: <implicit> = ...
+            initializer:
+                INT(4)
+        local? let a_b_c: <implicit> = ...
+            initializer:
+                INT(5)
+        local? let a1_b2_c3: <implicit> = ...
+            initializer:
+                INT(6)
+        local? let 仓颉: <implicit> = ...
+            initializer:
+                INT(7)
+        local? let __こんにちは: <implicit> = ...
+            initializer:
+                INT(8)
+        local? let _: <implicit> = ...
+            initializer:
+                INT(9)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(abc)
+                    NAMED_ACCESS(_abc)
+                    NAMED_ACCESS(abc_)
+                    NAMED_ACCESS(a1b2c3)
+                    NAMED_ACCESS(a_b_c)
+                    NAMED_ACCESS(a1_b2_c3)
+                    NAMED_ACCESS(仓颉)
+                    NAMED_ACCESS(__こんにちは)
+                }
+    }

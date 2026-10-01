@@ -1,0 +1,12 @@
+FILE: structStaticConst.cj
+    internal? struct S {
+        init()
+        public static let k: R|Int64| = ...
+            initializer:
+                INT(2)
+        internal? static func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(k)
+            }
+        }
+    }

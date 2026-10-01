@@ -1,0 +1,16 @@
+FILE: commentForms.cj
+    internal? class Documented {
+        init()
+        public func f(x: R|Int64|): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(x)
+            }
+        }
+    }
+    internal? func deprecatedDoc(): R|Unit| {
+    }
+    internal? func commentForms(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }

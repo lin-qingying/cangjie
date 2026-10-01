@@ -1,0 +1,136 @@
+FILE: controlFlowExprForms.cj
+    internal? func g1(x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? func g3(x: R|Int64|, y: R|Int64|, z: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            NAMED_ACCESS(y)
+                    }
+                arguments:
+                    NAMED_ACCESS(z)
+            }
+        }
+    }
+    internal? func controlFlowExprForms(a: R|Int64|, b: R|Int64|, c: R|Int64|, o: R|Option<R|Int64|>|, pairs: R|Array<R|(R|Int64|, R|String|)|>|): R|Int64| {
+        local? let one: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(g1) {
+                    IF {
+                        condition:
+                            COMPARISON(GT) {
+                                NAMED_ACCESS(a)
+                                INT(0)
+                            }
+                        then:
+                            INT(1)
+                        else:
+                            INT(2)
+                    }
+                }
+        local? let three: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(g3) {
+                    IF {
+                        condition:
+                            COMPARISON(GT) {
+                                NAMED_ACCESS(a)
+                                INT(0)
+                            }
+                        then:
+                            INT(1)
+                        else:
+                            INT(2)
+                    }
+                    NAMED_ACCESS(b)
+                    IF {
+                        condition:
+                            COMPARISON(GT) {
+                                NAMED_ACCESS(c)
+                                INT(0)
+                            }
+                        then:
+                            INT(3)
+                        else:
+                            INT(4)
+                    }
+                }
+        local? let chain: <implicit> = ...
+            initializer:
+                IF {
+                    condition:
+                        <element: CfirLetPatternExpression>
+                    then:
+                        NAMED_ACCESS(v)
+                    else:
+                        IF {
+                            condition:
+                                COMPARISON(GT) {
+                                    NAMED_ACCESS(b)
+                                    INT(0)
+                                }
+                            then:
+                                NAMED_ACCESS(b)
+                            else:
+                                INT(0)
+                        }
+                }
+        local? var t: <implicit> = ...
+            initializer:
+                INT(0)
+        local? var n: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(o)
+        WHILE {
+            condition:
+                <element: CfirLetPatternExpression>
+            body:
+                <element: CfirAugmentedAssignment>
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(n)
+                    rValue:
+                        NAMED_ACCESS(None)
+                }
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(pairs)
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(1)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(one)
+                                arguments:
+                                    NAMED_ACCESS(three)
+                            }
+                        arguments:
+                            NAMED_ACCESS(chain)
+                    }
+                arguments:
+                    NAMED_ACCESS(t)
+            }
+        }
+    }

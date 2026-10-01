@@ -1,0 +1,71 @@
+FILE: integerLiteralForms.cj
+    internal? func integerLiteralForms(): R|Unit| {
+        local? let dec: <implicit> = ...
+            initializer:
+                INT(42)
+        local? let decSep: <implicit> = ...
+            initializer:
+                INT(1_000_000)
+        local? let bin: <implicit> = ...
+            initializer:
+                INT(0b1010_1010)
+        local? let binUpper: <implicit> = ...
+            initializer:
+                INT(0B1111_1111)
+        local? let oct: <implicit> = ...
+            initializer:
+                INT(0o755)
+        local? let octUpper: <implicit> = ...
+            initializer:
+                INT(0O17)
+        local? let hex: <implicit> = ...
+            initializer:
+                INT(0xCAFE)
+        local? let hexUpper: <implicit> = ...
+            initializer:
+                INT(0XBEEF)
+        local? let hexSep: <implicit> = ...
+            initializer:
+                INT(0xFF_FF)
+        local? let zero: <implicit> = ...
+            initializer:
+                INT(0)
+        local? let maxI64: <implicit> = ...
+            initializer:
+                INT(9223372036854775807i64)
+        local? let maxU64: <implicit> = ...
+            initializer:
+                INT(18446744073709551615u64)
+        local? let minI8: <implicit> = ...
+            initializer:
+                INT(-128i8)
+        local? let maxI8: <implicit> = ...
+            initializer:
+                INT(127i8)
+        local? let maxU8: <implicit> = ...
+            initializer:
+                INT(255u8)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(dec)
+                    NAMED_ACCESS(decSep)
+                    NAMED_ACCESS(bin)
+                    NAMED_ACCESS(binUpper)
+                    NAMED_ACCESS(oct)
+                    NAMED_ACCESS(octUpper)
+                    NAMED_ACCESS(hex)
+                    NAMED_ACCESS(hexUpper)
+                    NAMED_ACCESS(hexSep)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(zero)
+                    NAMED_ACCESS(maxI64)
+                    NAMED_ACCESS(maxU64)
+                    NAMED_ACCESS(minI8)
+                    NAMED_ACCESS(maxI8)
+                    NAMED_ACCESS(maxU8)
+                }
+    }

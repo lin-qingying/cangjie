@@ -1,0 +1,26 @@
+FILE: macroQuoteForms.cj
+    package mp
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>

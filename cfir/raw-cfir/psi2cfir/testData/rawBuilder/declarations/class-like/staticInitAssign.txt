@@ -1,0 +1,18 @@
+FILE: staticInitAssign.cj
+    internal? class C {
+        init()
+        internal? static var x: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static let y: R|Int64| = ...
+            initializer:
+                INT(1)
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(x)
+                rValue:
+                    INT(2)
+            }
+        }
+    }

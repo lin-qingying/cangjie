@@ -1,0 +1,41 @@
+FILE: staticMemberForms.cj
+    internal? class Statics {
+        internal? static let A: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? static let B: R|String| = ...
+            initializer:
+                STRING("b")
+        internal? static var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static mut prop p: R|Int64|
+        init() {
+        }
+    }
+    internal? interface StaticProp {
+        public? static prop s: R|Int64|
+        public? abstract? prop p: R|Int64|
+    }
+    internal? enum EnumStatic {
+        A
+        init()
+        public static prop n: R|Int64|
+    }
+    internal? struct WithConst {
+        public static let A: R|Int64| = ...
+            initializer:
+                INT(1)
+        init() {
+        }
+    }
+    extend R|WithConst| {
+        public func f(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(A) {
+                    receiver:
+                        NAMED_ACCESS(WithConst)
+                }
+            }
+        }
+    }

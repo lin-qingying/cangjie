@@ -1,0 +1,129 @@
+FILE: indexAndSliceForms.cj
+    internal? class Item {
+        init()
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("x")
+    }
+    internal? func indexAndSliceForms(matrix: R|Array<R|Array<R|Int64|>|>|, items: R|Array<R|Item|>|, s: R|String|): R|Unit| {
+        local? let cell: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(matrix)
+                            indices:
+                                INT(0)
+                        }
+                    indices:
+                        INT(1)
+                }
+        local? let itemId: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(id) {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(items)
+                            indices:
+                                INT(0)
+                        }
+                }
+        local? let itemName: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(name) {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(items)
+                            indices:
+                                INT(0)
+                        }
+                }
+        local? let sub: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(matrix)
+                    indices:
+                        INT(0)
+                }
+        local? let sliceHalfOpen: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(sub)
+                    indices:
+                        RANGE(..) {
+                            INT(1)
+                            INT(2)
+                        }
+                }
+        local? let sliceClosed: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(sub)
+                    indices:
+                        RANGE(..=) {
+                            INT(1)
+                            INT(2)
+                        }
+                }
+        local? let sliceFromZero: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    indices:
+                        RANGE(..) {
+                            INT(0)
+                            INT(1)
+                        }
+                }
+        ASSIGNMENT {
+            lValue:
+                SUBSCRIPT {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(matrix)
+                            indices:
+                                INT(0)
+                        }
+                    indices:
+                        INT(1)
+                }
+            rValue:
+                INT(5)
+        }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(id) {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(items)
+                            indices:
+                                INT(0)
+                        }
+                }
+            rValue:
+                INT(7)
+        }
+        <element: CfirIncrementDecrementExpression>
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(cell)
+                    NAMED_ACCESS(itemId)
+                    NAMED_ACCESS(itemName)
+                    NAMED_ACCESS(sliceHalfOpen)
+                    NAMED_ACCESS(sliceClosed)
+                    NAMED_ACCESS(sliceFromZero)
+                }
+    }

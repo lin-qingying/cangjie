@@ -1,0 +1,4 @@
+FILE: lambdaDefaultValue.cj
+    internal? func lambdaDefaultValue(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

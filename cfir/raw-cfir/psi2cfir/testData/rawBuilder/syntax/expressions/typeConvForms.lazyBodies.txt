@@ -1,0 +1,7 @@
+FILE: typeConvForms.cj
+    internal? func numericConversions(a: R|Int64|, f: R|Float64|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func typeChecks(x: R|Any|, y: R|Int64|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -1257,17 +1257,21 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
 
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
-        val paramName = if (nameNode != null) Name.identifier(nameNode.asText()) else Name.special("<error>")
+        val paramName = if (nameNode != null) Name.identifier(nameNode.asText()) else SpecialNames.NO_NAME_PROVIDED
         val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
 
         val isNamed = tree.findChildByType(node, CjTokens.EXCL) != null
         val parameterSource = node.toSource()
 
-        // 默认值是最后一个表达式子节点
+        // 默认值是 `=` 之后的表达式子节点，但必须要求形参节点内有 EQ 词元：官方 `ParseAssignInParam` 在无名形参上报
+        // `parse_expected_dot_lparen` 后仍解析 `=` 后的表达式，而 PSI 侧 `CjParameter.equalsToken` 只看直接子节点，
+        // 恢复出来的 `=` 落在 ERROR_ELEMENT 里，PSI 不采信。两条 raw builder 以"无 EQ 即无默认值"统一。
         var defaultExpr: CfirExpression? = null
-        tree.forEachChildren(node) { child ->
-            if (LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)) {
-                defaultExpr = expressionBuilder.convertExpression(child)
+        if (tree.findChildByType(node, CjTokens.EQ) != null) {
+            tree.forEachChildren(node) { child ->
+                if (LightTreeRawCfirExpressionBuilder.isExpressionToken(child.tokenType)) {
+                    defaultExpr = expressionBuilder.convertExpression(child)
+                }
             }
         }
 
@@ -2858,7 +2862,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.OPERATION_NAME)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
-            ?: return Name.special("<anonymous>")
+            ?: return SpecialNames.NO_NAME_PROVIDED
 
         return when (val rawName = nameNode.asText()) {
             "-" -> if (valueParametersCount == 0) OperatorNameConventions.UNARY_MINUS else OperatorNameConventions.MINUS

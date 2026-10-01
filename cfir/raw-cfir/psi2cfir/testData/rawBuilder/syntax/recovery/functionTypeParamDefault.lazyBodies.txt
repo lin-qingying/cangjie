@@ -1,0 +1,2 @@
+FILE: functionTypeParamDefault.cj
+    internal? func withDefault(g: R|x|): <implicit>

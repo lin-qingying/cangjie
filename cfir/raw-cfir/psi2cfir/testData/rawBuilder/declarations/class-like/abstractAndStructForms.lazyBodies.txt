@@ -1,0 +1,35 @@
+FILE: abstractAndStructForms.cj
+    internal? abstract class Shape {
+        init()
+        public abstract? func area(): R|Int64|
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Square <: R|Shape| {
+        private let side: R|Int64|
+        init(side: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public func area(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? abstract class Root {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Left <: R|Root| {
+        init()
+    }
+    internal? class Right <: R|Root| {
+        init()
+    }
+    internal? struct Point {
+        internal? let x: R|Int64|
+        internal? let y: R|Int64|
+        init(x: R|Int64|, y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }

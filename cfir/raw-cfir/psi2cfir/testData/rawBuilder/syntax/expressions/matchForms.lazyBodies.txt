@@ -1,0 +1,22 @@
+FILE: matchForms.cj
+    internal? enum Shape {
+        Circle(R|Int64|)
+        Rect(R|Int64|, R|Int64|)
+        Empty
+        init()
+    }
+    internal? enum E2 {
+        A
+        B
+        init()
+    }
+    internal? func matchForms(x: R|Any|, n: R|Int64|, s: R|String|, r: R|Rune|, flag: R|Bool|, t: R|(R|Int64|, R|(R|String|, R|Bool|)|)|, o: R|Option<R|Int64|>|, sh: R|Shape|, e: R|E2|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? class WithMatch {
+        init()
+        internal? var kind: R|Int64|
+        internal? func describe(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

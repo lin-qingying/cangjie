@@ -1,0 +1,15 @@
+FILE: matchRangePattern.cj
+    internal? func matchRangePattern(x: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(const(1)) {
+                    INT(10)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }

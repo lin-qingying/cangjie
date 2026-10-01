@@ -1,0 +1,51 @@
+FILE: constructionForms.cj
+    internal? class WithInit {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Pair {
+        internal? var x: R|Int64|
+        internal? var y: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|, y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Box<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Color {
+        Red
+        Custom(R|Int64|)
+        init()
+    }
+    internal? enum GenericEnum<T> {
+        Some(R|T|)
+        None
+        init()
+    }
+    internal? class Callable {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_invoke(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func constructionForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

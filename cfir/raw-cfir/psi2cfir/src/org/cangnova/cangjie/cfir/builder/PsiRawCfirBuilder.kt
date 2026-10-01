@@ -2096,6 +2096,7 @@ class PsiRawCfirBuilder(
             is CjStringTemplateExpression -> convertStringTemplate(psi)
             is CjBinaryExpressionWithTypeRHS -> convertTypeOperator(psi)
             is CjBinaryExpression -> convertBinary(psi)
+            is CjSliceExpression -> convertSlice(psi)
             is CjPrefixExpression -> convertPrefix(psi)
             is CjPostfixExpression -> convertPostfix(psi)
             is CjUnsafeExpression -> convertUnsafe(psi)
@@ -2150,7 +2151,9 @@ class PsiRawCfirBuilder(
                 }
             }
 
-            else -> buildErrorExpression(psi.toSourceElement(), "Unsupported expression: ${psi.javaClass.simpleName}")
+            // 与 LightTree 路径同形：错误节点用 PSI 节点类型名（`VARIABLE`、`SLICE_EXPRESSION` …）而不是
+            // PSI 实现类名（`CjPatternVariable`、`CjSliceExpression` …），两条 raw builder 的渲染必须一致。
+            else -> buildErrorExpression(psi.toSourceElement(), "Unsupported expression: ${psi.node.elementType}")
         }
 
         /**
@@ -2485,6 +2488,37 @@ class PsiRawCfirBuilder(
                 this.end = end
                 this.step = step
                 isInclusive = psi.operationToken == CjTokens.RANGEEQ
+            }
+        }
+
+        /**
+         * 转换切片表达式（`SLICE_EXPRESSION`）。
+         *
+         * 解析器只在两种形态上产出该节点：操作符**前**有表达式（`x..`，`x` 是起点，缺终点，`CangJieExpressionParsing` 的
+         * `RANGE RBRACKET` 分支）与操作符**后**有表达式（`..x`，`x` 是终点，缺起点，`parsePefixSliceExpression`）。
+         * 与 `LightTreeRawCfirExpressionBuilder.convertSlice` 同形：CFIR 统一用 [CfirRangeExpression] 承接切片，缺失的一端保留为
+         * error expression，这样区间类型推断与下标语义仍能沿用完整的 Range 管线（`..` token 是裸叶节点，没有 `OPERATION_REFERENCE`
+         * 包裹，所以不能读 `CjUnaryExpression.operationToken`）。
+         */
+        private fun convertSlice(psi: CjSliceExpression): CfirExpression {
+            val nodes = psi.node.getChildren(null).toList()
+            val opIndex = nodes.indexOfFirst {
+                it.elementType == CjTokens.RANGE || it.elementType == CjTokens.RANGEEQ
+            }
+            val start = nodes.take(if (opIndex >= 0) opIndex else nodes.size)
+                .firstNotNullOfOrNull { it.psi as? CjExpression }
+                ?.let { convertExpression(it) }
+                ?: buildErrorExpression(reason = "Missing range start")
+            val end = (if (opIndex >= 0) nodes.drop(opIndex + 1) else emptyList())
+                .firstNotNullOfOrNull { it.psi as? CjExpression }
+                ?.let { convertExpression(it) }
+                ?: buildErrorExpression(reason = "Missing range end")
+            return buildRangeExpression {
+                source = psi.toCjPsiSourceElement()
+                this.start = start
+                this.end = end
+                step = null
+                isInclusive = opIndex >= 0 && nodes[opIndex].elementType == CjTokens.RANGEEQ
             }
         }
 
@@ -3425,7 +3459,10 @@ class PsiRawCfirBuilder(
 
         /** 转换 synchronized 表达式。 */
         private fun convertSynchronized(psi: CjSynchronizedExpression): CfirExpression {
-            val mutex = psi.expression?.let { convertExpression(it) }
+            // 官方要求 `synchronized (lock) { }`；缺 `(` 时块是唯一子节点，而 `CjBlockExpression` 也是 `CjExpression`，
+            // `findChildByClass(CjExpression)` 会把块当成 monitor。这里按 LightTree 路径同形排除块子节点。
+            val mutex = psi.children.filterIsInstance<CjExpression>().firstOrNull { it !is CjBlockExpression }
+                ?.let { convertExpression(it) }
                 ?: buildErrorExpression(psi.toSourceElement(), "Missing synchronized mutex expression")
             val body = psi.blockExpression?.let { convertBlock(it) } ?: buildBlock {
                 source = psi.toCjPsiSourceElement()

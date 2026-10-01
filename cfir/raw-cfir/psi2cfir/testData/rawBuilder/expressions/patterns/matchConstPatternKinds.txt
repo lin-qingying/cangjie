@@ -1,0 +1,36 @@
+FILE: matchConstPatternKinds.cj
+    internal? func useConst(x: R|Int64|, s: R|String|, b: R|Bool|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(const(1)) {
+                    INT(1)
+                }
+                BRANCH(const(2)) {
+                    INT(2)
+                }
+                BRANCH(_) {
+                    MATCH {
+                        subject:
+                            NAMED_ACCESS(s)
+                        BRANCH(const("a")) {
+                            INT(3)
+                        }
+                        BRANCH(_) {
+                            MATCH {
+                                subject:
+                                    NAMED_ACCESS(b)
+                                BRANCH(const(true)) {
+                                    INT(4)
+                                }
+                                BRANCH(_) {
+                                    INT(0)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }

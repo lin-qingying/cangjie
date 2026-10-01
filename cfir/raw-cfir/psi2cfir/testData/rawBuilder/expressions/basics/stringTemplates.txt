@@ -1,0 +1,30 @@
+FILE: stringTemplates.cj
+    internal? func greet(name: R|String|, x: R|Int64|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("hi ")
+                    NAMED_ACCESS(name)
+                    STRING(" ")
+                    NAMED_ACCESS(x)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("
+")
+                    STRING("        multi ")
+                    NAMED_ACCESS(name)
+                    STRING("
+")
+                    STRING("    ")
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }

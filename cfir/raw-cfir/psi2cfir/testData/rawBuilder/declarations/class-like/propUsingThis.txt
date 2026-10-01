@@ -1,0 +1,8 @@
+FILE: propUsingThis.cj
+    internal? class A {
+        init()
+        internal? var base: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? prop derived: R|Int64|
+    }

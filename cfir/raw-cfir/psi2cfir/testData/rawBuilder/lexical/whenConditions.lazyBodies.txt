@@ -1,0 +1,23 @@
+FILE: whenConditions.cj
+    @R|When|(os == "Windows") internal? class WindowsOnly {
+        @R|When|(arch == "x86_64") public func w(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        init() {
+            <element: CfirLazyBlock>
+        }
+        @R|When|(os != "Linux") internal? static var v: R|Int64|
+    }
+    @R|When|(os == "Windows" && arch == "x86_64") internal? interface WindowsArch {
+        public? abstract? func f(): R|Int64|
+    }
+    @R|When|(os == "Windows" || os == "Linux") internal? enum Desktop {
+        A
+        init()
+    }
+    @R|When|(os != "Linux") internal? func notLinux(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    @R|When|(os == "Windows") internal? func windowsOnly(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

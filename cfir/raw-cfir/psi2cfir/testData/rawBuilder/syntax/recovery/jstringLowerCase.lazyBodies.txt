@@ -1,0 +1,4 @@
+FILE: jstringLowerCase.cj
+    internal? func jstringLowerCase(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

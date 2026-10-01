@@ -1,0 +1,52 @@
+FILE: extendStructForms.cj
+    internal? interface I {
+        public? abstract? func f(): R|Int64|
+    }
+    internal? struct S {
+        internal? var v: R|Int64|
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|S| {
+        public operator func *operator_plus(o: R|S|): R|S| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_minus(o: R|S|): R|S| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_unaryMinus(): R|S| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_not(): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|S| <: R|I| {
+        public func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|S| {
+        public prop doubled: R|Int64|
+    }
+    internal? struct P<T> {
+        internal? var v: R|T|
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|P<R|T|>| {
+        public func get(): R|T| {
+            <element: CfirLazyBlock>
+        }
+        public func <U>pair(u: R|U|): R|(R|T|, R|U|)| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func extendStructForms(a: R|S|, b: R|S|, p: R|P<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,25 @@
+FILE: functionTypeRefs.cj
+    internal? func noArgs(f: R|() -> R|Unit||): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func oneArg(f: R|(R|Int64|) -> R|Int64||): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func twoArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        <element: CfirLazyBlock>
+    }
+    internal? func namedArgs(f: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        <element: CfirLazyBlock>
+    }
+    internal? func returningFunction(): R|(R|Int64|) -> R|(R|String|) -> R|Int64||| {
+        <element: CfirLazyBlock>
+    }
+    internal? class WithFuncProp {
+        init()
+        private var handler: R|(R|Int64|) -> R|Int64||
+        internal? mut prop handlerProp: R|(R|Int64|) -> R|Int64||
+    }
+    internal? typealias Callback = R|(R|Int64|) -> R|Unit||
+    internal? typealias HigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
+    internal? typealias NamedHigherOrder = R|(R|(R|Int64|) -> R|Int64||) -> R|Int64||
+    internal? typealias NamedTuple = R|x|

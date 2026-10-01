@@ -1,0 +1,3 @@
+FILE: functionExpressionBody.cj
+    internal? func f(): R|Int64|
+    internal? func g(x: R|Int64|): <implicit>

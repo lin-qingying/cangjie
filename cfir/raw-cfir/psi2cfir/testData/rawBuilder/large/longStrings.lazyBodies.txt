@@ -1,0 +1,4 @@
+FILE: longStrings.cj
+    internal? func longStrings(n: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }

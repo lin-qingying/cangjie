@@ -1,0 +1,4 @@
+FILE: rawStrings.cj
+    internal? func rawStringLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

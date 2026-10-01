@@ -1,0 +1,15 @@
+FILE: lambdaWithoutArrow.cj
+    internal? func lambdaWithoutArrow(): R|Int64| {
+        local? let f: <implicit> = ...
+            initializer:
+                LAMBDA() {
+                    local? let y: <implicit> = ...
+                        initializer:
+                            INT(1)
+                    NAMED_ACCESS(y)
+                }
+        RETURN {
+            FUNCTION_CALL(f) {
+            }
+        }
+    }

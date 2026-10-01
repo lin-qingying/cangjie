@@ -1,0 +1,4 @@
+FILE: nestedClassDecl.cj
+    internal? class Outer {
+        init()
+    }

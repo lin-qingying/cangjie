@@ -1,0 +1,8 @@
+FILE: staticConstMember.cj
+    internal? class C {
+        init()
+        public static let x: R|Int64|
+        public static func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

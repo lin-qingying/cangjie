@@ -1,0 +1,61 @@
+FILE: genericDeclarationForms.cj
+    internal? class One<T> {
+        init(v: R|T|) {
+        }
+    }
+    internal? class Two<A, B> {
+        init(a: R|A|, b: R|B|) {
+        }
+    }
+    internal? class Three<A, B, C> {
+        init(a: R|A|, b: R|B|, c: R|C|) {
+        }
+    }
+    internal? class Constrained<T> {
+        private let v: R|T|
+        init(v: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(v)
+            }
+        }
+        public func render(): R|String| {
+            RETURN {
+                FUNCTION_CALL(toString) {
+                    receiver:
+                        NAMED_ACCESS(v)
+                }
+            }
+        }
+    }
+    internal? func <T>singleConstraint(x: R|T|): R|String| {
+        RETURN {
+            FUNCTION_CALL(toString) {
+                receiver:
+                    NAMED_ACCESS(x)
+            }
+        }
+    }
+    internal? func <T, U>doubleConstraint(a: R|T|, b: R|U|): R|String| {
+        RETURN {
+            FUNCTION_CALL(toString) {
+                receiver:
+                    NAMED_ACCESS(a)
+            }
+        }
+    }
+    internal? func genericDeclarationForms(x: R|One<R|Int64|>|, y: R|Two<R|Int64|, R|String|>|, z: R|Three<R|Int64|, R|Int64|, R|Int64|>|, w: R|Constrained<R|String|>|): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(x)
+                    NAMED_ACCESS(y)
+                    NAMED_ACCESS(z)
+                    NAMED_ACCESS(w)
+                }
+    }

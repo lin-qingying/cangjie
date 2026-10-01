@@ -1,0 +1,47 @@
+FILE: runes.cj
+    internal? func runeLiterals(): R|Unit| {
+        local? let plain: <implicit> = ...
+            initializer:
+                RUNE('r'a'')
+        local? let plainDouble: <implicit> = ...
+            initializer:
+                RUNE('r"b"')
+        local? let slash: <implicit> = ...
+            initializer:
+                RUNE('r'\\'')
+        local? let newline: <implicit> = ...
+            initializer:
+                RUNE('r'\n'')
+        local? let tab: <implicit> = ...
+            initializer:
+                RUNE('r'\t'')
+        local? let quoteSingle: <implicit> = ...
+            initializer:
+                RUNE('r'\''')
+        local? let quoteDouble: <implicit> = ...
+            initializer:
+                RUNE('r"\""')
+        local? let unicodeShort: <implicit> = ...
+            initializer:
+                RUNE('r'\u{78}'')
+        local? let unicodeCjk: <implicit> = ...
+            initializer:
+                RUNE('r'\u{4f60}'')
+        local? let unicodeEmoji: <implicit> = ...
+            initializer:
+                RUNE('r'\u{1F600}'')
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(plain)
+                    NAMED_ACCESS(plainDouble)
+                    NAMED_ACCESS(slash)
+                    NAMED_ACCESS(newline)
+                    NAMED_ACCESS(tab)
+                    NAMED_ACCESS(quoteSingle)
+                    NAMED_ACCESS(quoteDouble)
+                    NAMED_ACCESS(unicodeShort)
+                    NAMED_ACCESS(unicodeCjk)
+                    NAMED_ACCESS(unicodeEmoji)
+                }
+    }
