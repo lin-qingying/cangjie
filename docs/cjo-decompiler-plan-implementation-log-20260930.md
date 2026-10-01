@@ -146,6 +146,12 @@
   IDE `CangJieDecompiledFileViewProviderFactoryTest` 直接打工厂入口（空内容 `.cjo`、`!isValid` `.cjo` 只降级不抛），
   放在 `modules/test-support`（`ide/base` 作为模块没有自己的 `plugin.xml`，其测试环境拿不到 `cjoFileDecompiler` 扩展点）。
   `:modules:test-support:test` 全模块 BUILD SUCCESSFUL。
+- 方案第 16 项的两条启动恢复入口都有用例（`CjWorkspaceModelSyncStdlibTest`，12/12 全绿）：
+  `testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow` 走 `PsiManager.findFile`（`openFilesOnStartup` 入口），
+  `testRestoredCjoTabDocumentTextIsAvailableForFoldingRecovery` 走 `FileDocumentManager.getDocument`
+  （`CodeFoldingNecromancer` 入口），并断言 document 文本与 PSI 文本一致、都不是占位。
+- 方案第 19 项（92 份 golden 不变）：`analysis/stubs` 下全部 `.stubs.txt` 与 `.decompiled.text.cj`
+  相对方案基线提交 `907598183` 字节完全一致（`git diff --quiet` 通过；仓库当前跟踪 48 份 `.stubs.txt` 与 46 份 `.decompiled.text.cj`）。
 - 沙箱读数（方案 §9.1/4/5）未做：重建后的沙箱没有项目状态与 `recentProjects.xml`，复现需要 GUI 新建带 SDK 的工程
   并恢复 `.cjo` 标签页；等价入口由 `CjWorkspaceModelSyncStdlibTest` 的重平台用例覆盖（`PsiManager.findFile`、文档文本）。
 
