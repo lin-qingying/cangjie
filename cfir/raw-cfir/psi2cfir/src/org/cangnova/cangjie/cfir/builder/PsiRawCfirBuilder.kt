@@ -1884,10 +1884,16 @@ class PsiRawCfirBuilder(
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
             }
+            // 宏式 `annotation attr` 在 PSI 中由 `CjMacroAttr` 承载（节点覆盖 `[` 到 `]`），
+            // `CjAnnotation.valueArguments` 为空；这里把 attr 文本与起始偏移一并下传，
+            // 让 `convertAnnotationArguments` 走宏分支重解析成标准具名实参，与声明宏路径保持一致。
+            val macroAttr = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java)
             return convertAnnotationCall(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
-                macroAttributeOverride = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java),
+                macroAttributeOverride = macroAttr,
+                macroAttributeTextOverride = macroAttr?.text,
+                macroAttributeStartOffsetOverride = macroAttr?.textRange?.startOffset,
             )
         }
 
