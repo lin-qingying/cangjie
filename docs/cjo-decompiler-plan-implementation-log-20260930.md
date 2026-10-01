@@ -99,8 +99,8 @@
   builtins 候选改为根路径包含判断；索引键并入根列表摘要，修改计数缺失时退回 PSI 计数而非常量 0。
 - 主仓测试补充：`CangJieMetadataStubBuilderTest.invalidFileIsRejectedWithoutHeaderRead`
   （`!isValid` 的 `.cjo` 不触发头部读）。
-  （`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，重入边不再存在；
-  此时再加“半成品 session”只会引入一个任何误用都会 `error(...)` 的中间态。依据是代码推导，未在运行期复核。
+  - 关于“半成品 session”：12a 落地后构造期的求值（`contentScope` → 枚举、`declarationProvider` → stub 索引）全部推迟，
+  重入边不再存在；改动组 6 的 12b 因此作为**防御层**保留（ThreadLocal 守卫 + 构造状态），而不是当时计划里的必需项。
 - 回归事故与修复：第一版 `CfirLazySymbolNamesProvider` 在解析前对包名返回 null、对能力标志返回 true，
   而 `CfirCompositeSymbolNamesProvider.flatMapToNullableSet` 里任一子 provider 返回 null 会让整个聚合为 null，
   `CfirCachedSymbolNamesProvider` 随即按“无顶层 classifier 的包”过滤 → 包作用域、覆写链、`isSubclassOf`
@@ -111,28 +111,153 @@
   `:analysis:low-level-api-cfir:test` 131 条 4 失败（Cjmp CallerFirst 4 条，既有），与基线逐条相同；
   主仓全部生产代码编译通过（含 IDE 复合构建）；`:analysis:decompiled:*`、`:analysis:stubs`、`cfir:cfir-serialization` 如上。
 
-## 改动组 5（IDE 改动 10：`CaIdeCandidateCollector` 按根判断）
+## 改动组 6（P2 改动 12b：builtins session 创建重入守卫）
+
+- 问题类型：建 session 期间同线程重入的唯一出口（对缓存 map 递归 → `Recursive update`，或静默拿到空 session）
+- 根因：`getBuiltinsSession` 用 `builtinsSessions.getOrPut`；映射函数内 `createBuiltinsSession` 一旦回到本入口，
+  `ConcurrentHashMap` 会抛 `Recursive update`，而方案也明确禁止换成 `computeIfAbsent`（同样的 map）。
+- 修复：新增 `BuiltinsSessionCreationGuard`（ThreadLocal 记录当前线程正在创建中的 `(平台, session)`）：
+  重入命中时返回半成品 session 并写一条 warn（线程名、平台、session 的 `toString`），登记在 `finally` 里清除；
+  同一键二次登记 `check` 失败（编程错误，应当先走重入短路）。`LLCfirBuiltinsSession` 增加
+  `isUnderConstruction` / `markConstructionCompleted()`，构造完成前才半成品，`toString` 带 `construction=`，
+  这样半成品上误读 `CfirProvider` 时 `ArrayMapAccessor` 的错误信息（`No '...' in array owner: $thisRef`）
+  能直接看出 session 还没建完。守卫只在创建期间挡在 `CfirSymbolProvider` / `CfirProvider` 注册之前，
+  12a 之后这两者本来就不在构造期求值，守卫是防御层。
+- 与 Kotlin 对位：Kotlin `LLFirBuiltinsSessionFactory` 同样是 `getOrPut` 且无守卫；Kotlin builtins 不经 stub 索引，
+  构造期不会重入（已记录为仓颉特有偏离），因此这里额外加了守卫而不是照搬。
+- 验证：`BuiltinsSessionCreationGuardTest` 5 个用例通过（重入返回同一实例、正常/异常退出都清除登记、
+  多键独立、ThreadLocal 语义、同键二次登记报错）；`:analysis:low-level-api-cfir:test` 136 条 / 4 失败，
+  4 条与基线相同（Cjmp CallerFirst 既有失败），新增 5 条全绿。
 
 - 验证：`:modules:ide:base:compileKotlin` 通过（复合构建指向 worktree）。
 
-## 剩余项- 改动 13（描述符防漂移约束）：已实施，`CangJieDecompiledDescriptorParityTest` 3 个用例通过。
-  描述符集合从测试宿主 `org.cangnova.cangjie.testSupport.xml` 声明的模块出发取 include 闭包，
-  不用类路径全扫描（后者会混进主仓描述符与第三方 maven 元数据）。
-- 改动 16/18（启动恢复、事件发布）：代码已写入 `CjWorkspaceModelSyncStdlibTest`，但该类在
-  本环境**整类无法运行**：HEAD 源码上同样 10 条全部失败于项目创建阶段
-  （`Cannot find service CangJieProjectStructureProviderService`）。根因是测试宿主用 `<module>`
-  依赖拉起各模块，而模块描述符（`org.cangnova.cangjie.ide.base.xml` 等）位于类路径根而非
-  `META-INF/`，`<module>` 依赖解析不到；属既有测试宿主缺口，未在本轮修复。
+## §2 崩溃根因：机制定案（方案 §2.4）
+
+- 机制：当时 `accepts = isSupported && readSafely { readPackageFqName != null }`，§2.2 四个 null 出口任一为假，
+  工厂 `checkNotNull` 就抛 `IllegalStateException: decompiler is not registered`，`FileManagerImpl.createFileViewProvider`
+  链路无 catch，入口是 `openFilesOnStartup` / `CodeFoldingNecromancer`。四个出口对用户是同一个表现，
+  所以当时的日志无法区分它们。
+- 出口 1/3 被字节级证据排除；出口 2（`.cjo` 正在被 cjpm 写入、读到截断内容）与出口 4（VFS 刷新瞬间 `!isValid`）
+  与“紧跟 `UnindexedFilesScanner - Reason: On project open`”“同一文件两个 file id + `Reload From Disk`”的现场一致。
+  原始日志已随沙箱重建丢失，**具体命中哪个出口无法回溯**，如实记录。
+- 关闭：改动 7 之后 `accepts` 只做类型级判断，四个出口与 `accepts` 无关；改动 1 的降级 provider + 各出口一条 warn
+  让同类现场下次能从日志区分。残留：启动瞬间 `!isValid` 的标签页停在空文本直到重载（与 Kotlin 同形）。
+- 回归覆盖：主仓 `CangJieMetadataStubBuilderTest` 的 `!isValid` 与 broken header 用例；
+  IDE `CangJieDecompiledFileViewProviderFactoryTest` 直接打工厂入口（空内容 `.cjo`、`!isValid` `.cjo` 只降级不抛），
+  放在 `modules/test-support`（`ide/base` 作为模块没有自己的 `plugin.xml`，其测试环境拿不到 `cjoFileDecompiler` 扩展点）。
+  `:modules:test-support:test` 全模块 BUILD SUCCESSFUL。
+- 方案第 16 项的两条启动恢复入口都有用例（`CjWorkspaceModelSyncStdlibTest`，12/12 全绿）：
+  `testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow` 走 `PsiManager.findFile`（`openFilesOnStartup` 入口），
+  `testRestoredCjoTabDocumentTextIsAvailableForFoldingRecovery` 走 `FileDocumentManager.getDocument`
+  （`CodeFoldingNecromancer` 入口），并断言 document 文本与 PSI 文本一致、都不是占位。
+- 方案第 19 项（92 份 golden 不变）：`analysis/stubs` 下全部 `.stubs.txt` 与 `.decompiled.text.cj`
+  相对方案基线提交 `907598183` 字节完全一致（`git diff --quiet` 通过；仓库当前跟踪 48 份 `.stubs.txt` 与 46 份 `.decompiled.text.cj`）。
+- 沙箱读数（方案 §9.1/4/5）已做（2026-10-01，`runIde` 真实沙箱 IDE，IU-2025.3.1 RC，插件 2.1.4）：
+  用一个临时启动活动（已回退）在 IDE 进程里注册真实 SDK（`C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5`）、
+  等索引结束，再经 `FileEditorManager.openFile`（`openFilesOnStartup` 入口）与
+  `FileDocumentManager.getDocument`（`CodeFoldingNecromancer` 入口）打开 `std.core.cjo`、`std.objectpool.cjo`。
+  - §9.1：`decompiler is not registered` 0 次；本次运行区间内没有仓颉相关的 `IllegalStateException`（21 处全是
+    自带 Kubernetes 插件的 remote API 报错）；读取层新诊断 0 条（真实 `.cjo` 头部全部读得出）。
+  - §9.4：`NoClassDefFoundError` 0 次、`Indexing process should not rely on non-indexed file data` 0 次、
+    `Broken stub format` 0 次。
+  - §9.5：`std.core.cjo`（1.97 MB）打开成功 → `CangJieBuiltinsDecompiledFile`，document 文本与 PSI 文本
+    均 91881 字符且以 `package std.core` 开头（非占位），stub 子节点 1040 个（非空）；文本中 `func println`
+    处元素的父节点是 `CjNamedFunction`（println），跳转目标存在。`std.objectpool.cjo`：571 字符、10 个子节点。
+  - builtins 枚举 46 个 `.cjo`。IDE 日志在 `product/idea-plugin/build/idea-sandbox/IU-2025.3.1/log/idea.log`
+    （历史运行条目累积在同一文件里，统计必须按本次 `IDE STARTED` 之后的区间）。
+  - 复现方式记录：临时工程与注册项已回退，`tmp/sandbox-verify-20261001.txt` 保留在工作树 `tmp/`（被忽略）。
+- 改动 16/18（启动恢复、事件发布）：代码写在 `CjWorkspaceModelSyncStdlibTest`，已随测试宿主修复一并跑通
+  （`testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow` / `testStdlibRootChangesPublishGlobalModuleStateEventOnlyWhenRootsChange`），
+  见下方“测试宿主缺口”一节。
 - 改动 15 的 `!isValid` 分支：已实施（覆写 `LightVirtualFile.isValid` 为 false，断言
   `contentsToByteArray` 从未被调用），`decompiler-to-file-stubs` 6 个用例通过。
 - 12b（`getBuiltinsSession` 重入守卫 / 半成品 session）：仍未实施，理由同改动组 4。
 - §2 崩溃根因：仍未定位；改动 1 提供的两层日志是取证手段，需要跑一次沙箱 IDE 读数。
 - 既有失败（与本次无关）：
   - `BuiltinsStubsTest` / `std.argopt.cjo.stubs.txt` 侧车注解缺失，HEAD 上同样失败。
-  - `CjWorkspaceModelSyncStdlibTest` 整类在 HEAD 上同样失败于项目创建阶段（见上）。
+  - `CjWorkspaceModelSyncStdlibTest` 原先整类在项目创建阶段失败，属测试宿主缺口，已在本轮修复（见“测试宿主缺口”一节）。
   - `:modules:ide:base:test` 单独跑时 18 条中 10 条失败（图标注册 2、QuickDocumentation 7、
     SourceHighlighting 1），HEAD 源码与本分支逐条一致；这 10 条与 `.cjo` 无关。
     注意：`:modules:ide:base:test` 与 `:modules:ide:project:test` 放在同一次 Gradle 调用里跑时，
     `CjStubElementType` 静态初始化会撞上 “index 初始化完成后才创建 stub element type”，额外多挂 8 条
     （folding/formatting/decompiled-text-contract/highlighting）。这是任务顺序造成的测试宿主假象，不是代码
     回归；核对回归时必须单独跑一个测试任务。
+
+## 验证基线（2026-10-01 补充）
+
+- 产品测试的“改动前”基线已取到：IDE 仓 detached 到 `f4c373c9`（`e525fd9e~1`，即本次两个 IDE 提交之前）
+  + 主仓指向 `df71d7212` 基线工作树、树干净，跑 `:product:idea-plugin:test` 得 **28 条 / 5 失败**，
+  与本分支 `cfir-new`（`2c138077`）+ worktree 主仓的干净树结果**逐条相同**：
+  `CangJieCompiledFilesHighlightingTest` 3 条（`testLargeStdlibCjoCanOpenInEditor`、
+  `testStdlibAstCjoFoldingDescriptorsStayInsideDocumentRange`、
+  `testStdlibAstCjoPlaceholderDocumentReloadsAfterToolchainRegistration`）、
+  `CangJieQuickFixRegistrationTest::testAbstractMemberNotImplementedRegistersImplementMembersQuickFix`、
+  `CangJieReferenceBindingTest::testCjoDeclarationNameProvidesDeclarationTargetAndDocumentation`。
+  结论：这 5 条是既有失败，**不是本次 `.cjo` 反编译改动引入的回归**；此前未判定只是因为没有真正的改动前基线。
+- 基线工作树 `ide-baseline-df71d7212` 已删除（`git worktree list` 不再包含）。
+
+## 测试宿主缺口（`intellij-ide/modules/test-support`）
+
+- 现象：任何用到项目级服务的重型测试（如 `CjWorkspaceModelSyncStdlibTest`、
+  `CangJieDecompiledFileTextContractTest`、`CjProjectOpenedActivityTest`）在创建项目阶段报
+  `Cannot find service CangJieProjectStructureProviderService`，`stubElementTypeHolder` 扩展点也未注册。
+- 机制（已用探针确认）：宿主 `META-INF/plugin.xml` 用 `xi:include` 引 `org.cangnova.cangjie.testSupport.xml`，
+  后者用 `<module name="org.cangnova.cangjie.foundation"/>` 等拉起生产模块；平台解析 `<module>` 时
+  （`PluginXmlPathResolver.resolveModuleFile` → `MixedDirAndJarDataLoader`）默认 `config-file` 是
+  `META-INF/<name>.xml`，且**只在宿主插件自己的 jar 内查找**。而四个模块描述符位于各自 jar 根
+  （`intellij-cangjie.foundation.jar!/org.cangnova.cangjie.foundation.xml` 等），宿主 jar 里没有，
+  因此报 “module dependency … cannot be loaded or missing”。改成 `config-file="X.xml"`、`config-file="/X.xml"`、
+  把描述符复制进 `src/main/resources/META-INF/` 均无效——因为解析范围是宿主 jar，不是测试类路径。
+- 绕过探针：把 `org.cangnova.cangjie.testSupport.xml` 改为对四个生产描述符做 `xi:include`
+  （按资源路径经宿主类加载器解析，与产品 `plugin.xml` 聚合方式一致），服务缺失错误消失；
+  随后暴露第二层缺口：`NoClassDefFoundError: org/cangnova/cangjie/formatter/CangJieCodeStyleSettings`
+  ——`ide/base` 对 code-insight 系列（formatter / folding / highlighting / refactoring）是 `compileOnly`，
+  这些 jar 不进 test-support 沙箱 `lib`。探针同时给 test-support 补上 5 个 `testImplementation`
+  依赖（与 `ide/base` 的 test 依赖集一致），结果见下。
+- 探针结果（`xi:include` 宿主 + 5 个 code-insight `testImplementation`）：整类 11 条里 10 条通过，
+  含本次新增的 `testStdlibRootChangesPublishGlobalModuleStateEventOnlyWhenRootsChange`（改动 18 已验证）；
+  唯一失败是 `testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow`（改动 16），失败点是**测试自身**：
+  直接在读动作外调 `PsiManager.findFile`，被 `ThreadingAssertions.softAssertReadAccess` 记为 error
+  （`Read access is allowed from inside read-action only`），不是产品代码抛错；已改为 `ReadAction.compute`
+  包裹并加 `isValid` 断言（把 SDK 路径带进消息）。
+- 已落盘的修复（IDE 仓 `cfir-new`）：`org.cangnova.cangjie.testSupport.xml` 改为 `xi:include` 四个生产描述符
+  并写明机制与代价；`modules/test-support/build.gradle.kts` 补 5 个 code-insight `testImplementation`；
+  `CangJieDecompiledDescriptorParityTest.ideDescriptorResources()` 改为从宿主 `xi:include` 的 href 出发
+  （`<module>` 形态作为回退）。
+- 复核发现：**宿主描述符放在 main 源集会污染消费者测试**。IDE 其他模块（`product/idea-plugin`、
+  `ide/base`、`ide/project`）通过 `testImplementation(testFixtures(project(":modules:test-support")))`
+  把 test-support 的 main 资源带进自己的测试 classpath；平台在单元测试模式下按 classpath 扫描
+  `META-INF/plugin.xml`，于是“CangJie Test Support”作为一个独立插件被加载，与产品插件重复注册服务，
+  `:product:idea-plugin:test` 28 条全挂在
+  `CjSdkRegistry is already registered: CjSdkRegistryImpl`（`loadAppInUnitTestMode` 阶段）。
+  这正是原 `plugin.xml` 注释警告的情形。
+- 探针 9（描述符移入 `src/test/resources/`）：产品侧恢复原状（`:product:idea-plugin:test` 28/5，与改动前基线逐条相同）、
+  `:modules:ide:base:test` 18/10（与 HEAD 一致）、`:modules:ide:project:test` 全绿；
+  但 test-support 自身整类退回“找不到服务” (`Cannot find service CangJieProjectStructureProviderService` /
+  `CangJieMessageBusProvider`)，描述符类路径断言也失败——**插件描述符只从 main 源集装配**，
+  test 源集的资源不进入插件 jar，探针假设不成立。
+- 探针 10（在 `PrepareSandboxTask.doFirst` 里替换占位符）：test-support 自身沙箱的 `intellij-cangjie.test-support.jar`
+  里 `plugin.xml` 仍是未替换的模板（`xi:include` 计数 0）——插件 jar 由 `processResources`/`composedJar` 在
+  沙箱任务之前打好，沙箱阶段再改源文件太晚。同一轮产品侧 28/28 失败是探针自身的副作用：doFirst 把改写后的
+  描述符写回了源文件，随后的产品构建重新打包时带上了 include，属于污染而非结论。
+- 探针 12（`processResources` 之前生成描述符）：构建脚本引用错误（该约定脚本里 `sourceSets.main` 不可解析），
+  未跑起来；结论无。
+- 探针 13（宿主描述符独立 jar + 只进 `testRuntimeOnly`）：四组全部符合预期。
+  沙箱检查：test-support 的 `lib` 里只有 `cangjie-test-host-descriptor-2.1.4.jar` 带 `plugin.xml`，
+  产品沙箱里只有 `idea-plugin-2.1.4.jar`。
+  - `:modules:test-support:test`（两个类）14/14 全绿，含 `testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow`
+    （读动作修正后通过，改动 16 得到验证）与 `testStdlibRootChangesPublishGlobalModuleStateEventOnlyWhenRootsChange`
+    （改动 18 得到验证）；
+  - `:product:idea-plugin:test` 28 条 / 5 失败，与“改动前”基线逐条相同；
+  - `:modules:ide:base:test` 18 条 / 10 失败，与 HEAD 一致；`:modules:ide:project:test` 全绿。
+- 由探针 9–13 定出的机制（写给下一个人）：
+  1. 单元测试模式下平台加载哪些插件，取决于插件沙箱 `lib` 目录里哪些 jar 带 `META-INF/plugin.xml`；
+  2. main 源集资源会随 `testFixtures` 依赖进入消费者测试的 classpath，并被平台当插件加载；
+  3. test 源集资源不参与插件装配（不进沙箱 jar）；
+  4. 插件 jar 内容在 `processResources` 阶段定死，沙箱任务里再改源文件已经太晚。
+- 落盘的修复（IDE 仓 `cfir-new`，一次提交）：
+  - `src/main/resources/META-INF/plugin.xml` 与 `org.cangnova.cangjie.testSupport.xml` 移到
+    `src/test/hostPlugin/`，由 `hostPluginDescriptorJar` 任务打包，只以 `testRuntimeOnly` 进入本模块测试；
+  - 宿主 `plugin.xml` 聚合四个生产描述符的 `xi:include`；5 个 code-insight 依赖改为 `testRuntimeOnly`；
+  - `CangJieDecompiledDescriptorParityTest.ideDescriptorResources()` 从宿主 `META-INF/plugin.xml` 的 include 出发；
+  - `CjWorkspaceModelSyncStdlibTest.testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow` 整段包进 `ReadAction.compute`。

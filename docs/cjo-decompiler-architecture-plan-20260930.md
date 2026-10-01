@@ -39,7 +39,7 @@
 
 ---
 
-## 2. 崩溃根因：尚未定位
+## 2. 崩溃根因：机制已定案（2026-10-01 补记，见 §2.4）
 
 ### 2.1 已排除
 
@@ -79,6 +79,20 @@
 | 读取层有 `NoClassDefFoundError` | 运行时缺 `PackageFormat` | 按 `deveco/product/build.gradle.kts:20-28` 的打包说明排查 |
 
 无论哪种，**改动 1（读取层与工厂层诊断 + null-safe）都应先做**：它把异常变成可诊断的降级，且不依赖根因。
+
+### 2.4 结论（2026-10-01）
+
+- **崩溃机制已定案**：工厂 `checkNotNull` 在 `accepts` 返回 false 时抛 `IllegalStateException: decompiler is not registered`，而 `FileManagerImpl.createFileViewProvider` 链路没有 catch，入口是 `openFilesOnStartup` 与 `CodeFoldingNecromancer`。§2.2 的四个 null 出口里任何一条都会让当时的 `accepts = isSupported && readSafely { readPackageFqName != null }` 变 false——四个出口对用户是同一个表现（日志里的 `not registered`），这解释了为什么日志无法区分它们。
+- **具体命中哪个出口无法回溯**：出口 1（类型/扩展名）与出口 3（空包名）被字节级证据排除（§2.1）；出口 2（`.cjo` 正在被 cjpm 写入/替换，读到截断内容）与出口 4（VFS 刷新瞬间 `!isValid`）都与 §1.1 的时间点（紧跟 `UnindexedFilesScanner - Reason: On project open`）和 §1.2 的第三个现象（同一个 `std.io.cjo` 出现两个 file id、`Last Action: Reload From Disk`）一致，且原始日志已随沙箱重建丢失（§11）。
+- **关闭方式**：改动 7 之后 `accepts` 只做类型级判断（`getStubBuilder().isSupported(file)`），不读内容，四个出口与 `accepts` 无关；改动 1 把工厂的 `checkNotNull` 换成降级 provider，并把四个出口各留一条 warn。因此这两类瞬态现场现在都表现为“打开 `.cjo` 得到空文本/诊断占位 + 日志一行”，不再抛异常，下次能从日志区分是 `!isValid` 还是头部读失败。
+- **残留行为（与 Kotlin 同形）**：启动瞬间 `!isValid` 的那个标签页会停在空文本上，直到文件重载或标签页重新打开；Kotlin `KotlinMetadataDecompiler` 在 metadata 读不出时同样返回空 PSI 文件，行为一致，不额外做重试。
+- **回归覆盖**：`CangJieMetadataStubBuilderTest.invalidFileIsRejectedWithoutHeaderRead`（`!isValid` 不触发头部读）、
+  同类的 broken header 用例，以及 IDE 侧 `CangJieDecompiledFileViewProviderFactoryTest`
+  （空内容 `.cjo` 与 `!isValid` `.cjo` 直接打工厂入口，只降级、不抛异常）。
+- **沙箱读数已做（2026-10-01）**：重建后的沙箱没有项目状态，`runIde` 用一个临时启动活动在真实 IDE 进程里
+  注册真实 SDK、等索引结束，再走 §1.1 里的两条入口打开 `std.core.cjo`、`std.objectpool.cjo`：
+  §9.1 `not registered` 归零，§9.4 `NoClassDefFoundError` 与索引告警归零，§9.5 stub 子节点 1040 个、
+  `println` 跳转目标存在。详见实施记录。
 
 ---
 
@@ -331,7 +345,7 @@ IDE 仓 HEAD `f4c373c9`（2026-09-30，“库 `.cjo` 包名改取自 binary inde
 
 ## 11. 未验证项
 
-- 崩溃的真正原因（§2）。沙箱被重建，原始日志不可读。
+- 崩溃的具体出口（§2.2 的 2 还是 4）：原始日志已随沙箱重建丢失，无法回溯；机制已定案并关闭（§2.4）。
 - 5-9-25 `NoClassDefFoundError` 栈中 `CaIdeCandidateCollector` 帧的完整重入环，来自单次读取，未二次复核。S4 的代码路径可独立验证。
 - `PackageFormat` 类在 2.1.4 那次沙箱构建的 `lib/` 里是否存在（沙箱已重建）。当前构建已确认存在。
 - 平台描述符加载器探测的路径集合未用 javap 复核（IU 2025.3 的 `PluginDescriptorLoader` 提取后无字节码输出）；按静态判断它只探测 `META-INF/plugin.xml` 与 jar 目录布局，不扫类路径上的分析描述符。若判断有误，`extensionList.size` 会是 2，改动 1 的日志会暴露。
