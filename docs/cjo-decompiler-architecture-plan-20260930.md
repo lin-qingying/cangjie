@@ -89,8 +89,10 @@
 - **回归覆盖**：`CangJieMetadataStubBuilderTest.invalidFileIsRejectedWithoutHeaderRead`（`!isValid` 不触发头部读）、
   同类的 broken header 用例，以及 IDE 侧 `CangJieDecompiledFileViewProviderFactoryTest`
   （空内容 `.cjo` 与 `!isValid` `.cjo` 直接打工厂入口，只降级、不抛异常）。
-- **沙箱读数未做**：§9.1/4/5 需要在重建后的沙箱里新建带 SDK 的工程并恢复 `.cjo` 标签页，依赖 GUI 操作，
-  本轮未做；等价入口（`PsiManager.findFile`、文档文本、stub 非空）由 `CjWorkspaceModelSyncStdlibTest` 的重平台用例覆盖。
+- **沙箱读数已做（2026-10-01）**：重建后的沙箱没有项目状态，`runIde` 用一个临时启动活动在真实 IDE 进程里
+  注册真实 SDK、等索引结束，再走 §1.1 里的两条入口打开 `std.core.cjo`、`std.objectpool.cjo`：
+  §9.1 `not registered` 归零，§9.4 `NoClassDefFoundError` 与索引告警归零，§9.5 stub 子节点 1040 个、
+  `println` 跳转目标存在。详见实施记录。
 
 ---
 

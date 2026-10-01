@@ -152,12 +152,20 @@
   （`CodeFoldingNecromancer` 入口），并断言 document 文本与 PSI 文本一致、都不是占位。
 - 方案第 19 项（92 份 golden 不变）：`analysis/stubs` 下全部 `.stubs.txt` 与 `.decompiled.text.cj`
   相对方案基线提交 `907598183` 字节完全一致（`git diff --quiet` 通过；仓库当前跟踪 48 份 `.stubs.txt` 与 46 份 `.decompiled.text.cj`）。
-- 沙箱读数（方案 §9.1/4/5）未做：重建后的沙箱没有项目状态与 `recentProjects.xml`，复现需要 GUI 新建带 SDK 的工程
-  并恢复 `.cjo` 标签页；等价入口由 `CjWorkspaceModelSyncStdlibTest` 的重平台用例覆盖（`PsiManager.findFile`、文档文本）。
-
-## 剩余项- 改动 13（描述符防漂移约束）：已实施，`CangJieDecompiledDescriptorParityTest` 3 个用例通过。
-  描述符集合从测试宿主 `org.cangnova.cangjie.testSupport.xml` 声明的模块出发取 include 闭包，
-  不用类路径全扫描（后者会混进主仓描述符与第三方 maven 元数据）。
+- 沙箱读数（方案 §9.1/4/5）已做（2026-10-01，`runIde` 真实沙箱 IDE，IU-2025.3.1 RC，插件 2.1.4）：
+  用一个临时启动活动（已回退）在 IDE 进程里注册真实 SDK（`C:\Users\lin17\.cangjie\sdks\cangjie-1.0.5`）、
+  等索引结束，再经 `FileEditorManager.openFile`（`openFilesOnStartup` 入口）与
+  `FileDocumentManager.getDocument`（`CodeFoldingNecromancer` 入口）打开 `std.core.cjo`、`std.objectpool.cjo`。
+  - §9.1：`decompiler is not registered` 0 次；本次运行区间内没有仓颉相关的 `IllegalStateException`（21 处全是
+    自带 Kubernetes 插件的 remote API 报错）；读取层新诊断 0 条（真实 `.cjo` 头部全部读得出）。
+  - §9.4：`NoClassDefFoundError` 0 次、`Indexing process should not rely on non-indexed file data` 0 次、
+    `Broken stub format` 0 次。
+  - §9.5：`std.core.cjo`（1.97 MB）打开成功 → `CangJieBuiltinsDecompiledFile`，document 文本与 PSI 文本
+    均 91881 字符且以 `package std.core` 开头（非占位），stub 子节点 1040 个（非空）；文本中 `func println`
+    处元素的父节点是 `CjNamedFunction`（println），跳转目标存在。`std.objectpool.cjo`：571 字符、10 个子节点。
+  - builtins 枚举 46 个 `.cjo`。IDE 日志在 `product/idea-plugin/build/idea-sandbox/IU-2025.3.1/log/idea.log`
+    （历史运行条目累积在同一文件里，统计必须按本次 `IDE STARTED` 之后的区间）。
+  - 复现方式记录：临时工程与注册项已回退，`tmp/sandbox-verify-20261001.txt` 保留在工作树 `tmp/`（被忽略）。
 - 改动 16/18（启动恢复、事件发布）：代码写在 `CjWorkspaceModelSyncStdlibTest`，已随测试宿主修复一并跑通
   （`testOpeningBuiltinsCjoAfterProjectOpenDoesNotThrow` / `testStdlibRootChangesPublishGlobalModuleStateEventOnlyWhenRootsChange`），
   见下方“测试宿主缺口”一节。
