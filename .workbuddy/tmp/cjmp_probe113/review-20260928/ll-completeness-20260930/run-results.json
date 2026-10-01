@@ -1,0 +1,54 @@
+{
+  "recordedAtUtc": "2026-09-30 15:23:25 UTC",
+  "workspace": "C:/Users/lin17/.codex/worktrees/cjmp-framework-implementation/cangjie",
+  "environment": {
+    "CANGJIE_HOME": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie",
+    "shell": "PowerShell 7",
+    "pathPrepend": "$CANGJIE_HOME/bin"
+  },
+  "runs": [
+    {
+      "case": "extendMemberDefaultCallerFirst",
+      "package": "cjmp_ll_member_default_first",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "version": "Cangjie Compiler: 1.1.3 (cjnative)\nTarget: x86_64-w64-mingw32",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "caller.cj callee.cj common_out/cjmp_ll_member_default_first.chir --experimental --common-part-cjo=common_out/cjmp_ll_member_default_first.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "fixture": "analysis/low-level-api-cfir/testData/diagnostics/cjmpMemberCallerFirst/extendMemberDefaultCallerFirst.cj",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/ll-completeness-20260930/extendMemberDefaultCallerFirst"
+    },
+    {
+      "case": "extendMemberShadowedCommonCallerFirst",
+      "package": "cjmp_ll_member_shadow_first",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "version": "Cangjie Compiler: 1.1.3 (cjnative)\nTarget: x86_64-w64-mingw32",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "caller.cj callee.cj common_out/cjmp_ll_member_shadow_first.chir --experimental --common-part-cjo=common_out/cjmp_ll_member_shadow_first.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "fixture": "analysis/low-level-api-cfir/testData/diagnostics/cjmpMemberCallerFirst/extendMemberShadowedCommonCallerFirst.cj",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/ll-completeness-20260930/extendMemberShadowedCommonCallerFirst"
+    },
+    {
+      "case": "uncalledImplementationCallerFirst",
+      "package": "cjmp_ll_uncalled_first",
+      "compiler": "C:/Users/lin17/.cangjie/sdks/cangjie-sdk-windows-x64-1.1.3/cangjie/bin/cjc.exe",
+      "version": "Cangjie Compiler: 1.1.3 (cjnative)\nTarget: x86_64-w64-mingw32",
+      "commonCommand": "common.cj --experimental --output-type=chir --output-dir common_out --diagnostic-format=json",
+      "commonExit": 0,
+      "commonLog": "",
+      "specificExit": 0,
+      "specificCommand": "caller.cj callee.cj uncalled.cj common_out/cjmp_ll_uncalled_first.chir --experimental --common-part-cjo=common_out/cjmp_ll_uncalled_first.cjo --output-type=dylib --output-dir specific_out -o probe.dll --diagnostic-format=json",
+      "specificLog": "",
+      "fixture": "analysis/low-level-api-cfir/testData/diagnostics/cjmpCallerFirst/uncalledImplementationCallerFirst.cj",
+      "workingDirectory": "D:/code/intellij/cangjie/.workbuddy/tmp/cjmp_probe113/review-20260928/ll-completeness-20260930/uncalledImplementationCallerFirst"
+    }
+  ]
+}
+

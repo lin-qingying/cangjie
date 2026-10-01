@@ -1,8 +1,0 @@
-docs(cjmp): record framework baseline and correct official version evidence
-
-建立唯一的框架修复台账，记录 465b87d13 / 3701bf948 的临时补丁归属和新鲜全量基线。
-根据全部本地46个官方tag与12组cjc1.1.3精确探针，更正多parent、加载格式版本门、Specific模式来源及Quest/空体/错误返回边界。
-记录P1新增4项真实失败、Kotlin惰性锁链对位及后续入口；不宣称P0/P1或总目标已完成。
-
-CFIR基线：8543 passed、387 skipped、0 failed；对v10无回归无增删。
-validateDocumentation 已运行，未报CJMP文档错误；聚合仍因既有CJD锚点和CLI模块目录3项错误失败。
