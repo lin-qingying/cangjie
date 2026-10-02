@@ -37,13 +37,23 @@ import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBasePartiallyApp
 import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseSimpleFunctionCall
 import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallResolutionError
 import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseCallResolutionSuccess
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseSymbolResolutionError
+import org.cangnova.cangjie.analysis.api.impl.base.resolution.CaBaseSymbolResolutionSuccess
+import org.cangnova.cangjie.analysis.api.cfir.references.getCaCandidateSymbols
+import org.cangnova.cangjie.analysis.api.cfir.references.toCaTargetSymbolOrNull
+import org.cangnova.cangjie.analysis.api.cfir.references.toCaTargetSymbols
+import org.cangnova.cangjie.analysis.api.cfir.references.toCaTargetSymbol
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.resolution.*
+import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
+import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionSuccess
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
 import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -71,6 +81,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.asCone
@@ -153,6 +164,71 @@ internal class CaCfirResolver(
             computeCallResolutionAttempt(this@tryResolveCall)
         }
     }
+
+    /**
+     * 把任意 PSI 元素解析为元素级符号解析尝试，并缓存整个尝试。
+     *
+     * 对齐 Kotlin `KaFirResolver.performSymbolResolution`：元素先经 CFIR 取出对应树节点，
+     * 再按节点种类投影为成功/失败尝试；失败时保留诊断与候选符号。
+     */
+    override fun performSymbolResolution(element: CjElement): CaSymbolResolutionAttempt? = withValidityAssertion {
+        analysisSession.cacheStorage.resolveSymbolCache.value.getOrPut(element) {
+            resolveSymbol(element)
+        }
+    }
+
+    /**
+     * 取元素的 CFIR 节点并投影为元素级解析尝试。
+     */
+    private fun resolveSymbol(element: CjElement): CaSymbolResolutionAttempt? =
+        element.getOrBuildCfir(analysisSession.resolutionFacade)?.toCaSymbolResolutionAttempt()
+
+    /**
+     * 按 CFIR 节点种类投影元素级解析尝试。
+     *
+     * 与 Kotlin `KaFirResolver.toKaSymbolResolutionAttempt` 的分派一一对应：
+     * 诊断节点给出失败尝试，可解析节点取其 callee 引用，引用节点取其目标符号，
+     * 已解析类型引用取其目标符号；仓颉 CFIR 没有 Kotlin 的 `FirResolvedQualifier` / `FirReturnExpression`
+     * 对应物，这两类不单独处理，由引用/类型引用分支覆盖。
+     */
+    private fun CfirElement.toCaSymbolResolutionAttempt(): CaSymbolResolutionAttempt? = when (this) {
+        is CfirDiagnosticHolder -> toCaSymbolResolutionError()
+        is CfirResolvable -> calleeReference.toCaSymbolResolutionAttempt()
+        is CfirReference -> toCaTargetSymbols(analysisSession.cfirSymbolBuilder).toSymbolResolutionSuccessOrNull()
+        is CfirResolvedTypeRef -> toCaTargetSymbol(analysisSession, analysisSession.cfirSymbolBuilder)
+            ?.toSymbolResolutionSuccessOrNull()
+        else -> null
+    }
+
+    /**
+     * 把携带诊断的 CFIR 节点投影为失败的元素级解析尝试。
+     */
+    private fun CfirDiagnosticHolder.toCaSymbolResolutionError(): CaSymbolResolutionAttempt {
+        val cfirDiagnostic = diagnostic.toCfirDiagnostics(
+            session = analysisSession.cfirSession,
+            source = source,
+            callOrAssignmentSource = null,
+        ).firstOrNull()
+        val caDiagnostic = cfirDiagnostic?.let { CJ_DIAGNOSTIC_CONVERTER.convert(analysisSession, it) }
+            ?: CaCfirSymbolResolutionDiagnostic(diagnostic, token)
+        val candidates = diagnostic.getCaCandidateSymbols()
+            .mapNotNull { it.toCaTargetSymbolOrNull(analysisSession.cfirSymbolBuilder) }
+        return CaBaseSymbolResolutionError(caDiagnostic, candidates)
+    }
+
+    /**
+     * 非空符号集合投影为成功的元素级解析尝试。
+     */
+    private fun List<CaSymbol>.toSymbolResolutionSuccessOrNull(): CaSymbolResolutionSuccess? =
+        takeIf { it.isNotEmpty() }?.let { symbols ->
+            CaBaseSymbolResolutionSuccess(backingSymbols = symbols, token = symbols.first().token)
+        }
+
+    /**
+     * 单个符号投影为成功的元素级解析尝试。
+     */
+    private fun CaSymbol.toSymbolResolutionSuccessOrNull(): CaSymbolResolutionSuccess? =
+        CaBaseSymbolResolutionSuccess(this)
 
     /**
      * 从 CFIR 调用节点构造成功或错误的公开解析尝试。
@@ -608,6 +684,21 @@ internal class CaCfirResolver(
     private fun buildPublicSymbol(symbol: CfirBasedSymbol<*>): CaSymbol {
         return analysisSession.cfirSymbolBuilder.buildSymbol(symbol)
     }
+}
+
+/**
+ * 不具备源码诊断映射的 CFIR 符号解析 error 在 Analysis API 中仍保留稳定诊断信息。
+ *
+ * 对齐 Kotlin `KaNonBoundToPsiErrorDiagnostic` 的兜底角色。
+ */
+private class CaCfirSymbolResolutionDiagnostic(
+    private val coneDiagnostic: ConeDiagnostic,
+    override val token: org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken,
+) : CaDiagnostic {
+    override val diagnosticClass: kotlin.reflect.KClass<*> get() = CaDiagnostic::class
+    override val factoryName: String get() = "SYMBOL_RESOLUTION_ERROR"
+    override val severity: CaSeverity get() = CaSeverity.ERROR
+    override val defaultMessage: String get() = withValidityAssertion { coneDiagnostic.reason }
 }
 
 /**

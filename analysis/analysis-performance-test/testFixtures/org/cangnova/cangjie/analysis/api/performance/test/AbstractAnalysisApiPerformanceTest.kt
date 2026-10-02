@@ -4,8 +4,8 @@ package org.cangnova.cangjie.analysis.api.performance.test
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
-import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
@@ -18,21 +18,21 @@ import org.cangnova.cangjie.test.services.TestServices
  * 宿主形态对齐 [CaCfirStandaloneAnalysisApiTestConfigurator]（standalone CFIR），
  * 在其之上补齐统计链路所需的全部条件：
  *
- * 1. 打开 `cangjie.analysis.statistics` registry key（[CaPerformanceStatisticsBootstrap]）；
- * 2. 注册 SDK 支撑的 `CangJieOpenTelemetryProvider`（[CaPerformanceTestServiceRegistrar]）；
- * 3. 启动统计服务，等价于 IDE 的 `CaIdeStatisticsStartupActivity`。
+ * 1. 从生产描述符登记 registry key 并打开 `cangjie.analysis.statistics`
+ *    （[CaPerformanceTestServiceRegistrar]）；
+ * 2. 注册 SDK 支撑的 OpenTelemetry provider（同上）；
+ * 3. 用例通过 [counterDelta] 在一段操作前后取指标增量，再对
+ *    [org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames]
+ *    中的指标名断言；指标由 [CaPerformanceTestTelemetry] 的 SDK 收集。
  *
- * 用例通过 [counterDelta] 在一段操作前后取指标增量，再对 [CaPerformanceMetricNames] 中的
- * 指标名断言；指标本身由 [CaPerformanceTestTelemetry] 的 SDK 收集。
- *
- * 子类只需给出 testData 目录并继承 [AbstractAnalysisApiExecutionTest] 的用例签名：
+ * 子类只需给出 testData 目录并沿用 [AbstractAnalysisApiExecutionTest] 的用例签名：
  *
  * ```kotlin
  * class MyPerfTest : AbstractAnalysisApiPerformanceTest("analysis/analysis-performance-test/testData/performance") {
  *     @Test
  *     fun myCase(mainFile: CjFile) {
  *         val delta = counterDelta { analyzeForTest(mainFile) { } }
- *         assertTrue(delta[CaPerformanceMetricNames.ANALYZE_INVOCATIONS]!! >= 1)
+ *         assertTrue(counter(delta, LLStatisticsMetricNames.analyzeInvocations) >= 1)
  *     }
  * }
  * ```
@@ -40,13 +40,6 @@ import org.cangnova.cangjie.test.services.TestServices
 abstract class AbstractAnalysisApiPerformanceTest(
     testDirPathString: String,
 ) : AbstractAnalysisApiExecutionTest(testDirPathString) {
-    /**
-     * 统计开关是 JVM 级 lazy 读取，必须在宿主创建之前就登记 registry key。
-     */
-    init {
-        CaPerformanceStatisticsBootstrap.enable()
-    }
-
     /**
      * 使用 standalone CFIR 宿主。
      */
@@ -70,7 +63,7 @@ abstract class AbstractAnalysisApiPerformanceTest(
      */
     protected val statisticsService: CaStatisticsService
         get() = CaStatisticsService.getInstance(project)
-            ?: error("Analysis API 统计未启用：请检查 ${CaPerformanceStatisticsBootstrap.STATISTICS_KEY} 是否已登记并置为 true。")
+            ?: error("Analysis API 统计未启用：请检查 ${CaPerformanceTestServiceRegistrar::class} 是否已登记并打开统计开关。")
 
     /**
      * 当前用例所属工程的 low-level 统计服务；统计域从这里获取。
@@ -80,7 +73,7 @@ abstract class AbstractAnalysisApiPerformanceTest(
             ?: error("LLStatisticsService 不可用：OpenTelemetry provider 未注册或统计开关未启用。")
 
     /**
-     * 在一段操作前后读取指标，返回“指标名 → 增量”。
+     * 在一段操作前后读取指标，返回"指标名 → 增量"。
      *
      * SDK 的指标按 JVM 累积，直接比较两次绝对值会把其他用例的数据算进来；
      * 用例内应一律基于增量断言。

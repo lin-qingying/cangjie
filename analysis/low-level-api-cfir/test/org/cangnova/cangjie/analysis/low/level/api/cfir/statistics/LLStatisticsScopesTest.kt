@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
 import org.junit.jupiter.api.Test
 
 /**
@@ -49,4 +50,29 @@ class LLStatisticsScopesTest {
             )
         }
     }
+
+    /**
+     * 公开名称视图必须与 internal scope 同源：任何一边改名，另一边都要跟着改。
+     *
+     * 跨模块的性能测试模块只能看到 [LLStatisticsMetricNames]，看不到 internal 的
+     * [LLStatisticsScopes]；两者一旦漂移，测试会对着不存在的指标做断言而不报错。
+     */
+    @Test
+    @OptIn(LLStatisticsOnlyApi::class)
+    fun publicMetricNamesMirrorInternalScopes() {
+        assertEquals(LLStatisticsScopes.name, LLStatisticsMetricNames.root)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Analyze.Invocations.name, LLStatisticsMetricNames.analyzeInvocations)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.LowMemoryCacheCleanup.Invocations.name, LLStatisticsMetricNames.lowMemoryCacheCleanupInvocations)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveCallCache.hits.name, LLStatisticsMetricNames.resolveCallCacheHits)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveCallCache.misses.name, LLStatisticsMetricNames.resolveCallCacheMisses)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveSymbolCache.hits.name, LLStatisticsMetricNames.resolveSymbolCacheHits)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveSymbolCache.misses.name, LLStatisticsMetricNames.resolveSymbolCacheMisses)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveToSymbolsCache.hits.name, LLStatisticsMetricNames.resolveToSymbolsCacheHits)
+        assertEquals(LLStatisticsScopes.AnalysisSessions.Caches.ResolveToSymbolsCache.misses.name, LLStatisticsMetricNames.resolveToSymbolsCacheMisses)
+        assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Classes.hits.name, LLStatisticsMetricNames.combinedSymbolProviderClassCacheHits)
+        assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Classes.misses.name, LLStatisticsMetricNames.combinedSymbolProviderClassCacheMisses)
+        assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Callables.hits.name, LLStatisticsMetricNames.combinedSymbolProviderCallableCacheHits)
+        assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Callables.misses.name, LLStatisticsMetricNames.combinedSymbolProviderCallableCacheMisses)
+    }
+
 }

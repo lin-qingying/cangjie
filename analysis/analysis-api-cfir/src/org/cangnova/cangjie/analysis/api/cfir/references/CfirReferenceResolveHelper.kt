@@ -231,7 +231,7 @@ internal object CfirReferenceResolveHelper {
     /**
      * 从已解析类型引用恢复目标符号。
      */
-    private fun CfirResolvedTypeRef.toTargetSymbol(
+    internal fun CfirResolvedTypeRef.toTargetSymbol(
         analysisSession: CaCfirSession,
         symbolBuilder: CaSymbolByCfirBuilder,
     ): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? {
@@ -262,3 +262,14 @@ internal object CfirReferenceResolveHelper {
     }
 
 }
+/**
+ * [CfirReferenceResolveHelper.toTargetSymbol] 的顶层桥接。
+ *
+ * 原实现是 helper object 的成员扩展，调用方无法直接导入；这里以顶层函数暴露同一语义，
+ * 供 CFIR resolver 的元素级符号解析路径复用，避免复制类型到符号的还原逻辑。
+ */
+internal fun CfirResolvedTypeRef.toCaTargetSymbol(
+    analysisSession: CaCfirSession,
+    symbolBuilder: CaSymbolByCfirBuilder,
+): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? =
+    with(CfirReferenceResolveHelper) { toTargetSymbol(analysisSession, symbolBuilder) }
