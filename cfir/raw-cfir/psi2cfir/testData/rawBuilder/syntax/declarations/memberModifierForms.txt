@@ -1,0 +1,537 @@
+FILE: memberModifierForms.cj
+    internal? let MEMBER_MOD_LIMIT: R|Int64| = ...
+        initializer:
+            INT(7)
+    internal? var memberModShared: R|Int64| = ...
+        initializer:
+            INT(0)
+    <element: CfirMainFunction>
+    internal? class MemberModClass {
+        internal? static var shared: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static let K: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? func implicit(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        private func priv(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        internal static func intStatic(): R|Int64| {
+            RETURN {
+                INT(4)
+            }
+        }
+        private static func privStatic(): R|Int64| {
+            RETURN {
+                INT(3)
+            }
+        }
+        internal? static func staticConst(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(K)
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+        internal? unsafe func uns(): R|Int64| {
+            RETURN {
+                INT(6)
+            }
+        }
+        internal? mut prop writable: R|Int64|
+        internal mut prop intWritable: R|Int64|
+        init() {
+        }
+    }
+    internal? open class MemberModOpen {
+        protected open func hook(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        init() {
+        }
+    }
+    internal? class MemberModOpenImpl <: R|MemberModOpen| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func hook(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+    }
+    internal? interface MemberModInterface {
+        public? static func origin(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+        public? static prop originProp: R|Int64|
+        public? mut mut func bump(): R|Int64| {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(memberModShared)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(memberModShared)
+                        arguments:
+                            INT(1)
+                    }
+            }
+            RETURN {
+                NAMED_ACCESS(memberModShared)
+            }
+        }
+        public? mut prop writable: R|Int64|
+        public? unsafe func uns(): R|Int64| {
+            RETURN {
+                INT(9)
+            }
+        }
+        public? func tag(): R|Int64| {
+            RETURN {
+                INT(8)
+            }
+        }
+        public? func plain(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? class MemberModInterfaceImpl <: R|MemberModInterface| {
+        init() {
+        }
+    }
+    internal? struct MemberModStruct {
+        private var hidden: R|Int64| = ...
+            initializer:
+                INT(0)
+        private static var store: R|Int64| = ...
+            initializer:
+                INT(0)
+        public static let ZERO: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(hidden)
+                rValue:
+                    INT(0)
+            }
+        }
+        public static func make(): R|MemberModStruct| {
+            RETURN {
+                FUNCTION_CALL(MemberModStruct) {
+                }
+            }
+        }
+        public mut mut func bump(): <implicit> {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(hidden)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(hidden)
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        private mut mut func privateBump(): <implicit> {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(hidden)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(hidden)
+                        arguments:
+                            INT(2)
+                    }
+            }
+        }
+        public mut prop mutableView: R|Int64|
+        internal? static mut prop mutableStatic: R|Int64|
+    }
+    internal? struct MemberModConstTarget {
+        internal? let limit: R|Int64| = ...
+            initializer:
+                NAMED_ACCESS(MEMBER_MOD_LIMIT)
+        init() {
+        }
+    }
+    extend R|MemberModConstTarget| {
+        public func plusOne(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(MEMBER_MOD_LIMIT)
+                    arguments:
+                        INT(1)
+                }
+            }
+        }
+    }
+    internal? enum MemberModEnum {
+        A
+        B(R|Int64|)
+        init()
+        internal? func base(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        private func privateTag(): R|Int64| {
+            RETURN {
+                INT(11)
+            }
+        }
+        protected func protTag(): R|Int64| {
+            RETURN {
+                INT(12)
+            }
+        }
+        internal static func make(v: R|Int64|): R|MemberModEnum| {
+            RETURN {
+                FUNCTION_CALL(B) {
+                    NAMED_ACCESS(v)
+                }
+            }
+        }
+        internal? func tag(): R|Int64| {
+            RETURN {
+                INT(7)
+            }
+        }
+        internal? unsafe func uns(): R|Int64| {
+            RETURN {
+                INT(10)
+            }
+        }
+    }
+    internal? struct MemberModTarget {
+        public var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(v: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(v)
+            }
+        }
+    }
+    extend R|MemberModTarget| {
+        private mut mut func bumpPrivate(): <implicit> {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        public mut mut func bump(): <implicit> {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        internal mut mut func bumpInternal(): <implicit> {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v)
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        public static func make(v: R|Int64|): R|MemberModTarget| {
+            RETURN {
+                FUNCTION_CALL(MemberModTarget) {
+                    NAMED_ACCESS(v)
+                }
+            }
+        }
+        internal? static func bareStatic(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        private static func privStatic(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        internal? unsafe func uns(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v)
+            }
+        }
+        internal? static prop staticView: R|Int64|
+    }
+    internal? func memberModTotal(): R|Int64| {
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(MemberModClass) {
+                }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(writable) {
+                    receiver:
+                        NAMED_ACCESS(c)
+                }
+            rValue:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(writable) {
+                                    receiver:
+                                        NAMED_ACCESS(c)
+                                }
+                            arguments:
+                                NAMED_ACCESS(intWritable) {
+                                    receiver:
+                                        NAMED_ACCESS(c)
+                                }
+                        }
+                    arguments:
+                        FUNCTION_CALL(implicit) {
+                            receiver:
+                                NAMED_ACCESS(c)
+                        }
+                }
+        }
+        local? var i: R|MemberModInterface| = ...
+            initializer:
+                FUNCTION_CALL(MemberModInterfaceImpl) {
+                }
+        local? var s: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(make) {
+                    receiver:
+                        NAMED_ACCESS(MemberModStruct)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(make) {
+                    receiver:
+                        NAMED_ACCESS(MemberModEnum)
+                    arguments:
+                        INT(1)
+                }
+        local? var t: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(MemberModTarget) {
+                    INT(2)
+                }
+        FUNCTION_CALL(bump) {
+            receiver:
+                NAMED_ACCESS(s)
+        }
+        FUNCTION_CALL(bump) {
+            receiver:
+                NAMED_ACCESS(t)
+        }
+        UNSAFE {
+            local? let _: <implicit> = ...
+                initializer:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(uns) {
+                                                receiver:
+                                                    NAMED_ACCESS(c)
+                                            }
+                                        arguments:
+                                            FUNCTION_CALL(uns) {
+                                                receiver:
+                                                    NAMED_ACCESS(t)
+                                            }
+                                    }
+                                arguments:
+                                    FUNCTION_CALL(uns) {
+                                        receiver:
+                                            NAMED_ACCESS(i)
+                                    }
+                            }
+                        arguments:
+                            FUNCTION_CALL(uns) {
+                                receiver:
+                                    NAMED_ACCESS(e)
+                            }
+                    }
+        }
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(writable) {
+                    receiver:
+                        NAMED_ACCESS(i)
+                }
+            rValue:
+                FUNCTION_CALL(bump) {
+                    receiver:
+                        NAMED_ACCESS(i)
+                }
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(*operator_plus) {
+                                                receiver:
+                                                    FUNCTION_CALL(*operator_plus) {
+                                                        receiver:
+                                                            FUNCTION_CALL(*operator_plus) {
+                                                                receiver:
+                                                                    FUNCTION_CALL(*operator_plus) {
+                                                                        receiver:
+                                                                            FUNCTION_CALL(*operator_plus) {
+                                                                                receiver:
+                                                                                    FUNCTION_CALL(*operator_plus) {
+                                                                                        receiver:
+                                                                                            FUNCTION_CALL(*operator_plus) {
+                                                                                                receiver:
+                                                                                                    FUNCTION_CALL(*operator_plus) {
+                                                                                                        receiver:
+                                                                                                            FUNCTION_CALL(*operator_plus) {
+                                                                                                                receiver:
+                                                                                                                    FUNCTION_CALL(*operator_plus) {
+                                                                                                                        receiver:
+                                                                                                                            FUNCTION_CALL(hook) {
+                                                                                                                                receiver:
+                                                                                                                                    FUNCTION_CALL(MemberModOpenImpl) {
+                                                                                                                                    }
+                                                                                                                            }
+                                                                                                                        arguments:
+                                                                                                                            FUNCTION_CALL(staticConst) {
+                                                                                                                                receiver:
+                                                                                                                                    NAMED_ACCESS(MemberModClass)
+                                                                                                                            }
+                                                                                                                    }
+                                                                                                                arguments:
+                                                                                                                    NAMED_ACCESS(mutableView) {
+                                                                                                                        receiver:
+                                                                                                                            NAMED_ACCESS(s)
+                                                                                                                    }
+                                                                                                            }
+                                                                                                        arguments:
+                                                                                                            NAMED_ACCESS(ZERO) {
+                                                                                                                receiver:
+                                                                                                                    NAMED_ACCESS(MemberModStruct)
+                                                                                                            }
+                                                                                                    }
+                                                                                                arguments:
+                                                                                                    NAMED_ACCESS(mutableStatic) {
+                                                                                                        receiver:
+                                                                                                            NAMED_ACCESS(MemberModStruct)
+                                                                                                    }
+                                                                                            }
+                                                                                        arguments:
+                                                                                            FUNCTION_CALL(base) {
+                                                                                                receiver:
+                                                                                                    NAMED_ACCESS(e)
+                                                                                            }
+                                                                                    }
+                                                                                arguments:
+                                                                                    FUNCTION_CALL(tag) {
+                                                                                        receiver:
+                                                                                            NAMED_ACCESS(e)
+                                                                                    }
+                                                                            }
+                                                                        arguments:
+                                                                            FUNCTION_CALL(protTag) {
+                                                                                receiver:
+                                                                                    NAMED_ACCESS(e)
+                                                                            }
+                                                                    }
+                                                                arguments:
+                                                                    FUNCTION_CALL(plusOne) {
+                                                                        receiver:
+                                                                            FUNCTION_CALL(MemberModConstTarget) {
+                                                                            }
+                                                                    }
+                                                            }
+                                                        arguments:
+                                                            NAMED_ACCESS(staticView) {
+                                                                receiver:
+                                                                    NAMED_ACCESS(MemberModTarget)
+                                                            }
+                                                    }
+                                                arguments:
+                                                    FUNCTION_CALL(bareStatic) {
+                                                        receiver:
+                                                            NAMED_ACCESS(MemberModTarget)
+                                                    }
+                                            }
+                                        arguments:
+                                            FUNCTION_CALL(origin) {
+                                                receiver:
+                                                    NAMED_ACCESS(MemberModInterface)
+                                            }
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(originProp) {
+                                        receiver:
+                                            NAMED_ACCESS(MemberModInterface)
+                                    }
+                            }
+                        arguments:
+                            FUNCTION_CALL(tag) {
+                                receiver:
+                                    NAMED_ACCESS(i)
+                            }
+                    }
+                arguments:
+                    FUNCTION_CALL(plain) {
+                        receiver:
+                            NAMED_ACCESS(i)
+                    }
+            }
+        }
+    }

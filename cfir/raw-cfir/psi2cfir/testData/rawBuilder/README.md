@@ -201,3 +201,169 @@ This directory stores golden-file tests for `PsiRawCfirBuilder`.
 | do-while 循环体必须带花括号 | `ParseExpr.cpp` ParseDoWhileExpr | `recovery/doWhileWithoutBrace.cj` |
 | 其它补齐：if 表达式作实参 / if-let-else-if / while 条件 let 模式 / for 元组解构 / 多级成员访问 / 类静态成员访问 / 枚举静态工厂 / 嵌套元组与 Option 数组类型 / `CType` 形参 / 异常层次与 `throw` 表达式 / `Nothing` / 位运算与全套复合赋值 / 嵌套 lambda 与尾随闭包 | 对应 `Parse*` 入口 | `expressions/*` |
 
+### 第三批（2026-10-02）：局部函数声明
+
+`syntax/declarations/localFunctionForms.cj` 覆盖函数体内 `func` 声明的 13 种形态：普通函数体 / `init()` 体 / `prop get()` 与
+`mut prop set(v)` 体、局部函数自递归、捕获外层 `let` 与 `var`、遮蔽外层同名函数、与局部 `const`/`let`/`var` 共存、
+局部函数名作函数值绑定与作高阶函数实参、局部函数体内再声明局部函数、`if`/`else`/`for`/`while`/`do-while` 体、
+`try`/`catch`/`finally` 体与 `match` case 体、局部泛型函数与局部 `const func`、只捕获 `let` 时显式标注函数类型后逃逸为返回值。
+cjc 1.0.5 / 1.1.3 各 0 error 0 warning（1.1.3 需单独设 `CANGJIE_HOME` 指向其 SDK，否则会用 1.0.5 的 `opt.exe` 假崩）。
+
+官方依据：`ParseAtom.cpp:1706 ParseFuncBody`（普通函数体按 `ScopeKind::FUNC_BODY`）、`:1664 ParsePropMemberBody`、
+`:374/392/433/459/463/1035/1045` 各分支块、`:397 ParseExprOrDeclsInMatchCase → Parser.cpp:452 ParseExprOrDecl`、
+`ParserImpl.h:258 declHandlerMap {FUNC → ParseFuncDecl}`、`ParserModifierRules.cpp:260` FUNC_BODY 作用域 FUNC 修饰符白名单（仅
+`unsafe` / `const`）、`:264-277` 函数体内不允许声明 class / interface、`ParseDecl.cpp:899 CheckDeclarationInScope` +
+`ParserDiag.cpp:656`（`main` 只允许顶层）、`ParseDecl.cpp:1533 CheckFuncBody`（局部 func 必须有体）、
+`Sema/Diags.cpp:571 DiagUseClosureCaptureVarAlone`（捕获 `var` 的局部函数不能作为一等公民）。
+
+本批同时在 cjc 1.0.5 / 1.1.3 上实测否决、可作 `recovery/` 用例的形态：局部 `func` 带 `public` / `static` / `open` / `operator`
+（`parse_illegal_modifier_in_scope`）；函数体内声明 `class` / `interface` / `main`（`parse_unexpected_declaration_in_scope`）；
+局部 `func` 无函数体（`parse_missing_body`）；语句位置的裸块 `{ func f() {} }` 被解析为尾随 lambda
+（`parse_expected_double_arrow_in_lambda`，块必须挂在 `if` / `for` 等分支上）；局部函数互相递归（前引后声明）
+（`sema_undeclared_identifier`，官方文档《闭包》标 `compile` 的示例在两版上实际不通过）；捕获 `var` 的局部函数逃逸
+（`let b = g` / `return g`，`sema_use_func_capture_var_alone`，显式非捕获函数类型时为 `sema_no_match_function_declaration_for_ref`）；
+`unsafe func` 直接调用（`sema_unsafe_function_invoke_failed`，须置于 `unsafe {}` 块内）。
+
+### 主构造函数成员变量形参（2026-10-02 取证）
+
+官方文档《定义 struct 类型》"struct 构造函数"节：主构造函数定义在类型体内、名字与类型名相同，形参可以是普通形参或带
+`let` / `var` 的成员变量形参。实现：`ParseDecl.cpp:64-66 → ParsePrimaryConstructor:589`，`SeeingPrimaryConstructor`
+只在 `STRUCT_BODY` / `CLASS_BODY` 成立（`ParserImpl.h:459-467`），`SeeingPrimaryIdentifer` 要求标识符后跟 `(` / `[` / `{`
+且与类名编辑距离 ≤ 1（`ParserUtils.cpp:552-556`），成员形参见 `ParseLetOrVarInParamList:1916-1934`（`isMemberParam` / `isVar`）。
+
+实测：以下形态两版零诊断，可进合法语法夹具 —— `public Rectangle(let width: Int64, let height: Int64) {}`、成员形参用 `var`、
+普通形参与成员形参混写、与 `init` 形参构成重载、`open class` 主构造 + `init()` 内 `super(...)`、泛型类主构造、主构造体内给
+`var` 成员赋值。以下形态两版均被拒，只能进 `recovery/` —— 顶层 `class P(var x: Int64) {}`（`parse_expected_left_brace`，
+1.0.5 / 1.1.3 都不支持把主构造写在类型名后的圆括号里）、`init(var x: Int64)`（`parse_expected_parameter_rp`）、
+`static` 主构造（`parse_illegal_modifier_in_scope`）、无体主构造（`parse_missing_body`）、主构造内 `this(...)`
+（`sema_illegal_place_of_calling_this_primary_constructor` + `sema_recursive_constructor_call`）、interface 体内主构造
+（`parse_expected_decl`）、主构造之后再写 `func` / `~init` 两版均零诊断（主构造不必是最后一个成员），但之后再写 `prop` 两版均报 `parse_expected_decl`。
+
+### 导入组语法更正（2026-10-02）
+
+组导入用花括号：`import std.collection.{ArrayList, HashMap}`、每项可 `as` 别名、`import a.{b}.{c}` 不存在（`ParseImports.cpp`
+只有一层 `LCURL`，见 `:216` 进入、`:262 ParseImportMulti` 按 `COMMA` 切分、`:146 DesugarImportMulti` 展开、`:309 ParseImportAliasPart`）。
+`syntax/declarations/packageAndImportVariants.cj` 头注释把导入组写成 `import (a.b, c.d)` 括号形式且正文没有组导入，与官方语法不符。### 第四批（2026-10-02）：导入组（花括号多导入）
+
+`syntax/declarations/importGroupForms.cj` 覆盖导入组的 7 种形态：多项组 `import a.{b, c}`、单项组 `{b}`、组内每项
+`as` 别名、组内项带点号前缀（选择式组）`import std.{math.sqrt, fs.Path}`、三项组 + 尾逗号、组 import 与普通 import 混用、
+`@When[...]` 作用于组 import（注解随展开复制到每一项）、`internal` 修饰符作用于组 import。cjc 1.0.5 / 1.1.3 零诊断。
+
+官方依据（`src/Parse/ParseImports.cpp`）：`:216 ParseImportSingle` 遇 `LCURL` 返回 false → `:194-196` 转
+`ParseImportMulti`；`:262 ParseImportMulti`（组内逐项解析、`COMMA` 分隔、`:274` 允许尾逗号、`:288-290` 组内 `Skip(AS)`）、
+`:295` 循环条件含 `AS`、`:287` 组内项按选择式解析（`:248` DOT 循环、`:604 ExpectPackageIdentWithPos`）；
+`:146 DesugarImportMulti` 展开为多个 `ImportSpec` 并复制修饰符与注解；`:323 CheckAllowedAnnoOnImport`（import 上仅允许
+`@When`）；`:119-124` 修饰符记在 `ImportSpec` 上。
+
+被官方拒绝的形态（两版一致，可作 `recovery/` 用例）：`import a.{*}`（`parse_expected_name`，`:225` 组内首项不接受 `MUL`）；
+嵌套组 `import std.{collection.{ArrayList}}`（`parse_expected_name`，`:216` 的 `!inMultiImport` 守卫，组内不再收 `{`）；
+`@Deprecated[...] import a.{b, c}`（`parse_unexpected_anno_on`，`:331-333`）；`{A B}` 缺逗号（`parse_expected_character`，
+`:279-282`）；`{ArrayList as func}` 关键字别名（`parse_expected_name`，`:309` → `ParserUtils.cpp:588`，关键字须反引号）；
+`from std.collection import ArrayList` 与 `import (a, b)`（`parse_expected_decl` / `parse_expected_name`，两版 parser 均无
+`FROM` 与括号组语法，尽管 `ParseImports.cpp:58-63` 的文法注释写着这两种形式）。
+
+另：同一符号经多种形态重复导入两版都只报 `package_conflict_import` warning，夹具里每种形态各用独立符号以保持零诊断。### 第五批（2026-10-02）：主构造函数成员变量形参
+
+`syntax/declarations/primaryConstructorForms.cj` 覆盖主构造函数的 11 组形态：struct 全 `let` 成员形参、class `var` 成员形参、
+普通形参与成员形参混写（普通在前）、主构造函数自身的访问修饰符（无修饰 / internal / protected / private / const）、成员形参自身的
+private / protected 修饰符、主构造函数与 `init` 构成重载、open 基类主构造函数 + 子类 `init()` 内 `super(...)`、泛型主构造函数与
+`where` 约束、主构造函数体内 `this.` 赋值 `var` 成员 / 访问 `this` 成员变量 / 调用成员函数、主构造函数只有普通形参、形参列表为空。
+cjc 1.0.5 / 1.1.3 零诊断。
+
+官方依据：文档《定义 struct 类型》"struct 构造函数"节（主构造函数名字与类型名相同，形参分普通形参与成员变量形参，需在成员形参名前加
+`let` / `var`）；`ParseDecl.cpp:64 → :589 ParsePrimaryConstructor`；`ParserImpl.h:465 SeeingPrimaryConstructor`（作用域仅
+`STRUCT_BODY` / `CLASS_BODY`）；`ParserUtils.cpp:552 SeeingPrimaryIdentifer`（标识符后跟 `(` / `[` / `{` 且与类型名编辑距离 ≤ 1）；
+`ParseDecl.cpp:1916 ParseLetOrVarInParamList`（仅主构造函数作用域的 `let` / `var` 形参才是成员形参，其它作用域报
+`parse_expected_parameter_rp`）；`ParseDecl.cpp:1896 DiagMemberParameterAfterRegular`（普通形参必须排在成员形参之前）；
+`ParseDecl.cpp:1816 ParseAssignInParam`、`:1939 CheckModifierInParamList`（默认值只对具名形参开放，成员形参 `const` 被拒）；
+`ParserModifierRules.cpp:232` 与 `:286 DefKind::PRIMARY_CONSTRUCTOR`（主构造函数只接受 public / protected / internal / private /
+const）；`ParseClassDecl:913`（`:930 SetPrimaryDecl`）、`ParseStructDecl:1119`（`:1146 SetPrimaryDecl`）；
+`Sema/Desugar/DesugarInTypeCheck.cpp:153 DesugarPrimaryCtorHandleParamSetEachParam`（成员形参 desugar 成成员变量并在函数体末尾
+追加 `this.<name> = <name>`）。
+
+被官方拒绝的形态（两版 kind 一致，可作 `recovery/` 用例）：`static` / `open` / `sealed` / `abstract` 主构造
+（`parse_illegal_modifier_in_scope`）；无体主构造，含 `struct P(let x: Int64)` 单行写法（`parse_missing_body` /
+`parse_expected_left_brace`）；顶层 `class P(var x: Int64)`（`parse_expected_left_brace`）；`init(var x)` 与普通 `func f(let x)`
+（`parse_expected_parameter_rp`）；interface 体内主构造、主构造名 ≠ 类型名（`parse_expected_decl`）；`enum` 里 `public C(Int64)`
+（`parse_expected_no_modifier`）；`struct` 体内 `~init`（`parse_unexpected_declaration_in_scope`）；成员形参后跟普通形参
+（`parse_member_parameter_after_regular`）；具名普通形参后跟成员形参（`parse_named_parameter_after_unnamed`）；成员形参默认值
+（`parse_expected_dot_lparen`）；成员形参 `const`（`parse_unexpected_const_modifier_on_variable`）；成员形参 `static`
+（`parse_illegal_modifier_in_scope`）；同一类型两个主构造（`sema_multiple_primary_constructors`）；同名成员形参或重复声明字段
+（`sema_redefinition` + `sema_class_uninitialized_field`）；主构造内 `this(...)`（`sema_illegal_place_of_calling_this_primary_constructor`
++ `sema_recursive_constructor_call`）；裸写 `v = ...`（无 `this.`，`sema_cannot_assign_to_immutable`）；给 `let` 成员形参赋值（同一 kind）；
+主构造体内调用会改写 `var` 字段的成员函数（`sema_cannot_modify_var`）；另一个 `init` 未初始化成员形参字段
+（`sema_class_uninitialized_field`）；主构造的普通形参在同类其他成员中不可见（`sema_undeclared_identifier`）。
+
+两处对早先记录的订正（已用 cjc 1.0.5 复核）：主构造**不必**是最后一个成员——之后再写 `func` / `~init` 两版均零诊断，只有之后再写
+`prop` 会被 `parse_expected_decl` 拒；主构造体内给 `var` 成员赋值必须带 `this.`，裸写 `v = v + 1` 与 `let` 成员形参的赋值都报
+`sema_cannot_assign_to_immutable`。### 第六批（2026-10-02）：match case 体多形态
+
+`syntax/expressions/matchCaseBodyForms.cj` 覆盖 `case ... =>` 之后体的 14 组形态：单表达式体、同行分号序列
+`case 1 => let a = 2; a + 1`、换行分隔多语句体、体内 `let` / `var` / `const` 声明并使用、体内局部 `func` 声明并调用、体内嵌套
+`match`、`where` 守卫 + 多语句体、绑定模式（类型 / 元组 / 枚举）+ 体内使用、体为 `return`、体内 `if` / `for` / `while`、
+体内 lambda 立即调用、`match` 作语句（分支 Unit）+ 多语句体、无匹配值 match 的多语句体、整行 match 与同行多 case 以 `;` 分隔。
+cjc 1.0.5 / 1.1.3 零诊断（连 warning 也没有）。
+
+官方依据：`ParseAtom.cpp:397 ParseExprOrDeclsInMatchCase`（循环 `ParseExprOrDecl` 直到下一个 `case` / `}`，产出块）；
+`:404-405 DiagExpectSemiOrNewline`（分号或换行分隔）；`:412 SeeingExpr()`（`{` 走 lambda 解析，故不能当块）；`Parser.cpp:452
+ParseExprOrDecl` → `:468 SeeingDecl()`（含 `LET` / `VAR` / `FUNC`，`ParserImpl.h:447`）；`:550 Skip(WHERE)` → `:552 patternGuard`
+（守卫只认 `where`）；`:539 ParseMatchCases`；`:581 ParseMatchNoSelector`（无匹配值形式）；文档《match 表达式》"`=>` 之后可以是一系列
+表达式、变量和函数定义（新定义作用域到下一个 case 之前结束）"。
+
+被官方拒绝的形态（两版一致，可作 `recovery/` 用例）：空 case 体 `case 1 =>` 紧接下一 case
+（`parse_case_body_cannot_be_empty`，`ParseAtom.cpp:573` / `:616`）；`=>` 后跟独立块 `{ ... }`
+（`parse_expected_double_arrow_in_lambda`，`ParseAtom.cpp:412` 把 `{` 交给 lambda）；case 列表尾随逗号
+（`parse_expected_character`，`:404`）；用 `if` 代替 `where` 守卫（`parse_expected_double_arrow_in_case`，`:550` 只认 `WHERE`）；
+体内 `class` 声明（`parse_unexpected_declaration_in_scope`，`ParseDecl.cpp:899` → `:907`，case 体是 `ScopeKind::FUNC_BODY`）。
+
+探查中的一个环境坑：对 cjc 1.0.5 必须 `env -u CANGJIE_HOME`，否则全局 `CANGJIE_HOME` 指向 1.1.3 时 1.0.5 会混用 1.1.3 的 `opt.exe`
+（rc=139 段错误）；对 1.1.3 则必须逐条前缀 `CANGJIE_HOME=<1.1.3 SDK>/cangjie`。### 第七批（2026-10-02）：内置注解与内建编译标记的剩余形态
+
+`syntax/declarations/builtinAnnotationForms.cj` 覆盖剩余可写的内置注解形态：`@Attribute[...]`（identifier / 字符串字面量 /
+上下文关键字属性值、逗号分隔、空参数 `[]`、不带方括号的裸写法；宿主覆盖 class / interface / struct / enum / 顶层函数 /
+顶层变量 / 成员变量 / 成员函数 / `prop` / 函数形参 / `init` 形参 / `extend` 成员函数）、`@EnsurePreparedToMock` 的声明位置、
+`@Deprecated` 的空参数 / 具名 message / 裸写法、`@OverflowWrapping[wrapping]` / `@OverflowThrowing[saturating]` 的方括号形式、
+`@When` 的 `cjc_version` / `backend` / `debug` / `test` 内置条件变量与 `!debug`、括号多条件、自定义 `@Annotation` 类型声明
+（`const init`）与 `@X` / `@X[]` 两种使用形式、`@sourceFile()` / `@sourcePackage()` / `@sourceLine()` 作为表达式 / 顶层 `let` 初值 /
+算术操作数 / 具名形参默认值 / 字符串插值、多注解叠加于一个声明。cjc 1.0.5 / 1.1.3 零 error（1.1.3 有 1 条
+`chir_dce_unused_function` warning，属 CHIR 阶段噪声）。
+
+官方依据：`include/cangjie/Parse/Parser.h:52 NAME_TO_ANNO_KIND`（15 个内建注解名）；`ParseAnnotations.cpp:19
+ParseAttributeAnnotation`（`:28` 只收 identifier / 字符串字面量 / 上下文关键字，逗号分隔；未见 `[` 直接返回，故裸写法合法）、
+`:41 ParseOverflowAnnotation`（`:46` 方括号内单个 identifier 经 `Utils::StringToOverflowStrategy` 独立决定策略）、
+`:63 ParseWhenAnnotation`（`[]` 内为表达式）、`:110 ParseAnnotationArguments`、`:266 CheckDeprecatedAnnotation`、
+`:296 ParseAnnotation` 按 kind 分派、`:206 ParseAnnotations` 循环；`ParseDecl.cpp:1877 ParseParamInParamList`（`:1888` 形参先解析注解）；
+`ParseMacro.cpp:144 IsBuiltinMacro`；`ParseUtils.cpp:22 GetContextualKeyword`；文档《内置编译标记》《@Attribute》《@Deprecated》
+《注解》《条件编译》。
+
+被官方拒绝的形态（两版一致，可作 `recovery/` 用例）：`@EnsurePreparedToMock { => ... }` lambda 宿主（`sema_mock_not_in_test_mode`，
+文档限定 lambda + `--test` / `--mock`，而声明位置的裸形态两版零诊断，与文档相悖，已在夹具注释记录）；`@When[version >= "1.0.0"]`
+（版本变量名是 `cjc_version`，`conditional_compilation_not_support_this_condition`）；`@ConstSafe`（`:147 STD_ONLY_ANNO` 仅
+std 包，`sema_undeclared_identifier`）；`@Overflow[wrapping]`（不在 `NAME_TO_ANNO_KIND`，`sema_undeclared_identifier`）；`@Frozen`
+标 class（`sema_illegal_use_of_annotation`）；`@FastNative` 标非 foreign 函数（同一 kind）；`@CallingConv["C"]` 标非 CFunc
+（`sema_only_cfunc_can_use_annotation`）；`@sourcePackage()` 标在声明上（`macro_expect_declaration`，只能出现在表达式位置）。### 第八批（2026-10-02）：成员修饰符组合
+
+`syntax/declarations/memberModifierForms.cj` 覆盖各作用域成员声明修饰符白名单里尚未被现有夹具覆盖的组合：
+`unsafe main()`；class 的缺省可见性 `func`、`internal static func` / `private static func`、`static const func`、
+`unsafe func`、`mut prop` / `internal mut prop`、`protected open func` + `public override func`；interface 的 `static func`
+（带体）、`static prop`、`mut func` / `mut prop`、`unsafe func`、`const func`；struct 的 `public mut func` / `private mut func`、
+`static mut prop` + `private static var`、`const init()` + extend `public const func`；enum 的 `private func` / `protected func` /
+`internal static func`、`const func`、`unsafe func`；extend 的 `private` / `public` / `internal mut func`、
+`public static func` / 裸 `static func` / `private static func`、`unsafe func`、`static prop`。
+cjc 1.0.5 / 1.1.3 零 error（7 条 `chir_dce_unused_function` warning 属 CHIR 阶段噪声）。
+
+官方依据（`src/Parse/ParserModifierRules.cpp` 当前 checkout 行号）：`:118 TOPLEVEL_MAINDECL_MODIFIERS = {UNSAFE}`、
+`:122 CLASS_BODY_FUNCDECL_MODIFIERS`、`:136 INTERFACE_BODY_FUNCDECL_MODIFIERS`、`:148 STRUCT_BODY_FUNCDECL_MODIFIERS`、
+`:159 ENUM_BODY_FUNCDECL_MODIFIERS`、`:174 STRUCT_BODY_VARIABLE_MODIFIERS`、`:180 EXTEND_BODY_FUNCDECL_MODIFIERS`、
+`:189 CLASS_BODY_PROP_MODIFIERS`、`:201 INTERFACE_BODY_PROP_MODIFIERS`、`:210 STRUCT_BODY_PROP_MODIFIERS`、
+`:218 ENUM_BODY_PROP_MODIFIERS`、`:225 EXTEND_BODY_PROP_MODIFIERS`；`ParseModifiers.cpp:68-72` 缺省可见性按作用域补
+（类体内为 `IN_CLASSLIKE`）；`ParseModifiers.cpp:140` + `ParserModifierRules.cpp:320` interface 成员写 `public` 触发
+"interface member implies 'public'" warning；`ConstEvaluationChecker.cpp:60 / :383` const 规则。
+
+被官方拒绝的形态（两版一致，可作 `recovery/` 用例）：interface 成员上的 `static operator func`（`operator` 与 `static` 冲突，
+**注意当前 checkout 的表把二者列为兼容，说明 checkout 比 1.1.3 新，以 cjc 实测为准**）；`internal open func` / `private open func`
+（`open` 只与 `public` / `protected` 配对）；struct 上的 `static mut func` / `const mut func`；enum 成员的 `mut func` / `mut prop`；
+const 实例成员函数缺少 `const init`（`sema_no_const_init`）；extend 的 const 成员函数而被扩展类型无 const 构造器
+（`sema_no_const_init`）；const 函数体读实例 `let` 字段（`sema_expect_const`）。
+
+注意：rawBuilder 夹具止于 `FRONTEND`，`unsafe` 调用点约束与 const 求值规则只由 cjc 探针固定，仓库内没有对应测试覆盖这两条。
