@@ -13,6 +13,8 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroExpansionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLRawBuildStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLResolvePhaseStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLStatisticsDomain
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSymbolProviderStatistics
@@ -49,9 +51,19 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     internal val resolvePhases: LLResolvePhaseStatistics = LLResolvePhaseStatistics(this)
 
     /**
+     * raw CFIR 构建耗时统计域；各 session 注册的 raw build 观察者即指向该域。
+     */
+    val rawBuild: LLRawBuildStatistics = LLRawBuildStatistics(this)
+
+    /**
+     * macro construction 耗时统计域；各 session 注册的宏展开观察者即指向该域。
+     */
+    val macroExpansion: LLMacroExpansionStatistics = LLMacroExpansionStatistics(this)
+
+    /**
      * 当前服务管理的所有统计域。
      */
-    internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders, resolvePhases)
+    internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders, resolvePhases, rawBuild, macroExpansion)
 
     @OptIn(CaPlatformInterface::class)
     /**

@@ -2,25 +2,14 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseTimingObserver
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
-
-/**
- * 阶段耗时的桶边界（毫秒）。
- *
- * 语义解析的阶段耗时跨度较大：从亚毫秒级的单声明推进到整包解析的秒级，用对数式边界覆盖两端。
- */
-private val PHASE_DURATION_BUCKETS_MS: List<Long> =
-    listOf(1L, 5L, 10L, 25L, 50L, 100L, 250L, 500L, 1_000L, 2_500L, 5_000L, 10_000L, 30_000L)
-
-/**
- * 纳秒到毫秒的换算。
- */
-private const val NANOS_PER_MILLI: Long = 1_000_000L
 
 /**
  * 语义解析阶段耗时统计域。
@@ -50,7 +39,7 @@ class LLResolvePhaseStatistics internal constructor(
                 .setDescription("Semantic resolve phase duration for ${phase.name}")
                 .setUnit("ms")
                 .ofLongs()
-                .setExplicitBucketBoundariesAdvice(PHASE_DURATION_BUCKETS_MS)
+                .setExplicitBucketBoundariesAdvice(DURATION_BUCKETS_MS)
                 .build()
         }
 
