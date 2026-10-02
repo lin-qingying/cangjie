@@ -173,6 +173,15 @@ private fun Candidate.prepareExpectedType(
     parameter: CfirValueParameter?,
 ): ConeCangJieType? {
     if (parameter == null) return null
+    /*
+     * 形参类型引用可能尚未解析——lazy resolve 期间它仍是非解析的 `CfirBasicTypeRefImpl`，
+     * 而 `getExpectedType` 消费的是严格视图 `CfirTypeRef.coneType`，读到未解析引用会抛内部
+     * 错误而不是给出正常结论。
+     *
+     * 这里就地判定该位置是否还有期望类型可消费，不推进任何阶段：在调用解析入口强制推进相位
+     * 会让惰性解析的分步观测失效（低层 API 按阶段探测解析进度的用例依赖这一点）。
+     */
+    if (parameter.returnTypeRef.coneTypeOrNull == null) return null
     val declaredExpectedType = argument.getExpectedType(
         session,
         parameter,
