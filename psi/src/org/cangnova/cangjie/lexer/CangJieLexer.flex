@@ -60,13 +60,13 @@
  *    DIGIT               = [0-9]                    数字字符
  *    DIGIT_OR_UNDERSCORE = [0-9_]                  数字或下划线
  *    LETTER             = [:letter:]|_             字母或下划线
- *    WHITE_SPACE_CHAR   = [\ \n\t\f]              空白字符
+ *    WHITE_SPACE_CHAR   = [\ \r\n\t\f]            空白字符（\r 与 \n 同等视为行终止）
  * 
  * 2. 标识符：
  *    IDENTIFIER_START    = {LETTER}                标识符起始字符
  *    IDENTIFIER_PART    = [:digit:]|{LETTER}      标识符组成部分
  *    PLAIN_IDENTIFIER   = {IDENTIFIER_START}{IDENTIFIER_PART}*  普通标识符
- *    ESCAPED_IDENTIFIER = `[^`\n]+`               转义标识符
+ *    ESCAPED_IDENTIFIER = `[^`\r\n]+`              转义标识符
  *    FIELD_IDENTIFIER   = \${IDENTIFIER}          字段标识符
  * 
  * 3. 数值字面量：
@@ -74,8 +74,8 @@
  *    FLOAT_LITERAL     = 支持小数点和科学计数法
  *    
  * 4. 字符串相关：
- *    ESCAPE_SEQUENCE    = \\(u\{HEX_DIGIT{1,8}\}|[^\n])  转义序列
- *    STRING_CONTENT    = [^\\\"'\n\$]+            字符串内容
+ *    ESCAPE_SEQUENCE    = \\(u\{HEX_DIGIT{1,8}\}|[^\r\n])  转义序列
+ *    STRING_CONTENT    = [^\\\"'\r\n\$]+          字符串内容
  *    INTERPOLATION     = \$+                      字符串插值标记
  *
  * 错误处理策略：
@@ -228,7 +228,7 @@ import com.intellij.lexer.FlexLexer;
 /* 空白字符
  * =======
  */
-WHITE_SPACE_CHAR=[\ \n\t\f]          // 空格、换行、制表符、换页符
+WHITE_SPACE_CHAR=[\ \r\n\t\f]          // 空格、换行、回车、制表符、换页符（\r 必须与 \n 同等视为行终止）
 
 /* 标识符相关定义
  * ===========
@@ -247,14 +247,14 @@ IDENTIFIER_START={LETTER}             // 标识符起始字符：字母或下划
 
 PLAIN_IDENTIFIER={IDENTIFIER_START}{IDENTIFIER_PART}*  // 普通标识符
 BOOLEAN_LITERAL= true | false         // 布尔字面量
-ESCAPED_IDENTIFIER = `[^`\n]+`       // 反引号包围的标识符
+ESCAPED_IDENTIFIER = `[^`\r\n]+`      // 反引号包围的标识符（不含回车）
 IDENTIFIER={ESCAPED_IDENTIFIER}|{PLAIN_IDENTIFIER}  // 完整标识符定义
 FIELD_IDENTIFIER = \${IDENTIFIER}     // 字段标识符（以$开头）
 
 /* 注释
  * ====
  */
-EOL_COMMENT="/""/"[^\n]*             // 单行注释（到行尾）
+EOL_COMMENT="/""/"[^\r\n]*           // 单行注释（到行尾，不含回车）
 
 /* 字符和字符串相关定义
  * ================
@@ -266,7 +266,7 @@ EOL_COMMENT="/""/"[^\n]*             // 单行注释（到行尾）
  */
 
 // 转义序列
-ESCAPE_SEQUENCE=\\(u\{ {HEX_DIGIT}{1,8} \} | [^\n])  // 支持Unicode转义和普通转义
+ESCAPE_SEQUENCE=\\(u\{ {HEX_DIGIT}{1,8} \} | [^\r\n])  // 支持Unicode转义和普通转义
 
 // 字节字符字面量
 CHARACTER_BYTE_LITERAL = {CHARACTER_BYTE_SINGLE_LITERAL}  // 字节字符（b前缀）
@@ -312,8 +312,8 @@ DOUBLE_QUO = \"                      // 双引号
  */
 
 // 字符串内容
-REGULAR_STRING_PART_DOUBLE=[^\\\"\n\$]+  // 双引号字符串内容（非转义字符）
-REGULAR_STRING_PART_SINGLE=[^\\\'\n\$]+  // 单引号字符串内容（非转义字符）
+REGULAR_STRING_PART_DOUBLE=[^\\\"\r\n\$]+  // 双引号字符串内容（非转义字符，不含回车）
+REGULAR_STRING_PART_SINGLE=[^\\\'\r\n\$]+  // 单引号字符串内容（非转义字符，不含回车）
 INTERPOLATION = \$+                      // 字符串插值标记
 
 // 字符串模板
