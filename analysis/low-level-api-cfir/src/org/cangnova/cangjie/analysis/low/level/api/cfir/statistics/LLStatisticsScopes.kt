@@ -189,8 +189,8 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
     /**
      * 语义解析（resolve）阶段指标。
      *
-     * 每个阶段按 `duration`（毫秒直方图）、`files`（该阶段处理的文件数）、`runs`（该阶段执行次数）
-     * 三个后缀命名，阶段名取 [CfirResolvePhase] 的小写形式。
+     * 每个阶段按 `duration`（毫秒直方图）、`runs`（该阶段执行次数）、`files`（全量解析覆盖的 CFIR 文件数）、
+     * `declarations`（按需解析推进的声明数）四个后缀命名，阶段名取 [CfirResolvePhase] 的小写形式。
      */
     object Resolve : LLStatisticsScope("$name.resolve") {
         /**
@@ -203,9 +203,14 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
             fun duration(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.duration"
 
             /**
-             * 阶段处理的文件数。
+             * 阶段覆盖的文件数，仅全量解析路径累加。
              */
             fun files(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.files"
+
+            /**
+             * 阶段推进的声明数，仅按需解析路径累加。
+             */
+            fun declarations(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.declarations"
 
             /**
              * 阶段执行次数。

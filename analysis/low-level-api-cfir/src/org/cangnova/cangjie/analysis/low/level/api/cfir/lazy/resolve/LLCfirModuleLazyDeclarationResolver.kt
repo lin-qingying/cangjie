@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.session.importBindingStore
 import org.cangnova.cangjie.cfir.session.resolvePhaseTimingObserverOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirImportResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
 import org.cangnova.cangjie.cfir.resolve.transformers.measurePhase
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
@@ -165,8 +166,10 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             val transformer = CfirImportResolveTransformer(session, session.diagnosticReporter)
             if (cfirFile.resolvePhase < CfirResolvePhase.IMPORTS) {
                 lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
-                    // 按需解析没有阶段循环，IMPORTS 在这里单独推进并计时。
-                    session.resolvePhaseTimingObserverOrNull.measurePhase(CfirResolvePhase.IMPORTS, 1) {
+                    // 按需解析没有阶段循环，IMPORTS 在这里单独推进并计时；
+                    // 被推进的是文件本身，而 CfirFile 也是 CfirDeclaration，故记 1 个声明。
+                    val work = CfirResolvePhaseWork(files = 0, declarations = 1)
+                    session.resolvePhaseTimingObserverOrNull.measurePhase(CfirResolvePhase.IMPORTS, work) {
                         cfirFile.transformSingle(transformer, null)
                     }
                 }
@@ -215,7 +218,8 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
 
         val helper = LLCfirResolutionActivityTracker.getInstance()
         val timingObserver = moduleComponents.session.resolvePhaseTimingObserverOrNull
-        val fileCount = designationFileCount(target)
+        // 按需解析推进的是单个 designation，负载以其中被解析的声明数衡量。
+        val work = CfirResolvePhaseWork(files = 0, declarations = target.declarationCount())
         try {
             helper.beforeLazyResolve()
 
@@ -224,7 +228,7 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
                 currentPhase = phase
                 checkCanceled()
 
-                timingObserver.measurePhase(phase, fileCount) {
+                timingObserver.measurePhase(phase, work) {
                     LLCfirLazyResolverRunner.runLazyResolverByPhase(
                         phase = phase,
                         target = target,
@@ -235,11 +239,6 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             helper.afterLazyResolve()
         }
     }
-
-    /**
-     * 按需解析的一次阶段执行只覆盖 designation 所在的一个 CFIR 文件；无文件的 synthetic 元素记 0。
-     */
-    private fun designationFileCount(target: LLCfirResolveTarget): Int = if (target.cfirFile != null) 1 else 0
 
     /**
      * 返回 [designation] 中所有待解析声明的最低解析阶段。

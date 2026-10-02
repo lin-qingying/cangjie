@@ -11,16 +11,19 @@ import org.junit.jupiter.api.Test
  * 语义解析阶段耗时统计的接线测试。
  *
  * 验证按需解析路径（IDE / Analysis API 收集诊断时走的阶段循环）确实把每个阶段的耗时、
- * 文件数与执行次数写进了 SDK，并且指标名落在 `cangjie.analysis.resolve.phases.*` 命名空间下。
+ * 推进的声明数与执行次数写进了 SDK，并且指标名落在 `cangjie.analysis.resolve.phases.*` 命名空间下。
  */
 class CaResolvePhaseTimingTest : AbstractAnalysisApiPerformanceTest(
     "analysis/analysis-performance-test/testData/performance"
 ) {
     /**
      * 收集诊断会把声明逐阶段推进到目标阶段，随后每个阶段都应留下耗时采样。
+     *
+     * 按需解析路径的工作量记在 `declarations` 上（`files` 只由全量解析路径累加），
+     * 因此这里断言声明数而非文件数。
      */
     @Test
-    fun phaseDurationsAreRecordedForFullResolve(mainFile: CjFile) {
+    fun phaseDurationsAreRecordedForLazyResolve(mainFile: CjFile) {
         val pointsBefore = CaPerformanceTestTelemetry.collectHistogramPointCounts()
         val countersBefore = CaPerformanceTestTelemetry.collectLongCounters()
 
@@ -40,9 +43,9 @@ class CaResolvePhaseTimingTest : AbstractAnalysisApiPerformanceTest(
             val runs = countersAfter.getValue(runsName) - countersBefore.getValue(runsName)
             assertTrue(runs >= 1, "阶段 ${phase.name} 必须记录至少一次执行，实际 delta=$runs")
 
-            val filesName = LLStatisticsMetricNames.resolvePhaseFiles(phase)
-            val files = countersAfter.getValue(filesName) - countersBefore.getValue(filesName)
-            assertTrue(files >= 1, "阶段 ${phase.name} 必须记录处理文件数，实际 delta=$files")
+            val declarationsName = LLStatisticsMetricNames.resolvePhaseDeclarations(phase)
+            val declarations = countersAfter.getValue(declarationsName) - countersBefore.getValue(declarationsName)
+            assertTrue(declarations >= 1, "阶段 ${phase.name} 必须记录推进的声明数，实际 delta=$declarations")
         }
     }
 

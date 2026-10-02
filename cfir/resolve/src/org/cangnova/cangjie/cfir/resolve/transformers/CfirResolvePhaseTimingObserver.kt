@@ -5,6 +5,29 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import kotlin.time.TimeSource
 
 /**
+ * 一次阶段推进覆盖的工作量。
+ *
+ * 两条驱动路径的"处理单元"不同，指标必须分开计数，合成一个计数会失去意义：
+ *
+ * - 全量解析按文件集合推进，只知道文件数，逐声明统计需要额外的整棵树遍历；
+ * - 按需解析按 designation 推进，文件数恒为 1，声明数才是随请求变化的负载。
+ *
+ * 因此约定：[files] 只由全量解析路径填写，[declarations] 只由按需解析路径填写，
+ * 未适用的那个恒为 0。IMPORTS 例外：按需解析推进的是文件本身，而
+ * `CfirFile` 本身也是 `CfirDeclaration`，故记入 [declarations]。
+ */
+data class CfirResolvePhaseWork(
+    /**
+     * 本次推进覆盖的 CFIR 文件数，仅全量解析路径填写。
+     */
+    val files: Int,
+    /**
+     * 本次推进覆盖的声明数，仅按需解析路径填写。
+     */
+    val declarations: Int,
+)
+
+/**
  * 语义解析阶段的耗时观察者。
  *
  * 语义解析按 [CfirResolvePhase] 顺序推进，驱动的循环有两条：
@@ -33,22 +56,21 @@ interface CfirResolvePhaseTimingObserver : CfirSessionComponent {
      * 某个阶段执行结束，无论其是否抛出异常都会回调。
      *
      * @param phase 当前阶段
-     * @param fileCount 本次阶段执行覆盖的 CFIR 文件数：全量解析为该阶段的文件集合大小，
-     *   按需解析为 designation 所在文件数（无文件的 synthetic 元素为 0）
+     * @param work 本次阶段推进覆盖的文件数与声明数，见 [CfirResolvePhaseWork]
      * @param elapsedNanos 该阶段的单调时钟耗时（纳秒）
      */
-    fun onPhaseFinished(phase: CfirResolvePhase, fileCount: Int, elapsedNanos: Long)
+    fun onPhaseFinished(phase: CfirResolvePhase, work: CfirResolvePhaseWork, elapsedNanos: Long)
 }
 
 /**
- * 在 [observer] 存在时对 [action] 计时，并以 [fileCount] 作为本次阶段执行覆盖的文件数上报。
+ * 在 [observer] 存在时对 [action] 计时，并以 [work] 作为本次阶段推进的工作量上报。
  *
  * 未注册观察者时直接执行 [action]：不取单调时钟、不引入包装对象，计时路径零开销。
  * [action] 抛出异常时仍会上报已经消耗的时长。
  */
 inline fun CfirResolvePhaseTimingObserver?.measurePhase(
     phase: CfirResolvePhase,
-    fileCount: Int,
+    work: CfirResolvePhaseWork,
     action: () -> Unit,
 ) {
     if (this == null) {
@@ -61,6 +83,6 @@ inline fun CfirResolvePhaseTimingObserver?.measurePhase(
     try {
         action()
     } finally {
-        onPhaseFinished(phase, fileCount, startedAt.elapsedNow().inWholeNanoseconds)
+        onPhaseFinished(phase, work, startedAt.elapsedNow().inWholeNanoseconds)
     }
 }

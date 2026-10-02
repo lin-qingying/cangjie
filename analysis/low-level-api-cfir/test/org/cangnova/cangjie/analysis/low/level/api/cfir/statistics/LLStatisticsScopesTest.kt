@@ -79,6 +79,7 @@ class LLStatisticsScopesTest {
         CfirResolvePhase.entries.forEach { phase ->
             assertEquals(LLStatisticsScopes.Resolve.Phases.duration(phase), LLStatisticsMetricNames.resolvePhaseDuration(phase))
             assertEquals(LLStatisticsScopes.Resolve.Phases.files(phase), LLStatisticsMetricNames.resolvePhaseFiles(phase))
+            assertEquals(LLStatisticsScopes.Resolve.Phases.declarations(phase), LLStatisticsMetricNames.resolvePhaseDeclarations(phase))
             assertEquals(LLStatisticsScopes.Resolve.Phases.runs(phase), LLStatisticsMetricNames.resolvePhaseRuns(phase))
         }
     }
@@ -94,6 +95,7 @@ class LLStatisticsScopesTest {
             listOf(
                 LLStatisticsMetricNames.resolvePhaseDuration(phase),
                 LLStatisticsMetricNames.resolvePhaseFiles(phase),
+                LLStatisticsMetricNames.resolvePhaseDeclarations(phase),
                 LLStatisticsMetricNames.resolvePhaseRuns(phase),
             ).forEach { name ->
                 assertTrue(name.startsWith("${LLStatisticsScopes.name}$expectedSuffix"), "阶段指标 $name 命名不符")

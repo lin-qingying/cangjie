@@ -103,9 +103,14 @@ object LLStatisticsMetricNames {
     fun resolvePhaseDuration(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.duration(phase)
 
     /**
-     * 语义解析阶段处理文件数指标名。
+     * 语义解析阶段覆盖文件数指标名，仅全量解析路径累加。
      */
     fun resolvePhaseFiles(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.files(phase)
+
+    /**
+     * 语义解析阶段推进声明数指标名，仅按需解析路径累加。
+     */
+    fun resolvePhaseDeclarations(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.declarations(phase)
 
     /**
      * 语义解析阶段执行次数指标名。
