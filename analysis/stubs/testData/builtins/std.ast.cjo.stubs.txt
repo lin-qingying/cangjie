@@ -19268,7 +19268,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Tokens, extendId=std.ast:Tokens<:, fqName=std.ast.Tokens, name=Tokens, receiverTypeName=Tokens, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.ast:Tokens<:, fqName=std.ast.Tokens, name=Tokens, receiverTypeName=Tokens, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -19302,7 +19302,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Token]
-  CangJieStub$EXTEND[classId=std/ast/Token, extendId=std.ast:Token<:, fqName=std.ast.Token, name=Token, receiverTypeName=Token, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.ast:Token<:, fqName=std.ast.Token, name=Token, receiverTypeName=Token, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -40902,7 +40902,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/ast/ArrayList, extendId=std.ast:ArrayList<:ToTokens, fqName=std.ast.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:ArrayList<:ToTokens, fqName=std.ast.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -40934,7 +40934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Array, extendId=std.ast:Array<:ToTokens, fqName=std.ast.Array, name=Array, receiverTypeName=Array, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Array<:ToTokens, fqName=std.ast.Array, name=Array, receiverTypeName=Array, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46233,7 +46233,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Token, extendId=std.ast:Token<:ToTokens, fqName=std.ast.Token, name=Token, receiverTypeName=Token, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Token<:ToTokens, fqName=std.ast.Token, name=Token, receiverTypeName=Token, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46260,7 +46260,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Tokens, extendId=std.ast:Tokens<:ToTokens, fqName=std.ast.Tokens, name=Tokens, receiverTypeName=Tokens, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Tokens<:ToTokens, fqName=std.ast.Tokens, name=Tokens, receiverTypeName=Tokens, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46287,7 +46287,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Int64, extendId=std.ast:Int64<:ToTokens, fqName=std.ast.Int64, name=Int64, receiverTypeName=Int64, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Int64<:ToTokens, fqName=std.ast.Int64, name=Int64, receiverTypeName=Int64, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46309,7 +46309,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Int32, extendId=std.ast:Int32<:ToTokens, fqName=std.ast.Int32, name=Int32, receiverTypeName=Int32, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Int32<:ToTokens, fqName=std.ast.Int32, name=Int32, receiverTypeName=Int32, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46331,7 +46331,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Int16, extendId=std.ast:Int16<:ToTokens, fqName=std.ast.Int16, name=Int16, receiverTypeName=Int16, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Int16<:ToTokens, fqName=std.ast.Int16, name=Int16, receiverTypeName=Int16, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46353,7 +46353,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Int8, extendId=std.ast:Int8<:ToTokens, fqName=std.ast.Int8, name=Int8, receiverTypeName=Int8, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Int8<:ToTokens, fqName=std.ast.Int8, name=Int8, receiverTypeName=Int8, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46375,7 +46375,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/UInt64, extendId=std.ast:UInt64<:ToTokens, fqName=std.ast.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:UInt64<:ToTokens, fqName=std.ast.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46397,7 +46397,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/UInt32, extendId=std.ast:UInt32<:ToTokens, fqName=std.ast.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:UInt32<:ToTokens, fqName=std.ast.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46419,7 +46419,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/UInt16, extendId=std.ast:UInt16<:ToTokens, fqName=std.ast.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:UInt16<:ToTokens, fqName=std.ast.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46441,7 +46441,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/UInt8, extendId=std.ast:UInt8<:ToTokens, fqName=std.ast.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:UInt8<:ToTokens, fqName=std.ast.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46463,7 +46463,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Float64, extendId=std.ast:Float64<:ToTokens, fqName=std.ast.Float64, name=Float64, receiverTypeName=Float64, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Float64<:ToTokens, fqName=std.ast.Float64, name=Float64, receiverTypeName=Float64, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46485,7 +46485,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Float32, extendId=std.ast:Float32<:ToTokens, fqName=std.ast.Float32, name=Float32, receiverTypeName=Float32, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Float32<:ToTokens, fqName=std.ast.Float32, name=Float32, receiverTypeName=Float32, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46507,7 +46507,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Float16, extendId=std.ast:Float16<:ToTokens, fqName=std.ast.Float16, name=Float16, receiverTypeName=Float16, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Float16<:ToTokens, fqName=std.ast.Float16, name=Float16, receiverTypeName=Float16, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46529,7 +46529,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Bool, extendId=std.ast:Bool<:ToTokens, fqName=std.ast.Bool, name=Bool, receiverTypeName=Bool, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Bool<:ToTokens, fqName=std.ast.Bool, name=Bool, receiverTypeName=Bool, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46551,7 +46551,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/ast/Rune, extendId=std.ast:Rune<:ToTokens, fqName=std.ast.Rune, name=Rune, receiverTypeName=Rune, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:Rune<:ToTokens, fqName=std.ast.Rune, name=Rune, receiverTypeName=Rune, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -46607,7 +46607,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.ast, facadeFqName=std.ast, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/ast/String, extendId=std.ast:String<:ToTokens, fqName=std.ast.String, name=String, receiverTypeName=String, superNames=[ToTokens]]
+  CangJieStub$EXTEND[extendId=std.ast:String<:ToTokens, fqName=std.ast.String, name=String, receiverTypeName=String, superNames=[ToTokens]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

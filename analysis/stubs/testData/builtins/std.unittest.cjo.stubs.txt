@@ -6732,7 +6732,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=TestSuite]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/TestGroupResult, extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8102,7 +8102,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/Configuration, extendId=std.unittest:Configuration<:BenchmarkConfig, fqName=std.unittest.Configuration, name=Configuration, receiverTypeName=Configuration, superNames=[BenchmarkConfig]]
+  CangJieStub$EXTEND[extendId=std.unittest:Configuration<:BenchmarkConfig, fqName=std.unittest.Configuration, name=Configuration, receiverTypeName=Configuration, superNames=[BenchmarkConfig]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -12542,7 +12542,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/Float16, extendId=std.unittest:Float16<:NearEquatable&NearEquatable, fqName=std.unittest.Float16, name=Float16, receiverTypeName=Float16, superNames=[NearEquatable, NearEquatable]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float16<:NearEquatable&NearEquatable, fqName=std.unittest.Float16, name=Float16, receiverTypeName=Float16, superNames=[NearEquatable, NearEquatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -12590,7 +12590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                       CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/Float32, extendId=std.unittest:Float32<:NearEquatable&NearEquatable, fqName=std.unittest.Float32, name=Float32, receiverTypeName=Float32, superNames=[NearEquatable, NearEquatable]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float32<:NearEquatable&NearEquatable, fqName=std.unittest.Float32, name=Float32, receiverTypeName=Float32, superNames=[NearEquatable, NearEquatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -12638,7 +12638,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                       CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/Float64, extendId=std.unittest:Float64<:NearEquatable&NearEquatable, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[NearEquatable, NearEquatable]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float64<:NearEquatable&NearEquatable, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[NearEquatable, NearEquatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17909,7 +17909,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/UInt8, extendId=std.unittest:UInt8<:Torcable, fqName=std.unittest.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:UInt8<:Torcable, fqName=std.unittest.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18000,7 +18000,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/unittest/UInt16, extendId=std.unittest:UInt16<:Torcable, fqName=std.unittest.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:UInt16<:Torcable, fqName=std.unittest.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18109,7 +18109,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/unittest/UInt32, extendId=std.unittest:UInt32<:Torcable, fqName=std.unittest.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:UInt32<:Torcable, fqName=std.unittest.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18218,7 +18218,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/unittest/UInt64, extendId=std.unittest:UInt64<:Torcable, fqName=std.unittest.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:UInt64<:Torcable, fqName=std.unittest.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18327,7 +18327,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/Float32, extendId=std.unittest:Float32<:Torcable, fqName=std.unittest.Float32, name=Float32, receiverTypeName=Float32, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float32<:Torcable, fqName=std.unittest.Float32, name=Float32, receiverTypeName=Float32, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18436,7 +18436,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/Float64, extendId=std.unittest:Float64<:Torcable, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[Torcable]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float64<:Torcable, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[Torcable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -23165,7 +23165,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/TestGroupResult, extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -23193,7 +23193,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteResult, extendId=std.unittest:TestSuiteResult<:, fqName=std.unittest.TestSuiteResult, name=TestSuiteResult, receiverTypeName=TestSuiteResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteResult<:, fqName=std.unittest.TestSuiteResult, name=TestSuiteResult, receiverTypeName=TestSuiteResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -23261,7 +23261,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
       CangJieStub$REFERENCE_EXPRESSION[referencedName=gnuplotAvailable]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/TestGroupResult, extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -23545,7 +23545,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=MeasurementInfo]
-  CangJieStub$EXTEND[classId=std/unittest/StatisticsSample, extendId=std.unittest:StatisticsSample<:, fqName=std.unittest.StatisticsSample, name=StatisticsSample, receiverTypeName=StatisticsSample, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:StatisticsSample<:, fqName=std.unittest.StatisticsSample, name=StatisticsSample, receiverTypeName=StatisticsSample, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -23611,7 +23611,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/BenchmarkResult, extendId=std.unittest:BenchmarkResult<:, fqName=std.unittest.BenchmarkResult, name=BenchmarkResult, receiverTypeName=BenchmarkResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:BenchmarkResult<:, fqName=std.unittest.BenchmarkResult, name=BenchmarkResult, receiverTypeName=BenchmarkResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -24325,7 +24325,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
             CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteId, extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -24347,7 +24347,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/TestGroupResult, extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -24372,7 +24372,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Path]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteId, extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -24775,7 +24775,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PP]
-  CangJieStub$EXTEND[classId=std/unittest/TextReporter, extendId=std.unittest:TextReporter<:TextReporterBase, fqName=std.unittest.TextReporter, name=TextReporter, receiverTypeName=TextReporter, superNames=[TextReporterBase]]
+  CangJieStub$EXTEND[extendId=std.unittest:TextReporter<:TextReporterBase, fqName=std.unittest.TextReporter, name=TextReporter, receiverTypeName=TextReporter, superNames=[TextReporterBase]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -24811,7 +24811,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PP]
-  CangJieStub$EXTEND[classId=std/unittest/ConsoleReporter, extendId=std.unittest:ConsoleReporter<:TextReporterBase, fqName=std.unittest.ConsoleReporter, name=ConsoleReporter, receiverTypeName=ConsoleReporter, superNames=[TextReporterBase]]
+  CangJieStub$EXTEND[extendId=std.unittest:ConsoleReporter<:TextReporterBase, fqName=std.unittest.ConsoleReporter, name=ConsoleReporter, receiverTypeName=ConsoleReporter, superNames=[TextReporterBase]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -26715,7 +26715,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/ExecutionResultPart, extendId=std.unittest:ExecutionResultPart<:, fqName=std.unittest.ExecutionResultPart, name=ExecutionResultPart, receiverTypeName=ExecutionResultPart, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:ExecutionResultPart<:, fqName=std.unittest.ExecutionResultPart, name=ExecutionResultPart, receiverTypeName=ExecutionResultPart, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -26737,7 +26737,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestCaseName]
-  CangJieStub$EXTEND[classId=std/unittest/ExecutionResultBody, extendId=std.unittest:ExecutionResultBody<:, fqName=std.unittest.ExecutionResultBody, name=ExecutionResultBody, receiverTypeName=ExecutionResultBody, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:ExecutionResultBody<:, fqName=std.unittest.ExecutionResultBody, name=ExecutionResultBody, receiverTypeName=ExecutionResultBody, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -26831,7 +26831,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/TestCaseId, extendId=std.unittest:TestCaseId<:, fqName=std.unittest.TestCaseId, name=TestCaseId, receiverTypeName=TestCaseId, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestCaseId<:, fqName=std.unittest.TestCaseId, name=TestCaseId, receiverTypeName=TestCaseId, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -26853,7 +26853,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteId, extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteId<:, fqName=std.unittest.TestSuiteId, name=TestSuiteId, receiverTypeName=TestSuiteId, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27190,7 +27190,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/LStep, extendId=std.unittest:LStep<:Serializable, fqName=std.unittest.LStep, name=LStep, receiverTypeName=LStep, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:LStep<:Serializable, fqName=std.unittest.LStep, name=LStep, receiverTypeName=LStep, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27240,7 +27240,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=LStep]
-  CangJieStub$EXTEND[classId=std/unittest/StepKind, extendId=std.unittest:StepKind<:Serializable, fqName=std.unittest.StepKind, name=StepKind, receiverTypeName=StepKind, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:StepKind<:Serializable, fqName=std.unittest.StepKind, name=StepKind, receiverTypeName=StepKind, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27290,7 +27290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StepKind]
-  CangJieStub$EXTEND[classId=std/unittest/StepInfo, extendId=std.unittest:StepInfo<:Serializable, fqName=std.unittest.StepInfo, name=StepInfo, receiverTypeName=StepInfo, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:StepInfo<:Serializable, fqName=std.unittest.StepInfo, name=StepInfo, receiverTypeName=StepInfo, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27340,7 +27340,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StepInfo]
-  CangJieStub$EXTEND[classId=std/unittest/RunStepResult, extendId=std.unittest:RunStepResult<:, fqName=std.unittest.RunStepResult, name=RunStepResult, receiverTypeName=RunStepResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:RunStepResult<:, fqName=std.unittest.RunStepResult, name=RunStepResult, receiverTypeName=RunStepResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27385,7 +27385,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RunStepResult]
-  CangJieStub$EXTEND[classId=std/unittest/TestCaseResult, extendId=std.unittest:TestCaseResult<:, fqName=std.unittest.TestCaseResult, name=TestCaseResult, receiverTypeName=TestCaseResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestCaseResult<:, fqName=std.unittest.TestCaseResult, name=TestCaseResult, receiverTypeName=TestCaseResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27430,7 +27430,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestCaseResult]
-  CangJieStub$EXTEND[classId=std/unittest/TestCaseReportInfo, extendId=std.unittest:TestCaseReportInfo<:Serializable, fqName=std.unittest.TestCaseReportInfo, name=TestCaseReportInfo, receiverTypeName=TestCaseReportInfo, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestCaseReportInfo<:Serializable, fqName=std.unittest.TestCaseReportInfo, name=TestCaseReportInfo, receiverTypeName=TestCaseReportInfo, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27480,7 +27480,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestCaseReportInfo]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteResult, extendId=std.unittest:TestSuiteResult<:, fqName=std.unittest.TestSuiteResult, name=TestSuiteResult, receiverTypeName=TestSuiteResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteResult<:, fqName=std.unittest.TestSuiteResult, name=TestSuiteResult, receiverTypeName=TestSuiteResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27525,7 +27525,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestSuiteResult]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuiteReportInfo, extendId=std.unittest:TestSuiteReportInfo<:Serializable, fqName=std.unittest.TestSuiteReportInfo, name=TestSuiteReportInfo, receiverTypeName=TestSuiteReportInfo, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuiteReportInfo<:Serializable, fqName=std.unittest.TestSuiteReportInfo, name=TestSuiteReportInfo, receiverTypeName=TestSuiteReportInfo, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27575,7 +27575,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestSuiteReportInfo]
-  CangJieStub$EXTEND[classId=std/unittest/TestGroupResult, extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestGroupResult<:, fqName=std.unittest.TestGroupResult, name=TestGroupResult, receiverTypeName=TestGroupResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27620,7 +27620,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TestGroupResult]
-  CangJieStub$EXTEND[classId=std/unittest/RenderOptions, extendId=std.unittest:RenderOptions<:Serializable, fqName=std.unittest.RenderOptions, name=RenderOptions, receiverTypeName=RenderOptions, superNames=[Serializable]]
+  CangJieStub$EXTEND[extendId=std.unittest:RenderOptions<:Serializable, fqName=std.unittest.RenderOptions, name=RenderOptions, receiverTypeName=RenderOptions, superNames=[Serializable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -27993,7 +27993,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/Float64, extendId=std.unittest:Float64<:AsFloat, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[AsFloat]]
+  CangJieStub$EXTEND[extendId=std.unittest:Float64<:AsFloat, fqName=std.unittest.Float64, name=Float64, receiverTypeName=Float64, superNames=[AsFloat]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -30006,7 +30006,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=Exception]
-  CangJieStub$EXTEND[classId=std/unittest/DataStrategyProcessor, extendId=std.unittest:DataStrategyProcessor<:, fqName=std.unittest.DataStrategyProcessor, name=DataStrategyProcessor, receiverTypeName=DataStrategyProcessor, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:DataStrategyProcessor<:, fqName=std.unittest.DataStrategyProcessor, name=DataStrategyProcessor, receiverTypeName=DataStrategyProcessor, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -30424,7 +30424,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=FilterService]
-  CangJieStub$EXTEND[classId=std/unittest/TestSuite, extendId=std.unittest:TestSuite<:, fqName=std.unittest.TestSuite, name=TestSuite, receiverTypeName=TestSuite, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:TestSuite<:, fqName=std.unittest.TestSuite, name=TestSuite, receiverTypeName=TestSuite, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31042,7 +31042,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/JsonValue, extendId=std.unittest:JsonValue<:IntoJson, fqName=std.unittest.JsonValue, name=JsonValue, receiverTypeName=JsonValue, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:JsonValue<:IntoJson, fqName=std.unittest.JsonValue, name=JsonValue, receiverTypeName=JsonValue, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31073,7 +31073,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/String, extendId=std.unittest:String<:IntoJson, fqName=std.unittest.String, name=String, receiverTypeName=String, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:String<:IntoJson, fqName=std.unittest.String, name=String, receiverTypeName=String, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31102,7 +31102,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/Int64, extendId=std.unittest:Int64<:IntoJson, fqName=std.unittest.Int64, name=Int64, receiverTypeName=Int64, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:Int64<:IntoJson, fqName=std.unittest.Int64, name=Int64, receiverTypeName=Int64, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31126,7 +31126,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/Option, extendId=std.unittest:Option<:IntoJson, fqName=std.unittest.Option, name=Option, receiverTypeName=Option, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:Option<:IntoJson, fqName=std.unittest.Option, name=Option, receiverTypeName=Option, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31160,7 +31160,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/Array, extendId=std.unittest:Array<:IntoJson, fqName=std.unittest.Array, name=Array, receiverTypeName=Array, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:Array<:IntoJson, fqName=std.unittest.Array, name=Array, receiverTypeName=Array, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31194,7 +31194,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=JsonValue]
-  CangJieStub$EXTEND[classId=std/unittest/ArrayList, extendId=std.unittest:ArrayList<:IntoJson, fqName=std.unittest.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[IntoJson]]
+  CangJieStub$EXTEND[extendId=std.unittest:ArrayList<:IntoJson, fqName=std.unittest.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[IntoJson]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31437,7 +31437,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/RunStepResult, extendId=std.unittest:RunStepResult<:, fqName=std.unittest.RunStepResult, name=RunStepResult, receiverTypeName=RunStepResult, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:RunStepResult<:, fqName=std.unittest.RunStepResult, name=RunStepResult, receiverTypeName=RunStepResult, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -31603,7 +31603,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/Configuration, extendId=std.unittest:Configuration<:, fqName=std.unittest.Configuration, name=Configuration, receiverTypeName=Configuration, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:Configuration<:, fqName=std.unittest.Configuration, name=Configuration, receiverTypeName=Configuration, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -32216,7 +32216,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
           CangJieStub$BASIC_TYPE[basicType=Bool]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/CheckResult, extendId=std.unittest:CheckResult<:PrettyPrintable, fqName=std.unittest.CheckResult, name=CheckResult, receiverTypeName=CheckResult, superNames=[PrettyPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest:CheckResult<:PrettyPrintable, fqName=std.unittest.CheckResult, name=CheckResult, receiverTypeName=CheckResult, superNames=[PrettyPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -32734,7 +32734,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/DataModel, extendId=std.unittest:DataModel<:, fqName=std.unittest.DataModel, name=DataModel, receiverTypeName=DataModel, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest:DataModel<:, fqName=std.unittest.DataModel, name=DataModel, receiverTypeName=DataModel, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

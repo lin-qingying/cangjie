@@ -130,7 +130,7 @@ CangJieFileStubImpl[File[packageFqName=std.unicode]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=CasingOption]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/unicode/Rune, extendId=std.unicode:Rune<:UnicodeRuneExtension, fqName=std.unicode.Rune, name=Rune, receiverTypeName=Rune, superNames=[UnicodeRuneExtension]]
+  CangJieStub$EXTEND[extendId=std.unicode:Rune<:UnicodeRuneExtension, fqName=std.unicode.Rune, name=Rune, receiverTypeName=Rune, superNames=[UnicodeRuneExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -414,7 +414,7 @@ CangJieFileStubImpl[File[packageFqName=std.unicode]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unicode/String, extendId=std.unicode:String<:UnicodeStringExtension, fqName=std.unicode.String, name=String, receiverTypeName=String, superNames=[UnicodeStringExtension]]
+  CangJieStub$EXTEND[extendId=std.unicode:String<:UnicodeStringExtension, fqName=std.unicode.String, name=String, receiverTypeName=String, superNames=[UnicodeStringExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

@@ -8022,7 +8022,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/collection/ArrayDeque, extendId=std.collection:ArrayDeque<:ToString, fqName=std.collection.ArrayDeque, name=ArrayDeque, receiverTypeName=ArrayDeque, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayDeque<:ToString, fqName=std.collection.ArrayDeque, name=ArrayDeque, receiverTypeName=ArrayDeque, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8201,7 +8201,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/collection/ArrayList, extendId=std.collection:ArrayList<:Equatable, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayList<:Equatable, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8285,7 +8285,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/collection/ArrayList, extendId=std.collection:ArrayList<:, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayList<:, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8395,7 +8395,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/collection/ArrayList, extendId=std.collection:ArrayList<:ToString, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayList<:ToString, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8736,7 +8736,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/collection/ArrayQueue, extendId=std.collection:ArrayQueue<:ToString, fqName=std.collection.ArrayQueue, name=ArrayQueue, receiverTypeName=ArrayQueue, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayQueue<:ToString, fqName=std.collection.ArrayQueue, name=ArrayQueue, receiverTypeName=ArrayQueue, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8830,7 +8830,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/collection/ArrayStack, extendId=std.collection:ArrayStack<:ToString, fqName=std.collection.ArrayStack, name=ArrayStack, receiverTypeName=ArrayStack, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:ArrayStack<:ToString, fqName=std.collection.ArrayStack, name=ArrayStack, receiverTypeName=ArrayStack, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9162,7 +9162,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
               CangJieStub$BASIC_TYPE[basicType=Unit]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/collection/HashMap, extendId=std.collection:HashMap<:ToString, fqName=std.collection.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:HashMap<:ToString, fqName=std.collection.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9203,7 +9203,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/collection/HashMap, extendId=std.collection:HashMap<:Equatable, fqName=std.collection.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:HashMap<:Equatable, fqName=std.collection.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9284,7 +9284,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/collection/HashSet, extendId=std.collection:HashSet<:Equatable, fqName=std.collection.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:HashSet<:Equatable, fqName=std.collection.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9353,7 +9353,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/collection/HashSet, extendId=std.collection:HashSet<:ToString, fqName=std.collection.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:HashSet<:ToString, fqName=std.collection.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9390,7 +9390,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/collection/LinkedList, extendId=std.collection:LinkedList<:ToString, fqName=std.collection.LinkedList, name=LinkedList, receiverTypeName=LinkedList, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:LinkedList<:ToString, fqName=std.collection.LinkedList, name=LinkedList, receiverTypeName=LinkedList, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9422,7 +9422,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/collection/LinkedList, extendId=std.collection:LinkedList<:Equatable, fqName=std.collection.LinkedList, name=LinkedList, receiverTypeName=LinkedList, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:LinkedList<:Equatable, fqName=std.collection.LinkedList, name=LinkedList, receiverTypeName=LinkedList, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11019,7 +11019,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/collection/TreeMap, extendId=std.collection:TreeMap<:ToString, fqName=std.collection.TreeMap, name=TreeMap, receiverTypeName=TreeMap, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:TreeMap<:ToString, fqName=std.collection.TreeMap, name=TreeMap, receiverTypeName=TreeMap, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11055,7 +11055,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/collection/TreeMap, extendId=std.collection:TreeMap<:Equatable, fqName=std.collection.TreeMap, name=TreeMap, receiverTypeName=TreeMap, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:TreeMap<:Equatable, fqName=std.collection.TreeMap, name=TreeMap, receiverTypeName=TreeMap, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11674,7 +11674,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/collection/TreeSet, extendId=std.collection:TreeSet<:Equatable, fqName=std.collection.TreeSet, name=TreeSet, receiverTypeName=TreeSet, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.collection:TreeSet<:Equatable, fqName=std.collection.TreeSet, name=TreeSet, receiverTypeName=TreeSet, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11733,7 +11733,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/collection/TreeSet, extendId=std.collection:TreeSet<:ToString, fqName=std.collection.TreeSet, name=TreeSet, receiverTypeName=TreeSet, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.collection:TreeSet<:ToString, fqName=std.collection.TreeSet, name=TreeSet, receiverTypeName=TreeSet, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
