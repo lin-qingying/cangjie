@@ -14,8 +14,11 @@
 // 本项目：官方 kind 分别对应 INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL、INTRINSIC_FUNCTION_CANNOT_HAVE_BODY、
 //   INTRINSIC_FUNCTION_DUPLICATED、INVALID_INTRINSIC_DECL；CFIR 的前三个锚在"注解 + 签名"整段、第四个锚整条声明，
 //   与官方锚点不同（实现缺口），标记按官方范围写。
-// 合法对照：同名的非 intrinsic 成员/顶层函数零诊断；官方对 `extend` / 成员上的 `public` 另给 parse_redundant_modifier
-//   warning，合法对照里不写 `public`。
+// 合法对照：同名的非 intrinsic 类成员函数零诊断；官方对 `extend` / 成员上的 `public` 另给 parse_redundant_modifier
+//   warning，合法对照里不写 `public`。顶层函数不能沿用同名：本包内 duplicatedIntrinsic.cj 的两个
+//   `@Intrinsic func getTypeForTypeParameter` 已是顶层函数，同包同签名顶层重名官方报
+//   `sema_overload_conflicts` "function 'getTypeForTypeParameter' has overload conflicts"（锚第二个声明的函数名），
+//   CFIR 对应 CONFLICTING_OVERLOADS，所以顶层合法对照改名。
 
 // FILE: memberIntrinsic.cj
 class C {
@@ -53,6 +56,6 @@ class D {
     }
 }
 
-func getTypeForTypeParameter(): Int64 {
+func legalGetTypeForTypeParameter(): Int64 {
     return 2
 }

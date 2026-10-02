@@ -308,3 +308,115 @@ SOURCE: <manual doc id or path>; <official C++ file>
   依赖包编不出来时引用方只得到 `package_search_error`；1.1.3 的语义诊断本身可用（单独编译一致）。
 - 1.0.5 / 1.0.0 / 0.53.18 的 JSON 诊断可用；`@When` 的 `cjc_version` 在 1.0.x 有补零 bug（`== "1.0.5"` 恒假，
   `>= "1.0.5"` 为真），1.1.3 修好；fixture 不要用 `==` 配当前版本号。
+
+## 批次 7（2026-10-02）：属性继承 / 模式声明 / mut 函数引用三个语义夹具
+
+本批次在上一批次（45 个夹具）之后补三个新夹具，全部按“官方 C++ 报告点 → cjc 1.0.5 / 1.1.3 实测范围 → 本项目诊断名”的顺序写，逐点核对两版 Range 的起止行列完全一致后才落标记。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 |
+| --- | --- | --- |
+| `property/propertyInheritanceRules.cj` | `PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF`、`PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT` / `_IMMUT`、`PROPERTY_MUST_IMPLEMENT_BOTH`、`PROPERTY_MUST_HAVE_ACCESSORS` | 18 段 / 9 标记 |
+| `property/propertyInheritanceRulesLangVer100.cj`（`LANGUAGE_VERSION: 1.0.0`） | 上面四种继承类诊断在 1.0.x 的首字符锚点 | 4 段 / 4 标记 |
+| `pattern/patternDeclarationRules.cj` | `PATTERN_CAN_NOT_BE_ASSIGNED`、`ENUM_PATTERN_PARAM_SIZE_ERROR`、`TUPLE_PATTERN_NOT_MATCH`、`TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED`、`FORIN_PATTERN_MUST_BE_IRREFUTABLE`、`PATTERN_NOT_MATCH`、`EXPR_IN_FORIN_MUST_HAS_ITERATOR`、`CANNOT_CONVERT_LITERAL`、`TYPE_MISMATCH` | 9 段 / 24 标记 |
+| `mut/mutableFunctionReferenceRules.cj` | `ILLEGAL_CAPTURE_THIS`、`CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC`、`USE_MUTABLE_FUNC_ALONE`、`INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE`、`INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER` | 23 段 / 19 标记 |
+
+逐点核对结果（`.scratch/exact_check.py`，官方 Range 结束列按开区间处理）：property 1.1.3 形态 9/9 精确命中，LangVer100 形态 1.0.5 4/4 精确命中；pattern 两版各 24/24；mut 两版各 19/19。唯一未被标记覆盖的官方诊断是 `sema_wrong_forin_guard`（`WRONG_FORIN_GUARD` 在 `CfirDiagnosticsList.kt` 无对应名，按 `SUGGESTED_DIAGNOSTIC` 处理）。
+
+### 本批次相对子代理初稿做的修正
+
+- **同包顶层名冲突**：`// FILE:` 各段在测试框架里是同一模块同一包的多个文件。子代理初稿在多个段里复用 `Base` / `Sub` / `S` / `C` / `A` / `IMut` / `Multi` / `Single` / `Payload`，官方整包编译报 `sema_redefinition`（同名顶层函数是 `sema_overload_conflicts`），CFIR 报 `CLASSIFIER_REDECLARATION` 并级联出 `AMBIGUOUS_USE` / `NOTHING_TO_OVERRIDE` / `NOT_MEMBER_OF` / `UNRESOLVED_REFERENCE` 噪声。已按段改为唯一名（`OverrideTypeDiffBase`、`CtorLambdaCaptureStruct`、`StructMutMismatchIMut`、`ForInIrrefutableMulti` 等）。同批发现已提交的 `intrinsic/intrinsicMemberAndBody.cj` 顶层 `func getTypeForTypeParameter()` 与 `duplicatedIntrinsic.cj` 的两个 `@Intrinsic` 同名顶层函数构成重载冲突（官方 `sema_overload_conflicts`，CFIR `CONFLICTING_OVERLOADS`），把合法对照的顶层函数改名为 `legalGetTypeForTypeParameter`。
+- **标记范围逐字符对齐官方**：`AbstractCfirAnalysisDiagnosticsTest.assertDiagnosticsEqual` 比较的是 `(诊断名, startOffset, endOffset)` 三元组，所以标记必须与官方 Range 完全一致。初稿里 18 处标记包住整条声明 / 整条 for 语句 / 整个 `this`，官方只锚 1 个字符的 12 处已收窄成首字符形式（`<!X!>p<!>ublic …`、`<!X!>f<!>or …`、`<!X!>t<!>his …`、`<!X!>(<!>a, b`）。官方 `MakeRange(ma.field)` 形式的 `USE_MUTABLE_FUNC_ALONE` 保持成员名整段（`inc`）。
+- **形态 10 的 kind**：`let Payload.D = v`（无参构造器 `D`，但枚举里还有带参构造器）官方不是 `pattern_can_not_be_assigned`，而是 `sema_enum_pattern_param_size_error`（`D` 的类型是函数类型，`FindEnumPatternTarget` 空子模式分支只接受 `EnumTy` 候选）；1.0.5 / 1.1.3 实测一致。对照形态：全为无参构造器的枚举里 `Multi.A` 落到 `pattern_can_not_be_assigned`。
+- **官方源码行号**按当前 `external/cangjie_compiler`（v1.0.0 tag）重新核对并修正：`ChkTuplePattern` 的两条报告点实际在 `:461` / `:475`，`SynForInExpr` 在 `:94-134`（iterable `:110-112`、guard `:118-121`、不可反驳 `:127-129`），for-in 节点的 begin 在 `ParseAtom.cpp:999-1010`，`FindEnumPatternTarget` 在 `TypeCheckPattern.cpp:513-547`，`ChkEnumPattern` 在 `:362-420`（`pattern_not_match` 三处 `:396` / `:405` / `:415`），`DiagnosticSema.def` 里 `use_this_as_an_expression_in_func` 在 `:288`、`incompatible_mut_modifier_between_struct_and_interface` 在 `:289-290`，`DiagRefactor/DiagnosticSema.def` 里 `immutable_access_mutable_func` 在 `:45`、`instance_func_cannot_be_used_in_finalizer` 在 `:133`。`CfirErrors.kt` 行号也改成实测值（`:162-163`、`:322`、`:389`、`:1629`）。
+- **`INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER` 不是缺口**：初稿按 `SUGGESTED_DIAGNOSTIC` 处理，实际 `CfirErrors.kt:1629` 有对应名，改为写标记，锚在成员名首字母（官方 `CheckForbiddenFuncReferenceAccess` 的调用点 `NameReferenceExpr.cpp:1080` 传 `ma.field.Begin()`）。
+
+### 1.0.x 与 1.1.3 的锚点差异（语言版本门禁）
+
+官方 `DiagnosticEngine.h` 的 `Diagnose(const AST::Node& node, DiagKind)`（非 refactor kind）在 v1.0.0 tag 里退化为 `Diagnose(node.GetBegin(), kind)`，锚 1 个字符；cjc 1.1.3 对 `sema_property_have_same_declaration_in_inherit_mut` / `_immut`、`sema_property_must_implement_both` 锚整条 prop 声明。`sema_property_must_have_accessors` 是 refactor kind（`DiagnoseRefactor`），两版都锚整条声明；`sema_property_override_implement_type_diff` 两版都锚声明首字符。据此 `property` 域拆成两个夹具：默认语言版本（`LATEST_STABLE` = 1.1.3）夹具用整条声明标记，`propertyInheritanceRulesLangVer100.cj` 用 `LANGUAGE_VERSION: 1.0.0` + 首字符标记。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-02 09:45 聚焦跑 Property / Pattern / Mut 三组，22 用例 / 6 失败；改完夹具后复跑，失败集合不变）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `property/propertyInheritanceRules` | `PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF` 锚声明首字符 `p`（cjc 1.0.5 / 1.1.3 一致） | 锚属性名 `v`（`CfirOverrideChecker.kt:350` 用 `propertyNameDiagnosticSource()`；`CfirInheritanceDeepChecker.kt:350` 用 `nameSource ?: diagnosticSource`）。其余 8 个标记（继承类三种 + 访问器）整条声明锚点一致 |
+| `property/propertyInheritanceRulesLangVer100` | 1.0.0 语言版本下四种继承类诊断锚声明首字符 | 锚整条 prop 声明：CFIR 的诊断锚点没有按 `LANGUAGE_VERSION` 门禁 |
+| `pattern/patternDeclarationRules` | 模式类诊断锚模式 `GetBegin()` 一个字符（`PATTERN_CAN_NOT_BE_ASSIGNED` 锚 `(`、`PATTERN_NOT_MATCH` 锚 `C` / `F`、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 的 `f`、`TUPLE_*` 锚 `(`、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 锚 in 表达式的首字符）；`let Payload.D = v` 是 `ENUM_PATTERN_PARAM_SIZE_ERROR` | 模式类诊断锚整个模式（`declaration.pattern.source` / `pattern.source`）、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 三字符、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 对 `1 + 2` 锚整个表达式；`let Payload.D = v` 报 `PATTERN_CAN_NOT_BE_ASSIGNED`（语义分歧：无参构造器限定名模式未被识别为 `EnumPattern` 不可解析形态，CFIR 缺 `ENUM_PATTERN_PARAM_SIZE_ERROR` 这条路径） |
+| `mut/mutableFunctionReferenceRules` | `ILLEGAL_CAPTURE_THIS` / `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 锚 `NameReferenceExpr` 首字符 1 个字符（`this` / 字段名首字母）；`classFinalizerCaptureMemberFunc` 里 `this.read` 的成员函数引用另报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（锚 `read` 首字母） | `ILLEGAL_CAPTURE_THIS` 锚 `this` 整词；字段捕获（`value`）锚整个字段名；`this.read`（非调用形态）不报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（`CfirGeneralSemanticsChecker` 只遍历 `CfirFunctionCall`）；`let t = this`（finalizer 里把 `this` 当值）报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`，官方该形态是 `sema_use_this_as_an_expression_in_func`（本项目无对应名）。`USE_MUTABLE_FUNC_ALONE`（`inc`）与 `INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE`（`public` 首字符）锚点一致 |
+
+`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的三个新用例均通过；`property/propertyAccessorRules`、`pattern/patternLegality`、`mut/immutableFunctionRestrictions` 等既有夹具不受本批次影响。
+
+### 取证与整包编译的两个坑（复核时踩到）
+
+- **官方整包编译不能用作取证**：`DiagnosticEngine.cpp:764-770` 的 `CanBeEmitted` 只发第一个错误类别，`HandleDiagnose` 里 `HasPrevDiag(range.begin, message)` 会丢掉与已发诊断同起点同文案的重复项。一次编译里只要有一个 parse 错误，其余段的语义诊断全被吞掉。逐段单独编译（`.scratch/verify_one.py` / `exact_check.py` 的做法）仍是唯一可靠的取证方式；整包编译只用来查同包重名。
+- **Range 结束列是开区间**：单字符锚点官方报 `Begin..Begin+1`，`MakeRange(pos)` 报 `pos..pos+1`。按闭区间比对会把每个单字符锚点判成“不命中”。
+## 批次 8（2026-10-02）：const 声明语义 / lambda 捕获可变变量两个语义夹具
+
+口径与批次 6 / 7 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机
+cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官方不一致的按缺口记录，不改期望。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check |
+| --- | --- | --- | --- |
+| `const/constFunctionRules.cj` | `EXPECT_CONST`（"expected 'const' function" / "expression" / "expression guaranteed to be evaluated at compile time" 三种 kind）、`CANNOT_DEFINE_VAR_IN_CONST_FUNCTION`、`NO_CONST_INIT`、`CLASS_CONST_INIT_WITH_VAR` | 34 段 / 31 标记 | 各 31 OK / 0 DIFF / 0 未标记官方诊断 |
+| `lambda/lambdaCaptureVarRules.cj` | `USE_FUNC_CAPTURE_VAR_ALONE`、`FUNC_CAPTURE_VAR_CANNOT_ASSIGN` / `_RETURN` / `_PARAM` / `_EXPR`、`LAMBDA_MUST_HAVE_TYPE_ANNOTATION` | 25 段 / 21 标记 | 各 21 OK / 0 DIFF / 0 未标记官方诊断 |
+
+筛选依据（全 testData 盘点：`CfirDiagnosticsList.kt` 552 条声明，diagnostics2 + llt + macro 里 372 条已被内联标记覆盖，
+180 条零覆盖，其中互操作注解族占七成）：const 族的 `NO_CONST_INIT` / `CLASS_CONST_INIT_WITH_VAR` /
+`CANNOT_DEFINE_VAR_IN_CONST_FUNCTION` 与 lambda 族的 `FUNC_CAPTURE_VAR_CANNOT_PARAM` / `_RETURN` 是纯仓颉语义里
+零覆盖的部分；`EXPECT_CONST` / `USE_FUNC_CAPTURE_VAR_ALONE` / `LAMBDA_MUST_HAVE_TYPE_ANNOTATION` 在
+`llt/const_evaluation/err_*.cj`、`llt/lambda/lambda_capture/`、`llt/type_infer/lambda_param_*.cj` 已有用例，
+两个新夹具按官方报告点重排为诊断矩阵，并在文件头注明既有覆盖位置。
+
+### const 族取证结论（官方 ConstEvaluationChecker.cpp）
+
+- 四个报告点：`DiagExpectConstFunc :18`（锚函数名）、`DiagExpectConstExpr :24`（锚表达式节点）、`DiagDefineVarInConstFunction :46`（锚变量名）、
+  `DiagNoConstInit :52`（锚函数名）、`DiagCannotDefineConstInit :73`（锚第一个 const init 的 `init`）。文案在
+  `include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:165-168`。入口 `TypeChecker.cpp:2107 CheckConstEvaluation`。
+- 写夹具时踩到并已写进文件头的官方事实：
+  1. `static var` 成员同样算 var 字段（`ChkClassDeclHasConstInitNoVarMember :410` 只排除 prop，不排除 static），
+     所以"static var + const init"就报 `CLASS_CONST_INIT_WITH_VAR`。
+  2. 子类的 `const init()` 若隐式调用父类构造器（父类有显式 `init()`），官方把**整条 const init 声明**（`init` 标识符到函数体右花括号）
+     当 `EXPECT_CONST` 锚点；显式写 `super(...)` 时只锚 `super`。
+  3. 同签名的 `init()` 与 `const init()` 不能共存（`sema_overload_conflicts`），"结构化 init + const init"形态不可表达。
+  4. `this(a)` 委托必须是构造器首语句（`sema_illegal_place_of_calling_this_or_super` + `sema_class_uninitialized_field`）。
+  5. `ChkClassDeclHasConstInitNoVarMember` 只作用于 class，struct 的 `const init` + var 字段合法（合法对照 L2）。
+  6. 版本差异（未取形态）：class 有 const init 时普通成员变量的非常量初始化器，1.0.5 报 strong `EXPECT_CONST`、1.1.3 不报；
+     const 函数里含 `var` 的 `for` 语句，1.0.5 额外报块级 `EXPECT_CONST`、1.1.3 不报。
+  7. 官方对表达式形态的锚点宽度不同：调用锚被调函数名、下标锚基表达式、赋值锚整条赋值、`t++` 锚整条、`for` 锚整条 for 语句、
+     数组字面量初值锚整个字面量。测试框架比较 `(name, startOffset, endOffset)` 三元组，标记必须逐字符对齐。
+- 已删除形态 15 条写在文件末（`static const prop`、`open const func`、const 变量漏 static / 无初始化器、`@Frozen` 与 const 变量互斥、
+  `@Annotation` 类缺 const init、枚举构造器必须写 `|`、具名形参默认值必须写 `a!:` 等）。
+
+### lambda 捕获族取证结论（官方 TypeChecker.cpp:1780-1814 LegalityOfUsage）
+
+- 上一会话的假设"FUNC_CAPTURE_VAR_CANNOT_PARAM/RETURN 无官方证据"不成立，但它们不是靠"函数引用"可达：官方 `CheckLegalUseOfClosure`
+  对直接捕获 var 的闭包先报 `USE_FUNC_CAPTURE_VAR_ALONE`（`Diags.cpp:573`），四条 `FUNC_CAPTURE_VAR_CANNOT_*` 只在
+  **传递捕获**时触发。可达路径是嵌套 lambda：`{=> f()}`（f 捕获 var）分别放在声明初始化器 / `return` / 实参 / 裸语句位置触发四条诊断，两版一致。
+- 两种锚点形状：`use_func_capture_var_alone` 经 `DiagnoseRefactor` 带 MainHint.Range，锚**整个 lambda 字面量**（可跨行）；
+  四条 `CANNOT_*` 经 `diag.Diagnose` 无 Range，退化为 `GetBegin()` **一个字符**（`{` 或标识符首字母）。
+- 直接 vs 传递捕获的分界在 `LegalityOfUsage.cpp:22-69`：调用遍历只记"被调用闭包**自己函数体内**声明的 var"，外层 var 走绑定路径。
+- 版本差异（未取形态）：裸语句 `g`（函数引用不调用）在 1.0.5 报 `_cannot_expr`、1.1.3 不报。
+- 取证干扰（已在文件头注明）：`let name = {…}` / `w = {=> v}` 会多报 `sema_mismatched_types`，且官方 `HasPrevDiag` 会吞掉同段第二个
+  相同 lambda 的诊断（逐段取证时会让 exact_check 假 OK）；`let {…} = …` 是解析错误；llt 旧用例是 CRLF，官方把 lambda Range 终点算到行尾 `\r`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-02 15:42 聚焦跑 Const 组、15:56 跑 Lambda 组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `const/constFunctionRules` | `CLASS_CONST_INIT_WITH_VAR` 锚 `init` 1 字符 | 锚 `const init` 整段（`CfirConstDeclarationChecker.kt:139` 用 `constructorNameDiagnosticSource(includeConstKeyword = true)`） |
+| `const/constFunctionRules` | `CANNOT_DEFINE_VAR_IN_CONST_FUNCTION` 锚变量名 1 字符 | 锚整条 `var a = 1` 声明（`CfirConstDeclarationChecker.kt:833` 用 `variable.source`） |
+| `const/constFunctionRules` 形态 2 | 子类 const init 隐式 super() → `EXPECT_CONST` 锚整条 const init 声明 | 不产出该诊断 |
+| `const/constFunctionRules` 形态 22 | 下标表达式 `EXPECT_CONST` 锚基表达式 `constSubscriptArr` | 锚 `constSubscriptArr[0]` 含下标 |
+| `const/constFunctionRules` 合法对照 L5 | lambda 捕获 const 函数里的局部 `let` 零诊断 | 多报一条 `EXPECT_CONST` 锚 `b`（CFIR 把捕获的 let 当非常量） |
+| `const/constFunctionRules` 其余 26 个标记 | 与 CFIR 一致 | 绿（PSI / LightTree 一致） |
+| `lambda/lambdaCaptureVarRules` | 21 个标记（5 USE_FUNC_CAPTURE_VAR_ALONE / 12 FUNC_CAPTURE_VAR_CANNOT_* / 4 LAMBDA_MUST_HAVE_TYPE_ANNOTATION） | 全部零产出：PSI 与 LightTree 两条路径在 FRONTEND 阶段对这 21 个标记一条诊断都不报（`CfirClosureCaptureUsageChecker` 未在这些形态上触发或未接入） |
+
+`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的两个新用例（Const / Lambda）均未失败（该套件本次被跳过）。
+
+### 环境事实
+
+- 本工作树的 `gradlew-queue.bat` 首次引导脚本有 PowerShell 语法错误（`[DateTimeOffset]::Now.ToUnixTimeMilliseconds(` 缺右括号），
+  首次跑队列 Gradle 需先把主检出里已构建的 `gradle-queue-cli/build/libs/gradle-queue-cli.jar` 复制到工作树对应路径。
