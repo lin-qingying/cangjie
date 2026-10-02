@@ -64,7 +64,7 @@ class ConstraintSystemCompleter(
      */
     private val inferenceComponents = components.session.inferenceComponents
     /** 已完成 lambda body 的实际返回表达式，供最终变量固定保留源码错误。 */
-    private val dataFlowAnalyzer = components.dataFlowAnalyzer
+    private val dataFlowAnalyzer by lazy { components.dataFlowAnalyzer }
     /**
      * 类型变量固定选择器。
      */
