@@ -71,8 +71,8 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
             text = """
                 import ghost.pkg.MissingSymbol
 
-                func useGreeting() {
-                    let answer = 42
+                func useGreeting(): Int64 {
+                    return 42
                 }
             """.trimIndent(),
         )
@@ -86,8 +86,8 @@ class CangjieLanguageServerTest : AbstractLspIntegrationTest() {
             uri = uri,
             version = 2,
             newText = """
-                func useGreeting() {
-                    let answer = 42
+                func useGreeting(): Int64 {
+                    return 42
                 }
             """.trimIndent(),
         )
