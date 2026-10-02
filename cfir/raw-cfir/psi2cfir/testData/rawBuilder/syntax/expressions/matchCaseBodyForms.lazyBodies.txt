@@ -1,0 +1,54 @@
+FILE: matchCaseBodyForms.cj
+    internal? enum MatchBodyKind {
+        Round(R|Int64|)
+        Flat
+        init()
+    }
+    internal? func matchBodySingleExpr(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyOneLine(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodySemiSequence(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyMultiLine(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyDecls(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyLocalFunc(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyNestedMatch(n: R|Int64|, s: R|String|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyGuarded(x: R|Any|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyTypeBinding(x: R|Any|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyTupleBinding(t: R|(R|Int64|, R|Int64|)|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyEnumBinding(k: R|MatchBodyKind|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyReturn(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyControlFlow(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyLambda(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyAsStatement(n: R|Int64|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func matchBodyNoSelector(n: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
