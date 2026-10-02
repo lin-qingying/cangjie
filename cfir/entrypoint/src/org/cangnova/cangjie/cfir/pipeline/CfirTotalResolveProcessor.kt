@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirFileReplacingResolveProcessor
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirGlobalResolveProcessor
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTransformerBasedResolveProcessor
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -38,8 +39,9 @@ class CfirTotalResolveProcessor(private val session: CfirSession) {
             if (phase.noProcessor) continue
 
             val processor = registry.getProcessor(phase) ?: continue
-            val fileCount = currentFiles.size
-            timingObserver.measurePhase(phase, fileCount) {
+            // 全量解析按文件集合推进，声明数需要额外的整棵树遍历，这里不统计。
+            val work = CfirResolvePhaseWork(files = currentFiles.size, declarations = 0)
+            timingObserver.measurePhase(phase, work) {
                 processor.beforePhase()
                 try {
                     when (processor) {
