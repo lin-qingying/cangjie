@@ -556,3 +556,68 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 批次 7 表里"`USE_MUTABLE_FUNC_ALONE` 锚点一致"一句已按本次实跑改正：`let f = this.inc`（`useMutableFuncAloneOnThis.cj`）CFIR 不产出该诊断。
 
 `CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的三个新用例（Constructor / Generic / Inheritance）本次聚焦跑均被跳过或通过。
+
+## 批次 11（2026-10-02）：`??` 合并运算 / static 字段初始化 / 常量模式插值三个语义夹具
+
+口径与批次 6–10 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机 cjc 1.0.5 / 1.1.3 实测决定；
+内联标记用本项目 CFIR 名；官方有而本项目无对应名的 kind 按 SUGGESTED_DIAGNOSTIC 处理；CFIR 与官方不一致的按缺口记录，不改期望。
+三份夹具各由一个子代理独立编写（const-pattern 那个子代理在会话结束时被中断，主会话接手完成复核与修正）。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
+| --- | --- | --- | --- | --- |
+| `operator/coalescingRules.cj` | `INVALID_COALESCING` ×31、`TYPE_MISMATCH` ×4、`CANNOT_CONVERT_LITERAL` ×3 | 13 段 / 38 标记 | 各 38 OK / 0 DIFF / 0 未标记 | 子代理在"同名枚举也命中 Option 条件"的对照段里自定义 `enum Option<T>`，与 `pattern/patternLegality.cj`、`mock/createMockOptionBoundaryPlaceholder.cj` 的顶层 `Option` 重名（同包两文件同名触发 `sema_redefinition`），已改名 `CoalSameNameOption`（改名后仍命中 `IsCoalescingLeftTyValid` 的 identifier 条件，见官方 `:1102`） |
+| `static-init/staticFieldInitializationRules.cj` | `TYPE_UNINITIALIZED_STATIC_FIELD` ×21；另 2 段官方伴随诊断 `sema_class_uninitialized_field`（父类 static 字段被子类隐式构造器算作未初始化实例字段；类同时有未初始化 static 与实例字段）按 SUGGESTED 处理 | 24 段 / 21 标记 | 1.1.3：21 OK / 0 DIFF / 2 未标记（全部 SUGGESTED 段）；1.0.5：20 OK / 1 DIFF / 2 未标记（形态 8"未被调用的 lambda 里赋值"1.0.5 不报，已在头部记为语言版本分歧） | 无 |
+| `pattern/constPatternInterpolation.cj` | `INTERPOLATION_IN_CONST_PATTERN` ×10（全 testData 首次有内联标记；1 段官方 kind `sema_pattern_literal_expected` 在 v1.0.0 是死条目，按 SUGGESTED 记录） | 18 段 / 10 标记 | 各 10 OK / 0 DIFF / 0 未标记 | 子代理初稿的 L4"合法对照"段写了 `s.size()` / `"${x}".size()`，官方两版都报 `sema_no_match_operator_function_call`（`.size` 是 prop 不是方法，锚接收者 1 字符），已改成 prop 形态 `"v${x}${y}".size` 并补 L4b（常量模式分支体里的插值）；L2 / L2b / L3 的 warning 描述按实测改正（`chir_dce_unused_variable` 两版都有，`sema_unreachable_pattern` 锚 `_`） |
+
+### 取证结论
+
+- **`??` 合并运算**：`src/Sema/TypeCheckExpr/BinaryExpr.cpp:1085-1106` `IsCoalescingLeftTyValid` 要求左操作数是 core 包、名为 `Option`、单类型实参的 enum；
+  `:1108-1142` `ChkCoalescingExpr` 的报告点是 `diag.Diagnose(*be.leftExpr, DiagKind::sema_invalid_coalescing)`，
+  非 refactor kind 经 `DiagnosticEngine.h:844-857` 退化为 `GetBegin` 1 个字符，**成员访问锚的是基表达式首字符**（`b.v` 锚 `b`），
+  **括号表达式锚最外层左括号**。`CanSkipDiag`（`TypeCheckUtil.cpp:230-233`）= `!Ty::IsTyCorrect(node.ty)`：左操作数自身类型已 invalid 时
+  不报本诊断，且 `:1119` 直接 return，右操作数不再检查；右操作数字面量先由 `CheckWithNegCache` 报 `sema_cannot_convert_literal`（1 字符），
+  此时 `Diags.cpp:250-252` 提前返回、不再追加 mismatched types。`??` 是右结合（`ParseExpr.cpp:539-543`，同优先级的 `??` 与 `**`）。
+  `??=` 不是 token，只能写成 `(x ?? 2) ?? 3` 强制左结合。
+- **static 字段初始化**：报告点 `src/Sema/LegalityOfUsage/InitializationChecker.cpp:501-512`，
+  `sema_type_uninitialized_static_field` 用 `DiagnoseRefactor` 锚**整条 static 字段声明**（含 `static` / `public` 修饰符，如 `public static var x: Int64` → Range (2,5)..(2,25)）。
+  整段跳过的条件有两类：`static init` 体以 `throw` 直接终止（`:493-499`，`tryDepth != 0` 时不登记终止，见 `UpdateScopeStatus:304-306`），
+  以及字段在类体外 / 枚举构造器 / 伴生对象里被赋值。`interface` / `extend` / `enum` 体里的 `static` 字段是 parse 错误
+  （`CheckStaticInitForTypeDecl` 只对 `STRUCT_DECL` / `CLASS_DECL` 调用），写不出可达形态。形态 8（未被调用的 lambda 里赋值）两版分歧：1.1.3 报、1.0.5 不报。
+- **常量模式插值**：`src/Sema/TypeCheckPattern.cpp:243-279` `ChkConstPattern` 四步顺序固定、前一步失败即 return；
+  第 3 步 `DynamicCast<LitConstExpr*>(literal) && siExpr` 非空时报 `sema_interpolation_in_const_pattern`
+  （`DiagRefactor/DiagnosticSema.def:81`），`DiagnoseRefactor(kind, p)` 锚**整个 ConstPattern 节点**，
+  而 `ParsePattern.cpp:100-107` 把节点范围取成字面量 token 本身，所以锚点是**带引号的字符串字面量文本**（不含 `case`、不含 `=>`），
+  多行字符串时跨行。词法上只有 `${` 算插值（`Lexer.cpp:981-1020` / `:1164-1215`），`$ident` 与 `\$` 都不是，
+  故 `case "a$y"` / `case "a\${y}"` 官方零诊断。第 2 步类型不等（选择器不是 `String`）即 return，第 3 步不可达。
+  `sema_pattern_literal_expected`（同文件 `:104`）在 v1.0.0 全仓无引用点，是死条目。
+- 三份夹具除 static-init 的形态 8 外，两版 cjc 的 kind / 消息 / Range 完全一致，未拆 `LANGUAGE_VERSION`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-02 20:3x–20:5x 聚焦跑 Operator / StaticInit / Pattern 三组，6 用例 / 4 失败 / 2 跳过）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `operator/coalescingRules` | `INVALID_COALESCING` 锚左操作数首字符 1 字符：成员访问 / 构造器调用 / 下标 / 函数与 lambda 调用锚基表达式首字符 | PSI 与 LightTree 两条路径相同：锚整个左操作数元素（`b.v`、`CoalPoint()`、`s[0]`、`f(1)`、`coalIdtNonOption(1)`），19 处 |
+| `operator/coalescingRules` | 括号表达式锚最外层 `(`（`(i)`、`(((s)))`、`(1 + 1)`、`(x ?? 2)`） | 锚括号内的表达式（`i`、`s`、`1 + 1`、`x ?? 2`），4 处 |
+| `operator/coalescingRules` | 右结合 `oInt ?? 2 ?? 3` 内层左操作数 `2`；元组解构 `a ?? b` / `b ?? a` 锚元素首字符 | 不产出，6 处 |
+| `operator/coalescingRules` | `os ?? 1` → `CANNOT_CONVERT_LITERAL` 锚 `1` | 报 `TYPE_MISMATCH` 锚 `1`（诊断名不同） |
+| `operator/coalescingRules` | `oi ?? 1.5` → `CANNOT_CONVERT_LITERAL` 锚首字符 `1` | 锚整个字面量 `1.5` |
+| `operator/coalescingRules` | `let _: Int8 = o ?? 0` → `TYPE_MISMATCH` 锚左操作数 `o` | 锚整个 `o ?? 0`（coalescing 无专用生产者，由通用类型不匹配路径承载） |
+| `operator/coalescingRules` | 其余 19 个标记（4 个裸标识符 + 3 个右操作数 `TYPE_MISMATCH` 等） | 与 CFIR 一致，绿 |
+| `operator/coalescingRules`（`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated`） | 同上 | 该路径只产出形态 1 的 4 个裸标识符标记，形态 2 起全部不产出 |
+| `static-init/staticFieldInitializationRules` | `TYPE_UNINITIALIZED_STATIC_FIELD` 锚整条 static 字段声明（含修饰符，如 `public static var x: Int64` 19 字符） | 锚字段名 1 字符（`x` / `y` / `a` / `b`），21 处；PSI 与 LightTree 两条路径相同 |
+| `static-init/staticFieldInitializationRules` 合法对照 D（`classStaticInitThrowSkipsCheck.cj`：`static init` 体以 `throw` 终止，官方整段跳过、零诊断） | 零诊断 | 多报 `CLASS_UNINITIALIZED_FIELD` 锚 `a` / `b`，2 处 |
+| `static-init/staticFieldInitializationRules` 形态 24（类同时有未初始化 static 与实例字段，官方伴随 `sema_class_uninitialized_field` 锚实例构造器 `init` 首字符，不写标记） | — | CFIR 的 `CLASS_UNINITIALIZED_FIELD` 锚 `init`（构造器名），与官方伴随诊断锚点相同、仅因未写标记而显示为多出 |
+| `pattern/constPatternInterpolation` | `INTERPOLATION_IN_CONST_PATTERN` 锚字面量文本（10 个标记） | 不产出（`CfirConstPatternInterpolationChecker`，`CfirPatternExpressionChecker.kt:352-385`，整块被注释、无注册） |
+| `pattern/constPatternInterpolation` 形态 6（or 模式 `case "a${y}" \| "b" => 0`） | 报一条插值诊断，锚 `"a${y}"` | CFIR 在 `runCheckers` 阶段抛 `FileAnalysisException`：`CfirMatchUnreachablePatternChecker.isCoveredBy`（`:81`）→ `MarangetChecker.isUseful` → `MatrixUtils.getFirstColumnType` 抛 `MarangetException: matrix first-column types are inconsistent`（`MatrixUtils.kt:25`），该 `match` 整段没有诊断；PSI 与 LightTree 两条路径相同 |
+
+`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的两个新用例（Pattern / StaticInit）本次聚焦跑均被跳过。
+
+### 环境与工具事实
+
+- 沙箱的工作树路径可见性仍会间歇性丢失（`cd` / `python` 报 `No such file or directory`，重试即恢复）；`Write` 工具对工作树绝对路径偶发
+  "Edit the worktree copy" 误拒，改用 bash heredoc 写 `.scratch` 脚本。
+- `.scratch/parse_cfir_diff.py`（本批次新增）解析 `cfir/analysis-tests/build/test-results/test/*.xml`，
+  按 `=====预期=====` / `=====得到=====` 切出两段并打印统一差异；测试框架的失败消息在"得到"段之后还会跟 `FileAnalysisException` 的栈，需按 `\tat ` 截断。
+- 同一 fixture 的三个套件（LightTree / PSI / WithoutAliasExpansion）用同一份 testData，但锚点宽度与产出量可以不同（见上表最后两行）。
