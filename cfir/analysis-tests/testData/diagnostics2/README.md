@@ -343,7 +343,7 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | `property/propertyInheritanceRules` | `PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF` 锚声明首字符 `p`（cjc 1.0.5 / 1.1.3 一致） | 锚属性名 `v`（`CfirOverrideChecker.kt:350` 用 `propertyNameDiagnosticSource()`；`CfirInheritanceDeepChecker.kt:350` 用 `nameSource ?: diagnosticSource`）。其余 8 个标记（继承类三种 + 访问器）整条声明锚点一致 |
 | `property/propertyInheritanceRulesLangVer100` | 1.0.0 语言版本下四种继承类诊断锚声明首字符 | 锚整条 prop 声明：CFIR 的诊断锚点没有按 `LANGUAGE_VERSION` 门禁 |
 | `pattern/patternDeclarationRules` | 模式类诊断锚模式 `GetBegin()` 一个字符（`PATTERN_CAN_NOT_BE_ASSIGNED` 锚 `(`、`PATTERN_NOT_MATCH` 锚 `C` / `F`、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 的 `f`、`TUPLE_*` 锚 `(`、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 锚 in 表达式的首字符）；`let Payload.D = v` 是 `ENUM_PATTERN_PARAM_SIZE_ERROR` | 模式类诊断锚整个模式（`declaration.pattern.source` / `pattern.source`）、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 三字符、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 对 `1 + 2` 锚整个表达式；`let Payload.D = v` 报 `PATTERN_CAN_NOT_BE_ASSIGNED`（语义分歧：无参构造器限定名模式未被识别为 `EnumPattern` 不可解析形态，CFIR 缺 `ENUM_PATTERN_PARAM_SIZE_ERROR` 这条路径） |
-| `mut/mutableFunctionReferenceRules` | `ILLEGAL_CAPTURE_THIS` / `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 锚 `NameReferenceExpr` 首字符 1 个字符（`this` / 字段名首字母）；`classFinalizerCaptureMemberFunc` 里 `this.read` 的成员函数引用另报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（锚 `read` 首字母） | `ILLEGAL_CAPTURE_THIS` 锚 `this` 整词；字段捕获（`value`）锚整个字段名；`this.read`（非调用形态）不报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（`CfirGeneralSemanticsChecker` 只遍历 `CfirFunctionCall`）；`let t = this`（finalizer 里把 `this` 当值）报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`，官方该形态是 `sema_use_this_as_an_expression_in_func`（本项目无对应名）。`USE_MUTABLE_FUNC_ALONE`（`inc`）与 `INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE`（`public` 首字符）锚点一致 |
+| `mut/mutableFunctionReferenceRules` | `ILLEGAL_CAPTURE_THIS` / `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 锚 `NameReferenceExpr` 首字符 1 个字符（`this` / 字段名首字母）；`classFinalizerCaptureMemberFunc` 里 `this.read` 的成员函数引用另报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（锚 `read` 首字母） | `ILLEGAL_CAPTURE_THIS` 锚 `this` 整词；字段捕获（`value`）锚整个字段名；`this.read`（非调用形态）不报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（`CfirGeneralSemanticsChecker` 只遍历 `CfirFunctionCall`）；`let t = this`（finalizer 里把 `this` 当值）报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`，官方该形态是 `sema_use_this_as_an_expression_in_func`（本项目对应名是 `THIS_AS_EXPRESSION_IN_FUNC`，但只有 open/abstract 构造器与 struct/extend mut 成员函数两个生产者，析构器分支没有）。`INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE`（`public` 首字符）锚点一致；`USE_MUTABLE_FUNC_ALONE` 的 struct 接收者形态（`s.inc`，`useMutableFuncAloneOnVarReceiver.cj`）锚点一致，但 `let f = this.inc` 形态（`useMutableFuncAloneOnThis.cj`）CFIR 2026-10-02 17:5x 实跑不产出该诊断（当时记为锚点一致，以批次 10 的实跑为准） |
 
 `CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的三个新用例均通过；`property/propertyAccessorRules`、`pattern/patternLegality`、`mut/immutableFunctionRestrictions` 等既有夹具不受本批次影响。
 
@@ -434,6 +434,7 @@ cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官
 | `generic/genericBoundRules.cj` | `GENERIC_PARAM_DIRECTLY_RECURSIVE`、`GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY`、`FORBID_GENERIC_CONSTRUCTOR`、`FORBID_GENERIC_FINALIZER`、`GENERIC_IN_OPERATOR_OVERLOAD`、`VALUE_TYPE_RECURSIVE`、`CLASS_UNINITIALIZED_FIELD`（值类型递归段的官方伴随诊断，按官方锚 `let` 首字母） | 24 段 / 23 标记 | 各 23 OK / 0 DIFF / 0 未标记官方诊断 |
 | `inheritance/overrideRedefRules.cj` | `INVALID_OVERRIDE_MEMBER_IN_CLASS`、`STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME`、`REDEF_INSTANCE_ERROR`、`INVALID_MEMBER_VISIBILITY_IN_CLASS`；另有 5 段官方 kind 本项目无对应名（`sema_invalid_override_or_redefine_member_in_interface`、`sema_func_no_override_or_redefine_modifier`、`sema_missing_redefined_func`）按 SUGGESTED_DIAGNOSTIC 处理 | 15 段 / 11 标记 | 各 11 OK / 0 DIFF / 10 未标记（全部 SUGGESTED 段） |
 | `type-mismatch/typeReferenceRules.cj` | `NOT_A_TYPE`、`REF_NOT_BE_TYPE`、`NO_MATCH_OPERATOR_FUNCTION_CALL`、`MISMATCHED_TYPES_BECAUSE`、`TYPE_INCOMPATIBLE`、`INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS` | 17 段 / 17 标记 | 各 17 OK / 0 DIFF / 0 未标记官方诊断 |
+| `constructor/superThisCallRules.cj` | `ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER`、`ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR`、`MULTIPLE_PRIMARY_CONSTRUCTORS`、`NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`（官方三个锚点分支：用户写的 `init` 4 字符、主构造器锚宿主类名）、`THIS_AS_EXPRESSION_IN_FUNC`、`ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR`、`ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR`、`INVALID_THIS_CALL_OUTSIDE_CTOR`；另有 3 段官方 kind 本项目无对应名（`sema_use_super_in_interface`、`sema_super_use_error_inside_non_class`、`sema_extend_use_super`）按 SUGGESTED_DIAGNOSTIC 处理；`ILLEGAL_THIS_OR_SUPER_CALL` / `EXPLICIT_SUPER_CALL_REQUIRED` 有 CFIR 名但无生产者且官方 v1.0.0 无同名 kind，未写期望 | 23 段 / 18 标记 | 各 18 OK / 0 DIFF / 3 未标记（全部 SUGGESTED 段） |
 
 筛选依据沿用批次 8 的全 testData 盘点：这三族里的 `GENERIC_PARAM_DIRECTLY_RECURSIVE`、
 `GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY`、`FORBID_GENERIC_CONSTRUCTOR` / `_FINALIZER`、
@@ -498,3 +499,60 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
   夹具头部的示例标记一律用文字描述。三份新夹具的头部均无字面标记。
 - 本会话的沙箱对工作树路径的可见性会间歇性丢失（`ls` / Python `os.listdir` 报 `No such file or directory`，重试即恢复）；
   判定"目录真的不存在"前先重试一次。
+
+## 批次 10（2026-10-02）：抽象成员访问 / this()-super() 调用 / 泛型实例化三个语义夹具，外加 mut 夹具的析构器 `this` 修正
+
+口径与批次 6–9 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机 cjc 1.0.5 / 1.1.3 实测决定；
+内联标记用本项目 CFIR 名；官方有而本项目无对应名的 kind 按 SUGGESTED_DIAGNOSTIC 处理；CFIR 与官方不一致的按缺口记录，不改期望。
+三份夹具各由一个子代理独立编写，主会话用同一套 exact_check 复核，并修了四处官方口径问题（下表"主会话修正"列）。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
+| --- | --- | --- | --- | --- |
+| `inheritance/abstractMemberAccessRules.cj` | `ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY`、`ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED`、`MISSING_FUNC_BODY`（全 testData 首次有内联标记）、`INHERIT_NOT_RETURN_THIS`、`WEAK_VISIBILITY` | 15 段 / 16 标记 | 各 16 OK / 0 DIFF / 4 未标记（全部 SUGGESTED 段：`sema_interface_can_not_be_instantiated`、`sema_class_need_abstract_modifier_or_func_need_impl` ×3） | 无（官方 `sema_abstract_class_can_not_be_instantiated` 在 v1.0.0 `DiagnosticSema.def:211` 确实存在，子代理起初判为"官方无同名 kind"是错的，已按官方 kind 写标记） |
+| `constructor/superThisCallRules.cj` | `ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER`、`ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR`、`MULTIPLE_PRIMARY_CONSTRUCTORS`、`NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS`、`THIS_AS_EXPRESSION_IN_FUNC`、`INVALID_THIS_CALL_OUTSIDE_CTOR`、`ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR` | 23 段 / 18 标记 | 各 18 OK / 0 DIFF / 3 未标记（SUGGESTED：`sema_use_super_in_interface`、`sema_super_use_error_inside_non_class`、`sema_extend_use_super`） | 无 |
+| `generic/genericInstantiationRules.cj` | `GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS`（官方 `sema_not_found_from_generic_upper_bounds`）、`GENERIC_INFINITE_INSTANTIATION`、`GENERIC_TYPE_INCONSISTENT` | 26 段 / 17 标记 | 各 17 OK / 0 DIFF / 0 未标记 | 三处：① operator 实参段的形参类型 `GII3A<GII3A<T>>` 官方同样报 `sema_generic_infinite_instantiation`（checkRecursion STOP_NOW），原漏标记，已补；② 合法对照 L7 的 `GIL7Holder(a, a)` 官方报 `sema_mismatched_types`（锚第一个实参），不是合法形态，已改成显式具体类型实参；③ 合法对照 L10 与 L9 顶层名 `GIL9Base` / `GIL9C` 重复（同包两文件同名会触发 `sema_redefinition`），L10 已改名 `GIL10*` |
+| `mut/mutableFunctionReferenceRules.cj`（修正） | `THIS_AS_EXPRESSION_IN_FUNC` | 20 段 / 20 标记 | 各 20 OK / 0 DIFF / 0 未标记 | 批次 7 的 `classFinalizerThisAlone` 段按 SUGGESTED 处理且写了本项目不存在的名字 `USE_THIS_AS_AN_EXPRESSION_IN_FUNC`；实际本项目名是 `THIS_AS_EXPRESSION_IN_FUNC`（`CfirDiagnosticsList.kt:511`，生产者 `CfirExpressionSemanticsChecker.kt:388` open/abstract 构造器分支、`:459` struct/extend 的 mut 成员函数分支，析构器分支没有），已按官方锚点（`this` 首字母）改为正式标记 |
+
+### 取证结论
+
+- **抽象成员**：报告点 `src/Sema/DeclAttributeChecker.cpp:297-317`（`MISSING_FUNC_BODY` 的条件是 `(成员 static 且非 foreign) || (宿主非 abstract 且非 foreign)`；
+  可见性两种形态分别锚成员名）、`TypeCheckCall.cpp:2521-2533`（`sema_interface_can_not_be_instantiated` / `sema_abstract_class_can_not_be_instantiated`，锚类型名首字符）、
+  `TypeCheckReference.cpp`（抽象方法直接访问）、`StructInheritanceChecker.cpp`（`inherit_not_return_this` 锚子函数名、`weak_visibility` 锚子成员名）。
+  抽象成员只能写成"无函数体的成员声明"（显式 `abstract` 被 parser 拦，且 1.1.3 会多报 `parse_explicitly_abstract_only_for_cjmp_abstract_class`，版本分歧）。
+  标记不能放在 `super` 与成员名之间（去标记后拼成 `superf`），必须写成只包 `super` 首字母的形式。
+- **this()/super()**：`StructInheritanceChecker.cpp` / `TypeCheckDecl.cpp` / `TypeChecker.cpp` 的构造器检查。官方非 refactor 的
+  `Diagnose(node, kind)` 只锚 1 个字符（`DiagnosticEngine.h:844-857`）；`sema_no_non_param_constructor_in_super_class` 只对编译器合成的
+  `super()` 报，锚点有三个分支（用户写的 `init`、宿主类名整段、补出的构造器）。CFIR 把"显式 super 调用"语义拆成 `EXPLICIT_SUPER_CALL_REQUIRED`
+  与 `ILLEGAL_THIS_OR_SUPER_CALL` 两个名字，但两个都没有生产者，官方 v1.0.0 也没有对应 kind（该语义只有
+  `sema_no_non_param_constructor_in_super_class` 一种），已在夹具头部注明。
+- **泛型实例化**：`GENERIC_INFINITE_INSTANTIATION` 的真正条件是 `WillCauseInfiniteInstantiation` 的 `checkRecursion`：
+  `ty->Contains(genericTy)` 要求**被 Walker 访问的节点就是宿主泛型声明**，所以字段 / struct / `var` 带初值 / 非宿主类形参全部零诊断，
+  能写出的形态只有 enum 构造器形参 `E<E<T>>` 与 operator 形参或实参自嵌套。`sema_generic_no_method_match_in_upper_bounds` /
+  `sema_generic_ambiguous_method_match_in_upper_bounds` 在官方 v1.0.0 不可达（唯一调用点 `DiagnoseForCall` 的三条路径都被更早的诊断挡住），
+  约 25 个探针全部零诊断或报别的 kind，因此本项目 `GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS` 没有形态。
+- 三个新夹具两版 cjc 的 kind / 消息 / Range 完全一致，未拆 `LANGUAGE_VERSION`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-02 18:0x–18:4x 聚焦跑 Inheritance / Constructor / Mut / Generic 四组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出（PSI 与 LightTree 相同） |
+| --- | --- | --- |
+| `inheritance/abstractMemberAccessRules` | `ABSTRACT_CLASS_CANNOT_BE_INSTANTIATED` 锚类型名首字母 1 字符 | 锚类型名整段（`AbsAccInstantiateParent`），2 处 |
+| `inheritance/abstractMemberAccessRules` | 宿主类非 abstract 且成员无体 → `MISSING_FUNC_BODY` 锚成员声明首字符 | 改报 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 锚类名（3 个"类没写 abstract 修饰符"形态）；4 个成员级标记一致 |
+| `inheritance/abstractMemberAccessRules` | `WEAK_VISIBILITY` "a deriving member must be at least as visible as its base member" | 报 `CANNOT_WEAKEN_ACCESS_PRIVILEGE`（锚点相同、诊断名不同），2 处 |
+| `inheritance/abstractMemberAccessRules` | `super.p` 访问父类抽象成员 → `ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY` 锚 `super` 的 `s` | 不产出 |
+| `inheritance/abstractMemberAccessRules` 形态 4 | 接口实例化：官方 `sema_interface_can_not_be_instantiated`（本项目无对应名，SUGGESTED 段） | 多报 `NO_CONSTRUCTOR` 锚类型名整段 |
+| `inheritance/abstractMemberAccessRules` 其余 9 个标记 | 与 CFIR 一致 | 绿 |
+| `constructor/superThisCallRules` | `ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER` / `_PRIMARY_CONSTRUCTOR` / `INVALID_THIS_CALL_OUTSIDE_CTOR` / `ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR` 锚关键字首字母 1 字符 | 锚整个 `this` / `super` 关键字（4–5 字符），14 处 |
+| `constructor/superThisCallRules` | 主构造器形态：`sema_no_non_param_constructor_in_super_class` 锚宿主类名整段（4 字符） | 不产出 |
+| `constructor/superThisCallRules` | lambda 体里的 `super(a)`：官方只报位置 | 多报 `INVALID_THIS_CALL_OUTSIDE_CTOR` |
+| `constructor/superThisCallRules` 合法段 L* | 接口 / struct / extend 成员里 `super.f()` 合法（0 error） | 多报 `INTERFACE_SUPER_NOT_ALLOWED` / `STRUCT_SUPER_NOT_ALLOWED` / `EXTEND_SUPER_NOT_ALLOWED`，3 处误报 |
+| `constructor/superThisCallRules` 其余标记（`MULTIPLE_PRIMARY_CONSTRUCTORS`、`THIS_AS_EXPRESSION_IN_FUNC` ×3、`INVALID_THIS_CALL_OUTSIDE_CTOR` ×2） | 与 CFIR 一致 | 绿 |
+| `generic/genericInstantiationRules` | 17 个标记 | 全部一致，绿 |
+| `mut/mutableFunctionReferenceRules`（新增标记） | 析构器里 `let t = this` → `THIS_AS_EXPRESSION_IN_FUNC` 锚 `this` 首字母 | 改报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（析构器分支无生产者） |
+| `mut/mutableFunctionReferenceRules` 其余 | 与 CFIR 一致（含 `USE_MUTABLE_FUNC_ALONE` 的 struct 接收者形态 5 处） | 绿 |
+
+批次 7 表里"`USE_MUTABLE_FUNC_ALONE` 锚点一致"一句已按本次实跑改正：`let f = this.inc`（`useMutableFuncAloneOnThis.cj`）CFIR 不产出该诊断。
+
+`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的三个新用例（Constructor / Generic / Inheritance）本次聚焦跑均被跳过或通过。

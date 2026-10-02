@@ -244,22 +244,20 @@ class FinalizerMemberFuncClass {
 }
 
 // FILE: classFinalizerThisAlone.cj
-/*
-SUGGESTED_DIAGNOSTIC: USE_THIS_AS_AN_EXPRESSION_IN_FUNC
-SUGGESTED_MESSAGE: 'this' cannot be used as an expression in the %s
-SOURCE: src/Sema/TypeCheckReference.cpp:176-188（CheckUsageOfThis）；include/cangjie/Basic/DiagnosticSema.def:289
-*/
 // 形态：class 析构函数里把 `this` 当作独立表达式使用（不是 `this(...)` 调用、也不是 `this.x` 的基表达式）。
 // kind：sema_use_this_as_an_expression_in_func "'this' cannot be used as an expression in the finalizer"
-// 锚点：`this` 首字符。1.0.5 / 1.1.3 一致。CheckUsageOfThis 在 CfirErrors.kt 里没有同名诊断，按
-// SUGGESTED_DIAGNOSTIC 处理：本段不写内联断言。同一检查在 mut 函数、可继承类构造器里同样成立
-// （消息分别为 "mutable function 'f'" 与 "constructor of open/abstract class"）。
+//       （include/cangjie/Basic/DiagnosticSema.def:289；报告点 src/Sema/TypeCheckReference.cpp:176-188 CheckUsageOfThis）
+// 锚点：`this` 首字符，1 个字符。1.0.5 / 1.1.3 一致。
+// 本项目对应诊断名是 THIS_AS_EXPRESSION_IN_FUNC（CfirDiagnosticsList.kt:511，CfirErrorsDefaultMessages.kt:350；
+// 生产者 CfirExpressionSemanticsChecker.kt:388 open/abstract class 构造器分支、:459 struct/extend 的 mut 成员函数分支，
+// 锚点同样是 `this` 首字母）。官方同一检查还有析构器分支（消息 "…in the finalizer"），本项目目前没有对应生产者，
+// 因此本段按官方期望写标记，CFIR 侧红是缺口。mut 函数与可继承类构造器两个分支由 constructor/superThisCallRules.cj 覆盖。
 class FinalizerThisAloneClass {
     var value: Int64 = 0
     var sink: Int64 = 0
 
     ~init() {
-        let t = this
+        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
         this.sink = 1
         let _ = t
     }
