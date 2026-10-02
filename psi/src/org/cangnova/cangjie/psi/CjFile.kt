@@ -364,6 +364,10 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
                     when (child) {
                         is CjPackageDirective -> Unit
                         is CjForeignDirective -> child.body?.declarations?.let(::addAll)
+                        // 顶层宏包装的声明在 PSI 上是 CjExpression 而不是 CjDeclaration，
+                        // 必须按声明宏链解包，否则这类顶层声明会从文件声明列表中整体消失，
+                        // 依赖"包内顶层声明名集合"的平台索引、作用域枚举与 ClassId 查询都会漏掉它们。
+                        is CjMacroExpression -> child.unwrappedDeclaration?.let(::add)
                         is CjDeclaration -> add(child)
                     }
                 }
