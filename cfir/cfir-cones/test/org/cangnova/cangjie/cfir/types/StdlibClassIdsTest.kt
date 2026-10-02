@@ -64,7 +64,10 @@ class StdlibClassIdsTest {
         assertTrue(all.contains(StdlibClassIds.ThreadContext))
         assertTrue(all.contains(StdlibClassIds.Command))
         assertTrue(all.contains(StdlibClassIds.Resumption))
-        assertEquals(18, all.size)
+        assertTrue(all.contains(StdlibClassIds.CType))
+        assertTrue(all.contains(StdlibClassIds.AnnotationKind))
+        assertTrue(all.contains(StdlibClassIds.Collection))
+        assertEquals(21, all.size)
     }
 
     /**
