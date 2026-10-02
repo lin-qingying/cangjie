@@ -888,7 +888,11 @@ fun MacroConstructionService.expandWithDefaultContext(
         sharedBuiltinDefinitions = sharedBuiltinDefinitions,
         macroArtifactDefinitions = macroArtifactDefinitions,
     )
-    return expand(pre, context, classification, mode)
+    // construction 耗时：宿主注册观察者时才取单调时钟，否则直接展开。
+    val observer = pre.session.macroExpansionTimingObserverOrNull
+    return observer.measureMacroExpansion(mode = mode, fileCount = pre.size, surfaceCount = pre.allSurfaces.size) {
+        expand(pre, context, classification, mode)
+    }
 }
 
 /** 不做真实 macro 展开的 identity service，用于无宏或测试场景维持边界约束。 */

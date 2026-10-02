@@ -10,6 +10,8 @@ import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
+import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroExpansionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.registerResolvePhaseTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
@@ -60,6 +62,8 @@ abstract class LLCfirSession(
         // 统计可用时挂上语义解析阶段耗时观察者；统计未启用（无 provider 或开关关闭）时不注册，解析路径零开销。
         LLStatisticsService.getInstance(caModule.project)?.let { statisticsService ->
             registerResolvePhaseTimingObserver(statisticsService.resolvePhases)
+            registerRawBuildTimingObserver(statisticsService.rawBuild)
+            registerMacroExpansionTimingObserver(statisticsService.macroExpansion)
         }
     }
 

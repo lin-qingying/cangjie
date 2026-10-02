@@ -7,7 +7,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 
 /**
  * OpenTelemetry 指标 scope 名称。
@@ -216,6 +218,64 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              * 阶段执行次数。
              */
             fun runs(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.runs"
+        }
+    }
+
+    /**
+     * raw CFIR 构建指标。
+     *
+     * 按前端来源分段命名：`<source>.duration`（毫秒直方图）与 `<source>.runs`（构建次数），
+     * 来源段取 [CfirRawBuildSource.metricSuffix]。
+     */
+    object RawBuild : LLStatisticsScope("$name.rawBuild") {
+        /**
+         * 来源段前缀。
+         */
+        fun source(source: CfirRawBuildSource): String = "${name}.${source.metricSuffix}"
+
+        /**
+         * 单文件 raw 构建耗时（毫秒）。
+         */
+        fun duration(source: CfirRawBuildSource): String = "${source(source)}.duration"
+
+        /**
+         * raw 构建次数。
+         */
+        fun runs(source: CfirRawBuildSource): String = "${source(source)}.runs"
+    }
+
+    /**
+     * macro construction 指标。
+     */
+    object Macro : LLStatisticsScope("$name.macro") {
+        /**
+         * construction 指标集合。
+         */
+        object Expand : LLStatisticsScope("$name.expand") {
+            /**
+             * construction 耗时（毫秒）。
+             */
+            fun duration(): String = "$name.duration"
+
+            /**
+             * construction 次数。
+             */
+            fun runs(): String = "$name.runs"
+
+            /**
+             * construction 覆盖的 pre-macro 文件数。
+             */
+            fun files(): String = "$name.files"
+
+            /**
+             * construction 覆盖的宏 surface 数。
+             */
+            fun surfaces(): String = "$name.surfaces"
+
+            /**
+             * 按结果归类的次数。
+             */
+            fun outcome(outcome: CfirMacroExpansionOutcome): String = "$name.${outcome.metricSuffix}"
         }
     }
 

@@ -3,7 +3,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 import org.junit.jupiter.api.Test
 
 /**
@@ -40,6 +42,9 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.AnalysisSessions.Caches.ResolveToSymbolsCache,
             LLStatisticsScopes.Resolve,
             LLStatisticsScopes.Resolve.Phases,
+            LLStatisticsScopes.RawBuild,
+            LLStatisticsScopes.Macro,
+            LLStatisticsScopes.Macro.Expand,
             LLStatisticsScopes.SymbolProviders,
             LLStatisticsScopes.SymbolProviders.Combined,
             LLStatisticsScopes.SymbolProviders.Combined.Classes,
@@ -81,6 +86,36 @@ class LLStatisticsScopesTest {
             assertEquals(LLStatisticsScopes.Resolve.Phases.files(phase), LLStatisticsMetricNames.resolvePhaseFiles(phase))
             assertEquals(LLStatisticsScopes.Resolve.Phases.declarations(phase), LLStatisticsMetricNames.resolvePhaseDeclarations(phase))
             assertEquals(LLStatisticsScopes.Resolve.Phases.runs(phase), LLStatisticsMetricNames.resolvePhaseRuns(phase))
+        }
+        CfirRawBuildSource.entries.forEach { source ->
+            assertEquals(LLStatisticsScopes.RawBuild.duration(source), LLStatisticsMetricNames.rawBuildDuration(source))
+            assertEquals(LLStatisticsScopes.RawBuild.runs(source), LLStatisticsMetricNames.rawBuildRuns(source))
+        }
+        assertEquals(LLStatisticsScopes.Macro.Expand.duration(), LLStatisticsMetricNames.macroExpandDuration)
+        assertEquals(LLStatisticsScopes.Macro.Expand.runs(), LLStatisticsMetricNames.macroExpandRuns)
+        assertEquals(LLStatisticsScopes.Macro.Expand.files(), LLStatisticsMetricNames.macroExpandFiles)
+        assertEquals(LLStatisticsScopes.Macro.Expand.surfaces(), LLStatisticsMetricNames.macroExpandSurfaces)
+        CfirMacroExpansionOutcome.entries.forEach { outcome ->
+            assertEquals(LLStatisticsScopes.Macro.Expand.outcome(outcome), LLStatisticsMetricNames.macroExpandOutcome(outcome))
+        }
+    }
+
+    /**
+     * 阶段指标名由阶段名拼出，必须逐个落在根 scope 下，且带上阶段名。
+     */
+    @Test
+    @OptIn(LLStatisticsOnlyApi::class)
+    fun rawBuildAndMacroMetricNamesArePrefixedWithRoot() {
+        CfirRawBuildSource.entries.forEach { source ->
+            assertEquals("${LLStatisticsScopes.name}.rawBuild.${source.metricSuffix}.duration", LLStatisticsMetricNames.rawBuildDuration(source))
+            assertEquals("${LLStatisticsScopes.name}.rawBuild.${source.metricSuffix}.runs", LLStatisticsMetricNames.rawBuildRuns(source))
+        }
+        assertEquals("${LLStatisticsScopes.name}.macro.expand.duration", LLStatisticsMetricNames.macroExpandDuration)
+        assertEquals("${LLStatisticsScopes.name}.macro.expand.runs", LLStatisticsMetricNames.macroExpandRuns)
+        assertEquals("${LLStatisticsScopes.name}.macro.expand.files", LLStatisticsMetricNames.macroExpandFiles)
+        assertEquals("${LLStatisticsScopes.name}.macro.expand.surfaces", LLStatisticsMetricNames.macroExpandSurfaces)
+        CfirMacroExpansionOutcome.entries.forEach { outcome ->
+            assertEquals("${LLStatisticsScopes.name}.macro.expand.${outcome.metricSuffix}", LLStatisticsMetricNames.macroExpandOutcome(outcome))
         }
     }
 

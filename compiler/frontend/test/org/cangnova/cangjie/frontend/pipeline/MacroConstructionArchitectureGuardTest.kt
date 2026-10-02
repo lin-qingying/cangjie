@@ -510,7 +510,7 @@ class MacroConstructionArchitectureGuardTest {
         val artifactDefinitionsIndex = source.indexOf("macroArtifactDefinitions = macroArtifactDefinitions")
         val bindIndex = source.indexOf("val context = bindMacroImports(pre, symbolIndex)")
         val preDiagnosticsErrorGateIndex = source.indexOf("preConstructionDiagnostics.any")
-        val expandIndex = source.indexOf("val result = constructionService.expand(")
+        val expandIndex = source.indexOf("constructionService.expand(")
         val preDiagnosticsPassIndex = source.indexOf("preConstructionDiagnostics = preConstructionDiagnostics")
         val recordIndex = source.indexOf("recordExpandedRawFilesOnce(provider, recordable, result.registry)")
         val resolveIndex = source.indexOf("val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)")

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 
 /**
  * Analysis API 统计指标的公开名称视图。
@@ -116,6 +118,45 @@ object LLStatisticsMetricNames {
      * 语义解析阶段执行次数指标名。
      */
     fun resolvePhaseRuns(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.runs(phase)
+
+    /**
+     * `rawBuild.<source>.duration`：单文件 raw CFIR 构建耗时（毫秒）。
+     */
+    fun rawBuildDuration(source: CfirRawBuildSource): String = LLStatisticsScopes.RawBuild.duration(source)
+
+    /**
+     * `rawBuild.<source>.runs`：raw CFIR 构建次数。
+     */
+    fun rawBuildRuns(source: CfirRawBuildSource): String = LLStatisticsScopes.RawBuild.runs(source)
+
+    /**
+     * `macro.expand.duration`：macro construction 耗时（毫秒）。
+     */
+    val macroExpandDuration: String
+        get() = LLStatisticsScopes.Macro.Expand.duration()
+
+    /**
+     * `macro.expand.runs`：macro construction 次数。
+     */
+    val macroExpandRuns: String
+        get() = LLStatisticsScopes.Macro.Expand.runs()
+
+    /**
+     * `macro.expand.files`：macro construction 覆盖的 pre-macro 文件数。
+     */
+    val macroExpandFiles: String
+        get() = LLStatisticsScopes.Macro.Expand.files()
+
+    /**
+     * `macro.expand.surfaces`：macro construction 覆盖的宏 surface 数。
+     */
+    val macroExpandSurfaces: String
+        get() = LLStatisticsScopes.Macro.Expand.surfaces()
+
+    /**
+     * `macro.expand.<outcome>`：按结果归类的 construction 次数。
+     */
+    fun macroExpandOutcome(outcome: CfirMacroExpansionOutcome): String = LLStatisticsScopes.Macro.Expand.outcome(outcome)
 
     /**
      * 判断指标名是否属于本项目的统计命名空间。
