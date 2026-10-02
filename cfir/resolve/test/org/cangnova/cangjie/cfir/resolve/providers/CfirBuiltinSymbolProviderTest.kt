@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirBuiltInTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -24,7 +25,6 @@ import org.cangnova.cangjie.name.Name
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -33,13 +33,22 @@ import org.junit.jupiter.api.Test
  */
 class CfirBuiltinSymbolProviderTest {
     /**
-     * 内建声明尚未接入完整 Cone 语义映射时必须显式失败，不能静默变成普通 class-like 类型。
+     * 内建声明缺少必需类型实参时必须显式失败，不能静默变成普通 class-like 类型。
+     *
+     * CPointer 已接入 `ConePointerType` 映射，因此缺参数时按仓库错误约定产出结构化的
+     * `ConeErrorType`，而不是退化成 class-like 类型，也不抛通用异常。
      */
     @Test
     fun `unmapped builtin symbol never falls back to class like type`() {
         val symbol = CfirBuiltInTypeSymbol(StdlibClassIds.CPointer, CfirBuiltInTypeKind.CPOINTER)
 
-        assertThrows(IllegalStateException::class.java) { symbol.constructType() }
+        val constructed = symbol.constructType()
+
+        assertTrue(
+            constructed is ConeErrorType,
+            "CPointer without pointee type argument must fail structurally, but was $constructed",
+        )
+        assertFalse(constructed is ConeClassLikeType, "must not degrade into a plain class-like type")
     }
 
     /**
