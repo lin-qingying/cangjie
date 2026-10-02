@@ -420,3 +420,81 @@ cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官
 
 - 本工作树的 `gradlew-queue.bat` 首次引导脚本有 PowerShell 语法错误（`[DateTimeOffset]::Now.ToUnixTimeMilliseconds(` 缺右括号），
   首次跑队列 Gradle 需先把主检出里已构建的 `gradle-queue-cli/build/libs/gradle-queue-cli.jar` 复制到工作树对应路径。
+
+## 批次 9（2026-10-02）：泛型上界 / override-redef 修饰符 / 类型引用三个语义夹具
+
+口径与批次 6 / 7 / 8 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机
+cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官方不一致的按缺口记录，不改期望。三份夹具各由一个子代理
+独立编写，主会话用同一套 exact_check 复核并补了两处官方锚点修正（见下）。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check |
+| --- | --- | --- | --- |
+| `generic/genericBoundRules.cj` | `GENERIC_PARAM_DIRECTLY_RECURSIVE`、`GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY`、`FORBID_GENERIC_CONSTRUCTOR`、`FORBID_GENERIC_FINALIZER`、`GENERIC_IN_OPERATOR_OVERLOAD`、`VALUE_TYPE_RECURSIVE`、`CLASS_UNINITIALIZED_FIELD`（值类型递归段的官方伴随诊断，按官方锚 `let` 首字母） | 24 段 / 23 标记 | 各 23 OK / 0 DIFF / 0 未标记官方诊断 |
+| `inheritance/overrideRedefRules.cj` | `INVALID_OVERRIDE_MEMBER_IN_CLASS`、`STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME`、`REDEF_INSTANCE_ERROR`、`INVALID_MEMBER_VISIBILITY_IN_CLASS`；另有 5 段官方 kind 本项目无对应名（`sema_invalid_override_or_redefine_member_in_interface`、`sema_func_no_override_or_redefine_modifier`、`sema_missing_redefined_func`）按 SUGGESTED_DIAGNOSTIC 处理 | 15 段 / 11 标记 | 各 11 OK / 0 DIFF / 10 未标记（全部 SUGGESTED 段） |
+| `type-mismatch/typeReferenceRules.cj` | `NOT_A_TYPE`、`REF_NOT_BE_TYPE`、`NO_MATCH_OPERATOR_FUNCTION_CALL`、`MISMATCHED_TYPES_BECAUSE`、`TYPE_INCOMPATIBLE`、`INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS` | 17 段 / 17 标记 | 各 17 OK / 0 DIFF / 0 未标记官方诊断 |
+
+筛选依据沿用批次 8 的全 testData 盘点：这三族里的 `GENERIC_PARAM_DIRECTLY_RECURSIVE`、
+`GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY`、`FORBID_GENERIC_CONSTRUCTOR` / `_FINALIZER`、
+`GENERIC_IN_OPERATOR_OVERLOAD`、`VALUE_TYPE_RECURSIVE`、`INVALID_OVERRIDE_MEMBER_IN_CLASS`、
+`STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME`、`REDEF_INSTANCE_ERROR`、`INVALID_MEMBER_VISIBILITY_IN_CLASS`、
+`NOT_A_TYPE`、`REF_NOT_BE_TYPE`、`MISMATCHED_TYPES_BECAUSE`、`TYPE_INCOMPATIBLE`、
+`INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS` 在全 testData 此前无内联标记；`constraints/` 七个既有夹具、
+`nothingToOverride` / `classNotOpenForInheritance` / `override*` 系列、`declaration-status/staticCannotBeOpenAbstractOverride.cj`
+等已覆盖的部分在各夹具头部逐条列出，不重复。
+
+### 取证结论
+
+- **泛型上界**：报告点集中在 `src/Sema/PreCheck.cpp`（`:923-930` 直接递归、`:932-938` 非类上界里出现形参、`:982-990`
+  多个类上界、`:1005-1011` 上界必须是类或接口）与 `src/Sema/TypeChecker.cpp`（`:1389-1392` 泛型构造器、`:1696-1698`
+  主构造器泛型）、`DeclAttributeChecker.cpp`（`:368` / `:396` 泛型 operator）、`Utils.cpp`（值类型递归）。
+  三段值类型递归的 struct 字段必带 `sema_class_uninitialized_field`，主构造器形态两版 cjc 都是 parse 错误，
+  给初值又触发 `sema_recursive_constructor_call`，官方找不到只留 `VALUE_TYPE_RECURSIVE` 的写法，故伴随诊断按官方写入标记。
+- **CFIR 有而官方 v1.0.0 无同名 kind**：`SHADOW_CANNOT_IN_TYPE_ARGS`、`PRIMITIVE_TYPE_AS_GENERICS_ARG`、
+  `MEET_CONSTRAINT_INDIRECTLY`、`GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA`、`GENERIC_STATIC_ACCESS`、
+  `CONFLICTING_UPPER_BOUNDS`、`REPEATED_BOUND`、`ONLY_ONE_CLASS_BOUND_ALLOWED`、`OVERRIDE_STATIC_ERROR`、
+  `FORBID_GENERIC_NONSTATIC_METHOD`（后者在本项目 `CfirDiagnosticsList.kt` 里根本不存在）。前五个的官方 kind 在
+  v1.0.0 有定义但全仓无报告点或只在 `@Java` 场景（`@Java` 本机两版都是 `sema_undeclared_identifier`），其余未写标记。
+- **override / redef**：`StructInheritanceChecker.cpp:961` / `:988` / `:1006` / `:1022` / `:1052`，
+  可见性规则在 `DeclAttributeChecker.cpp:303-307`（abstract 形态）与 `:310-317`（open 形态），锚点都是成员名首字符。
+  非 refactor kind 锚整条成员声明首字符，refactor kind（可见性）锚成员名——两种口径都在夹具里出现。
+  抽象成员只能写成"无函数体的成员声明"（显式 `abstract` 被 parser 拦），且宿主类必须是 `abstract class`，否则先报
+  `sema_missing_func_body`。
+- **类型引用**：`sema_not_a_type` 报在 `PreCheck.cpp:404` / `:497` / `:724`，`sema_ref_not_be_type` 报在
+  `TypeCheckReference.cpp:626`，`sema_mismatched_types_because` 全仓只有两个 because 非空的调用点
+  （`TypeChecker.cpp:134` 空函数体、`:150` CheckReturnThisInFuncBody），锚整条函数体块；`sema_type_incompatible`
+  在 v1.0.0 **有**同名 kind（`DiagnosticSema.def:107`，5 个报告点），此前任务描述里"grep 未命中"的判断有误。
+  枚举类型当构造器官方没有 `sema_enum_type_cannot_be_used_as_constructor`，实际报 `sema_no_match_operator_function_call`，
+  夹具按官方 kind 写标记，CFIR 名字 `ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR` 在头部单列说明。
+- 1.0.5 与 1.1.3 两版 kind / 消息 / Range 完全一致，三份夹具均未拆 `LANGUAGE_VERSION`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-02 17:0x–17:4x 聚焦跑 Generic / Inheritance / TypeMismatch 三组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `generic/genericBoundRules` | `FORBID_GENERIC_CONSTRUCTOR` 锚 `init` 首字母 1 字符 | 锚 `init` 整词（4 字符），3 处 |
+| `generic/genericBoundRules` | `GENERIC_IN_OPERATOR_OVERLOAD` 锚声明首字符（`public` / `operator` 的 `p` / `o`） | 锚 operator 名 `+`（1 字符），4 处 |
+| `generic/genericBoundRules` | `CLASS_UNINITIALIZED_FIELD` 锚字段声明首字符 `let` 的 `l` | 锚字段名（`self` / `other` / `back` / `pair`），5 处 |
+| `generic/genericBoundRules` 其余 11 个标记 | 与 CFIR 一致 | 绿 |
+| `inheritance/overrideRedefRules` | `REDEF_INSTANCE_ERROR` 锚 `redef` 的 `r` 1 字符 | 锚 `redef` 整词（4 字符） |
+| `inheritance/overrideRedefRules` | `STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME` 锚成员声明首字符（`public` / `open` 的 `p` / `o`） | 锚成员名（`g` / `f` / `x`），3 处 |
+| `inheritance/overrideRedefRules` | 静态 `redef` 无对应父 static 成员：官方 `sema_missing_redefined_func` 锚声明首字符（SUGGESTED 段，不写标记） | CFIR 多报 `NOTHING_TO_OVERRIDE` 锚 `redef`，5 处；实例 `redef func` 命中父类成员时也额外多报一条 `NOTHING_TO_OVERRIDE` |
+| `inheritance/overrideRedefRules` 其余 5 个标记（`INVALID_OVERRIDE_MEMBER_IN_CLASS` ×3、`INVALID_MEMBER_VISIBILITY_IN_CLASS` ×4、`INVALID_MEMBER_VISIBILITY_IN_CLASS` 形态 9/10） | 与 CFIR 一致 | 绿 |
+| `type-mismatch/typeReferenceRules` | `NOT_A_TYPE` / `REF_NOT_BE_TYPE` 锚名称首字母 1 字符 | PSI 路径锚整名（10 处）；LightTree 路径对裸类型名 / 值位置引用一条都不报（10 处） |
+| `type-mismatch/typeReferenceRules` | `NO_MATCH_OPERATOR_FUNCTION_CALL` 锚 `trCalledEnum(1)` 首字符 | 报 `NO_MATCHING_OPERATOR_INVOKE` 锚 `trCalledEnum` 整名 |
+| `type-mismatch/typeReferenceRules` | `MISMATCHED_TYPES_BECAUSE` 锚整条函数体块（跨行） | 报 `RETURN_TYPE_MISMATCH` 锚 `{`，2 处 |
+| `type-mismatch/typeReferenceRules` | `TYPE_INCOMPATIBLE` 锚复合赋值左值首字母（`p` / `u`）、catch 模式变量 `e` | 复合赋值改报 `INVALID_BINARY_OPERATOR` 锚运算符（2 处）；catch 改成锚整条 `catch (e: …)` 子句；LightTree 路径三条都不报 |
+| `type-mismatch/typeReferenceRules` | `INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS` 锚 owner 首字母 `t` | PSI 锚 owner 整名 `trYearEnum`；LightTree 一致 |
+
+PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testData 两个入口），`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated`
+的三个新用例均通过（本次聚焦跑被跳过）。
+
+### 环境与工具事实
+
+- 工作树里的 `gradlew-queue.bat` 首次引导有 PowerShell 语法错误（见 `cangjie-gradle-queue-worktree-bootstrap` 记忆），
+  从主检出复制 `gradle-queue-cli.jar` 后可用；后台 shell 写不进工作树的 `.scratch`，日志统一写 `D:\tmp`。
+- `.scratch/verify_one.py` / `exact_check.py` 把首个 `// FILE:` 之前的头部注释也当一段解析，头部里出现字面 `<!X!>` 会被当成真标记；
+  夹具头部的示例标记一律用文字描述。三份新夹具的头部均无字面标记。
+- 本会话的沙箱对工作树路径的可见性会间歇性丢失（`ls` / Python `os.listdir` 报 `No such file or directory`，重试即恢复）；
+  判定"目录真的不存在"前先重试一次。
