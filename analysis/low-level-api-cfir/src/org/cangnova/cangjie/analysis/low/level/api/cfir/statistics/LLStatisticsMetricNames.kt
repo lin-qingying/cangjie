@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+
 /**
  * Analysis API 统计指标的公开名称视图。
  *
@@ -94,6 +96,21 @@ object LLStatisticsMetricNames {
      */
     val combinedSymbolProviderCallableCacheMisses: String
         get() = LLStatisticsScopes.SymbolProviders.Combined.Callables.misses.name
+
+    /**
+     * 语义解析阶段耗时指标名（毫秒直方图）。
+     */
+    fun resolvePhaseDuration(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.duration(phase)
+
+    /**
+     * 语义解析阶段处理文件数指标名。
+     */
+    fun resolvePhaseFiles(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.files(phase)
+
+    /**
+     * 语义解析阶段执行次数指标名。
+     */
+    fun resolvePhaseRuns(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.runs(phase)
 
     /**
      * 判断指标名是否属于本项目的统计命名空间。

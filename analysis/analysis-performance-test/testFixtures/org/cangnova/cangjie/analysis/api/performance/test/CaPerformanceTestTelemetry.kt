@@ -73,4 +73,44 @@ object CaPerformanceTestTelemetry {
         }
         return counters
     }
+
+    /**
+     * 读取所有直方图指标，返回“指标名 → 采样点数”。
+     *
+     * 采样点数即该指标的记录次数；耗时类指标据此判断“是否被记录过”，
+     * 具体数值用 [collectHistogramSums] 与 [collectHistogramMaxima]。
+     */
+    fun collectHistogramPointCounts(): Map<String, Long> {
+        val counts = LinkedHashMap<String, Long>()
+        inMemoryReader.collectAllMetrics().forEach { metric ->
+            val histogram = metric.histogramData ?: return@forEach
+            counts[metric.name] = (counts[metric.name] ?: 0L) + histogram.points.sumOf { it.count }
+        }
+        return counts
+    }
+
+    /**
+     * 读取所有直方图指标，返回“指标名 → 采样值之和”。
+     */
+    fun collectHistogramSums(): Map<String, Double> {
+        val sums = LinkedHashMap<String, Double>()
+        inMemoryReader.collectAllMetrics().forEach { metric ->
+            val histogram = metric.histogramData ?: return@forEach
+            sums[metric.name] = (sums[metric.name] ?: 0.0) + histogram.points.sumOf { it.sum }
+        }
+        return sums
+    }
+
+    /**
+     * 读取所有直方图指标，返回“指标名 → 最大采样值”。
+     */
+    fun collectHistogramMaxima(): Map<String, Double> {
+        val maxima = LinkedHashMap<String, Double>()
+        inMemoryReader.collectAllMetrics().forEach { metric ->
+            val histogram = metric.histogramData ?: return@forEach
+            val max = histogram.points.maxOfOrNull { if (it.hasMax()) it.max else it.sum } ?: return@forEach
+            maxima[metric.name] = maxOf(maxima[metric.name] ?: Double.NEGATIVE_INFINITY, max)
+        }
+        return maxima
+    }
 }

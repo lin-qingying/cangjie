@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseTimingObserver
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporter
 import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticReporterComponent
@@ -12,6 +13,17 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
 
 /** resolve 阶段处理器注册表，对齐 Kotlin `FirPhaseManager` 的阶段调度入口。 */
 val CfirSession.phaseResolverRegistry: CfirPhaseResolverRegistry by CfirSession.sessionComponentAccessor()
+/**
+ * 语义解析阶段耗时观察者；宿主未注册时为 `null`，解析路径据此跳过计时。
+ */
+val CfirSession.resolvePhaseTimingObserverOrNull: CfirResolvePhaseTimingObserver? by CfirSession.nullableSessionComponentAccessor()
+
+/**
+ * 注册语义解析阶段耗时观察者。
+ */
+fun CfirSession.registerResolvePhaseTimingObserver(observer: CfirResolvePhaseTimingObserver) {
+    register(CfirResolvePhaseTimingObserver::class, observer)
+}
 
 /** 按需声明解析服务。 */
 val CfirSession.lazyDeclarationResolver: CfirLazyDeclarationResolver by CfirSession.sessionComponentAccessor()

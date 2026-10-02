@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.junit.jupiter.api.Test
 
 /**
@@ -37,6 +38,8 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.AnalysisSessions.Caches.ResolveCallCache.Evictions,
             LLStatisticsScopes.AnalysisSessions.Caches.ResolveSymbolCache,
             LLStatisticsScopes.AnalysisSessions.Caches.ResolveToSymbolsCache,
+            LLStatisticsScopes.Resolve,
+            LLStatisticsScopes.Resolve.Phases,
             LLStatisticsScopes.SymbolProviders,
             LLStatisticsScopes.SymbolProviders.Combined,
             LLStatisticsScopes.SymbolProviders.Combined.Classes,
@@ -73,6 +76,29 @@ class LLStatisticsScopesTest {
         assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Classes.misses.name, LLStatisticsMetricNames.combinedSymbolProviderClassCacheMisses)
         assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Callables.hits.name, LLStatisticsMetricNames.combinedSymbolProviderCallableCacheHits)
         assertEquals(LLStatisticsScopes.SymbolProviders.Combined.Callables.misses.name, LLStatisticsMetricNames.combinedSymbolProviderCallableCacheMisses)
+        CfirResolvePhase.entries.forEach { phase ->
+            assertEquals(LLStatisticsScopes.Resolve.Phases.duration(phase), LLStatisticsMetricNames.resolvePhaseDuration(phase))
+            assertEquals(LLStatisticsScopes.Resolve.Phases.files(phase), LLStatisticsMetricNames.resolvePhaseFiles(phase))
+            assertEquals(LLStatisticsScopes.Resolve.Phases.runs(phase), LLStatisticsMetricNames.resolvePhaseRuns(phase))
+        }
+    }
+
+    /**
+     * 阶段指标名由阶段名拼出，必须逐个落在根 scope 下，且带上阶段名。
+     */
+    @Test
+    @OptIn(LLStatisticsOnlyApi::class)
+    fun phaseMetricNamesArePrefixedWithRootAndCarryPhaseName() {
+        CfirResolvePhase.entries.filterNot { it.noProcessor }.forEach { phase ->
+            val expectedSuffix = ".resolve.phases.${phase.name.lowercase()}."
+            listOf(
+                LLStatisticsMetricNames.resolvePhaseDuration(phase),
+                LLStatisticsMetricNames.resolvePhaseFiles(phase),
+                LLStatisticsMetricNames.resolvePhaseRuns(phase),
+            ).forEach { name ->
+                assertTrue(name.startsWith("${LLStatisticsScopes.name}$expectedSuffix"), "阶段指标 $name 命名不符")
+            }
+        }
     }
 
 }
