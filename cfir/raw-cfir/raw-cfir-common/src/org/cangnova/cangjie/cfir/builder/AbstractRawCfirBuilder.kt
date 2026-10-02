@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -152,6 +152,55 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         } else {
             CallableId(packageFqName, name)
         }
+    }
+
+    /**
+     * 成员列表中是否存在非静态构造器。
+     *
+     * 枚举构造项（[CfirEnumConstructor]）不是普通构造器，不参与该判定——它由
+     * [orderClassLikeDeclarations] 通过 [RawClassShape] 的 entries 单独处理。
+     */
+    protected fun List<CfirDeclaration>.hasNonStaticConstructor(): Boolean =
+        any { it is CfirConstructor && !it.status.isStatic }
+
+    /**
+     * class-like 声明的形状：与前端无关，由各前端在进入成员转换前一次性算出。
+     *
+     * 形状只描述"事实"，不描述"遍历结果"。成员顺序决策统一由
+     * [orderClassLikeDeclarations] 承担，两套前端不得各自实现。
+     *
+     * @property classKind class-like 的种类。
+     * @property hasExplicitPrimaryConstructor 源码是否已显式声明主构造器。
+     */
+    protected data class RawClassShape(
+        val classKind: CfirClassKind,
+        val hasExplicitPrimaryConstructor: Boolean,
+    )
+
+    /**
+     * class-like 成员的唯一排序决策：枚举项 → 隐式主构造器 → 普通成员。
+     *
+     * 官方 `EnumDecl` 把枚举构造项（`constructors`）与普通成员（`members`）建模为两个
+     * 不相交的集合，本函数据此让枚举项整体前置，隐式主构造器紧随其后。顺序由构造式
+     * 表达，不再依赖 `takeWhile` 之类的顺序推断。
+     *
+     * @param shape 当前 class-like 的形状。
+     * @param entries 枚举构造项；非枚举时为空。
+     * @param members 普通成员。
+     * @param buildImplicitInit 合成隐式主构造器的回调。
+     */
+    protected fun orderClassLikeDeclarations(
+        shape: RawClassShape,
+        entries: List<CfirDeclaration>,
+        members: List<CfirDeclaration>,
+        buildImplicitInit: () -> CfirDeclaration,
+    ): List<CfirDeclaration> {
+        val implicitInit = when {
+            shape.classKind == CfirClassKind.INTERFACE -> emptyList()
+            shape.hasExplicitPrimaryConstructor -> emptyList()
+            else -> listOf(buildImplicitInit())
+        }
+        return if (entries.isEmpty()) implicitInit + members else entries + implicitInit + members
     }
 
     /**

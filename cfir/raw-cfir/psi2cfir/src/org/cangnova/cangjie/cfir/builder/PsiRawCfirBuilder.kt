@@ -799,12 +799,14 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                                convertClassMembers(psi).toMutableList().also { declarations ->
-                                    addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                        declarations.add(0, buildImplicitPrimaryConstructor(psi))
-                                    }
-                                }
+                                val members = convertClassMembers(psi).toMutableList()
+                                    addPrimaryConstructorParameterProperties(psi, members)
+                                    orderClassLikeDeclarations(
+                                        shape = RawClassShape(classKind, members.hasNonStaticConstructor()),
+                                        entries = emptyList(),
+                                        members = members,
+                                        buildImplicitInit = { buildImplicitPrimaryConstructor(psi) },
+                                    )
                             }
                             typeParameters to declarations
                         }
@@ -852,12 +854,14 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                                convertClassMembers(psi).toMutableList().also { declarations ->
-                                    addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                        declarations.add(0, buildImplicitPrimaryConstructor(psi))
-                                    }
-                                }
+                                val members = convertClassMembers(psi).toMutableList()
+                                    addPrimaryConstructorParameterProperties(psi, members)
+                                    orderClassLikeDeclarations(
+                                        shape = RawClassShape(CfirClassKind.STRUCT, members.hasNonStaticConstructor()),
+                                        entries = emptyList(),
+                                        members = members,
+                                        buildImplicitInit = { buildImplicitPrimaryConstructor(psi) },
+                                    )
                             }
                             typeParameters to declarations
                         }
@@ -881,16 +885,31 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                                convertClassMembers(psi).toMutableList().also { declarations ->
-                                    addPrimaryConstructorParameterProperties(psi, declarations)
-                                    if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                        // 枚举构造项占据声明列表的源码前缀；隐式 init 位于它们与普通成员之间。
-                                        declarations.add(
-                                            declarations.takeWhile { it is CfirEnumConstructor }.size,
-                                            buildImplicitPrimaryConstructor(psi),
-                                        )
+                                val members = convertClassMembers(psi).toMutableList()
+                                    addPrimaryConstructorParameterProperties(psi, members)
+                                    // 官方 EnumDecl 把枚举项(constructors)与普通成员(members)建模为
+                                    // 两个不相交集合；隐式 init 位于两者之间，顺序由决策函数唯一确定。
+                                    val enumEntries = members.filterIsInstance<CfirEnumConstructor>()
+                                    val plainMembers = members.filterNot { it is CfirEnumConstructor }
+                                    // 自检：通用遍历必须覆盖 PSI 声明的全部枚举构造项。条目数量对不上，
+                                    // 说明 PSI 形状与"枚举项是 body 成员"的遍历前提已经脱节；必须立即
+                                    // 暴露，而不是静默产出缺项的 IR——下游只会看到一个与病因相距很远的
+                                    // 类型错误。
+                                    val declaredEntries = (psi as? org.cangnova.cangjie.psi.CjEnum)?.constructor.orEmpty()
+                                    check(enumEntries.size == declaredEntries.size) {
+                                        "enum ${psi.name}: 通用遍历得到 ${enumEntries.size} 个枚举构造项，" +
+                                            "但 PSI 声明了 ${declaredEntries.size} 个" +
+                                            "(${declaredEntries.map { it.name }})"
                                     }
-                                }
+                                    orderClassLikeDeclarations(
+                                        shape = RawClassShape(
+                                            CfirClassKind.ENUM,
+                                            plainMembers.hasNonStaticConstructor(),
+                                        ),
+                                        entries = enumEntries,
+                                        members = plainMembers,
+                                        buildImplicitInit = { buildImplicitPrimaryConstructor(psi) },
+                                    )
                             }
                             typeParameters to declarations
                         }

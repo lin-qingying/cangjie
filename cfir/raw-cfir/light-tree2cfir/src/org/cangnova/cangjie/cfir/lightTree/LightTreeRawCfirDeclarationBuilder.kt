@@ -421,12 +421,14 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            withEnclosingClassModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                    declarations.add(0, buildImplicitPrimaryConstructor(node))
-                                }
-                            }
+                            val members = withEnclosingClassModifiers(modifiers) { extractClassMembers(node, name) }.toMutableList()
+                                addPrimaryConstructorParameterProperties(node, members)
+                                orderClassLikeDeclarations(
+                                    shape = RawClassShape(CfirClassKind.CLASS, members.hasNonStaticConstructor()),
+                                    entries = emptyList(),
+                                    members = members,
+                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
+                                )
                         }
                         typeParameters to declarations
                     }
@@ -472,12 +474,14 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            extractClassMembers(node, name).toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                    declarations.add(0, buildImplicitPrimaryConstructor(node))
-                                }
-                            }
+                            val members = extractClassMembers(node, name).toMutableList()
+                                addPrimaryConstructorParameterProperties(node, members)
+                                orderClassLikeDeclarations(
+                                    shape = RawClassShape(CfirClassKind.STRUCT, members.hasNonStaticConstructor()),
+                                    entries = emptyList(),
+                                    members = members,
+                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
+                                )
                         }
                         typeParameters to declarations
                     }
@@ -500,15 +504,21 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = withDispatchReceiverType(symbol.rawDispatchReceiverType(typeParameters)) {
-                            extractClassMembers(node, name).toMutableList().also { declarations ->
-                                addPrimaryConstructorParameterProperties(node, declarations)
-                                if (declarations.none { it is CfirConstructor && !it.status.isStatic }) {
-                                    declarations.add(
-                                        declarations.takeWhile { it is CfirEnumConstructor }.size,
-                                        buildImplicitPrimaryConstructor(node),
-                                    )
-                                }
-                            }
+                            val members = extractClassMembers(node, name).toMutableList()
+                                addPrimaryConstructorParameterProperties(node, members)
+                                // 官方 EnumDecl 把枚举项(constructors)与普通成员(members)建模为
+                                // 两个不相交集合；隐式 init 位于两者之间，顺序由决策函数唯一确定。
+                                val enumEntries = members.filterIsInstance<CfirEnumConstructor>()
+                                val plainMembers = members.filterNot { it is CfirEnumConstructor }
+                                orderClassLikeDeclarations(
+                                    shape = RawClassShape(
+                                        CfirClassKind.ENUM,
+                                        plainMembers.hasNonStaticConstructor(),
+                                    ),
+                                    entries = enumEntries,
+                                    members = plainMembers,
+                                    buildImplicitInit = { buildImplicitPrimaryConstructor(node) },
+                                )
                         }
                         typeParameters to declarations
                     }
