@@ -94,6 +94,7 @@ CFIR2CHIR → CODEGEN
 **测试基建与套件**
 - `:tests` / `:tests:test-infrastructure` — Kotlin 风格 Directive/TestServices/配置 DSL
 - `:cfir:analysis-tests` — CFIR 分析测试套件
+- `:analysis:analysis-performance-test` — Analysis API 性能/统计测试入口（OpenTelemetry SDK、统计断言基类）
 
 **Prepare / 发布工件**
 - `:prepare:frontend` / `:prepare:frontend-embeddable`

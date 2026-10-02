@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.platform.caches
 
 import com.github.benmanes.caffeine.cache.Cache
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import java.util.concurrent.ConcurrentMap
 
 /**
@@ -36,7 +37,13 @@ inline fun <K : Any, R> ConcurrentMap<K, Any>.getOrPutWithNullableValue(
  * 在 Caffeine [Cache] 中缓存允许为 null 的计算结果。
  */
 @CaImplementationDetail
+@OptIn(CaPlatformInterface::class)
 inline fun <K : Any, R> Cache<K, Any>.getOrPutWithNullableValue(
     key: K,
     crossinline compute: (K) -> Any?,
-): R = asMap().getOrPutWithNullableValue(key) { compute(key) }
+): R {
+    // 这里不能用 `asMap().getOrPutWithNullableValue`：那样会绕过 Caffeine 的命中/未命中记录，
+    // 接入 StatsCounter 的缓存指标（analysisSessions.caches.*）将恒为 0。
+    val value = getOrPut(key) { compute(key) ?: NullValue }
+    return value.nullValueToNull()
+}

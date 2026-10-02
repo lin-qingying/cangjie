@@ -123,6 +123,9 @@ include(":analysis:analysis-tools")
 
 
 include(":analysis:analysis-test-framework")
+
+// Analysis API 性能/统计测试入口：独立模块承载 OpenTelemetry SDK 与统计断言基类
+include(":analysis:analysis-performance-test")
 include(":tests")
 include(":tests:test-infrastructure")
 
