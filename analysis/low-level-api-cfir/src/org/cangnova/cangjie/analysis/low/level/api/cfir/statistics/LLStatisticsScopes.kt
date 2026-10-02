@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 
 /**
  * OpenTelemetry 指标 scope 名称。
@@ -182,6 +183,34 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
                  */
                 override val evictions: LLStatisticsScope get() = Evictions
             }
+        }
+    }
+
+    /**
+     * 语义解析（resolve）阶段指标。
+     *
+     * 每个阶段按 `duration`（毫秒直方图）、`files`（该阶段处理的文件数）、`runs`（该阶段执行次数）
+     * 三个后缀命名，阶段名取 [CfirResolvePhase] 的小写形式。
+     */
+    object Resolve : LLStatisticsScope("$name.resolve") {
+        /**
+         * 语义解析阶段指标集合。
+         */
+        object Phases : LLStatisticsScope("$name.phases") {
+            /**
+             * 阶段耗时（毫秒）。
+             */
+            fun duration(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.duration"
+
+            /**
+             * 阶段处理的文件数。
+             */
+            fun files(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.files"
+
+            /**
+             * 阶段执行次数。
+             */
+            fun runs(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}.runs"
         }
     }
 
