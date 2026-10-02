@@ -74,6 +74,13 @@ public class: $
 public companion object
 Companion.public fun create(session: CaSession, psi: PsiElement): CaBaseIllegalPsiException
 Companion.public fun <T> allowIllegalPsiAccess(action: () -> T): T
+## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseResolver.kt
+package org.cangnova.cangjie.analysis.api.impl.base.components
+public abstract class CaBaseResolver<S : CaSession>( final override val analysisSessionProvider: () -> S, ) : CaBaseSessionComponent<S>(), CaResolver
+CaBaseResolver.public final override fun CjElement.resolveToCall(): CaCallInfo?
+CaBaseResolver.public final override fun CjElement.tryResolveSymbols(): CaSymbolResolutionAttempt?
+CaBaseResolver.public final override fun CjElement.resolveSymbols(): Collection<CaSymbol>
+CaBaseResolver.public final override fun CjElement.resolveSymbol(): CaSymbol?
 ## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseSessionComponent.kt
 package org.cangnova.cangjie.analysis.api.impl.base.components
 public abstract class CaBaseSessionComponent<T : CaSession> : CaSessionComponent

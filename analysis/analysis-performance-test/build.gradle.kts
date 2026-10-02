@@ -14,6 +14,7 @@ allprojects {
             listOf(
                 "org.cangnova.cangjie.analysis.api.CaPlatformInterface",
                 "org.cangnova.cangjie.analysis.api.CaImplementationDetail",
+                "org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi",
             )
         )
     }
