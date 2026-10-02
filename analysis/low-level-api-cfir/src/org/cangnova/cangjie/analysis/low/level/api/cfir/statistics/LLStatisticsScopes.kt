@@ -7,8 +7,11 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 
 /**
@@ -224,44 +227,65 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
     /**
      * raw CFIR 构建指标。
      *
-     * 按前端来源分段命名：`<source>.duration`（毫秒直方图）与 `<source>.runs`（构建次数），
-     * 来源段取 [CfirRawBuildSource.metricSuffix]。
+     * 按「前端来源 × 流水线阶段」分段命名：`<source>.<stage>.duration`（毫秒直方图）
+     * 与 `<source>.<stage>.runs`（执行次数），两段分别取
+     * [CfirRawBuildSource.metricSuffix] 与 [CfirRawBuildStage.metricSuffix]。
+     * 阶段维度是必需的：IDE 首开卡顿必须能区分解析慢与转换慢。
      */
     object RawBuild : LLStatisticsScope("$name.rawBuild") {
         /**
-         * 来源段前缀。
+         * `来源.阶段` 段前缀。
          */
-        fun source(source: CfirRawBuildSource): String = "${name}.${source.metricSuffix}"
+        fun segment(source: CfirRawBuildSource, stage: CfirRawBuildStage): String =
+            "${name}.${source.metricSuffix}.${stage.metricSuffix}"
 
         /**
-         * 单文件 raw 构建耗时（毫秒）。
+         * 单次阶段执行耗时（毫秒）。
          */
-        fun duration(source: CfirRawBuildSource): String = "${source(source)}.duration"
+        fun duration(source: CfirRawBuildSource, stage: CfirRawBuildStage): String = "${segment(source, stage)}.duration"
 
         /**
-         * raw 构建次数。
+         * 阶段执行次数。
          */
-        fun runs(source: CfirRawBuildSource): String = "${source(source)}.runs"
+        fun runs(source: CfirRawBuildSource, stage: CfirRawBuildStage): String = "${segment(source, stage)}.runs"
     }
 
     /**
      * macro construction 指标。
+     *
+     * construction 主流程分三段（[CfirMacroConstructionStage]），每段各有耗时与次数；
+     * 展开段额外记结果归类、覆盖文件数与宏 surface 数。
      */
     object Macro : LLStatisticsScope("$name.macro") {
         /**
-         * construction 指标集合。
+         * construction 阶段的耗时与次数，两段指标名一致。
          */
-        object Expand : LLStatisticsScope("$name.expand") {
+        abstract class StageMetrics(name: String) : LLStatisticsScope(name) {
             /**
-             * construction 耗时（毫秒）。
+             * 本阶段耗时（毫秒）。
              */
             fun duration(): String = "$name.duration"
 
             /**
-             * construction 次数。
+             * 本阶段执行次数。
              */
             fun runs(): String = "$name.runs"
+        }
 
+        /**
+         * 阶段 1/3：符号索引构建。
+         */
+        object SymbolIndex : StageMetrics("$name.symbolIndex")
+
+        /**
+         * 阶段 2/3：import 绑定。
+         */
+        object ImportBinding : StageMetrics("$name.importBinding")
+
+        /**
+         * 阶段 3/3：真实展开。
+         */
+        object Expansion : StageMetrics("$name.expansion") {
             /**
              * construction 覆盖的 pre-macro 文件数。
              */
@@ -276,6 +300,134 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              * 按结果归类的次数。
              */
             fun outcome(outcome: CfirMacroExpansionOutcome): String = "$name.${outcome.metricSuffix}"
+        }
+
+        /**
+         * 阶段 scope，按 [CfirMacroConstructionStage] 取。
+         */
+        fun stage(stage: CfirMacroConstructionStage): StageMetrics = when (stage) {
+            CfirMacroConstructionStage.SYMBOL_INDEX -> SymbolIndex
+            CfirMacroConstructionStage.IMPORT_BINDING -> ImportBinding
+            CfirMacroConstructionStage.EXPANSION -> Expansion
+        }
+    }
+
+    /**
+     * IDE 请求级诊断收集指标。
+     *
+     * 四个维度回答四个问题：用户等待的端到端耗时（`collection`）、高频元素查询
+     * （`elementCollection`）、文件结构首次构建（`structureBuild`）、checker 实际遍历
+     * （`checkerPass.<set>`）。`collection` 包含后两者，总量与分解同时可见。
+     */
+    object Diagnostics : LLStatisticsScope("$name.diagnostics") {
+        /**
+         * 耗时、次数与产出诊断数三个指标。
+         */
+        abstract class OperationMetrics(name: String) : LLStatisticsScope(name) {
+            /**
+             * 本项操作耗时（毫秒）。
+             */
+            fun duration(): String = "$name.duration"
+
+            /**
+             * 本项操作次数。
+             */
+            fun runs(): String = "$name.runs"
+
+            /**
+             * 本项操作产出的诊断数。
+             */
+            fun diagnostics(): String = "$name.diagnostics"
+        }
+
+        /**
+         * 文件级 `collectDiagnostics`。
+         */
+        object Collection : OperationMetrics("$name.collection")
+
+        /**
+         * 元素级 `getDiagnostics`。
+         */
+        object ElementCollection : OperationMetrics("$name.elementCollection")
+
+        /**
+         * 文件结构首次构建。
+         */
+        object StructureBuild : OperationMetrics("$name.structureBuild")
+
+        /**
+         * 单个 structure element 上某个 checker 集合的遍历。
+         */
+        object CheckerPass : LLStatisticsScope("$name.checkerPass") {
+            /**
+             * 集合段前缀。
+             */
+            fun set(set: CaDiagnosticCheckerSet): String = "${name}.${set.metricSuffix}"
+
+            /**
+             * 某 checker 集合的遍历耗时（毫秒）。
+             */
+            fun duration(set: CaDiagnosticCheckerSet): String = "${set(set)}.duration"
+
+            /**
+             * 某 checker 集合的遍历次数。
+             */
+            fun runs(set: CaDiagnosticCheckerSet): String = "${set(set)}.runs"
+
+            /**
+             * 某 checker 集合产出的诊断数。
+             */
+            fun diagnostics(set: CaDiagnosticCheckerSet): String = "${set(set)}.diagnostics"
+        }
+    }
+
+    /**
+     * session 创建指标，按模块种类分桶。
+     */
+    object SessionCreation : LLStatisticsScope("$name.sessionCreation") {
+        /**
+         * 种类段前缀。
+         */
+        fun kind(kind: CaModuleKind): String = "${name}.${kind.metricSuffix}"
+
+        /**
+         * 某类模块的 session 创建耗时（毫秒）。
+         */
+        fun duration(kind: CaModuleKind): String = "${kind(kind)}.duration"
+
+        /**
+         * 某类模块的 session 创建次数。
+         */
+        fun runs(kind: CaModuleKind): String = "${kind(kind)}.runs"
+    }
+
+    /**
+     * scope 会话指标。
+     */
+    object Scopes : LLStatisticsScope("$name.scopes") {
+        /**
+         * scope session 创建次数（scope 缓存未命中与失效重建）。
+         */
+        fun sessionCreated(): String = "$name.sessionCreated"
+    }
+
+    /**
+     * stub 反序列化指标。
+     */
+    object Deserialization : LLStatisticsScope("$name.deserialization") {
+        /**
+         * class-like 反序列化指标集合。
+         */
+        object ClassLike : LLStatisticsScope("$name.classLike") {
+            /**
+             * 反序列化耗时（毫秒）。
+             */
+            fun duration(): String = "$name.duration"
+
+            /**
+             * 反序列化次数。
+             */
+            fun runs(): String = "$name.runs"
         }
     }
 

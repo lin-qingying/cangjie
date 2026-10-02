@@ -93,7 +93,7 @@ class CangjieWorkspaceService(
         if (!serverContext.enabledFeatures.workspaceSymbol) {
             return CompletableFuture.completedFuture(Either.forLeft(emptyList()))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.WORKSPACE_SYMBOL) {
             serverContext.analysisFacade.workspaceSymbols(serverContext.requestContext(), params)
         }.also { it.thenAccept { logger.info("<==== symbol") } }
     }
@@ -108,7 +108,7 @@ class CangjieWorkspaceService(
         if (!serverContext.enabledFeatures.diagnostics) {
             return CompletableFuture.completedFuture(WorkspaceDiagnosticReport(emptyList()))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.WORKSPACE_DIAGNOSTIC) {
             val context = serverContext.requestContext()
             WorkspaceDiagnosticReport(serverContext.analysisFacade.collectWorkspaceDiagnostics(context))
         }.also { it.thenAccept { logger.info("<==== diagnostic (workspace)") } }

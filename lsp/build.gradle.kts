@@ -15,7 +15,10 @@ dependencies {
     implementation(project(":analysis:analysis-api-cfir"))
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-api-standalone"))
+    implementation(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":analysis:cj-references"))
+    // 请求级统计与 analysis 侧共用同一个 OpenTelemetry 后端实例，因此只需要 API。
+    implementation(libs.opentelemetry.api)
     implementation(project(":code-insight:formatting"))
     implementation(project(":code-insight:folding"))
     implementation(project(":code-insight:highlighting"))

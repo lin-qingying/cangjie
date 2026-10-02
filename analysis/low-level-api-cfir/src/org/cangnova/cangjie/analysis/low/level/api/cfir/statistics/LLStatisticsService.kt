@@ -13,9 +13,12 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
-import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroExpansionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroConstructionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLRawBuildStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLResolvePhaseStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSessionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLStatisticsDomain
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSymbolProviderStatistics
 
@@ -56,14 +59,42 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     val rawBuild: LLRawBuildStatistics = LLRawBuildStatistics(this)
 
     /**
-     * macro construction 耗时统计域；各 session 注册的宏展开观察者即指向该域。
+     * macro construction 耗时统计域；各 session 注册的宏构造观察者即指向该域。
      */
-    val macroExpansion: LLMacroExpansionStatistics = LLMacroExpansionStatistics(this)
+    val macroConstruction: LLMacroConstructionStatistics = LLMacroConstructionStatistics(this)
+
+    /**
+     * IDE 请求级诊断收集耗时统计域。
+     *
+     * 这三个域（诊断、session 创建、stub 反序列化）不由 session 观察者驱动，而是被调用方
+     * 直接持有：它们的位置都在 low-level 模块内，与本服务同模块，无需绕 session component。
+     */
+    val diagnostics: LLDiagnosticsStatistics = LLDiagnosticsStatistics(this)
+
+    /**
+     * session 创建与 scope session 统计域。
+     */
+    val sessions: LLSessionStatistics = LLSessionStatistics(this)
+
+    /**
+     * stub 反序列化统计域。
+     */
+    val deserialization: LLDeserializationStatistics = LLDeserializationStatistics(this)
 
     /**
      * 当前服务管理的所有统计域。
      */
-    internal val domains: List<LLStatisticsDomain> = listOf(analysisSessions, symbolProviders, resolvePhases, rawBuild, macroExpansion)
+    internal val domains: List<LLStatisticsDomain> =
+        listOf(
+            analysisSessions,
+            symbolProviders,
+            resolvePhases,
+            rawBuild,
+            macroConstruction,
+            diagnostics,
+            sessions,
+            deserialization,
+        )
 
     @OptIn(CaPlatformInterface::class)
     /**

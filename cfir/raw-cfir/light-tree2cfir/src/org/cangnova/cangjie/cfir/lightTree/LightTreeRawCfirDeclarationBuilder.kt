@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.CfirFeaturesDirective
 import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.builder.Context
 import org.cangnova.cangjie.cfir.builder.measureRawBuild
 import org.cangnova.cangjie.cfir.builder.rawBuildTimingObserverOrNull
@@ -191,7 +192,7 @@ class LightTreeRawCfirDeclarationBuilder(
     ): CfirFile {
         // LightTree 路径的 raw 构建耗时：宿主注册观察者时才取单调时钟，否则直接构建。
         val observer = baseSession.rawBuildTimingObserverOrNull
-        return observer.measureRawBuild(CfirRawBuildSource.LIGHT_TREE, bodyBuildingMode) {
+        return observer.measureRawBuild(CfirRawBuildSource.LIGHT_TREE, CfirRawBuildStage.CONVERT, bodyBuildingMode) {
             buildCfirFileContent(file, sourceFile, linesMapping)
         }
     }

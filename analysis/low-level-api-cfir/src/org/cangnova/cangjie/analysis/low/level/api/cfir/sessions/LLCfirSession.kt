@@ -11,7 +11,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
-import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroExpansionTimingObserver
+import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.registerResolvePhaseTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
@@ -63,7 +63,7 @@ abstract class LLCfirSession(
         LLStatisticsService.getInstance(caModule.project)?.let { statisticsService ->
             registerResolvePhaseTimingObserver(statisticsService.resolvePhases)
             registerRawBuildTimingObserver(statisticsService.rawBuild)
-            registerMacroExpansionTimingObserver(statisticsService.macroExpansion)
+            registerMacroConstructionTimingObserver(statisticsService.macroConstruction)
         }
     }
 

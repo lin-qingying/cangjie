@@ -11,7 +11,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
+import kotlin.time.TimeSource
 
 /**
  * 对单个 CFIR structure element 执行 diagnostics 收集并返回按 PSI 元素索引的结果。
@@ -20,6 +22,7 @@ internal fun collectForStructureElement(
     cfirDeclaration: CfirDeclaration,
     filter: DiagnosticCheckerFilter,
     createVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
+    diagnosticsStatistics: LLDiagnosticsStatistics?,
 ): FileStructureElementDiagnosticList {
     val session = cfirDeclaration.moduleData.session
     val reporter = LLCfirDiagnosticReporter(
@@ -30,10 +33,18 @@ internal fun collectForStructureElement(
         createVisitor,
         filter,
     )
+    // 组合 filter（多个 checker 集合同时启用）在 checkerSet 上没有唯一取值，此时不上报
+    // checkerPass，而不是把它算进某个集合里给出错误的归因。
+    val checkerSet = filter.checkerSet
+    val startedAt = if (diagnosticsStatistics != null && checkerSet != null) TimeSource.Monotonic.markNow() else null
     collector.collectDiagnostics(cfirDeclaration, reporter)
     val source = cfirDeclaration.source
     if (source != null) {
         reporter.checkAndCommitReportsOn(source, context = DiagnosticContext.Default, commitEverything = true)
     }
-    return FileStructureElementDiagnosticList(reporter.committedDiagnostics)
+    val diagnostics = reporter.committedDiagnostics
+    if (startedAt != null && checkerSet != null) {
+        diagnosticsStatistics!!.onCheckerPassFinished(checkerSet, startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
+    }
+    return FileStructureElementDiagnosticList(diagnostics)
 }

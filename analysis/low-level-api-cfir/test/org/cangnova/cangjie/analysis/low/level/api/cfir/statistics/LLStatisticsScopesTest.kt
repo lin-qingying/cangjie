@@ -2,9 +2,12 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 import org.junit.jupiter.api.Test
 
@@ -44,7 +47,18 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.Resolve.Phases,
             LLStatisticsScopes.RawBuild,
             LLStatisticsScopes.Macro,
-            LLStatisticsScopes.Macro.Expand,
+            LLStatisticsScopes.Macro.SymbolIndex,
+            LLStatisticsScopes.Macro.ImportBinding,
+            LLStatisticsScopes.Macro.Expansion,
+            LLStatisticsScopes.Diagnostics,
+            LLStatisticsScopes.Diagnostics.Collection,
+            LLStatisticsScopes.Diagnostics.ElementCollection,
+            LLStatisticsScopes.Diagnostics.StructureBuild,
+            LLStatisticsScopes.Diagnostics.CheckerPass,
+            LLStatisticsScopes.SessionCreation,
+            LLStatisticsScopes.Scopes,
+            LLStatisticsScopes.Deserialization,
+            LLStatisticsScopes.Deserialization.ClassLike,
             LLStatisticsScopes.SymbolProviders,
             LLStatisticsScopes.SymbolProviders.Combined,
             LLStatisticsScopes.SymbolProviders.Combined.Classes,
@@ -88,16 +102,72 @@ class LLStatisticsScopesTest {
             assertEquals(LLStatisticsScopes.Resolve.Phases.runs(phase), LLStatisticsMetricNames.resolvePhaseRuns(phase))
         }
         CfirRawBuildSource.entries.forEach { source ->
-            assertEquals(LLStatisticsScopes.RawBuild.duration(source), LLStatisticsMetricNames.rawBuildDuration(source))
-            assertEquals(LLStatisticsScopes.RawBuild.runs(source), LLStatisticsMetricNames.rawBuildRuns(source))
+            CfirRawBuildStage.entries.forEach { stage ->
+                assertEquals(
+                    LLStatisticsScopes.RawBuild.duration(source, stage),
+                    LLStatisticsMetricNames.rawBuildDuration(source, stage),
+                )
+                assertEquals(
+                    LLStatisticsScopes.RawBuild.runs(source, stage),
+                    LLStatisticsMetricNames.rawBuildRuns(source, stage),
+                )
+            }
         }
-        assertEquals(LLStatisticsScopes.Macro.Expand.duration(), LLStatisticsMetricNames.macroExpandDuration)
-        assertEquals(LLStatisticsScopes.Macro.Expand.runs(), LLStatisticsMetricNames.macroExpandRuns)
-        assertEquals(LLStatisticsScopes.Macro.Expand.files(), LLStatisticsMetricNames.macroExpandFiles)
-        assertEquals(LLStatisticsScopes.Macro.Expand.surfaces(), LLStatisticsMetricNames.macroExpandSurfaces)
+        CfirMacroConstructionStage.entries.forEach { stage ->
+            assertEquals(LLStatisticsScopes.Macro.stage(stage).duration(), LLStatisticsMetricNames.macroConstructionDuration(stage))
+            assertEquals(LLStatisticsScopes.Macro.stage(stage).runs(), LLStatisticsMetricNames.macroConstructionRuns(stage))
+        }
+        assertEquals(LLStatisticsScopes.Macro.Expansion.files(), LLStatisticsMetricNames.macroExpandFiles)
+        assertEquals(LLStatisticsScopes.Macro.Expansion.surfaces(), LLStatisticsMetricNames.macroExpandSurfaces)
         CfirMacroExpansionOutcome.entries.forEach { outcome ->
-            assertEquals(LLStatisticsScopes.Macro.Expand.outcome(outcome), LLStatisticsMetricNames.macroExpandOutcome(outcome))
+            assertEquals(LLStatisticsScopes.Macro.Expansion.outcome(outcome), LLStatisticsMetricNames.macroExpandOutcome(outcome))
         }
+        assertEquals(LLStatisticsScopes.Diagnostics.Collection.duration(), LLStatisticsMetricNames.diagnosticsCollectionDuration)
+        assertEquals(LLStatisticsScopes.Diagnostics.Collection.runs(), LLStatisticsMetricNames.diagnosticsCollectionRuns)
+        assertEquals(LLStatisticsScopes.Diagnostics.Collection.diagnostics(), LLStatisticsMetricNames.diagnosticsCollectionDiagnostics)
+        assertEquals(LLStatisticsScopes.Diagnostics.ElementCollection.duration(), LLStatisticsMetricNames.diagnosticsElementCollectionDuration)
+        assertEquals(LLStatisticsScopes.Diagnostics.ElementCollection.runs(), LLStatisticsMetricNames.diagnosticsElementCollectionRuns)
+        assertEquals(LLStatisticsScopes.Diagnostics.StructureBuild.duration(), LLStatisticsMetricNames.diagnosticsStructureBuildDuration)
+        assertEquals(LLStatisticsScopes.Diagnostics.StructureBuild.runs(), LLStatisticsMetricNames.diagnosticsStructureBuildRuns)
+        CaDiagnosticCheckerSet.entries.forEach { set ->
+            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.duration(set), LLStatisticsMetricNames.diagnosticsCheckerPassDuration(set))
+            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.runs(set), LLStatisticsMetricNames.diagnosticsCheckerPassRuns(set))
+            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.diagnostics(set), LLStatisticsMetricNames.diagnosticsCheckerPassDiagnostics(set))
+        }
+        CaModuleKind.entries.filter { it != CaModuleKind.UNKNOWN }.forEach { kind ->
+            assertEquals(LLStatisticsScopes.SessionCreation.duration(kind), LLStatisticsMetricNames.sessionCreationDuration(kind))
+            assertEquals(LLStatisticsScopes.SessionCreation.runs(kind), LLStatisticsMetricNames.sessionCreationRuns(kind))
+        }
+        assertEquals(LLStatisticsScopes.Scopes.sessionCreated(), LLStatisticsMetricNames.scopeSessionsCreated)
+        assertEquals(LLStatisticsScopes.Deserialization.ClassLike.duration(), LLStatisticsMetricNames.deserializationClassLikeDuration)
+        assertEquals(LLStatisticsScopes.Deserialization.ClassLike.runs(), LLStatisticsMetricNames.deserializationClassLikeRuns)
+    }
+
+    /**
+     * 模块种类的 JFR 编号是对外契约：既有消费者按这些数字分类，改动会让历史事件错位。
+     */
+    @Test
+    fun moduleKindJfrCodesStayStable() {
+        val expected = mapOf(
+            CaModuleKind.SOURCE to 0.toByte(),
+            CaModuleKind.DANGLING_FILE to 1.toByte(),
+            CaModuleKind.NOT_UNDER_CONTENT_ROOT to 2.toByte(),
+            CaModuleKind.FALLBACK_DEPENDENCIES to 3.toByte(),
+            CaModuleKind.LIBRARY to 4.toByte(),
+            CaModuleKind.LIBRARY_SOURCE to 5.toByte(),
+            CaModuleKind.BUILTINS to 6.toByte(),
+            CaModuleKind.UNKNOWN to (-1).toByte(),
+        )
+        assertEquals(expected, CaModuleKind.entries.associateWith { it.jfrCode })
+    }
+
+    /**
+     * 指标段必须与模块种类一一对应：漏登记会让该类别的 session 创建既不记耗时也不记次数。
+     */
+    @Test
+    fun sessionCreationScopesAreUniquePerModuleKind() {
+        val mapped = CaModuleKind.entries.filter { it != CaModuleKind.UNKNOWN }.associateWith { LLStatisticsScopes.SessionCreation.duration(it) }
+        assertEquals(mapped.size, mapped.values.toSet().size, "每个已知模块种类必须有独立的 session 创建 scope")
     }
 
     /**
@@ -107,15 +177,36 @@ class LLStatisticsScopesTest {
     @OptIn(LLStatisticsOnlyApi::class)
     fun rawBuildAndMacroMetricNamesArePrefixedWithRoot() {
         CfirRawBuildSource.entries.forEach { source ->
-            assertEquals("${LLStatisticsScopes.name}.rawBuild.${source.metricSuffix}.duration", LLStatisticsMetricNames.rawBuildDuration(source))
-            assertEquals("${LLStatisticsScopes.name}.rawBuild.${source.metricSuffix}.runs", LLStatisticsMetricNames.rawBuildRuns(source))
+            CfirRawBuildStage.entries.forEach { stage ->
+                val expected = "${LLStatisticsScopes.name}.rawBuild.${source.metricSuffix}.${stage.metricSuffix}"
+                assertEquals("$expected.duration", LLStatisticsMetricNames.rawBuildDuration(source, stage))
+                assertEquals("$expected.runs", LLStatisticsMetricNames.rawBuildRuns(source, stage))
+            }
         }
-        assertEquals("${LLStatisticsScopes.name}.macro.expand.duration", LLStatisticsMetricNames.macroExpandDuration)
-        assertEquals("${LLStatisticsScopes.name}.macro.expand.runs", LLStatisticsMetricNames.macroExpandRuns)
-        assertEquals("${LLStatisticsScopes.name}.macro.expand.files", LLStatisticsMetricNames.macroExpandFiles)
-        assertEquals("${LLStatisticsScopes.name}.macro.expand.surfaces", LLStatisticsMetricNames.macroExpandSurfaces)
+        CfirMacroConstructionStage.entries.forEach { stage ->
+            val expected = "${LLStatisticsScopes.name}.macro.${stage.metricSuffix}"
+            assertEquals("$expected.duration", LLStatisticsMetricNames.macroConstructionDuration(stage))
+            assertEquals("$expected.runs", LLStatisticsMetricNames.macroConstructionRuns(stage))
+        }
+        assertEquals("${LLStatisticsScopes.name}.macro.expansion.files", LLStatisticsMetricNames.macroExpandFiles)
+        assertEquals("${LLStatisticsScopes.name}.macro.expansion.surfaces", LLStatisticsMetricNames.macroExpandSurfaces)
         CfirMacroExpansionOutcome.entries.forEach { outcome ->
-            assertEquals("${LLStatisticsScopes.name}.macro.expand.${outcome.metricSuffix}", LLStatisticsMetricNames.macroExpandOutcome(outcome))
+            assertEquals(
+                "${LLStatisticsScopes.name}.macro.expansion.${outcome.metricSuffix}",
+                LLStatisticsMetricNames.macroExpandOutcome(outcome),
+            )
+        }
+    }
+
+    /**
+     * 阶段枚举与 scope 映射必须一一对应：漏登记某个阶段会让它既不记耗时也不记次数。
+     */
+    @Test
+    fun everyMacroStageHasItsOwnScope() {
+        val mapped = CfirMacroConstructionStage.entries.associateWith { LLStatisticsScopes.Macro.stage(it).name }
+        assertEquals(CfirMacroConstructionStage.entries.size, mapped.values.toSet().size, "每个宏阶段必须有独立 scope")
+        mapped.forEach { (stage, name) ->
+            assertEquals("${LLStatisticsScopes.name}.macro.${stage.metricSuffix}", name)
         }
     }
 
