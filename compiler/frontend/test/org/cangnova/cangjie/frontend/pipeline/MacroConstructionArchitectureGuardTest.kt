@@ -729,11 +729,28 @@ class MacroConstructionArchitectureGuardTest {
                     .filter { Files.isRegularFile(it) }
                     .filter { it.toString().endsWith(".kt") || it.toString().endsWith(".kts") }
                     .filter { !isGeneratedOrBuildOutput(it) }
+                    .filter { !isTestSource(it) }
                     .toList()
             } finally {
                 stream.close()
             }
         }
+
+    /**
+     * 判断路径是否位于测试源集。
+     *
+     * 这些架构规则描述的是**生产**代码路径（source provider 注册必须走最终 registrar、
+     * 语义路径不得引用文本补丁宏展开）。若把测试源纳入扫描，测试为构造夹具而写的同名
+     * 辅助函数或对被禁 API 的引用会被误判为生产违规——文本模式匹配无法区分意图，
+     * 只会让规则随夹具命名漂移。因此在共享扫描入口统一排除测试源集，而不是让每条
+     * 规则各自去容忍。
+     */
+    private fun isTestSource(path: Path): Boolean {
+        val relative = root.relativize(path)
+        return relative.any { part ->
+            part.toString() in setOf("test", "tests", "testFixtures", "testFixturesResources", "testResources")
+        }
+    }
 
     /**
      * 判断路径是否位于生成目录或构建输出目录。
