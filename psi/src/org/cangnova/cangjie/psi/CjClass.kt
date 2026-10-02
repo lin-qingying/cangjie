@@ -26,6 +26,7 @@ package org.cangnova.cangjie.psi
 
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.psiUtil.ClassIdCalculator
+import org.cangnova.cangjie.psi.stubs.CangJieClassifierStub
 import org.cangnova.cangjie.psi.stubs.CangJieClassStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.CLASS_BODY
@@ -81,7 +82,7 @@ open class CjClass : CjTypeStatement {
      * 实现 `getClassId` 的仓颉 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun getClassId(): ClassId? {
-        stub?.let { return it.getClassId() }
+        (stub as? CangJieClassifierStub)?.let { return it.getClassId() }
         return ClassIdCalculator.calculateClassId(this)
     }
 }

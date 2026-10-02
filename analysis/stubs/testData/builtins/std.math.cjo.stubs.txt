@@ -920,7 +920,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/math/Float64, extendId=std.math:Float64<:MathExtension, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[MathExtension]]
+  CangJieStub$EXTEND[extendId=std.math:Float64<:MathExtension, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -996,7 +996,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Float32, extendId=std.math:Float32<:MathExtension, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[MathExtension]]
+  CangJieStub$EXTEND[extendId=std.math:Float32<:MathExtension, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1041,7 +1041,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Float16, extendId=std.math:Float16<:MathExtension, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[MathExtension]]
+  CangJieStub$EXTEND[extendId=std.math:Float16<:MathExtension, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1086,7 +1086,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Int8, extendId=std.math:Int8<:MaxMinValue, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Int8<:MaxMinValue, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1129,7 +1129,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Int16, extendId=std.math:Int16<:MaxMinValue, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Int16<:MaxMinValue, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1152,7 +1152,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Int32, extendId=std.math:Int32<:MaxMinValue, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Int32<:MaxMinValue, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1175,7 +1175,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Int64, extendId=std.math:Int64<:MaxMinValue, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Int64<:MaxMinValue, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1198,7 +1198,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/IntNative, extendId=std.math:IntNative<:MaxMinValue, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:IntNative<:MaxMinValue, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1221,7 +1221,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/UInt8, extendId=std.math:UInt8<:MaxMinValue, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:UInt8<:MaxMinValue, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1244,7 +1244,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/UInt16, extendId=std.math:UInt16<:MaxMinValue, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:UInt16<:MaxMinValue, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1267,7 +1267,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/UInt32, extendId=std.math:UInt32<:MaxMinValue, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:UInt32<:MaxMinValue, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1290,7 +1290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/UInt64, extendId=std.math:UInt64<:MaxMinValue, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:UInt64<:MaxMinValue, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1313,7 +1313,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/UIntNative, extendId=std.math:UIntNative<:MaxMinValue, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:UIntNative<:MaxMinValue, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1336,7 +1336,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Float16, extendId=std.math:Float16<:MaxMinValue, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Float16<:MaxMinValue, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1359,7 +1359,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Float32, extendId=std.math:Float32<:MaxMinValue, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Float32<:MaxMinValue, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1382,7 +1382,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Float64, extendId=std.math:Float64<:MaxMinValue, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[extendId=std.math:Float64<:MaxMinValue, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1405,7 +1405,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/math/Int8, extendId=std.math:Int8<:Number, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Int8<:Number, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1515,7 +1515,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Int16, extendId=std.math:Int16<:Number, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Int16<:Number, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1568,7 +1568,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Int32, extendId=std.math:Int32<:Number, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Int32<:Number, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1621,7 +1621,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Int64, extendId=std.math:Int64<:Number, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Int64<:Number, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1674,7 +1674,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/IntNative, extendId=std.math:IntNative<:Number, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:IntNative<:Number, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1727,7 +1727,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=IntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/UInt8, extendId=std.math:UInt8<:Number, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:UInt8<:Number, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1780,7 +1780,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/UInt16, extendId=std.math:UInt16<:Number, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:UInt16<:Number, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1833,7 +1833,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/UInt32, extendId=std.math:UInt32<:Number, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:UInt32<:Number, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1886,7 +1886,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/UInt64, extendId=std.math:UInt64<:Number, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:UInt64<:Number, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1939,7 +1939,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/UIntNative, extendId=std.math:UIntNative<:Number, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:UIntNative<:Number, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1992,7 +1992,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Float16, extendId=std.math:Float16<:Number, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Float16<:Number, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2045,7 +2045,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Float32, extendId=std.math:Float32<:Number, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Float32<:Number, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2098,7 +2098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Float64, extendId=std.math:Float64<:Number, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math:Float64<:Number, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2151,7 +2151,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/math/Int8, extendId=std.math:Int8<:Integer, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:Int8<:Integer, fqName=std.math.Int8, name=Int8, receiverTypeName=Int8, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2325,7 +2325,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Int16, extendId=std.math:Int16<:Integer, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:Int16<:Integer, fqName=std.math.Int16, name=Int16, receiverTypeName=Int16, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2402,7 +2402,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Int32, extendId=std.math:Int32<:Integer, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:Int32<:Integer, fqName=std.math.Int32, name=Int32, receiverTypeName=Int32, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2479,7 +2479,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Int64, extendId=std.math:Int64<:Integer, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:Int64<:Integer, fqName=std.math.Int64, name=Int64, receiverTypeName=Int64, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2556,7 +2556,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/IntNative, extendId=std.math:IntNative<:Integer, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:IntNative<:Integer, fqName=std.math.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2633,7 +2633,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=IntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/UInt8, extendId=std.math:UInt8<:Integer, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:UInt8<:Integer, fqName=std.math.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2710,7 +2710,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/UInt16, extendId=std.math:UInt16<:Integer, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:UInt16<:Integer, fqName=std.math.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2787,7 +2787,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/UInt32, extendId=std.math:UInt32<:Integer, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:UInt32<:Integer, fqName=std.math.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2864,7 +2864,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/UInt64, extendId=std.math:UInt64<:Integer, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:UInt64<:Integer, fqName=std.math.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2941,7 +2941,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/UIntNative, extendId=std.math:UIntNative<:Integer, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math:UIntNative<:Integer, fqName=std.math.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3018,7 +3018,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Float16, extendId=std.math:Float16<:FloatingPoint, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[extendId=std.math:Float16<:FloatingPoint, fqName=std.math.Float16, name=Float16, receiverTypeName=Float16, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3145,7 +3145,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/math/Float32, extendId=std.math:Float32<:FloatingPoint, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[extendId=std.math:Float32<:FloatingPoint, fqName=std.math.Float32, name=Float32, receiverTypeName=Float32, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3192,7 +3192,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Float64, extendId=std.math:Float64<:FloatingPoint, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[extendId=std.math:Float64<:FloatingPoint, fqName=std.math.Float64, name=Float64, receiverTypeName=Float64, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

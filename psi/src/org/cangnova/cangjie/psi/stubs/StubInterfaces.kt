@@ -487,24 +487,24 @@ interface CangJieParameterStub : CangJieParameterStubBase<CjParameter> {
 /**
  * 定义 `CangJieClassStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieClassStub : CangJieTypeStatementStub<CjClass> {
+interface CangJieClassStub : CangJieClassLikeTypeStatementStub<CjClass> {
 
 }
 
 /**
  * 定义 `CangJieStructStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieStructStub : CangJieTypeStatementStub<CjStruct>
+interface CangJieStructStub : CangJieClassLikeTypeStatementStub<CjStruct>
 
 /**
  * 定义 `CangJieInterfaceStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieInterfaceStub : CangJieTypeStatementStub<CjInterface>
+interface CangJieInterfaceStub : CangJieClassLikeTypeStatementStub<CjInterface>
 
 /**
  * 定义 `CangJieEnumStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
  */
-interface CangJieEnumStub : CangJieTypeStatementStub<CjEnum> {
+interface CangJieEnumStub : CangJieClassLikeTypeStatementStub<CjEnum> {
     /**
      * 是否非穷尽枚举
      */
@@ -564,15 +564,23 @@ interface CangJieExtendStub : CangJieTypeStatementStub<CjExtend> {
 }
 
 
+
 /**
- * 定义 `CangJieTypeStatementStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。
+ * 定义 `CangJieTypeStatementStub` 接口，约束类型声明 stub 的语法与身份能力（FqName、父类型名）。
+ *
+ * 该接口刻意不含 `ClassId`：extend 不属于公开类型标识体系，它的身份由 `CangJieExtendStub.extendId` 表达。
  */
-interface CangJieTypeStatementStub<T : CjTypeStatement> : CangJieClassifierStub, CangJieStubWithFqName<T> {
+interface CangJieTypeStatementStub<T : CjTypeStatement> : CangJieStubWithFqName<T> {
     /**
      * 提供 `getSuperNames` 操作，封装PSI Stub节点的访问、构造或判断逻辑。
      */
     fun getSuperNames(): List<String>
 }
+
+/**
+ * 定义 `CangJieClassLikeTypeStatementStub` 接口，约束进入公开类型标识体系（拥有 `ClassId`）的类型声明 stub。
+ */
+interface CangJieClassLikeTypeStatementStub<T : CjTypeStatement> : CangJieTypeStatementStub<T>, CangJieClassifierStub
 
 /**
  * 定义 `CangJieConstructorStub` 接口，约束PSI Stub节点或服务需要暴露的结构能力。

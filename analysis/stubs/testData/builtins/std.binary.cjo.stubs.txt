@@ -108,7 +108,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/binary/UInt64, extendId=std.binary:UInt64<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:UInt64<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -205,7 +205,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/binary/Int64, extendId=std.binary:Int64<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int64, name=Int64, receiverTypeName=Int64, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Int64<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int64, name=Int64, receiverTypeName=Int64, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -302,7 +302,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/binary/UInt32, extendId=std.binary:UInt32<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:UInt32<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -399,7 +399,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/binary/Int32, extendId=std.binary:Int32<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int32, name=Int32, receiverTypeName=Int32, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Int32<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int32, name=Int32, receiverTypeName=Int32, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -496,7 +496,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/binary/UInt16, extendId=std.binary:UInt16<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:UInt16<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -593,7 +593,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/binary/Int16, extendId=std.binary:Int16<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int16, name=Int16, receiverTypeName=Int16, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Int16<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int16, name=Int16, receiverTypeName=Int16, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -690,7 +690,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/binary/UInt8, extendId=std.binary:UInt8<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:UInt8<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -787,7 +787,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/binary/Int8, extendId=std.binary:Int8<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int8, name=Int8, receiverTypeName=Int8, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Int8<:BigEndianOrder&LittleEndianOrder&SwapEndianOrder, fqName=std.binary.Int8, name=Int8, receiverTypeName=Int8, superNames=[BigEndianOrder, LittleEndianOrder, SwapEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -884,7 +884,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/binary/Float64, extendId=std.binary:Float64<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float64, name=Float64, receiverTypeName=Float64, superNames=[BigEndianOrder, LittleEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Float64<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float64, name=Float64, receiverTypeName=Float64, superNames=[BigEndianOrder, LittleEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -971,7 +971,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
                       CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/binary/Float32, extendId=std.binary:Float32<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float32, name=Float32, receiverTypeName=Float32, superNames=[BigEndianOrder, LittleEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Float32<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float32, name=Float32, receiverTypeName=Float32, superNames=[BigEndianOrder, LittleEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1058,7 +1058,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
                       CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/binary/Float16, extendId=std.binary:Float16<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float16, name=Float16, receiverTypeName=Float16, superNames=[BigEndianOrder, LittleEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Float16<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Float16, name=Float16, receiverTypeName=Float16, superNames=[BigEndianOrder, LittleEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1145,7 +1145,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.binary, facadeFqName=std.binary]]
                       CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/binary/Bool, extendId=std.binary:Bool<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Bool, name=Bool, receiverTypeName=Bool, superNames=[BigEndianOrder, LittleEndianOrder]]
+  CangJieStub$EXTEND[extendId=std.binary:Bool<:BigEndianOrder&LittleEndianOrder, fqName=std.binary.Bool, name=Bool, receiverTypeName=Bool, superNames=[BigEndianOrder, LittleEndianOrder]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

@@ -29,6 +29,7 @@ import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
 import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -67,16 +68,23 @@ object StubUtils {
      * 这里遵循仓颉的公开索引语义：
      * - 只有文件级顶层 class-like 声明拥有稳定 `ClassId`
      * - 其他声明位置一律返回 `null`
+     * - `extend` 不是 class-like，没有 `ClassId`（身份由 `CjExtend.getExtendId()` 表达）
      */
     @JvmStatic
-    fun createClassId(parentStub: StubElement<*>, currentDeclaration: CjClassLikeDeclaration): ClassId? = when {
-        // 文件级顶层 class-like 声明。
-        parentStub is CangJieFileStub -> ClassId(parentStub.getPackageFqName(), currentDeclaration.nameAsSafeName)
+    fun createClassId(parentStub: StubElement<*>, currentDeclaration: CjClassLikeDeclaration): ClassId? {
+        check(currentDeclaration !is CjExtend) {
+            "`extend` must not get a `ClassId`; its identity is `CjExtend.getExtendId()`"
+        }
 
-        // 类体中的声明不进入顶层类索引。
-        parentStub is CangJiePlaceHolderStub<*> && parentStub.stubType == CjStubElementTypes.CLASS_BODY -> null
+        return when {
+            // 文件级顶层 class-like 声明。
+            parentStub is CangJieFileStub -> ClassId(parentStub.getPackageFqName(), currentDeclaration.nameAsSafeName)
 
-        // 其余位置同样不产生稳定 ClassId。
-        else -> null
+            // 类体中的声明不进入顶层类索引。
+            parentStub is CangJiePlaceHolderStub<*> && parentStub.stubType == CjStubElementTypes.CLASS_BODY -> null
+
+            // 其余位置同样不产生稳定 ClassId。
+            else -> null
+        }
     }
 }

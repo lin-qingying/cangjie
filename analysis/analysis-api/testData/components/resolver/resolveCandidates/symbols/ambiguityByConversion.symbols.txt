@@ -7,6 +7,6 @@ returnType: std.core.String
 
 symbolClass: CaCfirNamedFunctionSymbol
 name: render
-callableId: sample.resolver.candidates.Printer.render
+callableId: sample.resolver.candidates.render
 receiverType: null
 returnType: std.core.String

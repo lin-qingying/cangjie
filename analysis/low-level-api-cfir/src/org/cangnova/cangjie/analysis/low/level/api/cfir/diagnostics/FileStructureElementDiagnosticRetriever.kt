@@ -148,6 +148,38 @@ internal class ClassDiagnosticRetriever(
 }
 
 /**
+ * extend 声明对应的 structure element diagnostics retriever。
+ *
+ * 与 [ClassDiagnosticRetriever] 同形：extend 成员各自是独立的 structure element，
+ * 收集 extend 自身 diagnostics 时必须跳过成员，否则同一成员会被访问两次。
+ */
+internal class ExtendDiagnosticRetriever(
+    declaration: CfirExtend,
+    file: CfirFile,
+    moduleComponents: LLCfirModuleResolveComponents,
+) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
+    /**
+     * 创建忽略成员声明的 extend diagnostics visitor。
+     */
+    override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
+        return Visitor(declaration as CfirExtend, context, components)
+    }
+
+    /**
+     * extend 容器 diagnostics visitor。
+     */
+    private class Visitor(
+        extend: CfirExtend,
+        context: CheckerContextForProvider,
+        components: DiagnosticCollectorComponents,
+    ) : LLCfirContainerDiagnosticVisitor(
+        declarationsToIgnore = extend.declarationsToIgnore,
+        context = context,
+        components = components,
+    )
+}
+
+/**
  * 单个非局部声明对应的 structure element diagnostics retriever。
  */
 internal class SingleNonLocalDeclarationDiagnosticRetriever(

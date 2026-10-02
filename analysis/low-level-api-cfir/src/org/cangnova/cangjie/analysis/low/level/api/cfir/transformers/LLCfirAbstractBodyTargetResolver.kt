@@ -83,11 +83,18 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
 
     /**
      * 在 [cfirExtend] 扩展声明容器上下文中执行 [action]。
+     *
+     * 与 eager [org.cangnova.cangjie.cfir.resolve.body.CfirDeclarationsResolveTransformer.transformExtendContent] 同形：
+     * 先进入 extend 的类型参数与隐式扩展接收者作用域（`this` 指向被扩展类型），再安装 extend 容器。
      */
     @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
     override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
-        transformer.declarationsTransformer.context.withContainer(cfirExtend) {
-            action()
+        val declarationsTransformer = transformer.declarationsTransformer
+        val context = declarationsTransformer.context
+        context.withScopesForExtend(cfirExtend, declarationsTransformer.components) {
+            context.withContainer(cfirExtend) {
+                action()
+            }
         }
     }
 

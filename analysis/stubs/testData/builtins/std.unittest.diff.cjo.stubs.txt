@@ -115,7 +115,7 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Float16, extendId=std.unittest.diff:Float16<:AssertPrintable, fqName=std.unittest.diff.Float16, name=Float16, receiverTypeName=Float16, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.diff:Float16<:AssertPrintable, fqName=std.unittest.diff.Float16, name=Float16, receiverTypeName=Float16, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -184,7 +184,7 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Float32, extendId=std.unittest.diff:Float32<:AssertPrintable, fqName=std.unittest.diff.Float32, name=Float32, receiverTypeName=Float32, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.diff:Float32<:AssertPrintable, fqName=std.unittest.diff.Float32, name=Float32, receiverTypeName=Float32, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -253,7 +253,7 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Float64, extendId=std.unittest.diff:Float64<:AssertPrintable, fqName=std.unittest.diff.Float64, name=Float64, receiverTypeName=Float64, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.diff:Float64<:AssertPrintable, fqName=std.unittest.diff.Float64, name=Float64, receiverTypeName=Float64, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -322,7 +322,7 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Option, extendId=std.unittest.diff:Option<:AssertPrintable, fqName=std.unittest.diff.Option, name=Option, receiverTypeName=Option, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.diff:Option<:AssertPrintable, fqName=std.unittest.diff.Option, name=Option, receiverTypeName=Option, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -411,7 +411,7 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/String, extendId=std.unittest.diff:String<:AssertPrintable, fqName=std.unittest.diff.String, name=String, receiverTypeName=String, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[extendId=std.unittest.diff:String<:AssertPrintable, fqName=std.unittest.diff.String, name=String, receiverTypeName=String, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

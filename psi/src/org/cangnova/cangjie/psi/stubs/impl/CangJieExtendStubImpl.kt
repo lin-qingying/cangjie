@@ -38,6 +38,9 @@ import org.cangnova.cangjie.name.*
 /**
  * 表示 `CangJieExtendStubImpl`，承载PSI Stub中的语法节点、索引桩或辅助模型。
  */
+/**
+ * `extend` 的 stub；`extend` 没有 `ClassId`，因此不持久化该字段。
+ */
 open class CangJieExtendStubImpl(
     type: CjExtendElementType,
     parent: StubElement<out PsiElement>?,
@@ -45,10 +48,6 @@ open class CangJieExtendStubImpl(
      * 保存 `qualifiedName` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
     private val qualifiedName: StringRef?,
-    /**
-     * 保存 `classId` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
-     */
-    private val classId: ClassId?,
     /**
      * 保存 `name` 的内部状态，供PSI Stub实现维护节点缓存或解析上下文。
      */
@@ -108,18 +107,12 @@ open class CangJieExtendStubImpl(
     }
 
     /**
-     * 实现 `getClassId` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
-     */
-    override fun getClassId(): ClassId? = classId
-
-    /**
      * 实现 `copyInto` 的PSI Stub协议回调，保持与 IntelliJ PSI 访问契约一致。
      */
     override fun copyInto(newParent: StubElement<*>?): CangJieExtendStubImpl = CangJieExtendStubImpl(
         type = stubType as CjExtendElementType,
         parent = newParent,
         qualifiedName = qualifiedName,
-        classId = classId,
         name = name,
         extendIdRef = extendIdRef,
         superNames = superNames,

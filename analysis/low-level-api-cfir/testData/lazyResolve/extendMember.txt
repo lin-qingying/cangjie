@@ -1,0 +1,230 @@
+IMPORTS:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(IMPORTS)] extend<T> R|Host<R|T|>| <: R|Marker| {
+        [ResolvedTo(IMPORTS)] internal? func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+SUPER_TYPES:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(SUPER_TYPES)] extend<T> R|Host<R|T|>| <: R|Marker| {
+        [ResolvedTo(SUPER_TYPES)] internal? func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+TYPES:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(TYPES)] internal? func describe(): R|struct String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+STATUS:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(STATUS)] internal? func describe(): R|struct String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+EXTENSIONS:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(EXTENSIONS)] internal? func describe(): R|struct String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+IMPLICIT_TYPES:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(IMPLICIT_TYPES)] internal? func describe(): R|struct String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+CJMP_MATCHING:
+[ResolvedTo(RAW_CFIR)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(RAW_CFIR)] public open class Host<T> {
+        [ResolvedTo(RAW_CFIR)] public var value: R|T|
+        [ResolvedTo(RAW_CFIR)] init([ResolvedTo(RAW_CFIR)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(RAW_CFIR)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(IMPORTS)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(IMPLICIT_TYPES)] internal? func describe(): R|struct String| {
+            <element: CfirLazyBlock>
+        }
+    }
+
+BODY_RESOLVE:
+[ResolvedTo(IMPORTS)] FILE: common.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(TYPES)] public open class Host<T> {
+        [ResolvedTo(TYPES)] public var value: R|T|
+        [ResolvedTo(IMPORTS)] init([ResolvedTo(IMPORTS)] value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(TYPES)] public func size(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+[ResolvedTo(IMPORTS)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(SUPER_TYPES)] internal? interface Marker {
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(BODY_RESOLVE)] internal? func describe(): R|struct String| {
+            [ResolvedTo(BODY_RESOLVE)] local? let current: R|T| = ...
+                initializer:
+                    NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                FUNCTION_CALL(size -> CfirNamedFunctionSymbol(size)) {
+                                    receiver:
+                                        <element: CfirThisReceiverExpression>
+                                }
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(current -> CfirPatternBindingSymbol(current))
+                        }
+                }
+            }
+        }
+    }
+
+FILE RAW TO BODY:
+[ResolvedTo(BODY_RESOLVE)] FILE: main.cj
+    package sample.lowlevel.lazy
+    [ResolvedTo(BODY_RESOLVE)] internal? interface Marker {
+    }
+    [ResolvedTo(BODY_RESOLVE)] extend<T> R|Host<T>| <: R|Marker| {
+        [ResolvedTo(BODY_RESOLVE)] internal? func describe(): R|struct String| {
+            [ResolvedTo(BODY_RESOLVE)] local? let current: R|T| = ...
+                initializer:
+                    NAMED_ACCESS(value -> CfirFieldVariableSymbol(value)) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                FUNCTION_CALL(size -> CfirNamedFunctionSymbol(size)) {
+                                    receiver:
+                                        <element: CfirThisReceiverExpression>
+                                }
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(current -> CfirPatternBindingSymbol(current))
+                        }
+                }
+            }
+        }
+    }

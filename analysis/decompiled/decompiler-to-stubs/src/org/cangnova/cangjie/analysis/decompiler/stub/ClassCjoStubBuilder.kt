@@ -56,7 +56,6 @@ internal fun createExtendStub(
         type = CjStubElementTypes.EXTEND,
         parent = parent,
         qualifiedName = StringRef.fromString(extendFqName.asString()),
-        classId = ClassId(context.packageFqName, org.cangnova.cangjie.name.Name.identifier(extendName)),
         name = StringRef.fromString(extendName),
         extendIdRef = StringRef.fromString(
             buildExtendId(
