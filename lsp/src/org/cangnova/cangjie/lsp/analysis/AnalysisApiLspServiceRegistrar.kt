@@ -11,6 +11,8 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTra
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
+import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieGlobalOpenTelemetryProvider
+import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
@@ -42,6 +44,9 @@ internal object AnalysisApiLspServiceRegistrar {
     private val analysisPluginXmls = listOf(
         "META-INF/analysis-api/cangjie-analysis-api-cfir.xml",
         "META-INF/analysis-api/cangjie-cj-references.xml",
+        // 统计开关 `cangjie.analysis.statistics` 声明在这里；不加载它，Registry 读到的永远是默认值
+        // false，LSP 侧的请求耗时与 analysis 侧的分析耗时都会静默不上报。
+        "META-INF/analysis-api/cangjie-analysis-api-platform-interface.xml",
     )
 
     /**
@@ -126,5 +131,28 @@ internal object AnalysisApiLspServiceRegistrar {
             CaPlatformSettings::class.java,
             AnalysisApiLspPlatformSettings::class.java,
         )
+
+        registerStatisticsBackend(project)
+    }
+
+    /**
+     * 注册统计后端服务。
+     *
+     * `cangjie-analysis-api-cfir.xml` 只声明了 `CaStatisticsService`，没有声明
+     * `CangJieOpenTelemetryProvider`——IDE 插件在自己的描述符里注册它。LSP 没有插件描述符，
+     * 必须在这里补上，否则 `LLStatisticsService.getInstance` 永远返回 null，整个统计链路
+     * （含 analysis 侧的所有域）在 LSP 里都是空的。
+     *
+     * 注册的是全局 provider：宿主若已把 OpenTelemetry SDK 初始化为全局实例就直接复用；
+     * 未初始化时 `GlobalOpenTelemetry` 退化为 noop，统计调用不产生上报也不会抛错。
+     */
+    @OptIn(CaPlatformInterface::class)
+    private fun registerStatisticsBackend(project: MockProject) {
+        if (CangJieOpenTelemetryProvider.getInstance(project) == null) {
+            project.registerService(
+                CangJieOpenTelemetryProvider::class.java,
+                CangJieGlobalOpenTelemetryProvider(),
+            )
+        }
     }
 }

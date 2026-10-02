@@ -342,8 +342,10 @@ class FrontendMacroConstructionService(
 ) : MacroConstructionService {
     /**
      * 对 pre-macro raw CFIR 执行宏构造并返回最终构造结果。
+     *
+     * 本方法由 [MacroConstructionService.expand] 模板方法调用，构造耗时已在其外侧统计。
      */
-    override fun expand(
+    override fun doExpand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         classification: MacroDemandClassification,

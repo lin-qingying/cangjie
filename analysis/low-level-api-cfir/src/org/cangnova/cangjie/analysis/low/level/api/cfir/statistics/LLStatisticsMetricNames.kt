@@ -1,7 +1,11 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
 
 /**
@@ -120,43 +124,128 @@ object LLStatisticsMetricNames {
     fun resolvePhaseRuns(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.runs(phase)
 
     /**
-     * `rawBuild.<source>.duration`：单文件 raw CFIR 构建耗时（毫秒）。
+     * `rawBuild.<source>.<stage>.duration`：单次 raw CFIR 构建阶段耗时（毫秒）。
      */
-    fun rawBuildDuration(source: CfirRawBuildSource): String = LLStatisticsScopes.RawBuild.duration(source)
+    fun rawBuildDuration(source: CfirRawBuildSource, stage: CfirRawBuildStage): String =
+        LLStatisticsScopes.RawBuild.duration(source, stage)
 
     /**
-     * `rawBuild.<source>.runs`：raw CFIR 构建次数。
+     * `rawBuild.<source>.<stage>.runs`：raw CFIR 构建阶段执行次数。
      */
-    fun rawBuildRuns(source: CfirRawBuildSource): String = LLStatisticsScopes.RawBuild.runs(source)
+    fun rawBuildRuns(source: CfirRawBuildSource, stage: CfirRawBuildStage): String =
+        LLStatisticsScopes.RawBuild.runs(source, stage)
 
     /**
-     * `macro.expand.duration`：macro construction 耗时（毫秒）。
+     * `macro.<stage>.duration`：macro construction 阶段耗时（毫秒）。
      */
-    val macroExpandDuration: String
-        get() = LLStatisticsScopes.Macro.Expand.duration()
+    fun macroConstructionDuration(stage: CfirMacroConstructionStage): String = LLStatisticsScopes.Macro.stage(stage).duration()
 
     /**
-     * `macro.expand.runs`：macro construction 次数。
+     * `macro.<stage>.runs`：macro construction 阶段执行次数。
      */
-    val macroExpandRuns: String
-        get() = LLStatisticsScopes.Macro.Expand.runs()
+    fun macroConstructionRuns(stage: CfirMacroConstructionStage): String = LLStatisticsScopes.Macro.stage(stage).runs()
 
     /**
-     * `macro.expand.files`：macro construction 覆盖的 pre-macro 文件数。
+     * `macro.expansion.files`：macro construction 覆盖的 pre-macro 文件数。
      */
     val macroExpandFiles: String
-        get() = LLStatisticsScopes.Macro.Expand.files()
+        get() = LLStatisticsScopes.Macro.Expansion.files()
 
     /**
-     * `macro.expand.surfaces`：macro construction 覆盖的宏 surface 数。
+     * `macro.expansion.surfaces`：macro construction 覆盖的宏 surface 数。
      */
     val macroExpandSurfaces: String
-        get() = LLStatisticsScopes.Macro.Expand.surfaces()
+        get() = LLStatisticsScopes.Macro.Expansion.surfaces()
 
     /**
-     * `macro.expand.<outcome>`：按结果归类的 construction 次数。
+     * `macro.expansion.<outcome>`：按结果归类的 construction 次数。
      */
-    fun macroExpandOutcome(outcome: CfirMacroExpansionOutcome): String = LLStatisticsScopes.Macro.Expand.outcome(outcome)
+    fun macroExpandOutcome(outcome: CfirMacroExpansionOutcome): String = LLStatisticsScopes.Macro.Expansion.outcome(outcome)
+
+    /**
+     * `diagnostics.collection.duration`：文件级诊断收集耗时（毫秒）。
+     */
+    val diagnosticsCollectionDuration: String
+        get() = LLStatisticsScopes.Diagnostics.Collection.duration()
+
+    /**
+     * `diagnostics.collection.runs`：文件级诊断收集次数。
+     */
+    val diagnosticsCollectionRuns: String
+        get() = LLStatisticsScopes.Diagnostics.Collection.runs()
+
+    /**
+     * `diagnostics.collection.diagnostics`：文件级诊断收集产出的诊断数。
+     */
+    val diagnosticsCollectionDiagnostics: String
+        get() = LLStatisticsScopes.Diagnostics.Collection.diagnostics()
+
+    /**
+     * `diagnostics.elementCollection.duration`：元素级诊断收集耗时（毫秒）。
+     */
+    val diagnosticsElementCollectionDuration: String
+        get() = LLStatisticsScopes.Diagnostics.ElementCollection.duration()
+
+    /**
+     * `diagnostics.elementCollection.runs`：元素级诊断收集次数。
+     */
+    val diagnosticsElementCollectionRuns: String
+        get() = LLStatisticsScopes.Diagnostics.ElementCollection.runs()
+
+    /**
+     * `diagnostics.structureBuild.duration`：文件结构首次构建耗时（毫秒）。
+     */
+    val diagnosticsStructureBuildDuration: String
+        get() = LLStatisticsScopes.Diagnostics.StructureBuild.duration()
+
+    /**
+     * `diagnostics.structureBuild.runs`：文件结构首次构建次数。
+     */
+    val diagnosticsStructureBuildRuns: String
+        get() = LLStatisticsScopes.Diagnostics.StructureBuild.runs()
+
+    /**
+     * `diagnostics.checkerPass.<set>.duration`：某 checker 集合的遍历耗时（毫秒）。
+     */
+    fun diagnosticsCheckerPassDuration(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.duration(set)
+
+    /**
+     * `diagnostics.checkerPass.<set>.runs`：某 checker 集合的遍历次数。
+     */
+    fun diagnosticsCheckerPassRuns(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.runs(set)
+
+    /**
+     * `diagnostics.checkerPass.<set>.diagnostics`：某 checker 集合产出的诊断数。
+     */
+    fun diagnosticsCheckerPassDiagnostics(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.diagnostics(set)
+
+    /**
+     * `sessionCreation.<kind>.duration`：某类模块的 session 创建耗时（毫秒）。
+     */
+    fun sessionCreationDuration(kind: CaModuleKind): String = LLStatisticsScopes.SessionCreation.duration(kind)
+
+    /**
+     * `sessionCreation.<kind>.runs`：某类模块的 session 创建次数。
+     */
+    fun sessionCreationRuns(kind: CaModuleKind): String = LLStatisticsScopes.SessionCreation.runs(kind)
+
+    /**
+     * `scopes.sessionCreated`：scope session 创建次数。
+     */
+    val scopeSessionsCreated: String
+        get() = LLStatisticsScopes.Scopes.sessionCreated()
+
+    /**
+     * `deserialization.classLike.duration`：stub class-like 反序列化耗时（毫秒）。
+     */
+    val deserializationClassLikeDuration: String
+        get() = LLStatisticsScopes.Deserialization.ClassLike.duration()
+
+    /**
+     * `deserialization.classLike.runs`：stub class-like 反序列化次数。
+     */
+    val deserializationClassLikeRuns: String
+        get() = LLStatisticsScopes.Deserialization.ClassLike.runs()
 
     /**
      * 判断指标名是否属于本项目的统计命名空间。

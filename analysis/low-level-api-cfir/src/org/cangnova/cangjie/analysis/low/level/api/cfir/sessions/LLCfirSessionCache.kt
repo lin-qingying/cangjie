@@ -14,7 +14,10 @@ import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModule
 import org.cangnova.cangjie.analysis.api.projectStructure.*
 import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.moduleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkCanceled
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
@@ -24,6 +27,7 @@ import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import kotlin.time.TimeSource
 
 /**
  * 工程级 low-level CFIR session 缓存。
@@ -54,6 +58,15 @@ class LLCfirSessionCache(
      */
     private val moduleInformationProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CangJieModuleInformationProvider.getInstance(project)
+    }
+
+    /**
+     * session 创建统计域；统计未启用时为 `null`。
+     *
+     * 延迟解析：session 缓存本身是工程服务，构造期工程级统计服务可能还没注册好。
+     */
+    private val sessionStatistics by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(project).sessionStatistics
     }
 
     /**
@@ -93,7 +106,18 @@ class LLCfirSessionCache(
      */
     private fun getBinaryLibraryCachedSession(module: CaModule, storage: SessionStorage): LLCfirSession =
         getCachedSession(module, storage) {
-            createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
+            val statistics = sessionStatistics
+            val kind = module.moduleKind()
+            if (statistics == null || kind == CaModuleKind.UNKNOWN) {
+                createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
+            } else {
+                val startedAt = TimeSource.Monotonic.markNow()
+                try {
+                    createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
+                } finally {
+                    statistics.onSessionCreated(kind, startedAt.elapsedNow().inWholeNanoseconds)
+                }
+            }
         }
 
     /**
@@ -166,6 +190,22 @@ class LLCfirSessionCache(
      * 根据 [module] 类型创建对应 low-level CFIR session。
      */
     private fun createSession(module: CaModule): LLCfirSession {
+        val statistics = sessionStatistics
+        val kind = module.moduleKind()
+        if (statistics == null || kind == CaModuleKind.UNKNOWN) return createSessionFor(module)
+
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            return createSessionFor(module)
+        } finally {
+            statistics.onSessionCreated(kind, startedAt.elapsedNow().inWholeNanoseconds)
+        }
+    }
+
+    /**
+     * 按模块种类创建对应 low-level CFIR session；由 [createSession] 在计时包装内调用。
+     */
+    private fun createSessionFor(module: CaModule): LLCfirSession {
         val sessionFactory = createPlatformAwareSessionFactory(module)
         return when (module) {
             is CaDanglingFileModule -> {

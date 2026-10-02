@@ -54,9 +54,12 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         }
 
         return withSourceCodeAnalysisExceptionUnwrapping {
-            collectForStructureElement(declaration, filter) { components ->
-                createVisitor(context, components)
-            }
+            collectForStructureElement(
+                declaration,
+                filter,
+                createVisitor = { components -> createVisitor(context, components) },
+                diagnosticsStatistics = moduleComponents.globalResolveComponents.diagnosticsStatistics,
+            )
         }
     }
 

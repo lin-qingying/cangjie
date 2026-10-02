@@ -768,6 +768,10 @@ interface MacroConstructionService {
      * context     = bindMacroImports(pre, symbolIndex, ...)
      * result      = service.expand(pre, context, mode)
      * ```
+     *
+     * 本方法是最终入口：它负责 construction 计时（含结果归类），再委派给 [doExpand]。
+     * 这样任何调用方都不可能绕过耗时统计——计时不再依赖"记得包一层"。
+     * 实现类只覆写 [doExpand]。
      */
     fun expand(
         pre: PreMacroRawBuildResult,
@@ -775,6 +779,26 @@ interface MacroConstructionService {
         classification: MacroDemandClassification,
         mode: Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic> = emptyList(),
+    ): MacroConstructionResult =
+        pre.session.macroConstructionTimingObserverOrNull.measureMacroExpansion(
+            mode = mode,
+            fileCount = pre.size,
+            surfaceCount = pre.allSurfaces.size,
+        ) {
+            doExpand(pre, context, classification, mode, preConstructionDiagnostics)
+        }
+
+    /**
+     * [expand] 的实现钩子。
+     *
+     * 只有实现类覆写本方法；调用方必须经 [expand]，否则阶段耗时与结果归类不会上报。
+     */
+    fun doExpand(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        classification: MacroDemandClassification,
+        mode: Mode,
+        preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult
 
     /** Macro construction 的运行模式，决定失败是否可以降级为 placeholder。 */
@@ -888,11 +912,8 @@ fun MacroConstructionService.expandWithDefaultContext(
         sharedBuiltinDefinitions = sharedBuiltinDefinitions,
         macroArtifactDefinitions = macroArtifactDefinitions,
     )
-    // construction 耗时：宿主注册观察者时才取单调时钟，否则直接展开。
-    val observer = pre.session.macroExpansionTimingObserverOrNull
-    return observer.measureMacroExpansion(mode = mode, fileCount = pre.size, surfaceCount = pre.allSurfaces.size) {
-        expand(pre, context, classification, mode)
-    }
+    // 展开耗时由 expand 模板方法统一计时，这里不再重复包装。
+    return expand(pre, context, classification, mode)
 }
 
 /** 不做真实 macro 展开的 identity service，用于无宏或测试场景维持边界约束。 */
@@ -901,7 +922,7 @@ private object IdentityMacroConstructionService : MacroConstructionService {
      * 将 pre-macro 文件原样包装为可注册文件；若已有 construction 诊断，则按 [mode]
      * 决定返回 failed 还是 degraded。
      */
-    override fun expand(
+    override fun doExpand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         classification: MacroDemandClassification,

@@ -221,7 +221,7 @@ class PsiRawCfirBuilder(
     fun buildCfirFile(file: CjFile): CfirFile {
         // PSI 路径的 raw 构建耗时：宿主注册观察者时才取单调时钟，否则直接构建。
         val observer = baseSession.rawBuildTimingObserverOrNull
-        return observer.measureRawBuild(CfirRawBuildSource.PSI, mode) {
+        return observer.measureRawBuild(CfirRawBuildSource.PSI, CfirRawBuildStage.CONVERT, mode) {
             runOnStubs {
                 withSourceModuleContext(file) { file.accept(Visitor(), null) as CfirFile }
             }

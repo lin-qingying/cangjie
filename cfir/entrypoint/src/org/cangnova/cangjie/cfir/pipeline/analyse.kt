@@ -286,20 +286,14 @@ fun resolveAndCheckCfirAfterConstruction(
         session.annotationMetadataRegistryOrNull?.freeze()
         return MacroConstructionResult.Failed(registry) to null
     }
-    // construction 耗时：宿主注册观察者时才取单调时钟，否则直接展开。
-    val result = session.macroExpansionTimingObserverOrNull.measureMacroExpansion(
+    // 展开耗时由 MacroConstructionService.expand 模板方法统一统计。
+    val result = constructionService.expand(
+        pre = pre,
+        context = context,
+        classification = classification,
         mode = constructionMode,
-        fileCount = pre.size,
-        surfaceCount = pre.allSurfaces.size,
-    ) {
-        constructionService.expand(
-            pre = pre,
-            context = context,
-            classification = classification,
-            mode = constructionMode,
-            preConstructionDiagnostics = preConstructionDiagnostics,
-        )
-    }
+        preConstructionDiagnostics = preConstructionDiagnostics,
+    )
     val recordable: RecordableRawCfirFiles = when (result) {
         is MacroConstructionResult.Success -> result.recordableFiles
         is MacroConstructionResult.Degraded -> result.recordableFiles
