@@ -192,7 +192,7 @@ class CjmpTwoPhaseCompilationTest {
                 addCangJieSourceRoot(source.toString())
                 configure()
             }
-            val artifact = CfirFrontendPipelinePhase.executePhase(ConfigurationPipelineArtifact(configuration, disposable))
+            val artifact = cfirFrontendPipeline().executePhase(ConfigurationPipelineArtifact(configuration, disposable))
             val cjmpNominalMappings = buildMap {
                 for (output in artifact?.frontendOutput?.outputs.orEmpty()) {
                     val mappingStorage = output.session.cjmpMappingStorageOrNull ?: continue
