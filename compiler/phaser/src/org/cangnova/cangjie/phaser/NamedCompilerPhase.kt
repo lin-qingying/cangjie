@@ -43,8 +43,12 @@ abstract class NamedCompilerPhase<in Context : LoggingContext, Input, Output>(
 
     /**
      * 按统一流水线协议执行 phase：检查启用状态、前置依赖、action、主体、条件和统计状态。
+     *
+     * 覆写留给组合阶段穿透一次：组合阶段要用同一套协议驱动子阶段，让子阶段同样获得
+     * 启用判断、prerequisite 校验、前后置 action 与耗时采集。普通阶段不应覆写它——绕过
+     * 本方法直接调 executePhase 会跳过上述全部步骤。
      */
-    final override fun invoke(phaseConfig: PhaseConfig, phaserState: PhaserState, context: Context, input: Input): Output {
+    override fun invoke(phaseConfig: PhaseConfig, phaserState: PhaserState, context: Context, input: Input): Output {
         if (!phaseConfig.isEnabled(this)) {
             return outputIfNotEnabled(phaseConfig, phaserState, context, input)
         }
