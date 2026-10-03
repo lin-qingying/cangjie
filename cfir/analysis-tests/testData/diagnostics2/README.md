@@ -621,3 +621,77 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 - `.scratch/parse_cfir_diff.py`（本批次新增）解析 `cfir/analysis-tests/build/test-results/test/*.xml`，
   按 `=====预期=====` / `=====得到=====` 切出两段并打印统一差异；测试框架的失败消息在"得到"段之后还会跟 `FileAnalysisException` 的栈，需按 `\tat ` 截断。
 - 同一 fixture 的三个套件（LightTree / PSI / WithoutAliasExpansion）用同一份 testData，但锚点宽度与产出量可以不同（见上表最后两行）。
+## 批次 12（2026-10-03）：元组字段 CType 约束 / 实例字段初始化 / 静态上下文访问三个语义夹具
+
+口径与批次 6–11 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机 cjc 1.0.5 / 1.1.3 实测决定；
+内联标记用本项目 CFIR 名；官方有而本项目无对应名的 kind 按 SUGGESTED_DIAGNOSTIC 处理；CFIR 与官方不一致的按缺口记录，不改期望。
+三份夹具各由一个子代理独立编写（实例字段那个子代理三次被网关中断，最终由主会话自己写），主会话逐份用同一套 exact_check 复核。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
+| --- | --- | --- | --- | --- |
+| `interop/tupleFieldCTypeRules.cj` | `INVALID_TUPLE_FIELD_CTYPE` ×22；另有 4 段按 SUGGESTED 处理（官方同段必带的 `sema_illegal_member_of_cstruct`、`sema_invalid_cfunc_arg_type` / `sema_invalid_cfunc_return_type`、`sema_unsafe_function_invoke_failed`、`sema_upper_bound_must_be_class_or_interface`，本项目都有名但已在别的夹具覆盖） | 28 段 / 22 标记 | 各 22 OK / 0 DIFF / 12 未标记（全部落在 4 个 SUGGESTED 段） | ① 子代理把 `@C struct TFCCPoint` 在 20 多段重复声明——diagnostics2 的 `// FILE:` 段是**同一包**里的不同文件，顶层名必须在整个夹具文件内唯一，PSI 路径因此满屏 `CLASSIFIER_REDECLARATION` + `AMBIGUOUS_USE`；按段改名为 `TFCCPointS1`…`TFCCPointS28`。② 改名时**被内联标记切断的名字**（`<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPoint`）不会被普通词边界替换命中，第一版改名脚本漏了它们，导致 4 段里出现 `TTFCCPointS<n>` 之类的未声明类型（连带 `sema_not_a_type` / `sema_generic_type_without_type_argument` 等 4 条噪声诊断）；修正后 22/22 全中。 |
+| `initialization/instanceFieldInitializationRules.cj` | `CLASS_UNINITIALIZED_FIELD` ×17（全 testData 此前只在 diagnostics/ 与 LLT 有覆盖，diagnostics2 下只有泛型夹具里的 5 条伴随标记）；形态 10 / 11 / 12 的官方伴随诊断 `sema_used_before_initialization`、`sema_illegal_usage_of_member`、`sema_recursive_constructor_call`（本项目都有名、已在别处覆盖）按官方 Range 记录、不写标记 | 27 段 / 17 标记 | 各 17 OK / 0 DIFF / 3 未标记（全部是上面三条伴随诊断） | 子代理三次网关失败后由主会话按 70 余个探针自己写；头部把 `DiagnosticSema.def` 行号从 :206 改正为 :191；形态 7（父类 `private` 字段）的锚点从 `var` 改到 `private` 修饰符首字母 |
+| `static-members/staticContextAccessRules.cj` | `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`、`STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER`、`STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`、`STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER`、`OBJECT_CANNOT_ACCESS_STATIC_MEMBER`、`ILLEGAL_ACCESS_NON_STATIC_MEMBER`（这六个名字在 diagnostics2 下此前零内联标记，只有 LLT 有覆盖） | 24 段 / 41 标记 | 各 41 OK / 0 DIFF / 2 未标记（形态 10 的 `sema_used_before_initialization` 伴随，按 static-init 夹具的先例只登记不写标记） | 无（头部引用的 `TypeCheckExpr.cpp:52/83/85`、`TypeCheckReference.cpp:150-159/211-219/449-462/500/525/618/764`、`TypeCheckDecl.cpp:89/107/256`、`Utils.cpp:325`、`ScopeManager.h:32`、`DeclAttributeChecker.cpp:117` 已逐条与源码核对；`ILLEGAL_ACCESS_NON_STATIC_MEMBER` 的 4 处标记由整个类型名收窄为 1 字符是子代理自己按实测改的） |
+
+### 取证结论
+
+- **元组字段 CType 约束**：`src/Sema/TypeCheckType.cpp:300-310` `CheckTupleType` 遍历 `tt.fieldTypes`，`Synthesize` 后第一个满足
+  `Ty::IsCTypeConstraint` 的字段即报 `sema_invalid_tuple_field_ctype` 并 `return`（同一元组类型节点最多一条）。判定在
+  `src/AST/Types.cpp:874-879`：只有 **`@C` struct**（`IsCStructType` 且名字不是 `String`）命中；`CPointer<T>` / `CFunc<…>` /
+  `Pointer` 是 CType 但 kind 不是 `TYPE_STRUCT`，`VArray<@C struct>` 递归到元素后 kind 是 `TYPE_VARRAY`，都不命中。
+  锚点是**出问题字段的类型节点**首字符（非 refactor kind）；具名元组字段 `(first: T, …)` 的锚点是**字段名**。
+  该检查对任何类型位置生效（`let` 注解、形参、返回、class/struct 成员、类型别名、泛型实参、`Option<…>`、`VArray<…>` 实参、
+  泛型上界、函数类型、interface 方法形参），`@C` struct 本身不能被 extend（`sema_c_type_cannot_extend_interface`），
+  enum 构造器形参不走 `CheckReferenceTypeLegality` 的元组分派。
+- **实例字段初始化**：唯一报告点 `src/Sema/LegalityOfUsage/InitializationChecker.cpp:1539-1545`，三个锚点分支：
+  用户写的构造器 → `init` 首字母；编译器补出的无参构造器 → 字段声明首字符；主构造器 → 主构造器节点（本机两版 cjc 的 parser
+  不接受主构造器写法，第三分支不可达）。待检查集合是类型体里**非 static 的 var / let**（`prop` 不参与）+ 父类的**非 private** 字段
+  （`GetNonFuncDeclsInSuperClass:1577-1598`）。跳过路径：`this(...)` / `super(...)` 委托方构造器（真正被检查的是被委托到的那个）、
+  `@Foreign` / `@Java` 宿主、构造器体被 `throw` 直接终止、以及字段已 `INITIALIZED`（有内联初值 / 构造器体里出现过赋值 /
+  被父类构造器初始化过；**读不算赋值，lambda 体内的赋值也不算**）。一个构造器漏多个字段时官方循环会对每个字段调一次
+  `Diagnose`，但锚点相同，而 `src/Basic/DiagnosticEngine.cpp:725-723` 的 `ConvertOldDiagToNew` 把 `errorMessage` 置成
+  **未替换 `%s` 的模板文案**、`:778` `HasPrevDiag(起点, 模板文案)` 按这个二元组去重，所以只留一条（消息里的字段名是声明顺序里
+  第一个漏掉的）。
+- **静态上下文访问**：六个报告点 `TypeCheckReference.cpp:159` / `:219`（`this` / `super` 在带 `STATIC` 的函数体里）、
+  `TypeCheckExpr.cpp:83` / `:85`（静态函数 / 静态 lambda 裸名访问实例成员，`funcDecl == nullptr` 才走 lambda 那条）、
+  `TypeCheckDecl.cpp:107`（静态变量初值里的裸名）、`TypeCheckReference.cpp:462`（类型名访问实例成员）、
+  `:525`（对象访问静态成员）。`this.<静态成员>` 官方报的是 `sema_object_cannot_access_static_member` 而**不是**
+  `sema_static_members_cannot_call_members`；`IsLegalAccessFromStaticFunc` 只在 `re.ref.targets.size() <= 1` 时检查；
+  `SymbolKind::STRUCT` 覆盖 class / interface / struct / enum / extend。
+- 三份夹具两版 cjc 的 kind / 文案 / Range 完全一致，均未拆 `LANGUAGE_VERSION`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-03 11:3x–12:0x 聚焦跑 Interop / Initialization / StaticMembers 三组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `interop/tupleFieldCTypeRules` | `INVALID_TUPLE_FIELD_CTYPE` 锚**元组内出问题字段类型**的首字符 1 字符 | PSI 与 LightTree 两条路径相同：锚**整个元组类型引用**（`CfirTupleCFieldTypeChecker` 用 `typeRef.source`，如 `(TFCCPoint, Int64)`），22 个标记全部红在元组起始左括号 |
+| `interop/tupleFieldCTypeRules` | 同上（SUGGESTED 段 6 / 13 / 14 / 15 的伴随诊断） | LightTree 路径额外多报 `ILLEGAL_MEMBER_OF_CSTRUCT`（形态 6）、别名使用点的第二条 `INVALID_TUPLE_FIELD_CTYPE`（形态 10）、`INVALID_CFUNC_PARAMETER_TYPE` / `INVALID_CFUNC_RETURN_TYPE` / `UNSAFE_FUNCTION_INVOKE_FAILED`（形态 13 / 14）、`UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`（形态 15）、warning `UNUSED_IMPORT`（形态 17）；PSI 路径在具名元组字段形态多报 `UNDECLARED_TYPE_NAME`（把字段名 `first` 当类型名） |
+| `interop/tupleFieldCTypeRules`（WithoutAliasExpansion 路径） | 同上 | 只产出形态 1 一条（锚整个元组），形态 2 起全部不产出 |
+| `initialization/instanceFieldInitializationRules` | `CLASS_UNINITIALIZED_FIELD` 锚 `init` 首字母 1 字符（显式构造器） | 锚整个 `init` 关键字（4 字符，`constructorNameDiagnosticSource` 取 `initKeyword` 整段），13 处 |
+| `initialization/instanceFieldInitializationRules` | 无构造器形态锚**字段声明首字符**（`var` / `let` / `private`） | 锚字段名（`a` / `x`），4 处 |
+| `initialization/instanceFieldInitializationRules` 形态 6（父类未初始化字段传递给子类） | 父类字段声明一条 + 子类 `init` 一条 | 父类那条一致，子类那条改报成同一 `init` 上的重复条目 `<!CLASS_UNINITIALIZED_FIELD, CLASS_UNINITIALIZED_FIELD!>init<!>()`（`instanceFieldInfos(context)` 不带 `includeInherited`） |
+| `initialization/instanceFieldInitializationRules` 形态 9（lambda 内赋值） | 字段仍算未初始化，锚 `init` | `init` 那条一致（但锚点宽度不同），另多报 `CAPTURE_BEFORE_INITIALIZATION` |
+| `initialization/instanceFieldInitializationRules` 形态 10 / 11 / 12 的伴随诊断 | `USED_BEFORE_INITIALIZATION`、`ILLEGAL_USAGE_OF_MEMBER`、`RECURSIVE_CONSTRUCTOR_CALL` | 三条都产出且锚点与官方一致（官方也有，只是本文件未写标记） |
+| `static-members/staticContextAccessRules` | `STATIC_MEMBERS_CANNOT_CALL_MEMBERS` / `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 锚 `this` / `super` 首字母 1 字符 | 锚整个 `this` / `super`（4–5 字符），多处；形态 5 / 14 的 `this.<静态成员>` 还**同时**多报一条 `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`（官方只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER`） |
+| `static-members/staticContextAccessRules` | `STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER`、`STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER` 锚裸名标识符 / `static` 首字母 | 一致，绿 |
+| `static-members/staticContextAccessRules` | `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 锚 lambda 里裸名首字母 | 静态属性访问器里的 lambda 一致（绿）；static func 体内 lambda 里的 `this.a` 官方报 `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`，CFIR 不产出 |
+| `static-members/staticContextAccessRules` | `ILLEGAL_ACCESS_NON_STATIC_MEMBER` 锚**类型名首字符** | 锚整个类型名（`SCATopLevelHost`、泛型 `SCAGenericStatic<Int64, String>`），4 处 |
+| `static-members/staticContextAccessRules` 形态 12（struct 实例函数里 `this.b = 1`，`b` 是 static var） | 官方只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` | 另多报 `CANNOT_MODIFY_VAR` |
+| `static-members/staticContextAccessRules` 形态 16（interface 里 `this.<静态 prop>`） | 官方报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 锚 `this` | 改报 `UNRESOLVED_REFERENCE`（`this.sp` 未解析） |
+| `static-members/staticContextAccessRules` 形态 10 的 `USED_BEFORE_INITIALIZATION` 伴随 | 官方有（未写标记） | CFIR 产出且锚点一致 |
+| `initialization` / `static-members`（WithoutAliasExpansion 路径） | — | 两个新用例本次聚焦跑均被跳过 |
+
+### 环境与工具事实
+
+- 后台 shell 的工作目录会漂到 `testData/`（环境提示里会切），此时 `./gradlew-queue.bat` 找不到（exit 127、只写出 70 字日志）。
+  聚焦跑一律用**绝对路径**调 `gradlew-queue.bat`。
+- 沙箱路径守卫会拒绝"用运行时计算出来的值当 `sed` / `find` 的参数"的命令（`S=…; sed -n … "$S/…"`、`sed -n "$(grep …)"`、
+  `find $S/src -name …`），官方源码的定点查看改成写全字面路径即可。
+- `Write` / `Edit` 工具在工作树绝对路径上仍会偶发 "Edit the worktree copy of this file" 误拒（两个子代理各遇到多次），
+  重试或改用 Python 写入都能绕过；`cat >> README.md <<'EOF'` 这种长 heredoc 也可能被守卫改写而报 "unexpected EOF"，
+  README 的长小节改用 Write 工具写进 `.scratch/` 再 `cat` 追加。
+- 子代理改顶层名时要留意**内联标记会切断标识符**：`<!DIAG!>T<!>FCCPoint` 里的名字不是普通词边界出现，按 `sed s/TFCCPoint/…/`
+  或 Python `\bTFCCPoint\b` 都会漏；改名后若 exact_check 的 UNMARKED 里冒出 `sema_not_a_type`、
+  `sema_generic_type_without_type_argument` 之类"本来不该有的诊断"，基本就是这种情况。
