@@ -33,8 +33,15 @@ processors:
 exporters:
   # 转给 Jaeger，由它存与渲染。CangJie 的指标全在 cangjie.* 命名空间下。
   # 用 otlp_grpc 而非 otlp：后者在 contrib 0.161 已是弃用别名，会打 deprecation warning。
+  #
+  # 端点必须是 1417 而不是 4317：Jaeger all-in-one 的 OTLP gRPC 收端在 1417，4317 是它的
+  # 内部查询端口。指错时 collector 能连上、却收到
+  #   rpc error: code = Unimplemented desc = unknown service
+  #       opentelemetry.proto.collector.metrics.v1.MetricsService
+  # 指标在 collector 侧一切正常（debug/file exporter 都收到了），只有转给 Jaeger 这一跳失败，
+  # 于是 Jaeger UI 恒为空，很容易误判成"指标没发出去"。
   otlp_grpc/jaeger:
-    endpoint: jaeger:4317
+    endpoint: jaeger:1417
     tls:
       insecure: true
 
