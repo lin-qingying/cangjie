@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
+import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 
 /**
  * OpenTelemetry 指标 scope 名称。
@@ -453,6 +454,29 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              */
             fun runs(): String = "$name.runs"
         }
+    }
+
+    /**
+     * PSI 解析指标，按解析入口分桶。
+     *
+     * 与 [RawBuild] 的 LightTree `parse` 阶段互补而非重复：这里测平台驱动的 PSI AST 构建，
+     * 那条测 `LightTree2Cfir` 内的 LightTree 构建。
+     */
+    object Parse : LLStatisticsScope("$name.parse") {
+        /**
+         * 入口段前缀。
+         */
+        fun kind(kind: CangjiePsiParseKind): String = "${name}.${kind.metricSuffix}"
+
+        /**
+         * 某入口的解析耗时（毫秒）。
+         */
+        fun duration(kind: CangjiePsiParseKind): String = "${kind(kind)}.duration"
+
+        /**
+         * 某入口的解析次数。
+         */
+        fun runs(kind: CangjiePsiParseKind): String = "${kind(kind)}.runs"
     }
 
     /**
