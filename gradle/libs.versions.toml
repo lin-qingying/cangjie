@@ -17,7 +17,8 @@ junit5 = "5.12.2"
 asm = "9.9"
 kotlinx-collections-immutable = "0.4.0"
 kotlinx-serialization-json = "1.7.3"
-opentelemetry = "1.39.0"
+# 与 IntelliJ 平台自带的 diagnostic-telemetry-impl 保持一致：平台是按 1.48.0 编译的，我们若声明 1.39.0，Gradle 会把 exporter-common 解析到 1.48.0 而把 exporter-sender-okhttp 卡在 1.39.0，加载时报 AbstractMethodError。
+opentelemetry = "1.48.0"
 [libraries]
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 koverGradlePlugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }

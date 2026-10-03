@@ -49,6 +49,7 @@
 | 子模块 | 职责 |
 |---|---|
 | `analysis-test-framework` | 分析 API 测试框架（对齐 Kotlin `analysis-api-impl-base` testFixtures） |
+| `analysis-performance-test` | 性能统计测试入口：指标断言、报表产出、OTLP 导出；用法见 `docs/analysis-performance-statistics.md` |
 
 ## 设计原则
 
@@ -59,4 +60,5 @@
 ## 相关文档
 
 - `../TESTING_CONVENTIONS.md` — Analysis 模块测试分类清单
+- `docs/analysis-performance-statistics.md` — 性能统计的开启方式、指标清单与看结果的方法
 - `../docs/k2-module-alignment.md` — 与 Kotlin K2 模块对照

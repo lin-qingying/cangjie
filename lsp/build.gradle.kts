@@ -53,6 +53,10 @@ dependencies {
     testImplementation(project(":compiler:config"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    // 请求级接缝用例需要真实 SDK 才能读到指标：InMemoryMetricReader 断言采样确实进了后端。
+    testImplementation(libs.opentelemetry.sdk)
+    testImplementation(libs.opentelemetry.sdk.metrics)
+    testImplementation(libs.opentelemetry.sdk.testing)
 
     testFixturesApi(project(":analysis:analysis-api"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))
