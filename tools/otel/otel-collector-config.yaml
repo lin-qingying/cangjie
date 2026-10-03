@@ -34,14 +34,18 @@ exporters:
   # 转给 Jaeger，由它存与渲染。CangJie 的指标全在 cangjie.* 命名空间下。
   # 用 otlp_grpc 而非 otlp：后者在 contrib 0.161 已是弃用别名，会打 deprecation warning。
   #
-  # 端点必须是 1417 而不是 4317：Jaeger all-in-one 的 OTLP gRPC 收端在 1417，4317 是它的
-  # 内部查询端口。指错时 collector 能连上、却收到
-  #   rpc error: code = Unimplemented desc = unknown service
+  # 端点是 4317：all-in-one 镜像 EXPOSE 声明的 OTLP gRPC 端口就是 4317（另有 4318 HTTP）。
+  #
+  # 此前试过 1417 并提交，那是我推断错了：镜像 EXPOSE 里没有 1417，collector 连它直接
+  # connection refused。1417 是 Jaeger 1.x 某些自建部署的端口，all-in-one 不用它。
+  #
+  # 未解决：走 4317 gRPC 时 collector 收到
+  #   code = Unimplemented desc = unknown service
   #       opentelemetry.proto.collector.metrics.v1.MetricsService
-  # 指标在 collector 侧一切正常（debug/file exporter 都收到了），只有转给 Jaeger 这一跳失败，
-  # 于是 Jaeger UI 恒为空，很容易误判成"指标没发出去"。
+  # 即连得上、但 Jaeger 没注册这个服务名。下一步是探 4318 的 OTLP HTTP 服务是否可用，可用就
+  # 把这里换成 otlp_http/jaeger 指向 4318。先记在配置里，别让它只活在对话里。
   otlp_grpc/jaeger:
-    endpoint: jaeger:1417
+    endpoint: jaeger:4317
     tls:
       insecure: true
 

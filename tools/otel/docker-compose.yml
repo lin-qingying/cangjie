@@ -13,7 +13,11 @@
 services:
   # Jaeger all-in-one：自带存储与 UI，不需要另接后端。
   jaeger:
-    image: jaegertracing/all-in-one:latest
+    # 钉在 1.62.0 而不是 latest：latest 的 OTLP receiver 只到 StatusStarting 从未 ready，
+    # collector 推过去得到 Unimplemented（unknown service MetricsService），Jaeger UI 恒空。
+    # 1.62.0 的 OTLP gRPC/HTTP 两个 server 都正常启动。用 latest 时 UI 正常但指标进不去，
+    # 症状极具误导性——看起来像"指标没发出去"，实际是收端没就绪。
+    image: jaegertracing/all-in-one:1.62.0
     environment:
       # all-in-one 默认不接 OTLP，要显式打开才能当 collector 的下游。
       COLLECTOR_OTLP_ENABLED: "true"
