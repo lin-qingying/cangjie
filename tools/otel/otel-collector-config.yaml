@@ -42,15 +42,19 @@ exporters:
     path: /var/lib/otel/metrics.json
 
   # 基本日志：collector 自己看到什么、收到了哪些指标，出问题时先看这里。
-  logging:
-    verbosity: basic
+  #
+  # 用 debug 而非 logging：contrib 新版已把 logging exporter 标记弃用，配了它 collector
+  # 直接拒绝启动（'exporters' the logging exporter has been deprecated, use the debug
+  # exporter instead），且 verbosity 的取值也从 basic/normal 改成了 normal/detailed。
+  debug:
+    verbosity: normal
 
 service:
   pipelines:
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp/jaeger, file, logging]
+      exporters: [otlp/jaeger, file, debug]
   telemetry:
     logs:
       level: info
