@@ -44,7 +44,7 @@ internal fun collectForStructureElement(
     }
     val diagnostics = reporter.committedDiagnostics
     if (startedAt != null && checkerSet != null) {
-        diagnosticsStatistics!!.onCheckerPassFinished(checkerSet, startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
+        diagnosticsStatistics!!.onStructureElementCollectionFinished(checkerSet, startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
     }
     return FileStructureElementDiagnosticList(diagnostics)
 }

@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -356,21 +357,24 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
         object StructureBuild : OperationMetrics("$name.structureBuild")
 
         /**
-         * 单个 structure element 上某个 checker 集合的遍历。
+         * 单个 structure element 上、某个 checker 集合的完整诊断收集。
+         *
+         * 计量范围包含该元素上的全部遍历（`SEMA` 与可能发生的 `POST_SEMA`）与诊断提交，
+         * 因此它与 [Pass] 的关系是"元素级总量 vs 单次遍历"，不是并列的两个切面。
          */
-        object CheckerPass : LLStatisticsScope("$name.checkerPass") {
+        object StructureElement : LLStatisticsScope("$name.structureElement") {
             /**
              * 集合段前缀。
              */
             fun set(set: CaDiagnosticCheckerSet): String = "${name}.${set.metricSuffix}"
 
             /**
-             * 某 checker 集合的遍历耗时（毫秒）。
+             * 某 checker 集合的收集耗时（毫秒）。
              */
             fun duration(set: CaDiagnosticCheckerSet): String = "${set(set)}.duration"
 
             /**
-             * 某 checker 集合的遍历次数。
+             * 某 checker 集合的收集次数。
              */
             fun runs(set: CaDiagnosticCheckerSet): String = "${set(set)}.runs"
 
@@ -378,6 +382,26 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              * 某 checker 集合产出的诊断数。
              */
             fun diagnostics(set: CaDiagnosticCheckerSet): String = "${set(set)}.diagnostics"
+        }
+
+        /**
+         * 单次诊断遍历，按 SEMA / POST_SEMA 阶段分桶。
+         */
+        object Pass : LLStatisticsScope("$name.pass") {
+            /**
+             * 阶段段前缀。
+             */
+            fun phase(phase: DiagnosticCollectionPhase): String = "${name}.${phase.name.lowercase()}"
+
+            /**
+             * 某阶段的遍历耗时（毫秒）。
+             */
+            fun duration(phase: DiagnosticCollectionPhase): String = "${phase(phase)}.duration"
+
+            /**
+             * 某阶段的遍历次数。
+             */
+            fun runs(phase: DiagnosticCollectionPhase): String = "${phase(phase)}.runs"
         }
     }
 
