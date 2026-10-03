@@ -775,4 +775,79 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
   或 `REDEFINITION_ENTRY`（`main`）。每段都写 `main()` 是常见踩法，写完要用脚本按段统计顶层声明名。
 - 一行两个官方诊断同起点时（形参名同时触发"具名"与"整段"两条），标记必须写成嵌套：外层从形参名起、内层只包首字符。
 - 后台 shell 现在**完全看不到**工作树路径（`/d/...` 与 `D:/...` 两种写法都 exit 127，只写出 141 字日志），
-  `gradlew-queue.bat` 聚焦跑改在前台执行即可（约 20 秒到 1 分半）。生成的测试组名按目录名首字母大写：`varray/` → `Varray`。
+  `gradlew-queue.bat` 聚焦跑改在前台执行即可（约 20 秒到 1 分半）。生成的测试组名按目录名首字母大写：`varray/` → `Varray`。## 批次 13（2026-10-03）：类型别名规则 / 继承图规则 / 泛型调用实参映射三个语义夹具
+
+口径与批次 6–12 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机 cjc 1.0.5 / 1.1.3 实测决定；
+内联标记用本项目 CFIR 名；官方有而本项目无对应名的 kind 按 SUGGESTED_DIAGNOSTIC 处理；CFIR 与官方不一致的按缺口记录，不改期望。
+三份夹具各由一个子代理独立编写；继承图那个子代理三次被网关空闲超时打断，主会话用其 54 个探针的实测结果自己写完并复核。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
+| --- | --- | --- | --- | --- |
+| `typealias/typeAliasRules.cj` | `TYPEALIAS_CYCLE`、`TYPEALIAS_UNUSED_TYPE_PARAMETERS`（官方是 **warning**）、`TYPEALIAS_EXTERNAL_REFER_INTERNAL`、`ACCESSIBILITY_ERROR`（伴随名 `sema_accessibility`，也在本文件当正式标记用） | 30 段 / 35 标记 | 各 35 OK / 0 DIFF / 3 未标记（形态 29 支撑声明上的三条官方诊断，头部登记） | ① 12 个顶层名跨段 / 跨文件重名（子代理自查只比了本文件内的其它 `.cj`，而 LLT 把三份文件放进同一个包；已按段改名加 `V<段号>` 后缀，改名脚本要先剥掉内联标记再匹配声明行，否则 `<!X!>p<!>ublic type <!Y!>TARBj<!>` 这类"修饰符被标记切断"的声明会被漏掉）；② 第 1 段的 `// FILE:` 前缀丢失（子代理写成 `typeAliasCycleTwoWay.cj` 裸行），LLT 把整个头部当一段，报 `Filename \` is not valid` |
+| `typealias/typeAliasRulesV105.cj` | 同上（1.0.5-only 段） | 7 段 / 11 标记 | 1.0.5：11 OK / 0 DIFF；1.1.3：10 OK / 1 DIFF（形态 7 段，**属预期**：`exact_check.py` 不看 `LANGUAGE_VERSION` 指令，仍会用 1.1.3 编这段，1.1.3 本就不报） | 见下"版本门禁段必须单独成文件" |
+| `typealias/typeAliasRulesV110.cj` | 同上（1.1.0-only 段） | 2 段 / 4 标记 | 各 4 OK / 0 DIFF | 同上 |
+| `inheritance/inheritanceGraphRules.cj` | `INHERITANCE_CYCLE`、`CLASS_INHERIT_NON_CLASS_NOR_INTERFACE`、`INTERFACE_MEMBER_MUST_BE_IMPLEMENTED`、`NEED_MEMBER_IMPLEMENTATION`、`CANNOT_OVERRIDE`；1 段官方 `sema_class_need_abstract_modifier_or_func_need_impl` 无 CFIR 名按 SUGGESTED 记录 | 32 段 / 28 标记 | 各 28 OK / 0 DIFF / 6 未标记（伴随诊断：`sema_recursive_constructor_call`、`sema_non_inheritable_super_class`、`sema_illegal_extended_type`、`sema_inheritance_non_ref_type` ×2、形态 26 的 `sema_class_need_abstract_modifier_or_func_need_impl`） | ① 官方 `Diagnose(node, kind)` 对非 refactor kind 退化成 `GetBegin()` 1 字符，锚**声明的首 token**（`open` / `class` / `struct` / `enum` / `interface` / `extend` 关键字的首字母），第一版把标记写成整词被 exact_check 判 27 处 DIFF，已收窄；② `CANNOT_OVERRIDE` 是 refactor kind，锚**成员名整段**（`foo` 3 字符 / `a` 1 字符），第一版只标了首字母，已改正 |
+| `call/genericCallArgumentMappingRules.cj` | `AMBIGUOUS_ARG_TYPE`、`PARAMETERS_AND_ARGUMENTS_MISMATCH`；伴随 `TYPE_MISMATCH`、`NO_MATCH_FUNCTION_DECLARATION_FOR_REF` | 18 段 / 20 标记 | 各 20 OK / 0 DIFF / 0 未标记 | 无（头部对 `sema_generic_ambiguous_method_match_in_upper_bounds` 死分支与三个 v1.0.0 尚未引入的 kind（`sema_too_many_arguments` / `sema_no_value_for_parameter` / `sema_cannot_infer_parameter_type`，全树 grep 无命中）的判断经主会话复核成立） |
+
+### 取证结论
+
+- **类型别名**（`src/Sema/PreCheck.cpp:1187-1196` 别名环、`src/Sema/TypeCheckDecl.cpp:679-696` 未用类型形参、`:619-642` 访问级别）：
+  别名环的锚点是 `TypeAliasDecl::GetBegin()`，parser 在消费修饰符**之前**记录它（`ParseDecl.cpp:1180-1181`），所以
+  `public type A = …` 锚 `p`（列 1）而不是 `type` 的 `t`；`sema_accessibility`（`DiagRefactor/DiagnosticSema.def:23`，refactor）锚别名名。
+  官方**没有**自引用别名环（报 `sema_undeclared_type_name`）、别名经泛型类参数成环（零诊断）、partial-inference 报告点（只擦除不报）、
+  别名声明上的 `where`（parser 不支持）。未用形参的判定来自 `GetUnusedTysInTypeAlias`（`:660-677`）按声明顺序减去 RHS
+  类型树任意深度出现过的类型实参，链头形参即使实参被 `EraseIf` 擦掉也算未用。
+- **继承图**（`src/Sema/PreCheck.cpp:1315-1322` 环、`:1256-1269` 非 ref 类型、`:1204-1235` DFS 入口；
+  `src/Sema/TypeCheckClassLike.cpp:146-150` 非 class-nor-interface；`src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:855-878`
+  接口成员未实现 / 需要实现；`src/Sema/Diags.cpp:368-377` override 非 open 父类成员）：struct / enum 自身不查环，
+  环只在 class / interface 之间以及经 extend 传播；环经类型别名可穿透（`CheckInheritanceCycleHelper` 递归进别名 RHS）；
+  `<:` 后面直接写元组 / 函数类型 / 原始类型会被 parser 拒（`parse_invalid_super_declaration`），
+  所以 `sema_inheritance_non_ref_type` **必须经类型别名**才可达；`extend` 参与时报告落在 extend 块上。
+- **泛型调用实参映射**（`src/Sema/TypeCheckCall.cpp:989-1050` 主路径、`:265-303 ResolveTypeMappings`、`:305-323 DiagnoseForMultiMapping`）：
+  `ResolveTypeMappings` 只从 `matchMark[i] == true` 的下标收集结果，返回的 `resMappings` 恒为 `typeMappings` 的子序列，
+  所以 `:318` 的 `resMappings.size() > typeMappings.size()` 分支是**死分支**；该 kind 的活报告点在 `:2579 GetErrorKindForCall`
+  （要求接收者是 `isExposedAccess` 的 `MemberAccess`，即类型形参），本轮三种写法都先被 `sema_unable_to_infer_generic_func` 拦下。
+  两条 kind 的报告点都是 `Diagnose(ce, …)`，锚调用表达式首字符。`:2195` 的"实参类型推不出来"入口（`CheckFuncPtrCall`）
+  五种写法都被更早诊断拦下，本轮不可达。
+- 三份主夹具两版 cjc 的 kind / 文案 / Range 完全一致；类型别名夹具按版本拆成三份文件（见下）。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-03 11:5x–12:0x 聚焦跑 Typealias / Inheritance / Call 三组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `typealias/typeAliasRules` | `TYPEALIAS_CYCLE` 锚别名声明首字符 1 个（`public type A` 锚 `p`） | 锚 `type A` 整段（`public` 修饰符被排除在外，泛型实参列表被包含在内），如 `type TARB4<T>`；PSI 与 LightTree 相同 |
+| `typealias/typeAliasRules` | `TYPEALIAS_UNUSED_TYPE_PARAMETERS`（warning）同上锚 1 字符 | 锚 `type TARB6<T>` 整段；形态 24 / 29 这类同起点的段把 C 与未用形参**合并**成一个范围上的两个名字（`<!TYPEALIAS_EXTERNAL_REFER_INTERNAL, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type <!ACCESSIBILITY_ERROR!>TARBk<!><T><!>`），官方是两条同起点的独立诊断 |
+| `typealias/typeAliasRules` | `TYPEALIAS_EXTERNAL_REFER_INTERNAL` 锚 `p` / `t` 1 字符 | 锚 `type <别名名>`（起点在 `type` 而不是修饰符），`ACCESSIBILITY_ERROR` 的别名名锚点与官方一致 |
+| `typealias/typeAliasRules`（WithoutAliasExpansion 路径） | 同上 | 35 个标记里只有 2 条 `TYPEALIAS_CYCLE` 产出（其余 C / 未用形参 / `ACCESSIBILITY_ERROR` 全缺） |
+| `inheritance/inheritanceGraphRules` | `INHERITANCE_CYCLE` 锚声明首 token 1 字符 | 锚 `interface IgIpA` / `extend IgCsxS` 这类"关键字 + 类型名"整段；形态 3（别名环）还多报一条 `RECURSIVE_CONSTRUCTOR_CALL`（官方也有，未写标记）；形态 7 多报 `NON_INHERITABLE_SUPER_CLASS`、形态 8 多报 `ILLEGAL_EXTENDED_TYPE`（同属官方伴随，未写标记）；形态 5 / 6 的 extend 块上 CFIR 报而官方报在环上的 interface |
+| `inheritance/inheritanceGraphRules` | `CLASS_INHERIT_NON_CLASS_NOR_INTERFACE` 锚超类型名首字母 1 字符 | 锚整个超类型引用（`Array<Int64>` / `IgNaA2`），5 处 |
+| `inheritance/inheritanceGraphRules` | `INTERFACE_MEMBER_MUST_BE_IMPLEMENTED` 锚宿主声明首 token 1 字符 | 锚宿主类型名（`IgMsS` / `IgMpS` / `IgMsgS` / `IgM3S`），enum 与 extend 宿主两段不产出 |
+| `inheritance/inheritanceGraphRules` | `NEED_MEMBER_IMPLEMENTATION` 锚宿主声明首 token | 改报 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 并锚宿主类型名，enum / extend 宿主不产出 |
+| `inheritance/inheritanceGraphRules` | `CANNOT_OVERRIDE` 锚成员名整段 | 一致（PSI 与 LightTree 绿）；WithoutAliasExpansion 路径全部 28 个标记不产出 |
+| `inheritance/inheritanceGraphRules`（WithoutAliasExpansion 路径） | 同上 | 只有 1 条 `INHERITANCE_CYCLE` 产出（形态 1，锚 `interface IgIpA`），其余全缺 |
+| `call/genericCallArgumentMappingRules` | `PARAMETERS_AND_ARGUMENTS_MISMATCH` 锚调用表达式首字符 1 字符 | 锚被调者整名（`GAMBox13` / `GAMBox14<…>` / `GAMHolder15`），4 处；`extend` 成员与类内成员两段一致 |
+| `call/genericCallArgumentMappingRules` | 伴随 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF` 锚函数名首字母 | 锚整名（`gamS14Height`），1 处 |
+| `call/genericCallArgumentMappingRules`（WithoutAliasExpansion 路径） | 12 条 `AMBIGUOUS_ARG_TYPE` + 4 条 `PARAMETERS_AND_ARGUMENTS_MISMATCH` | 全部不产出 |
+
+### 版本门禁段必须单独成文件
+
+LLT 的 `LANGUAGE_VERSION` 指令是**文件级**指令，写在 `// FILE:` 段内会直接失败：
+`java.lang.IllegalStateException: Directive LANGUAGE_VERSION has Global applicability but it declared in File`
+（`ModuleStructureExtractorImpl.kt:322`）。因此类型别名夹具的 7 个门禁段拆成 `typeAliasRulesV105.cj`（版本 1.0.5，6 段）与
+`typeAliasRulesV110.cj`（版本 1.1.0，1 段），主文件只剩 26 个两版一致的段。已核实 testData 下没有任何多段文件在段内写该指令。
+另外，头部**散文里**提到 `` `// LANGUAGE_VERSION:` `` 或 `` `// FILE:` `` 的行也会被框架当成真指令解析
+（`Filename \` is not valid`），本批已把这些行改成不带冒号的文字描述。
+
+### 环境与工具事实
+
+- `.scratch/exact_check.py` 原来只比对 **error**（`official_ranges` 跳过 warning），因此官方 warning 类标记
+  （本批的 `TYPEALIAS_UNUSED_TYPE_PARAMETERS`）恒为 DIFF。已改成 error + warning 都收；批次 13 之前
+  `finallyFlowPlaceholder.cj` 的 `UNUSED_VARIABLE` / `UNUSED_EXPRESSION` 同样是这个工具口径造成的假 DIFF
+  （README 批次 8 记录过"exact=0 diff=2"），现在应为 exact=2 diff=0。
+- 跨文件重名自查要按 **LLT 的包边界**做：同一目录下所有夹具文件进同一个包，只查"本文件 vs 其它文件"会漏
+  （类型别名子代理自查就是这样漏掉 12 个重名）。改名脚本匹配声明行前要先剥掉内联标记。
+- 生成的测试组名按目录名首字母大写：`varray/` → `Varray`、`typealias/` → `Typealias`、`static-members/` → `StaticMembers`；
+  方法名是文件名去 `.cj` 后首字母大写加 `test` 前缀。
+- 后台 shell 偶尔完全看不到工作树路径（`/d/...` 与 `D:/...` 两种写法都报 No such file），此时 gradle 聚焦跑要在前台执行。
