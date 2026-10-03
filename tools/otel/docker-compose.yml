@@ -1,0 +1,34 @@
+# Analysis API 性能统计的本地采集栈。
+#
+# 启动：
+#   docker compose -f tools/otel/docker-compose.yml up -d
+#
+# 跑测试并把指标推过去：
+#   ./gradlew :analysis:analysis-performance-test:test \
+#       -Dcangjie.performance.otlp.endpoint=http://localhost:4317
+#
+# 看板上指标全在 cangjie.* 命名空间下。累计型（cumulative）指标不会自己变小，
+# 两次运行对比请先取差值或在 Jaeger 里用 rate。
+
+services:
+  # Jaeger all-in-one：自带存储与 UI，不需要另接后端。
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      # all-in-one 默认不接 OTLP，要显式打开才能当 collector 的下游。
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # UI
+      - "4317:4317" # 内部：collector 推给它，不要从宿主机直连，所以不映射到外
+
+  collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317" # 测试进程的 OtlpGrpcMetricExporter 打到这里
+      - "4318:4318" # OTLP HTTP，供临时排查
+      - "8889:8889" # collector 自身指标
+    depends_on:
+      - jaeger

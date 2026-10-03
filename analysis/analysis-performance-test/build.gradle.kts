@@ -57,3 +57,23 @@ projectTests {
         workingDir = rootDir
     }
 }
+
+/**
+ * 开启 OTLP 导出的系统属性名，值是 gRPC endpoint。须与
+ * `CaPerformanceTestTelemetry.OTLP_ENDPOINT_PROPERTY` 一致。
+ */
+val caPerformanceOtlpEndpoint = "cangjie.performance.otlp.endpoint"
+
+// 把 OTLP endpoint 转发进测试 JVM。
+//
+// `Test` 任务另起 JVM，Gradle 命令行上的 `-D` 只进 Gradle 自身进程，不转发就永远到不了
+// 测试进程——`CaPerformanceTestTelemetry` 读的那个系统属性会恒为 null，OTLP 导出这条路等于
+// 没接上。要用就显式传：
+//
+//   ./gradlew :analysis:analysis-performance-test:test \
+//       -Dcangjie.performance.otlp.endpoint=http://localhost:4317
+tasks.withType<Test>().configureEach {
+    providers.systemProperty(caPerformanceOtlpEndpoint).orNull?.let { endpoint ->
+        systemProperty(caPerformanceOtlpEndpoint, endpoint)
+    }
+}

@@ -1,0 +1,56 @@
+# OpenTelemetry Collector 配置：Analysis API 统计的采集与看板
+#
+# 指标本身是 OpenTelemetry 标准的 LongCounter / LongHistogram，采集、聚合、落盘、看板都是
+# 现成组件的事，仓里不自己写渲染逻辑。
+#
+# 启动：docker compose up -d（见同目录 docker-compose.yml）
+# 前端：http://localhost:16686
+# 直连 OTLP gRPC：localhost:4317
+
+receivers:
+  # 与 CaPerformanceTestTelemetry 的 OtlpGrpcMetricExporter 对应：它发 gRPC，所以这里
+  # 必须开 grpc 端口。http 同时开是为了让 curl 之类的临时排查能用。
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # 先于 batch 执行：批处理的排队窗口会让瞬时内存涨过限，硬丢数据反而更糟。
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # 攒 5 秒再发。指标按 JVM 累积（cumulative temporality），所以间隔越短看板上的
+  # cumulative 值抖动越大；5 秒是对"想看趋势"和"别把 exporter 打爆"的折中。
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+exporters:
+  # 转给 Jaeger，由它存与渲染。CangJie 的指标全在 cangjie.* 命名空间下。
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # 落 JSON 行，离线或 CI 归档时用，不依赖 Jaeger 还在跑。
+  file:
+    path: /var/lib/otel/metrics.json
+
+  # 基本日志：collector 自己看到什么、收到了哪些指标，出问题时先看这里。
+  logging:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp/jaeger, file, logging]
+  telemetry:
+    logs:
+      level: info
