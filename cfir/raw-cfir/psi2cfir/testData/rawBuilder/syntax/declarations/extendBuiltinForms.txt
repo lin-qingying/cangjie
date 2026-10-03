@@ -1,0 +1,99 @@
+FILE: extendBuiltinForms.cj
+    internal? struct P {
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(x: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(x) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+        }
+        public func d(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(x)
+            }
+        }
+    }
+    extend R|P| {
+        public operator func *operator_plus(o: R|P|): R|P| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func zero(): R|P| {
+            RETURN {
+                FUNCTION_CALL(P) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    extend R|Int64| {
+        public func twice(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+    }
+    extend R|String| {
+        public func shout(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        STRING("!")
+                }
+            }
+        }
+    }
+    internal? class G<T> {
+        init() {
+        }
+    }
+    extend<T> R|G<R|T|>| {
+        public func g(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }
+    internal? func extendBuiltinForms(p: R|P|, n: R|Int64|, s: R|String|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(d) {
+                                receiver:
+                                    NAMED_ACCESS(p)
+                            }
+                        arguments:
+                            FUNCTION_CALL(twice) {
+                                receiver:
+                                    NAMED_ACCESS(n)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            FUNCTION_CALL(shout) {
+                                receiver:
+                                    NAMED_ACCESS(s)
+                            }
+                    }
+            }
+        }
+    }

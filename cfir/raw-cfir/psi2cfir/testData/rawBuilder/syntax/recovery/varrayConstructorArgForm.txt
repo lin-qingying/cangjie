@@ -1,0 +1,32 @@
+FILE: varrayConstructorArgForm.cj
+    internal? func twoArgs(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    INT(2)
+                    <element: CfirNamedArgumentExpression>
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }
+    internal? func lambdaArg(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(size: <implicit>) {
+                        INT(1)
+                    }
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    <element: CfirNamedArgumentExpression>
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

@@ -1,0 +1,62 @@
+FILE: functionParams.cj
+    internal? func noParams(): R|Unit| {
+    }
+    internal? func unnamed(a: R|Int64|, b: R|String|): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }
+    internal? func named(x: R|Int64|, y: R|String|): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(x)
+                    NAMED_ACCESS(y)
+                }
+    }
+    internal? func namedWithDefault(x: R|Int64| = INT(1)
+    , y: R|String| = STRING("d")
+    ): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(x)
+                    NAMED_ACCESS(y)
+                }
+    }
+    internal? func mixed(a: R|Int64|, b: R|String| = STRING("d")
+    , c: R|Bool| = BOOLEAN(true)
+    ): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                }
+    }
+    internal? func functionParam(f: R|(R|Int64|) -> R|Int64||, g: R|(R|Int64|, R|Int64|) -> R|Unit||): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    FUNCTION_CALL(f) {
+                        INT(1)
+                    }
+                    NAMED_ACCESS(g)
+                }
+    }
+    internal? func returns(): R|(R|Int64|) -> R|Int64|| {
+        RETURN {
+            LAMBDA(a: R|Int64|) {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        INT(1)
+                }
+            }
+        }
+    }

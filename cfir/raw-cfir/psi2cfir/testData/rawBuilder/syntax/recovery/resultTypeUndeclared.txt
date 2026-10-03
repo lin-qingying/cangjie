@@ -1,0 +1,8 @@
+FILE: resultTypeUndeclared.cj
+    internal? func resultTypeUndeclared(): R|Result<R|Int64|, R|String|>| {
+        RETURN {
+            FUNCTION_CALL(Ok) {
+                INT(1)
+            }
+        }
+    }

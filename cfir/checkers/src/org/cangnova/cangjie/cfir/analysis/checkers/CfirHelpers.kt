@@ -1,14 +1,25 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
+import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.findBuiltinAnnotations
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.hasBuiltinAnnotation
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.expressions.booleanArgument
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -79,4 +90,37 @@ internal fun CfirExpression.isFlowExpression(): Boolean = when (this) {
             origin == CfirFunctionCallOrigin.CompilerCoreIntrinsic
     is CfirWrappedExpression -> expression.isFlowExpression()
     else -> false
+}
+
+/**
+ * 同包弃用豁免（对齐官方 `TypeChecker::ShouldSkipDeprecationDiagnostic`）。
+ *
+ * 官方 `CheckUsageOfDeprecated` 在进入一个带 `@Deprecated` 的声明时把该声明记为
+ * `deprecatedContext` / `strictDeprecatedContext`，离开时清空；报告使用点之前先判断
+ * 目标声明与当前上下文声明是否同包：strict 目标只在上下文声明本身 strict 时豁免，
+ * 非 strict 目标在任意同包弃用声明内部豁免。cjc 1.0.5 实测：弃用类 B 内部调用同包弃用类 A
+ * 零诊断；非弃用声明内部调用弃用类 A 报 warning；非 strict 的弃用子类 D 继承 strict 弃用父类 C
+ * 仍报 `strictness ... weaken` 与两处 `class 'C' is deprecated.`。
+ */
+internal fun CheckerContext.shouldSkipSamePackageDeprecation(targetPackage: FqName?, strict: Boolean): Boolean {
+    if (targetPackage == null) return false
+    for (symbol in containingDeclarations.asReversed()) {
+        val declaration = symbol.cfir as? CfirDeclaration ?: continue
+        if (!declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.DEPRECATED)) continue
+        val annotation = declaration.findBuiltinAnnotations(BuiltInAnnotationKind.DEPRECATED)
+            .firstOrNull() as? CfirAnnotationCall ?: continue
+        val enclosingIsStrict = annotation.booleanArgument("strict") == true
+        if (strict && !enclosingIsStrict) continue
+        val enclosingPackage = symbol.declarationPackageFqName() ?: continue
+        if (enclosingPackage == targetPackage) return true
+    }
+    return false
+}
+
+/** 取符号所属声明的包名；callable 取 classId，class-like 直接取 classId。 */
+private fun CfirBasedSymbol<*>.declarationPackageFqName(): FqName? = when (this) {
+    // 顶层 callable 的 `classId` 为 null（见 CallableId 注释），包名只能取 `packageName`。
+    is CfirCallableSymbol<*> -> callableId.packageName
+    is CfirClassLikeSymbol<*> -> classId.packageFqName
+    else -> null
 }

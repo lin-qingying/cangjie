@@ -1,0 +1,4 @@
+FILE: prefixIncDec.cj
+    internal? func prefixIncDec(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

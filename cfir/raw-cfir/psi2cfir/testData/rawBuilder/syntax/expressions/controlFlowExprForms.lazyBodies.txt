@@ -1,0 +1,10 @@
+FILE: controlFlowExprForms.cj
+    internal? func g1(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func g3(x: R|Int64|, y: R|Int64|, z: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func controlFlowExprForms(a: R|Int64|, b: R|Int64|, c: R|Int64|, o: R|Option<R|Int64|>|, pairs: R|Array<R|(R|Int64|, R|String|)|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

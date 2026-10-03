@@ -1,0 +1,4 @@
+FILE: largeComments.cj
+    internal? func largeComments(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

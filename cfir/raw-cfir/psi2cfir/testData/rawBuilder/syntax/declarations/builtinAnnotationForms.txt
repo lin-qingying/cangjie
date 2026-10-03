@@ -1,0 +1,187 @@
+FILE: builtinAnnotationForms.cj
+    @R|Attribute|("a", "b", "s") internal? class BuiltinAnnoClass {
+        init()
+    }
+    @R|Attribute|("State") internal? var builtinAnnoVarA: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|("Binding") internal? var builtinAnnoVarB: R|Int64| = ...
+        initializer:
+            INT(0)
+    @R|Attribute|("public", "open") internal? class BuiltinAnnoCtxKeyword {
+        init()
+    }
+    @R|Attribute|() internal? class BuiltinAnnoEmpty {
+        init()
+    }
+    @R|Attribute|("BuiltinAnnoBare", "Attribute", "State") internal? interface BuiltinAnnoIface {
+        public? abstract? func f(): R|Int64|
+    }
+    @R|Attribute|("State") internal? struct BuiltinAnnoStruct {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    @R|Attribute|("State") internal? enum BuiltinAnnoEnum {
+        A
+        B
+        init()
+    }
+    @R|Attribute|("State") internal? func builtinAnnoFunc(x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    @R|Attribute|("In") internal? func builtinAnnoParam(@R|Attribute|("State") x: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? class BuiltinAnnoMember {
+        @R|Attribute|("State") internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        @R|Attribute|("Binding", "other") internal? func m(@R|Attribute|("In") x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(v)
+                    arguments:
+                        NAMED_ACCESS(x)
+                }
+            }
+        }
+        @R|Attribute|("Binding") internal? prop q: R|Int64|
+        init(@R|Attribute|("In") y: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }
+    extend R|Int64| {
+        @R|Attribute|("State") internal? func builtinAnnoExtendMember(): R|Int64| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    @R|EnsurePreparedToMock|() internal? class BuiltinAnnoMockClass {
+        init()
+    }
+    @R|EnsurePreparedToMock|() internal? func builtinAnnoMockFunc(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    internal? class BuiltinAnnoMockMember {
+        init()
+        @R|EnsurePreparedToMock|() internal? func f(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepEmpty {
+        init()
+    }
+    @R|Deprecated|(<expr>) internal? class BuiltinAnnoDepNamed {
+        init()
+    }
+    @R|Deprecated|() internal? class BuiltinAnnoDepBare {
+        init()
+    }
+    @R|OverflowWrapping|(wrapping) internal? func builtinAnnoOverflowWrapping(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|OverflowThrowing|(saturating) internal? func builtinAnnoOverflowSaturating(x: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(1u8)
+            }
+        }
+    }
+    @R|When|(cjc_version >= "1.0.0") internal? class BuiltinAnnoWhenVersion {
+        init()
+    }
+    @R|When|(backend == "cjnative") internal? func builtinAnnoWhenBackend(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(debug) internal? func builtinAnnoWhenDebug(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    @R|When|(*operator_not()) internal? func builtinAnnoWhenNotDebug(): R|Int64| {
+        RETURN {
+            INT(2)
+        }
+    }
+    @R|When|(test) internal? class BuiltinAnnoWhenTest {
+        init()
+    }
+    @R|When|(*operator_not()) internal? class BuiltinAnnoWhenNotTest {
+        init()
+    }
+    @R|When|(os == "Windows" || os == "Linux" && *operator_not()) internal? func builtinAnnoWhenCombo(): R|Int64| {
+        RETURN {
+            INT(3)
+        }
+    }
+    @R|Annotation|() public class BuiltinAnnoMarked {
+        init() {
+        }
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedBare {
+        init()
+    }
+    @R|BuiltinAnnoMarked|() internal? class BuiltinAnnoMarkedEmpty {
+        init()
+    }
+    internal? let builtinAnnoSrcFile: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? let builtinAnnoSrcPackage: R|String| = ...
+        initializer:
+            ERROR_EXPR(Macro expression `@sourcePackage()` is a construction-only surface and must be replaced before final provider registration.)
+    internal? func builtinAnnoSrcExpr(line: R|Int64|): R|Int64| {
+        RETURN {
+            ERROR_EXPR(Missing right operand)
+        }
+    }
+    internal? func builtinAnnoSrcDefault(line: R|Int64| = ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+    ): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(line)
+        }
+    }
+    internal? func builtinAnnoSrcInterp(): R|String| {
+        RETURN {
+            STRING_INTERPOLATION {
+                ERROR_EXPR(Macro expression `@sourceFile()` is a construction-only surface and must be replaced before final provider registration.)
+                STRING(":")
+                ERROR_EXPR(Macro expression `@sourceLine()` is a construction-only surface and must be replaced before final provider registration.)
+            }
+        }
+    }
+    @R|When|(*operator_not()) @R|Attribute|("State") @R|Deprecated|("gone", <expr>) @R|EnsurePreparedToMock|() internal? class BuiltinAnnoStacked {
+        init()
+    }

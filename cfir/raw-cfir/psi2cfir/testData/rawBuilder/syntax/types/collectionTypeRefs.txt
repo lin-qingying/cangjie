@@ -1,0 +1,45 @@
+FILE: collectionTypeRefs.cj
+    import std.collection.*
+    internal? func collectionTypeRefs(m: R|HashMap<R|Int64|, R|String|>|, s: R|HashSet<R|Int64|>|, l: R|ArrayList<R|Int64|>|, k: R|LinkedList<R|Int64|>|, it: R|Iterator<R|Int64|>|, ie: R|Iterable<R|Int64|>|, o: R|Option<R|Int64|>|): R|Int64| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(m)
+                    NAMED_ACCESS(s)
+                    NAMED_ACCESS(l)
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(it)
+                    NAMED_ACCESS(ie)
+                    NAMED_ACCESS(o)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(size) {
+                                        receiver:
+                                            NAMED_ACCESS(m)
+                                    }
+                                arguments:
+                                    NAMED_ACCESS(size) {
+                                        receiver:
+                                            NAMED_ACCESS(s)
+                                    }
+                            }
+                        arguments:
+                            NAMED_ACCESS(size) {
+                                receiver:
+                                    NAMED_ACCESS(l)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(k)
+                    }
+            }
+        }
+    }

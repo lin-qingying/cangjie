@@ -1,0 +1,15 @@
+FILE: extendInterfaceWithWhere.cj
+    internal? class Box<T> {
+        internal? let value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        internal? func get(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|Box<R|T|>| {
+        internal? func dump(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }

@@ -1,0 +1,11 @@
+FILE: powerOperatorRightOperand.cj
+    internal? func powerOperatorRightOperand(a: R|Int64|, c: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_exponentiation) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(c)
+            }
+        }
+    }

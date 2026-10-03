@@ -1,0 +1,7 @@
+FILE: operatorForms.cj
+    internal? func identity(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func operatorForms(a: R|Int64|, b: R|Int64|, flag: R|Bool|, opt: R|Option<R|Int64|>|, s: R|String|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

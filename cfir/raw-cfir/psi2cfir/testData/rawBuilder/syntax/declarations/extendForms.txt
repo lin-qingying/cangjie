@@ -1,0 +1,123 @@
+FILE: extendForms.cj
+    internal? interface Show {
+        public? func show(): R|String| {
+            RETURN {
+                STRING("show")
+            }
+        }
+    }
+    internal? interface Hash {
+        public? func hash(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }
+    internal? struct Vec {
+        init()
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var y: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    extend R|Vec| {
+        public func len(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        NAMED_ACCESS(y)
+                }
+            }
+        }
+        public prop sum: R|Int64|
+        public operator func *operator_plus(other: R|Vec|): R|Vec| {
+            RETURN {
+                NAMED_ACCESS(other)
+            }
+        }
+        public operator func *operator_times(k: R|Int64|): R|Vec| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    extend R|Vec| {
+        public func scale(k: R|Int64|): R|Vec| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    internal? struct Holder<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+    }
+    extend<T> R|Holder<R|T|>| {
+        public func render(): R|String| {
+            RETURN {
+                FUNCTION_CALL(show) {
+                    receiver:
+                        NAMED_ACCESS(value)
+                }
+            }
+        }
+    }
+    extend<T> R|Holder<R|T|>| <: R|Hash| {
+        public func hashCode(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(hash) {
+                    receiver:
+                        NAMED_ACCESS(value)
+                }
+            }
+        }
+    }
+    extend<T> R|Holder<R|T|>| {
+        public func unwrap(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }
+    internal? enum Flag {
+        On
+        Off
+        init()
+    }
+    extend R|Flag| {
+        public func flipped(): R|Flag| {
+            RETURN {
+                NAMED_ACCESS(Off)
+            }
+        }
+    }
+    internal? open class Node {
+        init() {
+        }
+        public func name(): R|String| {
+            RETURN {
+                STRING("node")
+            }
+        }
+    }
+    extend R|Node| {
+        public func tag(): R|String| {
+            RETURN {
+                STRING("tag")
+            }
+        }
+    }

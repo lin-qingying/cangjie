@@ -1,0 +1,10 @@
+FILE: quoteInterpolation.cj
+    import std.ast.*
+    internal? func useQuote(x: R|Int64|): R|Tokens| {
+        RETURN {
+            QUOTE("quote($(x))") {
+                interpolations:
+                    NAMED_ACCESS(x)
+            }
+        }
+    }

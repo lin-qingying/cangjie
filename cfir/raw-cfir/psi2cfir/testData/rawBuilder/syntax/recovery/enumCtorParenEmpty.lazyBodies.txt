@@ -1,0 +1,6 @@
+FILE: enumCtorParenEmpty.cj
+    internal? enum EmptyCtor {
+        A
+        B(<implicit>)
+        init()
+    }

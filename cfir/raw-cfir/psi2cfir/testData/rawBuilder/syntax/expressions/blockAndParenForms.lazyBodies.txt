@@ -1,0 +1,7 @@
+FILE: blockAndParenForms.cj
+    internal? func noArgs(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func blockAndParenForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

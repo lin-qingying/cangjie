@@ -1,0 +1,34 @@
+FILE: memberAccessForms.cj
+    internal? class B {
+        internal? var c: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class A {
+        internal? var b: R|B|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class C {
+        internal? static var v: R|Int64|
+        internal? static prop p: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum E {
+        A
+        B
+        init()
+        public static func make(): R|E| {
+            <element: CfirLazyBlock>
+        }
+        public func n(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func memberAccessForms(a: R|A|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,19 @@
+FILE: importGroupForms.cj
+    package importgroupforms
+    import std.collection.ArrayList
+    import std.collection.HashMap
+    import std.collection.HashSet
+    import std.collection.ArrayList as L
+    import std.collection.HashMap as M
+    import std.math.sqrt
+    import std.fs.Path
+    import std.collection.ArrayList as TA
+    import std.collection.HashMap as TB
+    import std.collection.HashSet as TC
+    import std.fs.File
+    import std.collection.ArrayList as WL
+    import std.collection.HashMap as WM
+    import std.collection.ArrayList as IL
+    internal? func useImportGroups(path: R|Path|): R|Float64| {
+        <element: CfirLazyBlock>
+    }

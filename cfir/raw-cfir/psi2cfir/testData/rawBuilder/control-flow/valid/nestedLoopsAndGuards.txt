@@ -1,0 +1,73 @@
+FILE: nestedLoopsAndGuards.cj
+    internal? func nestedWithGuards(values: R|Array<R|Int64|>|): R|Int64| {
+        local? var total: <implicit> = ...
+            initializer:
+                INT(0)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(values)
+            body:
+                FOR_IN(<anonymous>: <implicit>) {
+                    iterable:
+                        NAMED_ACCESS(values)
+                    body:
+                        IF {
+                            condition:
+                                COMPARISON(EQ) {
+                                    NAMED_ACCESS(w)
+                                    INT(0)
+                                }
+                            then:
+                                CONTINUE
+                        }
+                        ASSIGNMENT {
+                            lValue:
+                                NAMED_ACCESS(total)
+                            rValue:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(total)
+                                    arguments:
+                                        FUNCTION_CALL(*operator_times) {
+                                            receiver:
+                                                NAMED_ACCESS(v)
+                                            arguments:
+                                                NAMED_ACCESS(w)
+                                        }
+                                }
+                        }
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(total)
+        }
+    }
+    internal? func loopWithLet(values: R|Array<R|Option<R|Int64|>|>|): R|Int64| {
+        local? var count: <implicit> = ...
+            initializer:
+                INT(0)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(values)
+            body:
+                IF {
+                    condition:
+                        <element: CfirLetPatternExpression>
+                    then:
+                        ASSIGNMENT {
+                            lValue:
+                                NAMED_ACCESS(count)
+                            rValue:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(count)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                        }
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(count)
+        }
+    }

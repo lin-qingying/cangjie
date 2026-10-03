@@ -1,0 +1,500 @@
+FILE: primaryConstructorForms.cj
+    internal? struct PctorRect {
+        init(width: R|Int64|, height: R|Int64|) {
+        }
+        internal? prop width: R|Int64|
+        internal? prop height: R|Int64|
+        public func area(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(width) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                    arguments:
+                        NAMED_ACCESS(height) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                }
+            }
+        }
+    }
+    internal? class PctorCounter {
+        init(count: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(count) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(count)
+                        arguments:
+                            FUNCTION_CALL(offset) {
+                                receiver:
+                                    <element: CfirThisReceiverExpression>
+                            }
+                    }
+            }
+        }
+        internal? mut prop count: R|Int64|
+        private func offset(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public func bump(): R|Unit| {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(count) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(count) {
+                                receiver:
+                                    <element: CfirThisReceiverExpression>
+                            }
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        public func value(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(count) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorNamed {
+        internal? var label: R|String| = ...
+            initializer:
+                STRING("")
+        init(label: R|String|, width: R|Int64|, height: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(label) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(label)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(height) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(height)
+                        arguments:
+                            INT(1)
+                    }
+            }
+        }
+        internal? prop width: R|Int64|
+        internal? mut prop height: R|Int64|
+        public func describe(): R|String| {
+            RETURN {
+                STRING_INTERPOLATION {
+                    NAMED_ACCESS(label) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                    STRING(":")
+                    NAMED_ACCESS(width) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                    STRING("x")
+                    NAMED_ACCESS(height) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                }
+            }
+        }
+    }
+    internal? struct PctorModNone {
+        init(v: R|Int64|) {
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorModInternal {
+        init(v: R|Int64|) {
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorModProtected {
+        init(v: R|Int64|) {
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorModPrivate {
+        init(v: R|Int64|) {
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorModConst {
+        init(v: R|Int64|) {
+        }
+        internal? prop v: R|Int64|
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? class PctorMemberMods {
+        init(secret: R|Int64|, level: R|Int64|) {
+        }
+        private mut prop secret: R|Int64|
+        protected mut prop level: R|Int64|
+        public func sum(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(secret) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                    arguments:
+                        NAMED_ACCESS(level) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                }
+            }
+        }
+    }
+    internal? struct PctorOverloads {
+        init(value: R|Int64|) {
+        }
+        internal? prop value: R|Int64|
+        init(base: R|Int64|, extra: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(base)
+                        arguments:
+                            NAMED_ACCESS(extra)
+                    }
+            }
+        }
+        public func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(value) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? open class PctorBase {
+        init(seed: R|Int64|) {
+        }
+        internal? prop seed: R|Int64|
+        public open func value(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(seed) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? open class PctorSub <: R|PctorBase| {
+        init() {
+            FUNCTION_CALL(super) {
+                INT(0)
+            }
+        }
+        public open func value(): R|Int64| {
+            RETURN {
+                INT(9)
+            }
+        }
+    }
+    internal? class PctorGeneric<T> {
+        init(item: R|T|) {
+        }
+        internal? prop item: R|T|
+        public func get(): R|T| {
+            RETURN {
+                NAMED_ACCESS(item) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorPlain {
+        internal? var stored: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(value: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(stored) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        public func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(stored) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    internal? struct PctorEmpty {
+        init() {
+        }
+        internal? func get(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }
+    internal? func primaryConstructorForms(): R|Int64| {
+        local? let rect: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorRect) {
+                    INT(2)
+                    INT(3)
+                }
+        local? let counter: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorCounter) {
+                    INT(1)
+                }
+        FUNCTION_CALL(bump) {
+            receiver:
+                NAMED_ACCESS(counter)
+        }
+        local? let named: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorNamed) {
+                    STRING("a")
+                    INT(1)
+                    INT(2)
+                }
+        local? let overload: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorOverloads) {
+                    INT(1)
+                }
+        local? let overload2: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorOverloads) {
+                    INT(1)
+                    INT(2)
+                }
+        local? let sub: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorSub) {
+                }
+        local? let generic: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorGeneric<R|Int64|>) {
+                    INT(5)
+                }
+        local? let plain: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorPlain) {
+                    INT(4)
+                }
+        local? let empty: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorEmpty) {
+                }
+        local? let memberMods: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(PctorMemberMods) {
+                    INT(1)
+                    INT(2)
+                }
+        local? let total: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        FUNCTION_CALL(*operator_plus) {
+                                                            receiver:
+                                                                FUNCTION_CALL(*operator_plus) {
+                                                                    receiver:
+                                                                        FUNCTION_CALL(*operator_plus) {
+                                                                            receiver:
+                                                                                FUNCTION_CALL(*operator_plus) {
+                                                                                    receiver:
+                                                                                        FUNCTION_CALL(*operator_plus) {
+                                                                                            receiver:
+                                                                                                FUNCTION_CALL(*operator_plus) {
+                                                                                                    receiver:
+                                                                                                        FUNCTION_CALL(*operator_plus) {
+                                                                                                            receiver:
+                                                                                                                FUNCTION_CALL(*operator_plus) {
+                                                                                                                    receiver:
+                                                                                                                        FUNCTION_CALL(area) {
+                                                                                                                            receiver:
+                                                                                                                                NAMED_ACCESS(rect)
+                                                                                                                        }
+                                                                                                                    arguments:
+                                                                                                                        FUNCTION_CALL(value) {
+                                                                                                                            receiver:
+                                                                                                                                NAMED_ACCESS(counter)
+                                                                                                                        }
+                                                                                                                }
+                                                                                                            arguments:
+                                                                                                                NAMED_ACCESS(width) {
+                                                                                                                    receiver:
+                                                                                                                        NAMED_ACCESS(named)
+                                                                                                                }
+                                                                                                        }
+                                                                                                    arguments:
+                                                                                                        FUNCTION_CALL(get) {
+                                                                                                            receiver:
+                                                                                                                NAMED_ACCESS(overload)
+                                                                                                        }
+                                                                                                }
+                                                                                            arguments:
+                                                                                                FUNCTION_CALL(get) {
+                                                                                                    receiver:
+                                                                                                        NAMED_ACCESS(overload2)
+                                                                                                }
+                                                                                        }
+                                                                                    arguments:
+                                                                                        FUNCTION_CALL(value) {
+                                                                                            receiver:
+                                                                                                NAMED_ACCESS(sub)
+                                                                                        }
+                                                                                }
+                                                                            arguments:
+                                                                                FUNCTION_CALL(get) {
+                                                                                    receiver:
+                                                                                        NAMED_ACCESS(generic)
+                                                                                }
+                                                                        }
+                                                                    arguments:
+                                                                        FUNCTION_CALL(get) {
+                                                                            receiver:
+                                                                                NAMED_ACCESS(plain)
+                                                                        }
+                                                                }
+                                                            arguments:
+                                                                FUNCTION_CALL(get) {
+                                                                    receiver:
+                                                                        NAMED_ACCESS(empty)
+                                                                }
+                                                        }
+                                                    arguments:
+                                                        FUNCTION_CALL(sum) {
+                                                            receiver:
+                                                                NAMED_ACCESS(memberMods)
+                                                        }
+                                                }
+                                            arguments:
+                                                FUNCTION_CALL(get) {
+                                                    receiver:
+                                                        FUNCTION_CALL(PctorModNone) {
+                                                            INT(1)
+                                                        }
+                                                }
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(get) {
+                                            receiver:
+                                                FUNCTION_CALL(PctorModInternal) {
+                                                    INT(1)
+                                                }
+                                        }
+                                }
+                            arguments:
+                                FUNCTION_CALL(get) {
+                                    receiver:
+                                        FUNCTION_CALL(PctorModProtected) {
+                                            INT(1)
+                                        }
+                                }
+                        }
+                    arguments:
+                        FUNCTION_CALL(get) {
+                            receiver:
+                                FUNCTION_CALL(PctorModConst) {
+                                    INT(1)
+                                }
+                        }
+                }
+        FUNCTION_CALL(describe) {
+            receiver:
+                NAMED_ACCESS(named)
+        }
+        RETURN {
+            NAMED_ACCESS(total)
+        }
+    }

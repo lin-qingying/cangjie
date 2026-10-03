@@ -1,0 +1,4 @@
+FILE: flatNestedArrayLiteral.cj
+    internal? func flatNestedLiteral(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,55 @@
+FILE: strings.cj
+    internal? func stringLiterals(): R|Unit| {
+        local? let empty: <implicit> = ...
+            initializer:
+                STRING("")
+        local? let emptySingle: <implicit> = ...
+            initializer:
+                STRING("")
+        local? let plain: <implicit> = ...
+            initializer:
+                STRING("hello")
+        local? let plainSingle: <implicit> = ...
+            initializer:
+                STRING("hello")
+        local? let withSpace: <implicit> = ...
+            initializer:
+                STRING("hello world")
+        local? let quoteDouble: <implicit> = ...
+            initializer:
+                STRING("say \"hi\"")
+        local? let quoteSingle: <implicit> = ...
+            initializer:
+                STRING("say \'hi\'")
+        local? let backslash: <implicit> = ...
+            initializer:
+                STRING("a\\b")
+        local? let escapes: <implicit> = ...
+            initializer:
+                STRING("n\nt\tr\rb\bf\fv\v0\0")
+        local? let unicode: <implicit> = ...
+            initializer:
+                STRING("u\u{4f60}\u{597d}")
+        local? let chinese: <implicit> = ...
+            initializer:
+                STRING("仓颉")
+        local? let emoji: <implicit> = ...
+            initializer:
+                STRING("😀")
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(empty)
+                    NAMED_ACCESS(emptySingle)
+                    NAMED_ACCESS(plain)
+                    NAMED_ACCESS(plainSingle)
+                    NAMED_ACCESS(withSpace)
+                    NAMED_ACCESS(quoteDouble)
+                    NAMED_ACCESS(quoteSingle)
+                    NAMED_ACCESS(backslash)
+                    NAMED_ACCESS(escapes)
+                    NAMED_ACCESS(unicode)
+                    NAMED_ACCESS(chinese)
+                    NAMED_ACCESS(emoji)
+                }
+    }

@@ -1,0 +1,1376 @@
+FILE: longOperatorChain.cj
+    internal? class ChainHost {
+        private let values: R|Array<R|Int64|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(0)
+                    INT(1)
+                    INT(2)
+                    INT(3)
+                    INT(4)
+                }
+        init() {
+        }
+        public func at(i: R|Int64|): R|Int64| {
+            RETURN {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(values)
+                    indices:
+                        NAMED_ACCESS(i)
+                }
+            }
+        }
+        public func next(i: R|Int64|): R|ChainHost| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+        public static func of(i: R|Int64|): R|ChainHost| {
+            RETURN {
+                FUNCTION_CALL(ChainHost) {
+                }
+            }
+        }
+    }
+    internal? func longOperatorChain(flag: R|Bool|): R|Int64| {
+        local? var acc: R|Int64| = ...
+            initializer:
+                INT(1)
+        local? let host: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(next) {
+                    receiver:
+                        FUNCTION_CALL(of) {
+                            receiver:
+                                NAMED_ACCESS(ChainHost)
+                            arguments:
+                                INT(1)
+                        }
+                    arguments:
+                        INT(2)
+                }
+        local? let cell: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(at) {
+                            receiver:
+                                NAMED_ACCESS(host)
+                            arguments:
+                                INT(0)
+                        }
+                    arguments:
+                        SUBSCRIPT {
+                            receiver:
+                                FUNCTION_CALL(valuesOf) {
+                                }
+                            indices:
+                                INT(0)
+                        }
+                }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(9)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(10)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(15)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(16)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(21)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(22)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(23)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(24)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(25)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(26)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(31)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(32)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(33)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(34)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(35)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(36)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(41)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(42)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(43)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(44)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(45)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(46)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(15)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(16)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(51)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(52)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(53)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(54)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(55)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(56)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(9)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(10)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(61)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(62)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(63)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(64)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(65)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(66)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(71)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(72)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(73)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(74)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(75)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(76)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(15)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(16)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(81)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(82)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(83)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(84)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(85)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(86)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(9)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(10)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(91)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(92)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(93)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(94)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(95)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(96)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(101)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(102)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(103)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(104)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(105)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(106)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(111)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(112)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(113)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(114)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(115)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(116)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(121)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(122)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(123)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(124)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(125)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(126)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(15)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(16)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(131)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(132)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(133)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(134)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(135)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(136)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(9)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(10)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(141)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(142)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(143)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(144)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(145)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(146)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(151)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(152)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(153)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(154)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(155)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(156)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(15)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(16)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(161)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(162)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(163)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(164)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(165)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(166)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(9)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(10)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(171)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(172)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(173)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(174)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(175)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(176)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(1)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(2)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(3)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(4)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(181)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(182)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(183)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(184)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(185)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(186)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(11)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(12)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(13)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(14)
+        }
+        FUNCTION_CALL(*operator_plus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(191)
+        }
+        FUNCTION_CALL(*operator_minus) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(192)
+        }
+        FUNCTION_CALL(*operator_times) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(193)
+        }
+        FUNCTION_CALL(*operator_and) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(194)
+        }
+        FUNCTION_CALL(*operator_or) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(195)
+        }
+        FUNCTION_CALL(*operator_xor) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(196)
+        }
+        FUNCTION_CALL(*operator_left_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(5)
+        }
+        FUNCTION_CALL(*operator_right_shift) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(6)
+        }
+        FUNCTION_CALL(*operator_rem) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(7)
+        }
+        FUNCTION_CALL(*operator_div) {
+            receiver:
+                NAMED_ACCESS(acc)
+            arguments:
+                INT(8)
+        }
+        local? let unary: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_unaryMinus) {
+                    receiver:
+                        NAMED_ACCESS(acc)
+                }
+        local? let neg: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_not) {
+                    receiver:
+                        NAMED_ACCESS(flag)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(acc)
+                                arguments:
+                                    NAMED_ACCESS(unary)
+                            }
+                        arguments:
+                            IF {
+                                condition:
+                                    NAMED_ACCESS(neg)
+                                then:
+                                    INT(1)
+                                else:
+                                    INT(0)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(cell)
+            }
+        }
+    }
+    internal? func valuesOf(): R|Array<R|Int64|>| {
+        RETURN {
+            ARRAY_LITERAL {
+                INT(1)
+                INT(2)
+                INT(3)
+            }
+        }
+    }
+    internal? func longConditionChain(a: R|Int64|, b: R|Int64|, c: R|Int64|, d: R|Int64|, e: R|Int64|, f: R|Int64|): R|Bool| {
+        RETURN {
+            BINARY_OP(OR) {
+                BINARY_OP(OR) {
+                    BINARY_OP(OR) {
+                        BINARY_OP(OR) {
+                            BINARY_OP(AND) {
+                                COMPARISON(GT) {
+                                    NAMED_ACCESS(a)
+                                    INT(0)
+                                }
+                                COMPARISON(GT) {
+                                    NAMED_ACCESS(b)
+                                    INT(1)
+                                }
+                            }
+                            BINARY_OP(AND) {
+                                COMPARISON(LT) {
+                                    NAMED_ACCESS(c)
+                                    INT(2)
+                                }
+                                COMPARISON(LE) {
+                                    NAMED_ACCESS(d)
+                                    INT(3)
+                                }
+                            }
+                        }
+                        BINARY_OP(AND) {
+                            COMPARISON(NE) {
+                                NAMED_ACCESS(e)
+                                INT(4)
+                            }
+                            COMPARISON(GE) {
+                                NAMED_ACCESS(f)
+                                INT(5)
+                            }
+                        }
+                    }
+                    FUNCTION_CALL(*operator_not) {
+                        receiver:
+                            COMPARISON(EQ) {
+                                NAMED_ACCESS(a)
+                                NAMED_ACCESS(b)
+                            }
+                    }
+                }
+                COMPARISON(GT) {
+                    FUNCTION_CALL(*operator_left_shift) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                    INT(8)
+                }
+            }
+        }
+    }

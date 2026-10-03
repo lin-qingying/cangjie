@@ -1,0 +1,4647 @@
+FILE: manyDeclarations.cj
+    internal? class Node01 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-01")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(2)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node01|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node01| {
+            RETURN {
+                FUNCTION_CALL(Node01) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node02 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(2)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-02")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(4)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node02|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node02| {
+            RETURN {
+                FUNCTION_CALL(Node02) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node03 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(3)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-03")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(6)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node03|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node03| {
+            RETURN {
+                FUNCTION_CALL(Node03) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node04 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(4)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-04")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(8)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node04|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node04| {
+            RETURN {
+                FUNCTION_CALL(Node04) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node05 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(5)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-05")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(10)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node05|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node05| {
+            RETURN {
+                FUNCTION_CALL(Node05) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node06 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(6)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-06")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(12)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node06|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node06| {
+            RETURN {
+                FUNCTION_CALL(Node06) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node07 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(7)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-07")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(14)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node07|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node07| {
+            RETURN {
+                FUNCTION_CALL(Node07) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node08 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(8)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-08")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(16)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node08|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node08| {
+            RETURN {
+                FUNCTION_CALL(Node08) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node09 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(9)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-09")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(18)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node09|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node09| {
+            RETURN {
+                FUNCTION_CALL(Node09) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node10 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(10)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-10")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(20)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node10|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node10| {
+            RETURN {
+                FUNCTION_CALL(Node10) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node11 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(11)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-11")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(22)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node11|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node11| {
+            RETURN {
+                FUNCTION_CALL(Node11) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node12 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(12)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-12")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(24)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node12|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node12| {
+            RETURN {
+                FUNCTION_CALL(Node12) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node13 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(13)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-13")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(26)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node13|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node13| {
+            RETURN {
+                FUNCTION_CALL(Node13) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node14 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(14)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-14")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(28)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node14|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node14| {
+            RETURN {
+                FUNCTION_CALL(Node14) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node15 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(15)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-15")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(30)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node15|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node15| {
+            RETURN {
+                FUNCTION_CALL(Node15) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node16 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(16)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-16")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(32)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node16|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node16| {
+            RETURN {
+                FUNCTION_CALL(Node16) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node17 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(17)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-17")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(34)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node17|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node17| {
+            RETURN {
+                FUNCTION_CALL(Node17) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node18 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(18)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-18")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(36)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node18|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node18| {
+            RETURN {
+                FUNCTION_CALL(Node18) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node19 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(19)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-19")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(38)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node19|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node19| {
+            RETURN {
+                FUNCTION_CALL(Node19) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node20 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(20)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-20")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(40)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node20|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node20| {
+            RETURN {
+                FUNCTION_CALL(Node20) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node21 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(21)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-21")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(42)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node21|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node21| {
+            RETURN {
+                FUNCTION_CALL(Node21) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node22 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(22)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-22")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(44)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node22|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node22| {
+            RETURN {
+                FUNCTION_CALL(Node22) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node23 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(23)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-23")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(46)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node23|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node23| {
+            RETURN {
+                FUNCTION_CALL(Node23) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node24 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(24)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-24")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(48)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node24|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node24| {
+            RETURN {
+                FUNCTION_CALL(Node24) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node25 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(25)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-25")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(50)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node25|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node25| {
+            RETURN {
+                FUNCTION_CALL(Node25) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node26 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(26)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-26")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(52)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node26|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node26| {
+            RETURN {
+                FUNCTION_CALL(Node26) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node27 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(27)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-27")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(54)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node27|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node27| {
+            RETURN {
+                FUNCTION_CALL(Node27) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node28 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(28)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-28")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(56)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node28|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node28| {
+            RETURN {
+                FUNCTION_CALL(Node28) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node29 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(29)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-29")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(58)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node29|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node29| {
+            RETURN {
+                FUNCTION_CALL(Node29) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? class Node30 {
+        internal? var id: R|Int64| = ...
+            initializer:
+                INT(30)
+        internal? var name: R|String| = ...
+            initializer:
+                STRING("node-30")
+        internal? let tag: R|Int64| = ...
+            initializer:
+                INT(60)
+        init(id: R|Int64|, name: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(id) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(id)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(name) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(name)
+            }
+        }
+        init(other: R|Node30|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(id) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                NAMED_ACCESS(name) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+            }
+        }
+        public func describe(): R|String| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        FUNCTION_CALL(*operator_plus) {
+                                            receiver:
+                                                FUNCTION_CALL(*operator_plus) {
+                                                    receiver:
+                                                        STRING("#%d:")
+                                                    arguments:
+                                                        NAMED_ACCESS(name)
+                                                }
+                                            arguments:
+                                                STRING(":")
+                                        }
+                                    arguments:
+                                        FUNCTION_CALL(toString) {
+                                            receiver:
+                                                NAMED_ACCESS(id)
+                                        }
+                                }
+                            arguments:
+                                STRING(":")
+                        }
+                    arguments:
+                        FUNCTION_CALL(toString) {
+                            receiver:
+                                NAMED_ACCESS(tag)
+                        }
+                }
+            }
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node30| {
+            RETURN {
+                FUNCTION_CALL(Node30) {
+                    NAMED_ACCESS(id)
+                    STRING("static")
+                }
+            }
+        }
+    }
+    internal? struct Rec01 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(1)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec02 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(2)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec03 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(3)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec04 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(4)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec05 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(5)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec06 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(6)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec07 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(7)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec08 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(8)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec09 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(9)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec10 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(10)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec11 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(11)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec12 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(12)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec13 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(13)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec14 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(14)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? struct Rec15 {
+        internal? var a: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var b: R|String| = ...
+            initializer:
+                STRING("")
+        init() {
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        public func weight(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                            arguments:
+                                INT(15)
+                        }
+                    arguments:
+                        NAMED_ACCESS(size) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                        }
+                }
+            }
+        }
+    }
+    internal? enum Kind01 {
+        A01
+        B01(R|Int64|)
+        C01(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A01)) {
+                        INT(1)
+                    }
+                    BRANCH(B01(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C01(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind02 {
+        A02
+        B02(R|Int64|)
+        C02(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A02)) {
+                        INT(2)
+                    }
+                    BRANCH(B02(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C02(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind03 {
+        A03
+        B03(R|Int64|)
+        C03(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A03)) {
+                        INT(3)
+                    }
+                    BRANCH(B03(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C03(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind04 {
+        A04
+        B04(R|Int64|)
+        C04(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A04)) {
+                        INT(4)
+                    }
+                    BRANCH(B04(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C04(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind05 {
+        A05
+        B05(R|Int64|)
+        C05(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A05)) {
+                        INT(5)
+                    }
+                    BRANCH(B05(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C05(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind06 {
+        A06
+        B06(R|Int64|)
+        C06(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A06)) {
+                        INT(6)
+                    }
+                    BRANCH(B06(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C06(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind07 {
+        A07
+        B07(R|Int64|)
+        C07(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A07)) {
+                        INT(7)
+                    }
+                    BRANCH(B07(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C07(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind08 {
+        A08
+        B08(R|Int64|)
+        C08(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A08)) {
+                        INT(8)
+                    }
+                    BRANCH(B08(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C08(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind09 {
+        A09
+        B09(R|Int64|)
+        C09(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A09)) {
+                        INT(9)
+                    }
+                    BRANCH(B09(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C09(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? enum Kind10 {
+        A10
+        B10(R|Int64|)
+        C10(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A10)) {
+                        INT(10)
+                    }
+                    BRANCH(B10(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                    BRANCH(C10(deferred(v), _)) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+    }
+    internal? interface Shape01 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-01")
+            }
+        }
+    }
+    internal? interface Shape02 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-02")
+            }
+        }
+    }
+    internal? interface Shape03 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-03")
+            }
+        }
+    }
+    internal? interface Shape04 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-04")
+            }
+        }
+    }
+    internal? interface Shape05 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-05")
+            }
+        }
+    }
+    internal? interface Shape06 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-06")
+            }
+        }
+    }
+    internal? interface Shape07 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            RETURN {
+                STRING("shape-07")
+            }
+        }
+    }
+    internal? open class Base01 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(1)
+                }
+            }
+        }
+    }
+    internal? class Derived01 <: R|Base01| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base02 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+    }
+    internal? class Derived02 <: R|Base02| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base03 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(3)
+                }
+            }
+        }
+    }
+    internal? class Derived03 <: R|Base03| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base04 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(4)
+                }
+            }
+        }
+    }
+    internal? class Derived04 <: R|Base04| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base05 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(5)
+                }
+            }
+        }
+    }
+    internal? class Derived05 <: R|Base05| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base06 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(6)
+                }
+            }
+        }
+    }
+    internal? class Derived06 <: R|Base06| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base07 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(7)
+                }
+            }
+        }
+    }
+    internal? class Derived07 <: R|Base07| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? open class Base08 {
+        init() {
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(8)
+                }
+            }
+        }
+    }
+    internal? class Derived08 <: R|Base08| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            IF {
+                condition:
+                    COMPARISON(GT) {
+                        NAMED_ACCESS(x)
+                        INT(0)
+                    }
+                then:
+                    RETURN {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                FUNCTION_CALL(run) {
+                                    receiver:
+                                        QUALIFIED_ACCESS(super)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                else:
+                    RETURN {
+                        FUNCTION_CALL(*operator_unaryMinus) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                        }
+                    }
+            }
+        }
+    }
+    internal? func top01(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(1)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-1")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top02(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(2)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-2")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(20)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top03(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(3)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-3")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(30)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top04(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(4)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-4")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(40)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top05(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(5)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-5")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(50)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top06(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(6)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-6")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(60)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top07(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(7)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-7")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(70)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top08(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(8)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-8")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(80)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top09(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(9)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-9")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(90)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top10(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(10)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-10")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(100)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top11(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(11)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-11")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(110)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }
+    internal? func top12(x: R|Int64|, s: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(x)
+                    arguments:
+                        INT(12)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(s)
+                    arguments:
+                        STRING("-12")
+                }
+        local? var c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(c)
+                    INT(120)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(0)
+                    INT(3)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(b)
+                arguments:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            NAMED_ACCESS(c)
+                    }
+            }
+        }
+    }

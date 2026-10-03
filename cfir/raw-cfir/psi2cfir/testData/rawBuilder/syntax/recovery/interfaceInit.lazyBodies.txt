@@ -1,0 +1,8 @@
+FILE: interfaceInit.cj
+    internal? interface WithInit {
+    }
+    internal? class C <: R|WithInit| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }

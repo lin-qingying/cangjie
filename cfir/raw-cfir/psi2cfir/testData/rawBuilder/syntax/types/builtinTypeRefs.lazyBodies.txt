@@ -1,0 +1,77 @@
+FILE: builtinTypeRefs.cj
+    internal? func i8(a: R|Int8|): R|Int8| {
+        <element: CfirLazyBlock>
+    }
+    internal? func i16(a: R|Int16|): R|Int16| {
+        <element: CfirLazyBlock>
+    }
+    internal? func i32(a: R|Int32|): R|Int32| {
+        <element: CfirLazyBlock>
+    }
+    internal? func i64(a: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func iNative(a: R|IntNative|): R|IntNative| {
+        <element: CfirLazyBlock>
+    }
+    internal? func u8(a: R|UInt8|): R|UInt8| {
+        <element: CfirLazyBlock>
+    }
+    internal? func u16(a: R|UInt16|): R|UInt16| {
+        <element: CfirLazyBlock>
+    }
+    internal? func u32(a: R|UInt32|): R|UInt32| {
+        <element: CfirLazyBlock>
+    }
+    internal? func u64(a: R|UInt64|): R|UInt64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func uNative(a: R|UIntNative|): R|UIntNative| {
+        <element: CfirLazyBlock>
+    }
+    internal? func f16(a: R|Float16|): R|Float16| {
+        <element: CfirLazyBlock>
+    }
+    internal? func f32(a: R|Float32|): R|Float32| {
+        <element: CfirLazyBlock>
+    }
+    internal? func f64(a: R|Float64|): R|Float64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func b(a: R|Bool|): R|Bool| {
+        <element: CfirLazyBlock>
+    }
+    internal? func r(a: R|Rune|): R|Rune| {
+        <element: CfirLazyBlock>
+    }
+    internal? func s(a: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func u(a: R|Unit|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func n(a: R|Nothing|): R|Nothing| {
+        <element: CfirLazyBlock>
+    }
+    internal? func varray(a: R|VArray<R|Int8|, 4>|): R|VArray<R|Int8|, 4>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func cstring(a: R|CString|): R|CString| {
+        <element: CfirLazyBlock>
+    }
+    internal? func cpointer(a: R|CPointer<R|Int64|>|): R|CPointer<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? class ThisHolder {
+        internal? var v: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        internal? func selfRef(): R|This| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct UnitHolder {
+        init()
+        internal? var u: R|Unit|
+    }

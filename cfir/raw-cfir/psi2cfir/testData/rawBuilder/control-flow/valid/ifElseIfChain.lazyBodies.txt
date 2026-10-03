@@ -1,0 +1,4 @@
+FILE: ifElseIfChain.cj
+    internal? func classify(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

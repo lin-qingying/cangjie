@@ -1,0 +1,54 @@
+FILE: incDecForms.cj
+    internal? class Counter {
+        init()
+        internal? var count: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var other: R|Int64| = ...
+            initializer:
+                INT(0)
+        public func bump(): R|Int64| {
+            <element: CfirIncrementDecrementExpression>
+            <element: CfirIncrementDecrementExpression>
+            RETURN {
+                NAMED_ACCESS(count)
+            }
+        }
+    }
+    internal? struct Holder {
+        init()
+        internal? var items: R|Array<R|Int64|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(0)
+                    INT(0)
+                }
+    }
+    internal? func incDecForms(xs: R|Array<R|Int64|>|): R|Unit| {
+        local? var a: <implicit> = ...
+            initializer:
+                INT(1)
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Counter) {
+                }
+        <element: CfirIncrementDecrementExpression>
+        <element: CfirIncrementDecrementExpression>
+        local? let h: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Holder) {
+                }
+        <element: CfirIncrementDecrementExpression>
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(h)
+                }
+    }

@@ -1,0 +1,47 @@
+FILE: escapeForms.cj
+    internal? func escapeForms(): R|Unit| {
+        local? let b0: <implicit> = ...
+            initializer:
+                BYTE(b'0')
+        local? let b1: <implicit> = ...
+            initializer:
+                BYTE(b'0')
+        local? let b2: <implicit> = ...
+            initializer:
+                BYTE(b'32')
+        local? let r0: <implicit> = ...
+            initializer:
+                RUNE('r'\u{0}'')
+        local? let r1: <implicit> = ...
+            initializer:
+                RUNE('r'\\'')
+        local? let r2: <implicit> = ...
+            initializer:
+                RUNE('r'\''')
+        local? let r3: <implicit> = ...
+            initializer:
+                RUNE('r"\""')
+        local? let s0: <implicit> = ...
+            initializer:
+                STRING("\\u{41}")
+        local? let s1: <implicit> = ...
+            initializer:
+                STRING("a\"b")
+        local? let s2: <implicit> = ...
+            initializer:
+                STRING("\'")
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(b0)
+                    NAMED_ACCESS(b1)
+                    NAMED_ACCESS(b2)
+                    NAMED_ACCESS(r0)
+                    NAMED_ACCESS(r1)
+                    NAMED_ACCESS(r2)
+                    NAMED_ACCESS(r3)
+                    NAMED_ACCESS(s0)
+                    NAMED_ACCESS(s1)
+                    NAMED_ACCESS(s2)
+                }
+    }

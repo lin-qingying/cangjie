@@ -1,0 +1,28 @@
+FILE: packageAndImportVariants.cj
+    package sample.feature.sub
+    import std.collection.*
+    import std.collection as col
+    import std.fs.File
+    import std.fs.Path
+    import std.fs.File as WinFile
+    internal? func importUses(xs: R|ArrayList<R|Int64|>|): R|Int64| {
+        local? let list: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ArrayList<R|Int64|>) {
+                }
+        FUNCTION_CALL(add) {
+            receiver:
+                NAMED_ACCESS(list)
+            arguments:
+                NAMED_ACCESS(size) {
+                    receiver:
+                        NAMED_ACCESS(xs)
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(size) {
+                receiver:
+                    NAMED_ACCESS(list)
+            }
+        }
+    }

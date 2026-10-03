@@ -1,0 +1,104 @@
+FILE: structForms.cj
+    internal? struct Point {
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? let y: R|Int64|
+        private var hidden: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static let ORIGIN: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(y)
+                rValue:
+                    INT(0)
+            }
+        }
+        init(x: R|Int64|, y: R|Int64| = INT(0)
+        ) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(x) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(y) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+        init(from: R|Point|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(x) {
+                    receiver:
+                        NAMED_ACCESS(from)
+                }
+                <element: CfirNamedArgumentExpression>
+            }
+        }
+        public func lengthSquared(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_times) {
+                                    receiver:
+                                        NAMED_ACCESS(x)
+                                    arguments:
+                                        NAMED_ACCESS(x)
+                                }
+                            arguments:
+                                FUNCTION_CALL(*operator_times) {
+                                    receiver:
+                                        NAMED_ACCESS(y)
+                                    arguments:
+                                        NAMED_ACCESS(y)
+                                }
+                        }
+                    arguments:
+                        NAMED_ACCESS(hidden)
+                }
+            }
+        }
+        public mut prop magnitude: R|Int64|
+        public static func zero(): R|Point| {
+            RETURN {
+                FUNCTION_CALL(Point) {
+                    INT(0)
+                    <element: CfirNamedArgumentExpression>
+                }
+            }
+        }
+    }
+    internal? struct Wrapper<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        internal? func get(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }

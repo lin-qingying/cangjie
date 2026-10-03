@@ -1,0 +1,32 @@
+FILE: initCallingInit.cj
+    internal? class C {
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    INT(1)
+            }
+        }
+        init(x: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+            FUNCTION_CALL(<error>) {
+                receiver:
+                    <element: CfirThisReceiverExpression>
+            }
+        }
+    }

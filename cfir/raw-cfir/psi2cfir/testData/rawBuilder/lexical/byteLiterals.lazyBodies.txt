@@ -1,0 +1,4 @@
+FILE: byteLiterals.cj
+    internal? func byteLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

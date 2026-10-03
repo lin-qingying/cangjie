@@ -1,0 +1,19 @@
+FILE: constAndForeign.cj
+    internal? let MAX: R|Int64|
+    internal? let NAME: R|String|
+    public func doubled(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? foreign func absNative(x: R|Int64|): R|Int64|
+    @R|OverflowWrapping|() internal? func wrappingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        <element: CfirLazyBlock>
+    }
+    @R|OverflowThrowing|() internal? func throwingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        <element: CfirLazyBlock>
+    }
+    @R|OverflowSaturating|() internal? func saturatingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        <element: CfirLazyBlock>
+    }
+    internal? func foreignUses(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

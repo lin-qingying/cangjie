@@ -1,0 +1,15 @@
+FILE: structMemberFunction.cj
+    internal? struct S {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        public func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }

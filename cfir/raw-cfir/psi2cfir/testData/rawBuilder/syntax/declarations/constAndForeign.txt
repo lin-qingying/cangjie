@@ -1,0 +1,57 @@
+FILE: constAndForeign.cj
+    internal? let MAX: R|Int64| = ...
+        initializer:
+            INT(100)
+    internal? let NAME: R|String| = ...
+        initializer:
+            STRING("name")
+    public func doubled(x: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(2)
+            }
+        }
+    }
+    internal? foreign func absNative(x: R|Int64|): R|Int64|
+    @R|OverflowWrapping|() internal? func wrappingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    @R|OverflowThrowing|() internal? func throwingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    @R|OverflowSaturating|() internal? func saturatingAdd(a: R|UInt8|, b: R|UInt8|): R|UInt8| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? func foreignUses(): R|Int64| {
+        UNSAFE {
+            RETURN {
+                FUNCTION_CALL(absNative) {
+                    INT(-1)
+                }
+            }
+        }
+    }

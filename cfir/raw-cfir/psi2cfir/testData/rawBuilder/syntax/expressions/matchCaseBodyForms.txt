@@ -1,0 +1,411 @@
+FILE: matchCaseBodyForms.cj
+    internal? enum MatchBodyKind {
+        Round(R|Int64|)
+        Flat
+        init()
+    }
+    internal? func matchBodySingleExpr(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    INT(0)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyOneLine(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    INT(1)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodySemiSequence(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    local? let a: <implicit> = ...
+                        initializer:
+                            INT(2)
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyMultiLine(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    local? let a: <implicit> = ...
+                        initializer:
+                            INT(2)
+                    local? let b: <implicit> = ...
+                        initializer:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                                arguments:
+                                    INT(1)
+                            }
+                    NAMED_ACCESS(b)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyDecls(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    local? let a: <implicit> = ...
+                        initializer:
+                            INT(2)
+                    local? var b: <implicit> = ...
+                        initializer:
+                            INT(3)
+                    local? let c: <implicit> = ...
+                        initializer:
+                            INT(4)
+                    ASSIGNMENT {
+                        lValue:
+                            NAMED_ACCESS(b)
+                        rValue:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(b)
+                                arguments:
+                                    NAMED_ACCESS(a)
+                            }
+                    }
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(b)
+                        arguments:
+                            NAMED_ACCESS(c)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyLocalFunc(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    local? func matchBodyInner(x: R|Int64|): R|Int64| {
+                        RETURN {
+                            FUNCTION_CALL(*operator_times) {
+                                receiver:
+                                    NAMED_ACCESS(x)
+                                arguments:
+                                    INT(2)
+                            }
+                        }
+                    }
+                    FUNCTION_CALL(matchBodyInner) {
+                        INT(3)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyNestedMatch(n: R|Int64|, s: R|String|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    MATCH {
+                        subject:
+                            NAMED_ACCESS(s)
+                        BRANCH(const("a")) {
+                            INT(1)
+                        }
+                        BRANCH(_) {
+                            INT(2)
+                        }
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyGuarded(x: R|Any|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(is R|Int64| v where v > 0) {
+                    local? let doubled: <implicit> = ...
+                        initializer:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(v)
+                                arguments:
+                                    NAMED_ACCESS(v)
+                            }
+                    NAMED_ACCESS(doubled)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyTypeBinding(x: R|Any|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(is R|Int64| v) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                        arguments:
+                            INT(1)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyTupleBinding(t: R|(R|Int64|, R|Int64|)|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(t)
+                BRANCH((deferred(a), deferred(b))) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                }
+            }
+        }
+    }
+    internal? func matchBodyEnumBinding(k: R|MatchBodyKind|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(k)
+                BRANCH(Round(deferred(r))) {
+                    NAMED_ACCESS(r)
+                }
+                BRANCH(deferred(Flat)) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyReturn(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    RETURN {
+                        INT(10)
+                    }
+                }
+                BRANCH(_) {
+                    RETURN {
+                        INT(0)
+                    }
+                }
+            }
+        }
+    }
+    internal? func matchBodyControlFlow(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    IF {
+                        condition:
+                            COMPARISON(GT) {
+                                NAMED_ACCESS(n)
+                                INT(0)
+                            }
+                        then:
+                            INT(1)
+                        else:
+                            INT(2)
+                    }
+                }
+                BRANCH(const(2)) {
+                    local? var sum: <implicit> = ...
+                        initializer:
+                            INT(0)
+                    FOR_IN(<anonymous>: <implicit>) {
+                        iterable:
+                            RANGE(..) {
+                                INT(0)
+                                INT(3)
+                            }
+                        body:
+                            ASSIGNMENT {
+                                lValue:
+                                    NAMED_ACCESS(sum)
+                                rValue:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(sum)
+                                        arguments:
+                                            NAMED_ACCESS(i)
+                                    }
+                            }
+                    }
+                    NAMED_ACCESS(sum)
+                }
+                BRANCH(const(3)) {
+                    local? var acc: <implicit> = ...
+                        initializer:
+                            INT(0)
+                    local? var k: <implicit> = ...
+                        initializer:
+                            INT(0)
+                    WHILE {
+                        condition:
+                            COMPARISON(LT) {
+                                NAMED_ACCESS(k)
+                                INT(3)
+                            }
+                        body:
+                            ASSIGNMENT {
+                                lValue:
+                                    NAMED_ACCESS(acc)
+                                rValue:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(acc)
+                                        arguments:
+                                            NAMED_ACCESS(k)
+                                    }
+                            }
+                            ASSIGNMENT {
+                                lValue:
+                                    NAMED_ACCESS(k)
+                                rValue:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            NAMED_ACCESS(k)
+                                        arguments:
+                                            INT(1)
+                                    }
+                            }
+                    }
+                    NAMED_ACCESS(acc)
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyLambda(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(n)
+                BRANCH(const(1)) {
+                    FUNCTION_CALL(*operator_invoke) {
+                        receiver:
+                            LAMBDA(f: R|Int64|) {
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(f)
+                                    arguments:
+                                        INT(1)
+                                }
+                            }
+                        arguments:
+                            INT(2)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }
+    internal? func matchBodyAsStatement(n: R|Int64|): R|Unit| {
+        MATCH {
+            subject:
+                NAMED_ACCESS(n)
+            BRANCH(const(1)) {
+                local? let a: <implicit> = ...
+                    initializer:
+                        INT(1)
+                FUNCTION_CALL(println) {
+                    NAMED_ACCESS(a)
+                }
+            }
+            BRANCH(_) {
+                FUNCTION_CALL(println) {
+                    STRING("other")
+                }
+            }
+        }
+    }
+    internal? func matchBodyNoSelector(n: R|Int64|): R|Int64| {
+        RETURN {
+            MATCH {
+                BRANCH(expr(n > 10)) {
+                    local? let a: <implicit> = ...
+                        initializer:
+                            INT(1)
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                }
+                BRANCH(_) {
+                    INT(0)
+                }
+            }
+        }
+    }

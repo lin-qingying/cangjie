@@ -1,0 +1,5 @@
+FILE: enumCtorWithoutPipe.cj
+    internal? enum MissingPipe {
+        A
+        init(R|<ERROR:No type for parameter>|)
+    }

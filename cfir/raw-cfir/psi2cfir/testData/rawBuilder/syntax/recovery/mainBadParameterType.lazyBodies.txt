@@ -1,0 +1,2 @@
+FILE: mainBadParameterType.cj
+    <element: CfirMainFunction>

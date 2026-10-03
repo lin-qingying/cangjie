@@ -6,7 +6,7 @@ const var_1731854046694_51: Unit = ()
 const var_1731854046694_91: UInt16 = 62
 public let var_1731854046694_111: Int16 = Int16(UInt16(47))
 public let var_1731854046694_168: Unit = ()
-public var var_1731854046694_445: Class_1731854046694_441 = Class_1731854046694_441()
+public var var_1731854046694_445: <!DEPRECATED_WARNING!>Class_1731854046694_441<!> = <!DEPRECATED_WARNING!>Class_1731854046694_441<!>()
 @Deprecated
 let var_1731854046694_454: Enum_1731854046694_451 = Enum_1731854046694_451.enumValue_1731854046694_456
 public var var_1731854046694_491: Range<Int8> = ((Int8(Int8(28)) & 127)..=(Int8(Int8(-101)) & 127) : (Int64(-114) | 1))
@@ -54,7 +54,7 @@ var var_1731854046694_1346: Bool = false
 public var var_1731854046694_1362: Option<String> = Option<String>.None
 internal var var_1731854046694_1376: (Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, 
     String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, 
-    Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>) = (((UInt8(UInt8(127)) & 127)..(UInt8(UInt8(UInt8(178))) &
+    Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>) = (((UInt8(UInt8(127)) & 127)..(UInt8(UInt8(UInt8(178))) &
         127) : (Int64(UInt16(UInt16(130))) | 1)), ((UInt16(UInt16(204)) & 127)..=(UInt16(UInt16(184)) & 127) : (Int64(-31) |
         1)), [UInt64(83), UInt64(15), UInt64(173), UInt64(63), UInt64(169), UInt64(165), UInt64(209), UInt64(170),
         UInt64(98), UInt64(253)], [Float64(Float32(-35.0)), Float64(Float64(Float32(-40.0))), Float64(Float32(-119.0)),
@@ -68,7 +68,7 @@ internal var var_1731854046694_1376: (Range<UInt8>, Range<UInt16>, Array<UInt64>
             127) : (Int64(-80) | 1)), [<!TYPECAST_OVERFLOW!>UInt64(Int32(-73))<!>, UInt64(118), UInt64(16), UInt64(209), UInt64(68),
             UInt64(UInt64(27)), UInt64(124), UInt64(UInt16(9)), UInt64(36), UInt64(UInt32(43))], (((Int16(Int16(41)) &
                 127)..=(Int16(Int16(118)) & 127) : (Int64(59) | 1)), UInt16(160), UInt32(205), ((Int8(Int8(-9)) & 127)..(Int8(Int8(-123)) &
-                127) : (Int64(-3) | 1)), ((UInt16(UInt16(168)) & 127)..(UInt16(UInt16(31)) & 127) : (Int64(120) | 1))), Enum_1731854046694_451
+                127) : (Int64(-3) | 1)), ((UInt16(UInt16(168)) & 127)..(UInt16(UInt16(31)) & 127) : (Int64(120) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
             .enumValue_1731854046694_456), <!TYPECAST_OVERFLOW!>UInt32(Int32(Int16(-6)))<!>, ((UInt8(UInt8(157)) & 127)..(UInt8(UInt8(212)) & 127) : (Int64(-34) |
         1)))
 let var_1731854046694_1490: Bool = (match ("xVy=f;D0RQ") {
@@ -76,13 +76,13 @@ let var_1731854046694_1490: Bool = (match ("xVy=f;D0RQ") {
     case _ => false
 })
 internal var var_1731854046694_1496: (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, 
-    (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451) = ([(), (), (), (), (), (), (),
+    (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>) = ([(), (), (), (), (), (), (),
         (), (), ()], "5oh 8U${var_1731854046694_598}dS8C", Class_1731854046694_853(), ((UInt32(UInt32(244)) & 127)..=(UInt32(UInt32(190)) &
         127) : (Int64(Int16(Int8(62))) | 1)), ((UInt64(UInt64(222)) & 127)..=(UInt64(UInt64(Int8(UInt8(106)))) & 127) : (Int64(<!TYPECAST_OVERFLOW!>UInt8(Int8(-28))<!>) |
         1)), [UInt64(220), UInt64(212), UInt64(5), UInt64(230), UInt64(1), UInt64(213), UInt64(18), UInt64(34),
         UInt64(149), UInt64(31)], (((Int16(Int16(-7)) & 127)..(Int16(Int16(58)) & 127) : (Int64(UInt64(127)) | 1)),
         UInt16(UInt8(130)), UInt32(59), ((Int8(Int8(Int8(-86))) & 127)..=(Int8(Int8(UInt8(85))) & 127) : (Int64(UInt8(33)) |
-            1)), ((UInt16(UInt16(Int8(0))) & 127)..=(UInt16(UInt16(UInt8(193))) & 127) : (Int64(124) | 1))), Enum_1731854046694_451
+            1)), ((UInt16(UInt16(Int8(0))) & 127)..=(UInt16(UInt16(UInt8(193))) & 127) : (Int64(124) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
         .enumValue_1731854046694_456)
 @Deprecated
 public const var_1731854046694_1555: UInt8 = 85
@@ -135,7 +135,7 @@ var var_1731854046694_2360: String = "}" + var_1731854046694_598.toString() + "G
     "%cv" + var_1731854046694_598.toString() + "03"
 public let var_1731854046694_2401: Range<Int16> = ((Int16(Int16(-17)) & 127)..(Int16(Int16(-116)) & 127) : (Int64(74) | 1))
 public var var_1731854046694_2509: (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, 
-    (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451) = ([(), (), (), (), (), (), (),
+    (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>) = ([(), (), (), (), (), (), (),
         (), (), ()], """
 #${var_1731854046694_2360}c7${var_1731854046694_598}<:
 CyfuY${var_1731854046694_2360}
@@ -145,12 +145,12 @@ CyfuY${var_1731854046694_2360}
         <!TYPECAST_OVERFLOW!>UInt64(Int64(-65))<!>, UInt64(176), UInt64(173), <!TYPECAST_OVERFLOW!>UInt64(Int16(-15))<!>, UInt64(189), UInt64(151),
         UInt64(UInt32(UInt16(5))), UInt64(<!TYPECAST_OVERFLOW!>UInt32(Int32(-36))<!>)], (((Int16(Int16(-71)) & 127)..(Int16(Int16(-47)) & 127) : (Int64(119) |
             1)), UInt16(UInt16(UInt16(94))), UInt32(Int16(UInt16(106))), ((Int8(Int8(-126)) & 127)..=(Int8(Int8(85)) &
-            127) : (Int64(-46) | 1)), ((UInt16(UInt16(142)) & 127)..(UInt16(UInt16(50)) & 127) : (Int64(8) | 1))), Enum_1731854046694_451
+            127) : (Int64(-46) | 1)), ((UInt16(UInt16(142)) & 127)..(UInt16(UInt16(50)) & 127) : (Int64(8) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
         .enumValue_1731854046694_456)
 public let var_1731854046694_2591: Unit = ()
 public var var_1731854046694_2719: (Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, 
     String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, 
-    Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>) = (((UInt8(UInt8(254)) & 127)..(UInt8(UInt8(UInt8(36))) &
+    Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>) = (((UInt8(UInt8(254)) & 127)..(UInt8(UInt8(UInt8(36))) &
         127) : (Int64(Int8(Int8(88))) | 1)), ((UInt16(UInt16(219)) & 127)..=(UInt16(UInt16(UInt16(50))) & 127) : (Int64(UInt32(105)) |
         1)), [UInt64(209), UInt64(23), UInt64(19), UInt64(61), UInt64(232), UInt64(149), UInt64(133), UInt64(151),
         UInt64(170), UInt64(37)], [Float64(-88.0), Float64(28.0), Float64(15.0), Float64(-80.0), Float64(64.0),
@@ -162,7 +162,7 @@ public var var_1731854046694_2719: (Range<UInt8>, Range<UInt16>, Array<UInt64>, 
             UInt64(UInt16(82)), UInt64(102), UInt64(Int8(20)), UInt64(Int8(119)), UInt64(177), UInt64(242),
             UInt64(Int8(3))], (((Int16(Int16(-45)) & 127)..=(Int16(Int16(74)) & 127) : (Int64(-46) | 1)), <!TYPECAST_OVERFLOW!>UInt16(Int8(-26))<!>,
             UInt32(67), ((Int8(Int8(41)) & 127)..(Int8(Int8(78)) & 127) : (Int64(101) | 1)), ((UInt16(UInt16(224)) & 127)..(UInt16(UInt16(106)) &
-                127) : (Int64(-72) | 1))), Enum_1731854046694_451.enumValue_1731854046694_456), UInt32(<!TYPECAST_OVERFLOW!>Int8(UInt8(UInt8(227)))<!>),
+                127) : (Int64(-72) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_456), UInt32(<!TYPECAST_OVERFLOW!>Int8(UInt8(UInt8(227)))<!>),
     ((UInt8(UInt8(10)) & 127)..(UInt8(UInt8(95)) & 127) : (Int64(104) | 1)))
 public var var_1731854046694_2831: Class_1731854046694_853 = Class_1731854046694_853()
 public let var_1731854046694_2836: Range<UInt8> = ((UInt8(UInt8(<!TYPECAST_OVERFLOW!>UInt8(Int8(Int8(-5)))<!>)) & 127)..(UInt8(UInt8(235)) & 127) : (Int64(Int8(UInt8(107))) |
@@ -293,27 +293,27 @@ public let var_1731854046694_4538: Bool = (match (()) {
                     case caseVar_1731854046694_1203 =>
                         ((UInt32(UInt32(251)) & 127)..=(UInt32(UInt32(194)) & 127) : (Int64(-14) | 1));
                         ();
-                        UInt32(44) / ((var_1731854046694_1073) | 1)
+                        UInt32(44) / ((<!DEPRECATED_WARNING!>var_1731854046694_1073<!>) | 1)
 
                     case <!UNREACHABLE_PATTERN!>(_, caseVar_1731854046694_1212: Class_1731854046694_853, _, caseVar_1731854046694_1213, caseVar_1731854046694_1214: Float64, _)<!> =>
                         var_1731854046694_848 = var_1731854046694_848 + (Int8(95))
-                        UInt32(214) % ((var_1731854046694_1073) | 1)
+                        UInt32(214) % ((<!DEPRECATED_WARNING!>var_1731854046694_1073<!>) | 1)
 
                     case <!UNREACHABLE_PATTERN!>_: Bool<!> => UInt32(199)
 
-                    case <!UNREACHABLE_PATTERN!>(_, caseVar_1731854046694_1228, _, _, caseVar_1731854046694_1229: (Enum_1731854046694_451, (Array<Unit>, 
+                    case <!UNREACHABLE_PATTERN!>(_, caseVar_1731854046694_1228, _, _, caseVar_1731854046694_1229: (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>, (Array<Unit>, 
                                 String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, 
-                                UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt64, String, 
+                                UInt16, UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt64, String, 
                                 Float64), _)<!> =>
                         var_1731854046694_1049;
-                        var_1731854046694_1073 % ((UInt32(195)) | 1)
+                        <!DEPRECATED_WARNING!>var_1731854046694_1073<!> % ((UInt32(195)) | 1)
 
                     case <!UNREACHABLE_PATTERN!>_<!> =>
                         var_1731854046694_716;
-                        (((UInt16(var_1731854046694_716) & 127)..(UInt16(UInt16(164)) & 127) : (var_1731854046694_533 | 1)),
-                            var_1731854046694_1245, ((Int16(Int16(-61)) & 127)..(Int16(Int16(100)) & 127) : (Int64(63) |
-                                1)), var_1731854046694_697);
-                        var_1731854046694_1073
+                        (((UInt16(var_1731854046694_716) & 127)..(UInt16(UInt16(164)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_533<!> | 1)),
+                            <!DEPRECATED_WARNING!>var_1731854046694_1245<!>, ((Int16(Int16(-61)) & 127)..(Int16(Int16(100)) & 127) : (Int64(63) |
+                                1)), <!DEPRECATED_WARNING!>var_1731854046694_697<!>);
+                        <!DEPRECATED_WARNING!>var_1731854046694_1073<!>
                 })
         };
 
@@ -331,7 +331,7 @@ public let var_1731854046694_4538: Bool = (match (()) {
             case _ =>
                 var_1731854046694_848 = var_1731854046694_848 | (var_1731854046694_848)
                 ();
-                var_1731854046694_797
+                <!DEPRECATED_WARNING!>var_1731854046694_797<!>
 
             case <!UNREACHABLE_PATTERN!>_<!> =>
                 var_1731854046694_168;
@@ -344,7 +344,7 @@ public let var_1731854046694_4538: Bool = (match (()) {
 
             case <!UNREACHABLE_PATTERN!>_<!> =>
                 ();
-                var_1731854046694_797
+                <!DEPRECATED_WARNING!>var_1731854046694_797<!>
         }) {
             if (false) { // block id: 1337
                 let var_1731854046694_1341: Rune = r'i';
@@ -359,8 +359,8 @@ public let var_1731854046694_4538: Bool = (match (()) {
                     var_1731854046694_598
                 }
             } else { // block id: 1350
-                var_1731854046694_697;
-                if (var_1731854046694_797) {
+                <!DEPRECATED_WARNING!>var_1731854046694_697<!>;
+                if (<!DEPRECATED_WARNING!>var_1731854046694_797<!>) {
                     var_1731854046694_598
                 } else {
                     """
@@ -377,15 +377,15 @@ m_g\\U
         };
         (match (Option<(Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, String, 
                 Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, 
-                Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>)>.None) {
+                Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>)>.None) {
             case Some(num) => num
             case None => var_1731854046694_1376
         })[3][5];
         var var_1731854046694_1551: UInt8 = <!TYPECAST_OVERFLOW!>UInt8(Int8(-88))<!>;
-        let var_1731854046694_1559: (Range<UInt16>, (Enum_1731854046694_451, (Array<Unit>, String, 
+        let var_1731854046694_1559: (Range<UInt16>, (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>, (Array<Unit>, String, 
             Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, 
-            Range<UInt16>), Enum_1731854046694_451), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(<!TYPECAST_OVERFLOW!>UInt16(Int16(-1))<!>) &
-                127)..(UInt16(UInt16(218)) & 127) : (Int64(112) | 1)), (Enum_1731854046694_451
+            Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(<!TYPECAST_OVERFLOW!>UInt16(Int16(-1))<!>) &
+                127)..(UInt16(UInt16(218)) & 127) : (Int64(112) | 1)), (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
                     .enumValue_1731854046694_1024(Float64(Float64(-115.0)),
                         ((Int8(Int8(13)) & 127)..(Int8(Int8(120)) & 127) : (Int64(-25) | 1))), ([(), (), (), (), (), (),
                         (), (), (), ()], "#x;x(`(TR#", Class_1731854046694_853(), ((UInt32(UInt32(107)) & 127)..=(UInt32(UInt32(23)) &
@@ -393,7 +393,7 @@ m_g\\U
                         1)), [UInt64(87), UInt64(135), UInt64(95), UInt64(234), UInt64(166), UInt64(251), UInt64(29),
                         UInt64(120), UInt64(206), UInt64(106)], (((Int16(Int16(114)) & 127)..(Int16(Int16(106)) & 127) : (Int64(28) |
                             1)), UInt16(85), UInt32(170), ((Int8(Int8(-60)) & 127)..=(Int8(Int8(23)) & 127) : (Int64(-94) |
-                            1)), ((UInt16(UInt16(184)) & 127)..(UInt16(UInt16(23)) & 127) : (Int64(-83) | 1))), Enum_1731854046694_451
+                            1)), ((UInt16(UInt16(184)) & 127)..(UInt16(UInt16(23)) & 127) : (Int64(-83) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
                         .enumValue_1731854046694_456), UInt64(Int16(UInt16(45))), ";XAr&*jN1(", Float64(10.0)), ((Int16(Int16(Int16(UInt16(19)))) &
                 127)..(Int16(Int16(-79)) & 127) : (Int64(-117) | 1)), ());
         var var_1731854046694_1608: Int16 = Int16(28);
@@ -409,7 +409,7 @@ ZJC+B
         } else if (var_1731854046694_1490) { // block id: 1493
             Int64(43);
             var_1731854046694_1496;
-            var_1731854046694_1551 < var_1731854046694_1555
+            var_1731854046694_1551 < <!DEPRECATED_WARNING!>var_1731854046694_1555<!>
         } else { // block id: 1557
             var_1731854046694_1559;
             var_1731854046694_1608 = var_1731854046694_1608 + 1
@@ -495,14 +495,14 @@ public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_
             match (iter2709.next()) {
                 case None => break
                 case Some(v) => match (v) {
-                    case i where (if (var_1731854046694_797) { // block id: 2712
+                    case i where (if (<!DEPRECATED_WARNING!>var_1731854046694_797<!>) { // block id: 2712
                         var_1731854046694_2591;
                         ();
-                        var_1731854046694_797
+                        <!DEPRECATED_WARNING!>var_1731854046694_797<!>
                     } else { // block id: 2716
                         Option<(Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, 
                                 String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, 
-                                UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>)>
+                                UInt16, UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>)>
                             .Some(var_1731854046694_2719);
                         false
                     }) => ();
@@ -555,7 +555,7 @@ public interface Interface_1731854046694_125<T0, T1> <: Interface_1731854046694_
                     var_1731854046694_2854;
                     let var_1731854046694_2858: Range<Int16> = ((Int16(Int16(89)) & 127)..(Int16(Int16(Int8(95))) & 127) : (Int64(93) |
                         1));
-                    (var_1731854046694_2858, UInt16(240), var_1731854046694_1073, ((Int8(Int8(82)) & 127)..=(Int8(Int8(-81)) &
+                    (var_1731854046694_2858, UInt16(240), <!DEPRECATED_WARNING!>var_1731854046694_1073<!>, ((Int8(Int8(82)) & 127)..=(Int8(Int8(-81)) &
                             127) : (Int64(19) | 1)), ((UInt16(var_1731854046694_716) & 127)..=(UInt16(var_1731854046694_2870) &
                             127) : (Int64(-30) | 1)));
                     ((UInt64(UInt64(192)) & 127)..(UInt64(UInt64(45)) & 127) : (Int64(-59) | 1))
@@ -628,7 +628,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
             var_1731854046694_716
         } catch (e: Exception) { // block id: 731
             var_1731854046694_734 = var_1731854046694_734 >> ((Int64(62)) & 7)
-            var_1731854046694_697;
+            <!DEPRECATED_WARNING!>var_1731854046694_697<!>;
             UInt16(140)
         } finally { // block id: 742
             ();
@@ -651,11 +651,11 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
             case -66 | 62 | -15 | 98 =>
                 let var_1731854046694_792: Int = Int64(44);
                 ((Int64(var_1731854046694_734) & 127)..=(Int64(var_1731854046694_792) & 127) : (Int64(-97) | 1));
-                var_1731854046694_797 = var_1731854046694_797 && (true)
+                <!DEPRECATED_WARNING!>var_1731854046694_797<!> = <!DEPRECATED_WARNING!>var_1731854046694_797<!> && (true)
                 UInt16(191) % ((var_1731854046694_716) | 1)
 
             case _ =>
-                var_1731854046694_697;
+                <!DEPRECATED_WARNING!>var_1731854046694_697<!>;
                 var_1731854046694_688 / ((Int32(-98)) | 1);
                 UInt16(217) + UInt16(140)
         }
@@ -704,7 +704,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                 case Some(num) => num
                 case None =>
                     if (let caseVar_1731854046694_3155 <- Option<Option<(Class_1731854046694_204, UInt64)>>.None) {
-                        ((Int64(Int64(-44)) & 127)..(Int64(Int64(89)) & 127) : (var_1731854046694_1827 | 1))
+                        ((Int64(Int64(-44)) & 127)..(Int64(Int64(89)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1))
                     } else {
                         Option<Option<Range<Int64>>>.Some(var_1731854046694_3138);
                         var_1731854046694_3167
@@ -712,10 +712,10 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
             })
         } else {
             (if (if (var_1731854046694_1490) { // block id: 3175
-                var_1731854046694_1073 == UInt32(3)
-            } else if (var_1731854046694_797) { // block id: 3180
+                <!DEPRECATED_WARNING!>var_1731854046694_1073<!> == UInt32(3)
+            } else if (<!DEPRECATED_WARNING!>var_1731854046694_797<!>) { // block id: 3180
                 ();
-                var_1731854046694_797 || var_1731854046694_1346
+                <!DEPRECATED_WARNING!>var_1731854046694_797<!> || var_1731854046694_1346
             } else { // block id: 3185
                 ((Int32(Int32(69)) & 127)..=(Int32(var_1731854046694_3189) & 127) : (Int64(43) | 1));
                 true
@@ -732,7 +732,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                     ((Int64(Int64(68)) & 127)..=(Int64(Int64(-26)) & 127) : (Int64(-82) | 1))
                 }
             } else {
-                ((Int64(var_1731854046694_1827) & 127)..=(Int64(Int64(99)) & 127) : (var_1731854046694_1827 | 1))
+                ((Int64(<!DEPRECATED_WARNING!>var_1731854046694_1827<!>) & 127)..=(Int64(Int64(99)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1))
             })
         };
         let var_1731854046694_3241: (Float64, Float64, Range<Int32>, UInt32, UInt8) = (Float64(Float64(Float32(80.0))),
@@ -744,7 +744,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                 var_1731854046694_3198 = var_1731854046694_3198 - 1
                 ();
                 (var_1731854046694_3231, Float64(5.0), ((Int32(Int32(-115)) & 127)..(Int32(Int32(121)) & 127) : (Int64(103) |
-                        1)), var_1731854046694_1073, UInt8(207))
+                        1)), <!DEPRECATED_WARNING!>var_1731854046694_1073<!>, UInt8(207))
             } catch (e: Exception) { // block id: 3237
                 var_1731854046694_3117;
                 var_1731854046694_168;
@@ -758,10 +758,10 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
         });
         if (try { // block id: 3278
             Option<Range<Int32>>.None;
-            var_1731854046694_1073 = var_1731854046694_1073 * (UInt32(238))
+            <!DEPRECATED_WARNING!>var_1731854046694_1073<!> = <!DEPRECATED_WARNING!>var_1731854046694_1073<!> * (UInt32(238))
             false
         } finally { // block id: 3284
-            var_1731854046694_797
+            <!DEPRECATED_WARNING!>var_1731854046694_797<!>
         }) { // block id: 3286
             ();
             ((UInt64(UInt64(146)) & 127)..(UInt64(UInt64(16)) & 127) : (Int64(-42) | 1))
@@ -770,13 +770,13 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                 ((Int8(Int8(-114)) & 127)..(Int8(Int8(-107)) & 127) : (Int64(-50) | 1)),
                 ((Int8(Int8(-117)) & 127)..(Int8(Int8(44)) & 127) : (Int64(3) | 1)),
                 ((Int8(Int8(53)) & 127)..(Int8(Int8(-68)) & 127) : (Int64(1) | 1)),
-                ((Int8(var_1731854046694_848) & 127)..=(Int8(Int8(76)) & 127) : (var_1731854046694_1827 | 1)),
+                ((Int8(var_1731854046694_848) & 127)..=(Int8(Int8(76)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
                 var_1731854046694_491, var_1731854046694_491, var_1731854046694_491,
                 ((Int8(Int8(-58)) & 127)..(Int8(Int8(78)) & 127) : (Int64(46) | 1)),
                 ((Int8(Int8(125)) & 127)..=(Int8(Int8(100)) & 127) : (Int64(-38) | 1))];
             var_1731854046694_1346
         } finally { // block id: 3312
-            var_1731854046694_1073 = var_1731854046694_1073 ^ (UInt32(230))
+            <!DEPRECATED_WARNING!>var_1731854046694_1073<!> = <!DEPRECATED_WARNING!>var_1731854046694_1073<!> ^ (UInt32(230))
             const var_1731854046694_3318: Int16 = 108;
             var_1731854046694_3318 >= Int16(54)
         }) { // block id: 3321
@@ -787,15 +787,15 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                     127)..(Int16(Int16(Int8(89))) & 127) : (Int64(-102) | 1)), UInt16(Int8(75)), UInt32(UInt16(UInt8(15))),
                 ((Int8(Int8(UInt8(Int8(26)))) & 127)..(Int8(<!TYPECAST_OVERFLOW!>Int8(UInt8(UInt8(151)))<!>) & 127) : (Int64(2) | 1)), ((UInt16(UInt16(224)) &
                     127)..=(UInt16(UInt16(57)) & 127) : (Int64(117) | 1)));
-            match (((Int8(Int8(-125)) & 127)..(Int8(Int8(55)) & 127) : (var_1731854046694_1827 | 1))) {
+            match (((Int8(Int8(-125)) & 127)..(Int8(Int8(55)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1))) {
                 case caseVar_1731854046694_3330 =>
-                    var_1731854046694_1073 / ((var_1731854046694_1073) | 1);
+                    <!DEPRECATED_WARNING!>var_1731854046694_1073<!> / ((<!DEPRECATED_WARNING!>var_1731854046694_1073<!>) | 1);
                     ();
                     ((UInt64(UInt64(95)) & 127)..=(UInt64(UInt64(56)) & 127) : (Int64(-20) | 1))
 
                 case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_3342: Option<(Float64, Float64, Range<Int32>, UInt32, UInt8)><!> =>
                     let var_1731854046694_3369: Float64 = Float64(-102.0);
-                    (((UInt8(var_1731854046694_1555) & 127)..=(UInt8(UInt8(246)) & 127) : (var_1731854046694_1827 | 1)),
+                    (((UInt8(<!DEPRECATED_WARNING!>var_1731854046694_1555<!>) & 127)..=(UInt8(UInt8(246)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
                         ((UInt16(UInt16(95)) & 127)..=(UInt16(UInt16(151)) & 127) : (Int64(6) | 1)),
                         var_1731854046694_3351, [Float64(-16.0), Float64(-98.0), Float64(56.0), Float64(46.0),
                             Float64(-92.0), Float64(30.0), Float64(-14.0), var_1731854046694_3231, Float64(-30.0),
@@ -806,7 +806,7 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                                 var_1731854046694_2591], var_1731854046694_2360, var_1731854046694_2831, ((UInt32(UInt32(105)) &
                                 127)..(UInt32(UInt32(253)) & 127) : (Int64(-119) | 1)), ((UInt64(UInt64(204)) & 127)..=(UInt64(UInt64(63)) &
                                 127) : (Int64(69) | 1)), var_1731854046694_3394, var_1731854046694_3397,
-                            var_1731854046694_454), var_1731854046694_1073, ((UInt8(UInt8(234)) & 127)..(UInt8(UInt8(84)) &
+                            <!DEPRECATED_WARNING!>var_1731854046694_454<!>), <!DEPRECATED_WARNING!>var_1731854046694_1073<!>, ((UInt8(UInt8(234)) & 127)..(UInt8(UInt8(84)) &
                             127) : (Int64(12) | 1)));
                     var_1731854046694_2591;
                     if (true) {
@@ -823,8 +823,8 @@ public interface Interface_1731854046694_123 <: Interface_1731854046694_124 {
                     127) : (Int64(97) | 1)), ((UInt16(UInt16(248)) & 127)..=(UInt16(UInt16(UInt8(231))) & 127) : (Int64(68) |
                     1)));
             try { // block id: 3432
-                (((Int16(Int16(-75)) & 127)..(Int16(Int16(-46)) & 127) : (var_1731854046694_1827 | 1)),
-                    var_1731854046694_716, UInt32(67), ((Int8(Int8(19)) & 127)..(Int8(var_1731854046694_848) & 127) : (var_1731854046694_1827 |
+                (((Int16(Int16(-75)) & 127)..(Int16(Int16(-46)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
+                    var_1731854046694_716, UInt32(67), ((Int8(Int8(19)) & 127)..(Int8(var_1731854046694_848) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> |
                         1)), ((UInt16(UInt16(95)) & 127)..=(UInt16(UInt16(99)) & 127) : (Int64(33) | 1)));
                 const var_1731854046694_3448: Int32 = 50;
                 ((Int32(Int32(-109)) & 127)..(Int32(var_1731854046694_3448) & 127) : (Int64(9) | 1));
@@ -850,13 +850,13 @@ public interface Interface_1731854046694_130 <: Interface_1731854046694_127 & In
         const var_1731854046694_2372: UInt64 = 225;
         let var_1731854046694_2395: Range<Int8> = ((Int8(Int8(7)) & 127)..(Int8(Int8(7)) & 127) : (Int64(-30) | 1));
         (match (match ((((UInt16(var_1731854046694_716) & 127)..=(UInt16(var_1731854046694_716) & 127) : (Int64(-128) | 1)),
-            (var_1731854046694_454, (var_1731854046694_2357, var_1731854046694_2360, var_1731854046694_2363, ((UInt32(var_1731854046694_1073) &
-                        127)..(UInt32(UInt32(94)) & 127) : (var_1731854046694_1827 | 1)), var_1731854046694_2332, [var_1731854046694_2372,
+            (<!DEPRECATED_WARNING!>var_1731854046694_454<!>, (var_1731854046694_2357, var_1731854046694_2360, var_1731854046694_2363, ((UInt32(<!DEPRECATED_WARNING!>var_1731854046694_1073<!>) &
+                        127)..(UInt32(UInt32(94)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)), var_1731854046694_2332, [var_1731854046694_2372,
                         UInt64(167), var_1731854046694_2372, var_1731854046694_2372, var_1731854046694_2372, UInt64(155),
                         var_1731854046694_2372, UInt64(67), var_1731854046694_2372, UInt64(47)], (((Int16(Int16(98)) &
-                            127)..=(Int16(var_1731854046694_611) & 127) : (var_1731854046694_1827 | 1)),
+                            127)..=(Int16(var_1731854046694_611) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
                         var_1731854046694_716, UInt32(64), var_1731854046694_491, var_1731854046694_1049),
-                    Enum_1731854046694_451.enumValue_1731854046694_1024(Float64(103.0), var_1731854046694_2395)),
+                    <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_1024(Float64(103.0), var_1731854046694_2395)),
                 var_1731854046694_2372, """
 URkqw
 c5*ee
@@ -866,7 +866,7 @@ c5*ee
                 if (var_1731854046694_1490) {
                     var_1731854046694_2410
                 } else {
-                    Option<Int64>.Some(var_1731854046694_1827)
+                    Option<Int64>.Some(<!DEPRECATED_WARNING!>var_1731854046694_1827<!>)
                 }
         }) {
             case Some(num) => num
@@ -874,7 +874,7 @@ c5*ee
         });
         let var_1731854046694_2427: (Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, 
             String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, 
-            Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>) = (((UInt8(UInt8(162)) & 127)..(UInt8(UInt8(90)) &
+            Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>) = (((UInt8(UInt8(162)) & 127)..(UInt8(UInt8(90)) &
                 127) : (Int64(124) | 1)), ((UInt16(UInt16(210)) & 127)..(UInt16(UInt16(35)) & 127) : (Int64(-37) | 1)), [UInt64(194),
                 UInt64(223), UInt64(254), UInt64(126), UInt64(16), UInt64(141), UInt64(199), UInt64(144), UInt64(226),
                 UInt64(49)], [Float64(-79.0), Float64(111.0), Float64(-35.0), Float64(-8.0), Float64(-80.0),
@@ -887,7 +887,7 @@ c5*ee
                     UInt64(87), UInt64(165), UInt64(128), UInt64(254), UInt64(46), UInt64(5), UInt64(233), UInt64(108)],
                 (((Int16(Int16(34)) & 127)..=(Int16(Int16(62)) & 127) : (Int64(65) | 1)), <!TYPECAST_OVERFLOW!>UInt16(Int16(-1))<!>, UInt32(31),
                     ((Int8(Int8(-87)) & 127)..=(Int8(Int8(-25)) & 127) : (Int64(2) | 1)), ((UInt16(UInt16(36)) & 127)..=(UInt16(UInt16(136)) &
-                        127) : (Int64(-100) | 1))), Enum_1731854046694_451.enumValue_1731854046694_1024(
+                        127) : (Int64(-100) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_1024(
                     Float64(Float32(-27.0)), ((Int8(Int8(105)) & 127)..(Int8(Int8(-111)) & 127) : (Int64(-27) | 1)))),
             UInt32(UInt8(UInt8(Int8(103)))), ((UInt8(UInt8(99)) & 127)..=(UInt8(UInt8(105)) & 127) : (Int64(UInt64(28)) |
                 1)));
@@ -902,7 +902,7 @@ c5*ee
         var loopTimeVar_1731854046694_2648: Int64 = 0;
         (match ((match (match (var_1731854046694_2427) {
             case _ =>
-                -var_1731854046694_1827
+                -<!DEPRECATED_WARNING!>var_1731854046694_1827<!>
                 if (false) {
                     Option<UInt32>.None
                 } else {
@@ -911,12 +911,12 @@ c5*ee
 
             case <!UNREACHABLE_PATTERN!>(_: Range<UInt8>, _: Array<Range<Int16>>, caseVar_1731854046694_2498, caseVar_1731854046694_2499, caseVar_1731854046694_2500, _, _: Int64, _)<!> =>
                 const var_1731854046694_2505: Float64 = -112.0;
-                (Enum_1731854046694_451.enumValue_1731854046694_1024(var_1731854046694_2505, var_1731854046694_491),
+                (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_1024(var_1731854046694_2505, var_1731854046694_491),
                     var_1731854046694_2509, var_1731854046694_2372, "j%4pua{[3T#", var_1731854046694_2505);
                 var_1731854046694_2492
 
             case <!UNREACHABLE_PATTERN!>_<!> =>
-                if (var_1731854046694_797) {
+                if (<!DEPRECATED_WARNING!>var_1731854046694_797<!>) {
                     Option<UInt32>.None
                 } else {
                     Option<UInt32>.Some(UInt32(195))
@@ -940,13 +940,13 @@ c5*ee
                     ((UInt64(UInt64(92)) & 127)..(UInt64(var_1731854046694_2372) & 127) : (Int64(-23) | 1)), [var_1731854046694_2372,
                         UInt64(6), var_1731854046694_2615, var_1731854046694_2372, UInt64(105), var_1731854046694_2615,
                         UInt64(183), var_1731854046694_2372, UInt64(228), var_1731854046694_2615], var_1731854046694_2628,
-                    Enum_1731854046694_451.enumValue_1731854046694_456)
+                    <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_456)
             } while ((var_1731854046694_864 <= Float32(116.0)) && loopTimeVar_1731854046694_2648 < 100)
         });
-        let var_1731854046694_2654: (Range<UInt16>, (Enum_1731854046694_451, (Array<Unit>, String, 
+        let var_1731854046694_2654: (Range<UInt16>, (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>, (Array<Unit>, String, 
             Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, 
-            Range<UInt16>), Enum_1731854046694_451), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(UInt16(128)) &
-                127)..(UInt16(UInt16(200)) & 127) : (Int64(UInt64(79)) | 1)), (Enum_1731854046694_451
+            Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt64, String, Float64), Range<Int16>, Unit) = (((UInt16(UInt16(128)) &
+                127)..(UInt16(UInt16(200)) & 127) : (Int64(UInt64(79)) | 1)), (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
                     .enumValue_1731854046694_1024(Float64(Float64(-43.0)),
                         ((Int8(Int8(51)) & 127)..=(Int8(Int8(80)) & 127) : (Int64(-2) | 1))), ([(), (), (), (), (), (),
                         (), (), (), ()], " 3F^a{gxH4&", Class_1731854046694_853(), ((UInt32(UInt32(196)) & 127)..=(UInt32(UInt32(85)) &
@@ -955,7 +955,7 @@ c5*ee
                         UInt64(201), UInt64(19), UInt64(233)], (((Int16(Int16(66)) & 127)..=(Int16(Int16(19)) & 127) : (Int64(-30) |
                             1)), UInt16(184), UInt32(68), ((Int8(Int8(14)) & 127)..(Int8(Int8(99)) & 127) : (Int64(-101) |
                             1)), ((UInt16(UInt16(225)) & 127)..(UInt16(UInt16(5)) & 127) : (Int64(35) | 1))),
-                    Enum_1731854046694_451.enumValue_1731854046694_1024(Float64(88.0),
+                    <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_1024(Float64(88.0),
                         ((Int8(Int8(-44)) & 127)..=(Int8(Int8(-66)) & 127) : (Int64(-9) | 1)))), UInt64(UInt16(209)),
                 """
 4~NK,
@@ -969,7 +969,7 @@ QKyXm
         } catch (_) { // block id: 2698
             ();
             var_1731854046694_2372 / ((UInt64(82)) | 1)
-        }) & 127)..(UInt64(UInt64(Int64(var_1731854046694_1827))) & 127) : (var_1731854046694_1827 | 1))
+        }) & 127)..(UInt64(UInt64(Int64(<!DEPRECATED_WARNING!>var_1731854046694_1827<!>))) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1))
     }
 }
 
@@ -982,7 +982,7 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
         func_1731854046694_196(((UInt32(UInt32(51)) & 127)..(UInt32(UInt32(73)) & 127) : (Int64(-35) | 1)),
             if ((match (var_1731854046694_1663) {
                 case Some(num) => num
-                case None => var_1731854046694_797
+                case None => <!DEPRECATED_WARNING!>var_1731854046694_797<!>
             })) { // block id: 1672
                 var_1731854046694_1675 ** Int64(112)
             } else if ((match (Option<UInt32>.Some(UInt32(223))) {
@@ -999,7 +999,7 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             namedParam_1731854046694_199: (match (Option<Int8>.Some(Int8(69))) {
                 case Some(num) => num
                 case None => var_1731854046694_1699
-            }), namedParam_1731854046694_200: var_1731854046694_533);
+            }), namedParam_1731854046694_200: <!DEPRECATED_WARNING!>var_1731854046694_533<!>);
         let var_1731854046694_1747: ?Bool = (match ([((UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int64(-92))<!>) & 127)..=(UInt64(UInt64(210)) & 127) : (Int64(Int64(23)) |
             1)), ((UInt64(UInt64(172)) & 127)..=(UInt64(<!TYPECAST_OVERFLOW!>UInt64(Int32(-24))<!>) & 127) : (Int64(16) | 1)),
             ((UInt64(UInt64(217)) & 127)..=(UInt64(UInt64(21)) & 127) : (Int64(54) | 1)),
@@ -1031,7 +1031,7 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
                 }
             })) {
             case Some(num) => num
-            case None => (Option<UInt32>.Some(var_1731854046694_1073), ((UInt16(UInt16(214)) & 127)..=(UInt16(UInt16(208)) &
+            case None => (Option<UInt32>.Some(<!DEPRECATED_WARNING!>var_1731854046694_1073<!>), ((UInt16(UInt16(214)) & 127)..=(UInt16(UInt16(208)) &
                     127) : (Int64(-101) | 1)), Option<Option<(Class_1731854046694_204, UInt64)>>.None, [var_1731854046694_1663,
                     Option<Bool>.Some(false), Option<Bool>.Some(false), Option<Bool>.None, Option<Bool>.None,
                     var_1731854046694_1663, Option<Bool>.None, var_1731854046694_1747, Option<Bool>.None,
@@ -1041,10 +1041,10 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             1));
         (match (Option<(String, Unit, Unit, Array<Unit>, Range<UInt32>, Range<Int64>)>.None) {
             case Some(num) => num
-            case None => ("p\"2(kaS<s[", var_1731854046694_697, var_1731854046694_168, [var_1731854046694_697, (), (),
-                    var_1731854046694_168, (), var_1731854046694_168, (), var_1731854046694_168, var_1731854046694_697,
+            case None => ("p\"2(kaS<s[", <!DEPRECATED_WARNING!>var_1731854046694_697<!>, var_1731854046694_168, [<!DEPRECATED_WARNING!>var_1731854046694_697<!>, (), (),
+                    var_1731854046694_168, (), var_1731854046694_168, (), var_1731854046694_168, <!DEPRECATED_WARNING!>var_1731854046694_697<!>,
                     var_1731854046694_168], var_1731854046694_1813, ((Int64(Int64(-112)) & 127)..=(Int64(var_1731854046694_734) &
-                    127) : (var_1731854046694_533 | 1)))
+                    127) : (<!DEPRECATED_WARNING!>var_1731854046694_533<!> | 1)))
         })[1]
         return
     };
@@ -1063,10 +1063,10 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             var_1731854046694_1490
         } else { // block id: 2911
             var var_1731854046694_2931: Int64 = Int64(-89);
-            [((Int8(var_1731854046694_848) & 127)..=(Int8(Int8(14)) & 127) : (var_1731854046694_1827 | 1)),
+            [((Int8(var_1731854046694_848) & 127)..=(Int8(Int8(14)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
                 ((Int8(Int8(77)) & 127)..=(Int8(Int8(-68)) & 127) : (Int64(107) | 1)), var_1731854046694_491,
                 var_1731854046694_491, var_1731854046694_491, var_1731854046694_491, var_1731854046694_491,
-                ((Int8(var_1731854046694_848) & 127)..(Int8(Int8(-106)) & 127) : (var_1731854046694_1827 | 1)),
+                ((Int8(var_1731854046694_848) & 127)..(Int8(Int8(-106)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1)),
                 ((Int8(Int8(-115)) & 127)..=(Int8(var_1731854046694_848) & 127) : (var_1731854046694_2931 | 1)),
                 ((Int8(Int8(54)) & 127)..=(Int8(Int8(80)) & 127) : (Int64(104) | 1))];
             ();
@@ -1092,7 +1092,7 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             UInt32(191);
             var_1731854046694_864
         }) {
-            case <!UNREACHABLE_PATTERN!>_: Float64<!> => ((UInt64(var_1731854046694_2972) & 127)..(UInt64(var_1731854046694_2972) & 127) : (var_1731854046694_1827 |
+            case <!UNREACHABLE_PATTERN!>_: Float64<!> => ((UInt64(var_1731854046694_2972) & 127)..(UInt64(var_1731854046694_2972) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> |
                 1))
 
             case caseVar_1731854046694_2978 =>
@@ -1132,9 +1132,9 @@ public interface Interface_1731854046694_122<T0> <: Interface_1731854046694_123 
             Float64(-104.0), Float64(-36.0), Float64(-15.0), Float64(-2.0), Float64(100.0),
             Float64(Float64(Float32(-114.0))), Float64(Float32(120.0)), Float64(Float32(Float32(Float32(109.0))))];
         try { // block id: 3656
-            match (((UInt64(UInt64(212)) & 127)..(UInt64(UInt64(222)) & 127) : (var_1731854046694_1827 | 1))) {
+            match (((UInt64(UInt64(212)) & 127)..(UInt64(UInt64(222)) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_1827<!> | 1))) {
                 case _ =>
-                    (((UInt8(var_1731854046694_1555) & 127)..=(UInt8(var_1731854046694_1555) & 127) : (var_1731854046694_3495 |
+                    (((UInt8(<!DEPRECATED_WARNING!>var_1731854046694_1555<!>) & 127)..=(UInt8(<!DEPRECATED_WARNING!>var_1731854046694_1555<!>) & 127) : (var_1731854046694_3495 |
                             1)), ((UInt16(var_1731854046694_3672) & 127)..=(UInt16(UInt16(128)) & 127) : (var_1731854046694_3495 |
                             1)), var_1731854046694_3394, var_1731854046694_3680, [Float64(-122.0), Float64(-62.0),
                             Float64(122.0), Float64(106.0), Float64(-8.0), Float64(97.0), Float64(-62.0), Float64(38.0),
@@ -1147,19 +1147,19 @@ X;)f\\
                                 UInt64(129), UInt64(128), UInt64(77), UInt64(13), UInt64(51), UInt64(100), UInt64(93),
                                 UInt64(158), UInt64(208)], (var_1731854046694_2401, var_1731854046694_716, UInt32(173), ((Int8(Int8(81)) &
                                     127)..=(Int8(Int8(-24)) & 127) : (Int64(42) | 1)), var_1731854046694_3460),
-                            var_1731854046694_454), UInt32(185), var_1731854046694_2836);
+                            <!DEPRECATED_WARNING!>var_1731854046694_454<!>), UInt32(185), var_1731854046694_2836);
                     Int64(7);
                     UInt16(7)
             }
         } finally { // block id: 3723
             var loopTimeVar_1731854046694_3728: Int64 = 0;
-            while ((var_1731854046694_797) && loopTimeVar_1731854046694_3728 < 100) {
+            while ((<!DEPRECATED_WARNING!>var_1731854046694_797<!>) && loopTimeVar_1731854046694_3728 < 100) {
                 loopTimeVar_1731854046694_3728++;
             };
             try { // block id: 3730
                 Option<(Range<UInt8>, Range<UInt16>, Array<UInt64>, Array<Float64>, Array<Float64>, (Array<Unit>, String, 
                         Class_1731854046694_853, Range<UInt32>, Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, 
-                        UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451), UInt32, Range<UInt8>)>.Some(
+                        UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt32, Range<UInt8>)>.Some(
                     var_1731854046694_2719);
                 ();
                 var_1731854046694_716 % ((var_1731854046694_3672) | 1)
@@ -1183,9 +1183,9 @@ public interface Interface_1731854046694_121<T0, T1> <: Interface_1731854046694_
         if (try { // block id: 2996
             Float64(-112.0) > Float64(-16.0)
         } catch (e: Exception) { // block id: 3000
-            var_1731854046694_1073 = var_1731854046694_1073 | (var_1731854046694_1073)
+            <!DEPRECATED_WARNING!>var_1731854046694_1073<!> = <!DEPRECATED_WARNING!>var_1731854046694_1073<!> | (<!DEPRECATED_WARNING!>var_1731854046694_1073<!>)
             Float64(-12.0);
-            var_1731854046694_2266
+            <!DEPRECATED_WARNING!>var_1731854046694_2266<!>
         }) {
             ((UInt64(UInt64(90)) & 127)..(UInt64(UInt64(233)) & 127) : (Int64(4) | 1))
         } else {
@@ -1210,7 +1210,7 @@ public interface Interface_1731854046694_121<T0, T1> <: Interface_1731854046694_
                 case Some(num) => num
                 case None => [var_1731854046694_4429, var_1731854046694_4433, var_1731854046694_4429,
                     var_1731854046694_4429, Option<Bool>.None, var_1731854046694_4433, var_1731854046694_4429,
-                    var_1731854046694_4433, var_1731854046694_4429, Option<Bool>.Some(var_1731854046694_797)]
+                    var_1731854046694_4433, var_1731854046694_4429, Option<Bool>.Some(<!DEPRECATED_WARNING!>var_1731854046694_797<!>)]
             })
         } finally { // block id: 4444
             (match (Option<Unit>.None) {
@@ -1258,7 +1258,7 @@ public open class Class_1731854046694_118<T0, T1> <: Interface_1731854046694_121
 
     public static var var_1731854046694_4280: UInt32 = UInt32(141);
     public static func func_1731854046694_359(): UInt16 { // block id: 4121
-        if (let caseVar_1731854046694_4177 <- if (var_1731854046694_2266) { // block id: 4125
+        if (let caseVar_1731854046694_4177 <- if (<!DEPRECATED_WARNING!>var_1731854046694_2266<!>) { // block id: 4125
             let var_1731854046694_4127: Array<Range<UInt64>> = [((UInt64(UInt64(189)) & 127)..(UInt64(UInt64(86)) & 127) : (Int64(27) |
                 1)), ((UInt64(UInt64(150)) & 127)..=(UInt64(UInt64(48)) & 127) : (Int64(43) | 1)),
                 ((UInt64(UInt64(235)) & 127)..(UInt64(UInt64(241)) & 127) : (Int64(-1) | 1)),
@@ -1272,7 +1272,7 @@ public open class Class_1731854046694_118<T0, T1> <: Interface_1731854046694_121
             var_1731854046694_4127;
             ();
             var_1731854046694_4157
-        } else if ((match (Option<Bool>.Some(var_1731854046694_2266)) {
+        } else if ((match (Option<Bool>.Some(<!DEPRECATED_WARNING!>var_1731854046694_2266<!>)) {
             case Some(num) => num
             case None => false
         })) { // block id: 4167
@@ -1373,7 +1373,7 @@ pSxlz
                     var_1731854046694_4397
                 } else {
                     [true, false, var_1731854046694_4371, var_1731854046694_4309, true, var_1731854046694_4309,
-                        var_1731854046694_4309, var_1731854046694_2266, var_1731854046694_4309, var_1731854046694_2266]
+                        var_1731854046694_4309, <!DEPRECATED_WARNING!>var_1731854046694_2266<!>, var_1731854046694_4309, <!DEPRECATED_WARNING!>var_1731854046694_2266<!>]
                 };
                 UInt8(187)
             };
@@ -1451,7 +1451,7 @@ Wl8\"r
                 var_1731854046694_51;
                 false && var_1731854046694_4504
             } catch (_) { // block id: 4548
-                var_1731854046694_2266
+                <!DEPRECATED_WARNING!>var_1731854046694_2266<!>
             }
         })) { // block id: 4550
             var loopTimeVar_1731854046694_4560: Int64 = 0;
@@ -1547,7 +1547,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
             var_1731854046694_433 >= Int32(-4)
         }) { // block id: 439
             var_1731854046694_445.var_1731854046694_448;
-            match (var_1731854046694_454) {
+            match (<!DEPRECATED_WARNING!>var_1731854046694_454<!>) {
                 case _ => UInt16(197)
             }
         } else if (match (UInt64(147)) {
@@ -1569,7 +1569,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
             [(), (), (), (), (), (), (), (), (), ()][5];
             (var_1731854046694_506, var_1731854046694_168, (), [var_1731854046694_168, var_1731854046694_422, (),
                     var_1731854046694_515, (), var_1731854046694_422, (), var_1731854046694_515, (), ()],
-                var_1731854046694_524, ((Int64(var_1731854046694_533) & 127)..=(Int64(Int64(55)) & 127) : (Int64(25) | 1)))[1];
+                var_1731854046694_524, ((Int64(<!DEPRECATED_WARNING!>var_1731854046694_533<!>) & 127)..=(Int64(Int64(55)) & 127) : (Int64(25) | 1)))[1];
             if (false) { // block id: 540
                 UInt16(190)
             } else if (false) { // block id: 543
@@ -1674,7 +1674,7 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
         } catch (_) { // block id: 831
             var var_1731854046694_840: UInt32 = UInt32(UInt16(Int8(10)));
             try (resource = Class_1731854046694_853()) { // block id: 833
-                Enum_1731854046694_451.enumValue_1731854046694_456;
+                <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_456;
                 UInt8(0);
                 ()
             } finally { // block id: 837
@@ -1694,16 +1694,16 @@ public open class Class_1731854046694_204 <: Interface_1731854046694_124 & Resou
         namedParam_1731854046694_918!: Int8) { // block id: 919
         var_1731854046694_921;
         var var_1731854046694_996: Float64 = Float64(-97.0);
-        let var_1731854046694_1000: (Enum_1731854046694_451, (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, 
+        let var_1731854046694_1000: (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>, (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, 
             Range<UInt64>, Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), 
-            Enum_1731854046694_451), UInt64, String, Float64) = (Enum_1731854046694_451.enumValue_1731854046694_456, ([(),
+            <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>), UInt64, String, Float64) = (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_456, ([(),
                     (), (), (), (), (), (), (), (), ()], ###"TXV=huv#IP"###, Class_1731854046694_853(), ((UInt32(UInt32(211)) &
                     127)..(UInt32(UInt32(86)) & 127) : (Int64(-45) | 1)), ((UInt64(UInt64(2)) & 127)..=(UInt64(UInt64(166)) &
                     127) : (Int64(114) | 1)), [UInt64(166), UInt64(33), UInt64(192), UInt64(227), UInt64(16),
                     UInt64(208), UInt64(113), UInt64(86), UInt64(7), UInt64(66)], (((Int16(Int16(-37)) & 127)..=(Int16(Int16(-11)) &
                         127) : (Int64(49) | 1)), UInt16(Int16(42)), UInt32(152), ((Int8(Int8(-122)) & 127)..=(Int8(Int8(116)) &
                         127) : (Int64(12) | 1)), ((UInt16(UInt16(77)) & 127)..(UInt16(UInt16(21)) & 127) : (Int64(80) | 1))),
-                Enum_1731854046694_451.enumValue_1731854046694_1024(Float64(-61.0),
+                <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_1024(Float64(-61.0),
                     ((Int8(Int8(122)) & 127)..=(Int8(Int8(108)) & 127) : (Int64(-118) | 1)))), UInt64(UInt64(107)),
             """
 [B v2
@@ -1711,7 +1711,7 @@ p7d|C
 """, Float64(Float32(Float32(-127.0))));
         try { // block id: 928
             var var_1731854046694_932: (Array<Unit>, String, Class_1731854046694_853, Range<UInt32>, Range<UInt64>, 
-                Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), Enum_1731854046694_451) = ([(),
+                Array<UInt64>, (Range<Int16>, UInt16, UInt32, Range<Int8>, Range<UInt16>), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>) = ([(),
                     (), (), (), (), (), (), (), (), ()], """
 n#YeU
 Q_COy
@@ -1722,9 +1722,9 @@ Q_COy
                     <!TYPECAST_OVERFLOW!>UInt64(Int32(-119))<!>, UInt64(UInt32(127)), UInt64(UInt32(226)), UInt64(188)], (((Int16(Int16(-67)) &
                         127)..=(Int16(Int16(-17)) & 127) : (Int64(-37) | 1)), UInt16(Int8(17)), UInt32(UInt32(UInt32(254))),
                     ((Int8(Int8(48)) & 127)..=(Int8(Int8(Int8(-74))) & 127) : (Int64(-16) | 1)), ((UInt16(UInt16(53)) &
-                        127)..=(UInt16(UInt16(145)) & 127) : (Int64(-74) | 1))), Enum_1731854046694_451
+                        127)..=(UInt16(UInt16(145)) & 127) : (Int64(-74) | 1))), <!DEPRECATED_WARNING!>Enum_1731854046694_451<!>
                     .enumValue_1731854046694_456);
-            (Enum_1731854046694_451.enumValue_1731854046694_456, var_1731854046694_932, UInt64(178), "I4a8[(ap^4",
+            (<!DEPRECATED_WARNING!>Enum_1731854046694_451<!>.enumValue_1731854046694_456, var_1731854046694_932, UInt64(178), "I4a8[(ap^4",
                 var_1731854046694_996)
         } finally { // block id: 998
             var_1731854046694_1000
@@ -1733,7 +1733,7 @@ Q_COy
         var var_1731854046694_1100: Range<Int16> = ((Int16(Int16(9)) & 127)..=(Int16(Int16(-107)) & 127) : (Int64(63) | 1));
         try (resource = Class_1731854046694_204()) { // block id: 1041
             if (true) {
-                ((UInt16(UInt16(31)) & 127)..=(UInt16(var_1731854046694_716) & 127) : (var_1731854046694_533 | 1))
+                ((UInt16(UInt16(31)) & 127)..=(UInt16(var_1731854046694_716) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_533<!> | 1))
             } else {
                 var_1731854046694_1049
             };
@@ -1744,17 +1744,17 @@ Q_COy
 
                 case <!UNREACHABLE_PATTERN!>caseVar_1731854046694_1068: Range<UInt16><!> =>
                     var_1731854046694_1049;
-                    var_1731854046694_1073 = var_1731854046694_1073 | (UInt32(66))
+                    <!DEPRECATED_WARNING!>var_1731854046694_1073<!> = <!DEPRECATED_WARNING!>var_1731854046694_1073<!> | (UInt32(66))
 
                 case <!UNREACHABLE_PATTERN!>_: UInt64<!> => var_1731854046694_168
 
                 case <!UNREACHABLE_PATTERN!>_<!> =>
                     var_1731854046694_1085 = var_1731854046694_1085 + 1
-                    var_1731854046694_797 = var_1731854046694_797 || (true)
+                    <!DEPRECATED_WARNING!>var_1731854046694_797<!> = <!DEPRECATED_WARNING!>var_1731854046694_797<!> || (true)
                     ()
             };
-            (((UInt16(UInt16(168)) & 127)..=(UInt16(var_1731854046694_716) & 127) : (var_1731854046694_533 | 1)),
-                var_1731854046694_1000, var_1731854046694_1100, var_1731854046694_697)[3]
+            (((UInt16(UInt16(168)) & 127)..=(UInt16(var_1731854046694_716) & 127) : (<!DEPRECATED_WARNING!>var_1731854046694_533<!> | 1)),
+                var_1731854046694_1000, var_1731854046694_1100, <!DEPRECATED_WARNING!>var_1731854046694_697<!>)[3]
         } finally { // block id: 1104
             var loopTimeVar_1731854046694_1111: Array<UInt64> = [UInt64(133), UInt64(236), UInt64(Int8(4)),
                 UInt64(UInt64(207)), UInt64(43), UInt64(UInt32(222)), UInt64(UInt64(232)), UInt64(95), UInt64(Int16(70)),
@@ -2143,14 +2143,14 @@ public const func func_1731854046694_575(param_1731854046694_576: Int32): UInt16
 
     func_1731854046694_579(
         func_1731854046694_584(func_1731854046694_614(var_1731854046694_624),
-            namedParam_1731854046694_588: func_1731854046694_627((), namedParam_1731854046694_629: "J1b@tao\\1z",
+            namedParam_1731854046694_588: <!DEPRECATED_WARNING!>func_1731854046694_627<!>((), namedParam_1731854046694_629: "J1b@tao\\1z",
                 optionalParam_1731854046694_630: var_1731854046694_598)))
 }
 
 @Frozen
 public const func func_1731854046694_693(): Int32 { // block id: 694
     97.0;
-    var_1731854046694_697;
+    <!DEPRECATED_WARNING!>var_1731854046694_697<!>;
     -56 * var_1731854046694_688
 }
 
@@ -2184,7 +2184,7 @@ d2)Y5
 func func_1731854046694_364(param_1731854046694_365: Range<Int8>): UInt16 { // block id: 366
     var var_1731854046694_659: Float32 = Float32(-34.0);
     Class_1731854046694_204.func_1731854046694_370(optionalParam_1731854046694_374: Float32(var_1731854046694_659),
-        optionalParam_1731854046694_376: (func_1731854046694_662<UInt32>(var_1731854046694_716)))
+        optionalParam_1731854046694_376: (<!DEPRECATED_WARNING!>func_1731854046694_662<UInt32><!>(var_1731854046694_716)))
 }
 
 public open class Class_1731854046694_853 <: Resource {
@@ -2221,7 +2221,7 @@ internal func func_1731854046694_212(param_1731854046694_213: UInt32): Class_173
     var var_1731854046694_1164: (Class_1731854046694_204, UInt64) = (Class_1731854046694_204(), UInt64(Int32(Int8(UInt8(12)))));
     (match ((match (Option<Option<(Class_1731854046694_204, UInt64)>>.Some(var_1731854046694_909)) {
         case Some(num) => num
-        case None => Option<(Class_1731854046694_204, UInt64)>.Some((Class_1731854046694_441(), UInt64(197)))
+        case None => Option<(Class_1731854046694_204, UInt64)>.Some((<!DEPRECATED_WARNING!>Class_1731854046694_441<!>(), UInt64(197)))
     })) {
         case Some(num) => num
         case None => try { // block id: 1160
@@ -2383,7 +2383,7 @@ main(): Int64 {
                 case _ => false
             });
             const var_1731854046694_1972: Int32 = 100;
-            func_1731854046694_137(
+            <!DEPRECATED_WARNING!>func_1731854046694_137<!>(
                 if (var_1731854046694_1949) {
                     (Float64(10.0), Float64(1.0), ((Int32(var_1731854046694_1972) & 127)..(Int32(Int32(-36)) & 127) : (Int64(-107) |
                             1)), var_1731854046694_1977, UInt8(33))[2]
@@ -2465,7 +2465,7 @@ Y)/|?
                                 var_1731854046694_51, [var_1731854046694_51, var_1731854046694_51, (),
                                     var_1731854046694_51, (), (), var_1731854046694_51, var_1731854046694_51, (), ()], ((UInt32(UInt32(99)) &
                                     127)..=(UInt32(UInt32(9)) & 127) : (Int64(20) | 1)), ((Int64(Int64(58)) & 127)..=(Int64(Int64(-49)) &
-                                    127) : (Int64(-54) | 1))), var_1731854046694_2212, var_1731854046694_2218),
+                                    127) : (Int64(-54) | 1))), var_1731854046694_2212, <!DEPRECATED_WARNING!>var_1731854046694_2218<!>),
                         var_1731854046694_2221, var_1731854046694_2224, var_1731854046694_1985, Float64(81.0))
                 }) {
                     case <!UNREACHABLE_PATTERN!>(_: Rune, (caseVar_1731854046694_2230, caseVar_1731854046694_2231, _: Int8, caseVar_1731854046694_2232: Int32, _), _: Range<UInt64>, caseVar_1731854046694_2233, (caseVar_1731854046694_2234: Int8, caseVar_1731854046694_2235, caseVar_1731854046694_2236), _: (Option<Array<Range<Int8>>>, 
@@ -2498,7 +2498,7 @@ Y)/|?
 
         let var_1731854046694_2270: Range<Int32> = ((Int32(Int32(95)) & 127)..(Int32(Int32(-84)) & 127) : (Int64(110) | 1));
         var chainCall117 = func_1731854046694_133(
-            if (var_1731854046694_2266) { // block id: 2268
+            if (<!DEPRECATED_WARNING!>var_1731854046694_2266<!>) { // block id: 2268
                 var_1731854046694_2270
             } else { // block id: 2272
                 ((Int32(Int32(-60)) & 127)..=(Int32(Int32(-54)) & 127) : (Int64(20) | 1))
@@ -2690,6 +2690,6 @@ extend Int16 {
 
 extend Class_1731854046694_853 {}
 
-extend Enum_1731854046694_451 {}
+extend <!DEPRECATED_WARNING!>Enum_1731854046694_451<!> {}
 
-extend Class_1731854046694_441 {}
+extend <!DEPRECATED_WARNING!>Class_1731854046694_441<!> {}

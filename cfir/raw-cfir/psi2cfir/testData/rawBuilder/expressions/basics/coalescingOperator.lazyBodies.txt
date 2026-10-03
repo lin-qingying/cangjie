@@ -1,0 +1,4 @@
+FILE: coalescingOperator.cj
+    internal? func useCoalesce(a: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

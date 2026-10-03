@@ -1,0 +1,4 @@
+FILE: jstringUpperCase.cj
+    internal? func jstringUpperCase(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

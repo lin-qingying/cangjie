@@ -1,0 +1,11 @@
+FILE: multipleExtendBlocks.cj
+    extend R|Int64| {
+        internal? func plusOne(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|Int64| {
+        internal? func plusTwo(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

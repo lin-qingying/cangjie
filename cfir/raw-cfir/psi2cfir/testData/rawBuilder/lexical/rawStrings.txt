@@ -1,0 +1,59 @@
+FILE: rawStrings.cj
+    internal? func rawStringLiterals(): R|Unit| {
+        local? let emptyHash: <implicit> = ...
+            initializer:
+                STRING("""""")
+        local? let emptyHashSingle: <implicit> = ...
+            initializer:
+                STRING("''''")
+        local? let emptyHashTwoHash: <implicit> = ...
+            initializer:
+                STRING("""""")
+        local? let singleHash: <implicit> = ...
+            initializer:
+                STRING("
+raw
+stays
+")
+        local? let singleHashSingle: <implicit> = ...
+            initializer:
+                STRING("
+raw
+stays
+")
+        local? let twoHash: <implicit> = ...
+            initializer:
+                STRING("a "# inside")
+        local? let twoHashSingle: <implicit> = ...
+            initializer:
+                STRING("a '# inside")
+        local? let threeHash: <implicit> = ...
+            initializer:
+                STRING(""""""
+        multi
+        line "## inside")
+        local? let hashInside: <implicit> = ...
+            initializer:
+                STRING("
+a # b
+")
+        local? let backslash: <implicit> = ...
+            initializer:
+                STRING("
+C:\\temp\\x
+")
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(emptyHash)
+                    NAMED_ACCESS(emptyHashSingle)
+                    NAMED_ACCESS(emptyHashTwoHash)
+                    NAMED_ACCESS(singleHash)
+                    NAMED_ACCESS(singleHashSingle)
+                    NAMED_ACCESS(twoHash)
+                    NAMED_ACCESS(twoHashSingle)
+                    NAMED_ACCESS(threeHash)
+                    NAMED_ACCESS(hashInside)
+                    NAMED_ACCESS(backslash)
+                }
+    }

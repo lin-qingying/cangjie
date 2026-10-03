@@ -1,0 +1,58 @@
+FILE: redefMemberForms.cj
+    internal? open class Base {
+        init() {
+        }
+        public static func s(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public static prop p: R|Int64|
+        public open func f(): R|Int64| {
+            RETURN {
+                INT(3)
+            }
+        }
+    }
+    internal? class Derived <: R|Base| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public static func s(): R|Int64| {
+            RETURN {
+                INT(10)
+            }
+        }
+        public static prop p: R|Int64|
+        public override func f(): R|Int64| {
+            RETURN {
+                INT(30)
+            }
+        }
+    }
+    internal? func redefMemberForms(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(s) {
+                                receiver:
+                                    NAMED_ACCESS(Derived)
+                            }
+                        arguments:
+                            NAMED_ACCESS(p) {
+                                receiver:
+                                    NAMED_ACCESS(Derived)
+                            }
+                    }
+                arguments:
+                    FUNCTION_CALL(f) {
+                        receiver:
+                            FUNCTION_CALL(Derived) {
+                            }
+                    }
+            }
+        }
+    }
