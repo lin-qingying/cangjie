@@ -1,0 +1,29 @@
+FILE: genericTypeRefs.cj
+    internal? interface Box<T> {
+        public? abstract? func value(): R|T|
+    }
+    internal? typealias Alias<T> = R|Box<R|T|>|
+    internal? func nested(a: R|Box<R|Box<R|Box<R|Int64|>|>|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func multi(a: R|Box<R|Box<R|String|>|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func aliasArg(a: R|Alias<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func arrayOfGeneric(a: R|Array<R|Box<R|Int64|>|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func tupleOfGeneric(a: R|(R|Box<R|Int64|>|, R|Array<R|String|>|)|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func varrayOfGeneric(a: R|VArray<R|Int64|, 2>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T>genericPassThrough(x: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? func typeParamAsArg(a: R|Box<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

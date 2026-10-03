@@ -1,0 +1,3 @@
+FILE: macroOutsideMacroPackage.cj
+    import std.ast.*
+    <element: CfirMacroDeclaration>

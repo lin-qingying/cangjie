@@ -1,0 +1,25 @@
+FILE: propAccessorForms.cj
+    internal? class Props {
+        init()
+        private var store: R|Int64|
+        internal? prop getOnly: R|Int64|
+        internal? mut prop getSet: R|Int64|
+        internal? static prop staticGetOnly: R|Int64|
+    }
+    internal? interface PropInterface {
+        public? abstract? prop interfaceAbstract: R|String|
+        public? static prop interfaceStatic: R|Int64|
+    }
+    internal? enum PropEnum {
+        A
+        init()
+        internal? prop isA: R|Bool|
+    }
+    internal? struct PropStruct {
+        init()
+        internal? var v: R|Int64|
+        internal? prop doubled: R|Int64|
+    }
+    extend R|PropStruct| {
+        public prop tripled: R|Int64|
+    }

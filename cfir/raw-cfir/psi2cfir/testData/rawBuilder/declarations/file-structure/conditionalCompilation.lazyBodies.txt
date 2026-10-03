@@ -1,0 +1,13 @@
+FILE: conditionalCompilation.cj
+    @R|When|(os == "Windows") internal? func windowsOnly(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func withParams(@R|When|(os == "Windows") a: R|Int64|, @R|When|(os == "Windows") b: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? class C {
+        init()
+        @R|When|(os == "Windows") internal? func member(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

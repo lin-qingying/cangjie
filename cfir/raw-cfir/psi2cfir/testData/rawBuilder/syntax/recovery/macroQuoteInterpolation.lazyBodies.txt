@@ -1,0 +1,4 @@
+FILE: macroQuoteInterpolation.cj
+    package macroquote
+    import std.ast.*
+    <element: CfirMacroDeclaration>

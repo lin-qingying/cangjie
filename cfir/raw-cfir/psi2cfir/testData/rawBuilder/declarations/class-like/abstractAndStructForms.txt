@@ -1,0 +1,74 @@
+FILE: abstractAndStructForms.cj
+    internal? abstract class Shape {
+        init()
+        public abstract? func area(): R|Int64|
+        public func describe(): R|String| {
+            RETURN {
+                STRING("shape")
+            }
+        }
+    }
+    internal? class Square <: R|Shape| {
+        private let side: R|Int64|
+        init(side: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(side) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(side)
+            }
+        }
+        public func area(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(side) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                    arguments:
+                        NAMED_ACCESS(side) {
+                            receiver:
+                                <element: CfirThisReceiverExpression>
+                        }
+                }
+            }
+        }
+    }
+    internal? abstract class Root {
+        init() {
+        }
+    }
+    internal? class Left <: R|Root| {
+        init()
+    }
+    internal? class Right <: R|Root| {
+        init()
+    }
+    internal? struct Point {
+        internal? let x: R|Int64|
+        internal? let y: R|Int64|
+        init(x: R|Int64|, y: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(x) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(x)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(y) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }

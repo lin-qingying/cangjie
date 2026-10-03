@@ -1,0 +1,94 @@
+FILE: genericForms.cj
+    internal? func <T>identity(x: R|T|): R|T| {
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }
+    internal? class Box<T> {
+        internal? var value: R|T|
+        init(v: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value)
+                rValue:
+                    NAMED_ACCESS(v)
+            }
+        }
+    }
+    internal? struct Pair<A, B> {
+        internal? var firstValue: R|A|
+        internal? var secondValue: R|B|
+        init(a: R|A|, b: R|B|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(firstValue)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(secondValue)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        internal? func left(): R|A| {
+            RETURN {
+                NAMED_ACCESS(firstValue)
+            }
+        }
+        internal? func right(): R|B| {
+            RETURN {
+                NAMED_ACCESS(secondValue)
+            }
+        }
+    }
+    internal? interface Container<E> {
+        public? abstract? func empty(): R|Bool|
+        public? prop size: R|Int64|
+    }
+    internal? enum Opt<T> {
+        Some(R|T|)
+        None
+        init()
+    }
+    internal? typealias Alias<T> = R|Array<R|T|>|
+    internal? func genericUses(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(identity<R|Int64|>) {
+                    INT(1)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box<R|Int64|>) {
+                    INT(2)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    receiver:
+                        NAMED_ACCESS(Opt)
+                    arguments:
+                        INT(3)
+                }
+        local? let d: R|Alias<R|Box<R|Int64|>|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    NAMED_ACCESS(b)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Pair<R|Int64|, R|String|>) {
+                    INT(1)
+                    STRING("x")
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                }
+    }

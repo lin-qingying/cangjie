@@ -1,0 +1,19 @@
+FILE: operatorNotOverloadable.cj
+    internal? class NotOverloadable {
+        init()
+        public operator func <no name provided>(i: R|Int64|): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+        public operator func <no name provided>(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+        public operator func <no name provided>(): R|Int64| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }

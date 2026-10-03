@@ -1,0 +1,36 @@
+FILE: memberInitForms.cj
+    internal? class Factory {
+        private var v: R|Int64|
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public static func make(v: R|Int64|): R|Factory| {
+            <element: CfirLazyBlock>
+        }
+        public func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Delegating {
+        internal? var v: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|, y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface WithDefault {
+        public? prop p: R|Int64|
+    }
+    internal? class Impl <: R|WithDefault| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func memberInitForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

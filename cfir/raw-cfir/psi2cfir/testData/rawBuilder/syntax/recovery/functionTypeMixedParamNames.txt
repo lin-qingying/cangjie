@@ -1,0 +1,10 @@
+FILE: functionTypeMixedParamNames.cj
+    internal? func mixed(g: R|() -> R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(g) {
+                INT(1)
+                STRING("x")
+            }
+        }
+    }
+    internal? typealias MixedTuple = R|(R|Int64|, R|x|)|

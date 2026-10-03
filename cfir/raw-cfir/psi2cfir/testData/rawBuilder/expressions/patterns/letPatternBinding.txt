@@ -1,0 +1,28 @@
+FILE: letPatternBinding.cj
+    internal? func destructure(t: R|(R|Int64|, R|String|)|): R|Int64| {
+        local? let (a, b): <implicit> = ...
+            initializer:
+                NAMED_ACCESS(t)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(b)
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func destructureOption(o: R|Option<R|(R|Int64|, R|String|)|>|): R|Int64| {
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(b)
+                RETURN {
+                    NAMED_ACCESS(a)
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }

@@ -1,0 +1,123 @@
+FILE: builtinTypeRefs.cj
+    internal? func i8(a: R|Int8|): R|Int8| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func i16(a: R|Int16|): R|Int16| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func i32(a: R|Int32|): R|Int32| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func i64(a: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func iNative(a: R|IntNative|): R|IntNative| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func u8(a: R|UInt8|): R|UInt8| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func u16(a: R|UInt16|): R|UInt16| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func u32(a: R|UInt32|): R|UInt32| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func u64(a: R|UInt64|): R|UInt64| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func uNative(a: R|UIntNative|): R|UIntNative| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func f16(a: R|Float16|): R|Float16| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func f32(a: R|Float32|): R|Float32| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func f64(a: R|Float64|): R|Float64| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func b(a: R|Bool|): R|Bool| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func r(a: R|Rune|): R|Rune| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func s(a: R|String|): R|String| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func u(a: R|Unit|): R|Unit| {
+    }
+    internal? func n(a: R|Nothing|): R|Nothing| {
+        THROW {
+            FUNCTION_CALL(Exception) {
+                STRING("x")
+            }
+        }
+    }
+    internal? func varray(a: R|VArray<R|Int8|, 4>|): R|VArray<R|Int8|, 4>| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func cstring(a: R|CString|): R|CString| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func cpointer(a: R|CPointer<R|Int64|>|): R|CPointer<R|Int64|>| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? class ThisHolder {
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init() {
+        }
+        internal? func selfRef(): R|This| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+    }
+    internal? struct UnitHolder {
+        init()
+        internal? var u: R|Unit| = ...
+            initializer:
+                UNIT(())
+    }

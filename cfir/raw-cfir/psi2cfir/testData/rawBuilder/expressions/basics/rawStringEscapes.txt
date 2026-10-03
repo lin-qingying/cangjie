@@ -1,0 +1,24 @@
+FILE: rawStringEscapes.cj
+    internal? func f(name: R|String|): R|String| {
+        local? let a: <implicit> = ...
+            initializer:
+                STRING("tab\tnew\nquote\"done")
+        local? let b: <implicit> = ...
+            initializer:
+                STRING("
+        raw \t not escaped
+    ")
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                arguments:
+                    NAMED_ACCESS(name)
+            }
+        }
+    }

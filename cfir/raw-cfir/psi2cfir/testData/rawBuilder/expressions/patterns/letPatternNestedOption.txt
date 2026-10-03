@@ -1,0 +1,19 @@
+FILE: letPatternNestedOption.cj
+    internal? func f(o: R|Option<R|Option<R|Int64|>|>|): R|Int64| {
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                IF {
+                    condition:
+                        <element: CfirLetPatternExpression>
+                    then:
+                        RETURN {
+                            NAMED_ACCESS(v)
+                        }
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }

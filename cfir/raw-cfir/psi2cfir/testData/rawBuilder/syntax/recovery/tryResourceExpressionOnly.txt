@@ -1,0 +1,19 @@
+FILE: tryResourceExpressionOnly.cj
+    internal? class Res <: R|Resource| {
+        init() {
+        }
+        public func isClosed(): R|Bool| {
+            RETURN {
+                BOOLEAN(false)
+            }
+        }
+        public func close(): R|Unit| {
+        }
+    }
+    internal? func tryResourceExpressionOnly(): R|Unit| {
+        TRY {
+            try:
+                LAMBDA() {
+                }
+        }
+    }

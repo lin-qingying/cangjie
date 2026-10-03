@@ -1,0 +1,136 @@
+FILE: enumForms.cj
+    internal? enum SingleLine {
+        Red
+        Green
+        Blue
+        init()
+    }
+    internal? enum MultiLine {
+        A
+        B
+        C
+        init()
+    }
+    internal? enum Mixed {
+        A
+        B(R|Int64|)
+        C(R|String|, R|Bool|)
+        init()
+    }
+    internal? enum NonExhaustive {
+        A
+        B
+        ...
+        init()
+    }
+    internal? enum Recursive {
+        Num(R|Int64|)
+        Add(R|Recursive|, R|Recursive|)
+        Sub(R|Recursive|, R|Recursive|)
+        init()
+    }
+    internal? enum Generic<T> {
+        Some(R|T|)
+        None
+        init()
+    }
+    internal? enum WithMembers {
+        A
+        B(R|Int64|)
+        init()
+        internal? func weight(): R|Int64| {
+            RETURN {
+                MATCH {
+                    subject:
+                        <element: CfirThisReceiverExpression>
+                    BRANCH(deferred(A)) {
+                        INT(0)
+                    }
+                    BRANCH(B(deferred(v))) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+        internal? static func first(): R|WithMembers| {
+            RETURN {
+                NAMED_ACCESS(A)
+            }
+        }
+        internal? prop isA: R|Bool|
+        public operator func *operator_plus(other: R|WithMembers|): R|WithMembers| {
+            RETURN {
+                NAMED_ACCESS(other)
+            }
+        }
+    }
+    internal? func enumUses(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(Red) {
+                    receiver:
+                        NAMED_ACCESS(SingleLine)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(Green)
+        local? let c: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(B) {
+                    receiver:
+                        NAMED_ACCESS(MultiLine)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(A) {
+                    receiver:
+                        NAMED_ACCESS(Mixed)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(A) {
+                    receiver:
+                        NAMED_ACCESS(NonExhaustive)
+                }
+        local? let g: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Some) {
+                    receiver:
+                        NAMED_ACCESS(Generic)
+                    arguments:
+                        INT(1)
+                }
+        local? let h: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(None) {
+                    receiver:
+                        NAMED_ACCESS(Generic)
+                }
+        local? let i: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(A) {
+                    receiver:
+                        NAMED_ACCESS(WithMembers)
+                }
+        local? let j: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(B) {
+                    receiver:
+                        NAMED_ACCESS(WithMembers)
+                    arguments:
+                        INT(2)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(g)
+                    NAMED_ACCESS(h)
+                    NAMED_ACCESS(i)
+                    NAMED_ACCESS(j)
+                }
+    }

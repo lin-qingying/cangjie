@@ -1,0 +1,22 @@
+FILE: manyMatchCases.cj
+    internal? enum Kind01 {
+        A01
+        B01(R|Int64|)
+        C01(R|Int64|, R|String|)
+        init()
+    }
+    internal? enum Kind02 {
+        A02
+        B02(R|Int64|)
+        C02(R|Int64|, R|String|)
+        init()
+    }
+    internal? enum Kind03 {
+        A03
+        B03(R|Int64|)
+        C03(R|Int64|, R|String|)
+        init()
+    }
+    internal? func manyMatchCases(k1: R|Kind01|, k2: R|Kind02|, k3: R|Kind03|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

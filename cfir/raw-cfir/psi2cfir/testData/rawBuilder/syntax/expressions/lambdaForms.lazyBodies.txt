@@ -1,0 +1,13 @@
+FILE: lambdaForms.cj
+    internal? func apply(f: R|(R|Int64|, R|Int64|) -> R|Int64||): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func applyOne(f: R|(R|Int64|) -> R|Int64||): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func lambdaForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func returnsLambda(): R|(R|Int64|) -> R|(R|String|) -> R|Int64||| {
+        <element: CfirLazyBlock>
+    }

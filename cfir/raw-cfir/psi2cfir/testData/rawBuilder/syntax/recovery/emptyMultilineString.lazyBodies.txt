@@ -1,0 +1,4 @@
+FILE: emptyMultilineString.cj
+    internal? func emptyMultilineStrings(): R|String| {
+        <element: CfirLazyBlock>
+    }

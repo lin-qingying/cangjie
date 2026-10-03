@@ -1,0 +1,47 @@
+FILE: tryCatchForms.cj
+    internal? class MyError <: R|Exception| {
+        init(msg: R|String|) {
+            FUNCTION_CALL(super) {
+                NAMED_ACCESS(msg)
+            }
+        }
+    }
+    internal? func tryCatchForms(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                TRY {
+                    try:
+                        INT(1)
+                    catch(e: R|MyError|):
+                        INT(2)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                TRY {
+                    try:
+                        INT(3)
+                    finally:
+                        INT(4)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                TRY {
+                    try:
+                        INT(5)
+                    catch(e: R|Exception|):
+                        INT(6)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                arguments:
+                    NAMED_ACCESS(c)
+            }
+        }
+    }

@@ -1,0 +1,7 @@
+FILE: ifLetWhileLet.cj
+    internal? func firstOrZero(o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func drain(o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

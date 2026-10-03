@@ -30,6 +30,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features")
         }
 
+        @TestMetadata("ifAvailableExpression.cj")
+        fun testIfAvailableExpression() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/ifAvailableExpression.cj")
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/effects")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -53,9 +58,19 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend")
             }
 
+            @TestMetadata("extendAliasAndStdlibType.cj")
+            fun testExtendAliasAndStdlibType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendAliasAndStdlibType.cj")
+            }
+
             @TestMetadata("extendDeclaration.cj")
             fun testExtendDeclaration() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendDeclaration.cj")
+            }
+
+            @TestMetadata("extendGenericStdlibType.cj")
+            fun testExtendGenericStdlibType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/extend/extendGenericStdlibType.cj")
             }
 
             @TestMetadata("extendGenericWhereChain.cj")
@@ -95,6 +110,26 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
 
         }
 
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/quote")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Quote : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInQuote() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/quote")
+            }
+
+            @TestMetadata("quoteInterpolation.cj")
+            fun testQuoteInterpolation() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/quote/quoteInterpolation.cj")
+            }
+
+            @TestMetadata("quoteTokens.cj")
+            fun testQuoteTokens() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/quote/quoteTokens.cj")
+            }
+
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/spawn")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -116,6 +151,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
         class Varray : AbstractRawCfirBuilderLazyBodiesByStubTest() {
             fun testAllFilesPresentInVarray() {
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray")
+            }
+
+            @TestMetadata("varrayBraceInit.cj")
+            fun testVarrayBraceInit() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray/varrayBraceInit.cj")
             }
 
             @TestMetadata("varrayTypeRef.cj")
@@ -148,6 +188,16 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/breakAndContinue.cj")
             }
 
+            @TestMetadata("catchTypedFinally.cj")
+            fun testCatchTypedFinally() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/catchTypedFinally.cj")
+            }
+
+            @TestMetadata("continueInDoWhile.cj")
+            fun testContinueInDoWhile() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/continueInDoWhile.cj")
+            }
+
             @TestMetadata("controlFlow.cj")
             fun testControlFlow() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/controlFlow.cj")
@@ -161,6 +211,31 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("forWithPatternGuard.cj")
             fun testForWithPatternGuard() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/forWithPatternGuard.cj")
+            }
+
+            @TestMetadata("forWithWhereGuard.cj")
+            fun testForWithWhereGuard() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/forWithWhereGuard.cj")
+            }
+
+            @TestMetadata("ifElseIfChain.cj")
+            fun testIfElseIfChain() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/ifElseIfChain.cj")
+            }
+
+            @TestMetadata("ifLetWithGuard.cj")
+            fun testIfLetWithGuard() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/ifLetWithGuard.cj")
+            }
+
+            @TestMetadata("nestedLoopsAndGuards.cj")
+            fun testNestedLoopsAndGuards() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/nestedLoopsAndGuards.cj")
+            }
+
+            @TestMetadata("tryNestedFinally.cj")
+            fun testTryNestedFinally() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/control-flow/valid/tryNestedFinally.cj")
             }
 
         }
@@ -181,6 +256,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
         class ClassLike : AbstractRawCfirBuilderLazyBodiesByStubTest() {
             fun testAllFilesPresentInClassLike() {
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like")
+            }
+
+            @TestMetadata("abstractAndStructForms.cj")
+            fun testAbstractAndStructForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/abstractAndStructForms.cj")
             }
 
             @TestMetadata("accessControlMemberModifiers.cj")
@@ -228,6 +308,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/classWithTypeParameters.cj")
             }
 
+            @TestMetadata("constructorDelegation.cj")
+            fun testConstructorDelegation() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/constructorDelegation.cj")
+            }
+
             @TestMetadata("emptyClass.cj")
             fun testEmptyClass() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/emptyClass.cj")
@@ -236,6 +321,26 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("enumDeclaration.cj")
             fun testEnumDeclaration() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/enumDeclaration.cj")
+            }
+
+            @TestMetadata("extendInterfaceWithWhere.cj")
+            fun testExtendInterfaceWithWhere() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/extendInterfaceWithWhere.cj")
+            }
+
+            @TestMetadata("finalizerInClass.cj")
+            fun testFinalizerInClass() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/finalizerInClass.cj")
+            }
+
+            @TestMetadata("finalizerWithReturn.cj")
+            fun testFinalizerWithReturn() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/finalizerWithReturn.cj")
+            }
+
+            @TestMetadata("genericOptionField.cj")
+            fun testGenericOptionField() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/genericOptionField.cj")
             }
 
             @TestMetadata("genericWhereTypeDeclarations.cj")
@@ -248,14 +353,74 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/interfaceDeclaration.cj")
             }
 
+            @TestMetadata("interfaceMutAndDefault.cj")
+            fun testInterfaceMutAndDefault() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/interfaceMutAndDefault.cj")
+            }
+
+            @TestMetadata("interfaceStaticProp.cj")
+            fun testInterfaceStaticProp() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/interfaceStaticProp.cj")
+            }
+
+            @TestMetadata("multipleExtendBlocks.cj")
+            fun testMultipleExtendBlocks() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/multipleExtendBlocks.cj")
+            }
+
+            @TestMetadata("operatorOverloads.cj")
+            fun testOperatorOverloads() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/operatorOverloads.cj")
+            }
+
+            @TestMetadata("propUsingThis.cj")
+            fun testPropUsingThis() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/propUsingThis.cj")
+            }
+
+            @TestMetadata("propertyAccessors.cj")
+            fun testPropertyAccessors() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/propertyAccessors.cj")
+            }
+
             @TestMetadata("publicVisibilityDisplay.cj")
             fun testPublicVisibilityDisplay() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/publicVisibilityDisplay.cj")
             }
 
+            @TestMetadata("staticConstMember.cj")
+            fun testStaticConstMember() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/staticConstMember.cj")
+            }
+
+            @TestMetadata("staticInitAssign.cj")
+            fun testStaticInitAssign() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/staticInitAssign.cj")
+            }
+
             @TestMetadata("structDeclaration.cj")
             fun testStructDeclaration() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/structDeclaration.cj")
+            }
+
+            @TestMetadata("structMemberFunction.cj")
+            fun testStructMemberFunction() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/structMemberFunction.cj")
+            }
+
+            @TestMetadata("structStaticConst.cj")
+            fun testStructStaticConst() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/structStaticConst.cj")
+            }
+
+            @TestMetadata("thisAndSuperUsage.cj")
+            fun testThisAndSuperUsage() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/thisAndSuperUsage.cj")
+            }
+
+            @TestMetadata("thisQualifiedCall.cj")
+            fun testThisQualifiedCall() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/class-like/thisQualifiedCall.cj")
             }
 
         }
@@ -268,6 +433,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure")
             }
 
+            @TestMetadata("conditionalCompilation.cj")
+            fun testConditionalCompilation() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/conditionalCompilation.cj")
+            }
+
             @TestMetadata("emptyFile.cj")
             fun testEmptyFile() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/emptyFile.cj")
@@ -276,6 +446,16 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("featuresDirective.cj")
             fun testFeaturesDirective() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/featuresDirective.cj")
+            }
+
+            @TestMetadata("importForms.cj")
+            fun testImportForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/importForms.cj")
+            }
+
+            @TestMetadata("macroPackage.cj")
+            fun testMacroPackage() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/file-structure/macroPackage.cj")
             }
 
             @TestMetadata("packageAndImport.cj")
@@ -293,6 +473,21 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level")
             }
 
+            @TestMetadata("cfuncCallNamedParams.cj")
+            fun testCfuncCallNamedParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/cfuncCallNamedParams.cj")
+            }
+
+            @TestMetadata("constFunc.cj")
+            fun testConstFunc() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/constFunc.cj")
+            }
+
+            @TestMetadata("foreignDecls.cj")
+            fun testForeignDecls() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/foreignDecls.cj")
+            }
+
             @TestMetadata("genericWhereFunction.cj")
             fun testGenericWhereFunction() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/genericWhereFunction.cj")
@@ -308,9 +503,34 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/localScopeVisibility.cj")
             }
 
+            @TestMetadata("mainArgsSize.cj")
+            fun testMainArgsSize() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/mainArgsSize.cj")
+            }
+
             @TestMetadata("mainEntryOfficial.cj")
             fun testMainEntryOfficial() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/mainEntryOfficial.cj")
+            }
+
+            @TestMetadata("mainWithArgs.cj")
+            fun testMainWithArgs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/mainWithArgs.cj")
+            }
+
+            @TestMetadata("mainWithoutReturnType.cj")
+            fun testMainWithoutReturnType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/mainWithoutReturnType.cj")
+            }
+
+            @TestMetadata("namedAndDefaultParams.cj")
+            fun testNamedAndDefaultParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/namedAndDefaultParams.cj")
+            }
+
+            @TestMetadata("nothingReturn.cj")
+            fun testNothingReturn() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/declarations/top-level/nothingReturn.cj")
             }
 
             @TestMetadata("topLevelFunction.cj")
@@ -353,6 +573,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/arrayAndTupleLiterals.cj")
             }
 
+            @TestMetadata("coalescingOperator.cj")
+            fun testCoalescingOperator() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/coalescingOperator.cj")
+            }
+
             @TestMetadata("dotQualifiedAccess.cj")
             fun testDotQualifiedAccess() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/dotQualifiedAccess.cj")
@@ -363,9 +588,39 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/functionExpressions.cj")
             }
 
+            @TestMetadata("ifLetWhileLet.cj")
+            fun testIfLetWhileLet() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/ifLetWhileLet.cj")
+            }
+
+            @TestMetadata("incDecExpressions.cj")
+            fun testIncDecExpressions() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/incDecExpressions.cj")
+            }
+
             @TestMetadata("isTypeCheckExpression.cj")
             fun testIsTypeCheckExpression() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/isTypeCheckExpression.cj")
+            }
+
+            @TestMetadata("lambdaBlockBody.cj")
+            fun testLambdaBlockBody() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/lambdaBlockBody.cj")
+            }
+
+            @TestMetadata("lambdaParameters.cj")
+            fun testLambdaParameters() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/lambdaParameters.cj")
+            }
+
+            @TestMetadata("literalForms.cj")
+            fun testLiteralForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/literalForms.cj")
+            }
+
+            @TestMetadata("nestedArrayAndTupleLiterals.cj")
+            fun testNestedArrayAndTupleLiterals() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/nestedArrayAndTupleLiterals.cj")
             }
 
             @TestMetadata("opAndIfExpressions.cj")
@@ -373,14 +628,39 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/opAndIfExpressions.cj")
             }
 
+            @TestMetadata("optionAndCoalescing.cj")
+            fun testOptionAndCoalescing() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/optionAndCoalescing.cj")
+            }
+
             @TestMetadata("optionalChainAccess.cj")
             fun testOptionalChainAccess() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/optionalChainAccess.cj")
             }
 
+            @TestMetadata("optionalChainInvoke.cj")
+            fun testOptionalChainInvoke() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/optionalChainInvoke.cj")
+            }
+
+            @TestMetadata("parenthesizedExpression.cj")
+            fun testParenthesizedExpression() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/parenthesizedExpression.cj")
+            }
+
             @TestMetadata("rangeExpression.cj")
             fun testRangeExpression() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/rangeExpression.cj")
+            }
+
+            @TestMetadata("rawStringEscapes.cj")
+            fun testRawStringEscapes() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/rawStringEscapes.cj")
+            }
+
+            @TestMetadata("sliceExpression.cj")
+            fun testSliceExpression() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/sliceExpression.cj")
             }
 
             @TestMetadata("specialExpressionsPreserve.cj")
@@ -393,9 +673,24 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/stringInterpolation.cj")
             }
 
+            @TestMetadata("stringInterpolationCall.cj")
+            fun testStringInterpolationCall() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/stringInterpolationCall.cj")
+            }
+
+            @TestMetadata("stringTemplates.cj")
+            fun testStringTemplates() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/stringTemplates.cj")
+            }
+
             @TestMetadata("subscriptAccess.cj")
             fun testSubscriptAccess() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/subscriptAccess.cj")
+            }
+
+            @TestMetadata("throwExpression.cj")
+            fun testThrowExpression() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/throwExpression.cj")
             }
 
             @TestMetadata("trailingClosureOfficial.cj")
@@ -408,6 +703,211 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/tryExpression.cj")
             }
 
+            @TestMetadata("tupleReturnValue.cj")
+            fun testTupleReturnValue() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/tupleReturnValue.cj")
+            }
+
+            @TestMetadata("typeConversions.cj")
+            fun testTypeConversions() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/basics/typeConversions.cj")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Patterns : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInPatterns() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns")
+            }
+
+            @TestMetadata("forTuplePattern.cj")
+            fun testForTuplePattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/forTuplePattern.cj")
+            }
+
+            @TestMetadata("letPatternBinding.cj")
+            fun testLetPatternBinding() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/letPatternBinding.cj")
+            }
+
+            @TestMetadata("letPatternNestedOption.cj")
+            fun testLetPatternNestedOption() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/letPatternNestedOption.cj")
+            }
+
+            @TestMetadata("matchBindingPattern.cj")
+            fun testMatchBindingPattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/matchBindingPattern.cj")
+            }
+
+            @TestMetadata("matchConstPatternKinds.cj")
+            fun testMatchConstPatternKinds() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/matchConstPatternKinds.cj")
+            }
+
+            @TestMetadata("matchPatternForms.cj")
+            fun testMatchPatternForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/expressions/patterns/matchPatternForms.cj")
+            }
+
+        }
+
+    }
+
+    @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large")
+    @TestDataPath("\$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners::class)
+    class Large : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+        fun testAllFilesPresentInLarge() {
+            assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large")
+        }
+
+        @TestMetadata("deepGenerics.cj")
+        fun testDeepGenerics() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/deepGenerics.cj")
+        }
+
+        @TestMetadata("deepNesting.cj")
+        fun testDeepNesting() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/deepNesting.cj")
+        }
+
+        @TestMetadata("largeComments.cj")
+        fun testLargeComments() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/largeComments.cj")
+        }
+
+        @TestMetadata("largeLineComment.cj")
+        fun testLargeLineComment() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/largeLineComment.cj")
+        }
+
+        @TestMetadata("longOperatorChain.cj")
+        fun testLongOperatorChain() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/longOperatorChain.cj")
+        }
+
+        @TestMetadata("longStrings.cj")
+        fun testLongStrings() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/longStrings.cj")
+        }
+
+        @TestMetadata("manyDeclarations.cj")
+        fun testManyDeclarations() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/manyDeclarations.cj")
+        }
+
+        @TestMetadata("manyMatchCases.cj")
+        fun testManyMatchCases() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/manyMatchCases.cj")
+        }
+
+        @TestMetadata("wideArrayLiterals.cj")
+        fun testWideArrayLiterals() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/large/wideArrayLiterals.cj")
+        }
+
+    }
+
+    @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical")
+    @TestDataPath("\$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners::class)
+    class Lexical : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+        fun testAllFilesPresentInLexical() {
+            assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical")
+        }
+
+        @TestMetadata("boolsAndUnit.cj")
+        fun testBoolsAndUnit() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/boolsAndUnit.cj")
+        }
+
+        @TestMetadata("byteLiterals.cj")
+        fun testByteLiterals() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/byteLiterals.cj")
+        }
+
+        @TestMetadata("commentForms.cj")
+        fun testCommentForms() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/commentForms.cj")
+        }
+
+        @TestMetadata("comments.cj")
+        fun testComments() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/comments.cj")
+        }
+
+        @TestMetadata("escapeForms.cj")
+        fun testEscapeForms() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/escapeForms.cj")
+        }
+
+        @TestMetadata("floats.cj")
+        fun testFloats() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/floats.cj")
+        }
+
+        @TestMetadata("identifiers.cj")
+        fun testIdentifiers() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/identifiers.cj")
+        }
+
+        @TestMetadata("importForms.cj")
+        fun testImportForms() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/importForms.cj")
+        }
+
+        @TestMetadata("integerLiteralForms.cj")
+        fun testIntegerLiteralForms() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/integerLiteralForms.cj")
+        }
+
+        @TestMetadata("integers.cj")
+        fun testIntegers() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/integers.cj")
+        }
+
+        @TestMetadata("multilineStrings.cj")
+        fun testMultilineStrings() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/multilineStrings.cj")
+        }
+
+        @TestMetadata("numericEdges.cj")
+        fun testNumericEdges() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/numericEdges.cj")
+        }
+
+        @TestMetadata("rawIdentifiers.cj")
+        fun testRawIdentifiers() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/rawIdentifiers.cj")
+        }
+
+        @TestMetadata("rawStrings.cj")
+        fun testRawStrings() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/rawStrings.cj")
+        }
+
+        @TestMetadata("runes.cj")
+        fun testRunes() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/runes.cj")
+        }
+
+        @TestMetadata("stringInterpolation.cj")
+        fun testStringInterpolation() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/stringInterpolation.cj")
+        }
+
+        @TestMetadata("strings.cj")
+        fun testStrings() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/strings.cj")
+        }
+
+        @TestMetadata("whenConditions.cj")
+        fun testWhenConditions() {
+            runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/whenConditions.cj")
         }
 
     }
@@ -450,6 +950,21 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
 
         }
 
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/declarations")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Declarations : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInDeclarations() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/declarations")
+            }
+
+            @TestMetadata("doWhileMissingCondition.cj")
+            fun testDoWhileMissingCondition() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/declarations/doWhileMissingCondition.cj")
+            }
+
+        }
+
         @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/expressions")
         @TestDataPath("\$PROJECT_ROOT")
         @RunWith(JUnit3RunnerWithInners::class)
@@ -461,6 +976,991 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("binaryMissingRightOperand.cj")
             fun testBinaryMissingRightOperand() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/expressions/binaryMissingRightOperand.cj")
+            }
+
+            @TestMetadata("prefixMissingOperand.cj")
+            fun testPrefixMissingOperand() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/expressions/prefixMissingOperand.cj")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/patterns")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Patterns : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInPatterns() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/patterns")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/statements")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Statements : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInStatements() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/statements")
+            }
+
+        }
+
+    }
+
+    @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax")
+    @TestDataPath("\$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners::class)
+    class Syntax : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+        fun testAllFilesPresentInSyntax() {
+            assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax")
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Declarations : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInDeclarations() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations")
+            }
+
+            @TestMetadata("annotationForms.cj")
+            fun testAnnotationForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/annotationForms.cj")
+            }
+
+            @TestMetadata("builtinAnnotationForms.cj")
+            fun testBuiltinAnnotationForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/builtinAnnotationForms.cj")
+            }
+
+            @TestMetadata("cInteropForms.cj")
+            fun testCInteropForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/cInteropForms.cj")
+            }
+
+            @TestMetadata("classBodyForms.cj")
+            fun testClassBodyForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/classBodyForms.cj")
+            }
+
+            @TestMetadata("constAndForeign.cj")
+            fun testConstAndForeign() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/constAndForeign.cj")
+            }
+
+            @TestMetadata("constExpressions.cj")
+            fun testConstExpressions() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/constExpressions.cj")
+            }
+
+            @TestMetadata("constructorForms.cj")
+            fun testConstructorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/constructorForms.cj")
+            }
+
+            @TestMetadata("enumForms.cj")
+            fun testEnumForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/enumForms.cj")
+            }
+
+            @TestMetadata("extendBuiltinForms.cj")
+            fun testExtendBuiltinForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/extendBuiltinForms.cj")
+            }
+
+            @TestMetadata("extendForms.cj")
+            fun testExtendForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/extendForms.cj")
+            }
+
+            @TestMetadata("extendStructForms.cj")
+            fun testExtendStructForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/extendStructForms.cj")
+            }
+
+            @TestMetadata("functionModifiers.cj")
+            fun testFunctionModifiers() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/functionModifiers.cj")
+            }
+
+            @TestMetadata("functionParams.cj")
+            fun testFunctionParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/functionParams.cj")
+            }
+
+            @TestMetadata("genericDeclarationForms.cj")
+            fun testGenericDeclarationForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/genericDeclarationForms.cj")
+            }
+
+            @TestMetadata("genericForms.cj")
+            fun testGenericForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/genericForms.cj")
+            }
+
+            @TestMetadata("importGroupForms.cj")
+            fun testImportGroupForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/importGroupForms.cj")
+            }
+
+            @TestMetadata("interfaceForms.cj")
+            fun testInterfaceForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/interfaceForms.cj")
+            }
+
+            @TestMetadata("localFunctionForms.cj")
+            fun testLocalFunctionForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/localFunctionForms.cj")
+            }
+
+            @TestMetadata("macroCallForms.cj")
+            fun testMacroCallForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroCallForms.cj")
+            }
+
+            @TestMetadata("macroDeclVariants.cj")
+            fun testMacroDeclVariants() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroDeclVariants.cj")
+            }
+
+            @TestMetadata("macroQuoteForms.cj")
+            fun testMacroQuoteForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroQuoteForms.cj")
+            }
+
+            @TestMetadata("memberInitForms.cj")
+            fun testMemberInitForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberInitForms.cj")
+            }
+
+            @TestMetadata("memberModifierForms.cj")
+            fun testMemberModifierForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberModifierForms.cj")
+            }
+
+            @TestMetadata("operatorOverloadForms.cj")
+            fun testOperatorOverloadForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/operatorOverloadForms.cj")
+            }
+
+            @TestMetadata("packageAndImportVariants.cj")
+            fun testPackageAndImportVariants() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/packageAndImportVariants.cj")
+            }
+
+            @TestMetadata("primaryConstructorForms.cj")
+            fun testPrimaryConstructorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/primaryConstructorForms.cj")
+            }
+
+            @TestMetadata("propAccessorForms.cj")
+            fun testPropAccessorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/propAccessorForms.cj")
+            }
+
+            @TestMetadata("redefMemberForms.cj")
+            fun testRedefMemberForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/redefMemberForms.cj")
+            }
+
+            @TestMetadata("staticInitAndFinalizer.cj")
+            fun testStaticInitAndFinalizer() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/staticInitAndFinalizer.cj")
+            }
+
+            @TestMetadata("staticMemberForms.cj")
+            fun testStaticMemberForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/staticMemberForms.cj")
+            }
+
+            @TestMetadata("structForms.cj")
+            fun testStructForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/structForms.cj")
+            }
+
+            @TestMetadata("typeAliasForms.cj")
+            fun testTypeAliasForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/typeAliasForms.cj")
+            }
+
+            @TestMetadata("typeAliasSignatureForms.cj")
+            fun testTypeAliasSignatureForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/typeAliasSignatureForms.cj")
+            }
+
+            @TestMetadata("varDeclForms.cj")
+            fun testVarDeclForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/varDeclForms.cj")
+            }
+
+            @TestMetadata("whereConstraints.cj")
+            fun testWhereConstraints() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/whereConstraints.cj")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Expressions : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInExpressions() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions")
+            }
+
+            @TestMetadata("arrayOfInterfaceTypes.cj")
+            fun testArrayOfInterfaceTypes() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/arrayOfInterfaceTypes.cj")
+            }
+
+            @TestMetadata("assignmentForms.cj")
+            fun testAssignmentForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/assignmentForms.cj")
+            }
+
+            @TestMetadata("bitwiseCompoundAssignForms.cj")
+            fun testBitwiseCompoundAssignForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/bitwiseCompoundAssignForms.cj")
+            }
+
+            @TestMetadata("blockAndParenForms.cj")
+            fun testBlockAndParenForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/blockAndParenForms.cj")
+            }
+
+            @TestMetadata("constructionForms.cj")
+            fun testConstructionForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/constructionForms.cj")
+            }
+
+            @TestMetadata("controlFlowExprForms.cj")
+            fun testControlFlowExprForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/controlFlowExprForms.cj")
+            }
+
+            @TestMetadata("exceptionThrowForms.cj")
+            fun testExceptionThrowForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/exceptionThrowForms.cj")
+            }
+
+            @TestMetadata("genericCallForms.cj")
+            fun testGenericCallForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/genericCallForms.cj")
+            }
+
+            @TestMetadata("ifWhileForms.cj")
+            fun testIfWhileForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/ifWhileForms.cj")
+            }
+
+            @TestMetadata("incDecForms.cj")
+            fun testIncDecForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/incDecForms.cj")
+            }
+
+            @TestMetadata("indexAndSliceForms.cj")
+            fun testIndexAndSliceForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/indexAndSliceForms.cj")
+            }
+
+            @TestMetadata("lambdaCallForms.cj")
+            fun testLambdaCallForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/lambdaCallForms.cj")
+            }
+
+            @TestMetadata("lambdaForms.cj")
+            fun testLambdaForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/lambdaForms.cj")
+            }
+
+            @TestMetadata("lambdaTypedForms.cj")
+            fun testLambdaTypedForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/lambdaTypedForms.cj")
+            }
+
+            @TestMetadata("letPatternForms.cj")
+            fun testLetPatternForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/letPatternForms.cj")
+            }
+
+            @TestMetadata("matchCaseBodyForms.cj")
+            fun testMatchCaseBodyForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/matchCaseBodyForms.cj")
+            }
+
+            @TestMetadata("matchForms.cj")
+            fun testMatchForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/matchForms.cj")
+            }
+
+            @TestMetadata("memberAccessForms.cj")
+            fun testMemberAccessForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/memberAccessForms.cj")
+            }
+
+            @TestMetadata("multipleAssignForms.cj")
+            fun testMultipleAssignForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/multipleAssignForms.cj")
+            }
+
+            @TestMetadata("nestedTypeRefForms.cj")
+            fun testNestedTypeRefForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/nestedTypeRefForms.cj")
+            }
+
+            @TestMetadata("numericConversionForms.cj")
+            fun testNumericConversionForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/numericConversionForms.cj")
+            }
+
+            @TestMetadata("operatorForms.cj")
+            fun testOperatorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/operatorForms.cj")
+            }
+
+            @TestMetadata("powerOperatorForms.cj")
+            fun testPowerOperatorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/powerOperatorForms.cj")
+            }
+
+            @TestMetadata("questForms.cj")
+            fun testQuestForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/questForms.cj")
+            }
+
+            @TestMetadata("rangeStepForms.cj")
+            fun testRangeStepForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/rangeStepForms.cj")
+            }
+
+            @TestMetadata("stringTemplateForms.cj")
+            fun testStringTemplateForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/stringTemplateForms.cj")
+            }
+
+            @TestMetadata("subscriptOperatorForms.cj")
+            fun testSubscriptOperatorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/subscriptOperatorForms.cj")
+            }
+
+            @TestMetadata("synchronizedExprForms.cj")
+            fun testSynchronizedExprForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/synchronizedExprForms.cj")
+            }
+
+            @TestMetadata("synchronizedForms.cj")
+            fun testSynchronizedForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/synchronizedForms.cj")
+            }
+
+            @TestMetadata("thisSuperQualified.cj")
+            fun testThisSuperQualified() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/thisSuperQualified.cj")
+            }
+
+            @TestMetadata("thisTypeReturns.cj")
+            fun testThisTypeReturns() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/thisTypeReturns.cj")
+            }
+
+            @TestMetadata("tryCatchForms.cj")
+            fun testTryCatchForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/tryCatchForms.cj")
+            }
+
+            @TestMetadata("tryForms.cj")
+            fun testTryForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/tryForms.cj")
+            }
+
+            @TestMetadata("tryResourceForms.cj")
+            fun testTryResourceForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/tryResourceForms.cj")
+            }
+
+            @TestMetadata("typeCheckForms.cj")
+            fun testTypeCheckForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/typeCheckForms.cj")
+            }
+
+            @TestMetadata("typeConvForms.cj")
+            fun testTypeConvForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/typeConvForms.cj")
+            }
+
+            @TestMetadata("unsafeAndForeignCall.cj")
+            fun testUnsafeAndForeignCall() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/unsafeAndForeignCall.cj")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Recovery : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInRecovery() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery")
+            }
+
+            @TestMetadata("abstractPropInClass.cj")
+            fun testAbstractPropInClass() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/abstractPropInClass.cj")
+            }
+
+            @TestMetadata("annotationDeclaration.cj")
+            fun testAnnotationDeclaration() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/annotationDeclaration.cj")
+            }
+
+            @TestMetadata("arrayPattern.cj")
+            fun testArrayPattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/arrayPattern.cj")
+            }
+
+            @TestMetadata("arraySingleArgConstruction.cj")
+            fun testArraySingleArgConstruction() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/arraySingleArgConstruction.cj")
+            }
+
+            @TestMetadata("bareArrowType.cj")
+            fun testBareArrowType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/bareArrowType.cj")
+            }
+
+            @TestMetadata("bitwiseNotPrefix.cj")
+            fun testBitwiseNotPrefix() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/bitwiseNotPrefix.cj")
+            }
+
+            @TestMetadata("ccharTypeUndeclared.cj")
+            fun testCcharTypeUndeclared() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/ccharTypeUndeclared.cj")
+            }
+
+            @TestMetadata("cfuncNamedParam.cj")
+            fun testCfuncNamedParam() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.cj")
+            }
+
+            @TestMetadata("cfuncUnitTypeName.cj")
+            fun testCfuncUnitTypeName() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncUnitTypeName.cj")
+            }
+
+            @TestMetadata("cfuncValueTypeName.cj")
+            fun testCfuncValueTypeName() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncValueTypeName.cj")
+            }
+
+            @TestMetadata("coalescingAssign.cj")
+            fun testCoalescingAssign() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/coalescingAssign.cj")
+            }
+
+            @TestMetadata("collectionTypeNoImport.cj")
+            fun testCollectionTypeNoImport() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/collectionTypeNoImport.cj")
+            }
+
+            @TestMetadata("constArrayInitializer.cj")
+            fun testConstArrayInitializer() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/constArrayInitializer.cj")
+            }
+
+            @TestMetadata("constructorMemberParams.cj")
+            fun testConstructorMemberParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/constructorMemberParams.cj")
+            }
+
+            @TestMetadata("defaultParamOnUnnamed.cj")
+            fun testDefaultParamOnUnnamed() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/defaultParamOnUnnamed.cj")
+            }
+
+            @TestMetadata("doWhileWithoutBrace.cj")
+            fun testDoWhileWithoutBrace() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/doWhileWithoutBrace.cj")
+            }
+
+            @TestMetadata("emptyMultilineString.cj")
+            fun testEmptyMultilineString() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/emptyMultilineString.cj")
+            }
+
+            @TestMetadata("emptyWhenCondition.cj")
+            fun testEmptyWhenCondition() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/emptyWhenCondition.cj")
+            }
+
+            @TestMetadata("enumCtorParenEmpty.cj")
+            fun testEnumCtorParenEmpty() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorParenEmpty.cj")
+            }
+
+            @TestMetadata("enumCtorWithoutPipe.cj")
+            fun testEnumCtorWithoutPipe() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumCtorWithoutPipe.cj")
+            }
+
+            @TestMetadata("enumDuplicateConstructor.cj")
+            fun testEnumDuplicateConstructor() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumDuplicateConstructor.cj")
+            }
+
+            @TestMetadata("enumEllipsisNotSupported.cj")
+            fun testEnumEllipsisNotSupported() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumEllipsisNotSupported.cj")
+            }
+
+            @TestMetadata("enumInterfaceUnimplemented.cj")
+            fun testEnumInterfaceUnimplemented() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumInterfaceUnimplemented.cj")
+            }
+
+            @TestMetadata("enumTrailingPipe.cj")
+            fun testEnumTrailingPipe() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumTrailingPipe.cj")
+            }
+
+            @TestMetadata("extendBuiltinOperator.cj")
+            fun testExtendBuiltinOperator() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/extendBuiltinOperator.cj")
+            }
+
+            @TestMetadata("extendGenericUnused.cj")
+            fun testExtendGenericUnused() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/extendGenericUnused.cj")
+            }
+
+            @TestMetadata("extendWhereNonGeneric.cj")
+            fun testExtendWhereNonGeneric() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/extendWhereNonGeneric.cj")
+            }
+
+            @TestMetadata("flatNestedArrayLiteral.cj")
+            fun testFlatNestedArrayLiteral() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/flatNestedArrayLiteral.cj")
+            }
+
+            @TestMetadata("forLetPattern.cj")
+            fun testForLetPattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/forLetPattern.cj")
+            }
+
+            @TestMetadata("forWithLetPattern.cj")
+            fun testForWithLetPattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/forWithLetPattern.cj")
+            }
+
+            @TestMetadata("foreignCArrayType.cj")
+            fun testForeignCArrayType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/foreignCArrayType.cj")
+            }
+
+            @TestMetadata("foreignNamedParam.cj")
+            fun testForeignNamedParam() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/foreignNamedParam.cj")
+            }
+
+            @TestMetadata("funcMainKeyword.cj")
+            fun testFuncMainKeyword() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/funcMainKeyword.cj")
+            }
+
+            @TestMetadata("functionExpressionBody.cj")
+            fun testFunctionExpressionBody() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionExpressionBody.cj")
+            }
+
+            @TestMetadata("functionTypeMixedParamNames.cj")
+            fun testFunctionTypeMixedParamNames() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeMixedParamNames.cj")
+            }
+
+            @TestMetadata("functionTypeNamedParamBang.cj")
+            fun testFunctionTypeNamedParamBang() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeNamedParamBang.cj")
+            }
+
+            @TestMetadata("functionTypeParamDefault.cj")
+            fun testFunctionTypeParamDefault() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.cj")
+            }
+
+            @TestMetadata("genericVarianceMarker.cj")
+            fun testGenericVarianceMarker() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/genericVarianceMarker.cj")
+            }
+
+            @TestMetadata("hexOverflow.cj")
+            fun testHexOverflow() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/hexOverflow.cj")
+            }
+
+            @TestMetadata("ifAvailableBracketForm.cj")
+            fun testIfAvailableBracketForm() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/ifAvailableBracketForm.cj")
+            }
+
+            @TestMetadata("immutablePropSetter.cj")
+            fun testImmutablePropSetter() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/immutablePropSetter.cj")
+            }
+
+            @TestMetadata("initCallingInit.cj")
+            fun testInitCallingInit() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/initCallingInit.cj")
+            }
+
+            @TestMetadata("inoutParameter.cj")
+            fun testInoutParameter() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.cj")
+            }
+
+            @TestMetadata("integerOverflow.cj")
+            fun testIntegerOverflow() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/integerOverflow.cj")
+            }
+
+            @TestMetadata("interfaceInit.cj")
+            fun testInterfaceInit() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/interfaceInit.cj")
+            }
+
+            @TestMetadata("invalidModifierMutFunc.cj")
+            fun testInvalidModifierMutFunc() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/invalidModifierMutFunc.cj")
+            }
+
+            @TestMetadata("jstringLowerCase.cj")
+            fun testJstringLowerCase() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/jstringLowerCase.cj")
+            }
+
+            @TestMetadata("jstringUpperCase.cj")
+            fun testJstringUpperCase() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/jstringUpperCase.cj")
+            }
+
+            @TestMetadata("lambdaDefaultValue.cj")
+            fun testLambdaDefaultValue() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaDefaultValue.cj")
+            }
+
+            @TestMetadata("lambdaNamedParameter.cj")
+            fun testLambdaNamedParameter() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaNamedParameter.cj")
+            }
+
+            @TestMetadata("lambdaWithoutArrow.cj")
+            fun testLambdaWithoutArrow() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaWithoutArrow.cj")
+            }
+
+            @TestMetadata("logicalOperatorOverload.cj")
+            fun testLogicalOperatorOverload() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/logicalOperatorOverload.cj")
+            }
+
+            @TestMetadata("macroNamedParams.cj")
+            fun testMacroNamedParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/macroNamedParams.cj")
+            }
+
+            @TestMetadata("macroOutsideMacroPackage.cj")
+            fun testMacroOutsideMacroPackage() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/macroOutsideMacroPackage.cj")
+            }
+
+            @TestMetadata("macroQuoteInterpolation.cj")
+            fun testMacroQuoteInterpolation() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/macroQuoteInterpolation.cj")
+            }
+
+            @TestMetadata("mainBadParameterType.cj")
+            fun testMainBadParameterType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainBadParameterType.cj")
+            }
+
+            @TestMetadata("mainCurriedParameterList.cj")
+            fun testMainCurriedParameterList() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainCurriedParameterList.cj")
+            }
+
+            @TestMetadata("mainVariadicArgs.cj")
+            fun testMainVariadicArgs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainVariadicArgs.cj")
+            }
+
+            @TestMetadata("mainWithModifier.cj")
+            fun testMainWithModifier() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainWithModifier.cj")
+            }
+
+            @TestMetadata("matchRangePattern.cj")
+            fun testMatchRangePattern() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/matchRangePattern.cj")
+            }
+
+            @TestMetadata("missingBodyInFunc.cj")
+            fun testMissingBodyInFunc() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/missingBodyInFunc.cj")
+            }
+
+            @TestMetadata("missingNameInFunc.cj")
+            fun testMissingNameInFunc() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/missingNameInFunc.cj")
+            }
+
+            @TestMetadata("missingTypeInVar.cj")
+            fun testMissingTypeInVar() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/missingTypeInVar.cj")
+            }
+
+            @TestMetadata("namedArgumentInFuncValueCall.cj")
+            fun testNamedArgumentInFuncValueCall() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/namedArgumentInFuncValueCall.cj")
+            }
+
+            @TestMetadata("nestedClassDecl.cj")
+            fun testNestedClassDecl() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/nestedClassDecl.cj")
+            }
+
+            @TestMetadata("nonPublicMacroDecl.cj")
+            fun testNonPublicMacroDecl() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/nonPublicMacroDecl.cj")
+            }
+
+            @TestMetadata("operatorNotOverloadable.cj")
+            fun testOperatorNotOverloadable() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/operatorNotOverloadable.cj")
+            }
+
+            @TestMetadata("powerOperatorChain.cj")
+            fun testPowerOperatorChain() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/powerOperatorChain.cj")
+            }
+
+            @TestMetadata("powerOperatorRightOperand.cj")
+            fun testPowerOperatorRightOperand() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/powerOperatorRightOperand.cj")
+            }
+
+            @TestMetadata("prefixIncDec.cj")
+            fun testPrefixIncDec() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/prefixIncDec.cj")
+            }
+
+            @TestMetadata("privateInitCalledOutside.cj")
+            fun testPrivateInitCalledOutside() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/privateInitCalledOutside.cj")
+            }
+
+            @TestMetadata("quoteDollarIdentifier.cj")
+            fun testQuoteDollarIdentifier() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/quoteDollarIdentifier.cj")
+            }
+
+            @TestMetadata("quoteOutsideMacroPackage.cj")
+            fun testQuoteOutsideMacroPackage() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/quoteOutsideMacroPackage.cj")
+            }
+
+            @TestMetadata("rangeChainedOperators.cj")
+            fun testRangeChainedOperators() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/rangeChainedOperators.cj")
+            }
+
+            @TestMetadata("rangeMissingOperands.cj")
+            fun testRangeMissingOperands() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/rangeMissingOperands.cj")
+            }
+
+            @TestMetadata("rangeStringOperands.cj")
+            fun testRangeStringOperands() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/rangeStringOperands.cj")
+            }
+
+            @TestMetadata("redefInstanceMember.cj")
+            fun testRedefInstanceMember() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/redefInstanceMember.cj")
+            }
+
+            @TestMetadata("resultTypeUndeclared.cj")
+            fun testResultTypeUndeclared() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/resultTypeUndeclared.cj")
+            }
+
+            @TestMetadata("staticInitInEnum.cj")
+            fun testStaticInitInEnum() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/staticInitInEnum.cj")
+            }
+
+            @TestMetadata("stepFunctionCall.cj")
+            fun testStepFunctionCall() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/stepFunctionCall.cj")
+            }
+
+            @TestMetadata("strayCloseBrace.cj")
+            fun testStrayCloseBrace() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/strayCloseBrace.cj")
+            }
+
+            @TestMetadata("structFinalizer.cj")
+            fun testStructFinalizer() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/structFinalizer.cj")
+            }
+
+            @TestMetadata("subscriptSetUnnamedParameter.cj")
+            fun testSubscriptSetUnnamedParameter() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/subscriptSetUnnamedParameter.cj")
+            }
+
+            @TestMetadata("synchronizedWithoutLock.cj")
+            fun testSynchronizedWithoutLock() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/synchronizedWithoutLock.cj")
+            }
+
+            @TestMetadata("thisTypeAsParameter.cj")
+            fun testThisTypeAsParameter() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/thisTypeAsParameter.cj")
+            }
+
+            @TestMetadata("thisTypeInStruct.cj")
+            fun testThisTypeInStruct() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/thisTypeInStruct.cj")
+            }
+
+            @TestMetadata("tryResourceAsValue.cj")
+            fun testTryResourceAsValue() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/tryResourceAsValue.cj")
+            }
+
+            @TestMetadata("tryResourceExpressionOnly.cj")
+            fun testTryResourceExpressionOnly() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/tryResourceExpressionOnly.cj")
+            }
+
+            @TestMetadata("tryResourceMissingBlock.cj")
+            fun testTryResourceMissingBlock() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/tryResourceMissingBlock.cj")
+            }
+
+            @TestMetadata("tryResourceWithoutResourceInterface.cj")
+            fun testTryResourceWithoutResourceInterface() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/tryResourceWithoutResourceInterface.cj")
+            }
+
+            @TestMetadata("unclosedBrace.cj")
+            fun testUnclosedBrace() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/unclosedBrace.cj")
+            }
+
+            @TestMetadata("unclosedParen.cj")
+            fun testUnclosedParen() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/unclosedParen.cj")
+            }
+
+            @TestMetadata("unterminatedMultilineString.cj")
+            fun testUnterminatedMultilineString() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/unterminatedMultilineString.cj")
+            }
+
+            @TestMetadata("unterminatedRawString.cj")
+            fun testUnterminatedRawString() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/unterminatedRawString.cj")
+            }
+
+            @TestMetadata("unterminatedString.cj")
+            fun testUnterminatedString() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/unterminatedString.cj")
+            }
+
+            @TestMetadata("varPatternInMatch.cj")
+            fun testVarPatternInMatch() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varPatternInMatch.cj")
+            }
+
+            @TestMetadata("varrayConstructorArgForm.cj")
+            fun testVarrayConstructorArgForm() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayConstructorArgForm.cj")
+            }
+
+            @TestMetadata("varrayConstructorArgName.cj")
+            fun testVarrayConstructorArgName() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayConstructorArgName.cj")
+            }
+
+            @TestMetadata("varrayNestedArray.cj")
+            fun testVarrayNestedArray() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayNestedArray.cj")
+            }
+
+            @TestMetadata("varrayRefTypeArg.cj")
+            fun testVarrayRefTypeArg() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayRefTypeArg.cj")
+            }
+
+            @TestMetadata("varraySliceNotSupported.cj")
+            fun testVarraySliceNotSupported() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varraySliceNotSupported.cj")
+            }
+
+            @TestMetadata("varrayTypeArgumentWithoutDollar.cj")
+            fun testVarrayTypeArgumentWithoutDollar() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayTypeArgumentWithoutDollar.cj")
+            }
+
+            @TestMetadata("whereOnTypeAlias.cj")
+            fun testWhereOnTypeAlias() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/whereOnTypeAlias.cj")
+            }
+
+            @TestMetadata("whereWithoutTypeParams.cj")
+            fun testWhereWithoutTypeParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/whereWithoutTypeParams.cj")
+            }
+
+            @TestMetadata("withExpression.cj")
+            fun testWithExpression() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/withExpression.cj")
+            }
+
+        }
+
+        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types")
+        @TestDataPath("\$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners::class)
+        class Types : AbstractRawCfirBuilderLazyBodiesByStubTest() {
+            fun testAllFilesPresentInTypes() {
+                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types")
+            }
+
+            @TestMetadata("builtinTypeRefs.cj")
+            fun testBuiltinTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/builtinTypeRefs.cj")
+            }
+
+            @TestMetadata("collectionTypeRefs.cj")
+            fun testCollectionTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/collectionTypeRefs.cj")
+            }
+
+            @TestMetadata("functionTypeRefs.cj")
+            fun testFunctionTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/functionTypeRefs.cj")
+            }
+
+            @TestMetadata("genericTypeRefs.cj")
+            fun testGenericTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/genericTypeRefs.cj")
+            }
+
+            @TestMetadata("questTypeRefs.cj")
+            fun testQuestTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/questTypeRefs.cj")
             }
 
         }
@@ -483,6 +1983,26 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references")
             }
 
+            @TestMetadata("cffiParameterTypes.cj")
+            fun testCffiParameterTypes() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/cffiParameterTypes.cj")
+            }
+
+            @TestMetadata("cffiTypeRefs.cj")
+            fun testCffiTypeRefs() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/cffiTypeRefs.cj")
+            }
+
+            @TestMetadata("functionTypeNamedParams.cj")
+            fun testFunctionTypeNamedParams() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/functionTypeNamedParams.cj")
+            }
+
+            @TestMetadata("genericTypeAliases.cj")
+            fun testGenericTypeAliases() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/genericTypeAliases.cj")
+            }
+
             @TestMetadata("nestedFunctionAndTupleTypes.cj")
             fun testNestedFunctionAndTupleTypes() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/nestedFunctionAndTupleTypes.cj")
@@ -491,6 +2011,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("optionalTypeRefs.cj")
             fun testOptionalTypeRefs() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/optionalTypeRefs.cj")
+            }
+
+            @TestMetadata("thisType.cj")
+            fun testThisType() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/types/type-references/thisType.cj")
             }
 
             @TestMetadata("typeAliasRefsOfficial.cj")

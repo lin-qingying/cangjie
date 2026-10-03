@@ -1,0 +1,10 @@
+FILE: extendWhereNonGeneric.cj
+    internal? struct Plain {
+        init()
+        internal? var x: R|Int64|
+    }
+    extend R|Plain| {
+        public func extra(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

@@ -1,0 +1,4 @@
+FILE: stringTemplates.cj
+    internal? func greet(name: R|String|, x: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }

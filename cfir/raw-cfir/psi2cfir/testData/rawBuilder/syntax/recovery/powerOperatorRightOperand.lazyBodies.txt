@@ -1,0 +1,4 @@
+FILE: powerOperatorRightOperand.cj
+    internal? func powerOperatorRightOperand(a: R|Int64|, c: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -1,0 +1,4 @@
+FILE: arraySingleArgConstruction.cj
+    internal? func singleArg(xs: R|Array<R|String|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

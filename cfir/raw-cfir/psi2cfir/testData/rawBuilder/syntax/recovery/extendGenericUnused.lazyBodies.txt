@@ -1,0 +1,11 @@
+FILE: extendGenericUnused.cj
+    internal? struct P {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|P| {
+        public func g(t: R|T|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

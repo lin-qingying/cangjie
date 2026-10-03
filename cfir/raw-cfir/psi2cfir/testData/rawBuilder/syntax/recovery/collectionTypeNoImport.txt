@@ -1,0 +1,25 @@
+FILE: collectionTypeNoImport.cj
+    internal? func collectionTypeNoImport(m: R|Map<R|Int64|, R|String|>|, s: R|HashSet<R|Int64|>|, l: R|ArrayList<R|Int64|>|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(size) {
+                                receiver:
+                                    NAMED_ACCESS(m)
+                            }
+                        arguments:
+                            NAMED_ACCESS(size) {
+                                receiver:
+                                    NAMED_ACCESS(s)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(l)
+                    }
+            }
+        }
+    }

@@ -1,0 +1,4 @@
+FILE: resultTypeUndeclared.cj
+    internal? func resultTypeUndeclared(): R|Result<R|Int64|, R|String|>| {
+        <element: CfirLazyBlock>
+    }

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
@@ -32,6 +34,14 @@ object CfirReturnLegalityChecker : CfirReturnExpressionChecker() {
         // handle 子句中的 return 需要走 effects 专用诊断，而不是普通 invalid-return。
         if (context.containingElements.any { it is CfirHandleClause }) {
             reporter.reportOn(source, CfirErrors.RETURN_IN_TRY_HANDLE_BLOCK)
+            return
+        }
+
+        // 静态初始化器（static init）内不允许显式 return：
+        // 对齐官方 `PreCheck.cpp::CheckReturnAndJump` 对 `IsStaticInitializer(funcDecl)` 的判定，
+        // 锚点与官方一致（整个 return 表达式）。
+        if (context.containingElements.any { it is CfirConstructor && it.status.isStatic }) {
+            reporter.reportOn(source, CfirErrors.INVALID_RETURN_IN_STATIC_INIT)
             return
         }
 

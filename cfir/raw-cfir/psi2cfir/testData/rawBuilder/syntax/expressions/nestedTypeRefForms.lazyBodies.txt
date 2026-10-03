@@ -1,0 +1,4 @@
+FILE: nestedTypeRefForms.cj
+    internal? func nestedTypeRefForms(a: R|(R|Int64|, R|(R|String|, R|Bool|)|)|, b: R|Array<R|(R|Int64|, R|Array<R|String|>|)|>|, c: R|Array<R|Option<R|Int64|>|>|, d: R|CType|, e: R|CType|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

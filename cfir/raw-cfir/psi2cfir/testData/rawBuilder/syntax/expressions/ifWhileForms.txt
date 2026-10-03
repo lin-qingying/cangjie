@@ -1,0 +1,146 @@
+FILE: ifWhileForms.cj
+    internal? func cond(x: R|Int64|): R|Bool| {
+        RETURN {
+            COMPARISON(GT) {
+                NAMED_ACCESS(x)
+                INT(0)
+            }
+        }
+    }
+    internal? func ifWhileForms(xs: R|Array<R|Int64|>|, o: R|Option<R|Int64|>|): R|Int64| {
+        local? var total: <implicit> = ...
+            initializer:
+                INT(0)
+        IF {
+            condition:
+                FUNCTION_CALL(cond) {
+                    INT(1)
+                }
+            then:
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(total)
+                    rValue:
+                        INT(1)
+                }
+            else:
+                IF {
+                    condition:
+                        FUNCTION_CALL(cond) {
+                            INT(2)
+                        }
+                    then:
+                        ASSIGNMENT {
+                            lValue:
+                                NAMED_ACCESS(total)
+                            rValue:
+                                INT(2)
+                        }
+                    else:
+                        IF {
+                            condition:
+                                FUNCTION_CALL(cond) {
+                                    INT(3)
+                                }
+                            then:
+                                ASSIGNMENT {
+                                    lValue:
+                                        NAMED_ACCESS(total)
+                                    rValue:
+                                        INT(3)
+                                }
+                            else:
+                                ASSIGNMENT {
+                                    lValue:
+                                        NAMED_ACCESS(total)
+                                    rValue:
+                                        INT(4)
+                                }
+                        }
+                }
+        }
+        local? var i: <implicit> = ...
+            initializer:
+                INT(0)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(i)
+                    INT(10)
+                }
+            body:
+                <element: CfirIncrementDecrementExpression>
+                IF {
+                    condition:
+                        COMPARISON(EQ) {
+                            NAMED_ACCESS(i)
+                            INT(3)
+                        }
+                    then:
+                        CONTINUE
+                }
+                IF {
+                    condition:
+                        COMPARISON(EQ) {
+                            NAMED_ACCESS(i)
+                            INT(8)
+                        }
+                    then:
+                        BREAK
+                }
+                <element: CfirAugmentedAssignment>
+        }
+        DO_WHILE {
+            condition:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(i)
+                    INT(5)
+                }
+            body:
+                <element: CfirIncrementDecrementExpression>
+        }
+        local? var rest: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(o)
+        WHILE {
+            condition:
+                COMPARISON(NE) {
+                    NAMED_ACCESS(rest)
+                    NAMED_ACCESS(None)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+                ASSIGNMENT {
+                    lValue:
+                        NAMED_ACCESS(rest)
+                    rValue:
+                        NAMED_ACCESS(None)
+                }
+        }
+        IF {
+            condition:
+                <element: CfirLetPatternExpression>
+            then:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(xs)
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        IF {
+            condition:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(total)
+                    INT(100)
+                }
+            then:
+                RETURN {
+                    NAMED_ACCESS(total)
+                }
+        }
+        RETURN {
+            NAMED_ACCESS(total)
+        }
+    }

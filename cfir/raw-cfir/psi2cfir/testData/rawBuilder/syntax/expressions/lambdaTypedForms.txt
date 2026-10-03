@@ -1,0 +1,51 @@
+FILE: lambdaTypedForms.cj
+    internal? func lambdaTypedForms(): R|Unit| {
+        local? let a: R|(R|Int64|) -> R|Int64|| = ...
+            initializer:
+                LAMBDA(x: <implicit>) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            INT(1)
+                    }
+                }
+        local? let b: R|() -> R|Int64|| = ...
+            initializer:
+                LAMBDA() {
+                    INT(1)
+                }
+        local? let c: R|(R|Int64|, R|Int64|) -> R|Int64|| = ...
+            initializer:
+                LAMBDA(x: <implicit>, y: <implicit>) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            NAMED_ACCESS(y)
+                    }
+                }
+        local? let d: R|(R|Int64|, R|Int64|) -> R|Int64|| = ...
+            initializer:
+                LAMBDA(x: <implicit>, y: <implicit>) {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            NAMED_ACCESS(y)
+                    }
+                }
+        local? let g: R|(R|Int64|) -> R|Unit|| = ...
+            initializer:
+                LAMBDA(<no name provided>: <implicit>) {
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(g)
+                }
+    }

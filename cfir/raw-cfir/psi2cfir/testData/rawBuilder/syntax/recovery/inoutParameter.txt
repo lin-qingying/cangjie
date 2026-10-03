@@ -1,0 +1,21 @@
+FILE: inoutParameter.cj
+    internal? func inoutParameter(x: <implicit>): R|Unit| {
+        ASSIGNMENT {
+            lValue:
+                NAMED_ACCESS(x)
+            rValue:
+                INT(1)
+        }
+    }
+    internal? func inoutCallSite(a: R|Array<R|Int64|>|): R|Unit| {
+        FUNCTION_CALL(takes) {
+            SUBSCRIPT {
+                receiver:
+                    NAMED_ACCESS(a)
+                indices:
+                    INT(0)
+            }
+        }
+    }
+    internal? func takes(x: R|Int64|): R|Unit| {
+    }

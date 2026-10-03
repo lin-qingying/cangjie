@@ -1,0 +1,29 @@
+FILE: exceptionThrowForms.cj
+    internal? open class BaseErr <: R|Exception| {
+        init(msg: R|String|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class SubErr <: R|BaseErr| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func fail(): R|Nothing| {
+        <element: CfirLazyBlock>
+    }
+    internal? func consume(x: R|Nothing|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func exceptionThrowForms(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func exceptionThrowAsExpr(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func exceptionThrowNothing(): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func catchDerived(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

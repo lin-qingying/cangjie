@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.type
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.shouldSkipSamePackageDeprecation
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -24,6 +25,7 @@ object CfirDeprecatedTypeRefChecker : CfirResolvedTypeRefChecker() {
         val deprecation = symbol.getOwnDeprecation(context.languageVersionSettings)?.all ?: return
 
         val isError = deprecation.deprecationLevel == DeprecationLevelValue.ERROR
+        if (context.shouldSkipSamePackageDeprecation(symbol.classId.packageFqName, isError)) return
         val factory = if (isError) CfirErrors.DEPRECATED_ERROR else CfirErrors.DEPRECATED_WARNING
         val declName: Name = symbol.classId.shortClassName
 

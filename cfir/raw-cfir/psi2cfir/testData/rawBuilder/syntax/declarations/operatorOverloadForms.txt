@@ -1,0 +1,391 @@
+FILE: operatorOverloadForms.cj
+    internal? class Num {
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(v: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(v)
+            }
+        }
+        public operator func *operator_plus(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_minus(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_times(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_div(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_rem(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_exponentiation(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_left_shift(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_right_shift(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_and(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_xor(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_or(o: R|Num|): R|Num| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_compare_lt(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_compare_lteq(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_compare_gt(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_compare_gteq(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_equals(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_not_equals(o: R|Num|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_unaryMinus(): R|Num| {
+            RETURN {
+                <element: CfirThisReceiverExpression>
+            }
+        }
+        public operator func *operator_not(): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v)
+            }
+        }
+        public operator func *operator_invoke(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(v)
+            }
+        }
+    }
+    internal? class IndexSet {
+        init()
+        internal? var values: R|Array<R|Int64|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(0)
+                }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            RETURN {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(values)
+                    indices:
+                        NAMED_ACCESS(i)
+                }
+            }
+        }
+        public operator func *operator_set(i: R|Int64|, value: R|Int64|): R|Unit| {
+            ASSIGNMENT {
+                lValue:
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(values)
+                        indices:
+                            NAMED_ACCESS(i)
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+    }
+    internal? struct Pt {
+        init()
+        internal? var x: R|Int64| = ...
+            initializer:
+                INT(0)
+    }
+    extend R|Pt| {
+        public operator func *operator_plus(o: R|Pt|): R|Pt| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+        public operator func *operator_equals(o: R|Pt|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+    }
+    internal? interface Eq {
+        public operator func *operator_not_equals(o: R|Eq|): R|Bool| {
+            RETURN {
+                BOOLEAN(true)
+            }
+        }
+    }
+    internal? enum Op {
+        A
+        init()
+        public operator func *operator_plus(o: R|Op|): R|Op| {
+            RETURN {
+                NAMED_ACCESS(o)
+            }
+        }
+    }
+    internal? func operatorOverloadUses(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Num) {
+                    INT(1)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_minus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_times) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let e: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_div) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let f: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_rem) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let g: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let h: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_left_shift) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let i: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_right_shift) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let j: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_and) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let k: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_xor) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let l: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_or) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(a)
+                }
+        local? let m: <implicit> = ...
+            initializer:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let n: <implicit> = ...
+            initializer:
+                COMPARISON(LE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let o: <implicit> = ...
+            initializer:
+                COMPARISON(GT) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let p: <implicit> = ...
+            initializer:
+                COMPARISON(GE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let q: <implicit> = ...
+            initializer:
+                COMPARISON(EQ) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let r: <implicit> = ...
+            initializer:
+                COMPARISON(NE) {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(a)
+                }
+        local? let s: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_unaryMinus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+        local? let t: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_not) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+        local? let u: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    indices:
+                        INT(0)
+                }
+        local? let w: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(a) {
+                }
+        local? let set: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(IndexSet) {
+                }
+        local? let x: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(set)
+                    indices:
+                        INT(0)
+                }
+        ASSIGNMENT {
+            lValue:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(set)
+                    indices:
+                        INT(0)
+                }
+            rValue:
+                INT(1)
+        }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                    NAMED_ACCESS(e)
+                    NAMED_ACCESS(f)
+                    NAMED_ACCESS(g)
+                    NAMED_ACCESS(h)
+                    NAMED_ACCESS(i)
+                    NAMED_ACCESS(j)
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(l)
+                    NAMED_ACCESS(m)
+                    NAMED_ACCESS(n)
+                    NAMED_ACCESS(o)
+                    NAMED_ACCESS(p)
+                    NAMED_ACCESS(q)
+                    NAMED_ACCESS(r)
+                    NAMED_ACCESS(s)
+                    NAMED_ACCESS(t)
+                    NAMED_ACCESS(u)
+                    NAMED_ACCESS(w)
+                    NAMED_ACCESS(x)
+                }
+    }

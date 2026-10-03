@@ -1,0 +1,4 @@
+FILE: ifAvailableExpression.cj
+    internal? func ifAvailableDemo(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

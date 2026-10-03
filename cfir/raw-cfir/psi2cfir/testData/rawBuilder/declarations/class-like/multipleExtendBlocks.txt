@@ -1,0 +1,25 @@
+FILE: multipleExtendBlocks.cj
+    extend R|Int64| {
+        internal? func plusOne(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        INT(1)
+                }
+            }
+        }
+    }
+    extend R|Int64| {
+        internal? func plusTwo(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                    arguments:
+                        INT(2)
+                }
+            }
+        }
+    }

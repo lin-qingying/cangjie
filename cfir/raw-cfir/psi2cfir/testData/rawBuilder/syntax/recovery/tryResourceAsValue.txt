@@ -1,0 +1,29 @@
+FILE: tryResourceAsValue.cj
+    internal? class Res <: R|Resource| {
+        init() {
+        }
+        public func isClosed(): R|Bool| {
+            RETURN {
+                BOOLEAN(false)
+            }
+        }
+        public func close(): R|Unit| {
+        }
+    }
+    internal? class MyError <: R|Exception| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+    }
+    internal? func tryResourceAsValue(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                TRY {
+                    try:
+                        INT(1)
+                }
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }

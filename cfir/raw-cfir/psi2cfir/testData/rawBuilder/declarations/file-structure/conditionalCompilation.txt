@@ -1,0 +1,32 @@
+FILE: conditionalCompilation.cj
+    @R|When|(os == "Windows") internal? func windowsOnly(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }
+    internal? func withParams(@R|When|(os == "Windows") a: R|Int64|, @R|When|(os == "Windows") b: R|Int64|): R|Int64| {
+        @R|When|(os == "Windows") local? let x: <implicit> = ...
+            initializer:
+                INT(1)
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            NAMED_ACCESS(b)
+                    }
+                arguments:
+                    NAMED_ACCESS(x)
+            }
+        }
+    }
+    internal? class C {
+        init()
+        @R|When|(os == "Windows") internal? func member(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }

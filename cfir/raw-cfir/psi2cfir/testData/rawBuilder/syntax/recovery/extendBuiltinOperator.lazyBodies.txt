@@ -1,0 +1,6 @@
+FILE: extendBuiltinOperator.cj
+    extend R|Int64| {
+        public operator func *operator_plus(o: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

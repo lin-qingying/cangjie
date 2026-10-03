@@ -1,0 +1,18 @@
+FILE: constFunc.cj
+    internal? func double(x: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(2)
+            }
+        }
+    }
+    internal? func useConst(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(double) {
+                INT(2)
+            }
+        }
+    }

@@ -1,0 +1,93 @@
+FILE: rangeStepForms.cj
+    internal? func rangeStepForms(xs: R|Array<R|Int64|>|): R|Int64| {
+        local? var t: <implicit> = ...
+            initializer:
+                INT(0)
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(1)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..=) {
+                    INT(1)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..) {
+                    INT(1)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                RANGE(..=) {
+                    INT(1)
+                    INT(10)
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+        }
+        local? let st: <implicit> = ...
+            initializer:
+                INT(2)
+        local? let a: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    INT(1)
+                    INT(10)
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(xs)
+                    indices:
+                        RANGE(..) {
+                            INT(0)
+                            INT(10)
+                        }
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(xs)
+                    indices:
+                        RANGE(..=) {
+                            INT(0)
+                            INT(10)
+                        }
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(step) {
+                    receiver:
+                        RANGE(..) {
+                            INT(1)
+                            INT(10)
+                        }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                    NAMED_ACCESS(c)
+                    NAMED_ACCESS(d)
+                }
+        RETURN {
+            NAMED_ACCESS(t)
+        }
+    }

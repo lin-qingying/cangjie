@@ -1,0 +1,4 @@
+FILE: sliceExpression.cj
+    internal? func useSlice(arr: R|Array<R|Int64|>|): R|Array<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }

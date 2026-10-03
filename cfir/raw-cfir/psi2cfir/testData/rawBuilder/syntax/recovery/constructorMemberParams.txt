@@ -1,0 +1,25 @@
+FILE: constructorMemberParams.cj
+    internal? class MemberParams {
+        internal? let a: R|Int64|
+        internal? var b: R|Int64|
+        init(a: R|<ERROR:No type for parameter>|, b: R|<ERROR:No type for parameter>|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }

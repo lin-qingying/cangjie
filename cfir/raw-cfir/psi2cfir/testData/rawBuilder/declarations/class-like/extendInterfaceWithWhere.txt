@@ -1,0 +1,36 @@
+FILE: extendInterfaceWithWhere.cj
+    internal? class Box<T> {
+        internal? let value: R|T|
+        init(value: R|T|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(value)
+            }
+        }
+        internal? func get(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }
+    extend<T> R|Box<R|T|>| {
+        internal? func dump(): R|Unit| {
+            local? let _: <implicit> = ...
+                initializer:
+                    FUNCTION_CALL(toString) {
+                        receiver:
+                            FUNCTION_CALL(get) {
+                                receiver:
+                                    <element: CfirThisReceiverExpression>
+                            }
+                    }
+        }
+    }

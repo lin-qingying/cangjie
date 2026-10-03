@@ -1,0 +1,11 @@
+FILE: optionalChainInvoke.cj
+    internal? class A {
+        init()
+        internal? func f(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? prop p: R|Int64|
+    }
+    internal? func useOptionalChain(a: R|Option<R|A|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

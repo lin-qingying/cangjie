@@ -1,0 +1,8 @@
+FILE: structStaticConst.cj
+    internal? struct S {
+        init()
+        public static let k: R|Int64|
+        internal? static func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

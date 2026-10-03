@@ -1,0 +1,9 @@
+FILE: jstringLowerCase.cj
+    internal? func jstringLowerCase(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(j)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

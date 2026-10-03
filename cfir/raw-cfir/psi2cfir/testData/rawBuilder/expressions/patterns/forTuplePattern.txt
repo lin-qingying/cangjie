@@ -1,0 +1,14 @@
+FILE: forTuplePattern.cj
+    internal? func useForTuple(arr: R|Array<R|(R|Int64|, R|String|)|>|): R|Unit| {
+        FOR_IN(<anonymous>: <implicit>) {
+            iterable:
+                NAMED_ACCESS(arr)
+            body:
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(a)
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(b)
+        }
+    }

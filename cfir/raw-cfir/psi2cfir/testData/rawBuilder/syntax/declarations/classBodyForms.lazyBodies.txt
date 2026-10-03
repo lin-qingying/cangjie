@@ -1,0 +1,60 @@
+FILE: classBodyForms.cj
+    internal? class Members {
+        internal? var instanceField: R|Int64|
+        internal? let immutableField: R|String|
+        private var privateField: R|Int64|
+        protected var protectedField: R|Int64|
+        internal var internalField: R|Int64|
+        internal? static var staticField: R|Int64|
+        internal? static let STATIC_CONST: R|Int64|
+        internal? prop readOnly: R|Int64|
+        internal? mut prop readWrite: R|Int64|
+        internal? static prop staticReadOnly: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Members|) {
+            <element: CfirLazyBlock>
+        }
+        public func method(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        private func privateMethod(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        protected func protectedMethod(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal func internalMethod(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public static func staticMethod(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_plus(other: R|Members|): R|Members| {
+            <element: CfirLazyBlock>
+        }
+        <element: CfirFinalizer>
+    }
+    internal? open class OpenBase {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func openFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public static func staticFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class RedefDerived <: R|OpenBase| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public static func staticFunc(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }

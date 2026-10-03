@@ -1,0 +1,22 @@
+FILE: varraySliceNotSupported.cj
+    internal? func varraySliceNotSupported(a: R|VArray<R|Int64|, 3>|): R|Int64| {
+        local? let s: R|Array<R|Int64|>| = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    indices:
+                        RANGE(..) {
+                            INT(0)
+                            INT(2)
+                        }
+                }
+        RETURN {
+            SUBSCRIPT {
+                receiver:
+                    NAMED_ACCESS(s)
+                indices:
+                    INT(0)
+            }
+        }
+    }

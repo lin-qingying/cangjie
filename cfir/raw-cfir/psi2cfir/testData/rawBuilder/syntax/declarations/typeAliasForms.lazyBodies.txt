@@ -1,0 +1,13 @@
+FILE: typeAliasForms.cj
+    internal? typealias Id = R|Int64|
+    internal? typealias Names = R|Array<R|String|>|
+    internal? typealias Matrix = R|Array<R|Array<R|Float64|>|>|
+    internal? typealias Handler = R|(R|Int64|, R|String|) -> R|Unit||
+    internal? typealias NamedHandler = R|(R|Int64|, R|String|) -> R|Bool||
+    internal? typealias Pair = R|(R|Int64|, R|Bool|)|
+    internal? typealias Maybe = R|Option<R|Int64|>|
+    internal? typealias Boxes = R|Array<R|Array<R|Int64|>|>|
+    internal? typealias AliasOfAlias = R|Names|
+    internal? func aliasUses(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

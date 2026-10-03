@@ -1,0 +1,7 @@
+FILE: bitwiseNotPrefix.cj
+    internal? func bitwiseNot(a: R|Int64|): R|Int64| {
+        local? let x: <implicit>
+        RETURN {
+            NAMED_ACCESS(x)
+        }
+    }

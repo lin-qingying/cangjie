@@ -1,0 +1,12 @@
+FILE: rangeStringOperands.cj
+    internal? func rangeStringOperands(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    STRING("a")
+                    STRING("b")
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

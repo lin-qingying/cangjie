@@ -1,0 +1,141 @@
+FILE: stringInterpolation.cj
+    internal? class Holder {
+        init()
+        internal? var field: R|Int64| = ...
+            initializer:
+                INT(7)
+    }
+    internal? func compute(x: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_times) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    INT(2)
+            }
+        }
+    }
+    internal? func interpolation(name: R|String|, h: R|Holder|, xs: R|Array<R|Int64|>|, x: R|Int64|): R|String| {
+        local? let plain: <implicit> = ...
+            initializer:
+                STRING("no interpolation")
+        local? let dollarOnly: <implicit> = ...
+            initializer:
+                STRING("100$ and $ not followed by brace")
+        local? let variable: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("x = ")
+                    NAMED_ACCESS(x)
+                }
+        local? let member: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("field = ")
+                    NAMED_ACCESS(field) {
+                        receiver:
+                            NAMED_ACCESS(h)
+                    }
+                }
+        local? let call: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("call = ")
+                    FUNCTION_CALL(compute) {
+                        NAMED_ACCESS(x)
+                    }
+                }
+        local? let index: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("first = ")
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(xs)
+                        indices:
+                            INT(0)
+                    }
+                }
+        local? let arithmetic: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("sum = ")
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            FUNCTION_CALL(*operator_times) {
+                                receiver:
+                                    INT(1)
+                                arguments:
+                                    INT(2)
+                            }
+                    }
+                }
+        local? let statements: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("stmt = ")
+                    ERROR_EXPR(Unsupported expression: VARIABLE)
+                }
+        local? let nested: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("nested = ")
+                    STRING_INTERPOLATION {
+                        STRING("inner ")
+                        NAMED_ACCESS(x)
+                    }
+                }
+        local? let escaped: <implicit> = ...
+            initializer:
+                STRING("escaped \${x} literal")
+        local? let multi: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    NAMED_ACCESS(name)
+                    STRING(": ")
+                    NAMED_ACCESS(x)
+                    STRING(", ")
+                    NAMED_ACCESS(field) {
+                        receiver:
+                            NAMED_ACCESS(h)
+                    }
+                    STRING(", ")
+                    FUNCTION_CALL(compute) {
+                        NAMED_ACCESS(x)
+                    }
+                }
+        local? let inMultiline: <implicit> = ...
+            initializer:
+                STRING_INTERPOLATION {
+                    STRING("
+")
+                    STRING("        multi ")
+                    NAMED_ACCESS(name)
+                    STRING(" line ")
+                    NAMED_ACCESS(x)
+                    STRING("
+")
+                    STRING("    ")
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(plain)
+                    NAMED_ACCESS(dollarOnly)
+                    NAMED_ACCESS(variable)
+                    NAMED_ACCESS(member)
+                    NAMED_ACCESS(call)
+                    NAMED_ACCESS(index)
+                    NAMED_ACCESS(arithmetic)
+                    NAMED_ACCESS(statements)
+                    NAMED_ACCESS(nested)
+                    NAMED_ACCESS(escaped)
+                    NAMED_ACCESS(multi)
+                    NAMED_ACCESS(inMultiline)
+                }
+        RETURN {
+            NAMED_ACCESS(multi)
+        }
+    }

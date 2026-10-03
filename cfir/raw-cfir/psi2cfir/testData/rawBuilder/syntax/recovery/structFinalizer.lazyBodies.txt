@@ -1,0 +1,6 @@
+FILE: structFinalizer.cj
+    internal? struct WithFinalizer {
+        init()
+        internal? var v: R|Int64|
+        <element: CfirFinalizer>
+    }

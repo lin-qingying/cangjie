@@ -1,0 +1,34 @@
+FILE: flatNestedArrayLiteral.cj
+    internal? func flatNestedLiteral(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        INT(11)
+                        INT(12)
+                        INT(13)
+                        INT(14)
+                        INT(15)
+                    }
+                    ARRAY_LITERAL {
+                        INT(21)
+                        INT(22)
+                        INT(23)
+                        INT(24)
+                        INT(25)
+                    }
+                }
+        RETURN {
+            SUBSCRIPT {
+                receiver:
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        indices:
+                            INT(1)
+                    }
+                indices:
+                    INT(1)
+            }
+        }
+    }

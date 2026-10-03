@@ -1,0 +1,6 @@
+FILE: ccharTypeUndeclared.cj
+    internal? func ccharTypeUndeclared(a: R|CPointer<R|CChar|>|): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

@@ -1,0 +1,17 @@
+FILE: thisQualifiedCall.cj
+    internal? class A {
+        init()
+        internal? func m(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        internal? func n(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(m) {
+                    receiver:
+                        <element: CfirThisReceiverExpression>
+                }
+            }
+        }
+    }

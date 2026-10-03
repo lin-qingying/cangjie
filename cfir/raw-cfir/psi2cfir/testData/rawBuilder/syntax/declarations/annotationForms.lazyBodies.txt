@@ -1,0 +1,15 @@
+FILE: annotationForms.cj
+    @R|Deprecated|("old api", <expr>, <expr>) @R|When|(os == "Windows" && arch == "x86_64") internal? class Annotated {
+        init()
+        @R|Deprecated|("field", <expr>) internal? var field: R|UInt8|
+        @R|OverflowWrapping|() public func wrapping(): R|UInt8| {
+            <element: CfirLazyBlock>
+        }
+    }
+    @R|When|(os != "Linux") @R|Deprecated|("fn", <expr>) internal? func annotatedFunc(p: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    @R|Deprecated|("top", <expr>) public let annotatedLet: R|Int64|
+    internal? func packageMacro(): R|String| {
+        <element: CfirLazyBlock>
+    }

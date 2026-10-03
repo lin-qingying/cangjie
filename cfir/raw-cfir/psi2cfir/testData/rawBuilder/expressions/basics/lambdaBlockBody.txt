@@ -1,0 +1,20 @@
+FILE: lambdaBlockBody.cj
+    internal? func useLambda(): R|Int64| {
+        local? let f: <implicit> = ...
+            initializer:
+                LAMBDA() {
+                    local? let a: <implicit> = ...
+                        initializer:
+                            INT(1)
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                        arguments:
+                            INT(1)
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(f) {
+            }
+        }
+    }

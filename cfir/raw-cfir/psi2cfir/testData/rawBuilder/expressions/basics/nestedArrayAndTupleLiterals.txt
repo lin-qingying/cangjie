@@ -1,0 +1,43 @@
+FILE: nestedArrayAndTupleLiterals.cj
+    internal? func useLiterals(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        INT(1)
+                        INT(2)
+                    }
+                    ARRAY_LITERAL {
+                        INT(3)
+                        INT(4)
+                    }
+                }
+        local? let b: R|Array<R|Array<R|Int64|>|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    ARRAY_LITERAL {
+                        INT(5)
+                    }
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                ARRAY_LITERAL {
+                    TUPLE_LITERAL {
+                        INT(1)
+                        INT(2)
+                    }
+                    TUPLE_LITERAL {
+                        INT(3)
+                        INT(4)
+                    }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(b)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(c)
+    }

@@ -1,0 +1,9 @@
+FILE: jstringUpperCase.cj
+    internal? func jstringUpperCase(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(J)
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

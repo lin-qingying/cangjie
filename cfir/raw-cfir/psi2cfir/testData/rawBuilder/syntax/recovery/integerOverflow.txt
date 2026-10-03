@@ -1,0 +1,15 @@
+FILE: integerOverflow.cj
+    internal? func integerOverflow(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                INT(99999999999999999999)
+        local? let b: <implicit> = ...
+            initializer:
+                INT(300u8)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

@@ -1,0 +1,12 @@
+FILE: varPatternInMatch.cj
+    internal? func varPatternInMatch(x: R|Any|): R|Int64| {
+        RETURN {
+            MATCH {
+                subject:
+                    NAMED_ACCESS(x)
+                BRANCH(_) {
+                    local? var v: R|Int64|
+                }
+            }
+        }
+    }

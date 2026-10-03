@@ -1,0 +1,133 @@
+FILE: classBodyForms.cj
+    internal? class Members {
+        internal? var instanceField: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? let immutableField: R|String|
+        private var privateField: R|Int64| = ...
+            initializer:
+                INT(0)
+        protected var protectedField: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal var internalField: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static var staticField: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? static let STATIC_CONST: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? prop readOnly: R|Int64|
+        internal? mut prop readWrite: R|Int64|
+        internal? static prop staticReadOnly: R|Int64|
+        init() {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(staticField)
+                rValue:
+                    INT(1)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(immutableField)
+                rValue:
+                    STRING("x")
+            }
+        }
+        init(a: R|Int64|, b: R|String|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(instanceField)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(immutableField)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+        init(other: R|Members|) {
+            FUNCTION_CALL(this) {
+                NAMED_ACCESS(instanceField) {
+                    receiver:
+                        NAMED_ACCESS(other)
+                }
+                <element: CfirNamedArgumentExpression>
+            }
+        }
+        public func method(): R|Int64| {
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(instanceField)
+                                    arguments:
+                                        NAMED_ACCESS(privateField)
+                                }
+                            arguments:
+                                NAMED_ACCESS(protectedField)
+                        }
+                    arguments:
+                        NAMED_ACCESS(internalField)
+                }
+            }
+        }
+        private func privateMethod(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        protected func protectedMethod(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+        internal func internalMethod(): R|Int64| {
+            RETURN {
+                INT(3)
+            }
+        }
+        public static func staticMethod(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(staticField)
+            }
+        }
+        public operator func *operator_plus(other: R|Members|): R|Members| {
+            RETURN {
+                NAMED_ACCESS(other)
+            }
+        }
+        <element: CfirFinalizer>
+    }
+    internal? open class OpenBase {
+        init() {
+        }
+        public open func openFunc(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+        public static func staticFunc(): R|Int64| {
+            RETURN {
+                INT(2)
+            }
+        }
+    }
+    internal? class RedefDerived <: R|OpenBase| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+        public static func staticFunc(): R|Int64| {
+            RETURN {
+                INT(3)
+            }
+        }
+    }

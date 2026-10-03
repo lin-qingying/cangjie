@@ -1,0 +1,1246 @@
+FILE: deepGenerics.cj
+    internal? class Box0<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap0<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box1<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap1<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box2<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap2<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box3<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap3<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box4<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap4<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box5<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap5<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box6<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap6<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box7<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap7<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box8<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap8<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box9<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap9<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box10<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap10<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Box11<T0, T1> {
+        internal? var a: R|T0|
+        internal? var b: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(a) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(b) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Wrap11<T0, T1> {
+        internal? var inner: R|T0|
+        internal? var other: R|T1|
+        init(a: R|T0|, b: R|T1|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(inner)
+                rValue:
+                    NAMED_ACCESS(a)
+            }
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(other)
+                rValue:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? class Leaf {
+        init() {
+        }
+    }
+    internal? func deepGenericArgs(): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+    }
+    internal? func deepGenericTypes(): R|Unit| {
+        local? let a1: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b1: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a2: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b2: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a3: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b3: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a4: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b4: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a5: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b5: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a6: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b6: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a7: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b7: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let a8: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap11) {
+                    INT(11)
+                    FUNCTION_CALL(Wrap10) {
+                        INT(10)
+                        FUNCTION_CALL(Wrap9) {
+                            INT(9)
+                            FUNCTION_CALL(Wrap8) {
+                                INT(8)
+                                FUNCTION_CALL(Wrap7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Wrap6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Wrap5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Wrap4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Wrap3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Wrap2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Wrap1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Wrap0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let b8: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Box11) {
+                    INT(11)
+                    FUNCTION_CALL(Box10) {
+                        INT(10)
+                        FUNCTION_CALL(Box9) {
+                            INT(9)
+                            FUNCTION_CALL(Box8) {
+                                INT(8)
+                                FUNCTION_CALL(Box7) {
+                                    INT(7)
+                                    FUNCTION_CALL(Box6) {
+                                        INT(6)
+                                        FUNCTION_CALL(Box5) {
+                                            INT(5)
+                                            FUNCTION_CALL(Box4) {
+                                                INT(4)
+                                                FUNCTION_CALL(Box3) {
+                                                    INT(3)
+                                                    FUNCTION_CALL(Box2) {
+                                                        INT(2)
+                                                        FUNCTION_CALL(Box1) {
+                                                            INT(1)
+                                                            FUNCTION_CALL(Box0) {
+                                                                INT(0)
+                                                                FUNCTION_CALL(Leaf) {
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        local? let leaf: R|Leaf| = ...
+            initializer:
+                FUNCTION_CALL(Leaf) {
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Wrap2) {
+                    FUNCTION_CALL(Wrap1) {
+                        FUNCTION_CALL(Wrap0) {
+                            INT(1)
+                            INT(2)
+                        }
+                        INT(3)
+                    }
+                    INT(4)
+                }
+        local? let d: R|Box0<R|Box1<R|Box2<R|Int64|, R|Int64|>|, R|Int64|>|, R|Int64|>| = ...
+            initializer:
+                FUNCTION_CALL(Box0) {
+                    FUNCTION_CALL(Box1) {
+                        FUNCTION_CALL(Box2) {
+                            INT(1)
+                            INT(2)
+                        }
+                        INT(3)
+                    }
+                    INT(4)
+                }
+        local? let e: R|Wrap2<R|Wrap1<R|Wrap0<R|Box1<R|Int64|, R|Int64|>|, R|Int64|>|, R|Int64|>|, R|Int64|>| = ...
+            initializer:
+                FUNCTION_CALL(Wrap2) {
+                    FUNCTION_CALL(Wrap1) {
+                        FUNCTION_CALL(Wrap0) {
+                            FUNCTION_CALL(Box1) {
+                                INT(1)
+                                INT(2)
+                            }
+                            INT(3)
+                        }
+                        INT(4)
+                    }
+                    INT(5)
+                }
+    }
+    internal? func <T, U>deepGenericWhere(a: R|T|, b: R|U|): R|T| {
+        RETURN {
+            NAMED_ACCESS(a)
+        }
+    }
+    internal? func <T, U, V>deepGenericWhereChain(a: R|T|, b: R|U|, c: R|V|): R|V| {
+        RETURN {
+            NAMED_ACCESS(c)
+        }
+    }

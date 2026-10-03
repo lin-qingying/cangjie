@@ -1,0 +1,10 @@
+FILE: catchTypedFinally.cj
+    internal? class E1 <: R|Exception| {
+        init()
+    }
+    internal? class E2 <: R|Exception| {
+        init()
+    }
+    internal? func f(b: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

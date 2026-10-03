@@ -1,0 +1,5 @@
+FILE: foreignNamedParam.cj
+    internal? foreign func native(x: R|Int64|): R|Int64|
+    internal? func foreignNamedParam(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

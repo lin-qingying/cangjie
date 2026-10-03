@@ -1,0 +1,11 @@
+FILE: genericOptionField.cj
+    internal? class Box<T> {
+        init()
+        private var value: R|Option<R|T|>|
+        public func get(): R|Option<R|T|>| {
+            <element: CfirLazyBlock>
+        }
+        public func put(item: R|T|): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }

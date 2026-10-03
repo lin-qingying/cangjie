@@ -1,0 +1,4 @@
+FILE: doWhileMissingCondition.cj
+    internal? func doWhileWithoutCondition(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

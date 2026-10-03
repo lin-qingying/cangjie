@@ -1,0 +1,24 @@
+FILE: privateInitCalledOutside.cj
+    internal? class C {
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        init(v: R|Int64|) {
+            ASSIGNMENT {
+                lValue:
+                    NAMED_ACCESS(v) {
+                        receiver:
+                            <element: CfirThisReceiverExpression>
+                    }
+                rValue:
+                    NAMED_ACCESS(v)
+            }
+        }
+    }
+    internal? func privateInitCalledOutside(): R|C| {
+        RETURN {
+            FUNCTION_CALL(C) {
+                INT(1)
+            }
+        }
+    }

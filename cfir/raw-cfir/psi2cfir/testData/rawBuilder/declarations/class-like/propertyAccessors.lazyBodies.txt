@@ -1,0 +1,10 @@
+FILE: propertyAccessors.cj
+    internal? class C {
+        init()
+        private var store: R|Int64|
+        public mut prop value: R|Int64|
+        public static prop counter: R|Int64|
+    }
+    internal? interface WithProp {
+        public? prop name: R|String|
+    }

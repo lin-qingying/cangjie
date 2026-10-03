@@ -1,0 +1,18 @@
+FILE: tupleReturnValue.cj
+    internal? func f(b: R|Bool|): R|(R|Int64|, R|String|)| {
+        IF {
+            condition:
+                NAMED_ACCESS(b)
+            then:
+                RETURN {
+                    TUPLE_LITERAL {
+                        INT(1)
+                        STRING("a")
+                    }
+                }
+        }
+        TUPLE_LITERAL {
+            INT(2)
+            STRING("b")
+        }
+    }

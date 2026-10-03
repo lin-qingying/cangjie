@@ -1,0 +1,6 @@
+FILE: abstractPropInClass.cj
+    internal? abstract class AbstractProps {
+        init() {
+        }
+        public abstract prop abstractProp: R|Int64|
+    }

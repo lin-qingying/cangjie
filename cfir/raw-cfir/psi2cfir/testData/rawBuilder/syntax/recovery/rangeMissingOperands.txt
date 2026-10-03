@@ -1,0 +1,16 @@
+FILE: rangeMissingOperands.cj
+    internal? func rangeMissingOperands(): R|Unit| {
+        local? let a: <implicit>
+        local? let b: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    INT(1)
+                    ERROR_EXPR(Missing range end)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

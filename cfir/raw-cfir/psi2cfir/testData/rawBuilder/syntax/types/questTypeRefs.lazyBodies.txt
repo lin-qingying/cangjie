@@ -1,0 +1,24 @@
+FILE: questTypeRefs.cj
+    internal? func optInt(a: R|Option<R|Int64|>|): R|Option<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func optArray(a: R|Array<R|Option<R|Int64|>|>|): R|Option<R|Array<R|Int64|>|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func optTuple(a: R|Option<R|(R|Int64|, R|String|)|>|): R|Option<R|(R|Int64|, R|String|)|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func optFuncParen(a: R|Option<R|(R|Int64|) -> R|Unit||>|): R|Option<R|(R|Int64|) -> R|Unit||>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func optFuncBare(a: R|Option<R|(R|Int64|) -> R|Unit||>|): R|Option<R|(R|Int64|) -> R|Unit||>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func optNested(a: R|Option<R|Int64|>|): R|Option<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? typealias Maybe<T> = R|Option<R|T|>|
+    internal? typealias MaybeList = R|Array<R|Maybe<R|Int64|>|>|
+    internal? func questTypeUses(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

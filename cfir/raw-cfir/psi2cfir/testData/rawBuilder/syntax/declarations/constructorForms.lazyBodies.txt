@@ -1,0 +1,37 @@
+FILE: constructorForms.cj
+    internal? open class Base {
+        internal? var a: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived <: R|Base| {
+        internal? var b: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|, y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Delegating {
+        internal? var v: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        init(x: R|Int64|, y: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func constructorForms(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

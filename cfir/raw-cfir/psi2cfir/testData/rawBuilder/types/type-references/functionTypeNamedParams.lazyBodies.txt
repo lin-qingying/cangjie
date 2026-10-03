@@ -1,0 +1,3 @@
+FILE: functionTypeNamedParams.cj
+    internal? typealias Handler = R|(R|String|, R|Int64|) -> R|Unit||
+    internal? typealias Bound<T> = R|(R|T|, R|T|) -> R|T||

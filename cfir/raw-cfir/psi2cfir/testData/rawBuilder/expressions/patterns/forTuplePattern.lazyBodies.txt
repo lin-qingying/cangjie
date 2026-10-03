@@ -1,0 +1,4 @@
+FILE: forTuplePattern.cj
+    internal? func useForTuple(arr: R|Array<R|(R|Int64|, R|String|)|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

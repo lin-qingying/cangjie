@@ -1,0 +1,14 @@
+FILE: lambdaNamedParameter.cj
+    internal? func lambdaNamedParameter(): R|Unit| {
+        local? let g: <implicit> = ...
+            initializer:
+                LAMBDA() {
+                    NAMED_ACCESS(a)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(g) {
+                    INT(1)
+                    <element: CfirNamedArgumentExpression>
+                }
+    }

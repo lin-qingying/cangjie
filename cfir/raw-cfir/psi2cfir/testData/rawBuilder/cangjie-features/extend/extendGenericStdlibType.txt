@@ -1,0 +1,16 @@
+FILE: extendGenericStdlibType.cj
+    extend<T> R|Array<R|T|>| {
+        internal? func dumpAll(): R|Unit| {
+            FOR_IN(<anonymous>: <implicit>) {
+                iterable:
+                    <element: CfirThisReceiverExpression>
+                body:
+                    local? let _: <implicit> = ...
+                        initializer:
+                            FUNCTION_CALL(toString) {
+                                receiver:
+                                    NAMED_ACCESS(v)
+                            }
+            }
+        }
+    }
