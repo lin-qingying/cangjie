@@ -41,10 +41,10 @@
 //        :341-355，`a = 0` / `this.a = 0` / `this.a += 1` / `this.a++` 都算赋值，**读**不算），
 //        或被父类构造器初始化过。
 //   - 同一构造器漏多个字段时只报**一条**：官方对每个漏掉的字段都会调用一次 Diagnose（:1536-1545 的循环），
-//     锚点都是同一个 `init` 首字母；去重发生在 src/Basic/DiagnosticEngine.cpp:725-723
+//     锚点都是同一个 `init` 首字母；去重发生在 src/Basic/DiagnosticEngine.cpp:725-733
 //     `ConvertOldDiagToNew` 把 `errorMessage` 置成**未替换 %s 的模板文案**，再由 :778
 //     `HasPrevDiag(d.mainHint.range.begin, d.errorMessage)` 按 (起点, 模板文案) 去重
-//     （实现 :716-723 用 `std::pair<Position, string>` 查表）——所以同一起点的多条只留第一条，
+//     （`HasPrevDiag` 实现在 :716-723，用 `std::pair<Position, string>` 查表）——所以同一起点的多条只留第一条，
 //     消息里的字段名是 `unInitNonFuncDecls` 里声明顺序最靠前的那个漏掉的字段（形态 8：漏 b、c → 报 b）。
 //   - 文案 include/cangjie/Basic/DiagnosticSema.def:191-192
 //     `ERROR(sema_class_uninitialized_field, "the uninitialized member variable '%s' is not initialized in the
