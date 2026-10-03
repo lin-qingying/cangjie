@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -54,7 +55,8 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.Diagnostics.Collection,
             LLStatisticsScopes.Diagnostics.ElementCollection,
             LLStatisticsScopes.Diagnostics.StructureBuild,
-            LLStatisticsScopes.Diagnostics.CheckerPass,
+            LLStatisticsScopes.Diagnostics.StructureElement,
+            LLStatisticsScopes.Diagnostics.Pass,
             LLStatisticsScopes.SessionCreation,
             LLStatisticsScopes.Scopes,
             LLStatisticsScopes.Deserialization,
@@ -130,9 +132,22 @@ class LLStatisticsScopesTest {
         assertEquals(LLStatisticsScopes.Diagnostics.StructureBuild.duration(), LLStatisticsMetricNames.diagnosticsStructureBuildDuration)
         assertEquals(LLStatisticsScopes.Diagnostics.StructureBuild.runs(), LLStatisticsMetricNames.diagnosticsStructureBuildRuns)
         CaDiagnosticCheckerSet.entries.forEach { set ->
-            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.duration(set), LLStatisticsMetricNames.diagnosticsCheckerPassDuration(set))
-            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.runs(set), LLStatisticsMetricNames.diagnosticsCheckerPassRuns(set))
-            assertEquals(LLStatisticsScopes.Diagnostics.CheckerPass.diagnostics(set), LLStatisticsMetricNames.diagnosticsCheckerPassDiagnostics(set))
+            assertEquals(
+                LLStatisticsScopes.Diagnostics.StructureElement.duration(set),
+                LLStatisticsMetricNames.diagnosticsStructureElementDuration(set),
+            )
+            assertEquals(
+                LLStatisticsScopes.Diagnostics.StructureElement.runs(set),
+                LLStatisticsMetricNames.diagnosticsStructureElementRuns(set),
+            )
+            assertEquals(
+                LLStatisticsScopes.Diagnostics.StructureElement.diagnostics(set),
+                LLStatisticsMetricNames.diagnosticsStructureElementDiagnostics(set),
+            )
+        }
+        DiagnosticCollectionPhase.entries.forEach { phase ->
+            assertEquals(LLStatisticsScopes.Diagnostics.Pass.duration(phase), LLStatisticsMetricNames.diagnosticsPassDuration(phase))
+            assertEquals(LLStatisticsScopes.Diagnostics.Pass.runs(phase), LLStatisticsMetricNames.diagnosticsPassRuns(phase))
         }
         CaModuleKind.entries.filter { it != CaModuleKind.UNKNOWN }.forEach { kind ->
             assertEquals(LLStatisticsScopes.SessionCreation.duration(kind), LLStatisticsMetricNames.sessionCreationDuration(kind))
@@ -159,6 +174,15 @@ class LLStatisticsScopesTest {
             CaModuleKind.UNKNOWN to (-1).toByte(),
         )
         assertEquals(expected, CaModuleKind.entries.associateWith { it.jfrCode })
+    }
+
+    /**
+     * 每个遍历阶段都必须有独立的 pass scope：漏登记会让该阶段既不记耗时也不记次数。
+     */
+    @Test
+    fun everyDiagnosticPassPhaseHasItsOwnScope() {
+        val names = DiagnosticCollectionPhase.entries.map { LLStatisticsScopes.Diagnostics.Pass.duration(it) }
+        assertEquals(DiagnosticCollectionPhase.entries.size, names.toSet().size, "每个遍历阶段必须有独立的 pass scope")
     }
 
     /**

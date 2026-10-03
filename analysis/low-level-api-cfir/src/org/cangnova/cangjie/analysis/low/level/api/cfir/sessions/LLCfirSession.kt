@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.analysis.collectors.registerDiagnosticPassTimingObserver
 import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
 import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -64,6 +65,7 @@ abstract class LLCfirSession(
             registerResolvePhaseTimingObserver(statisticsService.resolvePhases)
             registerRawBuildTimingObserver(statisticsService.rawBuild)
             registerMacroConstructionTimingObserver(statisticsService.macroConstruction)
+            registerDiagnosticPassTimingObserver(statisticsService.diagnosticPasses)
         }
     }
 

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -205,19 +206,29 @@ object LLStatisticsMetricNames {
         get() = LLStatisticsScopes.Diagnostics.StructureBuild.runs()
 
     /**
-     * `diagnostics.checkerPass.<set>.duration`：某 checker 集合的遍历耗时（毫秒）。
+     * `diagnostics.structureElement.<set>.duration`：单个 structure element 上某 checker 集合的收集耗时（毫秒）。
      */
-    fun diagnosticsCheckerPassDuration(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.duration(set)
+    fun diagnosticsStructureElementDuration(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.StructureElement.duration(set)
 
     /**
-     * `diagnostics.checkerPass.<set>.runs`：某 checker 集合的遍历次数。
+     * `diagnostics.structureElement.<set>.runs`：单个 structure element 上某 checker 集合的收集次数。
      */
-    fun diagnosticsCheckerPassRuns(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.runs(set)
+    fun diagnosticsStructureElementRuns(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.StructureElement.runs(set)
 
     /**
-     * `diagnostics.checkerPass.<set>.diagnostics`：某 checker 集合产出的诊断数。
+     * `diagnostics.structureElement.<set>.diagnostics`：某 checker 集合产出的诊断数。
      */
-    fun diagnosticsCheckerPassDiagnostics(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.CheckerPass.diagnostics(set)
+    fun diagnosticsStructureElementDiagnostics(set: CaDiagnosticCheckerSet): String = LLStatisticsScopes.Diagnostics.StructureElement.diagnostics(set)
+
+    /**
+     * `diagnostics.pass.<phase>.duration`：某阶段诊断遍历的耗时（毫秒）。
+     */
+    fun diagnosticsPassDuration(phase: DiagnosticCollectionPhase): String = LLStatisticsScopes.Diagnostics.Pass.duration(phase)
+
+    /**
+     * `diagnostics.pass.<phase>.runs`：某阶段诊断遍历的次数。
+     */
+    fun diagnosticsPassRuns(phase: DiagnosticCollectionPhase): String = LLStatisticsScopes.Diagnostics.Pass.runs(phase)
 
     /**
      * `sessionCreation.<kind>.duration`：某类模块的 session 创建耗时（毫秒）。

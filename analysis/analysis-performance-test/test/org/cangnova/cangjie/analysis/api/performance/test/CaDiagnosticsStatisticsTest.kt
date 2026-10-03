@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.performance.test
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -11,8 +12,9 @@ import org.junit.jupiter.api.Test
  * IDE 请求级诊断收集耗时统计的接线测试。
  *
  * 这是"IDE 卡顿投诉"最直接的对应物：用户在文件上按检查，等待的就是
- * `diagnostics.collection.duration`。本用例同时验证它的两个分解维度——文件结构首次构建
- * 与每个 checker 集合的遍历——确实各自留有采样，否则总耗时异常时无法定位责任方。
+ * `diagnostics.collection.duration`。本用例同时验证四个分解维度各自留有采样：文件结构首次
+ * 构建、按 checker 集合的元素级收集，以及 SEMA / POST_SEMA 两段遍历——少任何一段，总耗时
+ * 异常时都无法定位责任方。
  */
 class CaDiagnosticsStatisticsTest : AbstractAnalysisApiPerformanceTest(
     "analysis/analysis-performance-test/testData/performance"
@@ -47,12 +49,25 @@ class CaDiagnosticsStatisticsTest : AbstractAnalysisApiPerformanceTest(
         // EXTENDED_AND_COMMON 会请求 default 与 extra 两个 checker 集合。
         listOf(CaDiagnosticCheckerSet.DEFAULT, CaDiagnosticCheckerSet.EXTRA).forEach { set ->
             assertTrue(
-                points(LLStatisticsMetricNames.diagnosticsCheckerPassDuration(set)) >= 1,
-                "checker 集合 ${set.metricSuffix} 必须记录遍历耗时",
+                points(LLStatisticsMetricNames.diagnosticsStructureElementDuration(set)) >= 1,
+                "checker 集合 ${set.metricSuffix} 必须记录元素级收集耗时",
             )
             assertTrue(
-                runs(LLStatisticsMetricNames.diagnosticsCheckerPassRuns(set)) >= 1,
-                "checker 集合 ${set.metricSuffix} 必须记遍历次数",
+                runs(LLStatisticsMetricNames.diagnosticsStructureElementRuns(set)) >= 1,
+                "checker 集合 ${set.metricSuffix} 必须记元素级收集次数",
+            )
+        }
+
+        // 遍历分阶段：SEMA 常规检查必然发生；POST_SEMA 在文件无错误且集合非空时发生。
+        // 本用例的测试数据无错误，且 default filter 会装配 post-sema 组件，因此两段都应出现。
+        DiagnosticCollectionPhase.entries.forEach { phase ->
+            assertTrue(
+                points(LLStatisticsMetricNames.diagnosticsPassDuration(phase)) >= 1,
+                "遍历阶段 ${phase.name.lowercase()} 必须记录耗时",
+            )
+            assertTrue(
+                runs(LLStatisticsMetricNames.diagnosticsPassRuns(phase)) >= 1,
+                "遍历阶段 ${phase.name.lowercase()} 必须记遍历次数",
             )
         }
     }

@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticPassStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroConstructionStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLRawBuildStatistics
@@ -72,6 +73,11 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     val diagnostics: LLDiagnosticsStatistics = LLDiagnosticsStatistics(this)
 
     /**
+     * 诊断遍历分阶段耗时统计域；session 注册的遍历观察者指向该域。
+     */
+    val diagnosticPasses: LLDiagnosticPassStatistics = LLDiagnosticPassStatistics(this)
+
+    /**
      * session 创建与 scope session 统计域。
      */
     val sessions: LLSessionStatistics = LLSessionStatistics(this)
@@ -92,6 +98,7 @@ class LLStatisticsService(internal val project: Project) : Disposable {
             rawBuild,
             macroConstruction,
             diagnostics,
+            diagnosticPasses,
             sessions,
             deserialization,
         )

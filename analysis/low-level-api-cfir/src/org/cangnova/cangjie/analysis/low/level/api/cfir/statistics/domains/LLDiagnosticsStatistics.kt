@@ -68,19 +68,20 @@ class LLDiagnosticsStatistics(statisticsService: LLStatisticsService) : LLStatis
     )
 
     /**
-     * 按 checker 集合分桶的 checker 遍历直方图与计数器。
+     * 按 checker 集合分桶的"单个 structure element 完整收集"直方图与计数器。
      *
      * 只登记 [CaDiagnosticCheckerSet] 的三个单集合桶：组合 filter（`DiagnosticCheckerFilter.plus`）
-     * 在该维度上没有唯一取值，调用方对组合 filter 不上报 checkerPass，而不是硬塞进某个集合。
+     * 在该维度上没有唯一取值，调用方对组合 filter 不上报，而不是硬塞进某个集合。
+     * 单次遍历的分阶段耗时由 `LLDiagnosticPassStatistics` 负责，两者正交。
      */
-    private val checkerPasses: Map<CaDiagnosticCheckerSet, Counter> =
+    private val structureElements: Map<CaDiagnosticCheckerSet, Counter> =
         CaDiagnosticCheckerSet.entries.associateWith { set ->
-            val checkerPass = LLStatisticsScopes.Diagnostics.CheckerPass
+            val scope = LLStatisticsScopes.Diagnostics.StructureElement
             counter(
-                checkerPass.duration(set),
-                checkerPass.runs(set),
-                checkerPass.diagnostics(set),
-                "Checker pass (${set.metricSuffix})",
+                scope.duration(set),
+                scope.runs(set),
+                scope.diagnostics(set),
+                "Structure element diagnostics collection (${set.metricSuffix})",
             )
         }
 
@@ -126,10 +127,10 @@ class LLDiagnosticsStatistics(statisticsService: LLStatisticsService) : LLStatis
     fun onStructureBuildFinished(elapsedNanos: Long) = record(structureBuild, elapsedNanos, 0)
 
     /**
-     * 记录单个 structure element 上某个 checker 集合的遍历耗时与产出。
+     * 记录单个 structure element 上某个 checker 集合的完整收集耗时与产出。
      */
-    fun onCheckerPassFinished(set: CaDiagnosticCheckerSet, elapsedNanos: Long, diagnosticCount: Int) {
-        val counter = checkerPasses[set] ?: return
+    fun onStructureElementCollectionFinished(set: CaDiagnosticCheckerSet, elapsedNanos: Long, diagnosticCount: Int) {
+        val counter = structureElements[set] ?: return
         record(counter, elapsedNanos, diagnosticCount)
     }
 
