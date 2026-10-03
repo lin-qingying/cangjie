@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
@@ -257,6 +258,16 @@ object LLStatisticsMetricNames {
      */
     val deserializationClassLikeRuns: String
         get() = LLStatisticsScopes.Deserialization.ClassLike.runs()
+
+    /**
+     * `parse.<kind>.duration`：某解析入口的 PSI 解析耗时（毫秒）。
+     */
+    fun psiParseDuration(kind: CangjiePsiParseKind): String = LLStatisticsScopes.Parse.duration(kind)
+
+    /**
+     * `parse.<kind>.runs`：某解析入口的 PSI 解析次数。
+     */
+    fun psiParseRuns(kind: CangjiePsiParseKind): String = LLStatisticsScopes.Parse.runs(kind)
 
     /**
      * 判断指标名是否属于本项目的统计命名空间。

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
+import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 import org.junit.jupiter.api.Test
 
 /**
@@ -59,6 +60,7 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.Diagnostics.Pass,
             LLStatisticsScopes.SessionCreation,
             LLStatisticsScopes.Scopes,
+            LLStatisticsScopes.Parse,
             LLStatisticsScopes.Deserialization,
             LLStatisticsScopes.Deserialization.ClassLike,
             LLStatisticsScopes.SymbolProviders,
@@ -156,6 +158,10 @@ class LLStatisticsScopesTest {
         assertEquals(LLStatisticsScopes.Scopes.sessionCreated(), LLStatisticsMetricNames.scopeSessionsCreated)
         assertEquals(LLStatisticsScopes.Deserialization.ClassLike.duration(), LLStatisticsMetricNames.deserializationClassLikeDuration)
         assertEquals(LLStatisticsScopes.Deserialization.ClassLike.runs(), LLStatisticsMetricNames.deserializationClassLikeRuns)
+        CangjiePsiParseKind.entries.forEach { kind ->
+            assertEquals(LLStatisticsScopes.Parse.duration(kind), LLStatisticsMetricNames.psiParseDuration(kind))
+            assertEquals(LLStatisticsScopes.Parse.runs(kind), LLStatisticsMetricNames.psiParseRuns(kind))
+        }
     }
 
     /**
@@ -183,6 +189,15 @@ class LLStatisticsScopesTest {
     fun everyDiagnosticPassPhaseHasItsOwnScope() {
         val names = DiagnosticCollectionPhase.entries.map { LLStatisticsScopes.Diagnostics.Pass.duration(it) }
         assertEquals(DiagnosticCollectionPhase.entries.size, names.toSet().size, "每个遍历阶段必须有独立的 pass scope")
+    }
+
+    /**
+     * 每个 PSI 解析入口都必须有独立的 parse scope：漏登记会让该入口既不记耗时也不记次数。
+     */
+    @Test
+    fun everyPsiParseKindHasItsOwnScope() {
+        val names = CangjiePsiParseKind.entries.map { LLStatisticsScopes.Parse.duration(it) }
+        assertEquals(CangjiePsiParseKind.entries.size, names.toSet().size, "每个 PSI 解析入口必须有独立的 parse scope")
     }
 
     /**

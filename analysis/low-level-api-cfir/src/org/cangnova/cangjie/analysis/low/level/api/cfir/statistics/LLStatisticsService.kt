@@ -17,6 +17,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticPassStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLMacroConstructionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLParserStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLRawBuildStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLResolvePhaseStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSessionStatistics
@@ -88,6 +89,11 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     val deserialization: LLDeserializationStatistics = LLDeserializationStatistics(this)
 
     /**
+     * PSI 解析耗时统计域；以 projectService 形式注册，供 `psi` 侧的解析入口上报。
+     */
+    val parser: LLParserStatistics = LLParserStatistics(this)
+
+    /**
      * 当前服务管理的所有统计域。
      */
     internal val domains: List<LLStatisticsDomain> =
@@ -101,6 +107,7 @@ class LLStatisticsService(internal val project: Project) : Disposable {
             diagnosticPasses,
             sessions,
             deserialization,
+            parser,
         )
 
     @OptIn(CaPlatformInterface::class)
