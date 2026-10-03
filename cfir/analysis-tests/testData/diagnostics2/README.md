@@ -651,7 +651,7 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
   （`GetNonFuncDeclsInSuperClass:1577-1598`）。跳过路径：`this(...)` / `super(...)` 委托方构造器（真正被检查的是被委托到的那个）、
   `@Foreign` / `@Java` 宿主、构造器体被 `throw` 直接终止、以及字段已 `INITIALIZED`（有内联初值 / 构造器体里出现过赋值 /
   被父类构造器初始化过；**读不算赋值，lambda 体内的赋值也不算**）。一个构造器漏多个字段时官方循环会对每个字段调一次
-  `Diagnose`，但锚点相同，而 `src/Basic/DiagnosticEngine.cpp:725-723` 的 `ConvertOldDiagToNew` 把 `errorMessage` 置成
+  `Diagnose`，但锚点相同，而 `src/Basic/DiagnosticEngine.cpp:725-733` 的 `ConvertOldDiagToNew` 把 `errorMessage` 置成
   **未替换 `%s` 的模板文案**、`:778` `HasPrevDiag(起点, 模板文案)` 按这个二元组去重，所以只留一条（消息里的字段名是声明顺序里
   第一个漏掉的）。
 - **静态上下文访问**：六个报告点 `TypeCheckReference.cpp:159` / `:219`（`this` / `super` 在带 `STATIC` 的函数体里）、
@@ -695,3 +695,84 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 - 子代理改顶层名时要留意**内联标记会切断标识符**：`<!DIAG!>T<!>FCCPoint` 里的名字不是普通词边界出现，按 `sed s/TFCCPoint/…/`
   或 Python `\bTFCCPoint\b` 都会漏；改名后若 exact_check 的 UNMARKED 里冒出 `sema_not_a_type`、
   `sema_generic_type_without_type_argument` 之类"本来不该有的诊断"，基本就是这种情况。
+
+## 批次 13（2026-10-03）：operator 重载声明 / VArray 构造 / CFunc 签名三个语义夹具
+
+口径与批次 6–12 相同：期望只由官方 C++ 源码（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0）与本机 cjc 1.0.5 / 1.1.3 实测决定；
+内联标记用本项目 CFIR 名；官方有而本项目无对应名的 kind 按 SUGGESTED_DIAGNOSTIC 处理；CFIR 与官方不一致的按缺口记录，不改期望。
+三份夹具各由一个子代理独立编写，主会话逐份用同一套 exact_check 复核并修正跨段重名与锚点写法（见下表"主会话修正"）。
+
+### 新增夹具
+
+| 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
+| --- | --- | --- | --- | --- |
+| `operator/operatorOverloadDeclarationRules.cj` | `INVALID_OPERATOR_PARAMETER_COUNT`、`OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR`、`OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR`、`INVALID_SUBSCRIPT_ASSIGN_PARAMETER`、`INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM`、`INVALID_SUBSCRIPT_ASSIGN_RETURN` | 18 段 / 40 标记 | 各 40 OK / 0 DIFF / 0 未标记 | 无（头部引用的 `TypeCheckDecl.cpp:155-193 / :196-236`、`DiagnosticSema.def:54-58`、`DiagRefactor/DiagnosticSema.def:36-39` 已逐条核对；顶层名无跨段重名） |
+| `varray/varrayConstructorRules.cj` | `VARRAY_ARGS_NUMBER_MISMATCH`、`VARRAY_ARG_TYPE_WITH_REFTYPE`、`VARRAY_SUBSCRIPT_NUM`、`VARRAY_IN_CFUNC`；2 段按 SUGGESTED 处理（`sema_unknown_named_argument` 本项目无同名 CFIR 名；`sema_upper_bound_must_be_class_or_interface` 已在泛型上界夹具覆盖） | 22 段 / 18 标记 | 各 18 OK / 0 DIFF / 2 未标记（SUGGESTED 段） | ① `VCRClass` 在 10 个段同名（diagnostics2 的段是同一包里的不同文件）→ 按段改名；② `main()` 在 22 个段同名 → PSI / LightTree 路径满屏 `REDEFINITION_ENTRY`，全部改成唯一的 `func vcrMainS<n>()`；③ 头部两处过期的"`main` 未使用 CHIR 警告"描述按改名后实测改正 |
+| `interop/cfuncSignatureRules.cj` | `CFUNC_CANNOT_HAVE_NAMED_ARGS`、`CFUNC_CANNOT_HAVE_UNIT_ARGS`、`CFUNC_TOO_MANY_ARGUMENTS`、`CFUNC_TYPE`、`INVALID_CFUNC_PARAMETER_TYPE`、`INVALID_CFUNC_RETURN_TYPE`、`VARRAY_IN_CFUNC` | 20 段 / 23 标记 | 各 23 OK / 0 DIFF / 1 未标记（形态 3 的 `parse_named_parameter_after_unnamed`，parser 族伴随） | ① 子代理在 4 段里把第二个标记的锚点写成第一个标记锚点的重复（`<!A!>b<!>ad!: <!B!>bad: Unit<!>`），去标记后源码变成 `bad!: bad: Unit`，`.scratch/exact_check.py` 因此报 `diff=10`；子代理把这归因于 `verify_one.py` 的 `strip_markers` 有缺陷，实际是夹具文本写错（`strip_markers` 只做 `CFIR_MARK.sub("")` + `CFIR_END.sub("")`，行为正确）。已按官方 Range 改成**嵌套标记**（外层锚"形参名起点 → 类型终点"整段，内层只包首字符）；② 形态 1（孤立具名形参 `value!: Int64`）被子代理当成"官方零诊断"的合法对照，实测官方照报 `sema_cfunc_cannot_have_named_args`（锚 `value` 的 `v`，Range (1,27)..(1,28)），已改为正式错误形态 |
+
+### 取证结论
+
+- **operator 重载声明**（`src/Sema/TypeCheckDecl.cpp:155-193 CheckOperatorOverloadFunc`）：按**形参个数**分派。
+  0 个形参 → 必须 `IsUnaryOperator`（`BuiltInOperatorUtil.cpp:108`，查 `UNARY_EXPR_TYPE_MAP`）且宿主类型命中内建一元 →
+  `sema_operator_overload_built_in_unary_operator`（`:171`）；不是一元运算符 → `sema_operator_overload_invalid_num_parameter`（`:176`）。
+  1 个形参 → 必须 `IsBinaryOperator`（`:113`，查 `BINARY_EXPR_TYPE_MAP`），否则个数诊断（`:184`）；是二元且命中内建二元
+  → `sema_operator_overload_built_in_binary_operator`（`:187`）。≥2 个形参 → 个数诊断（`:193`）。
+  **两个表都很窄**：`+`、`==`、`**`、`!` 两张表里都没有，所以 `+` 写两个形参也报个数错；`-` 在二元表里，写一个形参合法；
+  `**` 只在内建 `Int64 ** UInt64 -> Int64`、`Float64 ** (Float64|Int64) -> Float64` 时命中内建二元。
+  `[]` 走 `:196-236 HandIndexOperatorOverload`：无形参 → 个数诊断；具名形参（`!` 语法）里不叫 `value` 的 →
+  `sema_invalid_subscript_assign_parameter`（refactor，锚第一个非法具名形参的标识符整段，其余作 hint）；
+  末位形参具名但总数 ≤ 1 → `sema_invalid_subscript_assign_parameter_num`（refactor，`MakeRange(fd.identifier)` 锚 `[]`）；
+  具名合法但返回类型不是 `Unit` → `sema_invalid_subscript_assign_return`（refactor，锚返回类型整段，无显式返回类型时锚 `[]`）。
+  **死条目**：`sema_operator_overload_can_not_has_default_param`（`DiagnosticSema.def:59`）与 `sema_unsupport_operator`（`:64`）
+  在 v1.0.0 `src/` 全仓无引用点；operator 带默认形参、`++` / `--` / `&&` / `||`、`set` 关键字都被 parser 直接拒绝
+  （`parse_expected_dot_lparen`、`parse_invalid_overloaded_operator`），本文件按"已删除的形态"记录取证。
+- **VArray 构造**：`TypeCheckBuiltinExpr.cpp:370-376 ChkVArrayArg` 在实参个数 ≠ 1 时报 `sema_varray_args_number_mismatch`，
+  锚 `MakeRange(ve.leftParenPos, ve.rightParenPos + 1)`，即**圆括号内的实参列表**，不含 `VArray` 与类型实参；
+  尾随 lambda（`VArray<T, $n> { i => i }`）走 `ve.args[0]->name.Empty()` 分支，个数仍算 1，不报。
+  `TypeCheckType.cpp:110-129 CheckVArrayType` 对元素类型调 `CheckVArrayWithRefType`，命中引用类型时
+  `sema_varray_arg_type_with_reftype`（refactor，锚整个类型实参）。`VArray` 返回值出现在 `foreign func` / `CFunc` 上时
+  走 `CFFICheck.cpp:297-300` 的 `else if` 分支报 `sema_varray_in_cfunc`（`VArray` 本身是 CType，所以**不**与
+  `sema_invalid_cfunc_return_type` 叠加）。**`VArray` 是内建类型，不需要 `import std.collection.*`**（加了反而多一条
+  `sema_unused_import` 警告——子代理纠正了任务简报里的错误说法）。
+- **CFunc / C 互操作签名**：`src/Sema/FFI/CFFICheck.cpp`。`UnsafeCheck`（`:281-302`，唯一调用点 `TypeChecker.cpp:266-268`）
+  对 `foreign` / `@C func` 的每个形参调 `CheckCFuncParam`（`:305-317`）：`fp.isNamedParam` → `sema_cfunc_cannot_have_named_args`
+  （`Diagnose(fp, …)` 非 refactor → 锚**形参首字符 1 个字符**）；`fp.ty->IsUnit()` → `sema_cfunc_cannot_have_unit_args`；
+  否则 `!IsMetCType` → `sema_invalid_cfunc_arg_type`（后两条都用显式 Range `Diagnose(fp.identifier.Begin(), fp.type->end, …)`
+  锚**形参名起点 → 类型终点整段**，所以与前一条同起点、需要嵌套标记）。返回类型 `!IsMetCType` →
+  `sema_invalid_cfunc_return_type`（refactor，锚整个返回类型节点），`VArray` 返回 → `sema_varray_in_cfunc`。
+  `CFunc<…>` 类型实参那条路径是 `CheckCFuncParamType` / `CheckCFuncReturnType`（`:319-340`），锚**类型节点**（不含形参名）；
+  `CFunc<非函数类型>` → `sema_cfunc_type`（`PreCheck.cpp:431-441`，锚类型实参整段）；
+  `CFunc<…>(…)` 构造器实参个数 ≠ 1 → `sema_cfunc_too_many_arguments`（`TypeConvExpr.cpp:49`，锚 `CFunc` 首字符 1 个字符，
+  0 个实参也用这一个 kind）。语法前提：`foreign func` 必须写返回类型（否则 parser `IS_BROKEN`）、具名形参后面
+  不能再跟无名形参（`parse_named_parameter_after_unnamed`，声明 `IS_BROKEN` ⇒ 本族零诊断）。
+- 三份夹具两版 cjc 的 kind / 文案 / Range 完全一致，均未拆 `LANGUAGE_VERSION`。
+
+### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-03 13:0x–13:5x 聚焦跑 Operator / Varray / Interop 三组）
+
+| 用例 | 官方（本用例期望） | CFIR 当前输出 |
+| --- | --- | --- |
+| `operator/operatorOverloadDeclarationRules` | `INVALID_OPERATOR_PARAMETER_COUNT` / `OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR` / `_BINARY_OPERATOR` 锚 `operator` 修饰符首字母 1 字符 | 锚整个 `operator` 关键字（8 字符），三类标记全红 |
+| `operator/operatorOverloadDeclarationRules` | `INVALID_SUBSCRIPT_ASSIGN_PARAMETER` 锚非法具名形参标识符、`_PARAM_NUM` 与 `_RETURN` 锚 `[]` 或返回类型整段 | `[]` setter 的三条**全部不产出** |
+| `operator/operatorOverloadDeclarationRules` | 官方只在返回类型与内建不一致时才有别的诊断（本文件按官方只写 built_in 一条） | 形态 7 多报 `RETURN_TYPE_INCOMPATIBLE`（CFIR 侧补充规则 `CfirOperatorDeclarationChecker.kt:140-148`）；`-` / `!` / `/` 的内建重载段还多报 `EXTEND_MEMBER_CANNOT_SHADOW` |
+| `operator/operatorOverloadDeclarationRules` | 0 形参 + 非一元运算符（`+` / `==`）→ 个数诊断 | `+` 被 CFIR 归一成 `unaryPlus`，不报个数诊断；`==` 一致 |
+| `varray/varrayConstructorRules` | 18 个标记 | PSI 与 LightTree 两条路径全部一致（绿）；额外：`VArray<Int64, $3>(item: 1)` 段官方 `sema_unknown_named_argument`（本项目无同名 CFIR 名）被改报 `NAMED_PARAMETER_NOT_FOUND`（映射到另一个官方 kind）；泛型上界段多报 `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`（官方也有，未写标记） |
+| `varray/varrayConstructorRules`（WithoutAliasExpansion 路径） | 同上 | 18 个标记一个都不产出 |
+| `interop/cfuncSignatureRules` | `CFUNC_CANNOT_HAVE_NAMED_ARGS` 锚形参首字符 1 字符 | 锚整个 `value!: Int64` / `bad!: String`，形态 1 一处、形态 2 / 5 / 8 / 9 与官方第二条同起点的段被合并成同一个范围上的两个名字（`<!CFUNC_CANNOT_HAVE_NAMED_ARGS, CFUNC_CANNOT_HAVE_UNIT_ARGS!>bad!: Unit<!>`） |
+| `interop/cfuncSignatureRules` | `INVALID_CFUNC_PARAMETER_TYPE` / `CFUNC_CANNOT_HAVE_UNIT_ARGS` 锚"形参名 → 类型终点"整段 | `foreign func` 路径只锚类型（`Rune`、`CSRSpecText`、`(Int64) -> Unit`），`CFunc<…>` 类型位置一致 |
+| `interop/cfuncSignatureRules` | 形态 3（具名形参后跟无名形参）官方只有 `parse_named_parameter_after_unnamed`，本族零诊断 | 误报 `CFUNC_CANNOT_HAVE_NAMED_ARGS`（`b!: Int64`）与 `CFUNC_CANNOT_HAVE_UNIT_ARGS`（`c: Unit`）两条 |
+| `interop/cfuncSignatureRules` | `CFUNC_TOO_MANY_ARGUMENTS` 锚 `C` 首字符 1 字符 | 锚整个 `CFunc<…>` 类型引用，2 处 |
+| `interop/cfuncSignatureRules` | `CFUNC_TYPE`（锚类型实参整段）、`VARRAY_IN_CFUNC`、`INVALID_CFUNC_RETURN_TYPE`（`?Int64`）、`CFunc<(Unit) -> Unit>` 的 Unit 形参类型 | PSI 与 LightTree 一致（绿）；嵌套标记处 CFIR 的渲染多出一个收尾 `<!>`（`…String<!><!>`），属测试框架渲染嵌套标记的已知表现 |
+| `interop/cfuncSignatureRules`（WithoutAliasExpansion 路径） | 同上 | 23 个标记一个都不产出 |
+| `operator` / `interop`（PSI 与 WithoutAliasExpansion 路径的 operator 跑） | — | operator 夹具本次聚焦跑只有 LightTree 路径执行（PSI 与 WithoutAliasExpansion 被跳过），其余两套的差异未取证 |
+
+### 环境与工具事实
+
+- `.scratch/verify_one.py` 的 `strip_markers` 行为正确（`CFIR_MARK.sub("")` 去开标记、`CFIR_END.sub("")` 去闭标记）；
+  一行里两个标记时 exact_check 报 DIFF，原因几乎都是夹具把第二个标记的锚点写成了重复文本。去标记后出现
+  `bad!: bad: Unit`、`X!: X: T` 这类**同一标识符出现两次**的源码，或多出 `sema_not_a_type` /
+  `sema_generic_type_without_type_argument` 之类"本来不该有的诊断"，就是这种错误。
+- diagnostics2 的 `// FILE:` 段是**同一包**里的不同文件：跨段重名会被 CFIR 报成 `CLASSIFIER_REDECLARATION`（类型）
+  或 `REDEFINITION_ENTRY`（`main`）。每段都写 `main()` 是常见踩法，写完要用脚本按段统计顶层声明名。
+- 一行两个官方诊断同起点时（形参名同时触发"具名"与"整段"两条），标记必须写成嵌套：外层从形参名起、内层只包首字符。
+- 后台 shell 现在**完全看不到**工作树路径（`/d/...` 与 `D:/...` 两种写法都 exit 127，只写出 141 字日志），
+  `gradlew-queue.bat` 聚焦跑改在前台执行即可（约 20 秒到 1 分半）。生成的测试组名按目录名首字母大写：`varray/` → `Varray`。
