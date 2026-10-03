@@ -18,8 +18,10 @@ services:
       # all-in-one 默认不接 OTLP，要显式打开才能当 collector 的下游。
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - "16686:16686" # UI
-      - "4317:4317" # 内部：collector 推给它，不要从宿主机直连，所以不映射到外
+      # 只暴露 UI。4317 绝不能映射到宿主机：collector 的 OTLP 接收端口也是 4317，
+      # 两者冲突会让 collector 起不来（Bind for 0.0.0.0:4317 failed: port is already allocated）。
+      # Jaeger 作为下游只需在 compose 网络内可达，由 collector 通过 otlp/jaeger 连。
+      - "16686:16686"
 
   collector:
     image: otel/opentelemetry-collector-contrib:latest
