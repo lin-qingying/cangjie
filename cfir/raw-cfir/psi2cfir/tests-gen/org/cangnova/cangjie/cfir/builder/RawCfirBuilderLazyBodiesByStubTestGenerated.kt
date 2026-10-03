@@ -153,6 +153,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray")
             }
 
+            @TestMetadata("varrayBraceInit.cj")
+            fun testVarrayBraceInit() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray/varrayBraceInit.cj")
+            }
+
             @TestMetadata("varrayTypeRef.cj")
             fun testVarrayTypeRef() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray/varrayTypeRef.cj")
@@ -1023,6 +1028,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/annotationForms.cj")
             }
 
+            @TestMetadata("builtinAnnotationForms.cj")
+            fun testBuiltinAnnotationForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/builtinAnnotationForms.cj")
+            }
+
             @TestMetadata("cInteropForms.cj")
             fun testCInteropForms() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/cInteropForms.cj")
@@ -1088,9 +1098,19 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/genericForms.cj")
             }
 
+            @TestMetadata("importGroupForms.cj")
+            fun testImportGroupForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/importGroupForms.cj")
+            }
+
             @TestMetadata("interfaceForms.cj")
             fun testInterfaceForms() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/interfaceForms.cj")
+            }
+
+            @TestMetadata("localFunctionForms.cj")
+            fun testLocalFunctionForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/localFunctionForms.cj")
             }
 
             @TestMetadata("macroCallForms.cj")
@@ -1113,6 +1133,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberInitForms.cj")
             }
 
+            @TestMetadata("memberModifierForms.cj")
+            fun testMemberModifierForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberModifierForms.cj")
+            }
+
             @TestMetadata("operatorOverloadForms.cj")
             fun testOperatorOverloadForms() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/operatorOverloadForms.cj")
@@ -1121,6 +1146,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("packageAndImportVariants.cj")
             fun testPackageAndImportVariants() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/packageAndImportVariants.cj")
+            }
+
+            @TestMetadata("primaryConstructorForms.cj")
+            fun testPrimaryConstructorForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/primaryConstructorForms.cj")
             }
 
             @TestMetadata("propAccessorForms.cj")
@@ -1251,6 +1281,11 @@ class RawCfirBuilderLazyBodiesByStubTestGenerated : AbstractRawCfirBuilderLazyBo
             @TestMetadata("letPatternForms.cj")
             fun testLetPatternForms() {
                 runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/letPatternForms.cj")
+            }
+
+            @TestMetadata("matchCaseBodyForms.cj")
+            fun testMatchCaseBodyForms() {
+                runTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/matchCaseBodyForms.cj")
             }
 
             @TestMetadata("matchForms.cj")
