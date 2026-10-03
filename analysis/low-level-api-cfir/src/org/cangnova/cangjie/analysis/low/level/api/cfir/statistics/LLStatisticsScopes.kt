@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
+import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationStage
 import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 
 /**
@@ -437,11 +438,15 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
     }
 
     /**
-     * stub 反序列化指标。
+     * 反序列化指标。
+     *
+     * 两条独立通道：`.cjo` 库与源码库混用时两者都会发生（打开工程、
+     * 补全一个库符号），必须能分开看：`.cjo` 慢在读文件还是慢在逐声明反序列化，
+     * 优化方向完全不同。
      */
     object Deserialization : LLStatisticsScope("$name.deserialization") {
         /**
-         * class-like 反序列化指标集合。
+         * class-like 反序列化指标集合（IntelliJ stub 树通道）。
          */
         object ClassLike : LLStatisticsScope("$name.classLike") {
             /**
@@ -453,6 +458,52 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              * 反序列化次数。
              */
             fun runs(): String = "$name.runs"
+        }
+
+        /**
+         * `.cjo` 反序列化指标，按阶段分桶。
+         */
+        object Cjo : LLStatisticsScope("$name.cjo") {
+            /**
+             * 反序列化阶段的耗时与次数，两段指标名一致。
+             *
+             * `runs` 的口径是"一次未命中的符号查找"，不是"一个声明"：一次查找可能反序列化
+             * 多个声明，声明数由 [Declaration.declarations] 单独给出。
+             */
+            abstract class StageMetrics(name: String) : LLStatisticsScope(name) {
+                /**
+                 * 本阶段耗时（毫秒）。
+                 */
+                fun duration(): String = "$name.duration"
+
+                /**
+                 * 本阶段执行次数。
+                 */
+                fun runs(): String = "$name.runs"
+            }
+
+            /**
+             * 取某阶段对应的 scope；新增阶段漏登记时漂移守卫会失败。
+             */
+            fun stage(stage: CfirCjoDeserializationStage): StageMetrics = when (stage) {
+                CfirCjoDeserializationStage.PACKAGE_LOAD -> PackageLoad
+                CfirCjoDeserializationStage.DECLARATION -> Declaration
+            }
+
+            /**
+             * 包加载阶段（读字节、解析 FlatBuffers 根、建上下文、初始化包 scope）。
+             */
+            object PackageLoad : StageMetrics("$name.packageLoad")
+
+            /**
+             * 按声明惰性反序列化阶段。
+             */
+            object Declaration : StageMetrics("$name.declaration") {
+                /**
+                 * 反序列化声明总数；与 [runs] 一起看才知道"慢在单次重"还是"慢在多"。
+                 */
+                fun declarations(): String = "$name.declarations"
+            }
         }
     }
 

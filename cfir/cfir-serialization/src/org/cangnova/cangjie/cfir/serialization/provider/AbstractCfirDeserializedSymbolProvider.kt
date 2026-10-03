@@ -156,9 +156,12 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
         val declIndices = deserializers.header.topLevelExtendIndices
         val declDeserializer = deserializers.createDeclDeserializer()
-        val loaded = declIndices.mapNotNull { declIndex ->
-            declDeserializer.deserializeDecl(declIndex) as? CfirExtend
-        }
+        val loaded = session.cjoDeserializationTimingObserverOrNull
+            .measureCjoDeclaration(declIndices.size) {
+                declIndices.mapNotNull { declIndex ->
+                    declDeserializer.deserializeDecl(declIndex) as? CfirExtend
+                }
+            }
 
         extendCache.putIfAbsent(packageFqName, loaded)
         return extendCache[packageFqName] ?: loaded
@@ -173,6 +176,20 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         contextCache[fullPkgName]?.let { return it }
         if (fullPkgName in missingContexts) return null
 
+        // Timing starts after the cache guard: a cache hit costs no loading, and counting it
+        // dilutes "package load duration" into "symbol query duration". The first miss on a search
+        // root also builds that root .cjo directory index (reading every .cjo header); that cost
+        // lands in the first package-load sample, which is where it belongs - it is part of
+        // "opening this library".
+        return session.cjoDeserializationTimingObserverOrNull.measureCjoPackageLoad {
+            loadDeserializersAndInitializeScope(fullPkgName)
+        }
+    }
+
+    /**
+     * The cache-miss load path of [getOrCreateDeserializers]; called inside its timing wrapper.
+     */
+    private fun loadDeserializersAndInitializeScope(fullPkgName: String): PackageDeserializers? {
         val created = loadPackageDeserializers(fullPkgName)
         if (created == null) {
             missingContexts += fullPkgName
@@ -223,18 +240,21 @@ abstract class AbstractCfirDeserializedSymbolProvider(
         val indices = deserializers.header.topLevelClassifierNameToIndices[shortName].orEmpty()
         val declDeserializer = deserializers.createDeclDeserializer()
 
-        for (declIndex in indices) {
-            val decl = declDeserializer.deserializeDecl(declIndex)
-            if (decl is CfirClassLikeDeclaration && decl.symbol is CfirClassLikeSymbol<*> && declSymbolName(
-                    decl
-                ) == shortName
-            ) {
-                val symbol = decl.symbol
-                return symbol
+        // Timing wraps the traversal, not deserializeDecl itself: the latter recurses (type
+        // parameters, supertypes and body parameters all call it again), so timing inside it
+        // counts nested declarations repeatedly and one lookup reports several samples.
+        return session.cjoDeserializationTimingObserverOrNull
+            .measureCjoDeclaration(indices.size) {
+                for (declIndex in indices) {
+                    val decl = declDeserializer.deserializeDecl(declIndex)
+                    if (decl is CfirClassLikeDeclaration && decl.symbol is CfirClassLikeSymbol<*> &&
+                        declSymbolName(decl) == shortName
+                    ) {
+                        return@measureCjoDeclaration decl.symbol
+                    }
+                }
+                null
             }
-        }
-
-        return null
     }
 
     /**
@@ -304,12 +324,14 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     ): List<CfirCallableSymbol<*>> {
         val deserializers = getOrCreateDeserializers(packageFqName.asString()) ?: return emptyList()
         val declDeserializer = deserializers.createDeclDeserializer()
-        return deserializers.header.topLevelNameToIndices[name.asString()]
-            .orEmpty()
-            .mapNotNull { declIndex ->
-                val decl = declDeserializer.deserializeDecl(declIndex)
-                (decl as? CfirCallableDeclaration)?.symbol as? CfirCallableSymbol<*>
-        }
+        val indices = deserializers.header.topLevelNameToIndices[name.asString()].orEmpty()
+        return session.cjoDeserializationTimingObserverOrNull
+            .measureCjoDeclaration(indices.size) {
+                indices.mapNotNull { declIndex ->
+                    val decl = declDeserializer.deserializeDecl(declIndex)
+                    (decl as? CfirCallableDeclaration)?.symbol as? CfirCallableSymbol<*>
+                }
+            }
     }
 
     /**

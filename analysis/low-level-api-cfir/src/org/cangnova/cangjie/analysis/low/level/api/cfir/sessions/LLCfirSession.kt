@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
 import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.registerResolvePhaseTimingObserver
+import org.cangnova.cangjie.cfir.serialization.provider.registerCjoDeserializationTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.ScopeSession
@@ -66,6 +67,7 @@ abstract class LLCfirSession(
             registerRawBuildTimingObserver(statisticsService.rawBuild)
             registerMacroConstructionTimingObserver(statisticsService.macroConstruction)
             registerDiagnosticPassTimingObserver(statisticsService.diagnosticPasses)
+            registerCjoDeserializationTimingObserver(statisticsService.deserialization)
         }
     }
 

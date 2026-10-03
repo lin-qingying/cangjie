@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationStage
 import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
@@ -258,6 +259,24 @@ object LLStatisticsMetricNames {
      */
     val deserializationClassLikeRuns: String
         get() = LLStatisticsScopes.Deserialization.ClassLike.runs()
+
+    /**
+     * `deserialization.cjo.<stage>.duration`：`.cjo` 反序列化某阶段耗时（毫秒）。
+     */
+    fun cjoDeserializationDuration(stage: CfirCjoDeserializationStage): String =
+        LLStatisticsScopes.Deserialization.Cjo.stage(stage).duration()
+
+    /**
+     * `deserialization.cjo.<stage>.runs`：`.cjo` 反序列化某阶段次数。
+     */
+    fun cjoDeserializationRuns(stage: CfirCjoDeserializationStage): String =
+        LLStatisticsScopes.Deserialization.Cjo.stage(stage).runs()
+
+    /**
+     * `deserialization.cjo.declaration.declarations`：按声明惰性反序列化的声明总数。
+     */
+    val cjoDeserializationDeclarations: String
+        get() = LLStatisticsScopes.Deserialization.Cjo.Declaration.declarations()
 
     /**
      * `parse.<kind>.duration`：某解析入口的 PSI 解析耗时（毫秒）。

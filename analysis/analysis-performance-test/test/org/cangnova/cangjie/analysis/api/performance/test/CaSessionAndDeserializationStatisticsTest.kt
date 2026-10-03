@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLSessionStatistics
+import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationStage
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -36,6 +37,8 @@ class CaSessionAndDeserializationStatisticsTest : AbstractAnalysisApiPerformance
         }
         sessions.onSessionCreated(CaModuleKind.UNKNOWN, 1_000_000L)
         deserialization.onClassLikeDeserialized(4_000_000L)
+        deserialization.onCjoDeserializationFinished(CfirCjoDeserializationStage.PACKAGE_LOAD, 9_000_000L, 0)
+        deserialization.onCjoDeserializationFinished(CfirCjoDeserializationStage.DECLARATION, 5_000_000L, 7)
 
         val countersAfter = CaPerformanceTestTelemetry.collectLongCounters()
         val pointsAfter = CaPerformanceTestTelemetry.collectHistogramPointCounts()
@@ -54,5 +57,23 @@ class CaSessionAndDeserializationStatisticsTest : AbstractAnalysisApiPerformance
         )
         assertEquals(1L, points(LLStatisticsMetricNames.deserializationClassLikeDuration), "stub 反序列化耗时")
         assertEquals(1L, runs(LLStatisticsMetricNames.deserializationClassLikeRuns), "stub 反序列化次数")
+
+        CfirCjoDeserializationStage.entries.forEach { stage ->
+            assertEquals(
+                1L,
+                points(LLStatisticsMetricNames.cjoDeserializationDuration(stage)),
+                "${stage.metricSuffix} 阶段的 .cjo 反序列化耗时",
+            )
+            assertEquals(
+                1L,
+                runs(LLStatisticsMetricNames.cjoDeserializationRuns(stage)),
+                "${stage.metricSuffix} 阶段的 .cjo 反序列化次数",
+            )
+        }
+        assertEquals(
+            7L,
+            runs(LLStatisticsMetricNames.cjoDeserializationDeclarations),
+            "包加载阶段不计入声明数，只有按声明惰性反序列化计入",
+        )
     }
 }
