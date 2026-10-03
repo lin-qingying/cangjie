@@ -32,14 +32,20 @@ processors:
 
 exporters:
   # 转给 Jaeger，由它存与渲染。CangJie 的指标全在 cangjie.* 命名空间下。
-  otlp/jaeger:
+  # 用 otlp_grpc 而非 otlp：后者在 contrib 0.161 已是弃用别名，会打 deprecation warning。
+  otlp_grpc/jaeger:
     endpoint: jaeger:4317
     tls:
       insecure: true
 
   # 落 JSON 行，离线或 CI 归档时用，不依赖 Jaeger 还在跑。
+  #
+  # 路径必须在 /tmp 下：contrib 镜像是 distroless（无 shell、非 root），它自己建不出
+  # /var/lib/otel 这样的目录，启动会直接失败：
+  #   failed to start "file" exporter: open /var/lib/otel/metrics.json: no such file or directory
+  # compose 里把宿主机目录挂到 /tmp/otel，落盘文件才拿得回来。
   file:
-    path: /var/lib/otel/metrics.json
+    path: /tmp/otel/metrics.json
 
   # 基本日志：collector 自己看到什么、收到了哪些指标，出问题时先看这里。
   #
@@ -54,7 +60,7 @@ service:
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [otlp/jaeger, file, debug]
+      exporters: [otlp_grpc/jaeger, file, debug]
   telemetry:
     logs:
       level: info
