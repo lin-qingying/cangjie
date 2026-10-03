@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationStage
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
@@ -63,6 +64,9 @@ class LLStatisticsScopesTest {
             LLStatisticsScopes.Parse,
             LLStatisticsScopes.Deserialization,
             LLStatisticsScopes.Deserialization.ClassLike,
+            LLStatisticsScopes.Deserialization.Cjo,
+            LLStatisticsScopes.Deserialization.Cjo.PackageLoad,
+            LLStatisticsScopes.Deserialization.Cjo.Declaration,
             LLStatisticsScopes.SymbolProviders,
             LLStatisticsScopes.SymbolProviders.Combined,
             LLStatisticsScopes.SymbolProviders.Combined.Classes,
@@ -158,6 +162,20 @@ class LLStatisticsScopesTest {
         assertEquals(LLStatisticsScopes.Scopes.sessionCreated(), LLStatisticsMetricNames.scopeSessionsCreated)
         assertEquals(LLStatisticsScopes.Deserialization.ClassLike.duration(), LLStatisticsMetricNames.deserializationClassLikeDuration)
         assertEquals(LLStatisticsScopes.Deserialization.ClassLike.runs(), LLStatisticsMetricNames.deserializationClassLikeRuns)
+        CfirCjoDeserializationStage.entries.forEach { stage ->
+            assertEquals(
+                LLStatisticsScopes.Deserialization.Cjo.stage(stage).duration(),
+                LLStatisticsMetricNames.cjoDeserializationDuration(stage),
+            )
+            assertEquals(
+                LLStatisticsScopes.Deserialization.Cjo.stage(stage).runs(),
+                LLStatisticsMetricNames.cjoDeserializationRuns(stage),
+            )
+        }
+        assertEquals(
+            LLStatisticsScopes.Deserialization.Cjo.Declaration.declarations(),
+            LLStatisticsMetricNames.cjoDeserializationDeclarations,
+        )
         CangjiePsiParseKind.entries.forEach { kind ->
             assertEquals(LLStatisticsScopes.Parse.duration(kind), LLStatisticsMetricNames.psiParseDuration(kind))
             assertEquals(LLStatisticsScopes.Parse.runs(kind), LLStatisticsMetricNames.psiParseRuns(kind))
@@ -268,4 +286,16 @@ class LLStatisticsScopesTest {
         }
     }
 
+    /**
+     * 每个 `.cjo` 反序列化阶段都必须有独立的 scope：漏登记会让该阶段既不记耗时也不记次数。
+     */
+    @Test
+    fun everyCjoDeserializationStageHasItsOwnScope() {
+        val names = CfirCjoDeserializationStage.entries.map { LLStatisticsScopes.Deserialization.Cjo.stage(it).name }
+        assertEquals(
+            CfirCjoDeserializationStage.entries.size,
+            names.toSet().size,
+            "每个 .cjo 反序列化阶段必须有独立的 scope",
+        )
+    }
 }
