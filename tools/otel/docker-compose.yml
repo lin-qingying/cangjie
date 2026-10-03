@@ -28,6 +28,9 @@ services:
     command: ["--config=/etc/otelcol/config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+      # 落盘目录。file exporter 只能写 /tmp（distroless 建不出 /var/lib/otel），
+      # 所以挂在 /tmp/otel 上，落盘文件才能从宿主机取回。
+      - ./otel-data:/tmp/otel
     ports:
       - "4317:4317" # 测试进程的 OtlpGrpcMetricExporter 打到这里
       - "4318:4318" # OTLP HTTP，供临时排查
