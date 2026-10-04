@@ -1,1 +1,2 @@
-tools/otel/otel-data/
+# file exporter 的落盘目录（compose 挂载 ./otel-data → 容器 /tmp/otel），不入库。
+otel-data/
