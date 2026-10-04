@@ -134,6 +134,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
         class Varray : AbstractLightTree2CfirConverterTestCase() {
             fun testSmoke() {}
 
+            @TestMetadata("varrayBraceInit.cj")
+            fun testVarrayBraceInit() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray/varrayBraceInit.cj")
+            }
+
             @TestMetadata("varrayTypeRef.cj")
             fun testVarrayTypeRef() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/cangjie-features/varray/varrayTypeRef.cj")
@@ -814,6 +819,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/importForms.cj")
         }
 
+        @TestMetadata("integerLiteralForms.cj")
+        fun testIntegerLiteralForms() {
+            doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/integerLiteralForms.cj")
+        }
+
         @TestMetadata("integers.cj")
         fun testIntegers() {
             doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/lexical/integers.cj")
@@ -926,22 +936,6 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
 
         }
 
-        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/patterns")
-        @TestDataPath("\$PROJECT_ROOT")
-        @RunWith(JUnit3RunnerWithInners::class)
-        class Patterns : AbstractLightTree2CfirConverterTestCase() {
-            fun testSmoke() {}
-
-        }
-
-        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/statements")
-        @TestDataPath("\$PROJECT_ROOT")
-        @RunWith(JUnit3RunnerWithInners::class)
-        class Statements : AbstractLightTree2CfirConverterTestCase() {
-            fun testSmoke() {}
-
-        }
-
     }
 
     @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax")
@@ -959,6 +953,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("annotationForms.cj")
             fun testAnnotationForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/annotationForms.cj")
+            }
+
+            @TestMetadata("builtinAnnotationForms.cj")
+            fun testBuiltinAnnotationForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/builtinAnnotationForms.cj")
             }
 
             @TestMetadata("cInteropForms.cj")
@@ -1001,6 +1000,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/extendForms.cj")
             }
 
+            @TestMetadata("extendStructForms.cj")
+            fun testExtendStructForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/extendStructForms.cj")
+            }
+
             @TestMetadata("functionModifiers.cj")
             fun testFunctionModifiers() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/functionModifiers.cj")
@@ -1021,9 +1025,19 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/genericForms.cj")
             }
 
+            @TestMetadata("importGroupForms.cj")
+            fun testImportGroupForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/importGroupForms.cj")
+            }
+
             @TestMetadata("interfaceForms.cj")
             fun testInterfaceForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/interfaceForms.cj")
+            }
+
+            @TestMetadata("localFunctionForms.cj")
+            fun testLocalFunctionForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/localFunctionForms.cj")
             }
 
             @TestMetadata("macroCallForms.cj")
@@ -1041,6 +1055,16 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/macroQuoteForms.cj")
             }
 
+            @TestMetadata("memberInitForms.cj")
+            fun testMemberInitForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberInitForms.cj")
+            }
+
+            @TestMetadata("memberModifierForms.cj")
+            fun testMemberModifierForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/memberModifierForms.cj")
+            }
+
             @TestMetadata("operatorOverloadForms.cj")
             fun testOperatorOverloadForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/operatorOverloadForms.cj")
@@ -1051,9 +1075,19 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/packageAndImportVariants.cj")
             }
 
+            @TestMetadata("primaryConstructorForms.cj")
+            fun testPrimaryConstructorForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/primaryConstructorForms.cj")
+            }
+
             @TestMetadata("propAccessorForms.cj")
             fun testPropAccessorForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/propAccessorForms.cj")
+            }
+
+            @TestMetadata("redefMemberForms.cj")
+            fun testRedefMemberForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/redefMemberForms.cj")
             }
 
             @TestMetadata("staticInitAndFinalizer.cj")
@@ -1074,6 +1108,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("typeAliasForms.cj")
             fun testTypeAliasForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/typeAliasForms.cj")
+            }
+
+            @TestMetadata("typeAliasSignatureForms.cj")
+            fun testTypeAliasSignatureForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/declarations/typeAliasSignatureForms.cj")
             }
 
             @TestMetadata("varDeclForms.cj")
@@ -1104,6 +1143,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/assignmentForms.cj")
             }
 
+            @TestMetadata("bitwiseCompoundAssignForms.cj")
+            fun testBitwiseCompoundAssignForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/bitwiseCompoundAssignForms.cj")
+            }
+
             @TestMetadata("blockAndParenForms.cj")
             fun testBlockAndParenForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/blockAndParenForms.cj")
@@ -1112,6 +1156,21 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("constructionForms.cj")
             fun testConstructionForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/constructionForms.cj")
+            }
+
+            @TestMetadata("controlFlowExprForms.cj")
+            fun testControlFlowExprForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/controlFlowExprForms.cj")
+            }
+
+            @TestMetadata("exceptionThrowForms.cj")
+            fun testExceptionThrowForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/exceptionThrowForms.cj")
+            }
+
+            @TestMetadata("genericCallForms.cj")
+            fun testGenericCallForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/genericCallForms.cj")
             }
 
             @TestMetadata("ifWhileForms.cj")
@@ -1129,6 +1188,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/indexAndSliceForms.cj")
             }
 
+            @TestMetadata("lambdaCallForms.cj")
+            fun testLambdaCallForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/lambdaCallForms.cj")
+            }
+
             @TestMetadata("lambdaForms.cj")
             fun testLambdaForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/lambdaForms.cj")
@@ -1144,14 +1208,29 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/letPatternForms.cj")
             }
 
+            @TestMetadata("matchCaseBodyForms.cj")
+            fun testMatchCaseBodyForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/matchCaseBodyForms.cj")
+            }
+
             @TestMetadata("matchForms.cj")
             fun testMatchForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/matchForms.cj")
             }
 
+            @TestMetadata("memberAccessForms.cj")
+            fun testMemberAccessForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/memberAccessForms.cj")
+            }
+
             @TestMetadata("multipleAssignForms.cj")
             fun testMultipleAssignForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/multipleAssignForms.cj")
+            }
+
+            @TestMetadata("nestedTypeRefForms.cj")
+            fun testNestedTypeRefForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/nestedTypeRefForms.cj")
             }
 
             @TestMetadata("numericConversionForms.cj")
@@ -1162,6 +1241,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("operatorForms.cj")
             fun testOperatorForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/operatorForms.cj")
+            }
+
+            @TestMetadata("powerOperatorForms.cj")
+            fun testPowerOperatorForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/powerOperatorForms.cj")
             }
 
             @TestMetadata("questForms.cj")
@@ -1177,6 +1261,16 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("stringTemplateForms.cj")
             fun testStringTemplateForms() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/stringTemplateForms.cj")
+            }
+
+            @TestMetadata("subscriptOperatorForms.cj")
+            fun testSubscriptOperatorForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/subscriptOperatorForms.cj")
+            }
+
+            @TestMetadata("synchronizedExprForms.cj")
+            fun testSynchronizedExprForms() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/expressions/synchronizedExprForms.cj")
             }
 
             @TestMetadata("synchronizedForms.cj")
@@ -1262,6 +1356,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/bitwiseNotPrefix.cj")
             }
 
+            @TestMetadata("ccharTypeUndeclared.cj")
+            fun testCcharTypeUndeclared() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/ccharTypeUndeclared.cj")
+            }
+
             @TestMetadata("cfuncNamedParam.cj")
             fun testCfuncNamedParam() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/cfuncNamedParam.cj")
@@ -1282,6 +1381,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/coalescingAssign.cj")
             }
 
+            @TestMetadata("collectionTypeNoImport.cj")
+            fun testCollectionTypeNoImport() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/collectionTypeNoImport.cj")
+            }
+
             @TestMetadata("constArrayInitializer.cj")
             fun testConstArrayInitializer() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/constArrayInitializer.cj")
@@ -1295,6 +1399,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("defaultParamOnUnnamed.cj")
             fun testDefaultParamOnUnnamed() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/defaultParamOnUnnamed.cj")
+            }
+
+            @TestMetadata("doWhileWithoutBrace.cj")
+            fun testDoWhileWithoutBrace() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/doWhileWithoutBrace.cj")
             }
 
             @TestMetadata("emptyMultilineString.cj")
@@ -1320,6 +1429,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("enumDuplicateConstructor.cj")
             fun testEnumDuplicateConstructor() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumDuplicateConstructor.cj")
+            }
+
+            @TestMetadata("enumEllipsisNotSupported.cj")
+            fun testEnumEllipsisNotSupported() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/enumEllipsisNotSupported.cj")
             }
 
             @TestMetadata("enumInterfaceUnimplemented.cj")
@@ -1397,6 +1511,21 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/functionTypeParamDefault.cj")
             }
 
+            @TestMetadata("genericVarianceMarker.cj")
+            fun testGenericVarianceMarker() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/genericVarianceMarker.cj")
+            }
+
+            @TestMetadata("hexOverflow.cj")
+            fun testHexOverflow() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/hexOverflow.cj")
+            }
+
+            @TestMetadata("ifAvailableBracketForm.cj")
+            fun testIfAvailableBracketForm() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/ifAvailableBracketForm.cj")
+            }
+
             @TestMetadata("immutablePropSetter.cj")
             fun testImmutablePropSetter() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/immutablePropSetter.cj")
@@ -1407,14 +1536,54 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/initCallingInit.cj")
             }
 
+            @TestMetadata("inoutParameter.cj")
+            fun testInoutParameter() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/inoutParameter.cj")
+            }
+
+            @TestMetadata("integerOverflow.cj")
+            fun testIntegerOverflow() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/integerOverflow.cj")
+            }
+
+            @TestMetadata("interfaceInit.cj")
+            fun testInterfaceInit() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/interfaceInit.cj")
+            }
+
             @TestMetadata("invalidModifierMutFunc.cj")
             fun testInvalidModifierMutFunc() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/invalidModifierMutFunc.cj")
             }
 
+            @TestMetadata("jstringLowerCase.cj")
+            fun testJstringLowerCase() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/jstringLowerCase.cj")
+            }
+
+            @TestMetadata("jstringUpperCase.cj")
+            fun testJstringUpperCase() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/jstringUpperCase.cj")
+            }
+
+            @TestMetadata("lambdaDefaultValue.cj")
+            fun testLambdaDefaultValue() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaDefaultValue.cj")
+            }
+
+            @TestMetadata("lambdaNamedParameter.cj")
+            fun testLambdaNamedParameter() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaNamedParameter.cj")
+            }
+
             @TestMetadata("lambdaWithoutArrow.cj")
             fun testLambdaWithoutArrow() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/lambdaWithoutArrow.cj")
+            }
+
+            @TestMetadata("logicalOperatorOverload.cj")
+            fun testLogicalOperatorOverload() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/logicalOperatorOverload.cj")
             }
 
             @TestMetadata("macroNamedParams.cj")
@@ -1440,6 +1609,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("mainCurriedParameterList.cj")
             fun testMainCurriedParameterList() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainCurriedParameterList.cj")
+            }
+
+            @TestMetadata("mainVariadicArgs.cj")
+            fun testMainVariadicArgs() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/mainVariadicArgs.cj")
             }
 
             @TestMetadata("mainWithModifier.cj")
@@ -1487,9 +1661,24 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/operatorNotOverloadable.cj")
             }
 
+            @TestMetadata("powerOperatorChain.cj")
+            fun testPowerOperatorChain() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/powerOperatorChain.cj")
+            }
+
+            @TestMetadata("powerOperatorRightOperand.cj")
+            fun testPowerOperatorRightOperand() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/powerOperatorRightOperand.cj")
+            }
+
             @TestMetadata("prefixIncDec.cj")
             fun testPrefixIncDec() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/prefixIncDec.cj")
+            }
+
+            @TestMetadata("privateInitCalledOutside.cj")
+            fun testPrivateInitCalledOutside() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/privateInitCalledOutside.cj")
             }
 
             @TestMetadata("quoteDollarIdentifier.cj")
@@ -1517,6 +1706,21 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/rangeStringOperands.cj")
             }
 
+            @TestMetadata("redefInstanceMember.cj")
+            fun testRedefInstanceMember() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/redefInstanceMember.cj")
+            }
+
+            @TestMetadata("resultTypeUndeclared.cj")
+            fun testResultTypeUndeclared() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/resultTypeUndeclared.cj")
+            }
+
+            @TestMetadata("staticInitInEnum.cj")
+            fun testStaticInitInEnum() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/staticInitInEnum.cj")
+            }
+
             @TestMetadata("stepFunctionCall.cj")
             fun testStepFunctionCall() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/stepFunctionCall.cj")
@@ -1530,6 +1734,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("structFinalizer.cj")
             fun testStructFinalizer() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/structFinalizer.cj")
+            }
+
+            @TestMetadata("subscriptSetUnnamedParameter.cj")
+            fun testSubscriptSetUnnamedParameter() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/subscriptSetUnnamedParameter.cj")
             }
 
             @TestMetadata("synchronizedWithoutLock.cj")
@@ -1617,6 +1826,16 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayRefTypeArg.cj")
             }
 
+            @TestMetadata("varraySliceNotSupported.cj")
+            fun testVarraySliceNotSupported() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varraySliceNotSupported.cj")
+            }
+
+            @TestMetadata("varrayTypeArgumentWithoutDollar.cj")
+            fun testVarrayTypeArgumentWithoutDollar() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/varrayTypeArgumentWithoutDollar.cj")
+            }
+
             @TestMetadata("whereOnTypeAlias.cj")
             fun testWhereOnTypeAlias() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/whereOnTypeAlias.cj")
@@ -1625,6 +1844,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("whereWithoutTypeParams.cj")
             fun testWhereWithoutTypeParams() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/whereWithoutTypeParams.cj")
+            }
+
+            @TestMetadata("withExpression.cj")
+            fun testWithExpression() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/recovery/withExpression.cj")
             }
 
         }
@@ -1638,6 +1862,11 @@ class LightTree2CfirConverterTestGenerated : AbstractLightTree2CfirConverterTest
             @TestMetadata("builtinTypeRefs.cj")
             fun testBuiltinTypeRefs() {
                 doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/builtinTypeRefs.cj")
+            }
+
+            @TestMetadata("collectionTypeRefs.cj")
+            fun testCollectionTypeRefs() {
+                doLightTree2CfirTest("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax/types/collectionTypeRefs.cj")
             }
 
             @TestMetadata("functionTypeRefs.cj")
