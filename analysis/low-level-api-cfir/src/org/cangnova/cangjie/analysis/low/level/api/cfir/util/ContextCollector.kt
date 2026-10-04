@@ -36,6 +36,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -580,6 +581,10 @@ private class ContextCollectorVisitor(
      */
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
         visitVariableLike(fieldVariable, fieldVariable.symbol, fieldVariable.initializer)
+        // 与 pattern binding 同理：字段变量要在 visitVariableLike 的清理之外入作用域。
+        if (isActive) {
+            context.storeVariable(fieldVariable, fieldVariable.moduleData.session)
+        }
     }
 
     /**
@@ -598,18 +603,43 @@ private class ContextCollectorVisitor(
                     process(patternVariable.pattern)
                 }
             }
+
+            // 绑定变量必须在 withLocalVariableBodyCompat **之外** 入作用域。
+            //
+            // 该 compat 是 `withTowerDataCleanup`：退出时把 tower 恢复成进入前的状态。
+            // 若在 `process(patternVariable.pattern)` 期间就地存储，清理会把这次存储一并回滚，
+            // 块内 `let` 绑定的名字就永远不会出现在该块的上下文快照里——
+            // 表现为解析与补全都「看不见」局部变量，且不报任何诊断。
+            if (isActive) {
+                for (binding in patternVariable.pattern.bindingVariables()) {
+                    context.storeVariable(binding, binding.moduleData.session)
+                }
+            }
         }
     }
 
     /**
      * 访问 pattern binding 变量。
+     *
+     * 存储放在 `visitVariableLike` 之后：那里的 `withLocalVariableBodyCompat` 已退出，
+     * 本方法自己的清理不会回滚这次存储。
+     *
+     * `match` 分支的绑定可以直接走到这里而不经过 [visitPatternVariable]，
+     * 因此这次存储不能省——只由 pattern variable 统一存储会让 `case Year(y) => y`
+     * 的 `y` 从作用域里消失。
      */
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {
         visitVariableLike(patternBindingVariable, patternBindingVariable.symbol, patternBindingVariable.initializer)
+        if (isActive) {
+            context.storeVariable(patternBindingVariable, patternBindingVariable.moduleData.session)
+        }
     }
 
     /**
      * 处理局部变量、字段变量和 pattern binding 变量的通用上下文收集流程。
+     *
+     * 这里**不做**入作用域存储：调用方必须在自己的 `withTowerDataCleanup` 之外存储，
+     * 否则清理会把存储回滚。作用域由 [visitPatternVariable] 与 [visitFieldVariable] 负责。
      */
     private fun visitVariableLike(
         variable: CfirDeclaration,
@@ -628,10 +658,6 @@ private class ContextCollectorVisitor(
                 dumpContext(variable, ContextKind.BODY)
                 process(initializer)
             }
-        }
-
-        if (variable is org.cangnova.cangjie.cfir.declarations.CfirVariable) {
-            context.storeVariable(variable, variable.moduleData.session)
         }
     }
 

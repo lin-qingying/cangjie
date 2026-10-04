@@ -59,15 +59,19 @@ class ScopeContextExecutionTest : AbstractAnalysisApiExecutionTest(
                 .toList()
             assertTrue(params.contains("value"), "局部作用域必须包含函数参数 value，实际 $params")
 
-            // 已知缺口：当前 LL 解析塔快照在 let 初始化之后仍未把块内局部声明写入局部作用域，
-            // 因此 `localValue` 暂不可见。该用例在低层修复后补齐正例断言，此处不写成通过。
-            val localsNow = context.compositeScope()
+            // 块内 `let` 声明在初始化之后必须进入局部作用域。
+            //
+            // 这里此前是一条**负例**断言，注释写明「底层修复后补齐正例断言」：
+            // LL 的 ContextCollector 把绑定变量的入作用域放在了 pattern variable 的
+            // `withLocalVariableBodyCompat` 清理内部，清理回滚后该名字永远不在快照里。
+            val locals = context.compositeScope()
                 .callables(setOf(Name.identifier("localValue")))
                 .filterIsInstance<CaNamedSymbol>()
+                .map { it.name.asString() }
                 .toList()
             assertTrue(
-                localsNow.isEmpty(),
-                "块内局部声明当前尚未进入解析塔快照；底层修复后此处应断言包含 localValue，实际 $localsNow",
+                locals.contains("localValue"),
+                "块内局部声明必须可见，实际 $locals",
             )
         }
     }
