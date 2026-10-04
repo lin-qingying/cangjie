@@ -199,7 +199,7 @@
 // 源码依据：`CheckCFuncParam` 对 `fp.isNamedParam` 无条件报，本形态没有别的 Sema 错误时**同样**报
 // （`HasPrevDiag` 只吞同起点同文案的重复诊断，这里是首条）。探针 cs01 / 主会话 r10 / s1 复核。
 // FILE: cfuncForeignNamedArgumentAlone.cj
-foreign func csNamedAlone(<!CFUNC_CANNOT_HAVE_NAMED_ARGS!>v<!>alue!: Int64): Unit
+foreign func csNamedAlone(<!CFUNC_CANNOT_HAVE_NAMED_ARGS!>value!: Int64<!>): Unit
 // ── 形态 2：具名形参（`name!: T`）+ 第二个形参是非 CType —— 官方**恰好两条** Sema 诊断
 // 诊断 1 sema_cfunc_cannot_have_named_args 锚 `b` 1 字符；诊断 2 sema_invalid_cfunc_arg_type
 // 锚 `bad: String` 整段。1.0.5 / 1.1.3 一致。探针 cs02。CFIR 的锚点差异见头部 (1) / (3)。
