@@ -7,6 +7,8 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockComponentManager
 import com.intellij.mock.MockProject
 import com.intellij.openapi.extensions.DefaultPluginDescriptor
+import com.intellij.openapi.util.registry.Registry
+import com.intellij.openapi.util.registry.RegistryKeyDescriptor
 import com.intellij.openapi.extensions.ExtensionDescriptor
 import com.intellij.openapi.extensions.LoadingOrder
 import com.intellij.platform.plugins.parser.impl.PluginDescriptorReaderContext
@@ -40,6 +42,23 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @Suppress("UnstableApiUsage")
 object PluginStructureProvider {
+    /**
+     * IntelliJ 平台登记 registry key 使用的扩展点全名（`com.intellij.registryKey`）。
+     */
+    private const val REGISTRY_KEY_EXTENSION_POINT: String = "com.intellij.registryKey"
+
+    /** `<registryKey>` 的 key 属性名。 */
+    private const val REGISTRY_KEY_NAME_ATTRIBUTE: String = "key"
+
+    /** `<registryKey>` 的 description 属性名。 */
+    private const val REGISTRY_KEY_DESCRIPTION_ATTRIBUTE: String = "description"
+
+    /** `<registryKey>` 的 defaultValue 属性名。 */
+    private const val REGISTRY_KEY_DEFAULT_ATTRIBUTE: String = "defaultValue"
+
+    /** `<registryKey>` 的 restartRequired 属性名。 */
+    private const val REGISTRY_KEY_RESTART_REQUIRED_ATTRIBUTE: String = "restartRequired"
+
     /**
      * headless 注册 extension/service 时使用的合成插件描述符。
      */
@@ -126,6 +145,7 @@ object PluginStructureProvider {
         registerExtensionPoints(application, pluginRelativePath, containerDescriptor)
         registerExtensionPointImplementations(application, pluginRelativePath)
         registerServices(application, pluginRelativePath, containerDescriptor)
+        registerRegistryKeys(application, pluginRelativePath)
     }
 
     /**
@@ -138,6 +158,34 @@ object PluginStructureProvider {
         registerExtensionPointImplementations(project, pluginRelativePath)
         registerServices(project, pluginRelativePath, containerDescriptor)
         registerProjectListeners(project, pluginRelativePath)
+    }
+
+    /**
+     * 登记 plugin XML 中 `<extensions defaultExtensionNs="com.intellij">` 下的 `<registryKey>` 声明。
+     *
+     * IDE 由平台的 `RegistryContributor` 完成这一步；standalone/测试宿主不加载平台插件，
+     * 因此这里从同一份描述符解析并登记，保证 `Registry.is/intValue` 在 headless 容器中
+     * 读到与 IDE 一致的 key、默认值与 restartRequired，而不是一律回退到调用点传入的默认值。
+     */
+    private fun registerRegistryKeys(application: MockApplication, pluginRelativePath: String) {
+        val pluginDescriptor = getOrCalculatePluginDescriptor(PluginDesignation(pluginRelativePath, application))
+        val registryKeyElements = pluginDescriptor.extensions[REGISTRY_KEY_EXTENSION_POINT].orEmpty()
+        if (registryKeyElements.isEmpty()) return
+        val pluginId = fakePluginDescriptor.pluginId.idString
+        Registry.mutateContributedKeys { contributed ->
+            registryKeyElements.fold(contributed) { acc, element ->
+                val attributes = element.element ?: return@fold acc
+                val key = attributes.getAttributeValue(REGISTRY_KEY_NAME_ATTRIBUTE) ?: return@fold acc
+                acc + (key to RegistryKeyDescriptor(
+                    key,
+                    attributes.getAttributeValue(REGISTRY_KEY_DESCRIPTION_ATTRIBUTE).orEmpty(),
+                    attributes.getAttributeValue(REGISTRY_KEY_DEFAULT_ATTRIBUTE) ?: "false",
+                    attributes.getAttributeValue(REGISTRY_KEY_RESTART_REQUIRED_ATTRIBUTE).toBoolean(),
+                    false,
+                    pluginId,
+                ))
+            }
+        }
     }
 
     /**

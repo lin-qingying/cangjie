@@ -44,7 +44,9 @@ class CangjieServerContext(
     /**
      * 串行执行语义请求的请求执行器。
      */
-    val requestExecutor: CangjieRequestExecutor = CangjieRequestExecutor(),
+    val requestExecutor: CangjieRequestExecutor = CangjieRequestExecutor(
+        statistics = CangjieRequestStatistics.forProject(environment.project),
+    ),
     analysisFacadeFactory: (CangjieAnalysisLifecycleContext) -> CangjieAnalysisFacade,
 ) : AutoCloseable {
     /**
@@ -144,7 +146,7 @@ class CangjieServerContext(
         if (!enabledFeatures.diagnostics) return
 
         documentStore.all().forEach { document ->
-            requestExecutor.compute {
+            requestExecutor.compute(CangjieLspRequest.PUBLISH_DIAGNOSTICS) {
                 val diagnostics = collectDiagnostics(document)
                 publishDiagnostics(document, diagnostics)
             }.join()

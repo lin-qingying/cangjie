@@ -286,6 +286,7 @@ fun resolveAndCheckCfirAfterConstruction(
         session.annotationMetadataRegistryOrNull?.freeze()
         return MacroConstructionResult.Failed(registry) to null
     }
+    // 展开耗时由 MacroConstructionService.expand 模板方法统一统计。
     val result = constructionService.expand(
         pre = pre,
         context = context,

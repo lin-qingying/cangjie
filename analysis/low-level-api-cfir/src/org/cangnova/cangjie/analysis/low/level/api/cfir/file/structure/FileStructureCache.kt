@@ -9,6 +9,7 @@ import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.psi.CjFile
 import java.util.concurrent.ConcurrentMap
+import kotlin.time.TimeSource
 
 /**
  * Caches [FileStructure] instances for an [LLResolutionFacade][org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade].
@@ -26,7 +27,17 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
      * 返回指定 PSI 文件的 file structure，缺失时构建并缓存。
      */
     fun getFileStructure(cjFile: CjFile): FileStructure = cache.computeIfAbsent(cjFile) {
-        FileStructure.build(cjFile, moduleResolveComponents)
+        val statistics = moduleResolveComponents.globalResolveComponents.diagnosticsStatistics
+        if (statistics == null) return@computeIfAbsent FileStructure.build(cjFile, moduleResolveComponents)
+
+        // 只在缓存未命中时计时：命中意味着结构早已建好，把它算进本次请求会虚增结构构建成本。
+        statistics.onStructureBuildStarted()
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            FileStructure.build(cjFile, moduleResolveComponents)
+        } finally {
+            statistics.onStructureBuildFinished(startedAt.elapsedNow().inWholeNanoseconds)
+        }
     }
 
     /**

@@ -17,7 +17,10 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.session.importBindingStore
+import org.cangnova.cangjie.cfir.session.resolvePhaseTimingObserverOrNull
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirImportResolveTransformer
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
+import org.cangnova.cangjie.cfir.resolve.transformers.measurePhase
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -163,7 +166,12 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
             val transformer = CfirImportResolveTransformer(session, session.diagnosticReporter)
             if (cfirFile.resolvePhase < CfirResolvePhase.IMPORTS) {
                 lockProvider.withWriteLock(cfirFile, CfirResolvePhase.IMPORTS) {
-                    cfirFile.transformSingle(transformer, null)
+                    // 按需解析没有阶段循环，IMPORTS 在这里单独推进并计时；
+                    // 被推进的是文件本身，而 CfirFile 也是 CfirDeclaration，故记 1 个声明。
+                    val work = CfirResolvePhaseWork(files = 0, declarations = 1)
+                    session.resolvePhaseTimingObserverOrNull.measurePhase(CfirResolvePhase.IMPORTS, work) {
+                        cfirFile.transformSingle(transformer, null)
+                    }
                 }
             }
             // withWriteLock 对已达到 IMPORTS 的文件会跳过 action；owner session 仍需补录自己的 binding。
@@ -209,17 +217,23 @@ internal class LLCfirModuleLazyDeclarationResolver(val moduleComponents: LLCfirM
         if (checkAnalysisReadiness(target.target, target.path, toPhase, currentPhase)) return
 
         val helper = LLCfirResolutionActivityTracker.getInstance()
+        val timingObserver = moduleComponents.session.resolvePhaseTimingObserverOrNull
+        // 按需解析推进的是单个 designation，负载以其中被解析的声明数衡量。
+        val work = CfirResolvePhaseWork(files = 0, declarations = target.declarationCount())
         try {
             helper.beforeLazyResolve()
 
             while (currentPhase < toPhase) {
-                currentPhase = currentPhase.next
+                val phase = currentPhase.next
+                currentPhase = phase
                 checkCanceled()
 
-                LLCfirLazyResolverRunner.runLazyResolverByPhase(
-                    phase = currentPhase,
-                    target = target,
-                )
+                timingObserver.measurePhase(phase, work) {
+                    LLCfirLazyResolverRunner.runLazyResolverByPhase(
+                        phase = phase,
+                        target = target,
+                    )
+                }
             }
         } finally {
             helper.afterLazyResolve()

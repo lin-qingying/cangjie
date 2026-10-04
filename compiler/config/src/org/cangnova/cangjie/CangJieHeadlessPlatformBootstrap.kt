@@ -7,6 +7,7 @@ import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupManagerImpl
 import com.intellij.codeInsight.multiverse.EditorContextManager
 import com.intellij.core.CoreApplicationEnvironment
+import com.intellij.diagnostic.LoadingState
 import com.intellij.lang.ASTNode
 import com.intellij.lang.MetaLanguage
 import com.intellij.lang.LanguageExtensionPoint
@@ -111,6 +112,20 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerApplicationExtensionPoints(applicationEnvironment.application.extensionArea)
         registerCangJiePsiInfrastructure(applicationEnvironment)
         registerApplicationServices(applicationEnvironment)
+        advanceLoadingStateToComponentsLoaded()
+    }
+
+    /**
+     * 组件注册完成后把全局加载状态推进到 `COMPONENTS_LOADED`。
+     *
+     * IDE 启动流程会在此之后推进该状态；headless 容器不走启动流程，若不推进，
+     * `Registry.is/intValue` 会直接回退到调用点传入的默认值，读不到描述符中登记的 registry key。
+     * 这里补齐这一步，使 headless 与 IDE 对 registry key 的读取行为一致。
+     */
+    private fun advanceLoadingStateToComponentsLoaded() {
+        if (!LoadingState.COMPONENTS_LOADED.isOccurred) {
+            LoadingState.setCurrentState(LoadingState.COMPONENTS_LOADED)
+        }
     }
 
     /**

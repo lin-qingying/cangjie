@@ -52,13 +52,13 @@ abstract class AbstractDiagnosticCollector(
         cfirDeclaration: CfirDeclaration,
         reporter: PendingDiagnosticReporter,
         components: DiagnosticCollectorComponents,
-    ): String? {
+    ): String? = session.diagnosticPassTimingObserverOrNull.measureDiagnosticPass(components.phase) {
         val visitor = createVisitor(components, reporter)
         visitor.checkSettings()
         session.lazyDeclarationResolver.disableLazyResolveContractChecksInside {
             cfirDeclaration.accept(visitor, null)
         }
-        return visitor.context.containingFilePath
+        visitor.context.containingFilePath
     }
 
     /** 仅执行不依赖具体声明节点的 session/语言设置诊断检查。 */
