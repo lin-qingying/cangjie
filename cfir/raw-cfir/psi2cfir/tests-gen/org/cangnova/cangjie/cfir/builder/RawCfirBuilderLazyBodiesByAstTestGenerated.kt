@@ -985,26 +985,6 @@ class RawCfirBuilderLazyBodiesByAstTestGenerated : AbstractRawCfirBuilderLazyBod
 
         }
 
-        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/patterns")
-        @TestDataPath("\$PROJECT_ROOT")
-        @RunWith(JUnit3RunnerWithInners::class)
-        class Patterns : AbstractRawCfirBuilderLazyBodiesByAstTest() {
-            fun testAllFilesPresentInPatterns() {
-                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/patterns")
-            }
-
-        }
-
-        @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/statements")
-        @TestDataPath("\$PROJECT_ROOT")
-        @RunWith(JUnit3RunnerWithInners::class)
-        class Statements : AbstractRawCfirBuilderLazyBodiesByAstTest() {
-            fun testAllFilesPresentInStatements() {
-                assertAllFilesPresentByMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/recovery/statements")
-            }
-
-        }
-
     }
 
     @TestMetadata("cfir/raw-cfir/psi2cfir/testData/rawBuilder/syntax")
