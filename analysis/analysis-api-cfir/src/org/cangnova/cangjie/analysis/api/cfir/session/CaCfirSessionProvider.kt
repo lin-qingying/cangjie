@@ -3,11 +3,14 @@ package org.cangnova.cangjie.analysis.api.cfir.session
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.LowMemoryWatcher
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.utils.CaCfirCacheCleaner
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.CangJieAnalysisInWriteActionListener
 import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
@@ -17,6 +20,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDec
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationListener
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
@@ -27,6 +32,12 @@ import java.util.concurrent.ConcurrentHashMap
  * 1. 根据 use-site 元素或模块选择对应 Analysis API session。
  * 2. 维护 Analysis API session 级缓存。
  * 3. 把失效请求同步到底层 `CaCfirResolutionFacadeService`。
+ * 4. 维护 Analysis API 统计域与强制缓存清理器：取得 session 前进入缓存清理器的分析域，
+ *    离开分析时归还；低内存事件则调度一次 stop-the-world 清理。
+ *
+ * 缓存清理器要求进入与离开成对（见 `CaCfirCacheCleaner`）：本 provider 的批量入口
+ * `analyzeElements` / `analyzeModules` 先按 use-site module 分组，每个 module 恰好一次
+ * `getAnalysisSession` 与一次 `afterLeavingAnalysis`，因此批量路径同样成对。
  *
  * 具体的 CFIR session 构建、Raw CFIR 生成与 resolve 流程全部留在 low-level 模块中。
  */
@@ -54,6 +65,39 @@ class CaCfirSessionProvider(
     }
 
     /**
+     * low-level analysis session 统计域；统计开关关闭或缺少 OpenTelemetry 实例时为 `null`。
+     */
+    @CaCachedService
+    private val analysisSessionStatistics: LLAnalysisSessionStatistics? by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLStatisticsService.getInstance(project)?.analysisSessions
+    }
+
+    /**
+     * 强制场景下的 low-level session 缓存清理器（对齐 Kotlin `KaFirCacheCleaner`）。
+     */
+    @CaCachedService
+    private val cacheCleaner: CaCfirCacheCleaner by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        CaCfirCacheCleaner.getInstance(project)
+    }
+
+    /**
+     * 低内存事件监听器；provider 释放时必须停止，避免监听器继续持有已释放的 provider。
+     */
+    private val lowMemoryWatcher: LowMemoryWatcher = LowMemoryWatcher.register(::handleLowMemoryEvent)
+
+    /**
+     * 低内存时调度一次 stop-the-world 缓存清理。
+     *
+     * 真正的清理由 [cacheCleaner] 在所有进行中的分析退出后执行；这里只递交请求。
+     *
+     * 与 Kotlin `KaFirSessionProvider.handleLowMemoryEvent` 的差异：Kotlin 侧还会顺带做
+     * Caffeine 缓存维护与 session 结构 GraphML 导出，仓颉侧这两项尚未对齐，不在本职责内。
+     */
+    private fun handleLowMemoryEvent() {
+        cacheCleaner.scheduleCleanup()
+    }
+
+    /**
      * 根据 use-site PSI 元素获取 Analysis API session。
      */
     override fun getAnalysisSession(useSiteElement: CjElement): CaSession {
@@ -68,49 +112,81 @@ class CaCfirSessionProvider(
         ProgressManager.checkCanceled()
         flushDeferredModificationsIfInsideWriteAction()
 
-        val session = cache.getOrPut(useSiteModule) {
-            createAnalysisSession(useSiteModule)
-        }
+        // 必须在取得 session 之前进入缓存清理器的分析域：
+        // 否则刚拿到的 session 可能被并发执行的强制清理立即失效。
+        cacheCleaner.enterAnalysis()
+        try {
+            val session = cache.getOrPut(useSiteModule) {
+                createAnalysisSession(useSiteModule)
+            }
 
-        checkSessionValidity(session)
-        return session
+            checkSessionValidity(session)
+            return session
+        } catch (e: Throwable) {
+            cacheCleaner.exitAnalysis()
+            throw e
+        }
     }
 
     /**
      * 进入基于 PSI 元素的分析前发布写动作分析事件。
      */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement) {
-        super.beforeEnteringAnalysis(session, useSiteElement)
-        publishEnteringAnalysisInWriteActionIfNeeded()
+        try {
+            analysisSessionStatistics?.analyzeCallCounter?.add(1)
+            super.beforeEnteringAnalysis(session, useSiteElement)
+            publishEnteringAnalysisInWriteActionIfNeeded()
+        } catch (e: Throwable) {
+            // getAnalysisSession 已进入缓存清理器的分析域，进入阶段失败时必须在这里归还。
+            cacheCleaner.exitAnalysis()
+            throw e
+        }
     }
 
     /**
      * 进入基于模块的分析前发布写动作分析事件。
      */
     override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule) {
-        super.beforeEnteringAnalysis(session, useSiteModule)
-        publishEnteringAnalysisInWriteActionIfNeeded()
+        try {
+            analysisSessionStatistics?.analyzeCallCounter?.add(1)
+            super.beforeEnteringAnalysis(session, useSiteModule)
+            publishEnteringAnalysisInWriteActionIfNeeded()
+        } catch (e: Throwable) {
+            // getAnalysisSession 已进入缓存清理器的分析域，进入阶段失败时必须在这里归还。
+            cacheCleaner.exitAnalysis()
+            throw e
+        }
     }
 
     /**
      * 离开基于 PSI 元素的分析后发布写动作分析事件。
      */
     override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement) {
-        try {
-            super.afterLeavingAnalysis(session, useSiteElement)
-        } finally {
-            publishAfterLeavingAnalysisInWriteActionIfNeeded()
-        }
+        afterLeavingAnalysisImpl { super.afterLeavingAnalysis(session, useSiteElement) }
     }
 
     /**
      * 离开基于模块的分析后发布写动作分析事件。
      */
     override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule) {
+        afterLeavingAnalysisImpl { super.afterLeavingAnalysis(session, useSiteModule) }
+    }
+
+    /**
+     * 离开分析域的公共收尾：基类回收 lifetime、发布写动作事件，最后退出缓存清理器的分析域。
+     *
+     * 退出必须位于最外层 `finally`：基类回收或平台事件发布抛错时，
+     * 同样要归还进入计数，否则挂起的清理将永远无法执行。
+     */
+    private inline fun afterLeavingAnalysisImpl(superCall: () -> Unit) {
         try {
-            super.afterLeavingAnalysis(session, useSiteModule)
+            try {
+                superCall()
+            } finally {
+                publishAfterLeavingAnalysisInWriteActionIfNeeded()
+            }
         } finally {
-            publishAfterLeavingAnalysisInWriteActionIfNeeded()
+            cacheCleaner.exitAnalysis()
         }
     }
 
@@ -155,6 +231,27 @@ class CaCfirSessionProvider(
     }
 
     /**
+     * 按 use-site module 逐个进入分析域。
+     *
+     * CFIR 的 Analysis API session 按 use-site module 一一缓存（见 [cache]），因此不同 module
+     * 不会共享同一个 session，基类"先取得全部 session、再按 session 分组"的做法在这里没有收益，
+     * 却会让批量入口在某个 module 的进入阶段抛错时留下未配对的缓存清理器进入计数。
+     * 逐 module 进入既与基类语义等价（每个 module 各自进入、退出一次分析域），又保证
+     * `getAnalysisSession` 与 `afterLeavingAnalysis` 严格成对。
+     */
+    override fun <R> analyzeModules(useSiteModules: Collection<CaModule>, action: CaSession.(CaModule) -> R): List<R> {
+        if (useSiteModules.isEmpty()) return emptyList()
+
+        val results = arrayOfNulls<Any?>(useSiteModules.size)
+        useSiteModules.forEachIndexed { index, useSiteModule ->
+            results[index] = analyze(useSiteModule) { action(useSiteModule) }
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return results.map { it as R }
+    }
+
+    /**
      * 清空当前 provider 管理的全部 session 缓存。
      */
     override fun clearCaches() {
@@ -165,6 +262,7 @@ class CaCfirSessionProvider(
      * provider 释放时清空 session 缓存。
      */
     override fun dispose() {
+        lowMemoryWatcher.stop()
         clearCaches()
     }
 

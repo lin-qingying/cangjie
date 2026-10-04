@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.*
@@ -51,6 +52,7 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
 import org.cangnova.cangjie.utils.ifNotEmpty
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import kotlin.time.TimeSource
 
 /**
  * typealias 反序列化后处理函数。
@@ -89,6 +91,15 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      * 当前会话的仓颉作用域提供器，用于类和成员反序列化。
      */
     private val cangjieScopeProvider: CfirCangJieScopeProvider get() = session.cangjieScopeProvider
+
+    /**
+     * stub 反序列化统计域；统计未启用时为 `null`。
+     *
+     * 延迟解析：符号提供器在 session 构造期就被创建，而工程级统计服务此时可能还没注册好。
+     */
+    private val deserializationStatistics by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(session).deserializationStatistics
+    }
     /**
      * 当前低阶 CFIR 模块数据。
      */
@@ -263,6 +274,31 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         if (declaration !is CjTypeStatement) return null
 
         checkDeclarationAndContextConsistency(declaration, parentContext)
+
+        // 库 class-like 符号首次被查询时才走到这里，因此这里就是"首次触碰延迟"的真实成本：
+        // 一次类型解析可能触发一整棵嵌套类的反序列化。只在缓存未命中时计时。
+        val statistics = deserializationStatistics
+        if (statistics == null) return deserializeClass(classId, declaration, parentContext)
+
+        statistics.onClassLikeDeserializationStarted()
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            return deserializeClass(classId, declaration, parentContext)
+        } finally {
+            statistics.onClassLikeDeserialized(startedAt.elapsedNow().inWholeNanoseconds)
+        }
+    }
+
+    /**
+     * 实际执行 class-like 符号的 stub 反序列化；由 [findAndDeserializeClass] 在计时包装内调用。
+     */
+    private fun deserializeClass(
+        classId: ClassId,
+        declaration: CjClassLikeDeclaration,
+        parentContext: StubBasedCfirDeserializationContext?,
+    ): CfirClassLikeSymbol<*>? {
+        // 调用方已判过，这里再收窄一次：deserializeClassToSymbol 只接受 type statement。
+        if (declaration !is CjTypeStatement) return null
 
         val symbol = createClassLikeSymbol(classId, declaration)
         deserializeClassToSymbol(

@@ -154,7 +154,7 @@ class CangjieLanguageServer(
         // 在构造 server context 之前先落库标准库/库搜索路径，避免任何懒初始化的 analysis 组件捕获到空搜索路径。
         LspProjectConfiguration.fromInitializeParams(params).applyLibrarySearchProperties()
 
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.INITIALIZE) {
             serverContext.client = connectedClient
             serverContext.workspaceState.initialize(params)
             serverContext.refreshProjectStructure()

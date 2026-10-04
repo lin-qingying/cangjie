@@ -212,6 +212,28 @@ fun buildMacroSymbolIndex(
     macroArtifactDefinitions: List<MacroDefinitionEntry> = emptyList(),
     builtinMacros: List<Name> = BuiltinMacroRegistry.all,
 ): MacroSymbolIndex {
+    // construction 阶段 1/3：符号索引构建。宏密集工程的索引构建本身就是瓶颈之一，
+    // 不计时会让"卡在索引构建"被误读成"展开很快"。
+    val observer = pre.session.macroConstructionTimingObserverOrNull
+    return observer.measureMacroConstructionStage(
+        stage = CfirMacroConstructionStage.SYMBOL_INDEX,
+        fileCount = pre.size,
+        surfaceCount = pre.allSurfaces.size,
+    ) {
+        buildMacroSymbolIndexContent(pre, libraryDefinitions, sharedBuiltinDefinitions, macroArtifactDefinitions, builtinMacros)
+    }
+}
+
+/**
+ * [buildMacroSymbolIndex] 的实际索引构建逻辑；由 [buildMacroSymbolIndex] 在计时包装内调用。
+ */
+private fun buildMacroSymbolIndexContent(
+    pre: PreMacroRawBuildResult,
+    libraryDefinitions: List<MacroDefinitionEntry>,
+    sharedBuiltinDefinitions: List<MacroDefinitionEntry>,
+    macroArtifactDefinitions: List<MacroDefinitionEntry>,
+    builtinMacros: List<Name>,
+): MacroSymbolIndex {
     val sourceEntries = collectSourceMacroDefinitions(pre)
     val builtinEntries = builtinMacros.map { name ->
         MacroDefinitionEntry(

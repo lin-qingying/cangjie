@@ -32,4 +32,7 @@ dependencies {
     // 项目模型
     api("com.jetbrains.intellij.platform:project-model:$intellijVersion") { isTransitive = false }
     api("com.jetbrains.intellij.platform:project-model-impl:$intellijVersion") { isTransitive = false }
+    // 对齐 Kotlin dependencies/intellij-core：平台运行时只保留一份 OpenTelemetry API，
+    // 供 analysis-api 统计后端（CangJieGlobalOpenTelemetryProvider）在 IDE 运行时解析；不参与编译传递。
+    runtimeOnly("io.opentelemetry:opentelemetry-api:1.39.0") { isTransitive = false }
 }

@@ -373,6 +373,26 @@ fun bindMacroImports(
     defaultMacroImports: List<FqName> = emptyList(),
     builtinRegistries: MacroBuiltinRegistries = MacroBuiltinRegistries.DEFAULT,
 ): MacroResolutionContext {
+    // construction 阶段 2/3：import 绑定。
+    val observer = pre.session.macroConstructionTimingObserverOrNull
+    return observer.measureMacroConstructionStage(
+        stage = CfirMacroConstructionStage.IMPORT_BINDING,
+        fileCount = pre.size,
+        surfaceCount = pre.allSurfaces.size,
+    ) {
+        bindMacroImportsContent(pre, symbolIndex, defaultMacroImports, builtinRegistries)
+    }
+}
+
+/**
+ * [bindMacroImports] 的实际绑定逻辑；由 [bindMacroImports] 在计时包装内调用。
+ */
+private fun bindMacroImportsContent(
+    pre: PreMacroRawBuildResult,
+    symbolIndex: MacroSymbolIndex,
+    defaultMacroImports: List<FqName>,
+    builtinRegistries: MacroBuiltinRegistries,
+): MacroResolutionContext {
     val bindings = mutableListOf<MacroImportBinding>()
     val packageAliases = mutableMapOf<Name, FqName>()
     val aliasTargets = mutableMapOf<Name, MutableSet<FqName>>()

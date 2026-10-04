@@ -10,11 +10,17 @@ import org.cangnova.cangjie.analysis.api.platform.lifetime.ModificationTrackerWi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.common.moduleData
+import org.cangnova.cangjie.cfir.analysis.collectors.registerDiagnosticPassTimingObserver
+import org.cangnova.cangjie.cfir.builder.registerRawBuildTimingObserver
+import org.cangnova.cangjie.cfir.resolve.providers.macro.registerMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.registerResolvePhaseTimingObserver
+import org.cangnova.cangjie.cfir.serialization.provider.registerCjoDeserializationTimingObserver
 import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLongFieldUpdater
 import kotlin.time.TimeSource
@@ -55,6 +61,14 @@ abstract class LLCfirSession(
 ) : CfirSession(kind) {
     init {
         register(CfirBuiltinTypes::class, builtinTypes)
+        // 统计可用时挂上语义解析阶段耗时观察者；统计未启用（无 provider 或开关关闭）时不注册，解析路径零开销。
+        LLStatisticsService.getInstance(caModule.project)?.let { statisticsService ->
+            registerResolvePhaseTimingObserver(statisticsService.resolvePhases)
+            registerRawBuildTimingObserver(statisticsService.rawBuild)
+            registerMacroConstructionTimingObserver(statisticsService.macroConstruction)
+            registerDiagnosticPassTimingObserver(statisticsService.diagnosticPasses)
+            registerCjoDeserializationTimingObserver(statisticsService.deserialization)
+        }
     }
 
     /**

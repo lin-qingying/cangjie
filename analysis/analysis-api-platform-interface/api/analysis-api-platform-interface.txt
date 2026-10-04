@@ -455,6 +455,10 @@ CaStatisticsService.public fun start()
 CaStatisticsService.public companion object
 CaStatisticsService.Companion.public val areStatisticsEnabled: Boolean
 CaStatisticsService.Companion.public fun getInstance(project: Project): CaStatisticsService?
+## org/cangnova/cangjie/analysis/api/platform/statistics/CangJieGlobalOpenTelemetryProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.statistics
+public class CangJieGlobalOpenTelemetryProvider : CangJieOpenTelemetryProvider
+CangJieGlobalOpenTelemetryProvider.public override val openTelemetry: OpenTelemetry
 ## org/cangnova/cangjie/analysis/api/platform/statistics/CangJieOpenTelemetryProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.statistics
 public interface CangJieOpenTelemetryProvider : CaOptionalPlatformComponent

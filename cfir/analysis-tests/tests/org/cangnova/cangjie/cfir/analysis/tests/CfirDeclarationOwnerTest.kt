@@ -54,7 +54,7 @@ import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.config.moduleName
 import org.cangnova.cangjie.config.useLightTree
-import org.cangnova.cangjie.frontend.pipeline.CfirFrontendPipelinePhase
+import org.cangnova.cangjie.frontend.pipeline.cfirFrontendPipeline
 import org.cangnova.cangjie.frontend.pipeline.ConfigurationPipelineArtifact
 import org.cangnova.cangjie.frontend.pipeline.DefaultCfirFrontendPipelineArtifact
 import org.cangnova.cangjie.lexer.CangJieLexer
@@ -239,7 +239,7 @@ class CfirDeclarationOwnerTest : AbstractCfirAnalysisTestCase() {
             addCangJieSourceRoot(source.toString())
             configure()
         }
-        val result = CfirFrontendPipelinePhase.executePhase(ConfigurationPipelineArtifact(configuration, disposable))
+        val result = cfirFrontendPipeline().executePhase(ConfigurationPipelineArtifact(configuration, disposable))
         assertFalse(messages.hasErrors(), messages.entries.joinToString("\n"))
         assertTrue(
             diagnostics.diagnostics.none { it.severity.isError },
