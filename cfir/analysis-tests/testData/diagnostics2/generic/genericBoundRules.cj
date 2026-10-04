@@ -130,21 +130,21 @@ func typeParamInTupleUpperBound<<!GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERB
 // 锚点：FuncDecl GetBegin，即 `init` 的首字符 `i`（TypeChecker.cpp:1391）。1.0.5 / 1.1.3 一致。
 // FILE: genericConstructorInClass.cj
 class GenericConstructorInClass {
-    <!FORBID_GENERIC_CONSTRUCTOR!>i<!>nit<T>(x: T) {}
+    <!FORBID_GENERIC_CONSTRUCTOR!>init<!><T>(x: T) {}
 }
 
 // ── 形态 8：struct 里的主构造器自带类型参数（CheckConstructor 对 CLASS_DECL / STRUCT_DECL 同规则）
 // kind / 锚点：同形态 7。1.0.5 / 1.1.3 一致。
 // FILE: genericConstructorInStruct.cj
 struct GenericConstructorInStruct {
-    <!FORBID_GENERIC_CONSTRUCTOR!>i<!>nit<T>(x: T) {}
+    <!FORBID_GENERIC_CONSTRUCTOR!>init<!><T>(x: T) {}
 }
 
 // ── 形态 9：泛型类的主构造器自带另一组类型参数（类级类型形参不豁免构造器自身的类型形参）
 // kind / 锚点：同形态 7。1.0.5 / 1.1.3 一致。
 // FILE: genericConstructorInGenericClass.cj
 class GenericConstructorInGenericClass<T> {
-    <!FORBID_GENERIC_CONSTRUCTOR!>i<!>nit<U>(x: U) {}
+    <!FORBID_GENERIC_CONSTRUCTOR!>init<!><U>(x: U) {}
 }
 
 // ── 形态 10：class 析构函数自带类型参数
@@ -175,7 +175,7 @@ class GenericFinalizerInGenericClass<T> {
 // 锚点：FuncDecl GetBegin，即声明首字符 `public` 的 `p`（DeclAttributeChecker.cpp:368 / :396）。1.0.5 / 1.1.3 一致。
 // FILE: genericOperatorInClass.cj
 class GenericOperatorInClass {
-    <!GENERIC_IN_OPERATOR_OVERLOAD!>p<!>ublic operator func +<T>(other: GenericOperatorInClass): GenericOperatorInClass {
+    public operator func <!GENERIC_IN_OPERATOR_OVERLOAD!>+<!><T>(other: GenericOperatorInClass): GenericOperatorInClass {
         this
     }
 }
@@ -184,7 +184,7 @@ class GenericOperatorInClass {
 // kind / 锚点：同形态 12，锚声明首字符。1.0.5 / 1.1.3 一致。
 // FILE: genericOperatorInStruct.cj
 struct GenericOperatorInStruct {
-    <!GENERIC_IN_OPERATOR_OVERLOAD!>p<!>ublic operator func +<T>(other: T): T {
+    public operator func <!GENERIC_IN_OPERATOR_OVERLOAD!>+<!><T>(other: T): T {
         other
     }
 }
@@ -197,7 +197,7 @@ struct GenericOperatorExtendHost {
 }
 
 extend GenericOperatorExtendHost {
-    <!GENERIC_IN_OPERATOR_OVERLOAD!>p<!>ublic operator func +<T>(other: T): T {
+    public operator func <!GENERIC_IN_OPERATOR_OVERLOAD!>+<!><T>(other: T): T {
         other
     }
 }
@@ -206,7 +206,7 @@ extend GenericOperatorExtendHost {
 // kind / 锚点：同形态 12，锚接口成员声明首字符 `operator` 的 `o`。1.0.5 / 1.1.3 一致。
 // FILE: genericOperatorInInterface.cj
 interface GenericOperatorInInterface {
-    <!GENERIC_IN_OPERATOR_OVERLOAD!>o<!>perator func +<T>(other: T): T
+    operator func <!GENERIC_IN_OPERATOR_OVERLOAD!>+<!><T>(other: T): T
 }
 
 // ── 形态 16：struct 字段自引用（值类型递归，环内全是 struct）
@@ -216,7 +216,7 @@ interface GenericOperatorInInterface {
 // 不带初始化时官方必然报未初始化；改成 `= X()` 又会触发 sema_recursive_constructor_call，见文件末"已删除的形态 7"。
 // FILE: valueTypeRecursiveSelfField.cj
 <!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveSelfField {
-    <!CLASS_UNINITIALIZED_FIELD!>l<!>et self: ValueTypeRecursiveSelfField
+    let <!CLASS_UNINITIALIZED_FIELD!>self<!>: ValueTypeRecursiveSelfField
 }
 
 // ── 形态 17：两个 struct 的非 static 字段互相引用
@@ -225,11 +225,11 @@ interface GenericOperatorInInterface {
 // 锚源码序最靠前的 struct 声明首字符。1.0.5 / 1.1.3 一致。两条 sema_class_uninitialized_field 同形态 16，两条均已按官方写 CLASS_UNINITIALIZED_FIELD 标记（锚字段声明首字符 `let` 的首字母，官方 Diagnose 取 VarDecl 的 GetBegin）
 // FILE: valueTypeRecursiveMutualFields.cj
 <!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveMutualFieldA {
-    <!CLASS_UNINITIALIZED_FIELD!>l<!>et other: ValueTypeRecursiveMutualFieldB
+    let <!CLASS_UNINITIALIZED_FIELD!>other<!>: ValueTypeRecursiveMutualFieldB
 }
 
 struct ValueTypeRecursiveMutualFieldB {
-    <!CLASS_UNINITIALIZED_FIELD!>l<!>et back: ValueTypeRecursiveMutualFieldA
+    let <!CLASS_UNINITIALIZED_FIELD!>back<!>: ValueTypeRecursiveMutualFieldA
 }
 
 // ── 形态 18：值类型递归经元组字段（CheckValueTypeRecursiveDFSSwitch 对 tuple / VArray 按元素类型展开）
@@ -238,11 +238,11 @@ struct ValueTypeRecursiveMutualFieldB {
 // 1.0.5 / 1.1.3 一致。
 // FILE: valueTypeRecursiveThroughTupleField.cj
 <!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveTupleFieldA {
-    <!CLASS_UNINITIALIZED_FIELD!>l<!>et pair: (ValueTypeRecursiveTupleFieldB, Int64)
+    let <!CLASS_UNINITIALIZED_FIELD!>pair<!>: (ValueTypeRecursiveTupleFieldB, Int64)
 }
 
 struct ValueTypeRecursiveTupleFieldB {
-    <!CLASS_UNINITIALIZED_FIELD!>l<!>et back: ValueTypeRecursiveTupleFieldA
+    let <!CLASS_UNINITIALIZED_FIELD!>back<!>: ValueTypeRecursiveTupleFieldA
 }
 
 // ── 合法对照 1：`T <: Holder<T>` 中 Holder 是 class——"直接递归"检查命中的是类无关类型，类上界不触发任何一条递归诊断。

@@ -13,7 +13,7 @@
 
 // FILE: memberTypeRef.cj
 class C {
-    var o: <!UNDECLARED_TYPE_NAME!>O<!>bject
+    var o: <!UNDECLARED_TYPE_NAME!>Object<!>
 
     init() {
         o = 0
