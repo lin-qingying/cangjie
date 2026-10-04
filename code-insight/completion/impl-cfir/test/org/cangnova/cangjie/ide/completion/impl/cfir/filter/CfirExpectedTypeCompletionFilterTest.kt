@@ -4,18 +4,18 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionExpectedType
-import org.cangnova.cangjie.ide.completion.api.CaCompletionExpectedTypeKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionExpectedTypeProvider
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaExpectedTypeMatch
-import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CaTestCompletionRequest
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.CompletionExpectedType
+import org.cangnova.cangjie.ide.completion.api.CompletionExpectedTypeKind
+import org.cangnova.cangjie.ide.completion.api.CompletionExpectedTypeProvider
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.ExpectedTypeMatch
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.TestCompletionRequest
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -47,7 +47,7 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun basicPassesThrough(mainFile: CjFile) {
         val snapshots = listOf(symbolSnapshot("alpha"), symbolSnapshot("beta"))
-        val request = requestOf(mainFile, CaCompletionKind.BASIC)
+        val request = requestOf(mainFile, CompletionKind.BASIC)
         val result = filterWith(providerThatMustNotBeCalled()).apply(request, snapshots)
         assertSame(snapshots, result, "BASIC 必须原样返回同一集合")
     }
@@ -58,8 +58,8 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun smartKeepsBasicSetWhenExpectedTypeUnknown(mainFile: CjFile) {
         val snapshots = listOf(symbolSnapshot("alpha"), symbolSnapshot("beta"))
-        val request = requestOf(mainFile, CaCompletionKind.SMART)
-        val result = filterWith(providerReturning(CaCompletionExpectedType.None)).apply(request, snapshots)
+        val request = requestOf(mainFile, CompletionKind.SMART)
+        val result = filterWith(providerReturning(CompletionExpectedType.None)).apply(request, snapshots)
         assertSame(snapshots, result, "期望类型未知时必须原样返回同一集合")
     }
 
@@ -70,9 +70,9 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
     fun smartFiltersAtTypePosition(mainFile: CjFile) {
         val type = typeSnapshot("Alpha")
         val value = symbolSnapshot("alpha")
-        val filter = filterWith(providerReturning(CaCompletionExpectedType(CaCompletionExpectedTypeKind.TYPE)))
+        val filter = filterWith(providerReturning(CompletionExpectedType(CompletionExpectedTypeKind.TYPE)))
 
-        val request = requestOf(mainFile, CaCompletionKind.SMART)
+        val request = requestOf(mainFile, CompletionKind.SMART)
         assertEquals(
             listOf("Alpha"),
             filter.apply(request, listOf(type, value)).map { it.lookupString },
@@ -80,7 +80,7 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
         )
 
         // 重复按 Tab 不构成访问权限：触发次数不得放宽或改变过滤结论。
-        val repeated = requestOf(mainFile, CaCompletionKind.SMART, invocationCount = 5)
+        val repeated = requestOf(mainFile, CompletionKind.SMART, invocationCount = 5)
         assertEquals(
             listOf("Alpha"),
             filter.apply(repeated, listOf(type, value)).map { it.lookupString },
@@ -96,9 +96,9 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
         val matched = symbolSnapshot("alpha", typeText = "Alpha")
         val undecided = symbolSnapshot("beta", typeText = "Beta")
         val noType = symbolSnapshot("gamma")
-        val request = requestOf(mainFile, CaCompletionKind.SMART)
+        val request = requestOf(mainFile, CompletionKind.SMART)
         val filter = filterWith(
-            providerReturning(CaCompletionExpectedType(CaCompletionExpectedTypeKind.EXPRESSION, "Alpha")),
+            providerReturning(CompletionExpectedType(CompletionExpectedTypeKind.EXPRESSION, "Alpha")),
         )
 
         val result = filter.apply(request, listOf(matched, undecided, noType))
@@ -109,15 +109,15 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
         )
 
         val alpha = result.single { it.lookupString == "alpha" }
-        assertEquals(CaExpectedTypeMatch.MATCH, alpha.sort.expectedTypeMatch)
+        assertEquals(ExpectedTypeMatch.MATCH, alpha.sort.expectedTypeMatch)
         assertTrue(alpha.weight > matched.weight, "匹配候选必须按新结论重算权重")
         assertEquals(
-            CaExpectedTypeMatch.UNKNOWN,
+            ExpectedTypeMatch.UNKNOWN,
             result.single { it.lookupString == "beta" }.sort.expectedTypeMatch,
             "类型文本不一致时不得武断判为不匹配",
         )
         assertEquals(
-            CaExpectedTypeMatch.UNKNOWN,
+            ExpectedTypeMatch.UNKNOWN,
             result.single { it.lookupString == "gamma" }.sort.expectedTypeMatch,
             "没有类型文本的候选必须保持未知",
         )
@@ -126,8 +126,8 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
     /**
      * 在夹具的锚点引用处构造请求。
      */
-    private fun requestOf(mainFile: CjFile, kind: CaCompletionKind, invocationCount: Int = 1): CaCompletionRequest =
-        CaTestCompletionRequest(
+    private fun requestOf(mainFile: CjFile, kind: CompletionKind, invocationCount: Int = 1): CompletionRequest =
+        TestCompletionRequest(
             position = mainFile.anchorPosition(),
             prefix = "",
             kind = kind,
@@ -144,44 +144,44 @@ class CfirExpectedTypeCompletionFilterTest : AbstractAnalysisApiExecutionTest(
     /**
      * 构造过滤器，注入假提供者。
      */
-    private fun filterWith(provider: CaCompletionExpectedTypeProvider): CfirExpectedTypeCompletionFilter =
+    private fun filterWith(provider: CompletionExpectedTypeProvider): CfirExpectedTypeCompletionFilter =
         CfirExpectedTypeCompletionFilter(expectedTypeProvider = provider)
 
     /**
      * BASIC 下绝不允许被调用的提供者。
      */
-    private fun providerThatMustNotBeCalled(): CaCompletionExpectedTypeProvider =
-        object : CaCompletionExpectedTypeProvider {
-            override fun expectedTypeAt(request: CaCompletionRequest): CaCompletionExpectedType =
+    private fun providerThatMustNotBeCalled(): CompletionExpectedTypeProvider =
+        object : CompletionExpectedTypeProvider {
+            override fun expectedTypeAt(request: CompletionRequest): CompletionExpectedType =
                 error("BASIC 不得查询期望类型")
         }
 
     /**
      * 固定返回给定结论的提供者。
      */
-    private fun providerReturning(expected: CaCompletionExpectedType): CaCompletionExpectedTypeProvider =
-        object : CaCompletionExpectedTypeProvider {
-            override fun expectedTypeAt(request: CaCompletionRequest): CaCompletionExpectedType = expected
+    private fun providerReturning(expected: CompletionExpectedType): CompletionExpectedTypeProvider =
+        object : CompletionExpectedTypeProvider {
+            override fun expectedTypeAt(request: CompletionRequest): CompletionExpectedType = expected
         }
 
     /**
      * 符号候选：局部来源，身份为 SYMBOL。
      */
-    private fun symbolSnapshot(name: String, typeText: String = ""): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun symbolSnapshot(name: String, typeText: String = ""): CompletionSnapshot = completionSnapshot(
         lookupString = name,
-        kind = CaCompletionItemKind.LOCAL,
-        origin = CaCompletionOrigin.LOCAL_SCOPE,
+        kind = CompletionItemKind.LOCAL,
+        origin = CompletionOrigin.LOCAL_SCOPE,
         typeText = typeText,
     ).build()
 
     /**
      * 类型候选：顶层来源，身份为 TYPE。
      */
-    private fun typeSnapshot(name: String): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun typeSnapshot(name: String): CompletionSnapshot = completionSnapshot(
         lookupString = name,
-        kind = CaCompletionItemKind.TOP_LEVEL,
-        origin = CaCompletionOrigin.TOP_LEVEL,
-        identityKind = CaCompletionIdentityKind.TYPE,
+        kind = CompletionItemKind.TOP_LEVEL,
+        origin = CompletionOrigin.TOP_LEVEL,
+        identityKind = CompletionIdentityKind.TYPE,
     ).build()
 
     companion object {

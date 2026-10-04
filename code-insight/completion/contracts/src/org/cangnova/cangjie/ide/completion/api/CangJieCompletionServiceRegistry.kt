@@ -11,18 +11,18 @@ import com.intellij.openapi.components.service
  * 也不需要在 XML 中为每个内部贡献者注册扩展点。
  */
 @Service(Service.Level.PROJECT)
-class CaCangJieCompletionServiceRegistry {
+class CangJieCompletionServiceRegistry {
     /**
      * 当前生效的补全服务；未注册实现时为 `null`。
      *
      * 平台据此明确「语义补全不可用」，而不是静默回落到词补全。
      */
     @Volatile
-    var service: CaCangJieCompletionService? = null
+    var service: CangJieCompletionService? = null
 }
 
 /**
  * 取得项目级补全服务注册表。
  */
-fun completionServiceRegistry(project: Project): CaCangJieCompletionServiceRegistry =
+fun completionServiceRegistry(project: Project): CangJieCompletionServiceRegistry =
     project.service()

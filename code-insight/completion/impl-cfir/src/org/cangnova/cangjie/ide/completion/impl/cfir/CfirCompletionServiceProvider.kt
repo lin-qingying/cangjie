@@ -2,7 +2,7 @@ package org.cangnova.cangjie.ide.completion.impl.cfir
 
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
-import org.cangnova.cangjie.ide.completion.api.CaCangJieCompletionService
+import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
 import org.cangnova.cangjie.ide.completion.api.completionServiceRegistry
 
 /**
@@ -17,7 +17,7 @@ class CfirCompletionServiceProvider {
     /**
      * 当前项目可用的补全服务。
      */
-    fun service(project: Project): CaCangJieCompletionService {
+    fun service(project: Project): CangJieCompletionService {
         val registry = completionServiceRegistry(project)
         return registry.service ?: CfirCompletionService().also { registry.service = it }
     }
@@ -29,6 +29,6 @@ class CfirCompletionServiceProvider {
  * 调用方必须容忍 `null`：那表示上游补全实现不在 classpath 上，
  * 此时不得退回通用词补全冒充语义补全。
  */
-fun cfirCompletionServiceOrNull(project: Project): CaCangJieCompletionService? = runCatching {
+fun cfirCompletionServiceOrNull(project: Project): CangJieCompletionService? = runCatching {
     project.getService(CfirCompletionServiceProvider::class.java)?.service(project)
 }.getOrNull()

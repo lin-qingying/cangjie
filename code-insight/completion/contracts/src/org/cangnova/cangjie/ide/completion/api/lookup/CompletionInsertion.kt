@@ -6,7 +6,7 @@ package org.cangnova.cangjie.ide.completion.api.lookup
  * 平台用负偏移表达「相对插入文本末尾」，正偏移表达「相对插入起点」。
  * 这里用显式枚举而非裸数字，避免各调用点各自猜测偏移符号。
  */
-enum class CaCaretPolicy {
+enum class CaretPolicy {
     /** caret 停在插入文本之后（默认，用于声明名/关键字/包名等无括号候选）。 */
     AFTER_INSERTED_TEXT,
 
@@ -30,7 +30,7 @@ enum class CaCaretPolicy {
  * 三种触发在括号与实参上的处理**不同**：显式 Enter 通常只接受当前选中项，
  * 而 Tab/字符选择发生在已有调用内部，必须保留已填实参。
  */
-enum class CaInsertionTrigger {
+enum class InsertionTrigger {
     /** 用户在弹窗中按 Enter 确认。 */
     ENTER,
 
@@ -47,7 +47,7 @@ enum class CaInsertionTrigger {
  * 这些结论全部在分析期算好：插入阶段处在写事务里，既不能查询 Analysis
  * （可能触发跨线程违规），也不该临时决定括号形态。
  */
-interface CaCompletionInsertion {
+interface CompletionInsertion {
     /** 插入后是否需要跟随左括号。 */
     val insertParenthesis: Boolean
 
@@ -60,7 +60,7 @@ interface CaCompletionInsertion {
     val namedArgumentPrefix: String
 
     /** caret 落点策略。 */
-    val caretPolicy: CaCaretPolicy
+    val caretPolicy: CaretPolicy
 
     /**
      * 分析完成时的文档版本戳。
@@ -76,9 +76,9 @@ interface CaCompletionInsertion {
 /**
  * 插入数据的标准实现。
  */
-data class CaCompletionInsertionData(
+data class CompletionInsertionData(
     override val insertParenthesis: Boolean = false,
     override val namedArgumentPrefix: String = "",
-    override val caretPolicy: CaCaretPolicy = CaCaretPolicy.AFTER_INSERTED_TEXT,
+    override val caretPolicy: CaretPolicy = CaretPolicy.AFTER_INSERTED_TEXT,
     override val documentStamp: Long = 0L,
-) : CaCompletionInsertion
+) : CompletionInsertion

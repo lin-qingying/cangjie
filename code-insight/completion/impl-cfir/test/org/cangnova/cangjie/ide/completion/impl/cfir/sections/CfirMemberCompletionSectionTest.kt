@@ -3,9 +3,9 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -33,7 +33,7 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         assertTrue(names.contains("visible"), "可见实例成员必须出现，实际 $names")
         assertFalse(names.contains("hidden"), "private 成员不得作为候选出现，实际 $names")
         assertTrue(
-            snapshots.all { it.kind == CaCompletionItemKind.MEMBER },
+            snapshots.all { it.kind == CompletionItemKind.MEMBER },
             "成员区段的候选类别必须统一为 MEMBER，实际 ${snapshots.map { it.kind }}",
         )
     }
@@ -55,7 +55,7 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
             "extend 成员必须作为候选出现，实际 ${snapshots.lookupNames()}",
         )
         assertTrue(
-            snapshots.any { it.kind == CaCompletionItemKind.EXTEND_MEMBER },
+            snapshots.any { it.kind == CompletionItemKind.EXTEND_MEMBER },
             "extend 成员必须标记为 EXTEND_MEMBER，实际 ${snapshots.map { it.kind }}",
         )
     }
@@ -64,8 +64,8 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun memberCandidatesAbsentAtExpression(mainFile: CjFile) {
         val request = mainFile.requestAtReference(TARGET)
-        val kind = CaCompletionPositionContexts.classify(request.completionPosition).kind
-        assertEquals(CaCompletionPositionKind.FUNCTION_BODY, kind, "夹具位置应为函数体而非成员访问")
+        val kind = CompletionPositionContexts.classify(request.completionPosition).kind
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, kind, "夹具位置应为函数体而非成员访问")
         assertTrue(
             section.collectCandidates(request).isEmpty(),
             "非成员访问位置不得产出成员候选",

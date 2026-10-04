@@ -3,8 +3,8 @@ package org.cangnova.cangjie.ide.completion.impl.shared.dummy
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -19,7 +19,7 @@ import org.cangnova.cangjie.psi.CjStringTemplateExpression
  * @param position 副本中经过占位替换后、可用于语义分析的元素。
  * @param prefix 光标处的真实前缀，已去除 dummy 文本与限定名。
  */
-data class CaCompletionDummyContext(
+data class CompletionDummyContext(
     val dummyFile: CjFile,
     val position: CjElement,
     val prefix: String,
@@ -37,7 +37,7 @@ data class CaCompletionDummyContext(
  * 只处理仓颉确实需要的形态：不复制 Kotlin 的 KDoc、`$name` 或尾随 lambda 规则；
  * 原始字符串不插值，其中的位置直接排除。
  */
-object CaCompletionDummyIdentifierProvider {
+object CompletionDummyIdentifierProvider {
     /**
      * 平台 dummy 标识符的稳定标记。
      */
@@ -49,14 +49,14 @@ object CaCompletionDummyIdentifierProvider {
      * 返回 `null` 表示该位置不允许补全：调用方必须停止，
      * 绝不能在仍含裸 dummy 的 PSI 上继续分析。
      */
-    fun provide(parameters: CompletionParameters): CaCompletionDummyContext? {
+    fun provide(parameters: CompletionParameters): CompletionDummyContext? {
         val position = parameters.position.nearestCangJieElement() ?: return null
         val dummyFile = position.containingCjFile ?: return null
         if (position.isInsideRawStringLiteral()) return null
 
-        val kind = CaCompletionPositionContexts.classify(position).kind
+        val kind = CompletionPositionContexts.classify(position).kind
         val replaced = replaceWithPlaceholder(dummyFile, position, kind) ?: position
-        return CaCompletionDummyContext(
+        return CompletionDummyContext(
             dummyFile = dummyFile,
             position = replaced,
             prefix = prefixOf(position),
@@ -72,7 +72,7 @@ object CaCompletionDummyIdentifierProvider {
     private fun replaceWithPlaceholder(
         dummyFile: CjFile,
         position: CjElement,
-        kind: CaCompletionPositionKind,
+        kind: CompletionPositionKind,
     ): CjElement? {
         if (!kind.needsCallablePlaceholder) return null
         val expression = position as? CjExpression ?: position.parent as? CjExpression ?: return null
@@ -84,11 +84,11 @@ object CaCompletionDummyIdentifierProvider {
     /**
      * 判断该位置形态是否需要可调用的占位表达式。
      */
-    private val CaCompletionPositionKind.needsCallablePlaceholder: Boolean
-        get() = this == CaCompletionPositionKind.EXPRESSION ||
-            this == CaCompletionPositionKind.FUNCTION_BODY ||
-            this == CaCompletionPositionKind.MEMBER_ACCESS ||
-            this == CaCompletionPositionKind.NAMED_ARGUMENT
+    private val CompletionPositionKind.needsCallablePlaceholder: Boolean
+        get() = this == CompletionPositionKind.EXPRESSION ||
+            this == CompletionPositionKind.FUNCTION_BODY ||
+            this == CompletionPositionKind.MEMBER_ACCESS ||
+            this == CompletionPositionKind.NAMED_ARGUMENT
 
     /**
      * 调用类位置的占位表达式。

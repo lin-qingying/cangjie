@@ -3,7 +3,7 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -60,7 +60,7 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         val names = snapshots.lookupNames()
         assertTrue(names.contains("func"), "声明名位置必须给出 func，实际 $names")
         assertTrue(
-            snapshots.all { it.kind == CaCompletionItemKind.KEYWORD },
+            snapshots.all { it.kind == CompletionItemKind.KEYWORD },
             "声明名位置只应给关键字，实际 ${snapshots.map { it.kind }}",
         )
         assertFalse(

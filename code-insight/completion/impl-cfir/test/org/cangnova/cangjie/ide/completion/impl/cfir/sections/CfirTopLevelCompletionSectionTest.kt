@@ -3,8 +3,8 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -52,9 +52,9 @@ class CfirTopLevelCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun topLevelCandidatesAbsentAtMemberAccess(mainFile: CjFile) {
         val position = mainFile.requestAtReference(TARGET).completionPosition
-        val kind = CaCompletionPositionContexts.classify(position).kind
+        val kind = CompletionPositionContexts.classify(position).kind
         assertNotEquals(
-            CaCompletionPositionKind.MEMBER_ACCESS,
+            CompletionPositionKind.MEMBER_ACCESS,
             kind,
             "夹具位置不是成员访问；该断言只保证前提成立",
         )

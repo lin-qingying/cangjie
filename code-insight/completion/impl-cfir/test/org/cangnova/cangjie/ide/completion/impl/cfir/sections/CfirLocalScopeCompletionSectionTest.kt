@@ -3,7 +3,7 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -32,7 +32,7 @@ class CfirLocalScopeCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         // 底层修复后此处应改为断言包含 `local`。
         assertFalse(names.contains("local"), "块内局部尚未进入解析塔快照，实际 $names")
         assertTrue(
-            snapshots.all { it.kind == CaCompletionItemKind.LOCAL },
+            snapshots.all { it.kind == CompletionItemKind.LOCAL },
             "词法区段的候选类别必须统一为 LOCAL，实际 ${snapshots.map { it.kind }}",
         )
     }

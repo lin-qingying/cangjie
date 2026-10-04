@@ -3,11 +3,11 @@ package org.cangnova.cangjie.ide.completion.api.lookup
 /**
  * 候选来源。
  *
- * 来源描述「候选从哪一层作用域/哪一类索引来」，与 [org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind]
+ * 来源描述「候选从哪一层作用域/哪一类索引来」，与 [org.cangnova.cangjie.ide.completion.api.CompletionItemKind]
  * 的「候选是什么形状」是两件事：一个 extend 成员既是来源 `EXTEND` 也是种类 `EXTEND_MEMBER`，
  * 而同一种类可以来自局部、成员或顶层三种来源，排序上必须区别对待。
  */
-enum class CaCompletionOrigin {
+enum class CompletionOrigin {
     /** 局部声明、参数、类型参数。 */
     LOCAL_SCOPE,
 
@@ -48,7 +48,7 @@ enum class CaCompletionOrigin {
  * 「未知」与「不匹配」必须分开：未知时不得据此过滤候选，
  * 否则一个尚未推导完成的期望类型会把整张列表清空。
  */
-enum class CaExpectedTypeMatch {
+enum class ExpectedTypeMatch {
     /** 该位置没有确定的期望类型。 */
     UNKNOWN,
 
@@ -67,20 +67,20 @@ enum class CaExpectedTypeMatch {
  * 1. 期望类型匹配必须调用 Analysis，不能留在界面线程；
  * 2. 避免为每个维度注册一个平台 weigher（那会把语义判断推给无法访问 Analysis 的平台代码）。
  */
-interface CaCompletionSortData {
+interface CompletionSortData {
     /** 候选来源。 */
-    val origin: CaCompletionOrigin
+    val origin: CompletionOrigin
 
     /**
      * 导入成本：数值越小越易用。
      *
-     * 已可达取 [CaImportCost.DIRECT]，需要追加 import 取 [CaImportCost.ADD_IMPORT]，
-     * 需先写限定名再缩短取 [CaImportCost.QUALIFY_THEN_SHORTEN]。
+     * 已可达取 [ImportCost.DIRECT]，需要追加 import 取 [ImportCost.ADD_IMPORT]，
+     * 需先写限定名再缩短取 [ImportCost.QUALIFY_THEN_SHORTEN]。
      */
     val importCost: Int
 
-    /** 期望类型匹配结论；非 SMART 位置恒为 [CaExpectedTypeMatch.UNKNOWN]。 */
-    val expectedTypeMatch: CaExpectedTypeMatch
+    /** 期望类型匹配结论；非 SMART 位置恒为 [ExpectedTypeMatch.UNKNOWN]。 */
+    val expectedTypeMatch: ExpectedTypeMatch
 
     /**
      * 同位置内的出现次序权重。
@@ -93,10 +93,10 @@ interface CaCompletionSortData {
 /**
  * 导入成本的取值常量。
  *
- * 数值刻意与 [CaCompletionSortData.importCost] 的语义一一对应，
+ * 数值刻意与 [CompletionSortData.importCost] 的语义一一对应，
  * 排序比较只允许引用本组常量，避免散落的魔数。
  */
-object CaImportCost {
+object ImportCost {
     /** 当前文件已可直接引用。 */
     const val DIRECT: Int = 0
 
@@ -110,16 +110,16 @@ object CaImportCost {
 /**
  * 排序数据的标准实现。
  */
-data class CaCompletionSortDataImpl(
-    override val origin: CaCompletionOrigin,
-    override val importCost: Int = CaImportCost.DIRECT,
-    override val expectedTypeMatch: CaExpectedTypeMatch = CaExpectedTypeMatch.UNKNOWN,
+data class CompletionSortDataImpl(
+    override val origin: CompletionOrigin,
+    override val importCost: Int = ImportCost.DIRECT,
+    override val expectedTypeMatch: ExpectedTypeMatch = ExpectedTypeMatch.UNKNOWN,
     override val declarationOrder: Int = 0,
-) : CaCompletionSortData {
+) : CompletionSortData {
     companion object {
         /** 已知来源的默认排序数据：不匹配未知导入成本、不确定期望类型。 */
-        fun of(origin: CaCompletionOrigin, declarationOrder: Int = 0): CaCompletionSortDataImpl =
-            CaCompletionSortDataImpl(origin = origin, declarationOrder = declarationOrder)
+        fun of(origin: CompletionOrigin, declarationOrder: Int = 0): CompletionSortDataImpl =
+            CompletionSortDataImpl(origin = origin, declarationOrder = declarationOrder)
     }
 }
 
@@ -129,8 +129,8 @@ data class CaCompletionSortDataImpl(
  * 匹配结论必须在**分析内**写入，而排序数据是快照契约的一部分，
  * 因此它由排序数据自己提供复制入口，而不是让调用方把接口强转成实现类。
  */
-fun CaCompletionSortData.withExpectedTypeMatch(match: CaExpectedTypeMatch): CaCompletionSortData =
-    CaCompletionSortDataImpl(
+fun CompletionSortData.withExpectedTypeMatch(match: ExpectedTypeMatch): CompletionSortData =
+    CompletionSortDataImpl(
         origin = origin,
         importCost = importCost,
         expectedTypeMatch = match,
@@ -143,13 +143,13 @@ fun CaCompletionSortData.withExpectedTypeMatch(match: CaExpectedTypeMatch): CaCo
  * 权重是**分析期**产物，冻结在快照里；平台侧只做等比映射，不重新判断语义。
  * 折算顺序即优先级顺序：来源 > 导入成本 > 期望类型 > 声明次序。
  */
-fun CaCompletionSortData.toWeight(): Int {
-    val originScore = (CaCompletionOrigin.entries.size - origin.ordinal) * 1_000_000
-    val importScore = (CaImportCost.QUALIFY_THEN_SHORTEN - importCost) * 1_000
+fun CompletionSortData.toWeight(): Int {
+    val originScore = (CompletionOrigin.entries.size - origin.ordinal) * 1_000_000
+    val importScore = (ImportCost.QUALIFY_THEN_SHORTEN - importCost) * 1_000
     val typeScore = when (expectedTypeMatch) {
-        CaExpectedTypeMatch.MATCH -> 100
-        CaExpectedTypeMatch.UNKNOWN -> 0
-        CaExpectedTypeMatch.MISMATCH -> -100
+        ExpectedTypeMatch.MATCH -> 100
+        ExpectedTypeMatch.UNKNOWN -> 0
+        ExpectedTypeMatch.MISMATCH -> -100
     }
     return originScore + importScore + typeScore + declarationOrder
 }

@@ -11,14 +11,14 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionSortDataImpl
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportCost
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
 
 /**
  * callable 符号的展示名。
@@ -51,19 +51,19 @@ internal fun CaCallableSymbol.qualifiedNameText(): String =
 @OptIn(CaExperimentalApi::class)
 internal fun CaSession.callableSnapshot(
     symbol: CaCallableSymbol,
-    kind: CaCompletionItemKind,
-    origin: CaCompletionOrigin,
-    importCost: Int = CaImportCost.DIRECT,
+    kind: CompletionItemKind,
+    origin: CompletionOrigin,
+    importCost: Int = ImportCost.DIRECT,
     documentStamp: Long = 0L,
-): CaCompletionSnapshot {
+): CompletionSnapshot {
     val name = symbol.displayName()
     val signature = with(this) { symbol.asSignature() }
     val tailText = renderSignatureTail(symbol, signature.returnType)
-    return caCompletionSnapshot(
+    return completionSnapshot(
         lookupString = name,
         kind = kind,
         origin = origin,
-        identityKind = CaCompletionIdentityKind.SYMBOL,
+        identityKind = CompletionIdentityKind.SYMBOL,
         tailText = tailText,
         typeText = signature.returnType.toString(),
         documentStamp = documentStamp,
@@ -74,14 +74,14 @@ internal fun CaSession.callableSnapshot(
         // 只用短名无法重新解析到具体声明；只用 callableId 又对同名重载给出同一个值，
         // 恢复时只能落到任意一个重载。两者拼接才同时满足「可定位」与「可区分」。
         val qualified = symbol.qualifiedNameText()
-        this.identity = CaCompletionIdentityData(
-            kind = CaCompletionIdentityKind.SYMBOL,
+        this.identity = CompletionIdentityData(
+            kind = CompletionIdentityKind.SYMBOL,
             handle = "$qualified$tailText",
             name = name,
             qualifiedName = qualified,
             deduplicationKey = if (tailText.isEmpty()) name else "$name$tailText",
         )
-        this.sort = CaCompletionSortDataImpl(origin = origin, importCost = importCost)
+        this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
     }.build()
 }
 
@@ -94,29 +94,29 @@ internal fun CaSession.callableSnapshot(
 @OptIn(CaExperimentalApi::class)
 internal fun CaSession.classifierSnapshot(
     classifier: CaClassifierSymbol,
-    kind: CaCompletionItemKind,
-    origin: CaCompletionOrigin,
-    importCost: Int = CaImportCost.DIRECT,
+    kind: CompletionItemKind,
+    origin: CompletionOrigin,
+    importCost: Int = ImportCost.DIRECT,
     documentStamp: Long = 0L,
-): CaCompletionSnapshot {
+): CompletionSnapshot {
     val name = (classifier as? CaNamedSymbol)?.name?.asString().orEmpty()
     val handle = name.ifEmpty { classifier.toString() }
-    return caCompletionSnapshot(
+    return completionSnapshot(
         lookupString = handle,
         kind = kind,
         origin = origin,
-        identityKind = CaCompletionIdentityKind.TYPE,
+        identityKind = CompletionIdentityKind.TYPE,
         qualifiedName = name,
         documentStamp = documentStamp,
     ).apply {
-        this.identity = CaCompletionIdentityData(
-            kind = CaCompletionIdentityKind.TYPE,
+        this.identity = CompletionIdentityData(
+            kind = CompletionIdentityKind.TYPE,
             handle = handle,
             name = handle,
             qualifiedName = name,
             deduplicationKey = handle,
         )
-        this.sort = CaCompletionSortDataImpl(origin = origin, importCost = importCost)
+        this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
     }.build()
 }
 
@@ -172,7 +172,7 @@ internal fun CaSession.callableIdentityKey(symbol: CaCallableSymbol): String {
  *
  * 只合并**确实同一**的候选：同名但签名不同者身份键不同，必须各自保留。
  */
-internal fun List<CaCompletionSnapshot>.distinctByIdentity(): List<CaCompletionSnapshot> {
+internal fun List<CompletionSnapshot>.distinctByIdentity(): List<CompletionSnapshot> {
     val seen = mutableSetOf<String>()
     return filter { seen.add(it.identity.deduplicationKey) }
 }

@@ -3,10 +3,10 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.recovery
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportPlan
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirTopLevelCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.collectCandidates
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.requestAtReference
@@ -80,8 +80,8 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
      */
     @Test
     fun reportsDanglingIdentity(mainFile: CjFile) {
-        val dangling = CaCompletionIdentityData.of(
-            kind = CaCompletionIdentityKind.SYMBOL,
+        val dangling = CompletionIdentityData.of(
+            kind = CompletionIdentityKind.SYMBOL,
             handle = "no.such.package.gone(): Int64",
             name = "gone",
             qualifiedName = "no.such.package.gone",
@@ -97,8 +97,8 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
      */
     @Test
     fun keywordIdentityNeverDangles(mainFile: CjFile) {
-        val keyword = CaCompletionIdentityData.of(
-            kind = CaCompletionIdentityKind.KEYWORD,
+        val keyword = CompletionIdentityData.of(
+            kind = CompletionIdentityKind.KEYWORD,
             handle = "func",
             name = "func",
         )
@@ -118,7 +118,7 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
             recoveryService.recover(mainFile, snapshot.identity),
         ) { "同包声明必须可恢复" }
         assertEquals(
-            CaCompletionImportPlan.NoImport,
+            CompletionImportPlan.NoImport,
             recovered.importPlan,
             "同包已可直接引用，不得要求追加 import，实际 ${recovered.importPlan}",
         )
@@ -130,7 +130,7 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
      * 快照经区段产出：签名必须在分析内渲染，这同时验证了
      * 「区段产出的快照在分析结束后仍然完整可用」——这正是 10.2 的前提。
      */
-    private fun overloads(mainFile: CjFile, name: String): List<CaCompletionSnapshot> =
+    private fun overloads(mainFile: CjFile, name: String): List<CompletionSnapshot> =
         CfirTopLevelCompletionSection().collectCandidates(mainFile.requestAtReference(TARGET))
             .filter { it.lookupString == name }
 

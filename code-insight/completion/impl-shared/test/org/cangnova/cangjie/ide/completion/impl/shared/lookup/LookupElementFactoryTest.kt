@@ -5,15 +5,15 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementDecorator
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupElementRenderer
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionSortDataImpl
-import org.cangnova.cangjie.ide.completion.api.lookup.CaExpectedTypeMatch
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportCost
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.ExpectedTypeMatch
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.api.lookup.toWeight
 import org.cangnova.cangjie.ide.completion.api.lookup.withExpectedTypeMatch
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.impl.shared.caNamedArgumentSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.namedArgumentSnapshot
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
@@ -33,7 +33,7 @@ import kotlin.test.assertTrue
  * （字段映射、快照回挂、优先级折算、稳定排序）都是 B5/B6 的硬约束，
  * 破坏任何一条都会让弹窗展示与分析结论脱节。
  */
-class CaLookupElementFactoryTest : CjParsingTestCase(
+class LookupElementFactoryTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
@@ -60,15 +60,15 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun mapsSnapshotFields() {
-        val snapshot = caCompletionSnapshot(
+        val snapshot = completionSnapshot(
             lookupString = "visible",
-            kind = CaCompletionItemKind.MEMBER,
-            origin = CaCompletionOrigin.MEMBER,
+            kind = CompletionItemKind.MEMBER,
+            origin = CompletionOrigin.MEMBER,
             tailText = "(x: Int64): Int64",
             typeText = "Int64",
         ).build()
 
-        val element = CaLookupElementFactory.create(snapshot)
+        val element = LookupElementFactory.create(snapshot)
         assertEquals("visible", element.lookupString)
         // 展示字段经平台的呈现模型读取：builder 的尾文本、类型文本与图标
         // 由 expensive renderer 渲染（普通 renderElement 只写主文本），
@@ -85,12 +85,12 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun emptyTypeTextStaysUnset() {
-        val snapshot = caCompletionSnapshot(
+        val snapshot = completionSnapshot(
             lookupString = "alpha",
-            kind = CaCompletionItemKind.LOCAL,
-            origin = CaCompletionOrigin.LOCAL_SCOPE,
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
         ).build()
-        val presentation = presentationOf(CaLookupElementFactory.create(snapshot))
+        val presentation = presentationOf(LookupElementFactory.create(snapshot))
         assertTrue(presentation.typeText.isNullOrEmpty(), "未设置 typeText 时不得凭空出现类型文本")
     }
 
@@ -99,13 +99,13 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun snapshotRoundTripsThroughUserData() {
-        val snapshot = caCompletionSnapshot(
+        val snapshot = completionSnapshot(
             lookupString = "alpha",
-            kind = CaCompletionItemKind.LOCAL,
-            origin = CaCompletionOrigin.LOCAL_SCOPE,
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
         ).build()
-        val element = CaLookupElementFactory.create(snapshot)
-        assertSame(snapshot, element.getUserData(CA_COMPLETION_SNAPSHOT))
+        val element = LookupElementFactory.create(snapshot)
+        assertSame(snapshot, element.getUserData(COMPLETION_SNAPSHOT))
     }
 
     /**
@@ -116,14 +116,14 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun priorityMatchesAnalysisWeight() {
-        val snapshot = caCompletionSnapshot(
+        val snapshot = completionSnapshot(
             lookupString = "alpha",
-            kind = CaCompletionItemKind.LOCAL,
-            origin = CaCompletionOrigin.LOCAL_SCOPE,
+            kind = CompletionItemKind.LOCAL,
+            origin = CompletionOrigin.LOCAL_SCOPE,
         ).build()
         assertEquals(snapshot.weight.toDouble(), priorityOf(snapshot), 0.0)
         assertTrue(
-            CaLookupElementFactory.create(snapshot) is PrioritizedLookupElement<*>,
+            LookupElementFactory.create(snapshot) is PrioritizedLookupElement<*>,
             "工厂必须把元素包进 PrioritizedLookupElement，否则分析期权重不会影响展示次序",
         )
     }
@@ -133,11 +133,11 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun createAllKeepsOrder() {
-        val first = caCompletionSnapshot("first", CaCompletionItemKind.LOCAL, CaCompletionOrigin.LOCAL_SCOPE).build()
-        val second = caCompletionSnapshot("second", CaCompletionItemKind.TOP_LEVEL, CaCompletionOrigin.TOP_LEVEL).build()
+        val first = completionSnapshot("first", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
+        val second = completionSnapshot("second", CompletionItemKind.TOP_LEVEL, CompletionOrigin.TOP_LEVEL).build()
         assertEquals(
             listOf("first", "second"),
-            CaLookupElementFactory.createAll(listOf(first, second)).map { it.lookupString },
+            LookupElementFactory.createAll(listOf(first, second)).map { it.lookupString },
         )
     }
 
@@ -146,9 +146,9 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun sortsByWeightKeepingArrivalOrder() {
-        val low = caCompletionSnapshot("low", CaCompletionItemKind.TOP_LEVEL, CaCompletionOrigin.TOP_LEVEL).build()
-        val high1 = caCompletionSnapshot("high1", CaCompletionItemKind.LOCAL, CaCompletionOrigin.LOCAL_SCOPE).build()
-        val high2 = caCompletionSnapshot("high2", CaCompletionItemKind.LOCAL, CaCompletionOrigin.LOCAL_SCOPE).build()
+        val low = completionSnapshot("low", CompletionItemKind.TOP_LEVEL, CompletionOrigin.TOP_LEVEL).build()
+        val high1 = completionSnapshot("high1", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
+        val high2 = completionSnapshot("high2", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE).build()
         assertEquals(
             listOf("high1", "high2", "low"),
             listOf(low, high1, high2).sortedByAnalysisWeight().map { it.lookupString },
@@ -160,20 +160,20 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun weightOrdersDimensions() {
-        val local = CaCompletionSortDataImpl(CaCompletionOrigin.LOCAL_SCOPE).toWeight()
-        val topLevel = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL).toWeight()
+        val local = CompletionSortDataImpl(CompletionOrigin.LOCAL_SCOPE).toWeight()
+        val topLevel = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL).toWeight()
         assertTrue(local > topLevel, "局部来源必须排在顶层来源之前，实际 $local vs $topLevel")
 
-        val direct = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL, importCost = CaImportCost.DIRECT).toWeight()
-        val addImport = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL, importCost = CaImportCost.ADD_IMPORT).toWeight()
+        val direct = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, importCost = ImportCost.DIRECT).toWeight()
+        val addImport = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, importCost = ImportCost.ADD_IMPORT).toWeight()
         assertTrue(direct > addImport, "已可达候选必须排在需导入候选之前，实际 $direct vs $addImport")
 
-        val matched = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL)
-            .withExpectedTypeMatch(CaExpectedTypeMatch.MATCH).toWeight()
-        val unknown = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL)
-            .withExpectedTypeMatch(CaExpectedTypeMatch.UNKNOWN).toWeight()
-        val mismatched = CaCompletionSortDataImpl(CaCompletionOrigin.TOP_LEVEL)
-            .withExpectedTypeMatch(CaExpectedTypeMatch.MISMATCH).toWeight()
+        val matched = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.MATCH).toWeight()
+        val unknown = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.UNKNOWN).toWeight()
+        val mismatched = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL)
+            .withExpectedTypeMatch(ExpectedTypeMatch.MISMATCH).toWeight()
         assertTrue(matched > unknown, "MATCH 必须高于 UNKNOWN，实际 $matched vs $unknown")
         assertTrue(unknown > mismatched, "UNKNOWN 必须高于 MISMATCH，实际 $unknown vs $mismatched")
     }
@@ -183,16 +183,16 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun withExpectedTypeMatchPreservesOtherDimensions() {
-        val original = CaCompletionSortDataImpl(
-            origin = CaCompletionOrigin.EXTEND,
-            importCost = CaImportCost.ADD_IMPORT,
+        val original = CompletionSortDataImpl(
+            origin = CompletionOrigin.EXTEND,
+            importCost = ImportCost.ADD_IMPORT,
             declarationOrder = 3,
         )
-        val rewritten = original.withExpectedTypeMatch(CaExpectedTypeMatch.MATCH)
-        assertEquals(CaCompletionOrigin.EXTEND, rewritten.origin)
-        assertEquals(CaImportCost.ADD_IMPORT, rewritten.importCost)
+        val rewritten = original.withExpectedTypeMatch(ExpectedTypeMatch.MATCH)
+        assertEquals(CompletionOrigin.EXTEND, rewritten.origin)
+        assertEquals(ImportCost.ADD_IMPORT, rewritten.importCost)
         assertEquals(3, rewritten.declarationOrder)
-        assertEquals(CaExpectedTypeMatch.MATCH, rewritten.expectedTypeMatch)
+        assertEquals(ExpectedTypeMatch.MATCH, rewritten.expectedTypeMatch)
     }
 
     /**
@@ -200,18 +200,18 @@ class CaLookupElementFactoryTest : CjParsingTestCase(
      */
     @Test
     fun helperContracts() {
-        assertTrue(isPromotedByExpectedType(CaExpectedTypeMatch.MATCH))
-        assertFalse(isPromotedByExpectedType(CaExpectedTypeMatch.UNKNOWN), "UNKNOWN 不得当成匹配")
-        assertFalse(isPromotedByExpectedType(CaExpectedTypeMatch.MISMATCH))
+        assertTrue(isPromotedByExpectedType(ExpectedTypeMatch.MATCH))
+        assertFalse(isPromotedByExpectedType(ExpectedTypeMatch.UNKNOWN), "UNKNOWN 不得当成匹配")
+        assertFalse(isPromotedByExpectedType(ExpectedTypeMatch.MISMATCH))
 
         assertTrue(
-            originRank(CaCompletionOrigin.LOCAL_SCOPE) < originRank(CaCompletionOrigin.TOP_LEVEL),
+            originRank(CompletionOrigin.LOCAL_SCOPE) < originRank(CompletionOrigin.TOP_LEVEL),
             "来源次序是契约：局部必须先于顶层",
         )
 
-        assertTrue(caNamedArgumentSnapshot("value").build().insertion.requiresSuffixText(), "命名实参必须追加 `name: `")
+        assertTrue(namedArgumentSnapshot("value").build().insertion.requiresSuffixText(), "命名实参必须追加 `name: `")
         assertFalse(
-            caCompletionSnapshot("alpha", CaCompletionItemKind.LOCAL, CaCompletionOrigin.LOCAL_SCOPE)
+            completionSnapshot("alpha", CompletionItemKind.LOCAL, CompletionOrigin.LOCAL_SCOPE)
                 .build().insertion.requiresSuffixText(),
             "普通候选不得携带命名实参前缀",
         )

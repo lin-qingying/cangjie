@@ -3,27 +3,27 @@ package org.cangnova.cangjie.ide.completion.impl.shared.insert
 import com.intellij.codeInsight.completion.InsertHandler
 import com.intellij.codeInsight.completion.InsertionContext
 import com.intellij.codeInsight.lookup.LookupElement
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCaretPolicy
-import org.cangnova.cangjie.ide.completion.api.lookup.CaInsertionValidity
-import org.cangnova.cangjie.ide.completion.impl.shared.lookup.CA_COMPLETION_SNAPSHOT
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CaretPolicy
+import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
+import org.cangnova.cangjie.ide.completion.impl.shared.lookup.COMPLETION_SNAPSHOT
 
 /**
  * 仓颉候选的插入处理器。
  *
  * 插入发生在**写事务**里，此时不能查询 Analysis（可能跨线程违规），
- * 也不该临时决定括号形态。因此所有结论都来自分析期冻结的 [CaCompletionSnapshot.insertion]。
+ * 也不该临时决定括号形态。因此所有结论都来自分析期冻结的 [CompletionSnapshot.insertion]。
  *
  * 本文件只做平台适配：把 `InsertionContext` 拆成 `Document` + caret 偏移 + 校验结论，
  * 真正的写入决策在 [performCangjieInsertion] 里，可直接用真实文档测试。
  */
-object CaCompletionInsertHandlers {
+object CompletionInsertHandlers {
     /**
      * 为快照选择插入处理器。
      *
      * 命名实参候选走独立分支：它写入 `name: ` 而不是 `name(`。
      */
-    fun forSnapshot(snapshot: CaCompletionSnapshot): InsertHandler<LookupElement> =
+    fun forSnapshot(snapshot: CompletionSnapshot): InsertHandler<LookupElement> =
         if (snapshot.insertion.namedArgumentPrefix.isNotEmpty()) NamedArgumentHandler else DefaultHandler
 
     /**
@@ -32,8 +32,8 @@ object CaCompletionInsertHandlers {
      * 元素不是由本工厂创建时返回 `null`：宿主可能把仓颉候选与其它插件的候选
      * 混在同一次补全里，此时不能假设每个元素都带仓颉快照。
      */
-    fun snapshotOf(element: LookupElement): CaCompletionSnapshot? =
-        element.getUserData(CA_COMPLETION_SNAPSHOT)
+    fun snapshotOf(element: LookupElement): CompletionSnapshot? =
+        element.getUserData(COMPLETION_SNAPSHOT)
 }
 
 /**
@@ -41,9 +41,9 @@ object CaCompletionInsertHandlers {
  */
 private object DefaultHandler : InsertHandler<LookupElement> {
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
-        val snapshot = CaCompletionInsertHandlers.snapshotOf(item) ?: return
+        val snapshot = CompletionInsertHandlers.snapshotOf(item) ?: return
         val document = context.document
-        val validity = CaInsertionValidator.validate(
+        val validity = InsertionValidator.validate(
             snapshot,
             context.startOffset,
             context.tailOffset,
@@ -52,7 +52,7 @@ private object DefaultHandler : InsertHandler<LookupElement> {
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel
-        performCangjieInsertion(snapshot, CaDocumentTextSink(document), validity, caretModel.offset) {
+        performCangjieInsertion(snapshot, DocumentTextSink(document), validity, caretModel.offset) {
             caretModel.moveToOffset(it)
         }
         context.commitDocument()
@@ -67,9 +67,9 @@ private object DefaultHandler : InsertHandler<LookupElement> {
  */
 private object NamedArgumentHandler : InsertHandler<LookupElement> {
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
-        val snapshot = CaCompletionInsertHandlers.snapshotOf(item) ?: return
+        val snapshot = CompletionInsertHandlers.snapshotOf(item) ?: return
         val document = context.document
-        val validity = CaInsertionValidator.validate(
+        val validity = InsertionValidator.validate(
             snapshot,
             context.startOffset,
             context.tailOffset,
@@ -78,7 +78,7 @@ private object NamedArgumentHandler : InsertHandler<LookupElement> {
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel
-        performNamedArgumentInsertion(snapshot, CaDocumentTextSink(document), validity, caretModel.offset) {
+        performNamedArgumentInsertion(snapshot, DocumentTextSink(document), validity, caretModel.offset) {
             caretModel.moveToOffset(it)
         }
         context.commitDocument()
@@ -93,7 +93,7 @@ private object NamedArgumentHandler : InsertHandler<LookupElement> {
  * 就只能在平台夹具里测——而夹具里能验证的恰恰只有「平台 API 能跑通」，
  * 括号补不补、caret 落在哪这些真正会破坏用户代码的判断反而测不到。
  */
-interface CaTextSink {
+interface CompletionTextSink {
     /** 当前文本长度。 */
     val length: Int
 
@@ -107,7 +107,7 @@ interface CaTextSink {
 /**
  * 把平台文档适配为文本接缝。
  */
-class CaDocumentTextSink(private val document: com.intellij.openapi.editor.Document) : CaTextSink {
+class DocumentTextSink(private val document: com.intellij.openapi.editor.Document) : CompletionTextSink {
     override val length: Int
         get() = document.textLength
 
@@ -127,7 +127,7 @@ class CaDocumentTextSink(private val document: com.intellij.openapi.editor.Docum
  * [wroteText] 区分「确实改了文本」与「校验未通过，什么都没写」：
  * 失效候选必须走到这里且 `wroteText` 为 false，否则就是往已失效的位置硬插。
  */
-data class CaInsertionResult(val wroteText: Boolean, val caretOffset: Int)
+data class InsertionResult(val wroteText: Boolean, val caretOffset: Int)
 
 /**
  * 执行普通候选插入。
@@ -139,13 +139,13 @@ data class CaInsertionResult(val wroteText: Boolean, val caretOffset: Int)
  * @param setCaret caret 落点回调。
  */
 fun performCangjieInsertion(
-    snapshot: CaCompletionSnapshot,
-    sink: CaTextSink,
-    validity: CaInsertionValidity,
+    snapshot: CompletionSnapshot,
+    sink: CompletionTextSink,
+    validity: InsertionValidity,
     caretOffset: Int,
     setCaret: (Int) -> Unit,
-): CaInsertionResult {
-    if (!validity.writable) return CaInsertionResult(wroteText = false, caretOffset = caretOffset)
+): InsertionResult {
+    if (!validity.writable) return InsertionResult(wroteText = false, caretOffset = caretOffset)
 
     var caret = caretOffset
     var wrote = false
@@ -154,31 +154,31 @@ fun performCangjieInsertion(
         caret += 1
         wrote = true
     }
-    if (snapshot.insertion.caretPolicy == CaCaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS) {
+    if (snapshot.insertion.caretPolicy == CaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS) {
         // 候选后面已经有实参和闭合括号：caret 必须停在右括号之前，
         // 否则用户写好的实参会被挤到括号外。
         caret = closingParenOffset(sink, caret) ?: caret
     }
     setCaret(caret)
-    return CaInsertionResult(wroteText = wrote, caretOffset = caret)
+    return InsertionResult(wroteText = wrote, caretOffset = caret)
 }
 
 /**
  * 执行命名实参插入：写入仓颉的 `name: ` 前缀并把 caret 放到冒号之后。
  */
 fun performNamedArgumentInsertion(
-    snapshot: CaCompletionSnapshot,
-    sink: CaTextSink,
-    validity: CaInsertionValidity,
+    snapshot: CompletionSnapshot,
+    sink: CompletionTextSink,
+    validity: InsertionValidity,
     caretOffset: Int,
     setCaret: (Int) -> Unit,
-): CaInsertionResult {
-    if (!validity.writable) return CaInsertionResult(wroteText = false, caretOffset = caretOffset)
+): InsertionResult {
+    if (!validity.writable) return InsertionResult(wroteText = false, caretOffset = caretOffset)
     val prefix = snapshot.insertion.namedArgumentPrefix
     sink.insert(caretOffset, prefix)
     val caret = caretOffset + prefix.length
     setCaret(caret)
-    return CaInsertionResult(wroteText = true, caretOffset = caret)
+    return InsertionResult(wroteText = true, caretOffset = caret)
 }
 
 /**
@@ -187,7 +187,7 @@ fun performNamedArgumentInsertion(
  * 已有括号时**不再补**：用户在 `foo(bar)` 里补 `foo` 的实参，重复补会得到
  * `foo((bar))`，而这正是 Tab 补全最常见的落点。
  */
-private fun isFollowedByOpeningParen(sink: CaTextSink, offset: Int): Boolean {
+private fun isFollowedByOpeningParen(sink: CompletionTextSink, offset: Int): Boolean {
     var index = offset
     while (index < sink.length && sink.charAt(index).isWhitespace()) index++
     return index < sink.length && sink.charAt(index) == '('
@@ -196,7 +196,7 @@ private fun isFollowedByOpeningParen(sink: CaTextSink, offset: Int): Boolean {
 /**
  * 找出插入点之后第一个右括号的位置；不存在时返回 `null`。
  */
-private fun closingParenOffset(sink: CaTextSink, offset: Int): Int? {
+private fun closingParenOffset(sink: CompletionTextSink, offset: Int): Int? {
     var index = offset
     while (index < sink.length && sink.charAt(index).isWhitespace()) index++
     return if (index < sink.length && sink.charAt(index) == ')') index else null

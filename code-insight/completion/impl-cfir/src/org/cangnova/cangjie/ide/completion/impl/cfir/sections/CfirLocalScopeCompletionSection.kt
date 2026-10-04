@@ -5,13 +5,13 @@ import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.components.CaScopeKind
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
  * 局部声明、参数与词法作用域候选。
@@ -30,12 +30,12 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
     /**
      * 计算当前位置的词法候选。
      */
-    override fun compute(request: CaCompletionRequest): List<CaCompletionSnapshot> {
+    override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CaCompletionPositionContexts.classify(position)
+        val context = CompletionPositionContexts.classify(position)
         // 成员访问与 import 位置不使用词法候选：它们的候选来自接收者与导入上下文。
-        if (context.kind == CaCompletionPositionKind.MEMBER_ACCESS ||
-            context.kind == CaCompletionPositionKind.IMPORT
+        if (context.kind == CompletionPositionKind.MEMBER_ACCESS ||
+            context.kind == CompletionPositionKind.IMPORT
         ) {
             return emptyList()
         }
@@ -60,8 +60,8 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
                         add(
                             callableSnapshot(
                                 symbol,
-                                CaCompletionItemKind.LOCAL,
-                                CaCompletionOrigin.LOCAL_SCOPE,
+                                CompletionItemKind.LOCAL,
+                                CompletionOrigin.LOCAL_SCOPE,
                                 documentStamp = request.documentStamp,
                             ),
                         )

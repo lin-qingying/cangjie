@@ -2,18 +2,18 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.analyze
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionSortDataImpl
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportCost
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
  * 关键字、声明名与类型建议候选。
@@ -32,10 +32,10 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
     /**
      * 计算当前位置的关键字与声明名候选。
      */
-    override fun compute(request: CaCompletionRequest): List<CaCompletionSnapshot> {
+    override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CaCompletionPositionContexts.classify(position).kind
-        if (context == CaCompletionPositionKind.IMPORT || context == CaCompletionPositionKind.DOCUMENTATION) {
+        val context = CompletionPositionContexts.classify(position).kind
+        if (context == CompletionPositionKind.IMPORT || context == CompletionPositionKind.DOCUMENTATION) {
             return emptyList()
         }
 
@@ -44,7 +44,7 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
 
         return analyze(file) {
             val scopeContext = file.scopeContext(position)
-            val snapshots = mutableListOf<CaCompletionSnapshot>()
+            val snapshots = mutableListOf<CompletionSnapshot>()
             for (keyword in keywordsFor(context, scopeContext.implicitReceivers.isNotEmpty())) {
                 if (prefix.isNotEmpty() && !keyword.startsWith(prefix)) continue
                 snapshots += keywordSnapshot(keyword)
@@ -54,14 +54,14 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
             // 声明名位置刻意不给：在声明标识符上取导入作用域会回到当前文件的作用域，
             // 与正在解析的声明互相递归，实测触发 StackOverflowError。
             // 声明名建议由顶层区段在成员/局部来源中给出，不与关键字区段混在一起。
-            if (context == CaCompletionPositionKind.TYPE) {
+            if (context == CompletionPositionKind.TYPE) {
                 val importing = file.importingScopeContext.compositeScope()
                 for (classifier in importing.classifiers { true }) {
                     val snapshot = classifierSnapshot(
                         classifier,
-                        CaCompletionItemKind.TOP_LEVEL,
-                        CaCompletionOrigin.TOP_LEVEL,
-                        CaImportCost.ADD_IMPORT,
+                        CompletionItemKind.TOP_LEVEL,
+                        CompletionOrigin.TOP_LEVEL,
+                        ImportCost.ADD_IMPORT,
                         documentStamp = request.documentStamp,
                     )
                     if (prefix.isEmpty() || snapshot.lookupString.startsWith(prefix)) snapshots += snapshot
@@ -80,24 +80,24 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
      * [hasReceiver] 直接决定 `this` 是否出现：无接收者时给出 `this`
      * 会补出在该位置无法解析的名字。
      */
-    private fun keywordsFor(kind: CaCompletionPositionKind, hasReceiver: Boolean): List<String> {
+    private fun keywordsFor(kind: CompletionPositionKind, hasReceiver: Boolean): List<String> {
         val thisKeyword = if (hasReceiver) listOf("this") else emptyList()
         return when (kind) {
-            CaCompletionPositionKind.MEMBER_ACCESS -> thisKeyword
-            CaCompletionPositionKind.FUNCTION_BODY -> thisKeyword + listOf("return", "let", "var", "if", "while", "for")
-            CaCompletionPositionKind.EXPRESSION -> listOf("let", "if", "return") + thisKeyword
-            CaCompletionPositionKind.TYPE -> listOf(
+            CompletionPositionKind.MEMBER_ACCESS -> thisKeyword
+            CompletionPositionKind.FUNCTION_BODY -> thisKeyword + listOf("return", "let", "var", "if", "while", "for")
+            CompletionPositionKind.EXPRESSION -> listOf("let", "if", "return") + thisKeyword
+            CompletionPositionKind.TYPE -> listOf(
                 "class", "struct", "interface", "enum", "extend", "type", "func", "prop", "let", "var",
             )
-            CaCompletionPositionKind.DECLARATION_NAME -> listOf(
+            CompletionPositionKind.DECLARATION_NAME -> listOf(
                 "class", "struct", "interface", "enum", "extend", "func", "prop", "main", "operator",
             )
-            CaCompletionPositionKind.IMPORT -> emptyList()
-            CaCompletionPositionKind.PACKAGE -> listOf("import")
-            CaCompletionPositionKind.NAMED_ARGUMENT -> emptyList()
-            CaCompletionPositionKind.OPERATOR -> listOf("operator")
-            CaCompletionPositionKind.DOCUMENTATION -> emptyList()
-            CaCompletionPositionKind.MACRO_TOKENS -> emptyList()
+            CompletionPositionKind.IMPORT -> emptyList()
+            CompletionPositionKind.PACKAGE -> listOf("import")
+            CompletionPositionKind.NAMED_ARGUMENT -> emptyList()
+            CompletionPositionKind.OPERATOR -> listOf("operator")
+            CompletionPositionKind.DOCUMENTATION -> emptyList()
+            CompletionPositionKind.MACRO_TOKENS -> emptyList()
         }
     }
 
@@ -107,19 +107,19 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
      * 关键字身份句柄就是关键字本身：恢复时无需重新解析符号，
      * 但仍要区分同名不同类别的候选。
      */
-    private fun keywordSnapshot(keyword: String): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun keywordSnapshot(keyword: String): CompletionSnapshot = completionSnapshot(
         lookupString = keyword,
-        kind = CaCompletionItemKind.KEYWORD,
-        origin = CaCompletionOrigin.KEYWORD,
-        identityKind = CaCompletionIdentityKind.KEYWORD,
+        kind = CompletionItemKind.KEYWORD,
+        origin = CompletionOrigin.KEYWORD,
+        identityKind = CompletionIdentityKind.KEYWORD,
     ).apply {
-        this.identity = CaCompletionIdentityData(
-            kind = CaCompletionIdentityKind.KEYWORD,
+        this.identity = CompletionIdentityData(
+            kind = CompletionIdentityKind.KEYWORD,
             handle = keyword,
             name = keyword,
             deduplicationKey = "keyword:$keyword",
         )
-        this.sort = CaCompletionSortDataImpl(origin = CaCompletionOrigin.KEYWORD)
+        this.sort = CompletionSortDataImpl(origin = CompletionOrigin.KEYWORD)
     }.build()
 
     companion object {

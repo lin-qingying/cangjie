@@ -1,14 +1,14 @@
 package org.cangnova.cangjie.ide.completion.impl.shared.insert
 
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCaretPolicy
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionInsertionData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaInsertionValidity
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.impl.shared.caNamedArgumentSnapshot
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CaretPolicy
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionInsertionData
+import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.namedArgumentSnapshot
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
  * - 已有实参与闭合括号时 caret 停在右括号之前；
  * - 命名实参只写仓颉的 `name: `，绝不写 Kotlin 的 `name = `。
  */
-class CaCangjieInsertionTest {
+class CangjieInsertionTest {
     /**
      * 待写入的文本。
      *
@@ -52,7 +52,7 @@ class CaCangjieInsertionTest {
         val result = performCangjieInsertion(
             snapshot = callableSnapshot(insertParenthesis = true),
             sink = target,
-            validity = CaInsertionValidity.StaleDocument(expectedStamp = 1L, actualStamp = 2L),
+            validity = InsertionValidity.StaleDocument(expectedStamp = 1L, actualStamp = 2L),
             caretOffset = 5,
         ) { caret = it }
         assertFalse(result.wroteText, "失效候选不得写文档")
@@ -69,7 +69,7 @@ class CaCangjieInsertionTest {
         val result = performCangjieInsertion(
             snapshot = callableSnapshot(insertParenthesis = true),
             sink = target,
-            validity = CaInsertionValidity.OutOfRange(10, 20, 2),
+            validity = InsertionValidity.OutOfRange(10, 20, 2),
             caretOffset = 5,
         ) {}
         assertFalse(result.wroteText, "越界候选不得写文档")
@@ -86,7 +86,7 @@ class CaCangjieInsertionTest {
         val result = performCangjieInsertion(
             snapshot = callableSnapshot(insertParenthesis = true),
             sink = target,
-            validity = CaInsertionValidity.Valid,
+            validity = InsertionValidity.Valid,
             caretOffset = 5,
         ) { caret = it }
         assertTrue(result.wroteText, "有效候选必须写括号")
@@ -107,7 +107,7 @@ class CaCangjieInsertionTest {
         val result = performCangjieInsertion(
             snapshot = callableSnapshot(insertParenthesis = true),
             sink = target,
-            validity = CaInsertionValidity.Valid,
+            validity = InsertionValidity.Valid,
             caretOffset = 5,
         ) { caret = it }
         assertFalse(result.wroteText, "已有左括号时不得再补括号")
@@ -129,10 +129,10 @@ class CaCangjieInsertionTest {
         performCangjieInsertion(
             snapshot = callableSnapshot(
                 insertParenthesis = false,
-                caretPolicy = CaCaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS,
+                caretPolicy = CaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS,
             ),
             sink = target,
-            validity = CaInsertionValidity.Valid,
+            validity = InsertionValidity.Valid,
             caretOffset = 6,
         ) { caret = it }
         assertEquals(7, caret, "caret 必须跨过空格停在右括号之前")
@@ -148,7 +148,7 @@ class CaCangjieInsertionTest {
         val result = performCangjieInsertion(
             snapshot = typeSnapshot(),
             sink = target,
-            validity = CaInsertionValidity.Valid,
+            validity = InsertionValidity.Valid,
             caretOffset = 5,
         ) {}
         assertFalse(result.wroteText, "类型候选不得补括号")
@@ -163,9 +163,9 @@ class CaCangjieInsertionTest {
         text("alpha()")
         var caret = 5
         val result = performNamedArgumentInsertion(
-            snapshot = caNamedArgumentSnapshot("size").build(),
+            snapshot = namedArgumentSnapshot("size").build(),
             sink = target,
-            validity = CaInsertionValidity.Valid,
+            validity = InsertionValidity.Valid,
             caretOffset = 5,
         ) { caret = it }
         assertTrue(result.wroteText, "命名实参必须写入前缀")
@@ -181,9 +181,9 @@ class CaCangjieInsertionTest {
     fun staleNamedArgumentWritesNothing() {
         text("alpha()")
         val result = performNamedArgumentInsertion(
-            snapshot = caNamedArgumentSnapshot("size").build(),
+            snapshot = namedArgumentSnapshot("size").build(),
             sink = target,
-            validity = CaInsertionValidity.StaleDocument(1L, 2L),
+            validity = InsertionValidity.StaleDocument(1L, 2L),
             caretOffset = 5,
         ) {}
         assertFalse(result.wroteText, "失效的命名实参候选不得写文档")
@@ -195,22 +195,22 @@ class CaCangjieInsertionTest {
      */
     private fun callableSnapshot(
         insertParenthesis: Boolean,
-        caretPolicy: CaCaretPolicy = CaCaretPolicy.INSIDE_NEW_PARENTHESIS,
-    ): CaCompletionSnapshot = caCompletionSnapshot(
+        caretPolicy: CaretPolicy = CaretPolicy.INSIDE_NEW_PARENTHESIS,
+    ): CompletionSnapshot = completionSnapshot(
         lookupString = "alpha",
-        kind = CaCompletionItemKind.MEMBER,
-        origin = CaCompletionOrigin.MEMBER,
+        kind = CompletionItemKind.MEMBER,
+        origin = CompletionOrigin.MEMBER,
         insertParenthesis = insertParenthesis,
     ).build().copy(insertion = insertionOf(insertParenthesis, caretPolicy))
 
     /**
      * 构造一个不需要括号的类型候选。
      */
-    private fun typeSnapshot(): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun typeSnapshot(): CompletionSnapshot = completionSnapshot(
         lookupString = "Alpha",
-        kind = CaCompletionItemKind.TOP_LEVEL,
-        origin = CaCompletionOrigin.TOP_LEVEL,
-        identityKind = CaCompletionIdentityKind.TYPE,
+        kind = CompletionItemKind.TOP_LEVEL,
+        origin = CompletionOrigin.TOP_LEVEL,
+        identityKind = CompletionIdentityKind.TYPE,
     ).build()
 
     /**
@@ -218,8 +218,8 @@ class CaCangjieInsertionTest {
      */
     private fun insertionOf(
         insertParenthesis: Boolean,
-        caretPolicy: CaCaretPolicy,
-    ) = CaCompletionInsertionData(
+        caretPolicy: CaretPolicy,
+    ) = CompletionInsertionData(
         insertParenthesis = insertParenthesis,
         namedArgumentPrefix = "",
         caretPolicy = caretPolicy,
@@ -230,7 +230,7 @@ class CaCangjieInsertionTest {
 /**
  * 纯文本 sink：以 `StringBuilder` 为后端，可在无平台环境的单元测试里使用。
  */
-private class FakeTextSink(initial: String) : CaTextSink {
+private class FakeTextSink(initial: String) : CompletionTextSink {
     private val buffer = StringBuilder(initial)
 
     override val length: Int

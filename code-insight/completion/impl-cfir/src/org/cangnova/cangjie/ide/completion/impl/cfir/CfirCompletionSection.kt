@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.ide.completion.impl.cfir
 
 import com.intellij.openapi.progress.ProgressIndicator
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.impl.shared.CaCompletionResultSink
-import org.cangnova.cangjie.ide.completion.impl.shared.CaCompletionSection
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.impl.shared.CompletionResultSink
+import org.cangnova.cangjie.ide.completion.impl.shared.CompletionSection
 
 /**
  * 仓颉补全区段的公共底座。
@@ -21,21 +21,21 @@ abstract class CfirCompletionSection(
      * 执行优先级，值越小越先执行。
      */
     final override val executionPriority: Int,
-) : CaCompletionSection {
+) : CompletionSection {
     /**
      * 计算本区段的候选快照。
      *
      * 允许返回空列表表示「该位置没有此类候选」；但不得吞掉异常：
      * 失败必须以异常形式暴露，否则空结果会伪装成「没有候选」。
      */
-    protected abstract fun compute(request: CaCompletionRequest): List<CaCompletionSnapshot>
+    protected abstract fun compute(request: CompletionRequest): List<CompletionSnapshot>
 
     /**
      * 执行本区段并推入结果。
      */
     final override fun execute(
-        request: CaCompletionRequest,
-        sink: CaCompletionResultSink,
+        request: CompletionRequest,
+        sink: CompletionResultSink,
         indicator: ProgressIndicator,
     ) {
         indicator.checkCanceled()

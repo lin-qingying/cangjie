@@ -20,7 +20,7 @@ import kotlin.test.assertNull
  * 只验证位置形态判定：分类错误会让候选生成选错家族，
  * 而且这种错误在界面上表现为「少补了一些东西」，很难定位。
  */
-class CaCompletionPositionContextTest : CjParsingTestCase(
+class CompletionPositionContextTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
@@ -70,13 +70,13 @@ class CaCompletionPositionContextTest : CjParsingTestCase(
         val selector = qualified.selectorExpression
         assertNotNull(selector, "限定表达式的选择器必须存在")
 
-        val onSelector = CaCompletionPositionContexts.classify(selector)
-        assertEquals(CaCompletionPositionKind.MEMBER_ACCESS, onSelector.kind)
+        val onSelector = CompletionPositionContexts.classify(selector)
+        assertEquals(CompletionPositionKind.MEMBER_ACCESS, onSelector.kind)
         assertEquals(qualified.receiverExpression, onSelector.receiverExpression)
 
         // 接收者一侧仍是普通函数体位置：只有选择器一侧才构成成员访问。
-        val onReceiver = CaCompletionPositionContexts.classify(qualified.receiverExpression)
-        assertEquals(CaCompletionPositionKind.FUNCTION_BODY, onReceiver.kind)
+        val onReceiver = CompletionPositionContexts.classify(qualified.receiverExpression)
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, onReceiver.kind)
         assertNull(onReceiver.receiverExpression, "接收者一侧不是成员访问位置")
     }
 
@@ -95,8 +95,8 @@ class CaCompletionPositionContextTest : CjParsingTestCase(
         )
 
         val usage = file.lastReference("value")
-        val context = CaCompletionPositionContexts.classify(usage)
-        assertEquals(CaCompletionPositionKind.FUNCTION_BODY, context.kind)
+        val context = CompletionPositionContexts.classify(usage)
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, context.kind)
         assertNull(context.receiverExpression, "函数体位置不是成员访问")
     }
 
@@ -113,8 +113,8 @@ class CaCompletionPositionContextTest : CjParsingTestCase(
             """.trimIndent(),
         )
 
-        val context = CaCompletionPositionContexts.classify(file.lastReference("ArrayList"))
-        assertEquals(CaCompletionPositionKind.IMPORT, context.kind)
+        val context = CompletionPositionContexts.classify(file.lastReference("ArrayList"))
+        assertEquals(CompletionPositionKind.IMPORT, context.kind)
     }
 }
 

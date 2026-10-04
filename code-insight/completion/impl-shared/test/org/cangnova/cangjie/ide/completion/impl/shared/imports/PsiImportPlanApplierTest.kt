@@ -1,11 +1,12 @@
 package org.cangnova.cangjie.ide.completion.impl.shared.imports
 
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.editor.Document
 import com.intellij.psi.PsiDocumentManager
 import org.cangnova.cangjie.ImportPath
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportPlan
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportTargetData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportConflictKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportConflictKind
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjFile
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -28,7 +28,7 @@ import kotlin.test.assertTrue
  *
  * 写入结果以报告与文档文本双重断言：只信报告会让「报告说写了、文档没变」漏过去。
  */
-class CaPsiImportPlanApplierTest : CjParsingTestCase(
+class PsiImportPlanApplierTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
@@ -72,12 +72,12 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
     @Test
     fun skipsAlreadyImportedPath() {
         val file = parse(FILE_WITH_IMPORT)
-        val before = documentOf(file).text
+        val before = documentText(file)
         val report = applyPlans(file, mapOf("arrayList" to addImport("std.collection.ArrayList", "ArrayList")))
         assertEquals(listOf("std.collection.ArrayList"), report.skippedAsAlreadyImported)
         assertTrue(report.added.isEmpty())
         assertFalse(report.documentChanged)
-        assertEquals(before, documentOf(file).text)
+        assertEquals(before, documentText(file))
     }
 
     /**
@@ -88,7 +88,7 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
         val file = parse(FILE_WITH_FOO_IMPORT)
         val report = applyPlans(file, mapOf("otherFoo" to addImport("c.d.Foo", "c.d.Foo")))
         val conflict = report.conflicts.single()
-        assertEquals(CaImportConflictKind.SHORT_NAME_TAKEN_BY_OTHER, conflict.kind)
+        assertEquals(ImportConflictKind.SHORT_NAME_TAKEN_BY_OTHER, conflict.kind)
         assertEquals("a.b.Foo", conflict.conflictingBinding)
         assertEquals("c.d.Foo", report.qualifiedExpressionText["otherFoo"])
         assertTrue(report.added.isEmpty(), "冲突时不得写入会造成二义的 import")
@@ -101,18 +101,18 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
     @Test
     fun qualifyThenShortenWritesNothing() {
         val file = parse(FILE_WITH_FOO_IMPORT)
-        val before = documentOf(file).text
+        val before = documentText(file)
         val report = applyPlans(
             file,
             mapOf(
-                "otherFoo" to CaCompletionImportPlan.QualifyThenShorten(
-                    CaCompletionImportTargetData(ImportPath.fromString("c.d.Foo"), "c.d.Foo"),
+                "otherFoo" to CompletionImportPlan.QualifyThenShorten(
+                    CompletionImportTargetData(ImportPath.fromString("c.d.Foo"), "c.d.Foo"),
                 ),
             ),
         )
         assertEquals("c.d.Foo", report.qualifiedExpressionText.values.single())
         assertTrue(report.added.isEmpty())
-        assertEquals(before, documentOf(file).text)
+        assertEquals(before, documentText(file))
     }
 
     /**
@@ -123,7 +123,7 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
         val file = parse(FILE_WITHOUT_IMPORTS)
         val report = applyPlans(file, mapOf("aliased" to addImport("org::pkg.Widget as W", "W")))
         assertEquals(listOf("org::pkg.Widget as W"), report.added)
-        val text = documentOf(file).text
+        val text = documentText(file)
         assertTrue(text.contains("import org::pkg.Widget as W"), "组织名与别名必须原样写入 import，实际：\n$text")
         assertFalse(text.contains("W as W"), "表达式文本不得混入 import 文本")
     }
@@ -134,11 +134,64 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
     @Test
     fun noImportPlanDoesNothing() {
         val file = parse(FILE_WITHOUT_IMPORTS)
-        val before = documentOf(file).text
-        val report = applyPlans(file, mapOf("widget" to CaCompletionImportPlan.NoImport))
+        val before = documentText(file)
+        val report = applyPlans(file, mapOf("widget" to CompletionImportPlan.NoImport))
         assertFalse(report.documentChanged)
         assertTrue(report.qualifiedExpressionText.isEmpty())
-        assertEquals(before, documentOf(file).text)
+        assertEquals(before, documentText(file))
+    }
+
+    /**
+     * 同包分组 import：新成员并入既有分组，而不是追加一行平行 import。
+     *
+     * 仓颉的 `import a.{b, c}` 与两条独立 import 语义等价，但前者是这个包在
+     * 该文件里的既有书写形式；追加平行行会把它打散，review 时看着像重复导入。
+     */
+    @Test
+    fun joinsExistingGroupedImport() {
+        val file = parse(FILE_WITH_GROUPED_IMPORT)
+        val report = applyPlans(file, mapOf("hashMap" to addImport("std.collection.HashMap", "HashMap")))
+        assertEquals(listOf("std.collection.HashMap"), report.added)
+        val text = documentText(file)
+        assertTrue(
+            text.contains("std.collection.{ArrayList, HashMap}") ||
+                text.contains("std.collection.{ArrayList,HashMap}"),
+            "新成员必须并入既有分组，实际 $text",
+        )
+        assertFalse(
+            text.lines().any { it.trim() == "import std.collection.HashMap" },
+            "不得同时追加平行 import，实际 $text",
+        )
+    }
+
+    /**
+     * 并组保持幂等：分组里已有该成员时不再改动文档。
+     */
+    @Test
+    fun joiningGroupIsIdempotent() {
+        val file = parse(FILE_WITH_GROUPED_IMPORT)
+        val before = documentText(file)
+        val report = applyPlans(file, mapOf("arrayList" to addImport("std.collection.ArrayList", "ArrayList")))
+        assertEquals(emptyList(), report.added, "分组内已有成员时不得重复写入")
+        assertTextEquals(before, documentText(file), "幂等场景下文档不得被改动")
+    }
+
+    /**
+     * 不同包的 import 不得并入既有分组。
+     */
+    @Test
+    fun doesNotJoinGroupAcrossPackages() {
+        val file = parse(FILE_WITH_GROUPED_IMPORT)
+        applyPlans(file, mapOf("option" to addImport("std.io.Option", "Option")))
+        val text = documentText(file)
+        assertTrue(
+            text.contains("import std.io.Option"),
+            "不同包的 import 必须独立成行，实际 $text",
+        )
+        assertFalse(
+            text.contains("std.collection.{ArrayList, Option}"),
+            "不得跨包并组，实际 $text",
+        )
     }
 
     /**
@@ -147,10 +200,34 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
     private fun parse(text: String): CjFile = createPsiFile("imports", text) as CjFile
 
     /**
+     * 文本相等断言。
+     *
+     * 刻意不写 `assertEquals(String, String, String)`：平台测试基类继承自 JUnit 3 的
+     * `TestCase`，其 `assertEquals(String message, String expected, String actual)`
+     * 是**成员函数**，在 Kotlin 里成员优先于导入，同名导入根本不会被选中——
+     * 三个字符串参数会被静默按 (message, expected, actual) 解释，
+     * 表现为「断言莫名其妙失败且实际值是一句提示语」。这里显式走 JUnit 5。
+     */
+    private fun assertTextEquals(expected: String, actual: String, message: String) =
+        org.junit.jupiter.api.Assertions.assertEquals(expected, actual, message)
+
+    /**
+     * 在 EDT 上读取文档文本。
+     *
+     * 轻量夹具的文档只在写命令内可用：测试线程直接读会拿到空文档，
+     * 断言随之变成「文本莫名变化」。与 [applyPlans] 走同一条 EDT 路径。
+     */
+    private fun documentText(file: CjFile): String {
+        var text = ""
+        java.awt.EventQueue.invokeAndWait { text = documentOf(file).text }
+        return text
+    }
+
+    /**
      * 取得文件文档；轻量夹具文件必须带文档，否则应用器无法写入。
      */
-    private fun documentOf(file: CjFile) =
-        assertNotNull(PsiDocumentManager.getInstance(project).getDocument(file), "夹具文件必须带文档")
+    private fun documentOf(file: CjFile): Document =
+        requireNotNull(PsiDocumentManager.getInstance(project).getDocument(file)) { "夹具文件必须带文档" }
 
     /**
      * 在写命令内应用导入计划：应用器的调用契约就是写事务。
@@ -158,22 +235,22 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
      * PSI 文档写入要求 EDT + 命令上下文：测试工作线程必须切到 EDT，
      * 并用 WriteCommandAction 包裹，与产品里插入处理器所处的命令上下文一致。
      */
-    private fun applyPlans(file: CjFile, plans: Map<String, CaCompletionImportPlan>): CaImportApplyReport {
-        var report: CaImportApplyReport? = null
+    private fun applyPlans(file: CjFile, plans: Map<String, CompletionImportPlan>): ImportApplyReport {
+        var report: ImportApplyReport? = null
         java.awt.EventQueue.invokeAndWait {
             WriteCommandAction.runWriteCommandAction(project) {
-                report = CaPsiImportPlanApplier(project).apply(file, plans)
+                report = PsiImportPlanApplier(project).apply(file, plans)
             }
         }
-        return assertNotNull(report, "写命令必须产出报告")
+        return requireNotNull(report) { "写命令必须产出报告" }
     }
 
     /**
      * 构造 AddImport 计划。
      */
-    private fun addImport(importPath: String, expressionText: String): CaCompletionImportPlan =
-        CaCompletionImportPlan.AddImport(
-            CaCompletionImportTargetData(ImportPath.fromString(importPath), expressionText),
+    private fun addImport(importPath: String, expressionText: String): CompletionImportPlan =
+        CompletionImportPlan.AddImport(
+            CompletionImportTargetData(ImportPath.fromString(importPath), expressionText),
         )
 
     companion object {
@@ -193,6 +270,15 @@ class CaPsiImportPlanApplierTest : CjParsingTestCase(
             import a.b.Foo
 
             func use(foo: Foo): Unit {}
+        """.trimIndent()
+
+        /** 带一条分组 import 的夹具。 */
+        private val FILE_WITH_GROUPED_IMPORT = """
+            package completion.imports
+
+            import std.collection.{ArrayList}
+
+            func use(items: ArrayList<Int64>): Unit {}
         """.trimIndent()
 
         /** 无 import 的夹具：插入点应落到包声明之后。 */

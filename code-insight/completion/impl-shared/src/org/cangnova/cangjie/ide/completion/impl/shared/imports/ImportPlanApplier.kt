@@ -3,10 +3,10 @@ package org.cangnova.cangjie.ide.completion.impl.shared.imports
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import org.cangnova.cangjie.ImportPath
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportPlan
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportTarget
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportConflict
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportConflictKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTarget
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportConflict
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportConflictKind
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjImportItem
@@ -17,13 +17,13 @@ import org.cangnova.cangjie.psi.CjImportItem
  * 报告而不是直接改文件：调用方需要区分「新增了 import」「已存在所以跳过」
  * 「与既有绑定冲突」三种不同结论，它们对应三种不同的 UI 行为。
  */
-data class CaImportApplyReport(
+data class ImportApplyReport(
     /** 实际写入的 import 文本，按写入顺序。 */
     val added: List<String> = emptyList(),
     /** 已存在因而跳过的 import 文本。 */
     val skippedAsAlreadyImported: List<String> = emptyList(),
     /** 检出的冲突。 */
-    val conflicts: List<CaImportConflict> = emptyList(),
+    val conflicts: List<ImportConflict> = emptyList(),
     /** 采用限定名策略的表达式文本，按候选去重键索引。 */
     val qualifiedExpressionText: Map<String, String> = emptyMap(),
 ) {
@@ -38,14 +38,14 @@ data class CaImportApplyReport(
  * **必须在写命令内调用**：导入与候选文本是同一次撤销的一部分，
  * 分成两个命令会让用户按一次 Ctrl+Z 只撤掉一半。
  */
-interface CaImportPlanApplier {
+interface ImportPlanApplier {
     /**
      * 应用导入计划。
      *
      * @param file 目标文件。
      * @param plans 候选去重键到导入计划的映射；无导入需求的候选不出现在其中。
      */
-    fun apply(file: CjFile, plans: Map<String, CaCompletionImportPlan>): CaImportApplyReport
+    fun apply(file: CjFile, plans: Map<String, CompletionImportPlan>): ImportApplyReport
 }
 
 /**
@@ -53,27 +53,27 @@ interface CaImportPlanApplier {
  *
  * 三条不变量：
  * 1. **幂等**：同一 import 已存在时不重复写入，也不产生空行或重复项；
- * 2. **组织名与别名只出现在 import 里**：表达式侧使用 [CaCompletionImportTarget.expressionText]，
+ * 2. **组织名与别名只出现在 import 里**：表达式侧使用 [CompletionImportTarget.expressionText]，
  *    绝不把 `org::` 前缀抄进表达式访问；
  * 3. **冲突不静默**：短名已被其它声明绑定时报告冲突，由调用方决定改用限定名还是隐藏候选。
  */
-class CaPsiImportPlanApplier(
+class PsiImportPlanApplier(
     private val project: Project,
-) : CaImportPlanApplier {
-    override fun apply(file: CjFile, plans: Map<String, CaCompletionImportPlan>): CaImportApplyReport {
+) : ImportPlanApplier {
+    override fun apply(file: CjFile, plans: Map<String, CompletionImportPlan>): ImportApplyReport {
         val added = mutableListOf<String>()
         val skipped = mutableListOf<String>()
-        val conflicts = mutableListOf<CaImportConflict>()
+        val conflicts = mutableListOf<ImportConflict>()
         val qualified = mutableMapOf<String, String>()
 
         val existing = ExistingImports.of(file)
 
         for ((key, plan) in plans) {
             when (plan) {
-                is CaCompletionImportPlan.NoImport -> Unit
-                is CaCompletionImportPlan.QualifyThenShorten ->
+                is CompletionImportPlan.NoImport -> Unit
+                is CompletionImportPlan.QualifyThenShorten ->
                     qualified[key] = plan.target.expressionText
-                is CaCompletionImportPlan.AddImport -> {
+                is CompletionImportPlan.AddImport -> {
                     val path = plan.target.importPath
                     if (existing.covers(path)) {
                         // 已导入：目标本来就可达，改成短名引用即可，无需再写 import。
@@ -96,7 +96,7 @@ class CaPsiImportPlanApplier(
                 }
             }
         }
-        return CaImportApplyReport(added, skipped, conflicts, qualified)
+        return ImportApplyReport(added, skipped, conflicts, qualified)
     }
 
     /**
@@ -115,9 +115,73 @@ class CaPsiImportPlanApplier(
         // 把基础设施错误伪装成成功。这里如实抛出，由调用方保证传入编辑器中的文件。
         val document = documentManager.getDocument(file)
             ?: error("文件 ${file.name} 没有关联文档，无法写入 import")
-        val anchor = insertionOffset(file, document)
-        document.insertString(anchor, "\nimport $path")
+
+        // 已有同包分组 import 时并入分组，而不是再写一行平行语句：
+        // 仓颉的 `import a.{b, c}` 与两条独立的 `import a.b` / `import a.c` 语义等价，
+        // 但前者是这个包在该文件里的既有书写形式，追加平行行会把它打散。
+        val group = findJoinableGroup(file, path)
+        if (group != null) {
+            appendToGroup(document, group, path)
+        } else {
+            val anchor = insertionOffset(file, document)
+            document.insertString(anchor, "\nimport $path")
+        }
         documentManager.commitDocument(document)
+    }
+
+    /**
+     * 找出可以把 [path] 并入的既有分组。
+     *
+     * 判定依据是**分组的包前缀**而不是成员自身的 `localFqName`：
+     * 在 `import std.collection.{ArrayList}` 里，成员的 `localFqName` 只是组内的
+     * 相对名 `ArrayList`，拿它算父包必然得到空，从而永远匹配不上任何分组。
+     *
+     * 组织名必须参与判断：不同组织的同名包路径不是同一个命名空间，并组会产生二义。
+     */
+    private fun findJoinableGroup(file: CjFile, path: ImportPath): CjImportDirective? {
+        val parent = parentPackageOf(path) ?: return null
+        return file.importDirectives.firstOrNull { directive ->
+            val group = directive.importItems.firstOrNull()?.importGroup ?: return@firstOrNull false
+            if (group.organizationName?.asString() != path.organizationName?.asString()) return@firstOrNull false
+            group.localFqName?.asString() == parent
+        }
+    }
+
+    /**
+     * 取包路径去掉最后一段后的父包。
+     *
+     * 只剩一段时返回 `null`：顶层包没有可分组的父包，强行分组会产出非法语法。
+     */
+    private fun parentPackageOf(path: ImportPath): String? {
+        val segments = path.fqName.pathSegments().toList()
+        return if (segments.size >= 2) segments.dropLast(1).joinToString(".") else null
+    }
+
+    /**
+     * 把 [path] 并入既有分组的文本。
+     *
+     * 改写分组的大括号内容而不是新建一条 directive：仓颉分组 import 的成员
+     * 只能写在 `{...}` 内，新建 directive 会得到一条语法上多余、语义上重复的 import。
+     */
+    private fun appendToGroup(
+        document: com.intellij.openapi.editor.Document,
+        group: CjImportDirective,
+        path: ImportPath,
+    ) {
+        val range = group.textRange
+        val groupText = document.charsSequence.subSequence(range.startOffset, range.endOffset).toString()
+        val open = groupText.indexOf('{')
+        val close = groupText.lastIndexOf('}')
+        val local = path.fqName.pathSegments().last()
+        if (open < 0 || close < open) {
+            // 不是分组形态：退化成追加平行行，不猜测括号位置。
+            document.insertString(lineEndOffset(document, range.endOffset), "\nimport $path")
+            return
+        }
+        val members = groupText.substring(open + 1, close).split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (members.any { it == local.asString() }) return
+        val updated = groupText.substring(0, close) + ", " + local + groupText.substring(close)
+        document.replaceString(range.startOffset, range.endOffset, updated)
     }
 
     /**
@@ -207,12 +271,12 @@ private class ExistingImports private constructor(
      *
      * 只在**同名不同路径**时判为冲突：同名同路径是幂等情形，已由 [covers] 处理。
      */
-    fun conflictOf(path: ImportPath): CaImportConflict? {
+    fun conflictOf(path: ImportPath): ImportConflict? {
         val importedName = path.importedName?.asString() ?: return null
         val owner = shortNameOwners[importedName] ?: return null
         if (owner == path.pathStr) return null
-        return CaImportConflict(
-            kind = CaImportConflictKind.SHORT_NAME_TAKEN_BY_OTHER,
+        return ImportConflict(
+            kind = ImportConflictKind.SHORT_NAME_TAKEN_BY_OTHER,
             conflictingBinding = owner,
         )
     }

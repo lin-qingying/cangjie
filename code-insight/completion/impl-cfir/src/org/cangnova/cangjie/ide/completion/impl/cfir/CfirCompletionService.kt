@@ -1,19 +1,19 @@
 package org.cangnova.cangjie.ide.completion.impl.cfir
 
 import com.intellij.openapi.progress.ProgressManager
-import org.cangnova.cangjie.ide.completion.api.CaCompletionFilter
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.CaCangJieCompletionService
+import org.cangnova.cangjie.ide.completion.api.CompletionFilter
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
 import org.cangnova.cangjie.ide.completion.impl.cfir.filter.CfirExpectedTypeCompletionFilter
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirKeywordCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirLocalScopeCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirMemberCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirTopLevelCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.distinctByIdentity
-import org.cangnova.cangjie.ide.completion.impl.shared.CaCompletionResultSink
-import org.cangnova.cangjie.ide.completion.impl.shared.CaCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.CaSerialCompletionRunner
+import org.cangnova.cangjie.ide.completion.impl.shared.CompletionResultSink
+import org.cangnova.cangjie.ide.completion.impl.shared.CompletionSection
+import org.cangnova.cangjie.ide.completion.impl.shared.SerialCompletionRunner
 import org.cangnova.cangjie.ide.completion.impl.shared.lookup.sortedByAnalysisWeight
 
 /**
@@ -29,15 +29,15 @@ class CfirCompletionService(
      * 期望类型过滤器。SMART 请求会在此按期望类型过滤并重写匹配结论；
      * BASIC 请求由过滤实现保证原样返回。
      */
-    private val filter: CaCompletionFilter = CfirExpectedTypeCompletionFilter(),
-) : CaCangJieCompletionService {
+    private val filter: CompletionFilter = CfirExpectedTypeCompletionFilter(),
+) : CangJieCompletionService {
     /**
      * 当前生效的候选区段；按执行优先级排列。
      *
      * 内部贡献者采用显式列表，不注册公共扩展点：
      * 补全区段的拆分是实现细节，不应成为宿主可替换的契约面。
      */
-    private val sections: List<CaCompletionSection> = listOf(
+    private val sections: List<CompletionSection> = listOf(
         CfirKeywordCompletionSection(),
         CfirLocalScopeCompletionSection(),
         CfirMemberCompletionSection(),
@@ -47,7 +47,7 @@ class CfirCompletionService(
     /**
      * 串行执行器；并行准入通过前不更换。
      */
-    private val runner = CaSerialCompletionRunner()
+    private val runner = SerialCompletionRunner()
 
     /**
      * 执行补全并返回稳定快照。
@@ -60,13 +60,13 @@ class CfirCompletionService(
      *
      * 取消与失败都向上传播：把异常吞成空列表会让真实缺陷看起来像「没有候选」。
      */
-    override fun complete(request: CaCompletionRequest): List<CaCompletionSnapshot> {
-        val collected = mutableListOf<CaCompletionSnapshot>()
-        val sink = object : CaCompletionResultSink {
+    override fun complete(request: CompletionRequest): List<CompletionSnapshot> {
+        val collected = mutableListOf<CompletionSnapshot>()
+        val sink = object : CompletionResultSink {
             /**
              * 按到达顺序收集快照；去重、过滤与排序在全部区段完成后统一进行。
              */
-            override fun consume(batch: List<CaCompletionSnapshot>, isLast: Boolean) {
+            override fun consume(batch: List<CompletionSnapshot>, isLast: Boolean) {
                 collected += batch
             }
         }

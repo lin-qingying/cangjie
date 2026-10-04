@@ -6,14 +6,14 @@ import org.cangnova.cangjie.analysis.api.components.CaScopeKind
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportCost
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
  * 顶层声明、类型与包候选。
@@ -35,11 +35,11 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
     /**
      * 计算当前位置的顶层与导入候选。
      */
-    override fun compute(request: CaCompletionRequest): List<CaCompletionSnapshot> {
+    override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CaCompletionPositionContexts.classify(position).kind
+        val context = CompletionPositionContexts.classify(position).kind
         // 成员访问只补接收者成员；import 位置由导入区段负责。
-        if (context == CaCompletionPositionKind.MEMBER_ACCESS) return emptyList()
+        if (context == CompletionPositionKind.MEMBER_ACCESS) return emptyList()
 
         val file = position.containingCjFile ?: return emptyList()
         val prefix = request.prefix
@@ -54,9 +54,9 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
                     for (classifier in entry.scope.classifiers { true }) {
                         val snapshot = classifierSnapshot(
                             classifier,
-                            CaCompletionItemKind.TOP_LEVEL,
+                            CompletionItemKind.TOP_LEVEL,
                             origin,
-                            CaImportCost.DIRECT,
+                            ImportCost.DIRECT,
                             documentStamp = request.documentStamp,
                         )
                         if (prefix.isEmpty() || snapshot.lookupString.startsWith(prefix)) add(snapshot)
@@ -66,9 +66,9 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
                         add(
                             callableSnapshot(
                                 callable,
-                                CaCompletionItemKind.TOP_LEVEL,
+                                CompletionItemKind.TOP_LEVEL,
                                 origin,
-                                CaImportCost.DIRECT,
+                                ImportCost.DIRECT,
                                 documentStamp = request.documentStamp,
                             ),
                         )
@@ -84,10 +84,10 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
      * 包成员与导入来源分开：前者是「同包直接可达」，后者是「靠 import 可达」，
      * 二者在需要追加 import 与冲突时的处理并不相同。
      */
-    private fun originFor(kind: CaScopeKind): CaCompletionOrigin = when {
-        kind.isImporting -> CaCompletionOrigin.IMPORT
-        kind == CaScopeKind.PACKAGE_MEMBER_SCOPE -> CaCompletionOrigin.TOP_LEVEL
-        else -> CaCompletionOrigin.TOP_LEVEL
+    private fun originFor(kind: CaScopeKind): CompletionOrigin = when {
+        kind.isImporting -> CompletionOrigin.IMPORT
+        kind == CaScopeKind.PACKAGE_MEMBER_SCOPE -> CompletionOrigin.TOP_LEVEL
+        else -> CompletionOrigin.TOP_LEVEL
     }
 
     companion object {

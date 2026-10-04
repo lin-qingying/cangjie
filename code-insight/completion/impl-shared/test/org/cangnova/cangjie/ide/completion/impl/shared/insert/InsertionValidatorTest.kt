@@ -3,12 +3,12 @@ package org.cangnova.cangjie.ide.completion.impl.shared.insert
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.impl.DocumentImpl
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
-import org.cangnova.cangjie.ide.completion.api.lookup.CaInsertionValidity
-import org.cangnova.cangjie.ide.completion.impl.shared.caCompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
+import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
@@ -23,7 +23,7 @@ import kotlin.test.assertEquals
  * 校验的语义是「失效候选不得写文档」：文档版本变化必须拒绝写入，
  * 区间越界必须拒绝写入，而关键字等与周围文本无关的候选不受版本戳约束。
  */
-class CaInsertionValidatorTest : CjParsingTestCase(
+class InsertionValidatorTest : CjParsingTestCase(
     dataPath = "",
     fileExt = "cj",
     fileType = CangJieFileType.INSTANCE,
@@ -55,8 +55,8 @@ class CaInsertionValidatorTest : CjParsingTestCase(
     fun validWhenStampMatches() {
         val stamp = document.modificationStamp
         assertEquals(
-            CaInsertionValidity.Valid,
-            CaInsertionValidator.validate(symbolSnapshot(stamp), 0, 5, document, stamp),
+            InsertionValidity.Valid,
+            InsertionValidator.validate(symbolSnapshot(stamp), 0, 5, document, stamp),
         )
     }
 
@@ -75,8 +75,8 @@ class CaInsertionValidatorTest : CjParsingTestCase(
         }
         val actual = document.modificationStamp
         assertEquals(
-            CaInsertionValidity.StaleDocument(expected, actual),
-            CaInsertionValidator.validate(symbolSnapshot(expected), 0, 5, document, actual),
+            InsertionValidity.StaleDocument(expected, actual),
+            InsertionValidator.validate(symbolSnapshot(expected), 0, 5, document, actual),
         )
     }
 
@@ -87,8 +87,8 @@ class CaInsertionValidatorTest : CjParsingTestCase(
     fun outOfRangeRejected() {
         val stamp = document.modificationStamp
         assertEquals(
-            CaInsertionValidity.OutOfRange(0, 999, document.textLength),
-            CaInsertionValidator.validate(symbolSnapshot(stamp), 0, 999, document, stamp),
+            InsertionValidity.OutOfRange(0, 999, document.textLength),
+            InsertionValidator.validate(symbolSnapshot(stamp), 0, 999, document, stamp),
         )
     }
 
@@ -98,8 +98,8 @@ class CaInsertionValidatorTest : CjParsingTestCase(
     @Test
     fun keywordExemptFromStamp() {
         assertEquals(
-            CaInsertionValidity.Valid,
-            CaInsertionValidator.validate(keywordSnapshot(), 0, 5, document, document.modificationStamp + 1),
+            InsertionValidity.Valid,
+            InsertionValidator.validate(keywordSnapshot(), 0, 5, document, document.modificationStamp + 1),
         )
     }
 
@@ -109,8 +109,8 @@ class CaInsertionValidatorTest : CjParsingTestCase(
     @Test
     fun keywordStillRangeChecked() {
         assertEquals(
-            CaInsertionValidity.OutOfRange(0, 999, document.textLength),
-            CaInsertionValidator.validate(keywordSnapshot(), 0, 999, document, 0),
+            InsertionValidity.OutOfRange(0, 999, document.textLength),
+            InsertionValidator.validate(keywordSnapshot(), 0, 999, document, 0),
         )
     }
 
@@ -122,20 +122,20 @@ class CaInsertionValidatorTest : CjParsingTestCase(
     /**
      * 构造符号候选：身份非关键字，插入依赖文档版本。
      */
-    private fun symbolSnapshot(stamp: Long): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun symbolSnapshot(stamp: Long): CompletionSnapshot = completionSnapshot(
         lookupString = "alpha",
-        kind = CaCompletionItemKind.LOCAL,
-        origin = CaCompletionOrigin.LOCAL_SCOPE,
+        kind = CompletionItemKind.LOCAL,
+        origin = CompletionOrigin.LOCAL_SCOPE,
         documentStamp = stamp,
     ).build()
 
     /**
      * 构造关键字候选：身份为 KEYWORD，插入与周围文本无关。
      */
-    private fun keywordSnapshot(): CaCompletionSnapshot = caCompletionSnapshot(
+    private fun keywordSnapshot(): CompletionSnapshot = completionSnapshot(
         lookupString = "return",
-        kind = CaCompletionItemKind.KEYWORD,
-        origin = CaCompletionOrigin.KEYWORD,
-        identityKind = CaCompletionIdentityKind.KEYWORD,
+        kind = CompletionItemKind.KEYWORD,
+        origin = CompletionOrigin.KEYWORD,
+        identityKind = CompletionIdentityKind.KEYWORD,
     ).build()
 }

@@ -7,13 +7,13 @@ import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.components.CaScopeKind
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentity
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportPlan
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionImportTargetData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionRecoveryService
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportResolution
-import org.cangnova.cangjie.ide.completion.api.lookup.CaRecoveredTarget
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentity
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionRecoveryService
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
+import org.cangnova.cangjie.ide.completion.api.lookup.RecoveredTarget
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.callableIdentityKey
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjElement
@@ -29,17 +29,17 @@ import org.cangnova.cangjie.psi.CjFile
  * 只按短名匹配会把用户选中的 `foo(Int64)` 恢复成 `foo(String)`。
  */
 @OptIn(CaExperimentalApi::class)
-class CfirCompletionRecoveryService : CaCompletionRecoveryService {
-    override fun recover(useSite: CjElement, identity: CaCompletionIdentity): CaRecoveredTarget? {
+class CfirCompletionRecoveryService : CompletionRecoveryService {
+    override fun recover(useSite: CjElement, identity: CompletionIdentity): RecoveredTarget? {
         // 关键字与文档标签没有可失效的声明身份：有效性只取决于语言版本。
-        if (identity.kind == CaCompletionIdentityKind.KEYWORD ||
-            identity.kind == CaCompletionIdentityKind.DOCUMENTATION
+        if (identity.kind == CompletionIdentityKind.KEYWORD ||
+            identity.kind == CompletionIdentityKind.DOCUMENTATION
         ) {
-            return CaRecoveredTarget(identity, identity.qualifiedName, CaCompletionImportPlan.NoImport, visible = true)
+            return RecoveredTarget(identity, identity.qualifiedName, CompletionImportPlan.NoImport, visible = true)
         }
         val file = useSite.containingCjFile ?: return null
         val located = analyze(file) { locateSymbol(file, identity) } ?: return null
-        return CaRecoveredTarget(
+        return RecoveredTarget(
             identity = identity,
             qualifiedName = located,
             importPlan = importPlanFor(file, identity, located),
@@ -61,19 +61,19 @@ class CfirCompletionRecoveryService : CaCompletionRecoveryService {
      */
     private fun CaSession.locateSymbol(
         file: CjFile,
-        identity: CaCompletionIdentity,
+        identity: CompletionIdentity,
     ): String? {
         for (entry in file.importingScopeContext.scopes) {
             if (entry.kind == CaScopeKind.LOCAL_SCOPE) continue
             when (identity.kind) {
-                CaCompletionIdentityKind.TYPE -> {
+                CompletionIdentityKind.TYPE -> {
                     for (classifier in entry.scope.classifiers { true }) {
                         if ((classifier as? CaNamedSymbol)?.name?.asString() == identity.name) {
                             return identity.qualifiedName.ifEmpty { identity.name }
                         }
                     }
                 }
-                CaCompletionIdentityKind.SYMBOL -> {
+                CompletionIdentityKind.SYMBOL -> {
                     for (callable in entry.scope.callables { true }) {
                         if (matchesIdentity(callable, identity)) {
                             return identity.qualifiedName.ifEmpty { identity.name }
@@ -91,18 +91,18 @@ class CfirCompletionRecoveryService : CaCompletionRecoveryService {
      *
      * 包不存在时返回 `null`：那正是「声明确实已不存在」的信号。
      */
-    private fun CaSession.locateInPackageScope(identity: CaCompletionIdentity): String? {
+    private fun CaSession.locateInPackageScope(identity: CompletionIdentity): String? {
         val packagePath = identity.qualifiedName.substringBeforeLast('.', "")
         if (packagePath.isEmpty()) return null
         val packageScope = getPackageScope(FqName.fromSegments(packagePath.split('.'))) ?: return null
         when (identity.kind) {
-            CaCompletionIdentityKind.TYPE ->
+            CompletionIdentityKind.TYPE ->
                 if (packageScope.classifiers { true }
                         .any { (it as? CaNamedSymbol)?.name?.asString() == identity.name }
                 ) {
                     return identity.qualifiedName
                 }
-            CaCompletionIdentityKind.SYMBOL ->
+            CompletionIdentityKind.SYMBOL ->
                 if (packageScope.callables { true }.any { matchesIdentity(it, identity) }) {
                     return identity.qualifiedName
                 }
@@ -119,7 +119,7 @@ class CfirCompletionRecoveryService : CaCompletionRecoveryService {
      */
     private fun CaSession.matchesIdentity(
         symbol: CaCallableSymbol,
-        identity: CaCompletionIdentity,
+        identity: CompletionIdentity,
     ): Boolean {
         val shortName = (symbol as? CaNamedSymbol)?.name?.asString() ?: return false
         if (shortName != identity.name) return false
@@ -140,25 +140,25 @@ class CfirCompletionRecoveryService : CaCompletionRecoveryService {
      */
     private fun importPlanFor(
         file: CjFile,
-        identity: CaCompletionIdentity,
+        identity: CompletionIdentity,
         qualifiedName: String,
-    ): CaCompletionImportPlan {
+    ): CompletionImportPlan {
         val packagePath = qualifiedName.substringBeforeLast('.', "")
-        if (packagePath.isEmpty() || qualifiedName == identity.name) return CaCompletionImportPlan.NoImport
+        if (packagePath.isEmpty() || qualifiedName == identity.name) return CompletionImportPlan.NoImport
         val targetPackage = FqName.fromSegments(packagePath.split('.'))
-        if (targetPackage == file.packageFqName) return CaCompletionImportPlan.NoImport
+        if (targetPackage == file.packageFqName) return CompletionImportPlan.NoImport
         val path = ImportPath(targetPackage, false)
         val alreadyImported = file.text.lineSequence().any { line ->
             line.trim().removePrefix("import ").trim() == path.pathStr
         }
-        if (alreadyImported) return CaCompletionImportPlan.NoImport
-        return CaCompletionImportPlan.AddImport(
-            CaCompletionImportTargetData(importPath = path, expressionText = identity.name),
+        if (alreadyImported) return CompletionImportPlan.NoImport
+        return CompletionImportPlan.AddImport(
+            CompletionImportTargetData(importPath = path, expressionText = identity.name),
         )
     }
 }
 
 /**
- * 把复查结论包装成导入解析结果，供插入阶段与 [CaImportResolution] 一起消费。
+ * 把复查结论包装成导入解析结果，供插入阶段与 [ImportResolution] 一起消费。
  */
-fun CaRecoveredTarget.asImportResolution(): CaImportResolution = CaImportResolution(importPlan)
+fun RecoveredTarget.asImportResolution(): ImportResolution = ImportResolution(importPlan)

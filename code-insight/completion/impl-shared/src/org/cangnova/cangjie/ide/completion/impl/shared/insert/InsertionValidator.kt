@@ -1,9 +1,9 @@
 package org.cangnova.cangjie.ide.completion.impl.shared.insert
 
 import com.intellij.openapi.editor.Document
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentityKind
-import org.cangnova.cangjie.ide.completion.api.lookup.CaInsertionValidity
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
+import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
 
 /**
  * 插入前校验。
@@ -14,7 +14,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CaInsertionValidity
  * 因此插入的第一件事是校验，不是写入。校验不通过时**拒绝写入**而不是尽力修正：
  * 「猜一个大概正确的位置」比「不插」更危险，因为用户不会注意到差别。
  */
-object CaInsertionValidator {
+object InsertionValidator {
     /**
      * 校验快照在当前文档状态下是否仍然可以写入。
      *
@@ -25,27 +25,27 @@ object CaInsertionValidator {
      * @param currentStamp 插入时刻的文档修改戳。
      */
     fun validate(
-        snapshot: CaCompletionSnapshot,
+        snapshot: CompletionSnapshot,
         startOffset: Int,
         tailOffset: Int,
         document: Document,
         currentStamp: Long,
-    ): CaInsertionValidity {
+    ): InsertionValidity {
         if (!snapshot.requiresDocumentStamp()) {
             return if (isRangeSane(startOffset, tailOffset, document.textLength)) {
-                CaInsertionValidity.Valid
+                InsertionValidity.Valid
             } else {
-                CaInsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
+                InsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
             }
         }
         val expected = snapshot.insertion.documentStamp
         if (expected != currentStamp) {
-            return CaInsertionValidity.StaleDocument(expected, currentStamp)
+            return InsertionValidity.StaleDocument(expected, currentStamp)
         }
         return if (isRangeSane(startOffset, tailOffset, document.textLength)) {
-            CaInsertionValidity.Valid
+            InsertionValidity.Valid
         } else {
-            CaInsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
+            InsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
         }
     }
 
@@ -66,5 +66,5 @@ object CaInsertionValidator {
  * 依赖版本的候选，其括号、实参与 caret 结论都是在**具体文本**上算出来的；
  * 不依赖版本的候选（关键字、包名）只写入自身文本，与周围文本无关。
  */
-private fun CaCompletionSnapshot.requiresDocumentStamp(): Boolean =
-    identity.kind != CaCompletionIdentityKind.KEYWORD
+private fun CompletionSnapshot.requiresDocumentStamp(): Boolean =
+    identity.kind != CompletionIdentityKind.KEYWORD

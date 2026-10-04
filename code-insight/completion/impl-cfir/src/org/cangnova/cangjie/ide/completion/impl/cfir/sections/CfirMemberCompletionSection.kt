@@ -12,13 +12,13 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.ide.completion.api.CaCompletionItemKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.api.CaCompletionSnapshot
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionContexts
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CaCompletionPositionKind
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -46,10 +46,10 @@ class CfirMemberCompletionSection : CfirCompletionSection(
     /**
      * 计算当前位置的接收者成员候选。
      */
-    override fun compute(request: CaCompletionRequest): List<CaCompletionSnapshot> {
+    override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CaCompletionPositionContexts.classify(position)
-        if (context.kind != CaCompletionPositionKind.MEMBER_ACCESS) return emptyList()
+        val context = CompletionPositionContexts.classify(position)
+        if (context.kind != CompletionPositionKind.MEMBER_ACCESS) return emptyList()
         val receiver = context.receiverExpression as? CjElement ?: return emptyList()
         val prefix = request.prefix
         val file = position.containingCjFile ?: return emptyList()
@@ -76,7 +76,7 @@ class CfirMemberCompletionSection : CfirCompletionSection(
                             callableSnapshot(
                                 symbol,
                                 kindFor(query.accessedThroughTypeName, fromExtend),
-                                if (fromExtend) CaCompletionOrigin.EXTEND else CaCompletionOrigin.MEMBER,
+                                if (fromExtend) CompletionOrigin.EXTEND else CompletionOrigin.MEMBER,
                                 documentStamp = request.documentStamp,
                             ),
                         )
@@ -91,8 +91,8 @@ class CfirMemberCompletionSection : CfirCompletionSection(
                         add(
                             callableSnapshot(
                                 symbol,
-                                CaCompletionItemKind.EXTEND_MEMBER,
-                                CaCompletionOrigin.EXTEND,
+                                CompletionItemKind.EXTEND_MEMBER,
+                                CompletionOrigin.EXTEND,
                                 documentStamp = request.documentStamp,
                             ),
                         )
@@ -187,10 +187,10 @@ class CfirMemberCompletionSection : CfirCompletionSection(
      * 静态成员与实例成员在展示与插入上不同：静态成员通过类型名限定访问，
      * 混为一类会让插入后得到不可解析的调用。
      */
-    private fun kindFor(accessedThroughTypeName: Boolean, fromExtend: Boolean): CaCompletionItemKind = when {
-        fromExtend -> CaCompletionItemKind.EXTEND_MEMBER
-        accessedThroughTypeName -> CaCompletionItemKind.STATIC_MEMBER
-        else -> CaCompletionItemKind.MEMBER
+    private fun kindFor(accessedThroughTypeName: Boolean, fromExtend: Boolean): CompletionItemKind = when {
+        fromExtend -> CompletionItemKind.EXTEND_MEMBER
+        accessedThroughTypeName -> CompletionItemKind.STATIC_MEMBER
+        else -> CompletionItemKind.MEMBER
     }
 
     companion object {

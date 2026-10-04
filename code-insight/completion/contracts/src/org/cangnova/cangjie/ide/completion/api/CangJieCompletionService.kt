@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.ide.completion.api
 
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionIdentity
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionInsertion
-import org.cangnova.cangjie.ide.completion.api.lookup.CaCompletionSortData
-import org.cangnova.cangjie.ide.completion.api.lookup.CaImportResolution
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentity
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionInsertion
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortData
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.psi.CjElement
 
 /**
@@ -13,7 +13,7 @@ import org.cangnova.cangjie.psi.CjElement
  * BASIC 与 SMART 共用候选生成，但期望类型过滤与构造方案只在 SMART 下启用；
  * 区分二者可以避免重复计算，也让「为什么某个候选缺席」可解释。
  */
-enum class CaCompletionKind {
+enum class CompletionKind {
     /** 手动或自动触发的基础补全：给出全部适用候选并排序。 */
     BASIC,
 
@@ -27,7 +27,7 @@ enum class CaCompletionKind {
  * 该对象是「分析期计算」与「界面期消费」之间唯一的边界：它只保存 PSI、
  * 文本区间与调用计数，不持有 Analysis 会话、符号或类型。
  */
-interface CaCompletionRequest {
+interface CompletionRequest {
     /** 触发本次补全的原始 PSI 位置。 */
     val originalPosition: CjElement
 
@@ -38,7 +38,7 @@ interface CaCompletionRequest {
     val prefix: String
 
     /** 触发来源。 */
-    val kind: CaCompletionKind
+    val kind: CompletionKind
 
     /** 本位置上的触发次数；平台用它区分自动弹窗与显式重复调用。 */
     val invocationCount: Int
@@ -76,7 +76,7 @@ interface CaCompletionRequest {
  * - [importPlan]：候选「怎么插进去」；
  * - [insertion]：插入时的括号、caret 与文档版本校验数据。
  */
-interface CaCompletionSnapshot {
+interface CompletionSnapshot {
     /** 候选显示名。 */
     val lookupString: String
 
@@ -87,22 +87,22 @@ interface CaCompletionSnapshot {
     val typeText: String
 
     /** 候选所属种类，用于图标与排序。 */
-    val kind: CaCompletionItemKind
+    val kind: CompletionItemKind
 
     /** 分析期权重；值越大越靠前。 */
     val weight: Int
 
     /** 候选稳定身份。 */
-    val identity: CaCompletionIdentity
+    val identity: CompletionIdentity
 
     /** 结构化排序数据。 */
-    val sort: CaCompletionSortData
+    val sort: CompletionSortData
 
     /** 导入策略与冲突结论。 */
-    val importPlan: CaImportResolution
+    val importPlan: ImportResolution
 
     /** 插入数据。 */
-    val insertion: CaCompletionInsertion
+    val insertion: CompletionInsertion
 
     /** 弹窗中展示的主文本；与 [lookupString] 相同时无需单独设置。 */
     val presentableText: String
@@ -123,7 +123,7 @@ interface CaCompletionSnapshot {
  * 类别只描述「候选是什么形状」，不描述它是否可见或是否已导入；
  * 可见性与导入需求必须由 Analysis 结论提供，不能从类别推断。
  */
-enum class CaCompletionItemKind {
+enum class CompletionItemKind {
     /** 局部声明或参数。 */
     LOCAL,
 
@@ -164,7 +164,7 @@ enum class CaCompletionItemKind {
  * 这是跨模块唯一的补全服务契约：宿主只依赖本接口消费补全，
  * 不接触内部贡献者列表、section 调度或 CFIR 实现细节。
  */
-interface CaCangJieCompletionService {
+interface CangJieCompletionService {
     /**
      * 在给定位置执行补全并返回稳定快照序列。
      *
@@ -173,7 +173,7 @@ interface CaCangJieCompletionService {
      * 2. 取消或失败时抛出异常而不是静默返回空列表；
      * 3. 同等输入的排序稳定。
      */
-    fun complete(request: CaCompletionRequest): List<CaCompletionSnapshot>
+    fun complete(request: CompletionRequest): List<CompletionSnapshot>
 
     /**
      * 判断该位置是否允许发起补全；用于自动触发前的快速排除。
@@ -189,9 +189,9 @@ interface CaCangJieCompletionService {
  * 平台侧注册实现并消费服务；未注册实现时补全不可用，
  * **不得**用通用词补全冒充仓颉语义补全。
  */
-interface CaCangJieCompletionServiceProvider {
+interface CangJieCompletionServiceProvider {
     /**
      * 取得当前可用的补全服务。
      */
-    fun completionService(): CaCangJieCompletionService
+    fun completionService(): CangJieCompletionService
 }

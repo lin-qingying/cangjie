@@ -6,7 +6,7 @@ package org.cangnova.cangjie.ide.completion.api.lookup
  * 身份类别决定「分析会话结束后如何恢复语义」：符号与类型靠指针重新解析，
  * 包与关键字本身即身份，命名实参靠「所属调用 + 参数名」复验。
  */
-enum class CaCompletionIdentityKind {
+enum class CompletionIdentityKind {
     /** 声明符号（顶层、成员、局部、参数）。 */
     SYMBOL,
 
@@ -42,9 +42,9 @@ enum class CaCompletionIdentityKind {
  * [deduplicationKey] 与 [lookupString] 必须分开：仓颉允许同名不同参数的声明共存，
  * 只按显示名去重会丢掉重载候选。
  */
-interface CaCompletionIdentity {
+interface CompletionIdentity {
     /** 身份类别。 */
-    val kind: CaCompletionIdentityKind
+    val kind: CompletionIdentityKind
 
     /**
      * 重新进入分析时用于恢复的稳定句柄。
@@ -72,13 +72,13 @@ interface CaCompletionIdentity {
  *
  * 全部字段在构造后不变，可安全跨会话传递。
  */
-data class CaCompletionIdentityData(
-    override val kind: CaCompletionIdentityKind,
+data class CompletionIdentityData(
+    override val kind: CompletionIdentityKind,
     override val handle: String,
     override val name: String,
     override val qualifiedName: String = "",
     override val deduplicationKey: String = handle,
-) : CaCompletionIdentity {
+) : CompletionIdentity {
     companion object {
         /**
          * 构造符号/类型身份：去重键默认取稳定句柄。
@@ -86,11 +86,11 @@ data class CaCompletionIdentityData(
          * 签名差异由调用方显式并入 [handle]，从而让同名重载天然得到不同键。
          */
         fun of(
-            kind: CaCompletionIdentityKind,
+            kind: CompletionIdentityKind,
             handle: String,
             name: String,
             qualifiedName: String = "",
-        ): CaCompletionIdentityData = CaCompletionIdentityData(
+        ): CompletionIdentityData = CompletionIdentityData(
             kind = kind,
             handle = handle,
             name = name,

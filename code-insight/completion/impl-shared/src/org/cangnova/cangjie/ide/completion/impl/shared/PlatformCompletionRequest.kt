@@ -3,9 +3,9 @@ package org.cangnova.cangjie.ide.completion.impl.shared
 import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.ide.completion.api.CaCompletionKind
-import org.cangnova.cangjie.ide.completion.api.CaCompletionRequest
-import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CaCompletionDummyContext
+import org.cangnova.cangjie.ide.completion.api.CompletionKind
+import org.cangnova.cangjie.ide.completion.api.CompletionRequest
+import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyContext
 import org.cangnova.cangjie.psi.CjElement
 
 /**
@@ -13,22 +13,22 @@ import org.cangnova.cangjie.psi.CjElement
  *
  * 该对象只保存 PSI、文本与计数：它是分析期与界面期之间可传递的最小集合。
  */
-class CaPlatformCompletionRequest(
+class PlatformCompletionRequest(
     override val originalPosition: CjElement,
     override val completionPosition: CjElement,
     override val prefix: String,
-    override val kind: CaCompletionKind,
+    override val kind: CompletionKind,
     override val invocationCount: Int,
     override val offset: Int,
     override val replaceStartOffset: Int,
     override val replaceEndOffset: Int,
     override val documentStamp: Long,
-) : CaCompletionRequest {
+) : CompletionRequest {
     /**
      * 供日志与测试使用的稳定描述，不包含文档内容。
      */
     override fun toString(): String =
-        "CaPlatformCompletionRequest(kind=$kind, prefix='$prefix', offset=$offset, " +
+        "PlatformCompletionRequest(kind=$kind, prefix='$prefix', offset=$offset, " +
             "replace=[$replaceStartOffset,$replaceEndOffset), count=$invocationCount)"
 }
 
@@ -39,12 +39,12 @@ class CaPlatformCompletionRequest(
  * 平台原始位置仍带 `IntellijIdeaRulezzz`，直接采用会让作用域分析与候选前缀同时失真。
  * `offset` 单独保留编辑器偏移——轻量夹具中它与 PSI 偏移属于不同坐标系，不可混用。
  */
-fun caCompletionRequestFrom(
+fun completionRequestFrom(
     parameters: CompletionParameters,
-    dummy: CaCompletionDummyContext,
-): CaCompletionRequest {
+    dummy: CompletionDummyContext,
+): CompletionRequest {
     val cangjiePosition = dummy.position
-    return CaPlatformCompletionRequest(
+    return PlatformCompletionRequest(
         originalPosition = cangjiePosition,
         completionPosition = cangjiePosition,
         prefix = dummy.prefix,
@@ -69,9 +69,9 @@ private val INVOCATION_COUNT_KEY: com.intellij.openapi.util.Key<Int> =
  * `CLASS_NAME` 是类名上下文专用类型：它仍属于基础补全，
  * 由仓颉侧的位置分类决定应给出哪些候选，不额外引入第三种语义。
  */
-fun completionKindOf(type: CompletionType): CaCompletionKind = when (type) {
-    CompletionType.BASIC, CompletionType.CLASS_NAME -> CaCompletionKind.BASIC
-    CompletionType.SMART -> CaCompletionKind.SMART
+fun completionKindOf(type: CompletionType): CompletionKind = when (type) {
+    CompletionType.BASIC, CompletionType.CLASS_NAME -> CompletionKind.BASIC
+    CompletionType.SMART -> CompletionKind.SMART
 }
 
 /**

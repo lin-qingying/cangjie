@@ -21,7 +21,7 @@ import org.cangnova.cangjie.psi.CjValueArgument
  * 不产出候选，也不做可见性判断。仓颉特有的形态（`match`、命名实参、CDoc）
  * 单独登记，不按 Kotlin 的 `when`/trailing lambda 直接映射。
  */
-enum class CaCompletionPositionKind {
+enum class CompletionPositionKind {
     /** 普通表达式位置。 */
     EXPRESSION,
 
@@ -63,8 +63,8 @@ enum class CaCompletionPositionKind {
  * @param receiverExpression 成员访问的接收者表达式；非成员访问为 `null`。
  * @param declaration 当前位置所属的声明；不属于任何声明时为 `null`。
  */
-data class CaCompletionPositionContext(
-    val kind: CaCompletionPositionKind,
+data class CompletionPositionContext(
+    val kind: CompletionPositionKind,
     val receiverExpression: PsiElement? = null,
     val declaration: CjElement? = null,
 )
@@ -75,45 +75,45 @@ data class CaCompletionPositionContext(
  * 只读取位置附近的语法结构，不做名称解析：把「这里是什么形状的槽位」与
  * 「这里能补出什么」分开，才能让候选生成按分类选择而不重复判断语法。
  */
-object CaCompletionPositionContexts {
+object CompletionPositionContexts {
     /**
      * 判定 [position] 的补全位置分类。
      *
      * [position] 可以是光标处的叶子节点，也可以是已完成 dummy 修正的元素。
      */
-    fun classify(position: PsiElement): CaCompletionPositionContext {
+    fun classify(position: PsiElement): CompletionPositionContext {
         val declaration = position.containingDeclarationOrNull()
 
         if (position.insideOf<CjImportDirective>() != null) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.IMPORT, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.IMPORT, declaration = declaration)
         }
         if (position.insideOf<PsiComment>() != null) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.DOCUMENTATION, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.DOCUMENTATION, declaration = declaration)
         }
         position.qualifiedReceiverOrNull()?.let { receiver ->
-            return CaCompletionPositionContext(CaCompletionPositionKind.MEMBER_ACCESS, receiver, declaration)
+            return CompletionPositionContext(CompletionPositionKind.MEMBER_ACCESS, receiver, declaration)
         }
         if (position.insideOf<CjTypeReference>() != null) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.TYPE, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.TYPE, declaration = declaration)
         }
         position.namedArgumentOrNull()?.let {
-            return CaCompletionPositionContext(CaCompletionPositionKind.NAMED_ARGUMENT, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.NAMED_ARGUMENT, declaration = declaration)
         }
         // 初始化槽位只看直接父节点：`CjNamedFunction` 本身也是带初始化器的声明，
         // 沿祖先链上溯会把整个函数体误判成初始化表达式位置。
         if (position.parent is CjDeclarationWithInitializer) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.EXPRESSION, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.EXPRESSION, declaration = declaration)
         }
         if (position.isOnDeclarationIdentifier()) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.DECLARATION_NAME, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.DECLARATION_NAME, declaration = declaration)
         }
         if (position.insideOf<CjBlockExpression>() != null) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.FUNCTION_BODY, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.FUNCTION_BODY, declaration = declaration)
         }
         if (position.insideOf<CjBinaryExpression>() != null) {
-            return CaCompletionPositionContext(CaCompletionPositionKind.OPERATOR, declaration = declaration)
+            return CompletionPositionContext(CompletionPositionKind.OPERATOR, declaration = declaration)
         }
-        return CaCompletionPositionContext(CaCompletionPositionKind.EXPRESSION, declaration = declaration)
+        return CompletionPositionContext(CompletionPositionKind.EXPRESSION, declaration = declaration)
     }
 
     /**
