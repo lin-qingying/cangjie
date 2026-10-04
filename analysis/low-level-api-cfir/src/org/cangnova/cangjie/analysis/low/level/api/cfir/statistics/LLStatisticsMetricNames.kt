@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
@@ -231,6 +232,16 @@ object LLStatisticsMetricNames {
      * `diagnostics.pass.<phase>.runs`：某阶段诊断遍历的次数。
      */
     fun diagnosticsPassRuns(phase: DiagnosticCollectionPhase): String = LLStatisticsScopes.Diagnostics.Pass.runs(phase)
+
+    /**
+     * `diagnostics.checkerComponent.<kind>.duration`：单个「元素 × 组件」检查的耗时（**微秒**）。
+     */
+    fun checkerComponentDuration(kind: CfirCheckerComponentKind): String = LLStatisticsScopes.Diagnostics.CheckerComponent.duration(kind)
+
+    /**
+     * `diagnostics.checkerComponent.<kind>.runs`：该组件被执行的元素数。
+     */
+    fun checkerComponentRuns(kind: CfirCheckerComponentKind): String = LLStatisticsScopes.Diagnostics.CheckerComponent.runs(kind)
 
     /**
      * `sessionCreation.<kind>.duration`：某类模块的 session 创建耗时（毫秒）。

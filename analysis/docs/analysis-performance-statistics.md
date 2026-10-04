@@ -3,6 +3,9 @@
 本文说明仓颉 Analysis API 性能统计的开启方式、指标清单、如何跑测试与看结果，以及每条通路
 各自的可验证边界。目标是让"IDE 卡在哪里"这个问题有可复现的测量，而不是靠猜。
 
+> 本文描述的是**设计意图**。审计中确认的缺陷、实测证据与修复方向见
+> [`analysis-performance-known-issues.md`](analysis-performance-known-issues.md)。
+
 ## 1. 开启统计
 
 统计只有一个开关，Analysis 侧与 LSP 侧共用：
@@ -59,6 +62,7 @@ OpenTelemetry SDK 时它退化为 noop，统计调用不产生上报，也不抛
 | `diagnostics.structureBuild.*` | 文件结构首次构建 |
 | `diagnostics.structureElement.<set>.*` | 按 checker 集合的元素级收集 |
 | `diagnostics.pass.<sema\|post_sema>.{duration,runs}` | 诊断遍历两段 |
+| `diagnostics.checkerComponent.<kind>.{duration,runs}` | 逐诊断组件：慢在声明 / 表达式 / 类型 / 宏 / 错误节点 / 语言设置 / CFA / CHIR 算术 |
 | `sessionCreation.<kind>.{duration,runs}` | 按模块种类的 session 创建 |
 | `scopes.sessionCreated` | scope session 创建次数 |
 | `parse.<kind>.{duration,runs}` | PSI 解析，六个入口分桶 |
@@ -132,6 +136,90 @@ span：解析/遍历/收集以异常结束时 span 照常结束并记录已耗�
 清单里区分两种情况：`reachableInAnalysisHost = true` 表示分析宿主真实路径能产生采样；
 `false` 表示分析宿主上不触发（不跑宏构造、没有库模块、没有 IDE 补全路径），由该通路所属模块
 自己的 seam 测试负责，且必须写明理由。
+
+### 采集 JFR 记录（本地剖析）
+
+指标回答的是"哪个阶段慢"，**声明级的实际用时走 JFR 通道**：分析路径上本来就在发
+`org.cangnova.cangjie.LLPhase` / `LLPhaseWithTrace` 等事件（见 `LLFlightRecorder`），
+粒度是"每个声明 × 每个 resolve 阶段"，纳秒精度且可带调用栈，只是一直没有把记录打开。
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test \
+    -Pcangjie.jfr.output=analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr \
+    -Dcangjie.analysis.jfr.includePhaseTraces=true
+```
+
+- `-Pcangjie.jfr.output` 传了就挂 `-XX:StartFlightRecording`，不传则完全不启用采集；
+  输出目录会被自动创建。
+- `-Dcangjie.analysis.jfr.includePhaseTraces` 单独控制是否带调用栈。栈采集的开销远大于
+  事件本身，默认关闭。
+- 记录在测试 JVM 退出时落盘（`dumponexit`）。`--tests` 过滤与它兼容，可以只录单个场景。
+
+看结果三选一：
+
+```bash
+# 事件清单与条数
+jfr summary analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr
+
+# 打印声明级阶段事件（duration / path / phase / stackTrace）
+jfr print --events org.cangnova.cangjie.LLPhaseWithTrace --stack-depth 8 \
+    analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr
+```
+
+或用 IDEA 内置的 JFR Profiler 直接打开 `.jfr`（Settings → Profiler → Open Snapshot）。
+
+事件字段含义：`duration` 是单次阶段耗时，`path` 定位到具体声明，`phase` 是 resolve 阶段编号，
+`moduleKind` 与指标的 `CaModuleKind` 共用同一套分类，`result` 表示该阶段是否正常返回。
+
+> **JFR 通道与 checker 遍历的关系。** JFR 记录的是 resolve 阶段推进，不记录诊断组件。
+> 诊断侧的耗时现在有两条互补的通路：OpenTelemetry 的
+> `diagnostics.checkerComponent.<kind>.*` 给出"慢在哪一类检查"，JFR 的 `LLPhase*` 给出
+> "慢在哪个声明的哪个阶段"。
+>
+> 逐组件耗时用的是**微秒**而不是毫秒——计量边界是"一个元素在一个组件上的检查"，基本都在
+> 亚毫秒量级，整毫秒会让样本塌成 0。组件清单见 `CfirCheckerComponentKind`，由装配方声明，
+> 与 `DiagnosticCollectorComponents.regularComponents` 严格同序。
+
+### 基线对比与本地报表
+
+每次跑完 `test`，模块会自动记录一次运行并与历史对比：
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test
+```
+
+产物：
+
+| 文件 | 内容 |
+|---|---|
+| `build/reports/analysis-performance/performance-report.html` | 单文件 HTML（样式内联、无外链），人看 |
+| `build/reports/analysis-performance/performance-report.txt` | 同样的纯文本摘要，便于 grep 与 CI 留档 |
+| `.gradle/performance-history/runs.jsonl` | 运行历史，保留最近 50 次 |
+
+历史刻意**不放在 `build/` 下**：`clean` 会清掉 `build/`，而基线需要跨 `clean` 存活。
+
+> 摘要也会经 JVM 关停钩子打到 stdout，但 Gradle 在构建成功时默认丢弃测试进程的标准输出，
+> 所以实际可靠的入口是上面那两个文件（`--console=plain` 也不会让关停阶段的输出出现）。
+
+**记录的是什么**：每个用例的墙钟耗时，加上该用例真正触发的指标增量——耗时类记单次均值
+（采样之和 ÷ 采样点数），计数类记增量。指标在采集时按 SDK 声明的单位统一换算成**纳秒**
+（逐诊断组件是 `us`，其余是 `ms`），不猜单位。
+
+**基线怎么选**：默认比上一次；历史攒够 3 次后自动改用最近若干次的**中位数**，中位数对单次离群不敏感。
+
+**判定为什么有阈值**：单次测量的噪声常常和"想看到的改进"同量级。没有阈值的话每次 +3% 都会被
+报成回归，报多了这份报告就没人看了。因此：
+
+1. 相对阈值 = max(历史样本观测抖动, 固定下限)，默认固定下限 **20%**；
+2. 耗时信号另有一条**绝对下限 1ms**：基线落在噪声底上时，相对变化再大也没有信息量
+   （0.3ms 跳到 0.7ms 是 +100%，但两次都在计时与调度噪声里），一律判为噪声；
+3. 计数类不受绝对下限约束——计数是精确值，3 变 4 就是真的变了。
+
+灵敏度不足时应当**先换更大的 testData**，而不是调低下限。确实需要调整时：
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test -Dcangjie.performance.changeFloor=0.5
+```
 
 ## 5. 看结果
 

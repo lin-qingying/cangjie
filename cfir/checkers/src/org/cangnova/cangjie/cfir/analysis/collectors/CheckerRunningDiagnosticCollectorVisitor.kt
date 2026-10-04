@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.collectors
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
+import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
@@ -13,6 +14,15 @@ open class CheckerRunningDiagnosticCollectorVisitor(
     protected val components: DiagnosticCollectorComponents
 ) : AbstractDiagnosticCollectorVisitor(context) {
 
+    /**
+     * 逐组件耗时观察者；宿主未注册时为 `null`，遍历路径据此跳过计时。
+     *
+     * 在构造期解析一次而不是每次分发时去查 session 组件表：分发按「元素 × 组件」发生，
+     * 是诊断遍历里频次最高的循环。
+     */
+    protected val checkerComponentTimingObserver: CfirCheckerComponentTimingObserver? =
+        context.session.checkerComponentTimingObserverOrNull
+
     /** 执行不依赖具体元素的全局设置检查。 */
     override fun checkSettings() {
         components.regularComponents.forEach { it.checkSettings(context) }
@@ -20,8 +30,8 @@ open class CheckerRunningDiagnosticCollectorVisitor(
 
     /** 将当前元素交给所有常规组件检查，并在结束后提交该元素上的 pending 诊断。 */
     override fun checkElement(element: CfirElement) {
-        components.regularComponents.forEach {
-            element.accept(it, context)
+        forEachTimedCheckerComponent { component ->
+            element.accept(component, context)
         }
         element.accept(components.reportCommitter, context)
     }
@@ -33,5 +43,22 @@ open class CheckerRunningDiagnosticCollectorVisitor(
         }
         if (declaration !is CfirFile) return
         components.reportCommitter.endOfFile(declaration, context)
+    }
+
+    /**
+     * 按组件种类依次把当前元素交给每个常规组件，逐组件计时。
+     *
+     * 子类覆写 [checkElement] 时应走这里而不是自己再写一遍循环，否则会漏掉耗时归因。
+     * [action] 的耗时整体计入所属组件——`checkCanceled` 与异常兜底都是这次检查的真实开销。
+     */
+    protected inline fun forEachTimedCheckerComponent(
+        action: (component: AbstractDiagnosticCollectorComponent) -> Unit,
+    ) {
+        val kinds = components.checkerComponentKinds
+        components.regularComponents.forEachIndexed { index, component ->
+            checkerComponentTimingObserver.measureCheckerComponent(kinds[index]) {
+                action(component)
+            }
+        }
     }
 }

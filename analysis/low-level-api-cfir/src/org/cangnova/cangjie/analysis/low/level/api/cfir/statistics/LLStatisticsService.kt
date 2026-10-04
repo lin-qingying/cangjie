@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLAnalysisSessionStatistics
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLCheckerComponentStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticPassStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
@@ -79,6 +80,14 @@ class LLStatisticsService(internal val project: Project) : Disposable {
     val diagnosticPasses: LLDiagnosticPassStatistics = LLDiagnosticPassStatistics(this)
 
     /**
+     * 逐诊断组件耗时统计域；session 注册的逐组件观察者指向该域。
+     *
+     * 回答"慢在声明检查、表达式检查还是 CFA"，粒度比 [diagnosticPasses] 更细：
+     * 后者计量一次遍历整体，本域计量这次遍历里各组件分别多久。
+     */
+    val checkerComponents: LLCheckerComponentStatistics = LLCheckerComponentStatistics(this)
+
+    /**
      * session 创建与 scope session 统计域。
      */
     val sessions: LLSessionStatistics = LLSessionStatistics(this)
@@ -105,6 +114,7 @@ class LLStatisticsService(internal val project: Project) : Disposable {
             macroConstruction,
             diagnostics,
             diagnosticPasses,
+            checkerComponents,
             sessions,
             deserialization,
             parser,
