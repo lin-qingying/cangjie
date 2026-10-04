@@ -3,6 +3,9 @@
 本文说明仓颉 Analysis API 性能统计的开启方式、指标清单、如何跑测试与看结果，以及每条通路
 各自的可验证边界。目标是让"IDE 卡在哪里"这个问题有可复现的测量，而不是靠猜。
 
+> 本文描述的是**设计意图**。审计中确认的缺陷、实测证据与修复方向见
+> [`analysis-performance-known-issues.md`](analysis-performance-known-issues.md)。
+
 ## 1. 开启统计
 
 统计只有一个开关，Analysis 侧与 LSP 侧共用：
