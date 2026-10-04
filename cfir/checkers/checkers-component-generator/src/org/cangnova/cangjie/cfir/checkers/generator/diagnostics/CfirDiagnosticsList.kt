@@ -1143,7 +1143,10 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 歧义使用
-        val AMBIGUOUS_USE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+        // 官方 `sema_ambiguous_use` 由 `DiagAmbiguousUse` 以整节点锚定（外部参考实现
+        // Sema/Diags.cpp 的 DiagnoseRefactor 重载不接收 Range，恒取 node.begin..node.end），
+        // 因此这里必须标记完整锚点元素，不能收窄到最终被引用的名称。
+        val AMBIGUOUS_USE by error<PsiElement>(PositioningStrategy.DEFAULT) {
             parameter<Name>("name")
         }
 

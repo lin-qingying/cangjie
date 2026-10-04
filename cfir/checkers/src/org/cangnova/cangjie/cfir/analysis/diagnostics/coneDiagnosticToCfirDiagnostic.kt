@@ -1635,7 +1635,11 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     val ambiguitySource = if (factory == CfirErrors.AMBIGUOUS_USE) {
         val completeTypeUseSource = typeUseSource
         if (completeTypeUseSource != null) {
-            CjOffsetsOnlySourceElement(completeTypeUseSource.startOffset, completeTypeUseSource.endOffset)
+            // 官方 `sema_ambiguous_use` 由 `DiagAmbiguousUse` 以整节点锚定，覆盖整条类型使用。
+            // `AMBIGUOUS_USE` 的定位策略是 DEFAULT，直接标记锚点元素自身范围，因此这里必须
+            // 保留 `typeUseSource` 的 PSI/LightTree 锚点；降级成 offsets-only 元素会丢失锚点，
+            // 使 analysis API 的 low-level reporter 无法把该诊断投影成 PSI 诊断。
+            completeTypeUseSource
         } else if (isFunctionValueAmbiguity()) {
             source.callableReferenceSelectorWithTypeArgumentsSource()
                 ?: source
@@ -1643,7 +1647,6 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         } else {
             callOrAssignmentSource
                 ?.takeIf { source == null || it.startOffset < source.startOffset || it.endOffset > source.endOffset }
-                ?.offsetRangeSourceWhenPsiElementIsNarrower()
                 ?: source?.qualifiedAmbiguousUseSource()
                 ?: callOrAssignmentSource?.qualifiedAmbiguousUseSource()
                 ?: diagnosticSource
@@ -1887,17 +1890,6 @@ private fun CjSourceElement.qualifiedAmbiguousUseSource(): AbstractCjSourceEleme
     qualifiedAmbiguousUsePsiSource()?.let { return it }
     qualifiedAmbiguousUseLightTreeSource()?.let { return it }
     return qualifiedAmbiguousUseTextSource()
-}
-
-/**
- * PSI fake source 可能用 selector PSI 携带整条 qualified access 的自定义 offsets。
- * 渲染诊断时必须尊重 offsets，否则会退回只标 selector。
- */
-private fun CjSourceElement.offsetRangeSourceWhenPsiElementIsNarrower(): AbstractCjSourceElement {
-    val psi = psi ?: return this
-    val range = psi.textRange
-    if (startOffset == range.startOffset && endOffset == range.endOffset) return this
-    return CjOffsetsOnlySourceElement(startOffset, endOffset)
 }
 
 /**
@@ -2432,10 +2424,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeNoMatchingInvokeOperatorError -> {
             val invokeDiagnosticSource = source ?: diagnosticSource
+            // 保留 PSI/LightTree 锚点，并覆盖定位策略为 DEFAULT 以维持整元素范围：
+            // 原先的 offsets-only 锚点在任何组合策略下都落到 offsets-only 分量并取
+            // `element.startOffset..element.endOffset`，DEFAULT 与之等价。
             CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
-                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset),
+                invokeDiagnosticSource,
                 name.asString(),
                 receiverType,
+                SourceElementPositioningStrategies.DEFAULT,
                 session,
             )
         }
@@ -2443,7 +2439,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         is ConeNoMatchOperatorFunctionCallError -> {
             val invokeDiagnosticSource = source ?: diagnosticSource
             CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL.on(
-                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset),
+                invokeDiagnosticSource,
                 session,
             )
         }
@@ -3973,6 +3969,21 @@ private fun <A, B> CjDiagnosticFactory2<A, B>.on(
     b: B,
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, null, diagnosticContext(session))
+
+/**
+ * 使用当前 session 上下文创建二参数诊断，并显式覆盖定位策略。
+ *
+ * 覆盖用于"高亮必须取锚点元素整体"的场景：工厂默认策略会把 PSI 锚点收窄到被引用的名称，
+ * 而该诊断在改为保留 PSI 锚点后需要与原先 offsets-only 锚点完全一致的整体范围。
+ */
+@OptIn(InternalDiagnosticFactoryMethod::class)
+private fun <A, B> CjDiagnosticFactory2<A, B>.on(
+    source: AbstractCjSourceElement,
+    a: A,
+    b: B,
+    positioningStrategy: AbstractSourceElementPositioningStrategy?,
+    session: CfirSession,
+): CjDiagnostic? = on(source, a, b, positioningStrategy, diagnosticContext(session))
 
 /**
  * 使用当前 session 上下文创建 unresolved-reference 风格的二参数字符串诊断。
