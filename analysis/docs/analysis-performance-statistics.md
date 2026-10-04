@@ -33,6 +33,14 @@ cangjie.analysis.statistics
 `CangJieGlobalOpenTelemetryProvider`，即取平台的 `GlobalOpenTelemetry.get()`。平台没有初始化
 OpenTelemetry SDK 时它退化为 noop，统计调用不产生上报，也不抛错。
 
+统计有两个信号，走同一个后端、去往不同的看板：
+
+- **指标（metrics）** → Prometheus：聚合视图，回答"平均多慢、哪条路在变慢"；
+- **链路（traces / span）** → Jaeger：单次调用视图，回答"这一次调用里时间花在哪"。
+
+每个耗时接缝同时产出两者，名字可直接对照：span 名取对应指标名去掉指标后缀后的前缀
+（如 `cangjie.analysis.resolve.phases.types`），维度信息放在 span 属性里（见第 3 节）。
+
 ## 3. 指标清单
 
 ### 分析侧 `cangjie.analysis.*`
@@ -64,6 +72,28 @@ OpenTelemetry SDK 时它退化为 noop，统计调用不产生上报，也不抛
 `cangjie.lsp.request.<method>.{duration,runs,failures}`，方法名的 `/` 换成 `.`。耗时不含排队
 等待——排队属服务器背压，混进去会让补全变慢被误读成分析变慢。失败单独计数，因为"请求慢"与
 "请求报错"对使用者的含义完全不同。
+
+### 链路 span（traces）
+
+每次真实调用同时产出一条 span。span 名与对应指标同名（去掉指标后缀），维度放在属性里；
+下表省略 `cangjie.analysis.` 前缀（LSP 请求 span 为 `cangjie.lsp.*`）：
+
+| span | 属性 | 说明 |
+|---|---|---|
+| `analysisSessions.analyze` | — | 分析会话根 span；一次分析调用一棵链路树的根 |
+| `resolve.phases.<phase>` | `cangjie.resolve.phase`、`resolve.files`、`resolve.declarations` | 语义解析各阶段；按需解析里每次阶段推进都有一条 |
+| `rawBuild.<source>.<stage>` | `cangjie.rawBuild.source/stage/bodyBuildingMode` | raw CFIR 构建 |
+| `macro.<stage>` | `cangjie.macro.stage/mode/outcome/files/surfaces` | 宏构造三阶段 |
+| `diagnostics.pass.<phase>` | `cangjie.diagnostics.phase` | 诊断遍历两段 |
+| `diagnostics.collection` / `elementCollection` / `structureBuild` / `structureElement.<set>` | `cangjie.diagnostics.count` | 诊断收集四个维度 |
+| `deserialization.classLike` / `deserialization.cjo.<stage>` | `cangjie.deserialization.stage/declarations` | 反序列化两条通道 |
+| `parse.<kind>` | `cangjie.parse.kind/succeeded` | PSI 解析六个入口 |
+| `sessionCreation.<kind>` | `cangjie.session.kind` | session 创建 |
+| `cangjie.lsp.request.<method>` | `cangjie.lsp.method` | LSP 请求；分析侧的 span 会挂到它下面 |
+
+同线程上的 span 按打开顺序自然嵌套（分析会话根 span 之下是阶段 span）；失败的操作同样产生
+span：解析/遍历/收集以异常结束时 span 照常结束并记录已耗时长，LSP 请求以 ERROR 状态结束
+并带异常事件。
 
 ### CLI 侧
 
@@ -105,47 +135,80 @@ OpenTelemetry SDK 时它退化为 noop，统计调用不产生上报，也不抛
 
 ## 5. 看结果
 
-指标是 OpenTelemetry 标准的 `LongCounter` / `LongHistogram`，采集、聚合、看板都交给现成组件，
-仓里不自己写渲染逻辑。
+指标是 OpenTelemetry 标准的 `LongCounter` / `LongHistogram`，链路是标准的 span，采集、聚合、
+看板都交给现成组件，仓里不自己写渲染逻辑。
 
 ### 起本地采集栈
 
-配置在 `tools/otel/`（collector 配置 + docker compose）：
+配置在 `tools/otel/`（collector 配置 + Prometheus 抓取配置 + docker compose）：
 
 ```bash
 docker compose -f tools/otel/docker-compose.yml up -d
 ```
 
-起两个容器：
+起三个容器：
 
-- **OpenTelemetry Collector**：收 OTLP gRPC（`localhost:4317`）与 HTTP（`4318`），把指标转给
-  Jaeger，同时以 JSON 行落盘到容器内 `/var/lib/otel/metrics.json`（离线与 CI 归档用），
-  并打 basic 日志（出问题时先看 collector 收到了什么）。
-- **Jaeger all-in-one**：自带存储与 UI，不需要另接后端。
+- **OpenTelemetry Collector**：收 OTLP gRPC（`localhost:4317`）与 HTTP（`4318`），把指标翻成
+  Prometheus 格式暴露在 `:9464/metrics`，把链路转给 Jaeger；同时把指标以 JSON 行落盘到
+  容器内 `/tmp/otel/metrics.json`（离线与 CI 归档用），并打日志（出问题时先看 collector
+  收到了什么）。
+- **Prometheus**：按 5 秒间隔抓取 collector 的 `:9464/metrics`，前端 **http://localhost:9090**。
+- **Jaeger all-in-one**：自带存储与链路 UI，前端 **http://localhost:16686**。
 
-看板入口：**http://localhost:16686**
+两个信号去向我们特意分开：**指标走 Prometheus，链路走 Jaeger**。此前曾把指标也发给 Jaeger，
+collector 报 `unknown service ...MetricsService`——Jaeger 只实现 OTLP 的 trace 服务，不接
+metrics，指标发给它注定失败。Prometheus 只认指标、Jaeger 只认链路，各归其位后两边都不需要"猜"。
 
-### 把指标推进去
+> 状态说明：三条链路均已实测通过——测试进程 → collector 的接收、日志与落盘此前已用真实打点确认；
+> collector → Prometheus 与 collector → Jaeger 已用 OTLP 合成探针实测，且真实性能测试推送的
+> `cangjie_analysis_*` 指标与 `cangjie.analysis.*` span 已在 Prometheus / Jaeger 中确认到达。
+
+### 把指标与链路推进去
 
 ```bash
 ./gradlew :analysis:analysis-performance-test:test \
     -Dcangjie.performance.otlp.endpoint=http://localhost:4317
 ```
 
-指标会以 5 秒为周期推给 collector。
+指标与链路都会以 5 秒为周期推给 collector（链路在 span 结束时导出）。
 
 这个属性名是 `cangjie.performance.otlp.endpoint`，`CaPerformanceTestTelemetry` 读它来决定是否
 挂 OTLP 导出器。构建脚本已把它从 Gradle 命令行转发进测试 JVM：`Test` 任务另起 JVM，命令行上的
 `-D` 只进 Gradle 自身进程，不转发就永远到不了测试进程，OTLP 导出这条路等于没接上。
 
-Jaeger 里按 `cangjie.*` 过滤。命名空间有两段：`cangjie.analysis.*` 是分析侧，
-`cangjie.lsp.*` 是 LSP 请求侧（见第 3 节）。
+Jaeger 里按 span 名（如 `cangjie.analysis.resolve.phases.types`）或属性过滤；一次 LSP 请求
+是一棵完整的树（`cangjie.lsp.request.*` 为根，分析侧 span 挂在它下面）。
+
+### PromQL 速查
+
+指标名经过 Prometheus 翻译：`.` 换成 `_`，并追加类型/单位后缀——计数器加 `_total`，
+直方图加 `_bucket` / `_sum` / `_count`，单位 `ms` 变成 `milliseconds`。所以
+`cangjie.analysis.resolve.phases.types.duration`（毫秒直方图）在 Prometheus 里是
+`cangjie_analysis_resolve_phases_types_duration_milliseconds_bucket`。以 `:9464/metrics`
+的实际输出为准，下面是几条常用查询：
+
+```promql
+# TYPES 阶段耗时的 P95（毫秒）
+histogram_quantile(0.95,
+  sum by (le) (rate(cangjie_analysis_resolve_phases_types_duration_milliseconds_bucket[5m])))
+
+# 各语义阶段的执行速率（次/秒）
+sum by (__name__) (rate({__name__=~"cangjie_analysis_resolve_phases_.*_runs_total"}[5m]))
+
+# 文件级诊断收集的 P95 耗时
+histogram_quantile(0.95,
+  sum by (le) (rate(cangjie_analysis_diagnostics_collection_duration_milliseconds_bucket[5m])))
+
+# LSP 补全请求的 P95 耗时
+histogram_quantile(0.95,
+  sum by (le) (rate(cangjie_lsp_request_textDocument_completion_duration_milliseconds_bucket[5m])))
+```
 
 ### 累计语义
 
 指标按 JVM 累积（cumulative temporality），**跑得越久数值越大，不代表变慢了**。两种对比方式：
 
-- Jaeger 里用 rate 曲线，或按固定时长对比两次采样点。
+- Prometheus 里一律用 `rate()` / `increase()` 看变化，不要直接读累计值。
 - 单元测试里取增量：测试基类的 `counterDelta {}` 与 `counterValue(name)` 就是干这个的。
 
 ### 进程内读取
@@ -174,10 +237,12 @@ Jaeger 里按 `cangjie.*` 过滤。命名空间有两段：`cangjie.analysis.*` 
 | `.cjo` 读侧 | `CjoDeserializationTimingSeamTest` 用真实 SDK fixture 加真实 provider，断言观察者回调 |
 | `.cjo` 写侧 | `CjoWritePhaseProfilingTest` 真实编译，断言报告里有该阶段 |
 | 组合阶段协议 | `FrontendPipelineCompositionTest` 断言子阶段经 phaser 协议执行 |
-| LSP 请求级 | `CangjieRequestStatisticsSeamTest` 真实环境、真实 executor，断言耗时/次数/失败数 |
+| LSP 请求级 | `CangjieRequestStatisticsSeamTest` 真实环境、真实 executor，断言耗时/次数/失败数，以及成功/失败请求的链路 span |
 | 诊断、raw 构建、resolve phase、session 创建 | 性能用例走真实 `analyzeForTest` + `collectDiagnostics` 路径 |
 | 宏构造 | `cfir/analysis-tests` 的 `MacroConstructionTimingObserverTest`，真实 construction |
 | LightTree raw 构建 | `light-tree2cfir` 的 seam 测试，真实驱动 `buildCfirFile` |
+| 链路 span（阶段与会话根） | `CaSpanTimingTest` 断言阶段 span 携带属性、且挂在分析会话根 span 之下 |
+| 链路 span（PSI 解析） | `CaSpanTimingTest` 断言 `parse.file` span 与入口/成败属性 |
 
 ## 7. 已知边界
 
