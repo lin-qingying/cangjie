@@ -62,6 +62,7 @@ OpenTelemetry SDK 时它退化为 noop，统计调用不产生上报，也不抛
 | `diagnostics.structureBuild.*` | 文件结构首次构建 |
 | `diagnostics.structureElement.<set>.*` | 按 checker 集合的元素级收集 |
 | `diagnostics.pass.<sema\|post_sema>.{duration,runs}` | 诊断遍历两段 |
+| `diagnostics.checkerComponent.<kind>.{duration,runs}` | 逐诊断组件：慢在声明 / 表达式 / 类型 / 宏 / 错误节点 / 语言设置 / CFA / CHIR 算术 |
 | `sessionCreation.<kind>.{duration,runs}` | 按模块种类的 session 创建 |
 | `scopes.sessionCreated` | scope session 创建次数 |
 | `parse.<kind>.{duration,runs}` | PSI 解析，六个入口分桶 |
@@ -170,9 +171,14 @@ jfr print --events org.cangnova.cangjie.LLPhaseWithTrace --stack-depth 8 \
 事件字段含义：`duration` 是单次阶段耗时，`path` 定位到具体声明，`phase` 是 resolve 阶段编号，
 `moduleKind` 与指标的 `CaModuleKind` 共用同一套分类，`result` 表示该阶段是否正常返回。
 
-> **JFR 通道不覆盖 checker 遍历。** 它记录的是 resolve 阶段推进，不记录单个 checker 跑了多久。
-> 诊断侧的耗时指标只到 checker **集合**（default / extra / experimental），见
-> `cangjie.analysis.diagnostics.structureElement.<set>.*`。
+> **JFR 通道与 checker 遍历的关系。** JFR 记录的是 resolve 阶段推进，不记录诊断组件。
+> 诊断侧的耗时现在有两条互补的通路：OpenTelemetry 的
+> `diagnostics.checkerComponent.<kind>.*` 给出"慢在哪一类检查"，JFR 的 `LLPhase*` 给出
+> "慢在哪个声明的哪个阶段"。
+>
+> 逐组件耗时用的是**微秒**而不是毫秒——计量边界是"一个元素在一个组件上的检查"，基本都在
+> 亚毫秒量级，整毫秒会让样本塌成 0。组件清单见 `CfirCheckerComponentKind`，由装配方声明，
+> 与 `DiagnosticCollectorComponents.regularComponents` 严格同序。
 
 ## 5. 看结果
 

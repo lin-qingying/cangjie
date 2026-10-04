@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.type.ComposedTypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckers
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.AbstractDiagnosticCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.CfirChirArithmeticDiagnosticCollectorComponent
@@ -92,6 +93,17 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
         }.toTypedArray()
 
+        // 与 regularComponents 严格同序，且必须跟着上面那条条件分支同步增减：
+        // 错位不会立刻失败，只会让耗时归到错误的组件上。
+        val checkerComponentKinds = buildList {
+            if (!filter.runExtraCheckers && !filter.runExperimentalCheckers) {
+                add(CfirCheckerComponentKind.ERROR_NODE)
+            }
+            add(CfirCheckerComponentKind.DECLARATION)
+            add(CfirCheckerComponentKind.EXPRESSION)
+            add(CfirCheckerComponentKind.TYPE)
+        }.toTypedArray()
+
         val postSemaComponents = if (filter.runDefaultCheckers) {
             arrayOf<AbstractDiagnosticCollectorComponent>(
                 ControlFlowAnalysisDiagnosticComponent(session, reporter),
@@ -105,6 +117,7 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             regularComponents = regularComponents,
             postSemaComponents = postSemaComponents,
             reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
+            checkerComponentKinds = checkerComponentKinds,
         )
     }
 

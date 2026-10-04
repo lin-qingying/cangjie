@@ -9,6 +9,7 @@ import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
 import io.opentelemetry.api.trace.Tracer
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
@@ -417,6 +418,30 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
              * 某阶段的遍历次数。
              */
             fun runs(phase: DiagnosticCollectionPhase): String = "${phase(phase)}.runs"
+        }
+
+        /**
+         * 单个诊断组件的计量：慢在声明检查、表达式检查还是 CFA。
+         *
+         * 与 [Pass] 的分工：[Pass] 计量"一次遍历整体"，本段计量"这次遍历里各组件分别多久"。
+         * 耗时用微秒而非毫秒——一次「元素 × 组件」检查基本在亚毫秒量级，整毫秒会让样本
+         * 塌成 0。
+         */
+        object CheckerComponent : LLStatisticsScope("$name.checkerComponent") {
+            /**
+             * 组件段前缀。
+             */
+            fun component(kind: CfirCheckerComponentKind): String = "${name}.${kind.metricSuffix}"
+
+            /**
+             * 单个「元素 × 组件」检查的耗时（微秒）。
+             */
+            fun duration(kind: CfirCheckerComponentKind): String = "${component(kind)}.duration"
+
+            /**
+             * 该组件被执行的元素数；与耗时相除即单次平均。
+             */
+            fun runs(kind: CfirCheckerComponentKind): String = "${component(kind)}.runs"
         }
     }
 

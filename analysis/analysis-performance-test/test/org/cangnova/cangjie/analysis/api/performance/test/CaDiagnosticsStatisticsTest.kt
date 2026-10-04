@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.performance.test
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsMetricNames
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -68,6 +69,52 @@ class CaDiagnosticsStatisticsTest : AbstractAnalysisApiPerformanceTest(
             assertTrue(
                 runs(LLStatisticsMetricNames.diagnosticsPassRuns(phase)) >= 1,
                 "遍历阶段 ${phase.name.lowercase()} 必须记遍历次数",
+            )
+        }
+    }
+
+    /**
+     * 逐诊断组件耗时必须真的走到接缝。
+     *
+     * 与上面的用例不同，这条断言的不是"统计域回调被调用"，而是**真实遍历**过
+     * `CheckerRunningDiagnosticCollectorVisitor` 的逐组件分发：只有走通整条链路，
+     * `checkerComponent.*.runs` 才会大于 0。接缝断掉时本用例立刻变红。
+     *
+     * 组件清单由装配方决定：`EXTENDED_AND_COMMON_CHECKERS` 会同时请求 default 与 extra，
+     * 因此 IDE 侧的 `ErrorNode` 组件不装配；POST_SEMA 在文件无错误时另外装配两个组件。
+     */
+    @Test
+    fun checkerComponentTimingsAreRecorded(mainFile: CjFile) {
+        val pointsBefore = CaPerformanceTestTelemetry.collectHistogramPointCounts()
+        val countersBefore = CaPerformanceTestTelemetry.collectLongCounters()
+
+        analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+
+        val pointsAfter = CaPerformanceTestTelemetry.collectHistogramPointCounts()
+        val countersAfter = CaPerformanceTestTelemetry.collectLongCounters()
+
+        fun points(name: String): Long = (pointsAfter[name] ?: 0L) - (pointsBefore[name] ?: 0L)
+        fun runs(name: String): Long = (countersAfter[name] ?: 0L) - (countersBefore[name] ?: 0L)
+
+        val expected = listOf(
+            CfirCheckerComponentKind.DECLARATION,
+            CfirCheckerComponentKind.EXPRESSION,
+            CfirCheckerComponentKind.TYPE,
+            CfirCheckerComponentKind.CONTROL_FLOW_ANALYSIS,
+            CfirCheckerComponentKind.CHIR_ARITHMETIC,
+        )
+        expected.forEach { kind ->
+            val durationName = LLStatisticsMetricNames.checkerComponentDuration(kind)
+            val runsName = LLStatisticsMetricNames.checkerComponentRuns(kind)
+            assertTrue(
+                points(durationName) >= 1,
+                "诊断组件 ${kind.metricSuffix} 必须记录耗时采样（微秒），实际 delta=${points(durationName)}",
+            )
+            assertTrue(
+                runs(runsName) >= 1,
+                "诊断组件 ${kind.metricSuffix} 必须记录被执行的元素数，实际 delta=${runs(runsName)}",
             )
         }
     }
