@@ -34,11 +34,15 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 
 /**
- * 按 callableId 与 callable kind 恢复稳定的公开 callable 符号。
+ * 按 callableId、callable kind 与签名恢复稳定的公开 callable 符号。
+ *
+ * [signature] 是区分同名重载的必要条件：没有它，两个重载都会通过筛选，
+ * `singleOrNull` 因「命中多个」返回 `null`，两个符号一起丢失。
  */
 internal fun CaCfirSession.restoreCallablePublicSymbol(
     callableId: CallableId,
     kind: CaCfirCallableSymbolKind,
+    signature: CfirCallableSignature?,
 ): CaCallableSymbol? {
     val ownerClassId = callableId.classId
     val candidates = when (ownerClassId) {
@@ -59,7 +63,9 @@ internal fun CaCfirSession.restoreCallablePublicSymbol(
             }
         }
     }
-    val stableCandidate = candidates.singleOrNull { candidate -> candidate.matchesStableCallable(callableId, kind) }
+    val stableCandidate = candidates.singleOrNull { candidate ->
+        candidate.matchesStableCallable(callableId, kind, signature)
+    }
     if (stableCandidate != null) return stableCandidate
 
     if (kind == CaCfirCallableSymbolKind.PATTERN_VARIABLE || kind == CaCfirCallableSymbolKind.PATTERN_BINDING) {
@@ -94,18 +100,19 @@ internal fun CaCfirSession.restoreTopLevelFunctionPublicSymbol(
 }
 
 /**
- * 按 extend 稳定身份和成员 callable 信息恢复 extend 成员公开符号。
+ * 按 extend 稳定身份、成员 callable 信息与签名恢复 extend 成员公开符号。
  */
 internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
     extendIdentity: CaCfirExtendSymbolIdentity,
     callableName: Name,
     kind: CaCfirCallableSymbolKind,
+    signature: CfirCallableSignature?,
 ): CaCallableSymbol? {
     val extendSymbol = restoreExtendPublicSymbol(extendIdentity) ?: return null
     val candidates = with(this) {
         extendSymbol.declaredMemberScope.callables(callableName).toList()
     }
-    val expectedKey = CaCfirExtendMemberCallableSymbolCacheKey(extendIdentity, callableName, kind)
+    val expectedKey = CaCfirExtendMemberCallableSymbolCacheKey(extendIdentity, callableName, kind, signature)
     return candidates.singleOrNull { candidate ->
         candidate.publicSymbolCacheKeyOrNull() == expectedKey
     }
@@ -168,13 +175,21 @@ private fun CfirCallableSymbol<*>.matchesKind(kind: CaCfirCallableSymbolKind): B
 }
 
 /**
- * 判断公开 callable 符号是否匹配稳定缓存键中的 callableId 与 kind。
+ * 判断公开 callable 符号是否匹配稳定缓存键中的 callableId、kind 与签名。
+ *
+ * 签名比较在 [signature] 为 `null` 时跳过：那种键对应没有 callable 声明形态的符号，
+ * 本来就不存在同名重载，跳过不会造成合并。
  */
 private fun CaCallableSymbol.matchesStableCallable(
     callableId: CallableId,
     kind: CaCfirCallableSymbolKind,
+    signature: CfirCallableSignature?,
 ): Boolean {
     if (this.callableId != callableId) return false
+    if (signature != null) {
+        val cfirCallable = (this as? CaCfirSymbol<*>)?.cfirSymbol as? CfirCallableSymbol<*> ?: return false
+        if (!signature.hasTheSameSignature(cfirCallable)) return false
+    }
     return when (kind) {
         CaCfirCallableSymbolKind.NAMED_FUNCTION -> this is org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol &&
             this !is org.cangnova.cangjie.analysis.api.symbols.CaMainFunctionSymbol &&

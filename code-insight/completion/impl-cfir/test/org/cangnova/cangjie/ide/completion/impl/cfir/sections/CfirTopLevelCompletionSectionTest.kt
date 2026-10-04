@@ -48,6 +48,38 @@ class CfirTopLevelCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 同名不同参数的重载必须**各带实例化签名**，不能只靠显示名区分。
+     *
+     * 这是缺陷 D-2 的验收：框架侧的 public symbol 缓存键此前只含 `callableId + kind`，
+     * 两个重载被判为同一符号；插件侧若再按短名去重，候选就只剩一个。
+     * 这里同时断言签名文本与身份键两两不同——只断言「候选数 ≥ 2」不足以发现
+     * 「两个候选指向同一声明」这种形态。
+     */
+    @Test
+    fun topLevelOverloadsCarryDistinctSignatures(mainFile: CjFile) {
+        val overloads = section.collectCandidates(mainFile.requestAtReference(TARGET, "over"))
+            .filter { it.lookupString == "overloaded" }
+        assertTrue(overloads.size >= 2, "同名重载必须保留多个候选，实际 ${overloads.lookupNames()}")
+
+        val tailTexts = overloads.map { it.tailText }
+        val typeTexts = overloads.map { it.typeText }
+        val dedupKeys = overloads.map { it.identity.deduplicationKey }
+        val handles = overloads.map { it.identity.handle }
+
+        assertEquals(tailTexts.size, tailTexts.distinct().size, "同名重载的签名尾文本必须互不相同，实际 $tailTexts")
+        assertEquals(typeTexts.size, typeTexts.distinct().size, "同名重载的返回类型必须互不相同，实际 $typeTexts")
+        assertEquals(dedupKeys.size, dedupKeys.distinct().size, "同名重载的身份键必须互不相同，实际 $dedupKeys")
+        assertEquals(handles.size, handles.distinct().size, "同名重载的身份句柄必须互不相同，实际 $handles")
+
+        // 夹具的两个重载分别是 (Int64): Int64 与 (String): String。
+        // 参数类型必须真的进到展示里，否则「签名不同」只是空断言。
+        assertTrue(
+            tailTexts.any { it.contains("Int64") } && tailTexts.any { it.contains("String") },
+            "签名尾文本必须体现各自的参数类型，实际 $tailTexts",
+        )
+    }
+
     /** 成员访问位置不使用顶层区段。 */
     @Test
     fun topLevelCandidatesAbsentAtMemberAccess(mainFile: CjFile) {

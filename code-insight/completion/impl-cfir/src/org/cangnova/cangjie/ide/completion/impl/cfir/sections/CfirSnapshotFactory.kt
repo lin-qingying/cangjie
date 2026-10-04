@@ -79,7 +79,8 @@ internal fun CaSession.callableSnapshot(
             handle = "$qualified$tailText",
             name = name,
             qualifiedName = qualified,
-            deduplicationKey = if (tailText.isEmpty()) name else "$name$tailText",
+            // 身份键走与 extend 通道同源的 callableIdentityKey，不在这里另写一份公式。
+            deduplicationKey = callableIdentityKey(symbol),
         )
         this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
     }.build()
@@ -154,17 +155,35 @@ private fun renderParameter(parameter: CaValueParameterSymbol): String {
 }
 
 /**
- * callable 的候选去重键。
+ * callable 的候选身份键。
  *
- * 与 [callableSnapshot] 内部写入身份的键**必须同源**：
+ * 与 [callableSnapshot] 写入 `deduplicationKey` 的值**必须同源**：
  * 区段用它判断「某个成员是否已由 extend 通道提供」，若两处算法不同，
  * 会把同一个成员同时按 MEMBER 和 EXTEND_MEMBER 各补一次。
+ *
+ * 键的构成是「展示名 + 渲染签名」而不是「展示名 + 展示尾文本」：
+ * 尾文本带 `!`、`vararg`、`= ...` 等**调用形态**标记，那些是展示约定不是符号身份；
+ * 用它当身份会让同一个声明因展示格式变化而被当成两个候选。
+ * 参数类型与返回类型仍然进键，因此同名不同参数的重载天然不等价。
  */
 @OptIn(CaExperimentalApi::class)
 internal fun CaSession.callableIdentityKey(symbol: CaCallableSymbol): String {
     val name = symbol.displayName()
-    val tailText = renderSignatureTail(symbol, with(this) { symbol.asSignature() }.returnType)
-    return if (tailText.isEmpty()) name else "$name$tailText"
+    val returnType = with(this) { symbol.asSignature() }.returnType
+    val parameters = when (symbol) {
+        is CaEnumConstructorSymbol -> symbol.payloadTypes.map { it.toString() }
+        is CaValueParameterOwnerSymbol -> symbol.valueParameters.map { it.parameterIdentityPart() }
+        else -> emptyList()
+    }
+    return "$name(${parameters.joinToString(", ")}): $returnType"
+}
+
+/**
+ * 取形参参与身份比较的部分：类型与 vararg 形态，不含命名标记与默认值标记。
+ */
+private fun CaValueParameterSymbol.parameterIdentityPart(): String {
+    val varargMark = if (isVararg) "vararg " else ""
+    return "$varargMark${returnType}"
 }
 
 /**

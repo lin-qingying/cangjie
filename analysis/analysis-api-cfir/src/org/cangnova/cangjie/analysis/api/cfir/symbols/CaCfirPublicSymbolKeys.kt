@@ -1,7 +1,11 @@
+@file:OptIn(CaImplementationDetail::class)
+
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -57,6 +61,11 @@ internal data class CaCfirExtendSymbolCacheKey(
 
 /**
  * 顶层 callable 符号的稳定缓存键。
+ *
+ * [signature] 不是可选的冗余信息：`CallableId` 只由包名与短名构成，
+ * 同名重载的 `CallableId` 完全相同。只用 `callableId + kind` 做键会把重载合并成同一个符号，
+ * 使 `isEquivalentTo` 对两个不同声明返回 `true`，缓存也会互相覆盖。
+ * 这与 Kotlin FIR 的 `KaFirCallableIdPlusSignature` 同形：**区分重载的是签名，不是 CallableId 本身**。
  */
 internal data class CaCfirCallableSymbolCacheKey(
     /**
@@ -67,10 +76,20 @@ internal data class CaCfirCallableSymbolCacheKey(
      * callable 的具体公开符号种类。
      */
     val kind: CaCfirCallableSymbolKind,
+    /**
+     * callable 的稳定签名（参数类型、类型参数数量、返回类型）。
+     *
+     * 取 `null` 只表示该符号种类没有可比较签名的声明形态（例如纯字段）；
+     * 任何可能重载的种类都必须给出，否则重载会被合并。
+     */
+    val signature: CfirCallableSignature?,
 ) : CaCfirPublicSymbolCacheKey
 
 /**
  * extend 成员 callable 符号的稳定缓存键。
+ *
+ * 同样必须携带签名：extend 内部的重载成员只有 `extendIdentity + 短名 + kind` 三项可区分，
+ * 少了签名会把同一 extend 里的同名重载成员合并成一个。
  */
 internal data class CaCfirExtendMemberCallableSymbolCacheKey(
     /** owner extend 的稳定语义身份，而不是公开 `extendId` 文本。 */
@@ -83,6 +102,10 @@ internal data class CaCfirExtendMemberCallableSymbolCacheKey(
      * extend 成员 callable 的公开符号种类。
      */
     val kind: CaCfirCallableSymbolKind,
+    /**
+     * extend 成员 callable 的稳定签名，取 `null` 的含义同 [CaCfirCallableSymbolCacheKey.signature]。
+     */
+    val signature: CfirCallableSignature?,
 ) : CaCfirPublicSymbolCacheKey
 
 /**

@@ -36,13 +36,14 @@ internal class CaCfirCallableSymbolPointer<S : CaCallableSymbol>(
     private val symbolType: Class<S>,
 ) : CaCfirSymbolPointerBase<S>() {
     /**
-     * 在目标 CFIR session 中按 callableId 和 kind 恢复 callable 符号。
+     * 在目标 CFIR session 中按 callableId、kind 与签名恢复 callable 符号。
      */
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
         symbolType.castOrNull(
             restoreSession(session)?.restoreCallablePublicSymbol(
                 callableId = cacheKey.callableId,
                 kind = cacheKey.kind,
+                signature = cacheKey.signature,
             )
         )
 }
@@ -61,7 +62,7 @@ internal class CaCfirExtendMemberCallableSymbolPointer<S : CaCallableSymbol>(
     private val symbolType: Class<S>,
 ) : CaCfirSymbolPointerBase<S>() {
     /**
-     * 在目标 CFIR session 中按 extend identity、成员名和 kind 恢复 callable 符号。
+     * 在目标 CFIR session 中按 extend identity、成员名、kind 与签名恢复 callable 符号。
      */
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
         symbolType.castOrNull(
@@ -69,6 +70,7 @@ internal class CaCfirExtendMemberCallableSymbolPointer<S : CaCallableSymbol>(
                 extendIdentity = cacheKey.extendIdentity,
                 callableName = cacheKey.callableName,
                 kind = cacheKey.kind,
+                signature = cacheKey.signature,
             )
         )
 }
