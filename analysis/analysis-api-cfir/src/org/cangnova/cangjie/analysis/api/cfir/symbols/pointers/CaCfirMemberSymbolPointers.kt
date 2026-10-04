@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
@@ -83,5 +84,39 @@ internal class CaCfirMemberFunctionSymbolPointer(
                     backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return@singleOrNull false
                 )
             }
+    }
+}
+
+/**
+ * 字段符号 pointer。
+ *
+ * 字段此前完全没有稳定指针，导致成员作用域一旦真的暴露字段就无法被渲染或恢复。
+ * 补全的候选快照需要「分析结束后按指针重新进入分析」，没有指针就无法满足该契约。
+ */
+@OptIn(CaImplementationDetail::class)
+internal class CaCfirMemberFieldSymbolPointer(
+    /**
+     * 字段所属声明容器的 pointer。
+     */
+    private val ownerPointer: CaSymbolPointer<CaDeclarationContainerSymbol>,
+    /**
+     * 字段短名。
+     */
+    private val name: Name,
+) : CaCfirMemberSymbolPointer<CaFieldSymbol>(ownerPointer) {
+    /**
+     * 从 owner 的声明成员作用域中按名恢复字段。
+     *
+     * 字段在成员作用域中唯一（同一容器内不允许同名字段），因此按名取单个即可；
+     * 找不到时返回 `null`，由调用方决定失效表现，不伪造符号。
+     */
+    override fun CaCfirSession.chooseCandidateAndCreateSymbol(
+        ownerSymbol: CaDeclarationContainerSymbol,
+    ): CaFieldSymbol? = with(this) {
+        when (ownerSymbol) {
+            is org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol -> ownerSymbol.declaredMemberScope.callables(name).toList()
+            is org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol -> ownerSymbol.declaredMemberScope.callables(name).toList()
+            else -> emptyList()
+        }.filterIsInstance<CaFieldSymbol>().singleOrNull()
     }
 }

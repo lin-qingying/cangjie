@@ -1129,6 +1129,21 @@ class CfirClassUseSiteMemberScope private constructor(
     /**
      * 按名称处理所有可见 callable。
      */
+    /**
+     * 按名称处理 use-site 变量成员。
+     *
+     * 本作用域是 `CaType.scope` 实际落到的包装层；它覆写了 callable、属性与名称集合，
+     * 唯独漏掉 `processVariablesByName`，而 Analysis 的 `getCallableSymbols` 正是走这一入口。
+     * 后果是成员补全只拿到函数、拿不到字段与成员变量。这里直接复用 callable 分派，
+     * 保证与 `processCallablesByName` 的可见集合完全一致。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        if (name !in getCallableNames()) return
+        processCallablesByName(name) { symbol ->
+            (symbol as? CfirVariableSymbol<*>)?.let(processor)
+        }
+    }
+
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
         if (name !in getCallableNames()) return
 

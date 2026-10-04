@@ -184,8 +184,7 @@ internal fun <S : CaFunctionSymbol> CaCfirSession.renderFunctionSignature(symbol
  */
 @OptIn(CaExperimentalApi::class)
 internal fun <S : CaVariableSymbol> CaCfirSession.renderVariableSignature(symbol: S): CaVariableSignature<S> {
-    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol
-        as? org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol<*>
-        ?: error("CFIR variable signature construction requires a CFIR-backed variable symbol")
+    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol as? CfirCallableSymbol<*>
+        ?: error("CFIR variable signature construction requires a CFIR-backed variable or property symbol")
     return CaCfirVariableDummySignature(token, cfirSymbol, cfirSymbolBuilder)
 }

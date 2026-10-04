@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.signatures
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
+import org.cangnova.cangjie.analysis.api.cfir.types.AbstractCaCfirSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
 import org.cangnova.cangjie.analysis.api.cfir.utils.cached
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.resolve.substitution.CfirChainedSubstitutor
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -69,13 +71,20 @@ internal class CaCfirFunctionSubstitutorBasedSignature<out S : CaFunctionSymbol>
         }
     }
 
-    /**
-     * 当前实现暂不支持链式签名替换。
-     */
+    /** 将新替换应用于当前签名，而不是重新从未实例化声明开始。 */
     override fun substitute(substitutor: CaSubstitutor): CaCfirFunctionSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
-        error("Chained signature substitution is not wired for CFIR yet")
+        require(substitutor is AbstractCaCfirSubstitutor<*>)
+        CaCfirFunctionSubstitutorBasedSignature(
+            token, cfirSymbol, cfirSymbolBuilder,
+            CfirChainedSubstitutor(coneSubstitutor, substitutor.substitutor),
+        )
     }
+
+    override fun equals(other: Any?): Boolean =
+        super.equals(other) && (other as CaCfirFunctionSubstitutorBasedSignature<*>).coneSubstitutor == coneSubstitutor
+
+    override fun hashCode(): Int = 31 * super.hashCode() + coneSubstitutor.hashCode()
 }
 
 /**
@@ -121,13 +130,20 @@ internal class CaCfirVariableSubstitutorBasedSignature<out S : CaVariableSymbol>
         symbol.receiverType?.let { substitutePublicType(it, coneSubstitutor, cfirSymbolBuilder) }
     }
 
-    /**
-     * 当前实现暂不支持链式签名替换。
-     */
+    /** 将新替换应用于当前签名，保留 property/field/局部变量的原声明身份。 */
     override fun substitute(substitutor: CaSubstitutor): CaCfirVariableSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return@withValidityAssertion this
-        error("Chained signature substitution is not wired for CFIR yet")
+        require(substitutor is AbstractCaCfirSubstitutor<*>)
+        CaCfirVariableSubstitutorBasedSignature(
+            token, cfirSymbol, cfirSymbolBuilder,
+            CfirChainedSubstitutor(coneSubstitutor, substitutor.substitutor),
+        )
     }
+
+    override fun equals(other: Any?): Boolean =
+        super.equals(other) && (other as CaCfirVariableSubstitutorBasedSignature<*>).coneSubstitutor == coneSubstitutor
+
+    override fun hashCode(): Int = 31 * super.hashCode() + coneSubstitutor.hashCode()
 }
 
 /**

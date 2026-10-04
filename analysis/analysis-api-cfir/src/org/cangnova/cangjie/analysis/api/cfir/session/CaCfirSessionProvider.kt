@@ -68,6 +68,10 @@ class CaCfirSessionProvider(
         ProgressManager.checkCanceled()
         flushDeferredModificationsIfInsideWriteAction()
 
+        // 临时副本同样走模块缓存：LL 会话缓存已按模块（含文件与解析模式）区分，
+        // 并在取用时检查副本文件的修改戳。绕过这里会让 LL 的 not-null 上下文缓存
+        // 在新建会话后拿不到值（`getNotNullValueForNotNullContext` Failed requirement），
+        // 因此不稳定副本的失效必须由 LL 侧解决，而不是在 Analysis 层丢弃缓存。
         val session = cache.getOrPut(useSiteModule) {
             createAnalysisSession(useSiteModule)
         }

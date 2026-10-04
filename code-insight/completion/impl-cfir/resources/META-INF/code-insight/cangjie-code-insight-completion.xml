@@ -1,0 +1,13 @@
+<idea-plugin>
+    <!--
+      仓颉原生补全的生产接线。
+
+      只注册单职责入口：内部候选区段由服务显式列表组织，不在此为每个区段增加扩展点。
+      宿主从 modules/ide/base 的模块描述符 include 本文件，不得复制其中的注册项。
+    -->
+    <extensions defaultExtensionNs="com.intellij">
+        <completion.contributor
+            language="CangJie"
+            implementationClass="org.cangnova.cangjie.ide.completion.impl.cfir.CangJieCfirCompletionContributor"/>
+    </extensions>
+</idea-plugin>

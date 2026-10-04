@@ -58,6 +58,17 @@ class CfirClassDeclaredMemberScope(
     }
 
     /**
+     * 按名称处理声明变量。
+     *
+     * 声明索引已经持有变量；只透出 `processCallablesByName` 会让按变量族查询的调用方
+     * （Analysis 的 `getCallableSymbols` 走的就是本入口）拿不到字段，
+     * 表现为成员补全只有函数、没有字段与成员变量。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        memberIndex.variables[name]?.forEach(processor)
+    }
+
+    /**
      * 按名称处理声明属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {

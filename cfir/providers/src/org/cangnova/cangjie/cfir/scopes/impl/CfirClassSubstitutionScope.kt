@@ -214,6 +214,20 @@ class CfirClassSubstitutionScope(
     }
 
     /**
+     * 按名称处理替换后的变量。
+     *
+     * 类型替换作用域是 `CaType.scope` 的实际返回类型；只覆写 `processCallablesByName`
+     * 与 `processPropertiesByName` 会让按变量族查询的调用方（Analysis 的
+     * `getCallableSymbols` 走本入口）在成员补全里完全拿不到字段与成员变量。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        useSiteMemberScope.processVariablesByName(name) { original ->
+            // `CfirVariableSymbol` 在字段形态下是 `CfirFieldVariableSymbol`，替换后类型不变。
+            processor(substituteCallableSymbol(original) as CfirVariableSymbol<*>)
+        }
+    }
+
+    /**
      * classifier 不需要 substitution override，直接透传。
      */
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {

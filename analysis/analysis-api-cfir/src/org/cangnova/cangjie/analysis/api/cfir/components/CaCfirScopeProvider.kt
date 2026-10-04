@@ -3,33 +3,44 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.*
-import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDelegatingNamesAwareScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirCompositeScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDeclaredMemberScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDelegatingNamesAwareScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirFileScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirPackageScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirScopeContext
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CfirSingleExtendDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
+import org.cangnova.cangjie.analysis.api.components.CaMemberScopeQuery
+import org.cangnova.cangjie.analysis.api.components.CaMemberScopeQueryData
+import org.cangnova.cangjie.analysis.api.components.CaScopeContext
+import org.cangnova.cangjie.analysis.api.components.CaScopeKind
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.components.CaTypeAccessKind
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 
 /**
@@ -162,19 +173,129 @@ internal class CaCfirScopeProvider(
     /**
      * 返回类型对应 class-like 声明的成员作用域。
      */
-    override val org.cangnova.cangjie.analysis.api.types.CaType.scope: CaScope?
+    override val CaType.scope: CaScope?
+        get() = withValidityAssertion { useSiteMemberScopeOf(this@scope) }
+
+    /**
+     * 返回类型对应 class-like 声明的**实例**成员作用域。
+     *
+     * 与 [CaType.scope] 走同一条 use-site 作用域构造路径：
+     * 仓颉的 use-site 成员作用域已经把继承链与适用 extend 一并纳入，
+     * 单独再包一层「仅实例」过滤会丢掉 extend 注入，代价大于收益。
+     * 真正的静态/实例区分由 [memberScopeQueries] 按使用点形态完成。
+     */
+    override val CaType.instanceMemberScope: CaScope?
+        get() = withValidityAssertion { useSiteMemberScopeOf(this@instanceMemberScope) }
+
+    /**
+     * 返回类型对应 class-like 声明的**静态**成员作用域。
+     *
+     * 用 `CfirClassStaticScope(...).withoutInstanceMemberDiagnostics()` 得到纯静态视图：
+     * 该视图在同名静态成员为空时**不会**回退到实例成员，
+     * 因此「`Type.member` 补出实例成员」这类错误候选不会从这里泄漏出去。
+     * 静态通道完全不可用时返回 `null`，让调用方能区分「没有静态成员」与「有但需要接收者」。
+     */
+    override val CaType.staticMemberScope: CaScope?
         get() = withValidityAssertion {
-            val classLikeSymbol = this@scope.requireCfirConeType("成员作用域查询")
-                .toClassLikeSymbol(analysisSession.cfirSession)
-                ?: return@withValidityAssertion null
-            val cfirScope = classLikeSymbol.cfir.unsubstitutedScope(
-                analysisSession.cfirSession,
-                getScopeSession(),
-                withForcedTypeCalculator = false,
-                memberRequiredPhase = CfirResolvePhase.STATUS,
+            val base = useSiteTypeScopeOf(this@staticMemberScope) ?: return@withValidityAssertion null
+            if (base.hasDefinitelyNoStaticMembers) return@withValidityAssertion null
+            CaCfirDelegatingNamesAwareScope(
+                CfirClassStaticScope(base).withoutInstanceMemberDiagnostics(),
+                analysisSession.cfirSymbolBuilder,
             )
-            CaCfirDelegatingNamesAwareScope(cfirScope, analysisSession.cfirSymbolBuilder)
         }
+
+    /**
+     * 按使用点形态给出成员作用域查询列表。
+     *
+     * `STATIC_THROUGH_TYPE_NAME` 只给静态通道；其余三种形态给实例通道。
+     * 返回顺序即查询优先级：调用方按序取第一个非空作用域，
+     * 因此这里不做过滤——过滤责任在可见性与适用性组件。
+     */
+    override fun CaType.memberScopeQueries(accessKind: CaTypeAccessKind): List<CaMemberScopeQuery> =
+        withValidityAssertion {
+            if (accessKind == CaTypeAccessKind.STATIC_THROUGH_TYPE_NAME) {
+                listOf(
+                    CaMemberScopeQueryData(
+                        token = analysisSession.token,
+                        scope = staticMemberScope,
+                        kind = CaScopeKind.STATIC_MEMBER_SCOPE,
+                        accessedThroughTypeName = true,
+                        requiresReceiver = false,
+                    ),
+                )
+            } else {
+                listOf(
+                    CaMemberScopeQueryData(
+                        token = analysisSession.token,
+                        scope = instanceMemberScope,
+                        kind = CaScopeKind.TYPE_SCOPE,
+                        accessedThroughTypeName = false,
+                        requiresReceiver = true,
+                    ),
+                )
+            }
+        }
+
+    /**
+     * 构造类型的 use-site 成员作用域（CFIR 层）。
+     */
+    private fun useSiteTypeScopeOf(type: CaType): CfirTypeScope? = type
+        .requireCfirConeType("成员作用域查询")
+        .toClassLikeSymbol(analysisSession.cfirSession)
+        ?.cfir
+        ?.unsubstitutedScope(
+            analysisSession.cfirSession,
+            getScopeSession(),
+            withForcedTypeCalculator = false,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
+        )
+
+    /**
+     * 构造类型的 use-site 成员作用域（公开层）。
+     */
+    private fun useSiteMemberScopeOf(type: CaType): CaScope? {
+        val cfirScope = useSiteTypeScopeOf(type) ?: return null
+        return CaCfirDelegatingNamesAwareScope(cfirScope, analysisSession.cfirSymbolBuilder)
+    }
+
+    /**
+     * 取得 [position] 处的词法作用域上下文。
+     *
+     * 位置在解析塔内时按真实查找顺序投影；否则退化为文件级导入上下文。
+     */
+    override fun CjFile.scopeContext(position: CjElement): CaScopeContext = withValidityAssertion {
+        CaCfirScopeContext(analysisSession, this@scopeContext, position)
+    }
+
+    /**
+     * 取得该文件的导入/包/顶层声明上下文。
+     */
+    override val CjFile.importingScopeContext: CaScopeContext
+        get() = withValidityAssertion { CaCfirScopeContext(analysisSession, this@importingScopeContext, this@importingScopeContext) }
+
+    /**
+     * 把多个作用域组合为单一名称查询视图，保持顺序与符号身份。
+     */
+    override fun List<CaScope>.asCompositeScope(filter: (CaScope) -> Boolean): CaScope = withValidityAssertion {
+        val delegates = filter { filter(it) }
+        check(delegates.isNotEmpty()) { "Composite scope requires at least one delegate scope" }
+        if (delegates.size == 1) delegates.single() else CaCfirCompositeScope(delegates, { first, second -> with(analysisSession) { first.isEquivalentTo(second) } })
+    }
+
+    /**
+     * 按来源过滤合成单一作用域视图，保持上下文优先级顺序。
+     */
+    override fun CaScopeContext.compositeScope(filter: (CaScopeKind) -> Boolean): CaScope = withValidityAssertion {
+        val delegates = scopes.map { it.scope }.filter { scope ->
+            scopes.firstOrNull { it.scope === scope }?.let { filter(it.kind) } ?: true
+        }
+        when {
+            delegates.isEmpty() -> error("Composite scope requires at least one scope matching the filter")
+            delegates.size == 1 -> delegates.single()
+            else -> CaCfirCompositeScope(delegates, { first, second -> with(analysisSession) { first.isEquivalentTo(second) } })
+        }
+    }
 
     /**
      * 校验公开 class-like 符号确实由 CFIR 符号承载。

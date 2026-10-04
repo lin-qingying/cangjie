@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.components.CaCDocProvider
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaDataFlowProvider
 import org.cangnova.cangjie.analysis.api.components.CaDefaultImportsProvider
@@ -52,6 +53,7 @@ abstract class CaBaseSession(
     scopeProvider: CaScopeProvider,
     defaultImportProvider: CaDefaultImportsProvider,
     completionCandidateChecker: CaCompletionCandidateChecker,
+    completionExtensionCandidateChecker: CaCompletionExtensionCandidateChecker,
     expressionTypeProvider: CaExpressionTypeProvider,
     expressionInformationProvider: CaExpressionInformationProvider,
     evaluator: CaEvaluator,
@@ -84,6 +86,7 @@ abstract class CaBaseSession(
     CaBaseAnalysisScopeProviderEx by analysisScopeProvider,
     CaDefaultImportsProvider by defaultImportProvider,
     CaCompletionCandidateChecker by completionCandidateChecker,
+    CaCompletionExtensionCandidateChecker by completionExtensionCandidateChecker,
     CaExpressionTypeProvider by expressionTypeProvider,
     CaExpressionInformationProvider by expressionInformationProvider,
     CaEvaluator by evaluator,

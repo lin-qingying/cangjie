@@ -23,16 +23,23 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirM
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.collectUseSiteContainers
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.resolve.calls.visibility.getOwnerClassId
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecker
-import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
+import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.cfir.session.accessibilityChecker
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.psi.CjExpression
 
 /**
@@ -148,6 +155,14 @@ private class CaCfirUseSiteVisibilityChecker(
 
 /**
  * 按 CFIR 声明可见性和 use-site 上下文执行最终访问判定。
+ *
+ * Public/internal/private/protected 一律交给编译器唯一的可访问性服务，
+ * Analysis 层不再维护第二套访问分支：两套规则迟早会漂移，而且成员可见性差异会被
+ * 补全候选静默放大。这里只传入服务需要的完整 use-site 事实——文件、外围声明链、
+ * 接收者类型和查找来源。
+ *
+ * 唯一保留在本层的规则是 [Visibilities.Local]：它是词法可见时机问题，
+ * 编译器可访问性服务按 `else -> false` 处理，不表达局部声明的时间边界。
  */
 private fun CaCfirSession.isDeclarationVisibleAtUseSite(
     candidateDeclaration: CfirMemberDeclaration,
@@ -156,28 +171,36 @@ private fun CaCfirSession.isDeclarationVisibleAtUseSite(
     containingDeclarations: List<CfirDeclaration>,
     position: PsiElement,
 ): Boolean {
-    val targetSession = getTargetSession(positionModule, candidateDeclaration)
-
-    return when (candidateDeclaration.status.visibility) {
-        Visibilities.Public -> true
-        Visibilities.Internal -> canSeePackageInternalDeclaration(useSiteFile, candidateDeclaration)
-        Visibilities.Private -> {
-            val ownerClassId = candidateDeclaration.symbol.getOwnerClassId()
-            when (ownerClassId) {
-                null -> canSeePrivateTopLevelDeclarationFromFile(useSiteFile, candidateDeclaration)
-                else -> canSeeMemberOf(ownerClassId, containingDeclarations)
-            }
-        }
-        Visibilities.Protected -> {
-            candidateDeclaration.llCfirModuleData.caModule == targetSession.caModule ||
-                targetSession.moduleVisibilityChecker?.isInFriendModule(candidateDeclaration) == true ||
-                candidateDeclaration.symbol.getOwnerClassId()?.let { ownerClassId ->
-                    canSeeMemberOf(ownerClassId, containingDeclarations)
-                } == true
-        }
-        Visibilities.Local -> isLocalDeclarationVisible(candidateDeclaration, position)
-        else -> true
+    if (candidateDeclaration.status.visibility == Visibilities.Local) {
+        return isLocalDeclarationVisible(candidateDeclaration, position)
     }
+
+    val targetSession = getTargetSession(positionModule, candidateDeclaration)
+    val symbol = candidateDeclaration.symbol
+    val context = CfirAccessContext(
+        useSiteFile = useSiteFile,
+        containingDeclarations = containingDeclarations,
+        receiverType = null,
+        qualifierSymbol = null,
+        lookupOrigin = CfirLookupOrigin.LEXICAL,
+        kind = candidateDeclaration.accessKind(),
+    )
+    val result = when (symbol) {
+        is CfirCallableSymbol<*> -> targetSession.accessibilityChecker.checkCallable(symbol, context)
+        is CfirClassLikeSymbol<*> -> targetSession.accessibilityChecker.checkClassLike(symbol, context)
+        else -> return true
+    }
+    return result is CfirAccessibilityResult.Accessible
+}
+
+/**
+ * 按声明种类选择可访问性判定使用的语义入口。
+ */
+private fun CfirMemberDeclaration.accessKind(): CfirAccessKind = when (this) {
+    is CfirClassLikeDeclaration -> CfirAccessKind.TYPE
+    is CfirExtend -> CfirAccessKind.EXTEND
+    is CfirFieldVariable -> CfirAccessKind.NAMED_VALUE
+    else -> CfirAccessKind.CALLABLE
 }
 
 /**
@@ -192,43 +215,6 @@ private fun CaCfirSession.getTargetSession(
         else -> positionModule
     }
 )
-
-/**
- * 判断使用点包是否允许访问目标 package-internal 声明。
- */
-private fun canSeePackageInternalDeclaration(
-    useSiteFile: CfirFile,
-    declaration: CfirMemberDeclaration,
-): Boolean {
-    val declarationContainingFile = declaration.symbol.getContainingFile() ?: return false
-    val declarationPackage = declarationContainingFile.packageDirective.packageFqName
-    val useSitePackage = useSiteFile.packageDirective.packageFqName
-    return canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
-}
-
-/**
- * 判断 private 顶层声明是否与使用点处于同一个 CFIR 文件。
- */
-private fun canSeePrivateTopLevelDeclarationFromFile(
-    useSiteFile: CfirFile,
-    declaration: CfirMemberDeclaration,
-): Boolean {
-    val declarationContainingFile = declaration.symbol.getContainingFile() ?: return false
-    return useSiteFile == declarationContainingFile
-}
-
-/**
- * 判断 use-site 声明链是否位于指定 owner class 内部。
- */
-private fun canSeeMemberOf(
-    ownerClassId: ClassId,
-    containingDeclarations: List<CfirDeclaration>,
-): Boolean {
-    return containingDeclarations.asSequence()
-        .filterIsInstance<CfirClassLikeDeclaration>()
-        .map { it.symbol.classId }
-        .any { it == ownerClassId }
-}
 
 /**
  * 判断局部声明在当前 PSI 位置是否仍处于可见 lexical 范围内。

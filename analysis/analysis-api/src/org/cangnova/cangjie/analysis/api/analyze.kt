@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.api
 
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.withDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.psi.CjElement
 import kotlin.jvm.JvmName
@@ -28,6 +30,26 @@ inline fun <R> analyze(
 ): R =
     CaSessionProvider.getInstance(useSiteElement.project)
         .analyze(useSiteElement, action)
+
+/**
+ * 按指定模式分析文件副本，与 [analyze] 共享读锁、权限及 lifetime owner 不可泄漏的约束。
+ *
+ * [useSiteElement] 的文件必须为具有原件的游离文件，且未设置显式模块。
+ * 模式覆盖先于会话选择，仅对当前文件、当前线程生效；嵌套、异常和取消后恢复。
+ * [CaDanglingFileResolutionMode] 控制非局部引用的解析；局部声明仍来自副本。
+ * 副本修改须遵循 PSI/文档提交协议，此入口不自动提交尚未提交的文档。
+ */
+@OptIn(CaImplementationDetail::class)
+inline fun <R> analyzeCopy(
+    useSiteElement: CjElement,
+    resolutionMode: CaDanglingFileResolutionMode,
+    crossinline action: CaSession.() -> R,
+): R {
+    val file = useSiteElement.containingCjFile
+    return withDanglingFileResolutionMode(file, resolutionMode) {
+        analyze(file) { action() }
+    }
+}
 
 /**
  * 按模块执行分析。

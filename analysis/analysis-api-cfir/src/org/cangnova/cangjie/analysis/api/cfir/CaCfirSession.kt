@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCInteropComponent
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionCandidateChecker
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDataFlowProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDefaultImportsProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirDiagnosticProvider
@@ -83,6 +84,7 @@ internal class CaCfirSession private constructor(
     analysisScopeProvider = CaCfirAnalysisScopeProvider(analysisSessionProvider,useSiteScope),
     defaultImportProvider = CaCfirDefaultImportsProvider( ),
     completionCandidateChecker = CaCfirCompletionCandidateChecker(analysisSessionProvider),
+    completionExtensionCandidateChecker = CaCfirCompletionExtensionCandidateChecker(analysisSessionProvider),
     expressionTypeProvider = CaCfirExpressionTypeProvider(analysisSessionProvider),
     expressionInformationProvider = CaCfirExpressionInformationProvider(analysisSessionProvider),
     evaluator = CaCfirEvaluator(analysisSessionProvider),

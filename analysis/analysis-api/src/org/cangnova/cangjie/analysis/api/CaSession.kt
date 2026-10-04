@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.components.CaCDocProvider
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionExtensionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaCompletionCandidateChecker
 import org.cangnova.cangjie.analysis.api.components.CaDataFlowProvider
 import org.cangnova.cangjie.analysis.api.components.CaDefaultImportsProvider
@@ -63,6 +64,7 @@ interface CaSession : CaLifetimeOwner,
     CaAnalysisScopeProvider,
     CaDefaultImportsProvider,
     CaCompletionCandidateChecker,
+    CaCompletionExtensionCandidateChecker,
     CaExpressionTypeProvider,
     CaExpressionInformationProvider,
     CaEvaluator,

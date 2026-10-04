@@ -13,6 +13,12 @@ import org.cangnova.cangjie.test.services.moduleStructure
  *
  * 对齐 Kotlin `AbstractDanglingFileCollectDiagnosticsTest`：复制主文件为非物理 PSI，
  * 并通过 `originalFile` 让项目结构服务把它归入 dangling file module。
+ *
+ * 注意：Kotlin 参考实现只在 `IGNORE_SELF_MODE` 指令存在时才设置 `originalFile`，
+ * 其余夹具走 PREFER_SELF。仓颉当前的 dangling PREFER_SELF 解析路径存在低层缺陷
+ * （LL 侧 `getNotNullValueForNotNullContext` 抛 Failed requirement），
+ * 因此这里保留「总是设置原件」的行为，避免既有生成套件回归；
+ * IGNORE_SELF_MODE 指令仍被保留为显式声明，等 PREFER_SELF 修复后再切换。
  */
 abstract class AbstractDanglingFileCollectDiagnosticsTest : AbstractCollectDiagnosticsTest() {
     /**
@@ -51,10 +57,10 @@ abstract class AbstractDanglingFileCollectDiagnosticsTest : AbstractCollectDiagn
     }
 
     /**
-     * 将原始文件复制为带 `originalFile` 的非物理文件。
-     *
-     * 复制文件会被项目结构识别为 dangling file module，从而覆盖 dangling 分析路径。
-     */
+ * 将原始文件复制为带 `originalFile` 的非物理文件。
+ *
+ * 复制文件会被项目结构识别为 dangling file module，从而覆盖 dangling 分析路径。
+ */
     override fun prepareCjFile(cjFile: CjFile, testServices: TestServices): PreparedFile {
         val psiFactory = CjPsiFactory.contextual(cjFile, markGenerated = true)
         val fakeFile = psiFactory.createFile("fake.cj", cjFile.text).apply {

@@ -124,6 +124,16 @@ class CfirExtendMemberScope(
     }
 
     /**
+     * 按名称处理 extend 变量。
+     *
+     * 与类声明成员作用域同因：索引已持有变量，只透出 `processCallablesByName`
+     * 会让按变量族查询的调用方拿不到 extend 引入的变量成员。
+     */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        memberIndex.variables[name]?.forEach(processor)
+    }
+
+    /**
      * extend scope 自身不产生直接覆盖函数链。
      */
     override fun processDirectOverriddenFunctionsWithBaseScope(

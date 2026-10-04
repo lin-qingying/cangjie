@@ -3,10 +3,15 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
 import org.cangnova.cangjie.analysis.api.cfir.utils.unwrap
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
+import org.cangnova.cangjie.analysis.api.resolution.CaCall
+import org.cangnova.cangjie.analysis.api.resolution.CaEnumConstructorCall
+import org.cangnova.cangjie.analysis.api.resolution.CaFunctionCall
+import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
@@ -30,16 +35,29 @@ import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.containsErrorType
+import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.psi.CjBinaryExpression
+import org.cangnova.cangjie.psi.CjBlockExpression
+import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjConstantExpression
+import org.cangnova.cangjie.psi.CjContainerNode
 import org.cangnova.cangjie.psi.CjDeclarationWithBody
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjIfExpression
+import org.cangnova.cangjie.psi.CjMatchEntry
+import org.cangnova.cangjie.psi.CjMatchExpression
+import org.cangnova.cangjie.psi.CjWhileExpressionBase
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjOperationExpression
 import org.cangnova.cangjie.psi.CjParenthesizedExpression
 import org.cangnova.cangjie.psi.CjPrefixExpression
@@ -86,6 +104,16 @@ internal class CaCfirExpressionTypeProvider(
 
     /**
      * 返回 PSI 位置在当前上下文中被期望的类型。
+     *
+     * 覆盖的场景按「约束来源是否确定」排列：
+     * 1. 调用实参与 return（沿用既有入口）；
+     * 2. 显式类型的初始化器、赋值右侧、命名参数默认值；
+     * 3. 普通布尔条件与带 `else` 的 `if` 分支、`match` 分支块；
+     * 4. 不完整调用：从本次解析保留的候选中恢复，全部候选一致时才给出确定类型。
+     *
+     * 省略类型的初始化器、没有外部约束的分支、以及声明前/块非末项一律返回 `null`：
+     * 仓颉在这些位置按“最小公共父类型”求值，调用方不能把某个兄弟表达式的实际类型
+     * 当作该位置的期望类型。
      */
     override val PsiElement.expectedType: CaType?
         get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
@@ -93,6 +121,11 @@ internal class CaCfirExpressionTypeProvider(
                 val unwrapped = unwrapExpectedTypeTarget()
                 getExpectedTypeOfFunctionParameter(unwrapped)
                     ?: getExpectedTypeByReturnExpression(unwrapped)
+                    ?: getExpectedTypeByDeclaration(unwrapped)
+                    ?: getExpectedTypeByAssignment(unwrapped)
+                    ?: getExpectedTypeByCondition(unwrapped)
+                    ?: getExpectedTypeByBranchResult(unwrapped)
+                    ?: getExpectedTypeOfUnresolvedCall(unwrapped)
             }
         }
 
@@ -150,6 +183,168 @@ internal class CaCfirExpressionTypeProvider(
         val call = with(analysisSession) { callExpression.resolveToCall() }?.successfulFunctionCallOrNull() ?: return null
         return call.valueArgumentMapping[argumentExpression]?.returnType
     }
+
+    /**
+     * 当元素是显式声明类型的初始化器或命名参数默认值时，返回声明类型。
+ *
+     * 未标注类型的声明属于“由初始化器推导”，不能反过来把初始化器类型当作期望类型。
+ */
+    private fun getExpectedTypeByDeclaration(element: PsiElement): CaType? {
+        val expression = element as? CjExpression ?: return null
+        return when (val parent = expression.parent) {
+            is CjDeclarationWithInitializer -> parent.declaredTypeOrNull()
+            is CjParameter ->
+                if (parent.isNamed && parent.defaultValue === expression) {
+                    with(analysisSession) { parent.typeReference?.type }
+                } else {
+                    null
+                }
+
+            else -> null
+        }
+    }
+
+/**
+     * 当元素是赋值表达式的右值时，返回左值的声明类型。
+ *
+     * 左值类型不可用或本身是错误类型时不给出期望类型，避免把坏类型传播成候选过滤条件。
+ */
+    private fun getExpectedTypeByAssignment(element: PsiElement): CaType? {
+        val right = element as? CjExpression ?: return null
+        val assignment = right.parent as? CjBinaryExpression ?: return null
+        if (assignment.operationToken != CjTokens.EQ || assignment.right !== right) return null
+        val left = assignment.left ?: return null
+        return left.expressionType?.takeUnless { it.isErrorOrUnresolved }
+    }
+
+    /**
+     * 当元素是普通 `if`/`while` 条件时，返回 `Bool`。
+     *
+     * `let` 模式的初始化值有自己的类型，不能因为它出现在条件位置上就当成 `Bool`。
+     */
+    private fun getExpectedTypeByCondition(element: PsiElement): CaType? {
+        val condition = element as? CjExpression ?: return null
+        // 条件常挂在 CjContainerNode 之下，必须穿过容器取到真正的 if/while 宿主再比对槽位。
+        val host = condition.skipToNonContainerParent()
+        val declared = when (host) {
+            is CjIfExpression -> host.condition
+            is CjWhileExpressionBase -> host.condition
+            else -> null
+        }
+        if (declared !== condition) return null
+        return analysisSession.cfirSession.builtinTypes.boolType.asCaType()
+    }
+
+    /**
+     * 当元素是块的最后一项或分支体时，沿用外层表达式的期望类型。
+     *
+     * `if` 必须带 `else` 才继承整个 `if` 的外部约束（无 `else` 时按 `Unit` 处理）；
+     * `match` 各分支块继承 `match` 的外部约束。块的非末项不参与类型推导，因此不传播。
+     */
+    private fun getExpectedTypeByBranchResult(element: PsiElement): CaType? {
+        var current: PsiElement = element
+        while (true) {
+            val owner = current.skipToNonContainerParent() ?: return null
+            when (owner) {
+                // 只有块的末项参与该块的结果类型，非末项不传播任何约束。
+                is CjBlockExpression -> {
+                    val statements = owner.statements
+                    if (statements.isEmpty() || statements.last() !== current) return null
+                    current = owner
+                }
+
+                // `if` 只有带 `else` 时才继承外部约束；否则整个表达式按 Unit 处理。
+                is CjIfExpression -> {
+                    val branches = listOfNotNull(owner.then, owner.`else`)
+                    if (owner.`else` == null || branches.none { it === current }) return null
+                    current = owner
+                }
+
+                // 各分支块继承 `match` 的外部约束。
+                is CjMatchEntry -> if (owner.body !== current) return null else current = owner
+
+                is CjMatchExpression -> current = owner
+
+                is CjDeclarationWithInitializer -> return owner.declaredTypeOrNull()
+
+                is CjParameter ->
+                    return if (owner.isNamed && owner.defaultValue === current) {
+                        with(analysisSession) { owner.typeReference?.type }
+                    } else {
+                        null
+                    }
+
+                is CjReturnExpression ->
+                    return owner.getStrictParentOfType<CjNamedFunction>()?.returnType
+
+                else -> return null
+            }
+        }
+    }
+
+    /**
+     * 从未成功解析的调用中恢复可确定的实参期望类型。
+     *
+     * 只使用本次解析已保留并公开的候选（`CaCallInfo.calls`，含错误调用的 `candidateCalls`），
+     * 不枚举全部词法候选。任一候选缺少目标实参映射、映射类型未确定，
+     * 或候选之间约束不一致时返回 `null`：此时不能任取第一个候选的类型。
+     */
+    private fun getExpectedTypeOfUnresolvedCall(element: PsiElement): CaType? {
+        val argument = element as? CjExpression ?: return null
+        val valueArgument = argument.parent as? CjValueArgument ?: return null
+        val callExpression = valueArgument.parent?.parent as? CjCallExpression ?: return null
+        val callInfo = with(analysisSession) { callExpression.resolveToCall() } ?: return null
+        val calls = callInfo.calls
+        if (calls.isEmpty()) return null
+
+        val recovered = calls.map { call: CaCall -> recoveredArgumentType(call, argument) }
+        if (recovered.any { it == null || it.isErrorOrUnresolved }) return null
+        val types = recovered.filterNotNull()
+        val first = types.first()
+        return first.takeIf { candidate -> types.drop(1).all { with(analysisSession) { candidate.semanticallyEquals(it) } } }
+    }
+
+    /**
+     * 取出单个调用候选为该实参映射到的参数类型。
+     */
+    private fun recoveredArgumentType(call: CaCall, argument: CjExpression): CaType? = when (call) {
+        is CaFunctionCall<*> -> call.valueArgumentMapping[argument]?.returnType
+        is CaEnumConstructorCall<*> -> call.payloadArgumentMapping[argument]
+        else -> null
+    }
+
+    /**
+     * 判断类型是否含错误类型或未解类型；这些类型不得作为期望类型传播。
+     */
+    private val CaType.isErrorOrUnresolved: Boolean
+        get() {
+            val cfirType = (this as? CaCfirType)?.coneType ?: return true
+            // 未定的类型变量/存根同样不能作为期望类型：它们随时可能被替换成别的类型。
+            return cfirType.containsErrorType() ||
+                cfirType.contains { it is ConeTypeVariableType || it is ConeStubType }
+        }
+
+    /**
+     * 穿过只做结构分组的容器节点，返回真正承载语义的父节点。
+     *
+     * `if` 的分支体、条件等经常挂在 `CjContainerNode` 之下；不跳过容器就会把这些
+     * 槽位误判成没有宿主，从而漏掉确定存在的期望类型。
+     */
+    private fun PsiElement.skipToNonContainerParent(): PsiElement? {
+        var current: PsiElement = this
+        while (true) {
+            current = current.parent ?: return null
+            if (current !is CjContainerNode) return current
+        }
+    }
+
+    /**
+     * 取得带初始化器声明的显式类型引用。
+     */
+    private fun CjDeclarationWithInitializer.declaredTypeOrNull(): CaType? =
+        (this as? CjCallableDeclaration)?.typeReference?.let { typeReference ->
+            with(analysisSession) { typeReference.type }
+        }
 
     /**
      * 当元素是 return 表达式的返回值时，返回所属函数的返回类型。

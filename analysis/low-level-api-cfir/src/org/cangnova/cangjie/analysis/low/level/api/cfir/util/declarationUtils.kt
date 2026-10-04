@@ -5,7 +5,9 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.projectStructure.copyOrigin
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
@@ -333,9 +335,10 @@ val PsiElement.parentsCodeFragmentAware: Sequence<PsiElement>
 /**
  * 将复制 PSI 元素映射回原始文件中的对应元素。
  */
+@OptIn(CaExperimentalApi::class)
 internal fun <T : PsiElement> T.unwrapCopy(containingFile: PsiFile = this.containingFile): T? {
     val originalFile = (containingFile as? CjFile)?.originalCjFile
-        ?: containingFile.originalFile.takeUnless { it == containingFile }
+        ?: containingFile.copyOrigin
         ?: (containingFile as? CjFile)?.elementContext?.containingFile
         ?: return null
 

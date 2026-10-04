@@ -14,6 +14,8 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirMemberFieldSymbolPointer
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
@@ -150,10 +152,23 @@ internal class CaCfirFieldSymbol private constructor(
         get() = withValidityAssertion { status?.isModalityExplicit == true }
 
     /**
-     * 字段当前没有稳定 pointer。
+     * 字段符号的稳定指针。
+     *
+     * 字段此前直接报错，导致成员作用域一旦暴露字段就无法渲染或恢复；
+     * 补全候选快照需要在分析结束后按指针重新进入分析，因此这里必须可用。
+     * 缺少 owner 指针时（例如无源码的 .cjo 符号）仍如实报错，不伪造指针。
      */
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        error("Field symbol cannot create a stable pointer")
+        val ownerClassId = cfirSymbol.callableId?.classId
+            ?: error("Field symbol without an owner class cannot create a stable pointer")
+        val owner = with(analysisSession) {
+            getClassLikeSymbol(ownerClassId) as? CaDeclarationContainerSymbol
+        } ?: error("Field owner `$ownerClassId` is not a declaration container")
+        @Suppress("UNCHECKED_CAST")
+        CaCfirMemberFieldSymbolPointer(
+            owner.createPointer() as CaSymbolPointer<CaDeclarationContainerSymbol>,
+            name,
+        ) as CaSymbolPointer<CaCallableSymbol>
     }
 
     /**

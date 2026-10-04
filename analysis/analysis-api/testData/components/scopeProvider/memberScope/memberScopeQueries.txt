@@ -5,12 +5,26 @@ location: CLASS
 psi: CjNamedFunction
 callableId: sample.scope.User.rename
 
+CaCfirFieldSymbol
+name: field
+origin: SOURCE
+location: CLASS
+psi: CjFieldVariable
+callableId: sample.scope.User.field
+
 CaCfirNamedFunctionSymbol
 name: inherited
 origin: SOURCE
 location: CLASS
 psi: CjNamedFunction
 callableId: sample.scope.Base.inherited
+
+CaCfirFieldSymbol
+name: state
+origin: SOURCE
+location: CLASS
+psi: CjFieldVariable
+callableId: sample.scope.Base.state
 
 CaCfirConstructorSymbol
 name: <anonymous>

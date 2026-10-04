@@ -50,6 +50,9 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:chir:chir-tree` | CHIR | CHIR tree and passes | [owner](../chir/README.md) |
 | `:code-insight` | Code insight | Editor-service aggregation | [owner](../code-insight/README.md) |
 | `:code-insight:api` | Code insight | Editor-service API | [owner](../code-insight/README.md) |
+| `:code-insight:completion:contracts` | Code insight | Native completion service contracts | [owner](../code-insight/README.md) |
+| `:code-insight:completion:impl-cfir` | Code insight | Analysis-backed native completion pipeline | [owner](../code-insight/README.md) |
+| `:code-insight:completion:impl-shared` | Code insight | Completion position and editing support | [owner](../code-insight/README.md) |
 | `:code-insight:fixes` | Code insight | Editor quick fixes | [owner](../code-insight/README.md) |
 | `:code-insight:folding` | Code insight | Editor folding | [owner](../code-insight/README.md) |
 | `:code-insight:formatting` | Code insight | Editor formatting | [owner](../code-insight/README.md) |
@@ -86,6 +89,7 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-standalone-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
+| `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-completion-for-ide-module` | Publication | Native completion source bridge | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-folding-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-formatting-for-ide-module` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
@@ -97,6 +101,7 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalone-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
+| `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-completion-for-ide` | Publication | Native completion bundled artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
 | `:prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide` | Publication | IDE dependency publication artifact | [owner](../prepare/README.md) |
