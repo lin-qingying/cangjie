@@ -136,6 +136,44 @@ span：解析/遍历/收集以异常结束时 span 照常结束并记录已耗�
 `false` 表示分析宿主上不触发（不跑宏构造、没有库模块、没有 IDE 补全路径），由该通路所属模块
 自己的 seam 测试负责，且必须写明理由。
 
+### 采集 JFR 记录（本地剖析）
+
+指标回答的是"哪个阶段慢"，**声明级的实际用时走 JFR 通道**：分析路径上本来就在发
+`org.cangnova.cangjie.LLPhase` / `LLPhaseWithTrace` 等事件（见 `LLFlightRecorder`），
+粒度是"每个声明 × 每个 resolve 阶段"，纳秒精度且可带调用栈，只是一直没有把记录打开。
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test \
+    -Pcangjie.jfr.output=analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr \
+    -Dcangjie.analysis.jfr.includePhaseTraces=true
+```
+
+- `-Pcangjie.jfr.output` 传了就挂 `-XX:StartFlightRecording`，不传则完全不启用采集；
+  输出目录会被自动创建。
+- `-Dcangjie.analysis.jfr.includePhaseTraces` 单独控制是否带调用栈。栈采集的开销远大于
+  事件本身，默认关闭。
+- 记录在测试 JVM 退出时落盘（`dumponexit`）。`--tests` 过滤与它兼容，可以只录单个场景。
+
+看结果三选一：
+
+```bash
+# 事件清单与条数
+jfr summary analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr
+
+# 打印声明级阶段事件（duration / path / phase / stackTrace）
+jfr print --events org.cangnova.cangjie.LLPhaseWithTrace --stack-depth 8 \
+    analysis/analysis-performance-test/build/reports/analysis-performance/run.jfr
+```
+
+或用 IDEA 内置的 JFR Profiler 直接打开 `.jfr`（Settings → Profiler → Open Snapshot）。
+
+事件字段含义：`duration` 是单次阶段耗时，`path` 定位到具体声明，`phase` 是 resolve 阶段编号，
+`moduleKind` 与指标的 `CaModuleKind` 共用同一套分类，`result` 表示该阶段是否正常返回。
+
+> **JFR 通道不覆盖 checker 遍历。** 它记录的是 resolve 阶段推进，不记录单个 checker 跑了多久。
+> 诊断侧的耗时指标只到 checker **集合**（default / extra / experimental），见
+> `cangjie.analysis.diagnostics.structureElement.<set>.*`。
+
 ## 5. 看结果
 
 指标是 OpenTelemetry 标准的 `LongCounter` / `LongHistogram`，链路是标准的 span，采集、聚合、
