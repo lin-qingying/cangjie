@@ -127,6 +127,7 @@ class LLStatisticsCoverageManifestTest {
         LLStatisticsScopes.Diagnostics.StructureBuild,
         LLStatisticsScopes.Diagnostics.StructureElement,
         LLStatisticsScopes.Diagnostics.Pass,
+        LLStatisticsScopes.Diagnostics.CheckerComponent,
         LLStatisticsScopes.SessionCreation,
         LLStatisticsScopes.Scopes,
         LLStatisticsScopes.Parse,
@@ -210,6 +211,10 @@ class LLStatisticsCoverageManifestTest {
                 LLStatisticsScopes.Diagnostics.StructureElement,
                 LLStatisticsScopes.Diagnostics.Pass,
             ).forEach { put(it, Coverage("CaDiagnosticsStatisticsTest#diagnosticsCollectionStagesAreRecorded", true)) }
+            put(
+                LLStatisticsScopes.Diagnostics.CheckerComponent,
+                Coverage("CaDiagnosticsStatisticsTest#checkerComponentTimingsAreRecorded", true),
+            )
 
             put(LLStatisticsScopes.SessionCreation, Coverage("CaSessionAndDeserializationStatisticsTest", true))
             put(LLStatisticsScopes.Scopes, Coverage("CaSessionAndDeserializationStatisticsTest#sessionCreationAndDeserializationAreCounted", true))

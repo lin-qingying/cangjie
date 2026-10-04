@@ -158,6 +158,21 @@ object CaPerformanceTestTelemetry {
     }
 
     /**
+     * 读取所有直方图指标的单位，返回“指标名 → 单位”。
+     *
+     * 单位由埋点自己声明（会话/文件级是 `ms`，逐诊断组件是 `us`），必须从 SDK 读而不是
+     * 从指标名猜：猜错会把微秒值当毫秒值参与对比。
+     */
+    fun collectHistogramUnits(): Map<String, String> {
+        val units = LinkedHashMap<String, String>()
+        inMemoryReader.collectAllMetrics().forEach { metric ->
+            if (metric.histogramData == null) return@forEach
+            units[metric.name] = metric.unit
+        }
+        return units
+    }
+
+    /**
      * 读取所有直方图指标，返回“指标名 → 最大采样值”。
      */
     fun collectHistogramMaxima(): Map<String, Double> {

@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.services.environmentManager
 import org.cangnova.cangjie.test.services.TestServices
+import org.junit.jupiter.api.extension.ExtendWith
 
 /**
  * Analysis API 性能/统计测试入口。
@@ -37,6 +38,7 @@ import org.cangnova.cangjie.test.services.TestServices
  * }
  * ```
  */
+@ExtendWith(CaPerformanceRecordingExtension::class)
 abstract class AbstractAnalysisApiPerformanceTest(
     testDirPathString: String,
 ) : AbstractAnalysisApiExecutionTest(testDirPathString) {

@@ -39,11 +39,11 @@ echo $jar='%JAR:'=''%'
 echo $gradlew='%PROJECT_ROOT:'=''%\gradlew.bat'
 echo $timeoutMs=[int]^(15 * 60 * 1000^)
 echo $pollMs=200
-echo $start=[DateTimeOffset]::Now.ToUnixTimeMilliseconds()
+echo $start=[DateTimeOffset]::Now.ToUnixTimeMilliseconds^(^)
 echo $fs = $null
 echo function Release-Lock {
-echo   param^([System.IO.FileStream]^)$s
-echo   if^($s^){ try { $s.Close^() } catch {} }
+echo   param^([System.IO.FileStream]$s^)
+echo   if^($s^){ try { $s.Close^(^) } catch {} }
 echo   Remove-Item -Path $lockFile -Force -ErrorAction SilentlyContinue
 echo }
 echo while^($true^) {
@@ -51,7 +51,7 @@ echo   try {
 echo     $fs = [System.IO.File]::Open^($lockFile, [System.IO.FileMode]::OpenOrCreate, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None^)
 echo     break
 echo   } catch [System.IO.IOException] {
-echo     $elapsed=[DateTimeOffset]::Now.ToUnixTimeMilliseconds^()-$start
+echo     $elapsed=[DateTimeOffset]::Now.ToUnixTimeMilliseconds^(^)-$start
 echo     if^($elapsed -gt $timeoutMs^){ Write-Host '[GradleQueue] bootstrap lock timeout after 15min' -ForegroundColor Red; exit 4 }
 echo     Start-Sleep -Milliseconds $pollMs
 echo   } catch {
@@ -69,7 +69,7 @@ echo     $psi.Arguments=':gradle-queue-cli:shadowJar --no-daemon'
 echo     $psi.WorkingDirectory='%PROJECT_ROOT:'=''%'
 echo     $psi.UseShellExecute=$false
 echo     $p=[System.Diagnostics.Process]::Start^($psi^)
-echo     $p.WaitForExit^()
+echo     $p.WaitForExit^(^)
 echo     $rc=$p.ExitCode
 echo     if^($rc -ne 0^){
 echo       Write-Host "[GradleQueue] shadowJar failed exitCode=$rc" -ForegroundColor Red
