@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.ide.completion.api.lookup
 
+import org.cangnova.cangjie.psi.CjElement
+
 /**
  * 插入前校验结论。
  *
@@ -49,11 +51,14 @@ data class CaRecoveredTarget(
  */
 interface CaCompletionRecoveryService {
     /**
-     * 凭 [identity] 重新进入分析并恢复候选目标。
+     * 凭 [identity] 在 [useSite] 处重新进入分析并恢复候选目标。
+     *
+     * [useSite] 必须是**当初触发补全的那个文件**：可达性是相对使用点而言的，
+     * 同一个声明在文件 A 里可直接引用、在文件 B 里可能需要 import。
      *
      * 返回 `null` 表示身份已失效（声明被删、作用域失效、索引失效）。
      * 实现**不得**吞掉分析异常后返回 `null`：失败与失效必须可区分，
      * 否则一次真实的分析崩溃会被伪装成「候选过期」。
      */
-    fun recover(identity: CaCompletionIdentity): CaRecoveredTarget?
+    fun recover(useSite: CjElement, identity: CaCompletionIdentity): CaRecoveredTarget?
 }
