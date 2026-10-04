@@ -40,626 +40,12 @@
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="update action">
       <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-06-18.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-14.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-16.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-18.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-19.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-20.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-21.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-22.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-23.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-24.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-25.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/2026-09-29.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/ARCHITECTURE-FACTS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/memory/MEMORY.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp-count.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp-gitproc.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/arch-mut.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/baseline-failures.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_f2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_ga.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_o1.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_proof.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_regress.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_regress2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_regress3.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_verify.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cc_verify2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_compare.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_failures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_failures2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_failures3.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cfir_report.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/apply_checker.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/checker_append.kt.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/diff_e2e.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_checker_enum_extend.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_enum_extend.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_fbs.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_gate.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_producer.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/edit_ser.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/make_e2e_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/make_e2e_fixtures2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/make_e2e_fixtures3.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_p4/make_gate_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/ASTLoaderCJMP.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/CheckCJMP.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/CheckCJMPAnnotations.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/DiagnosticParser.def" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/DiagnosticSema.def" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/Option.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/Parameters.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/ParseCJMPDecl.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/ParserModifierRules.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/official/Tokens.inc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/add_nullable_accessor.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjc_help.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjmp_default_probe.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjmp_multi_extend.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjmp_pointer_extend.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjmp_unmarked_probe.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/cjo_inspect.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/clean_import.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/commonWithDefaultUnpairedEnumCommon.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/commonWithDefaultUnpairedEnumSpecific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/delegate_patch.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/dp/dp.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AccessLevel.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AccessModifier.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AliasInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Anno.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AnnoArg.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AnnoKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ArrayInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ArrayTyInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ArrayValue.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AssignInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/AutoDiffInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/BinaryInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/BlockInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/BuiltInInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/BuiltInType.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CallInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CallKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CjoVersion.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ClassInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CompositeTyInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CompositeValue.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/CompositeValueIndex.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ConstValue.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Constraint.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Decl.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/DeclHash.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/DeclInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/DeclKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/EnumInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Expr.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ExprInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ExprKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ExtendInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FeatureId.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FeaturesDirective.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FeaturesSet.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FileInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Float32Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Float64Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ForInInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ForInKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FullId.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FuncArgInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FuncBody.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FuncInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FuncParamList.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/FuncTyInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Generic.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/GenericTyInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ImportSpec.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Imports.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/IncOrDecInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Int16Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Int32Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Int64Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Int8Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/InterfaceInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/JumpInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/LambdaInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/LetPatternDestructorInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/LitConstInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/LitConstKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/MatchCaseInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/MatchInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/MemberValue.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/OperatorKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Option.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/OverflowPolicy.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Package.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/PackageKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ParamInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Pattern.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/PatternKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/Position.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/PropInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/ReferenceInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/SemaTy.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/SemaTyInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/SpawnInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/StringId.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/StringKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/StructInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/SubscriptInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/TryInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/TypeKind.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/UInt16Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/UInt32Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/UInt64Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/UInt8Value.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/UnaryInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/VarInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fbsgen/PackageFormat/VarWithPatternInfo.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/final_memories.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common1.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common1_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common1_out/cjmp_firstfit.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common2.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common2_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_common2_out/cjmp_firstfit.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_specific_multi.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/firstfit_specific_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_brace.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_clear.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_cone_import.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_coverage_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_kdoc.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_kdoc2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_phase2_accessors.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_phase_branches.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_phase_ext.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/fix_psi_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/full/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/full/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/full/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/full/out2/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/full/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_nominal_arity/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_nominal_arity/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_nominal_arity/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_outer/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_outer/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_outer/generic_outer.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/generic_outer/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_common_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_common_out/cjmp_genericmerge.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_override_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_specific_out/.keep" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/genericmerge_specific_override.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/imp/imp.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/json/cjmp_p.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/json/out2/cjmp_p.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k01_pkg_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k02_pkg_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k03_vars.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k04_funcs.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k05_members.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k06_import.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k07_types.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k08_enum.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k09_pkg_segment.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k10_import_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k11_import_multi.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/kw/k12_generic.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/libcjmp_default_probe.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/ll_nullable.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/A/a.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/B/b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/B/pb.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/C/c.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/D1/d1.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/D1/d2.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/D1/pd.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/E/e.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/F/f.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/mainp/G/g.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/make_p7.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/make_p7b.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/make_p7c.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/move_storage.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/multi_extend.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/multi_extend_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/multi_extend_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/multi_extend_verified.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p105/a.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p105/b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p2/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p2/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p3/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p3/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p4/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p4/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p5/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p5/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p6/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p6/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p6/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorExtra/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorExtra/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorExtra/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorMissing/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorMissing/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorMissing/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorNonExhaustiveExtra/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorNonExhaustiveExtra/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorNonExhaustiveExtra/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/EnumCtorNonExhaustiveExtra/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendMissingMember/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendMissingMember/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendMissingMember/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendOk/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendOk/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendOk/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ExtendOk/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/GenericBoundStricter/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/GenericBoundStricter/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/GenericBoundStricter/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ReturnCovariant/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ReturnCovariant/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ReturnCovariant/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p7/ReturnCovariant/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p8/none.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p8/none2.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p8/none3.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T16_SpecificInitVsUnmarkedCommonPrimary/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T16_SpecificInitVsUnmarkedCommonPrimary/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T16_SpecificInitVsUnmarkedCommonPrimary/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T17_SpecificInitWithUnmarkedCommonPrimaryAndCommonInit/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T17_SpecificInitWithUnmarkedCommonPrimaryAndCommonInit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T17_SpecificInitWithUnmarkedCommonPrimaryAndCommonInit/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T17_SpecificInitWithUnmarkedCommonPrimaryAndCommonInit/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T18_SpecificMarkedPrimaryCtor/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T18_SpecificMarkedPrimaryCtor/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T18_SpecificMarkedPrimaryCtor/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T19_UnmarkedSpecificPrimaryCtor/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T19_UnmarkedSpecificPrimaryCtor/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9/T19_UnmarkedSpecificPrimaryCtor/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C01_OpenClassNoInitGeneralSub/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C02_OpenClassPrimaryCtorGeneralSub/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C03_AbstractClassNoInitGeneralSub/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C04_ExtPrivateDup/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C05_ExtCommonPrivate/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C06_StaticLetInStaticInit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C07_AssignCommonLetInCommonCtor/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C08_AbstractMemberNoExplicit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C09_ExplicitAbstractWithBody/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C10_GenericFrozen/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C11_AnnotationNotAllowed/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C12_AnnotationNotAllowedConstSafe/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/C13_StaticLetCommonStaticInitAssignOnly/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T01_VarNotMatchLet/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T01_VarNotMatchLet/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T01_VarNotMatchLet/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T02_InitForPrimaryCtor/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T02_InitForPrimaryCtor/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T03_PrimaryUnmatchedVarDecl/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T03_PrimaryUnmatchedVarDecl/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T04_MemberMustHaveImpl/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T04_MemberMustHaveImpl/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T04_MemberMustHaveImpl/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T05_DifferentAnnotation/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T05_DifferentAnnotation/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T05_DifferentAnnotation/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T05_DifferentAnnotation/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T06_DifferentAnnotationSpecificOnly/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T06_DifferentAnnotationSpecificOnly/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T06_DifferentAnnotationSpecificOnly/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T07_DeprecatedOnSpecific/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T07_DeprecatedOnSpecific/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T07_DeprecatedOnSpecific/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T08_DifferentSuperType/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T08_DifferentSuperType/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T08_DifferentSuperType/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09_DuplicateExtensions/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09_DuplicateExtensions/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09_DuplicateExtensions/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09b_DuplicateExtensionsEmpty/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09b_DuplicateExtensionsEmpty/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T09b_DuplicateExtensionsEmpty/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T10_OpenToAbstract/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T10_OpenToAbstract/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T10_OpenToAbstract/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T11_NonSpecificAbstractMember/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T11_NonSpecificAbstractMember/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T11_NonSpecificAbstractMember/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T12_AssignCommonLetInSpecificCtor/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T12_AssignCommonLetInSpecificCtor/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T12_AssignCommonLetInSpecificCtor/out.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T12_AssignCommonLetInSpecificCtor/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T13_DifferentModifierOpenClass/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T13_DifferentModifierOpenClass/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T13_DifferentModifierOpenClass/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T14_SpecificAbstractMemberNoExplicit/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T14_SpecificAbstractMemberNoExplicit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T14_SpecificAbstractMemberNoExplicit/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T15_StaticLetSpecificStaticInit/cjmp_p.chir" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T15_StaticLetSpecificStaticInit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/p9_done/T15_StaticLetSpecificStaticInit/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_annotations.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_delete_rename.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_fixtures2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_gate.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_iface_exempt.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_item1.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase3_notmatched.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_1.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_1_fixtures.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_2a.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_2a_cont.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_2b.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_3a.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_3b.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_3b2.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase4_3b3.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase5_enum.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase5_enum_generic_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase5_enum_generic_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase5_nominal_generic_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/phase5_nominal_generic_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/pointer_extend_common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/pointer_extend_specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/private_function_instantiation.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_d.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results2.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results3.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results4.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results5.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results6.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results7.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results7b.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results7c.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results9.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results9b.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/probe_results9c.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/register_ll.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/register_storage_common.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/P0-HIGH-SEVERITY-FIXTURE-INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/P1-FRAMEWORK-MAPPING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/VERSION-EVIDENCE-20260929.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/baseline-matching-commit.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/baseline-owner-cjo-commit.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/baseline-partial.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_helper/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_helper/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_unmarked/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/b1_unmarked/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c1_default_member/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c1_default_member/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c2_unpaired_subtype/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c2_unpaired_subtype/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c4_callable_reference/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c4_callable_reference/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c5_implicit_super/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/c5_implicit_super/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d1_owner_interface/main.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d1_public_owner/main.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/d2_concrete_holder/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e1_marked_abstract_members/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e1_marked_abstract_members/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e3_same_count_interfaces/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/e3_same_count_interfaces/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_function_parameter/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_function_parameter/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_tuple_parameter/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f1_tuple_parameter/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_partial_pattern/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_partial_pattern/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_tuple_pattern/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/f2_tuple_pattern/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/caller.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/g1_standalone/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h1_full_id/client.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h1_full_id/library.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/neighbor.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/specific_imports_neighbor.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/stale.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h2_exact_path/wrong_package.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h3_cli_output/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p0-fixtures/h3_cli_output/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_empty_unit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_empty_unit/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_bad/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_good/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/both_implicit_good/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_bodyless_untyped/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_empty_specific_implicit_value/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_implicit_specific_explicit_bad/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/common_value_specific_empty/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/run-results.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_bodyless_untyped/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_error_type/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/specific_implicit_error/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use3/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use3/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use4/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-cjc-20260929/use4/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_bounds_two_two/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_named/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_one/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/generic_owner_two_two/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/named_parameter_firstfit/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/occupied_before_missing_body/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/one_common_two_specific/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/run-results.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_one_specific/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_static_instance/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/common.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/two_common_two_specific/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/common.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/specific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-first-fit-20260929/unoccupied_missing_body/specific.diagnostics.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/CfirCjmpCallerFirstDiagnosticsTest.kt.draft" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/CfirCjmpCallerFirstDiagnosticsTest.methods.kt.fragment" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/INDEX.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/ll/defaultArgumentInferredCallerFirst.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/ll/shadowedCommonInferredCallerFirst.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpBothImplicitReturnTypesMatch.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpCommonImplicitSpecificExplicitReturnMismatch.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpCommonValueSpecificEmptyBodyMismatch.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpEmptyBodiesMatchAsUnit.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpEmptyCommonImplicitSpecificValuePostCheck.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpExplicitSpecificErrorTypeDoesNotMatch.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/additional-20260929/llt/cjmpImplicitSpecificBodyErrorPreservesMatch.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/cjmpDefaultReadThroughBeforeImplicitTypes.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/cjmpSpecificShadowingBeforeImplicitTypes.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/defaultArgumentCallerFirst.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/red-results-20260929.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/p1-tests/shadowedCommonCallerFirst.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/review-20260928/plan-evidence-commit.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probe6.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probe7.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probe9.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probes.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probes2.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probes3.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probes4.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/run_probes5.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/shadow_filter.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/staging_manifest.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/unmarkedDirectMemberMergeCommon.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/unmarkedDirectMemberMergeSpecific.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cjmp_probe113/update_memories.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/compact_diff.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cptrprobe/out.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cptrprobe/p.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/cptrprobe/t10.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/diff_full.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/dump_fail.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/err2.diff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/errmsgs.diff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/evidence-mut.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/fixfix.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/generic_constraint_and_4_official.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/golden.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official/CheckCJMP.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official/MPTypeCheckerImpl.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113/CheckCJMP.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113/CheckCJMPAnnotations.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113/MPTypeCheckerImpl.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/CheckCJMP.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/CheckCJMPAnnotations.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/DeclAttributeChecker.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/Diags.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/GlobalVarChecker.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/official113src/ParseCJMPDecl.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe1.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe1.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe1b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe1b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe2.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe2.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe2b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe2b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe3a.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe3a.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe3b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe3b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4a.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4a.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4c.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4c.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4d.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe4d.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5a.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5a.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5b.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5b.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5c.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5c.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5d.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5d.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5e.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5e.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5f.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/probe5f.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/prop5.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/read_fail.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/record_mut.diff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/record_rest.diff" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/unusedprobe/full.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/unusedprobe/full_out.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/unusedprobe/imports.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/unusedprobe/u.cj" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/wait_and_verify.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/wait_debug.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/wait_trace.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.workbuddy/tmp/writeback.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/transformers/LLCfirBodyLazyResolver.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/psi/gen/org/cangnova/cangjie/lexer/_CangJieLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/psi/gen/org/cangnova/cangjie/lexer/_CangJieLexer.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -755,6 +141,45 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="cangjie" type="f1a62948:ProjectNode" />
                 <item name="cangjie" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-performance-test" type="2d1252cf:ModuleNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-performance-test" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-performance-test" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="build" type="c8890929:TasksNode$1" />
+              </path>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="cangjie" type="f1a62948:ProjectNode" />
+                <item name="cangjie" type="2d1252cf:ModuleNode" />
+                <item name="analysis" type="2d1252cf:ModuleNode" />
+                <item name="analysis-performance-test" type="2d1252cf:ModuleNode" />
+                <item name="Tasks" type="e4a08cd1:TasksNode" />
+                <item name="verification" type="c8890929:TasksNode$1" />
               </path>
               <path>
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
@@ -925,7 +350,7 @@
     <dismissed value="$PROJECT_DIR$/.opencode/package.json" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
+    <option name="selectedTabId" value="BEProjectErrors" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -950,232 +375,233 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.AnalysisApiCfirDiagnosticsTest.interfaceTypeParameterDiagnostics.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.AnalysisApiSymbolProviderEntryTest.psiEntrySymbols.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Binary.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Box.testOptionBoxAssign01.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.BoxGenerated.testBoxInMultiMatchcase.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CaStubTreeSummaryExtractorTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieCompiledFilesHighlightingTest.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CangJieCompiledFilesHighlightingTest.testSameProjectLowercaseMacroImportHasNoDiagnosticHighlightingErrors.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieCompiledFilesHighlightingTest.testStdlibFunctionGotoDeclarationOpensBuiltinsTarget.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CangJieFoldingBuilderTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieFormattingTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieHighlightingColorsTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieHighlightingLexicalKeysTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieHighlightingStructuralRulesTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieReferenceBindingTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceDoesNotProvideTargetOrDocumentation.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceProvidesTargetAndDocumentation.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangJieReferenceBindingTest.testSourceReferenceToCjoProvidesTargetAndDocumentation.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CangjieLanguageServerTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnostics2PsiTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnostics2TestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsPsiTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CfirAnalysisLLTPsiTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisLLTTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisLltTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisMacroPsiTestGenerated.testSameProjectMacroPackageImportOnly.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisMacroTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisMacroTestGenerated.testSameProjectMacroPackageImportOnly.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirAnalysisResolveTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirConstraintCompletionTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirConstraintResultBuilderTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirIdeDependentAnalysisCodeFragmentModuleIsReferenceToTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirIdeDependentCodeFragmentModuleProjectStructureTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirJoinMeetTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirMapArgumentsTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirMinimalResolvePipelineTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CfirOverloadConflictResolverTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ChirBuilderTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CjcGoldenDiagnostics2Test.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CjoSdkDeserializationIntegrationTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CjoSearchPathTest.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.CommonSuperType2.testTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ConeSubtypeCheckerTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ConstEval.testConstEvalArithmeticOverflow.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ConstEval.testConstEvalDivideByZero.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.DeclarationStatus.testMutOnlyOnFunction.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.DeclarationStatus.testMutOnlyOnFunctionRich.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Declarations.testClassWithMembers.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Declarations.testEmptyClass.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.DecompiledFileStubKindsTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.DecompiledTextBuilderTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enum.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enum.testErrorSimpleEnum.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Enum.testSimpleEnum.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ExtendGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ExtendsImplementsInterfaceDuplicated.testInterfaceDuplicated08.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Extensions.testExtendDuplicateInterfaceRich.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Function.testBodyReturnInference.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Function.testFuncArg.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.FunctionGenerated.testBodyReturnInference.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.General.testMultipleDiagnostics.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.General.testSimpleT.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.General.testToStringInterfaceParentType.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.IfGenerated.testIf6.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Inheritance.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Inheritance.testOverrideReturnType.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Initialization.testControlFlowInitialization.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Interface.testComparable.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Interop.testObjcMirrorImplTypeBoundaryPlaceholder.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.LightTree2CfirConverterTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.LightTree2CfirConverterTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.LlvmNativeIntegrationTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Match.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Match.testMatchRichPatternsOfficial.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Match.testNonExhaustiveMatchRich.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.ModifierGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.MultipleAssignExpr.testCase01.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.OfficialCompilerChirComparisonTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.OfficialCompilerLlvmIrComparisonTest.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.OkNoSubPkg01Generated.testMain.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Operator.testInvoke.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Operator.testSubscriptGet.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.PerformParsingTest.testPerformParsing.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.RawCfirBuilderTestCase.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.RawCfirBuilderTestCaseGenerated (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.RawCfirBuilderTestCaseGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Redeclaration.testSimple.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Run All Test.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Run Cfir Test All.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Run Cfir Test.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Run IDE with Plugin.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Service.testServiceDescriptor.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Stdlib.testCore.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Super.testRepeatedInheritance.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.Try.testTryCatchBranchTypeMismatch.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeInferGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.testArgumentTypeMismatch.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.testGenericArgumentConstraintConflict (1).executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.TypeMismatch.testGenericArgumentConstraintConflict.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.testGenericConstraintFromExpectedType.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.testGenericReturnTypeInference.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypeMismatch.testReturnTypeMismatch.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.TypeMismatch.testSimple.executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.TypeMismatch.testWhereMultipleUpperBounds.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypePatternGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Typealias.testA.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.TypealiasGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Unresolved.testStdCore.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Unresolved.testUnresolvedReferenceName.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Users.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Visibility.testPrivateMemberAccessExplicitThis.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:analysis:analysis-api-cfir:generateDiagnostics].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:analysis:analysis-api-cfir:test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:analysis:low-level-api-cfir:test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:analysis-tests:build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:analysis-tests:test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-cones:build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:providers:build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:compiler:cli:generateCliArguments].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:lsp:installDist].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:lsp:jar].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:lsp:test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:product:idea-plugin:dependencies --configuration runtimeClasspath &gt; deps.txt].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:psi build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [:psi:build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [cfir:cfir-tree:generateTree].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [classes].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [clean].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [codeStats].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [generateCfirDiagnostics].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [generateKotlinFlatBuffers].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [gradle-build-conventions:build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [nativeCompile].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [psi build].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [publishToMavenLocal].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [publish].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.cangjie [test].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.deveco [:product:runIde].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.intellij-ide [:cangjie:analysis:analysis-api-cfir:analysis-api-cfir-generator:org.cangnova.cangjie.analysis.api.cfir.generator.MainKt.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.intellij-ide [:product:idea-plugin:buildPlugin].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.intellij-ide [:product:idea-plugin:dependencies --configuration runtimeClasspath &gt; deps.txt].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.intellij-ide [:product:idea-plugin:runIde].executor&quot;: &quot;Debug&quot;,
-    &quot;Gradle.下载 IntelliJ 平台源.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.下载源代码.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.加载 Gradle 依赖项.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.升级 Gradle 包装器.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.构建 cangjie.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.构建 intellij-ide.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.AbstractCfirAnalysisResolveTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.CangjieLanguageServerTest.executor&quot;: &quot;Debug&quot;,
-    &quot;JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.整个项目 (1).executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.整个项目.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.未命名.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;auto.test.manager.delay&quot;: &quot;10000&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/code/intellij/cangjie/deveco&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.jshint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.jshint&quot;: &quot;&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.30207306&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;http.proxy&quot;,
-    &quot;settings.editor.splitter.proportion&quot;: &quot;0.20833333&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\code\\intellij\\cangjie\\deveco\\.host\\devEco-studio\\plugins\\codescanner\\code-scanner-agent\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;,
-    &quot;远程 JVM 调试.:cfir:analysis-tests:test.executor&quot;: &quot;Debug&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.AnalysisApiCfirDiagnosticsTest.interfaceTypeParameterDiagnostics.executor": "Run",
+    "Gradle.AnalysisApiSymbolProviderEntryTest.psiEntrySymbols.executor": "Run",
+    "Gradle.Binary.executor": "Run",
+    "Gradle.Box.testOptionBoxAssign01.executor": "Debug",
+    "Gradle.BoxGenerated.testBoxInMultiMatchcase.executor": "Run",
+    "Gradle.CaStubTreeSummaryExtractorTest.executor": "Run",
+    "Gradle.CangJieCompiledFilesHighlightingTest.executor": "Debug",
+    "Gradle.CangJieCompiledFilesHighlightingTest.testSameProjectLowercaseMacroImportHasNoDiagnosticHighlightingErrors.executor": "Run",
+    "Gradle.CangJieCompiledFilesHighlightingTest.testStdlibFunctionGotoDeclarationOpensBuiltinsTarget.executor": "Debug",
+    "Gradle.CangJieFoldingBuilderTest.executor": "Run",
+    "Gradle.CangJieFormattingTest.executor": "Run",
+    "Gradle.CangJieHighlightingColorsTest.executor": "Run",
+    "Gradle.CangJieHighlightingLexicalKeysTest.executor": "Run",
+    "Gradle.CangJieHighlightingStructuralRulesTest.executor": "Run",
+    "Gradle.CangJieReferenceBindingTest.executor": "Run",
+    "Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceDoesNotProvideTargetOrDocumentation.executor": "Run",
+    "Gradle.CangJieReferenceBindingTest.testFieldBasicTypeReferenceProvidesTargetAndDocumentation.executor": "Run",
+    "Gradle.CangJieReferenceBindingTest.testSourceReferenceToCjoProvidesTargetAndDocumentation.executor": "Run",
+    "Gradle.CangjieLanguageServerTest.executor": "Run",
+    "Gradle.CfirAnalysisDiagnostics2PsiTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisDiagnostics2TestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisDiagnosticsPsiTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisDiagnosticsTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testArgumentTypeMismatch.executor": "Debug",
+    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor": "Run",
+    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor": "Run",
+    "Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor": "Debug",
+    "Gradle.CfirAnalysisLLTPsiTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisLLTTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisLltTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisMacroPsiTestGenerated.testSameProjectMacroPackageImportOnly.executor": "Run",
+    "Gradle.CfirAnalysisMacroTestGenerated.executor": "Run",
+    "Gradle.CfirAnalysisMacroTestGenerated.testSameProjectMacroPackageImportOnly.executor": "Run",
+    "Gradle.CfirAnalysisResolveTestGenerated.executor": "Run",
+    "Gradle.CfirConstraintCompletionTest.executor": "Run",
+    "Gradle.CfirConstraintResultBuilderTest.executor": "Run",
+    "Gradle.CfirIdeDependentAnalysisCodeFragmentModuleIsReferenceToTestGenerated.executor": "Run",
+    "Gradle.CfirIdeDependentCodeFragmentModuleProjectStructureTestGenerated.executor": "Run",
+    "Gradle.CfirIdeDependentSourceModuleCollectDiagnosticsTestGenerated.executor": "Run",
+    "Gradle.CfirJoinMeetTest.executor": "Run",
+    "Gradle.CfirMapArgumentsTest.executor": "Run",
+    "Gradle.CfirMinimalResolvePipelineTest.executor": "Run",
+    "Gradle.CfirOverloadConflictResolverTest.executor": "Run",
+    "Gradle.ChirBuilderTest.executor": "Run",
+    "Gradle.CjcGoldenDiagnostics2Test.executor": "Run",
+    "Gradle.CjoSdkDeserializationIntegrationTest.executor": "Run",
+    "Gradle.CjoSdkDeserializationIntegrationTest.sdk cjo fixtures can be deserialized with expected version.executor": "Debug",
+    "Gradle.CjoSearchPathTest.executor": "Debug",
+    "Gradle.CommonSuperType2.testTest.executor": "Run",
+    "Gradle.ConeSubtypeCheckerTest.executor": "Run",
+    "Gradle.ConstEval.testConstEvalArithmeticOverflow.executor": "Run",
+    "Gradle.ConstEval.testConstEvalDivideByZero.executor": "Run",
+    "Gradle.DeclarationStatus.testMutOnlyOnFunction.executor": "Run",
+    "Gradle.DeclarationStatus.testMutOnlyOnFunctionRich.executor": "Run",
+    "Gradle.Declarations.testClassWithMembers.executor": "Run",
+    "Gradle.Declarations.testEmptyClass.executor": "Debug",
+    "Gradle.DecompiledFileStubKindsTest.executor": "Run",
+    "Gradle.DecompiledTextBuilderTest.executor": "Run",
+    "Gradle.Enum.executor": "Run",
+    "Gradle.Enum.testErrorSimpleEnum.executor": "Run",
+    "Gradle.Enum.testSimpleEnum.executor": "Run",
+    "Gradle.ExtendGenerated.executor": "Run",
+    "Gradle.ExtendsImplementsInterfaceDuplicated.testInterfaceDuplicated08.executor": "Run",
+    "Gradle.Extensions.testExtendDuplicateInterfaceRich.executor": "Debug",
+    "Gradle.Function.testBodyReturnInference.executor": "Run",
+    "Gradle.Function.testFuncArg.executor": "Run",
+    "Gradle.FunctionGenerated.testBodyReturnInference.executor": "Run",
+    "Gradle.General.testMultipleDiagnostics.executor": "Run",
+    "Gradle.General.testSimpleT.executor": "Run",
+    "Gradle.General.testToStringInterfaceParentType.executor": "Debug",
+    "Gradle.IfGenerated.testIf6.executor": "Debug",
+    "Gradle.Inheritance.executor": "Run",
+    "Gradle.Inheritance.testOverrideReturnType.executor": "Debug",
+    "Gradle.Initialization.testControlFlowInitialization.executor": "Run",
+    "Gradle.Interface.testComparable.executor": "Run",
+    "Gradle.Interop.testObjcMirrorImplTypeBoundaryPlaceholder.executor": "Debug",
+    "Gradle.LightTree2CfirConverterTest.executor": "Run",
+    "Gradle.LightTree2CfirConverterTestGenerated.executor": "Run",
+    "Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor": "Debug",
+    "Gradle.LlvmNativeIntegrationTest.can generate llvm ir file through JNI bridge.executor": "Debug",
+    "Gradle.LlvmNativeIntegrationTest.executor": "Run",
+    "Gradle.Match.executor": "Run",
+    "Gradle.Match.testMatchRichPatternsOfficial.executor": "Debug",
+    "Gradle.Match.testNonExhaustiveMatchRich.executor": "Run",
+    "Gradle.ModifierGenerated.executor": "Run",
+    "Gradle.MultipleAssignExpr.testCase01.executor": "Run",
+    "Gradle.OfficialCompilerChirComparisonTest.executor": "Run",
+    "Gradle.OfficialCompilerLlvmIrComparisonTest.executor": "Run",
+    "Gradle.OkNoSubPkg01Generated.testMain.executor": "Debug",
+    "Gradle.Operator.testInvoke.executor": "Debug",
+    "Gradle.Operator.testSubscriptGet.executor": "Run",
+    "Gradle.PerformParsingTest.testPerformParsing.executor": "Debug",
+    "Gradle.RawCfirBuilderLazyBodiesByAstTestGenerated.executor": "Run",
+    "Gradle.RawCfirBuilderTestCase.executor": "Run",
+    "Gradle.RawCfirBuilderTestCaseGenerated (1).executor": "Run",
+    "Gradle.RawCfirBuilderTestCaseGenerated.executor": "Run",
+    "Gradle.Redeclaration.testSimple.executor": "Run",
+    "Gradle.Run All Test.executor": "Run",
+    "Gradle.Run Cfir Test All.executor": "Run",
+    "Gradle.Run Cfir Test.executor": "Run",
+    "Gradle.Run IDE with Plugin.executor": "Run",
+    "Gradle.Service.testServiceDescriptor.executor": "Run",
+    "Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable.executor": "Run",
+    "Gradle.Stdlib.testCore.executor": "Debug",
+    "Gradle.Super.testRepeatedInheritance.executor": "Debug",
+    "Gradle.Try.testTryCatchBranchTypeMismatch.executor": "Run",
+    "Gradle.TypeInferGenerated.executor": "Run",
+    "Gradle.TypeMismatch.executor": "Run",
+    "Gradle.TypeMismatch.testArgumentTypeMismatch.executor": "Run",
+    "Gradle.TypeMismatch.testGenericArgumentConstraintConflict (1).executor": "Debug",
+    "Gradle.TypeMismatch.testGenericArgumentConstraintConflict.executor": "Run",
+    "Gradle.TypeMismatch.testGenericConstraintFromExpectedType.executor": "Run",
+    "Gradle.TypeMismatch.testGenericReturnTypeInference.executor": "Run",
+    "Gradle.TypeMismatch.testReturnTypeMismatch.executor": "Debug",
+    "Gradle.TypeMismatch.testSimple.executor": "Debug",
+    "Gradle.TypeMismatch.testWhereMultipleUpperBounds.executor": "Run",
+    "Gradle.TypePatternGenerated.executor": "Run",
+    "Gradle.Typealias.testA.executor": "Run",
+    "Gradle.TypealiasGenerated.executor": "Run",
+    "Gradle.Unresolved.testStdCore.executor": "Run",
+    "Gradle.Unresolved.testUnresolvedReferenceName.executor": "Run",
+    "Gradle.Users.executor": "Run",
+    "Gradle.Visibility.testPrivateMemberAccessExplicitThis.executor": "Run",
+    "Gradle.cangjie [:analysis:analysis-api-cfir:generateDiagnostics].executor": "Run",
+    "Gradle.cangjie [:analysis:analysis-api-cfir:test].executor": "Run",
+    "Gradle.cangjie [:analysis:analysis-performance-test:test].executor": "Run",
+    "Gradle.cangjie [:analysis:low-level-api-cfir:test].executor": "Run",
+    "Gradle.cangjie [:cfir:analysis-tests:build].executor": "Run",
+    "Gradle.cangjie [:cfir:analysis-tests:generateTestGeneratorForCfirAnalysisTestsTests].executor": "Run",
+    "Gradle.cangjie [:cfir:analysis-tests:test].executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-cones:build].executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-tree:generateTree].executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:assemble].executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangjie.cfir.tree.generator.MainKt.main()].executor": "Run",
+    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:org.cangnova.cangjie.cfir.tree.generator.MainKt.main()].executor": "Debug",
+    "Gradle.cangjie [:cfir:cfir-tree:tree-generator:run].executor": "Run",
+    "Gradle.cangjie [:cfir:checkers:checkers-component-generator:org.cangnova.cangjie.cfir.checkers.generator.MainKt.main()].executor": "Run",
+    "Gradle.cangjie [:cfir:providers:build].executor": "Run",
+    "Gradle.cangjie [:cfir:raw-cfir:psi2cfir:org.cangjie.cfir.builder.TestGeneratorForPsi2Cfir.main()].executor": "Run",
+    "Gradle.cangjie [:compiler:cli-arguments-generator:org.cangnova.cangjie.cli.arguments.generator.MainKt.main()].executor": "Run",
+    "Gradle.cangjie [:compiler:cli:generateCliArguments].executor": "Run",
+    "Gradle.cangjie [:lsp:installDist].executor": "Run",
+    "Gradle.cangjie [:lsp:jar].executor": "Run",
+    "Gradle.cangjie [:lsp:test].executor": "Run",
+    "Gradle.cangjie [:prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide:publishToMavenLocal].executor": "Run",
+    "Gradle.cangjie [:product:idea-plugin:dependencies --configuration runtimeClasspath > deps.txt].executor": "Run",
+    "Gradle.cangjie [:psi build].executor": "Run",
+    "Gradle.cangjie [:psi:build].executor": "Run",
+    "Gradle.cangjie [build].executor": "Run",
+    "Gradle.cangjie [cfir:cfir-tree:generateTree].executor": "Run",
+    "Gradle.cangjie [cfir:raw-cfir:psi2cfir:test].executor": "Run",
+    "Gradle.cangjie [classes].executor": "Run",
+    "Gradle.cangjie [clean].executor": "Run",
+    "Gradle.cangjie [codeStats].executor": "Run",
+    "Gradle.cangjie [generateCfirDiagnostics].executor": "Run",
+    "Gradle.cangjie [generateKotlinFlatBuffers].executor": "Run",
+    "Gradle.cangjie [gradle-build-conventions:build].executor": "Run",
+    "Gradle.cangjie [nativeCompile].executor": "Run",
+    "Gradle.cangjie [psi build].executor": "Run",
+    "Gradle.cangjie [publishToMavenLocal].executor": "Run",
+    "Gradle.cangjie [publish].executor": "Run",
+    "Gradle.cangjie [test].executor": "Run",
+    "Gradle.deveco [:product:runIde].executor": "Run",
+    "Gradle.intellij-ide [:cangjie:analysis:analysis-api-cfir:analysis-api-cfir-generator:org.cangnova.cangjie.analysis.api.cfir.generator.MainKt.main()].executor": "Run",
+    "Gradle.intellij-ide [:product:idea-plugin:buildPlugin].executor": "Run",
+    "Gradle.intellij-ide [:product:idea-plugin:dependencies --configuration runtimeClasspath > deps.txt].executor": "Run",
+    "Gradle.intellij-ide [:product:idea-plugin:runIde].executor": "Debug",
+    "Gradle.下载 IntelliJ 平台源.executor": "Run",
+    "Gradle.下载源代码.executor": "Run",
+    "Gradle.加载 Gradle 依赖项.executor": "Run",
+    "Gradle.升级 Gradle 包装器.executor": "Run",
+    "Gradle.构建 cangjie.executor": "Run",
+    "Gradle.构建 intellij-ide.executor": "Run",
+    "JUnit.AbstractCfirAnalysisResolveTest.executor": "Run",
+    "JUnit.CangjieLanguageServerTest.executor": "Debug",
+    "JUnit.RawCfirBuilderDeclarationTest 和其他 2 个.executor": "Run",
+    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Atomic 和其他 33 个.executor": "Run",
+    "JUnit.RawCfirBuilderLazyBodiesByAstTestGenerated$Expressions$Basics 和其他 57 个.executor": "Run",
+    "JUnit.RawCfirBuilderLazyBodiesByStubTestGenerated.executor": "Run",
+    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 4 个.executor": "Run",
+    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations 和其他 9 个.executor": "Run",
+    "JUnit.RawCfirBuilderTestCaseGenerated$Declarations.executor": "Run",
+    "JUnit.整个项目 (1).executor": "Run",
+    "JUnit.整个项目.executor": "Run",
+    "JUnit.未命名.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "auto.test.manager.delay": "10000",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "copilot.chat.legacySessionMetadata.migrated": "true",
+    "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/code/intellij/cangjie/deveco",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.jshint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.jshint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.dev.executor": "Run",
+    "project.structure.last.edited": "模块",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.30207306",
+    "settings.editor.selected.configurable": "http.proxy",
+    "settings.editor.splitter.proportion": "0.20833333",
+    "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "D:\\code\\intellij\\cangjie\\deveco\\.host\\devEco-studio\\plugins\\codescanner\\code-scanner-agent\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true",
+    "远程 JVM 调试.:cfir:analysis-tests:test.executor": "Debug"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;dev.kikugie.stonecutter.projects&quot;: []
+  "keyToStringList": {
+    "dev.kikugie.stonecutter.projects": []
   }
-}</component>
+}]]></component>
   <component name="PsiViewer">
     <option name="SPLIT_DIVIDER_POSITION" value="261" />
   </component>
@@ -1219,13 +645,58 @@
       <command value="gradle codeStats" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.Run IDE with Plugin">
+  <component name="RunManager" selected="Gradle.Run All Test">
     <configuration default="true" type="JUnit" factoryName="JUnit">
       <shortenClasspath name="ARGS_FILE" />
       <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
+    </configuration>
+    <configuration default="true" type="JUnit" factoryName="JUnit">
+      <shortenClasspath name="ARGS_FILE" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="code.intellij.cangjie" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="code.intellij.cangjie" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Binary" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":cangjie:cfir:analysis-tests:test" />
+            <option value="--tests" />
+            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Binary&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
     </configuration>
     <configuration name="Binary" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
@@ -1281,6 +752,58 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
+    <configuration name="Const" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":cangjie:cfir:analysis-tests:test" />
+            <option value="--tests" />
+            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Const&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="cangjie [:analysis:analysis-performance-test:test]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":analysis:analysis-performance-test:test" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
     <configuration name="cangjie [:lsp:jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -1293,6 +816,56 @@
         <option name="taskNames">
           <list>
             <option value=":lsp:jar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="cangjie [:lsp:jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":lsp:jar" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="deveco [:product:runIde]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/deveco" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":product:runIde" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -1353,6 +926,7 @@
       <item itemvalue="Gradle.Run IDE with Plugin" />
       <item itemvalue="Gradle.Run All Test" />
       <item itemvalue="Gradle.Run Cfir Test" />
+      <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
       <item itemvalue="Gradle.cangjie [:lsp:jar]" />
       <item itemvalue="Gradle.deveco [:product:runIde]" />
       <item itemvalue="Gradle.Binary" />
@@ -1360,6 +934,7 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
         <item itemvalue="Gradle.cangjie [:lsp:jar]" />
         <item itemvalue="Gradle.deveco [:product:runIde]" />
         <item itemvalue="Gradle.Const" />
@@ -1925,7 +1500,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="claude/completion-k2-musing-bun" />
                       </list>
                     </value>
                   </entry>
