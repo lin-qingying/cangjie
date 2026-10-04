@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics
 
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.metrics.Meter
+import io.opentelemetry.api.trace.Tracer
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
@@ -31,6 +32,13 @@ internal abstract class LLStatisticsScope(val name: String) {
  * 通过 [scope] 名称取得 OpenTelemetry meter。
  */
 internal fun OpenTelemetry.getMeter(scope: LLStatisticsScope): Meter = getMeter(scope.name)
+
+/**
+ * 通过 [scope] 名称取得 OpenTelemetry tracer。
+ *
+ * 与 [getMeter] 共用同一份 scope 名字：同名指标与 span 在看板上可以直接对照。
+ */
+internal fun OpenTelemetry.getTracer(scope: LLStatisticsScope): Tracer = getTracer(scope.name)
 
 /**
  * Caffeine cache 统计 scope 需要提供的 hit/miss/eviction 子 scope。
@@ -205,6 +213,11 @@ internal object LLStatisticsScopes : LLStatisticsScope("cangjie.analysis") {
          * 语义解析阶段指标集合。
          */
         object Phases : LLStatisticsScope("$name.phases") {
+            /**
+             * 阶段链路 span 名：`<阶段名>`。
+             */
+            fun span(phase: CfirResolvePhase): String = "$name.${phase.name.lowercase()}"
+
             /**
              * 阶段耗时（毫秒）。
              */

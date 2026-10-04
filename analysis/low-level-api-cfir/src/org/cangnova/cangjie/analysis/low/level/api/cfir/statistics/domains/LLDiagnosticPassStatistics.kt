@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.cfir.analysis.collectors.CfirDiagnosticPassTimingObserver
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectionPhase
 
@@ -28,6 +31,11 @@ class LLDiagnosticPassStatistics(statisticsService: LLStatisticsService) :
      * 遍历耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Diagnostics)
+
+    /**
+     * 诊断遍历链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Diagnostics))
 
     /**
      * 各阶段耗时直方图（毫秒）。
@@ -53,8 +61,15 @@ class LLDiagnosticPassStatistics(statisticsService: LLStatisticsService) :
                 .build()
         }
 
+    override fun onDiagnosticPassStarted(phase: DiagnosticCollectionPhase) {
+        spans.start(phase, LLStatisticsScopes.Diagnostics.Pass.phase(phase)) {
+            setAttribute(LLStatisticsSpanAttributes.diagnosticsPhase, phase.name.lowercase())
+        }
+    }
+
     override fun onDiagnosticPassFinished(phase: DiagnosticCollectionPhase, elapsedNanos: Long) {
         durations[phase]?.record(elapsedNanos / NANOS_PER_MILLI)
         runs[phase]?.add(1)
+        spans.end(phase)
     }
 }

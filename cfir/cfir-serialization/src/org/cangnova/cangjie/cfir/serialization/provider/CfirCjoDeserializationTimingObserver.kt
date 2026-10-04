@@ -46,6 +46,21 @@ interface CfirCjoDeserializationTimingObserver : CfirSessionComponent {
         elapsedNanos: Long,
         declarationCount: Int,
     )
+
+    /**
+     * 包加载阶段开始。
+     *
+     * 默认空实现：只有需要记录链路 span 的实现才覆写它。开始回调与 [onCjoDeserializationFinished]
+     * 在同一线程上严格成对。
+     */
+    fun onCjoPackageLoadStarted() {
+    }
+
+    /**
+     * 按声明惰性反序列化阶段开始。
+     */
+    fun onCjoDeclarationStarted(declarationCount: Int) {
+    }
 }
 
 /**
@@ -54,6 +69,7 @@ interface CfirCjoDeserializationTimingObserver : CfirSessionComponent {
 inline fun <T> CfirCjoDeserializationTimingObserver?.measureCjoPackageLoad(action: () -> T): T {
     if (this == null) return action()
 
+    onCjoPackageLoadStarted()
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         return action()
@@ -77,6 +93,7 @@ inline fun <T> CfirCjoDeserializationTimingObserver?.measureCjoDeclaration(
 ): T {
     if (this == null) return action()
 
+    onCjoDeclarationStarted(declarationCount)
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         return action()

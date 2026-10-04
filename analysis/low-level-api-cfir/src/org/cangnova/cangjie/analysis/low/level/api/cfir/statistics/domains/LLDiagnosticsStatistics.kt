@@ -4,10 +4,13 @@ import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 
 /**
  * IDE 请求级诊断收集耗时统计域。
@@ -31,6 +34,11 @@ class LLDiagnosticsStatistics(statisticsService: LLStatisticsService) : LLStatis
      * 诊断收集耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Diagnostics)
+
+    /**
+     * 诊断收集链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Diagnostics))
 
     /**
      * 一次诊断收集的三个维度：耗时、次数、产出诊断数。
@@ -110,28 +118,68 @@ class LLDiagnosticsStatistics(statisticsService: LLStatisticsService) : LLStatis
     }
 
     /**
-     * 记录文件级诊断收集的耗时与产出。
+     * 开始一次文件级诊断收集。
      */
-    fun onFileCollectionFinished(elapsedNanos: Long, diagnosticCount: Int) =
+    fun onFileCollectionStarted() =
+        spans.start(LLStatisticsScopes.Diagnostics.Collection, LLStatisticsScopes.Diagnostics.Collection.name)
+
+    /**
+     * 开始一次元素级诊断收集。
+     */
+    fun onElementCollectionStarted() =
+        spans.start(LLStatisticsScopes.Diagnostics.ElementCollection, LLStatisticsScopes.Diagnostics.ElementCollection.name)
+
+    /**
+     * 开始一次文件结构首次构建。
+     */
+    fun onStructureBuildStarted() =
+        spans.start(LLStatisticsScopes.Diagnostics.StructureBuild, LLStatisticsScopes.Diagnostics.StructureBuild.name)
+
+    /**
+     * 开始一次单个 structure element 上、某 checker 集合的完整收集。
+     */
+    fun onStructureElementCollectionStarted(set: CaDiagnosticCheckerSet) =
+        spans.start(set, LLStatisticsScopes.Diagnostics.StructureElement.set(set))
+
+    /**
+     * 记录文件级诊断收集的耗时与产出，并结束对应的链路 span。
+     */
+    fun onFileCollectionFinished(elapsedNanos: Long, diagnosticCount: Int) {
         record(collection, elapsedNanos, diagnosticCount)
+        spans.end(LLStatisticsScopes.Diagnostics.Collection) {
+            setAttribute(LLStatisticsSpanAttributes.diagnosticsCount, diagnosticCount.toLong())
+        }
+    }
 
     /**
-     * 记录元素级诊断收集的耗时与产出。
+     * 记录元素级诊断收集的耗时与产出，并结束对应的链路 span。
      */
-    fun onElementCollectionFinished(elapsedNanos: Long, diagnosticCount: Int) =
+    fun onElementCollectionFinished(elapsedNanos: Long, diagnosticCount: Int) {
         record(elementCollection, elapsedNanos, diagnosticCount)
+        spans.end(LLStatisticsScopes.Diagnostics.ElementCollection) {
+            setAttribute(LLStatisticsSpanAttributes.diagnosticsCount, diagnosticCount.toLong())
+        }
+    }
 
     /**
-     * 记录文件结构首次构建的耗时。结构构建不产出诊断，因此诊断数为 0。
+     * 记录文件结构首次构建的耗时，并结束对应的链路 span。结构构建不产出诊断，因此诊断数为 0。
      */
-    fun onStructureBuildFinished(elapsedNanos: Long) = record(structureBuild, elapsedNanos, 0)
+    fun onStructureBuildFinished(elapsedNanos: Long) {
+        record(structureBuild, elapsedNanos, 0)
+        spans.end(LLStatisticsScopes.Diagnostics.StructureBuild)
+    }
 
     /**
      * 记录单个 structure element 上某个 checker 集合的完整收集耗时与产出。
      */
     fun onStructureElementCollectionFinished(set: CaDiagnosticCheckerSet, elapsedNanos: Long, diagnosticCount: Int) {
-        val counter = structureElements[set] ?: return
-        record(counter, elapsedNanos, diagnosticCount)
+        val counter = structureElements[set]
+        if (counter != null) {
+            record(counter, elapsedNanos, diagnosticCount)
+        }
+        spans.end(set) {
+            setAttribute(LLStatisticsSpanAttributes.diagnosticsCount, diagnosticCount.toLong())
+        }
     }
 
     /**

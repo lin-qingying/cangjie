@@ -4,10 +4,13 @@ import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 
 /**
  * session 创建耗时统计域。
@@ -27,6 +30,11 @@ class LLSessionStatistics(statisticsService: LLStatisticsService) : LLStatistics
      * session 创建耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.SessionCreation)
+
+    /**
+     * session 创建链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.SessionCreation))
 
     /**
      * 按模块种类分桶的 session 创建直方图。
@@ -61,11 +69,22 @@ class LLSessionStatistics(statisticsService: LLStatisticsService) : LLStatistics
         .build()
 
     /**
+     * 开始一次 session 创建；[CaModuleKind.UNKNOWN] 不上报。
+     */
+    fun onSessionStarted(kind: CaModuleKind) {
+        if (kind == CaModuleKind.UNKNOWN) return
+        spans.start(kind, LLStatisticsScopes.SessionCreation.kind(kind)) {
+            setAttribute(LLStatisticsSpanAttributes.sessionKind, kind.metricSuffix)
+        }
+    }
+
+    /**
      * 记录一次 session 创建；[CaModuleKind.UNKNOWN] 不上报。
      */
     fun onSessionCreated(kind: CaModuleKind, elapsedNanos: Long) {
         durations[kind]?.record(elapsedNanos / NANOS_PER_MILLI)
         runs[kind]?.add(1)
+        spans.end(kind)
     }
 
     /**

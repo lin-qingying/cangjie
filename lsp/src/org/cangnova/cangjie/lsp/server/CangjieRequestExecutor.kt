@@ -48,23 +48,32 @@ class CangjieRequestExecutor(
      * 在 LSP 工作线程上异步执行 [request] 对应的动作。
      *
      * 该方法将异常记录到日志后继续让 `CompletableFuture` 以失败状态完成，保持 JSON-RPC 错误传播链；
-     * 失败同时计入请求统计的失败计数。耗时不包含排队等待——排队时长属于服务器背压，
-     * 与请求本身的成本是两件事，混在一起会让补全变慢时误以为是分析变慢。
+     * 失败同时计入请求统计的失败计数，并让请求链路 span 以 ERROR 状态结束。耗时不包含排队等待——
+     * 排队时长属于服务器背压，与请求本身的成本是两件事，混在一起会让补全变慢时误以为是分析变慢。
      */
     fun <T> compute(request: CangjieLspRequest, action: () -> T): CompletableFuture<T> {
         return CompletableFuture.supplyAsync(
             {
+                val requestSpan = statistics?.startRequestSpan(request)
                 val startedAt = if (statistics != null) TimeSource.Monotonic.markNow() else null
                 var failed = false
+                var error: Throwable? = null
                 try {
                     action()
                 } catch (throwable: Throwable) {
                     failed = true
+                    error = throwable
                     logger.log(Level.SEVERE, "LSP request ${request.lspMethod} failed", throwable)
                     throw throwable
                 } finally {
                     if (startedAt != null) {
-                        statistics!!.onRequestFinished(request, startedAt.elapsedNow().inWholeNanoseconds, failed)
+                        statistics!!.onRequestFinished(
+                            request,
+                            startedAt.elapsedNow().inWholeNanoseconds,
+                            failed,
+                            error,
+                            requestSpan,
+                        )
                     }
                 }
             },

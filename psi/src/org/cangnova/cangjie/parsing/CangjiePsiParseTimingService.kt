@@ -60,6 +60,15 @@ open class CangjiePsiParseTimingService {
     open fun onParseFinished(kind: CangjiePsiParseKind, elapsedNanos: Long, succeeded: Boolean) {
     }
 
+    /**
+     * 一次 PSI 解析开始。
+     *
+     * 默认空实现：只有需要记录链路 span 的实现才覆写它。开始回调与 [onParseFinished]
+     * 在同一线程上严格成对。
+     */
+    open fun onParseStarted(kind: CangjiePsiParseKind) {
+    }
+
     companion object {
         /**
          * 无统计后端时的兜底实现：所有回调都是空操作。
@@ -81,6 +90,7 @@ open class CangjiePsiParseTimingService {
  * 解析抛异常时按未完成上报已消耗耗时后原样重抛：解析失败的耗时同样值得看见。
  */
 inline fun <T> CangjiePsiParseTimingService.measure(kind: CangjiePsiParseKind, action: () -> T): T {
+    onParseStarted(kind)
     val startedAt = TimeSource.Monotonic.markNow()
     var succeeded = true
     try {

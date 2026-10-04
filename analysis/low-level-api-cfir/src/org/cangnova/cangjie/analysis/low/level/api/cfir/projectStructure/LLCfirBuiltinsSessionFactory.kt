@@ -167,6 +167,7 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
         val statistics = sessionStatistics
         if (statistics == null) return createBuiltinsSession(targetPlatform)
 
+        statistics.onSessionStarted(CaModuleKind.BUILTINS)
         val startedAt = TimeSource.Monotonic.markNow()
         try {
             return createBuiltinsSession(targetPlatform)

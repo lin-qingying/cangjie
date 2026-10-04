@@ -79,6 +79,8 @@ kotlin {
             "org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals",
             "org.cangnova.cangjie.analysis.api.CaIdeApi",
             "org.cangnova.cangjie.analysis.api.CaImplementationDetail",
+            // 统计域自身引用公开的统计名字/属性视图（LLStatisticsMetricNames / LLStatisticsSpanAttributes）。
+            "org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi",
         )
     }
 }
@@ -105,6 +107,8 @@ tasks.withType<KotlinJvmCompile>().configureEach {
             "org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals",
             "org.cangnova.cangjie.analysis.api.CaIdeApi",
             "org.cangnova.cangjie.analysis.api.CaImplementationDetail",
+            // 统计域自身引用公开的统计名字/属性视图（LLStatisticsMetricNames / LLStatisticsSpanAttributes）。
+            "org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi",
         )
     )
 }

@@ -19,6 +19,10 @@ class LLParserTimingService(project: Project) : CangjiePsiParseTimingService() {
      */
     private val delegate: LLParserStatistics? = LLStatisticsService.getInstance(project)?.parser
 
+    override fun onParseStarted(kind: CangjiePsiParseKind) {
+        delegate?.onParseStarted(kind)
+    }
+
     override fun onParseFinished(kind: CangjiePsiParseKind, elapsedNanos: Long, succeeded: Boolean) {
         delegate?.onParseFinished(kind, elapsedNanos, succeeded)
     }

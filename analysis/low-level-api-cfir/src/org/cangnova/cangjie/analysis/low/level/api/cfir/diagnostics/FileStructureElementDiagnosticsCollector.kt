@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CaDiagnosticCheckerSet
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.cfir.analysis.collectors.CheckerRunningDiagnosticCollectorVisitor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -36,15 +37,44 @@ internal fun collectForStructureElement(
     // 组合 filter（多个 checker 集合同时启用）在 checkerSet 上没有唯一取值，此时不上报
     // checkerPass，而不是把它算进某个集合里给出错误的归因。
     val checkerSet = filter.checkerSet
-    val startedAt = if (diagnosticsStatistics != null && checkerSet != null) TimeSource.Monotonic.markNow() else null
+    val statistics = if (checkerSet != null) diagnosticsStatistics else null
+    if (statistics != null && checkerSet != null) {
+        return collectForStructureElementTimed(cfirDeclaration, checkerSet, collector, reporter, statistics)
+    }
+
     collector.collectDiagnostics(cfirDeclaration, reporter)
     val source = cfirDeclaration.source
     if (source != null) {
         reporter.checkAndCommitReportsOn(source, context = DiagnosticContext.Default, commitEverything = true)
     }
-    val diagnostics = reporter.committedDiagnostics
-    if (startedAt != null && checkerSet != null) {
-        diagnosticsStatistics!!.onStructureElementCollectionFinished(checkerSet, startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
+    return FileStructureElementDiagnosticList(reporter.committedDiagnostics)
+}
+
+/**
+ * [collectForStructureElement] 的计时路径：打开链路 span、执行收集、在 finally 中结束 span
+ * 并记录耗时。失败同样记录——失败的收集也是用户等掉的耗时，与其余接缝的失败口径一致。
+ */
+private fun collectForStructureElementTimed(
+    cfirDeclaration: CfirDeclaration,
+    checkerSet: CaDiagnosticCheckerSet,
+    collector: LLCfirStructureElementDiagnosticsCollector,
+    reporter: LLCfirDiagnosticReporter,
+    statistics: LLDiagnosticsStatistics,
+): FileStructureElementDiagnosticList {
+    statistics.onStructureElementCollectionStarted(checkerSet)
+    val startedAt = TimeSource.Monotonic.markNow()
+    try {
+        collector.collectDiagnostics(cfirDeclaration, reporter)
+        val source = cfirDeclaration.source
+        if (source != null) {
+            reporter.checkAndCommitReportsOn(source, context = DiagnosticContext.Default, commitEverything = true)
+        }
+        return FileStructureElementDiagnosticList(reporter.committedDiagnostics)
+    } finally {
+        statistics.onStructureElementCollectionFinished(
+            checkerSet,
+            startedAt.elapsedNow().inWholeNanoseconds,
+            reporter.committedDiagnostics.size,
+        )
     }
-    return FileStructureElementDiagnosticList(diagnostics)
 }
