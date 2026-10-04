@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationChecke
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.checkers.type.TypeCheckersDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.CliDiagnosticsCollector
+import org.cangnova.cangjie.cfir.analysis.collectors.CfirCheckerComponentKind
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -24,6 +25,15 @@ object DiagnosticComponentsFactory {
             add(ErrorNodeDiagnosticCollectorComponent(session, reporter))
             add(LanguageVersionSettingsDiagnosticComponent(session, reporter))
         }.toTypedArray()
+        // 与 regularComponents 严格同序；顺序漂移会让耗时归到错误的组件上。
+        val checkerComponentKinds = arrayOf(
+            CfirCheckerComponentKind.DECLARATION,
+            CfirCheckerComponentKind.EXPRESSION,
+            CfirCheckerComponentKind.TYPE,
+            CfirCheckerComponentKind.MACRO_CONSTRUCTION,
+            CfirCheckerComponentKind.ERROR_NODE,
+            CfirCheckerComponentKind.LANGUAGE_VERSION_SETTINGS,
+        )
         val postSemaComponents = arrayOf<AbstractDiagnosticCollectorComponent>(
             ControlFlowAnalysisDiagnosticComponent(session, reporter),
             CfirChirArithmeticDiagnosticCollectorComponent(session, reporter),
@@ -32,6 +42,7 @@ object DiagnosticComponentsFactory {
             regularComponents = regularComponents,
             postSemaComponents = postSemaComponents,
             reportCommitter = ReportCommitterDiagnosticComponent(session, reporter),
+            checkerComponentKinds = checkerComponentKinds,
         )
     }
 
