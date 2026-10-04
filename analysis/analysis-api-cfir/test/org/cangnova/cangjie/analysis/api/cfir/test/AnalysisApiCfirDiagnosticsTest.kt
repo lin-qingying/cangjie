@@ -94,6 +94,57 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 验证同名 classifier 在**类型使用位置**的歧义诊断能穿过 analysis API 收集链路。
+     *
+     * 回归背景：该诊断原先为了把高亮收窄到末段名称，把锚点降级为仅含 offsets 的源元素。
+     * analysis API 的 low-level reporter 只能消费带 PSI 锚点的诊断，命中兜底分支时会抛出
+     * `error("Unknown diagnostic type CjOffsetsOnlyDiagnosticWithParameters1")`；该异常被
+     * `suppressAndLogExceptions` 吞掉后会连带中止该 CFIR 元素上剩余 checker，使这条诊断
+     * （及其后的诊断）整体丢失——表现为一类无法复现的"IDE 少报诊断"。
+     *
+     * 同时校验官方语义：官方 `sema_ambiguous_use` 由 `DiagAmbiguousUse` 以**整节点**锚定
+     * （`Sema/Diags.cpp` 的重载不接收 Range，`DiagnosticEngine` 恒取 `node.begin..node.end`），
+     * 因此高亮必须覆盖整条类型引用（含类型实参），不能只标末段名称。
+     */
+    @Test
+    fun ambiguousClassifierTypeUse(mainFile: CjFile) {
+        val diagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+
+        val ambiguousUses = diagnostics.filter { it.factoryName == "AMBIGUOUS_USE" }
+        assertTrue(
+            ambiguousUses.isNotEmpty(),
+            "同名 classifier 的类型使用位置歧义必须能在 analysis API 链路中被收集；" +
+                "若为空，说明 low-level reporter 因诊断类型不受支持而中断了收集：" +
+                diagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" },
+        )
+
+        // 每条诊断都必须有可导航的 PSI 锚点：IDE 需要它绘制波浪线并提供快速修复入口。
+        for (diagnostic in ambiguousUses) {
+            assertNotNull(
+                diagnostic.psi,
+                "AMBIGUOUS_USE 必须锚定真实 PSI，而不是仅含 offsets 的源元素。",
+            )
+        }
+
+        // 高亮必须覆盖整条类型引用（含类型实参），而非仅末段名称。
+        val wholeTypeUses = ambiguousUses.filter { diagnostic ->
+            diagnostic.textRanges.any { range ->
+                mainFile.text.substring(range.startOffset, range.endOffset) in setOf("B<Y, X>", "C<Y, X>")
+            }
+        }
+        assertTrue(
+            wholeTypeUses.isNotEmpty(),
+            "官方 sema_ambiguous_use 以整节点锚定，类型使用位置的高亮应覆盖整条类型引用" +
+                "（含类型实参），实际范围为：" +
+                ambiguousUses.joinToString { diagnostic ->
+                    "${diagnostic.textRanges.map { range -> mainFile.text.substring(range.startOffset, range.endOffset) }}"
+                },
+        )
+    }
+
+    /**
      * 验证接口成员签名可以解析外层类型参数，不会在懒解析 diagnostics 中误报未解析引用。
      */
     @Test
