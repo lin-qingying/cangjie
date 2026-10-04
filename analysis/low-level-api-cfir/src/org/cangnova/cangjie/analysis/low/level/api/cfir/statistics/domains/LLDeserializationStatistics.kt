@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationStage
 import org.cangnova.cangjie.cfir.serialization.provider.CfirCjoDeserializationTimingObserver
 
@@ -33,6 +36,11 @@ class LLDeserializationStatistics(statisticsService: LLStatisticsService) :
      * 反序列化耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Deserialization)
+
+    /**
+     * 反序列化链路 span 记录器，两条通道共用。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Deserialization))
 
     /**
      * class-like 反序列化耗时直方图（毫秒）。
@@ -83,11 +91,38 @@ class LLDeserializationStatistics(statisticsService: LLStatisticsService) :
             .build()
 
     /**
+     * 开始一次 class-like stub 反序列化。
+     */
+    fun onClassLikeDeserializationStarted() {
+        spans.start(LLStatisticsScopes.Deserialization.ClassLike, LLStatisticsScopes.Deserialization.ClassLike.name)
+    }
+
+    /**
      * 记录一次 class-like stub 反序列化。
      */
     fun onClassLikeDeserialized(elapsedNanos: Long) {
         duration.record(elapsedNanos / NANOS_PER_MILLI)
         runs.add(1)
+        spans.end(LLStatisticsScopes.Deserialization.ClassLike)
+    }
+
+    override fun onCjoPackageLoadStarted() {
+        spans.start(CfirCjoDeserializationStage.PACKAGE_LOAD, LLStatisticsScopes.Deserialization.Cjo.PackageLoad.name) {
+            setAttribute(
+                LLStatisticsSpanAttributes.deserializationStage,
+                CfirCjoDeserializationStage.PACKAGE_LOAD.metricSuffix,
+            )
+        }
+    }
+
+    override fun onCjoDeclarationStarted(declarationCount: Int) {
+        spans.start(CfirCjoDeserializationStage.DECLARATION, LLStatisticsScopes.Deserialization.Cjo.Declaration.name) {
+            setAttribute(
+                LLStatisticsSpanAttributes.deserializationStage,
+                CfirCjoDeserializationStage.DECLARATION.metricSuffix,
+            )
+            setAttribute(LLStatisticsSpanAttributes.deserializationDeclarations, declarationCount.toLong())
+        }
     }
 
     /**
@@ -106,5 +141,6 @@ class LLDeserializationStatistics(statisticsService: LLStatisticsService) :
         if (stage == CfirCjoDeserializationStage.DECLARATION) {
             cjoDeclarations.add(declarationCount.toLong())
         }
+        spans.end(stage)
     }
 }

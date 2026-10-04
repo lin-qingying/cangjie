@@ -31,6 +31,7 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
         if (statistics == null) return@computeIfAbsent FileStructure.build(cjFile, moduleResolveComponents)
 
         // 只在缓存未命中时计时：命中意味着结构早已建好，把它算进本次请求会虚增结构构建成本。
+        statistics.onStructureBuildStarted()
         val startedAt = TimeSource.Monotonic.markNow()
         try {
             FileStructure.build(cjFile, moduleResolveComponents)

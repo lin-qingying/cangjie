@@ -23,6 +23,15 @@ interface CfirDiagnosticPassTimingObserver : CfirSessionComponent {
      * @param elapsedNanos 本阶段的单调时钟耗时（纳秒）
      */
     fun onDiagnosticPassFinished(phase: DiagnosticCollectionPhase, elapsedNanos: Long)
+
+    /**
+     * 一次诊断遍历阶段开始。
+     *
+     * 默认空实现：只有需要记录链路 span 的实现才覆写它。开始回调与 [onDiagnosticPassFinished]
+     * 在同一线程上严格成对。
+     */
+    fun onDiagnosticPassStarted(phase: DiagnosticCollectionPhase) {
+    }
 }
 
 /**
@@ -38,6 +47,7 @@ inline fun <T> CfirDiagnosticPassTimingObserver?.measureDiagnosticPass(
         return action()
     }
 
+    onDiagnosticPassStarted(phase)
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         return action()

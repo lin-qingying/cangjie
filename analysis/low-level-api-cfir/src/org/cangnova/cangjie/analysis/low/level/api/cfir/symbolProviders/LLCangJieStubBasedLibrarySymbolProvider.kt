@@ -280,6 +280,7 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val statistics = deserializationStatistics
         if (statistics == null) return deserializeClass(classId, declaration, parentContext)
 
+        statistics.onClassLikeDeserializationStarted()
         val startedAt = TimeSource.Monotonic.markNow()
         try {
             return deserializeClass(classId, declaration, parentContext)

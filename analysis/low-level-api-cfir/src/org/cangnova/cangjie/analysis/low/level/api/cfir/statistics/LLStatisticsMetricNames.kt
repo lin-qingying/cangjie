@@ -289,6 +289,22 @@ object LLStatisticsMetricNames {
     fun psiParseRuns(kind: CangjiePsiParseKind): String = LLStatisticsScopes.Parse.runs(kind)
 
     /**
+     * 分析会话根 span 名：`analysisSessions.analyze`。
+     */
+    val analysisSessionSpan: String
+        get() = LLStatisticsScopes.AnalysisSessions.Analyze.name
+
+    /**
+     * 语义解析阶段链路 span 名：`resolve.phases.<phase>`。
+     */
+    fun resolvePhaseSpan(phase: CfirResolvePhase): String = LLStatisticsScopes.Resolve.Phases.span(phase)
+
+    /**
+     * PSI 解析链路 span 名：`parse.<kind>`。
+     */
+    fun psiParseSpan(kind: CangjiePsiParseKind): String = LLStatisticsScopes.Parse.kind(kind)
+
+    /**
      * 判断指标名是否属于本项目的统计命名空间。
      */
     fun isCangjieAnalysisMetric(name: String): Boolean = name.startsWith("$root.")

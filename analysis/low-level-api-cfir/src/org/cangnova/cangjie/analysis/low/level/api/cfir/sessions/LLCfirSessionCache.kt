@@ -111,6 +111,7 @@ class LLCfirSessionCache(
             if (statistics == null || kind == CaModuleKind.UNKNOWN) {
                 createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
             } else {
+                statistics.onSessionStarted(kind)
                 val startedAt = TimeSource.Monotonic.markNow()
                 try {
                     createPlatformAwareSessionFactory(module).createBinaryLibrarySession(module)
@@ -194,6 +195,7 @@ class LLCfirSessionCache(
         val kind = module.moduleKind()
         if (statistics == null || kind == CaModuleKind.UNKNOWN) return createSessionFor(module)
 
+        statistics.onSessionStarted(kind)
         val startedAt = TimeSource.Monotonic.markNow()
         try {
             return createSessionFor(module)

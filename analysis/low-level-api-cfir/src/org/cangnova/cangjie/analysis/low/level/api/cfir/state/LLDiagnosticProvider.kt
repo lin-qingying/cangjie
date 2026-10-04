@@ -74,10 +74,16 @@ internal class LLSourceDiagnosticProvider(
         val statistics = diagnosticsStatistics
         if (statistics == null) return collectDiagnosticsWithoutStatistics(file, filter)
 
+        statistics.onFileCollectionStarted()
         val startedAt = TimeSource.Monotonic.markNow()
-        val diagnostics = collectDiagnosticsWithoutStatistics(file, filter)
-        statistics.onFileCollectionFinished(startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
-        return diagnostics
+        var diagnostics: List<CjPsiDiagnostic>? = null
+        try {
+            diagnostics = collectDiagnosticsWithoutStatistics(file, filter)
+            return diagnostics
+        } finally {
+            // 失败同样记录：失败的收集也是用户等掉的耗时，与其余接缝的失败口径一致。
+            statistics.onFileCollectionFinished(startedAt.elapsedNow().inWholeNanoseconds, diagnostics?.size ?: 0)
+        }
     }
 
     /**
@@ -101,9 +107,15 @@ internal class LLSourceDiagnosticProvider(
         val moduleComponents = sessionProvider.getResolvableSession(module).moduleComponents
         if (statistics == null) return moduleComponents.diagnosticsCollector.getDiagnosticsFor(element, filter)
 
+        statistics.onElementCollectionStarted()
         val startedAt = TimeSource.Monotonic.markNow()
-        val diagnostics = moduleComponents.diagnosticsCollector.getDiagnosticsFor(element, filter)
-        statistics.onElementCollectionFinished(startedAt.elapsedNow().inWholeNanoseconds, diagnostics.size)
-        return diagnostics
+        var diagnostics: List<CjPsiDiagnostic>? = null
+        try {
+            diagnostics = moduleComponents.diagnosticsCollector.getDiagnosticsFor(element, filter)
+            return diagnostics
+        } finally {
+            // 失败同样记录：失败的收集也是用户等掉的耗时，与其余接缝的失败口径一致。
+            statistics.onElementCollectionFinished(startedAt.elapsedNow().inWholeNanoseconds, diagnostics?.size ?: 0)
+        }
     }
 }

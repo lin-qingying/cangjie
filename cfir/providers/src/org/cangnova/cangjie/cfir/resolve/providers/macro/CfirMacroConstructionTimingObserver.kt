@@ -92,6 +92,20 @@ interface CfirMacroConstructionTimingObserver : CfirSessionComponent {
         surfaceCount: Int,
         elapsedNanos: Long,
     )
+
+    /**
+     * macro construction 的一个阶段开始。
+     *
+     * 默认空实现：只有需要记录链路 span 的实现才覆写它。开始回调与 [onMacroConstructionFinished]
+     * 在同一线程上严格成对。
+     */
+    fun onMacroConstructionStarted(
+        stage: CfirMacroConstructionStage,
+        mode: MacroConstructionService.Mode?,
+        fileCount: Int,
+        surfaceCount: Int,
+    ) {
+    }
 }
 
 /**
@@ -109,6 +123,7 @@ inline fun <T> CfirMacroConstructionTimingObserver?.measureMacroConstructionStag
         return action()
     }
 
+    onMacroConstructionStarted(stage, null, fileCount, surfaceCount)
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         return action()
@@ -132,6 +147,7 @@ inline fun CfirMacroConstructionTimingObserver?.measureMacroExpansion(
         return action()
     }
 
+    onMacroConstructionStarted(CfirMacroConstructionStage.EXPANSION, mode, fileCount, surfaceCount)
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         val result = action()

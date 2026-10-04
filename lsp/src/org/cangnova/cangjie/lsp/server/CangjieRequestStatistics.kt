@@ -2,9 +2,15 @@ package org.cangnova.cangjie.lsp.server
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
+import io.opentelemetry.api.OpenTelemetry
+import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import io.opentelemetry.api.metrics.Meter
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.context.Scope
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetryProvider
 
@@ -20,8 +26,20 @@ import org.cangnova.cangjie.analysis.api.platform.statistics.CangJieOpenTelemetr
  *
  * 开关沿用 registry key `cangjie.analysis.statistics`：它是平台声明的唯一工程级遥测开关，
  * 为 LSP 另开一个开关只会让"统计到底开没开"出现两个答案。
+ *
+ * 除三个指标外，每次请求还产出一条链路 span（traces 走 Jaeger）：指标回答"补全平均多慢"，
+ * span 回答"这一次补全里时间花在哪"。
  */
-class CangjieRequestStatistics(meter: Meter) {
+class CangjieRequestStatistics(openTelemetry: OpenTelemetry) {
+    /**
+     * 请求统计的 meter。
+     */
+    private val meter: Meter = openTelemetry.getMeter(SCOPE_NAME)
+
+    /**
+     * 请求链路 span 的 tracer。
+     */
+    private val tracer: Tracer = openTelemetry.getTracer(SCOPE_NAME)
     /**
      * 耗时的桶边界（毫秒）。LSP 请求跨度从毫秒级的补全到秒级的全文诊断。
      */
@@ -58,12 +76,47 @@ class CangjieRequestStatistics(meter: Meter) {
     }
 
     /**
-     * 记录一次请求的耗时与成败。
+     * 一次请求的链路 span 句柄：span 本身与它压入的 context scope。
      */
-    fun onRequestFinished(request: CangjieLspRequest, elapsedNanos: Long, failed: Boolean) {
+    class RequestSpan internal constructor(
+        internal val span: Span,
+        internal val scope: Scope,
+    )
+
+    /**
+     * 打开一次请求的链路 span，并设为当前活动 span。
+     *
+     * 请求执行器在动作开始前调用；分析侧在同一线程上创建的阶段 span 因此自动挂到
+     * 该请求 span 之下，一次请求在 Jaeger 里就是一棵完整的链路树。
+     */
+    fun startRequestSpan(request: CangjieLspRequest): RequestSpan {
+        val span = tracer.spanBuilder(spanName(request))
+            .setAttribute(METHOD_ATTRIBUTE, request.lspMethod)
+            .startSpan()
+        return RequestSpan(span, span.makeCurrent())
+    }
+
+    /**
+     * 记录一次请求的耗时与成败，并结束对应的链路 span。
+     */
+    fun onRequestFinished(
+        request: CangjieLspRequest,
+        elapsedNanos: Long,
+        failed: Boolean,
+        error: Throwable?,
+        requestSpan: RequestSpan?,
+    ) {
         durations[request]?.record(elapsedNanos / 1_000_000L)
         runs[request]?.add(1)
         if (failed) failures[request]?.add(1)
+        if (requestSpan != null) {
+            if (failed && error != null) {
+                requestSpan.span.recordException(error)
+                requestSpan.span.setStatus(StatusCode.ERROR)
+            }
+            requestSpan.scope.close()
+            requestSpan.span.end()
+        }
     }
 
     /**
@@ -80,12 +133,22 @@ class CangjieRequestStatistics(meter: Meter) {
         private const val STATISTICS_REGISTRY_KEY = "cangjie.analysis.statistics"
 
         /**
+         * 指标与 span 共用的 instrumentation scope 名。
+         */
+        private const val SCOPE_NAME = "cangjie.lsp"
+
+        /**
+         * 请求方法名属性：值为原始 LSP 方法名（含 `/`）。
+         */
+        private val METHOD_ATTRIBUTE: AttributeKey<String> = AttributeKey.stringKey("cangjie.lsp.method")
+
+        /**
          * 创建请求统计域；统计未启用或后端缺失时返回 `null`。
          */
         fun forProject(project: Project): CangjieRequestStatistics? {
             if (!Registry.`is`(STATISTICS_REGISTRY_KEY, false)) return null
             val openTelemetry = CangJieOpenTelemetryProvider.getInstance(project)?.openTelemetry ?: return null
-            return CangjieRequestStatistics(openTelemetry.getMeter("cangjie.lsp"))
+            return CangjieRequestStatistics(openTelemetry)
         }
 
         /**
@@ -95,5 +158,14 @@ class CangjieRequestStatistics(meter: Meter) {
          */
         fun metricName(request: CangjieLspRequest, suffix: String): String =
             "cangjie.lsp.request.${request.lspMethod.replace('/', '.')}.$suffix"
+
+        /**
+         * 请求链路 span 名：`cangjie.lsp.request.<method>`，方法名中的 `/` 换成 `.`。
+         *
+         * 与指标名共用同一段前缀，看板上同名指标与 span 可以直接对照；原始方法名
+         * （含 `/`）在 `cangjie.lsp.method` 属性里。
+         */
+        fun spanName(request: CangjieLspRequest): String =
+            "cangjie.lsp.request.${request.lspMethod.replace('/', '.')}"
     }
 }

@@ -3,9 +3,14 @@ package org.cangnova.cangjie.lsp.server
 import com.intellij.mock.MockProject
 import com.intellij.openapi.util.registry.Registry
 import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.metrics.SdkMeterProvider
 import io.opentelemetry.sdk.testing.exporter.InMemoryMetricReader
+import io.opentelemetry.sdk.testing.exporter.InMemorySpanExporter
+import io.opentelemetry.sdk.trace.SdkTracerProvider
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor
 import org.cangnova.cangjie.CangJieCoreEnvironmentMode
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
@@ -34,6 +39,9 @@ import java.util.concurrent.ExecutionException
  *
  * 断言的是**回调路径**而不是请求返回值：动作体做什么与统计无关，用一个最简动作即可，
  * 这样用例不会因语义能力实现变化而脆。
+ *
+ * 除指标外，用例同时断言请求链路 span：成功请求留下 UNSET 状态的 span 并携带方法名属性，
+ * 失败请求以 ERROR 状态结束并带异常事件。
  */
 @OptIn(CaPlatformInterface::class)
 class CangjieRequestStatisticsSeamTest {
@@ -43,8 +51,14 @@ class CangjieRequestStatisticsSeamTest {
     @Test
     fun realRequestExecutorReportsDurationRunsAndFailures() {
         val reader = InMemoryMetricReader.create()
+        val spanExporter = InMemorySpanExporter.create()
         val sdk = OpenTelemetrySdk.builder()
             .setMeterProvider(SdkMeterProvider.builder().registerMetricReader(reader).build())
+            .setTracerProvider(
+                SdkTracerProvider.builder()
+                    .addSpanProcessor(SimpleSpanProcessor.create(spanExporter))
+                    .build()
+            )
             .build()
         // 全局实例必须在环境创建之前设好：`CangjieLspEnvironment.create` 内部会跑 registrar，
         // 它注册的 `CangJieGlobalOpenTelemetryProvider` 读的就是 `GlobalOpenTelemetry.get()`。
@@ -91,6 +105,21 @@ class CangjieRequestStatisticsSeamTest {
                         "一次真实请求必须留下一个耗时采样",
                     )
 
+                    val requestSpans = spanExporter.finishedSpanItems.filter {
+                        it.name == CangjieRequestStatistics.spanName(CangjieLspRequest.COMPLETION)
+                    }
+                    assertEquals(1, requestSpans.size, "一次真实请求必须留下一条请求链路 span")
+                    assertEquals(
+                        "textDocument/completion",
+                        requestSpans.single().attributes.get(AttributeKey.stringKey("cangjie.lsp.method")),
+                        "请求 span 必须携带原始 LSP 方法名",
+                    )
+                    assertEquals(
+                        StatusCode.UNSET,
+                        requestSpans.single().status.statusCode,
+                        "成功请求的 span 状态不得是 ERROR",
+                    )
+
                     // 失败请求单独计数：请求慢与请求报错对使用者的含义完全不同。
                     val beforeFailure = counters(reader)
                     val failure = assertThrows(ExecutionException::class.java) {
@@ -109,6 +138,16 @@ class CangjieRequestStatisticsSeamTest {
                         1L,
                         delta(afterFailure, beforeFailure, CangjieRequestStatistics.metricName(CangjieLspRequest.COMPLETION, "runs")),
                         "失败请求同样计入执行次数",
+                    )
+
+                    val failedSpans = spanExporter.finishedSpanItems.filter {
+                        it.name == CangjieRequestStatistics.spanName(CangjieLspRequest.COMPLETION) &&
+                            it.status.statusCode == StatusCode.ERROR
+                    }
+                    assertEquals(1, failedSpans.size, "抛异常的请求必须以 ERROR 状态结束链路 span")
+                    assertTrue(
+                        failedSpans.single().events.any { it.name == "exception" },
+                        "失败 span 必须记录异常事件",
                     )
                 }
             } finally {

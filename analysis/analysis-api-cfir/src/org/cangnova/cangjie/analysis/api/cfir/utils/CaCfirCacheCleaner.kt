@@ -145,6 +145,9 @@ private class CaCfirStopWorldCacheCleaner(private val project: Project) : CaCfir
         get() = analyzerDepth.get() > 0
 
     override fun enterAnalysis() {
+        // 分析会话根 span 与缓存清理器的进入/退出共用同一对位置：嵌套分析产生嵌套 span。
+        analysisSessionStatistics?.onAnalysisEntered()
+
         // 嵌套分析不能阻塞，否则外层分析永远等不到内层分析结束，清理也就永远不会执行。
         if (hasOngoingAnalysis) {
             incAnalysisDepth()
@@ -164,6 +167,7 @@ private class CaCfirStopWorldCacheCleaner(private val project: Project) : CaCfir
 
     override fun exitAnalysis() {
         decAnalysisDepth()
+        analysisSessionStatistics?.onAnalysisLeft()
 
         // 与 enterAnalysis 一样忽略嵌套分析。
         if (hasOngoingAnalysis) {

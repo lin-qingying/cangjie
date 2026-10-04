@@ -43,7 +43,8 @@ dependencies {
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)
     // SDK：让统计指标真正进入 MeterProvider；InMemoryMetricReader 供断言，logging/OTLP 导出器供本地观察。
-    testFixturesImplementation(libs.opentelemetry.sdk)
+    // finishedSpans() 的签名暴露 SpanData（sdk-trace），因此 SDK 需作为 api 依赖对测试源集可见。
+    testFixturesApi(libs.opentelemetry.sdk)
     testFixturesImplementation(libs.opentelemetry.sdk.metrics)
     testFixturesImplementation(libs.opentelemetry.sdk.testing)
     testFixturesImplementation(libs.opentelemetry.exporter.otlp)

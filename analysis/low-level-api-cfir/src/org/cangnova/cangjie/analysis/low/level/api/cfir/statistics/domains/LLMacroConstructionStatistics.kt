@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionStage
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroConstructionTimingObserver
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirMacroExpansionOutcome
@@ -33,6 +36,11 @@ class LLMacroConstructionStatistics(statisticsService: LLStatisticsService) :
      * 宏 construction 的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Macro)
+
+    /**
+     * 宏构造链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Macro))
 
     /**
      * 各阶段耗时直方图（毫秒）。
@@ -81,6 +89,22 @@ class LLMacroConstructionStatistics(statisticsService: LLStatisticsService) :
                 .build()
         }
 
+    override fun onMacroConstructionStarted(
+        stage: CfirMacroConstructionStage,
+        mode: MacroConstructionService.Mode?,
+        fileCount: Int,
+        surfaceCount: Int,
+    ) {
+        spans.start(stage, LLStatisticsScopes.Macro.stage(stage).name) {
+            setAttribute(LLStatisticsSpanAttributes.macroStage, stage.metricSuffix)
+            mode?.let { setAttribute(LLStatisticsSpanAttributes.macroMode, it.name) }
+            if (stage == CfirMacroConstructionStage.EXPANSION) {
+                setAttribute(LLStatisticsSpanAttributes.macroFiles, fileCount.toLong())
+                setAttribute(LLStatisticsSpanAttributes.macroSurfaces, surfaceCount.toLong())
+            }
+        }
+    }
+
     override fun onMacroConstructionFinished(
         stage: CfirMacroConstructionStage,
         mode: MacroConstructionService.Mode?,
@@ -91,6 +115,9 @@ class LLMacroConstructionStatistics(statisticsService: LLStatisticsService) :
     ) {
         durations[stage]?.record(elapsedNanos / NANOS_PER_MILLI)
         runs[stage]?.add(1)
+        spans.end(stage) {
+            outcome?.let { setAttribute(LLStatisticsSpanAttributes.macroOutcome, it.metricSuffix) }
+        }
         if (stage != CfirMacroConstructionStage.EXPANSION) return
 
         // 文件数与 surface 数属于整次 construction 的规模，索引/绑定两段重复累加会让总量翻倍。

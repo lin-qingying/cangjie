@@ -62,6 +62,15 @@ interface CfirRawBuildTimingObserver : CfirSessionComponent {
      * @param elapsedNanos 本阶段的单调时钟耗时（纳秒）
      */
     fun onRawBuildFinished(source: CfirRawBuildSource, stage: CfirRawBuildStage, bodyBuildingMode: BodyBuildingMode?, elapsedNanos: Long)
+
+    /**
+     * raw CFIR 构建的一个阶段开始。
+     *
+     * 默认空实现：只有需要记录链路 span 的实现才覆写它。开始回调与 [onRawBuildFinished]
+     * 在同一线程上严格成对。
+     */
+    fun onRawBuildStarted(source: CfirRawBuildSource, stage: CfirRawBuildStage, bodyBuildingMode: BodyBuildingMode?) {
+    }
 }
 
 /**
@@ -80,6 +89,7 @@ inline fun <T> CfirRawBuildTimingObserver?.measureRawBuild(
         return action()
     }
 
+    onRawBuildStarted(source, stage, bodyBuildingMode)
     val startedAt = TimeSource.Monotonic.markNow()
     try {
         return action()

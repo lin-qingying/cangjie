@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.parsing.CangjiePsiParseKind
 import org.cangnova.cangjie.parsing.CangjiePsiParseTimingService
 
@@ -33,6 +36,11 @@ class LLParserStatistics(statisticsService: LLStatisticsService) :
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Parse)
 
     /**
+     * 解析链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Parse))
+
+    /**
      * 按入口分桶的解析耗时直方图（毫秒）。
      */
     private val durations: Map<CangjiePsiParseKind, LongHistogram> =
@@ -55,8 +63,17 @@ class LLParserStatistics(statisticsService: LLStatisticsService) :
                 .build()
         }
 
+    override fun onParseStarted(kind: CangjiePsiParseKind) {
+        spans.start(kind, LLStatisticsScopes.Parse.kind(kind)) {
+            setAttribute(LLStatisticsSpanAttributes.parseKind, kind.metricSuffix)
+        }
+    }
+
     override fun onParseFinished(kind: CangjiePsiParseKind, elapsedNanos: Long, succeeded: Boolean) {
         durations[kind]?.record(elapsedNanos / NANOS_PER_MILLI)
         runs[kind]?.add(1)
+        spans.end(kind) {
+            setAttribute(LLStatisticsSpanAttributes.parseSucceeded, succeeded)
+        }
     }
 }

@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
 import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
@@ -35,6 +38,11 @@ class LLRawBuildStatistics(statisticsService: LLStatisticsService) : LLStatistic
      * raw 构建耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.RawBuild)
+
+    /**
+     * raw 构建链路 span 记录器。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.RawBuild))
 
     /**
      * 耗时直方图的分段键：来源 × 阶段。
@@ -97,6 +105,18 @@ class LLRawBuildStatistics(statisticsService: LLStatisticsService) : LLStatistic
             .build()
     }
 
+    override fun onRawBuildStarted(
+        source: CfirRawBuildSource,
+        stage: CfirRawBuildStage,
+        bodyBuildingMode: BodyBuildingMode?,
+    ) {
+        spans.start(source to stage, LLStatisticsScopes.RawBuild.segment(source, stage)) {
+            setAttribute(LLStatisticsSpanAttributes.rawBuildSource, source.metricSuffix)
+            setAttribute(LLStatisticsSpanAttributes.rawBuildStage, stage.metricSuffix)
+            bodyBuildingMode?.let { setAttribute(LLStatisticsSpanAttributes.rawBuildBodyBuildingMode, it.name) }
+        }
+    }
+
     override fun onRawBuildFinished(
         source: CfirRawBuildSource,
         stage: CfirRawBuildStage,
@@ -105,5 +125,6 @@ class LLRawBuildStatistics(statisticsService: LLStatisticsService) : LLStatistic
     ) {
         durations[Segment(source, stage)]?.record(elapsedNanos / NANOS_PER_MILLI)
         runs[RunKey(source, stage, bodyBuildingMode)]?.add(1)
+        spans.end(source to stage)
     }
 }

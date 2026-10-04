@@ -3,10 +3,13 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains
 import io.opentelemetry.api.metrics.LongCounter
 import io.opentelemetry.api.metrics.LongHistogram
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.DURATION_BUCKETS_MS
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLSpanTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsScopes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsSpanAttributes
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.NANOS_PER_MILLI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getMeter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.getTracer
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseTimingObserver
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirResolvePhaseWork
@@ -29,6 +32,11 @@ class LLResolvePhaseStatistics internal constructor(
      * 阶段耗时的 meter 名字。
      */
     private val meter = statisticsService.openTelemetry.getMeter(LLStatisticsScopes.Resolve)
+
+    /**
+     * 阶段链路 span 记录器：与阶段指标同源，回答"这一次解析里时间花在哪个阶段"。
+     */
+    private val spans = LLSpanTracker(statisticsService.openTelemetry.getTracer(LLStatisticsScopes.Resolve))
 
     /**
      * 阶段耗时直方图（毫秒），按阶段名分桶。
@@ -74,7 +82,10 @@ class LLResolvePhaseStatistics internal constructor(
         }
 
     override fun onPhaseStarted(phase: CfirResolvePhase) {
-        // 耗时统一在 onPhaseFinished 记录；开始回调留给需要观测阶段嵌套的实现。
+        // 耗时统一在 onPhaseFinished 记录；开始回调用于打开链路 span。
+        spans.start(phase, LLStatisticsScopes.Resolve.Phases.span(phase)) {
+            setAttribute(LLStatisticsSpanAttributes.resolvePhase, phase.name)
+        }
     }
 
     override fun onPhaseFinished(phase: CfirResolvePhase, work: CfirResolvePhaseWork, elapsedNanos: Long) {
@@ -82,5 +93,9 @@ class LLResolvePhaseStatistics internal constructor(
         phaseRuns[phase]?.add(1)
         phaseFiles[phase]?.add(work.files.toLong())
         phaseDeclarations[phase]?.add(work.declarations.toLong())
+        spans.end(phase) {
+            setAttribute(LLStatisticsSpanAttributes.resolveFiles, work.files.toLong())
+            setAttribute(LLStatisticsSpanAttributes.resolveDeclarations, work.declarations.toLong())
+        }
     }
 }
