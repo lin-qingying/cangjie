@@ -180,6 +180,47 @@ jfr print --events org.cangnova.cangjie.LLPhaseWithTrace --stack-depth 8 \
 > 亚毫秒量级，整毫秒会让样本塌成 0。组件清单见 `CfirCheckerComponentKind`，由装配方声明，
 > 与 `DiagnosticCollectorComponents.regularComponents` 严格同序。
 
+### 基线对比与本地报表
+
+每次跑完 `test`，模块会自动记录一次运行并与历史对比：
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test
+```
+
+产物：
+
+| 文件 | 内容 |
+|---|---|
+| `build/reports/analysis-performance/performance-report.html` | 单文件 HTML（样式内联、无外链），人看 |
+| `build/reports/analysis-performance/performance-report.txt` | 同样的纯文本摘要，便于 grep 与 CI 留档 |
+| `.gradle/performance-history/runs.jsonl` | 运行历史，保留最近 50 次 |
+
+历史刻意**不放在 `build/` 下**：`clean` 会清掉 `build/`，而基线需要跨 `clean` 存活。
+
+> 摘要也会经 JVM 关停钩子打到 stdout，但 Gradle 在构建成功时默认丢弃测试进程的标准输出，
+> 所以实际可靠的入口是上面那两个文件（`--console=plain` 也不会让关停阶段的输出出现）。
+
+**记录的是什么**：每个用例的墙钟耗时，加上该用例真正触发的指标增量——耗时类记单次均值
+（采样之和 ÷ 采样点数），计数类记增量。指标在采集时按 SDK 声明的单位统一换算成**纳秒**
+（逐诊断组件是 `us`，其余是 `ms`），不猜单位。
+
+**基线怎么选**：默认比上一次；历史攒够 3 次后自动改用最近若干次的**中位数**，中位数对单次离群不敏感。
+
+**判定为什么有阈值**：单次测量的噪声常常和"想看到的改进"同量级。没有阈值的话每次 +3% 都会被
+报成回归，报多了这份报告就没人看了。因此：
+
+1. 相对阈值 = max(历史样本观测抖动, 固定下限)，默认固定下限 **20%**；
+2. 耗时信号另有一条**绝对下限 1ms**：基线落在噪声底上时，相对变化再大也没有信息量
+   （0.3ms 跳到 0.7ms 是 +100%，但两次都在计时与调度噪声里），一律判为噪声；
+3. 计数类不受绝对下限约束——计数是精确值，3 变 4 就是真的变了。
+
+灵敏度不足时应当**先换更大的 testData**，而不是调低下限。确实需要调整时：
+
+```bash
+.\gradlew-queue.bat :analysis:analysis-performance-test:test -Dcangjie.performance.changeFloor=0.5
+```
+
 ## 5. 看结果
 
 指标是 OpenTelemetry 标准的 `LongCounter` / `LongHistogram`，链路是标准的 span，采集、聚合、

@@ -48,6 +48,9 @@ dependencies {
     testFixturesImplementation(libs.opentelemetry.sdk.metrics)
     testFixturesImplementation(libs.opentelemetry.sdk.testing)
     testFixturesImplementation(libs.opentelemetry.exporter.otlp)
+    // 运行历史落盘用 JSONL。只用 kotlinx-serialization 的 tree API
+    // （buildJsonObject / parseToJsonElement），因此不需要 serialization 编译插件。
+    testFixturesImplementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
@@ -94,7 +97,23 @@ val caJfrIncludePhaseTraces = "cangjie.analysis.jfr.includePhaseTraces"
 // 事件本身在无记录时是 no-op，因此这条通路默认零开销。
 val repositoryRoot = rootDir
 
+/**
+ * 性能运行记录产物目录的构建属性名（值为模块目录，代码在其下自行推导产物路径）。
+ */
+val caPerformanceModuleDir = "cangjie.performance.moduleDir"
+
+/**
+ * 基线判定固定下限的系统属性名，须与
+ * `CaPerformanceBaselineComparator.CHANGE_FLOOR_PROPERTY` 一致。
+ */
+val caChangeFloor = "cangjie.performance.changeFloor"
+
+/** 模块目录，在配置期取出以便在 `Test` 任务上作为系统属性转发。 */
+val caPerformanceModuleDirectory = layout.projectDirectory.asFile.absolutePath
+
 tasks.withType<Test>().configureEach {
+    // 模块目录转发进测试 JVM：测试进程的 workingDir 是仓库根，凭 CWD 推导产物路径不可靠。
+    systemProperty(caPerformanceModuleDir, caPerformanceModuleDirectory)
     providers.systemProperty(caPerformanceOtlpEndpoint).orNull?.let { endpoint ->
         systemProperty(caPerformanceOtlpEndpoint, endpoint)
     }
@@ -102,6 +121,12 @@ tasks.withType<Test>().configureEach {
     // 带栈的阶段事件单独开关：栈采集的开销远大于事件本身，不适合默认打开。
     providers.systemProperty(caJfrIncludePhaseTraces).orNull?.let {
         systemProperty(caJfrIncludePhaseTraces, it)
+    }
+
+    // 基线判定的固定变化下限。默认 0.2：性能用例的 fixture 很小，单次抖动常在
+    // 10%–30%，下限太低会把每次抖动都报成回归。灵敏度不足时应当先换更大的 testData。
+    providers.systemProperty(caChangeFloor).orNull?.let {
+        systemProperty(caChangeFloor, it)
     }
 
     // 记录在 JVM 退出时落盘（`dumponexit`），测试进程很短因此不需要 `duration`；
