@@ -10450,3 +10450,103 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 未闭合项: `CfirFeaturesDirectiveChecker` 缺官方 1.1.3 的两条规则——重复 `@NonProduct`（官方 `duplicated annotation: '@NonProduct'`，checkers 全树亦无通用重复注解检查）与 `@NonProduct(1)` 的归属（官方判为落到 package 上并另报 parse error，CFIR 现报 `ANNOTATION_ERROR_ARG_NUM`）。两者属 Diagnostics family，与渲染形状正交，不在本次范围。`CfirCallArgumentsRenderer` 对空参数列表仍输出 `()`（`@NonProduct` 源码无括号）：Kotlin 默认 `FirCallArgumentsRenderer` 同样如此，`FirCallNoArgumentsRenderer` 是 `withReadability()` 的可选变体而非默认，且 `CfirRendererAnnotationRenderingTest` 显式断言 `@R|FileAnn|()`，属既定约定，不改。
 
 - verification command(s) and outcome: 新增护栏用例 `CfirRendererAnnotationRenderingTest.line owning annotations terminate their line without trailing whitespace`（构造带文件级注解与带注解的 features directive，断言渲染结果无任何以空格结尾的行、两个注解各自独占一行、`features {` 另起一行），`.\gradlew.bat :cfir:cfir-tree:test --tests 'org.cangnova.cangjie.cfir.renderer.CfirRendererAnnotationRenderingTest'` → `BUILD SUCCESSFUL in 4m 39s`；`:cfir:cfir-tree:test`（无过滤）→ `BUILD SUCCESSFUL in 7s`。`.\gradlew.bat :cfir:raw-cfir:psi2cfir:test -Dupdate.test.data=true` → 按框架"先失败再写盘"语义失败一次，`git status` 确认仅 2 个 `.txt` 变动且 diff 恰为该行空格消失；再跑无过滤 → `BUILD SUCCESSFUL in 18s`，XML 复核 686 tests / 0 failures。全量回归 `:cfir:analysis-tests:test`（无过滤）→ `8964 tests completed, 10 failed, 395 skipped`，`BUILD FAILED in 15m 39s`；XML 导出后与基线（`D:/tmp/xml_dirt`，8963 testcases / 10 failures）逐用例比对，**失败集合完全相同**（`comm` 双向差集均为空），10 个全为 `CommonSpecific$E2e` 的 cjmp 语料（8）与 `testPowInt64Uint640`（2），均为既有失败。完整用例名集合比对显示新增 2 个、消失 0 个，新增即上一阶段浮点条目新建的 `testFloatLiteralRange`（PSI 与非 PSI 各一，基线 XML 早于该夹具），两者均通过。
+
+## 2026-10-04：Diagnostics2 range-only 锚位对齐（checker source 归属 + fixture 政策口径）
+
+- problem type: Diagnostics（range-only 锚位为主，伴随少量 checker source 归属修复）。`CfirAnalysisDiagnostics2TestGenerated` / `CfirAnalysisDiagnostics2PsiTestGenerated` 基线 760 tests / 113 failed（PSI 与非 PSI 对称）。10 月 3–4 日新入库的官方对齐夹具按官方 cjc 的 `Diagnose(node, kind)` GetBegin 1 字符窄锚写内联标记（夹具注释自证"未跑 CFIR"），与项目 Diagnostic Range Policy（IDE 范围覆盖完整相关 token / 声明头 / Kotlin 模型）系统性冲突；另有一小部分是 CFIR 锚错对象的真实实现缺口（夹具注释自行登记）。
+- root cause: 三类。(1) 夹具照搬官方窄锚——官方 JSON Range 是 CLI 输出格式，政策明文不镜像；CFIR 输出的宽锚（声明头 / 完整名 token / 类型引用 / 表达式整体）均有共享 helper（`CfirDeclarationDiagnosticSources.kt` 家族）或 Kotlin FIR checker 的 range-selection 背书 → 修夹具。(2) CFIR 锚错对象——CLASS_CONST_INIT_WITH_VAR 锚 `const init`（官方 `MakeRange(identifier)` 只锚 `init`）、CANNOT_DEFINE_VAR_IN_CONST_FUNCTION 锚整条声明（官方锚变量名）、EXPECT_CONST 下标形态锚整个下标（官方 ChkSubscriptExpr 锚基表达式）、EXTEND_ILLEGAL_MEMBER 锚整条成员（官方锚 `init`/`var` 关键字）、EXTEND_IMMUTABLE_INDEX_ASSIGNMENT 与 INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM 错锚修饰符/整条声明（官方锚 `[]` 操作名，夹具登记的实现缺口）、CANNOT_INHERIT_SEALED 锚父类型引用（官方主锚子类名，夹具登记的实现缺口）、INOUT_MODIFY_CSTRING/NON_CTYPE 用内层表达式 source（官方 refactor kind 锚 `inout X` 整段，两条 raw 路径构造 source 时只取了内层实参）→ 修 checker。(3) 语义差异（kind 缺失/多报/kind 选择）一律不动，登记为遗留。
+- official Cangjie evidence: 全部引用夹具头部已固化的 cjc 1.0.5 / 1.1.3 双版实测（kind / 文案 / MainHint.Range 逐段记录）；range-only 编辑按技能 Fixture Edit Gate 条件 1 的例外以 Diagnostic Range Policy 本身为证据，不重复取证。两处关键官方事实被本轮判定直接引用：官方 1.1.3 对 propertyInheritanceRulesLangVer100 同输入实测已锚整条 prop 声明（官方自行弃用 1.0.x 窄锚）；官方 refactor kind（INOUT 族）锚 `inout s` 整段。
+- Kotlin counterpart files consulted: `external/kotlin/compiler/fir/checkers/src/org/jetbrains/kotlin/fir/analysis/checkers/declaration/FirConstPropertyChecker.kt`（:36-39 修饰符级规则锚 modifier token、:43 声明级锚 declaration.source、:75-76/:85 子表达式锚 initializer.source）；`.../declaration/FirOverrideChecker.kt`（:536/:592-608 override 族锚 declaration.source）；`.../declaration/FirConflictsDeclarationChecker.kt`（:123-147 REDECLARATION 锚 conflictingDeclaration.source，声明 PSI 含注解）。
+- CFIR owner files changed: `cfir/checkers/src/.../checkers/declaration/CfirDeclarationDiagnosticSources.kt`（新增 `CfirVariable.variableNameDiagnosticSource()` + light-tree `findVariableNameSource()`，与既有 fieldVariable/property/valueParameter 名称 helper 同族）；`CfirConstDeclarationChecker.kt`（3 处 source 归属）；`CfirExtendExtraChecker.kt`（EXTEND_ILLEGAL_MEMBER 两分支改关键字级 source）；`CfirExtendCheckers.kt`（EXTEND_IMMUTABLE_INDEX_ASSIGNMENT 改 `functionNameDiagnosticSource()`）；`CfirOperatorDeclarationChecker.kt`（INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM 改操作名锚，不动仍被 GENERIC_IN_OPERATOR_OVERLOAD 族依赖的 `operatorDiagnosticSource()`）；`CfirInheritanceDeepChecker.kt`（CANNOT_INHERIT_SEALED 改 `classLikeNameDiagnosticSource()`）；`cfir/checkers/src/.../checkers/expression/CfirInoutSemanticsChecker.kt`（`checkInoutTypeConstraints` 改收包装实参节点，用包装 source）；`cfir/raw-cfir/psi2cfir/src/.../PsiRawCfirBuilder.kt` 与 `cfir/raw-cfir/light-tree2cfir/src/.../LightTreeRawCfirExpressionBuilder.kt`（`CfirInoutArgumentExpression.source` 从内层表达式扩大到整个实参元素 / VALUE_ARGUMENT 节点，两条 raw 路径同步，named argument 包装的既有口径对齐）。全部改动只动 source 选择，零触发条件改动。
+- repair principle: "官方窄锚 → 按政策修夹具；CFIR 锚错对象 → 修 checker；kind 集合差异 → 只走证据顺序，绝不借 range 修正滑入语义修正"。每个修夹具的判定要求 CFIR 范围有共享 helper 或 Kotlin 模型背书，拒绝"恰好和 CFIR 输出一样就照抄"。
+- fixtures covered: diagnostics2 下 15 个（constraints/nameInConstraintVisibleClassifier、entry/mainParameterType、entry/mainSignature、inheritance/superAlone、inheritance/superclassMustBePlacedFirst、inheritance/thisAndSuperOutsideClass、interop/cfuncSignatureRules、intrinsic/intrinsicMemberAndBody、operator/coalescingRules、property/propertyInheritanceRulesLangVer100、static-init/thisOrSuperInStaticInit、typealias/typeAliasRules、typealias/typeAliasRulesV105、deprecation/callAndTypeRef、inout/inoutNonLValuePlaceholder）+ LLT 同语义族 3 个（const_evaluation/err_class_var、const_evaluation/err_func_var、varray/varray_size02——checker source 归属修复的连带对齐，Fixture Edit Gate 条件 4）。夹具头部与官方证据矛盾的注释同步更正（property 的"CFIR 侧红是实现缺口"、cfunc 的"逐字符对齐"、main 的"锚点一致"、const 的范围口径、intrinsic 的"实现缺口"声明；inoutNonLValuePlaceholder 补官方锚点依据）。intrinsic 的 member/duplicated 段与 cfunc 的 CFUNC_TOO_MANY_ARGUMENTS、TARBk/TARBvV23 行因属 kind 数量差异（CFIR 多报 CANNOT_HAVE_BODY / 报的对象三方不一致 / 多报）未动。
+- verification command(s) and outcome: 聚焦切片 `.\gradlew.bat :cfir:analysis-tests:test --tests '*CfirAnalysisDiagnostics2TestGenerated' --tests '*CfirAnalysisDiagnostics2PsiTestGenerated'` 两轮 → 第一轮 760 tests / 90 failed（对照基线 113：修复 25 用例、新增 2 用例 = inout raw source 改动暴露的 `inoutNonLValuePlaceholder` 两侧，同族政策口径修夹具）；第二轮（inout checker 改用包装 source + NonLValue 夹具修复后）760 tests / **84 failed**，与第一轮日志差集：修复 6（Inout 三夹具两侧）、新增 0；与最初基线日志差集：净修复 29 用例、**新增 0**（`comm` 双向差集核验）。全量回归 `.\gradlew.bat :cfir:analysis-tests:test`（无过滤）→ `9221 tests completed, 104 failed, 461 skipped`；非 Diagnostics2 失败 12 用例中 6 用例（errClassVar / errFuncVar / varraySize02 ×2 侧）为本轮 checker source 修复的 LLT 同族连带，修夹具后聚焦切片 `--tests '*LLTTestGenerated$ConstEvaluation' ... '$Varray'`（4 类）→ **BUILD SUCCESSFUL**；另 6 用例（`CfirAnalysisMacro{,Psi}TestGenerated > Llt > Function > DefaultParameterPkg02` 的 testTestMacro/testTest3/testTestMutation）为 DEPRECATED_WARNING 触发缺失，与本轮 range-only 改动机制正交，判定为 10 月 3–4 日 `ddb84faf8` 弃用检查器提交后的语料滞后（证据等级：机制推断，未做回退对照）。修复后全量失败集合 = Diagnostics2 家族 92（含 WithoutAliasExpansion 变体 8 与 cjmp E2e 既有 8）+ Macro 语料 6，相对改动前零新增。
+- 未闭合项（Diagnostics2 剩余 84 用例的语义族，需按证据顺序另行取证）：lambda capture 族全缺（`USE_FUNC_CAPTURE_VAR_ALONE` / `FUNC_CAPTURE_VAR_CANNOT_*` / `LAMBDA_MUST_HAVE_TYPE_ANNOTATION`——checker `CfirClosureCaptureUsageChecker` 已注册但触发条件未走到）；`INTERPOLATION_IN_CONST_PATTERN` 全缺；`CONDITIONAL_COMPILATION_*` 全缺；`DEPRECATION_WEAKENING`、`REDUNDANT_MODIFIER`、`THIS_AS_EXPRESSION_IN_FUNC`、`PROPERTY_MUST_HAVE_ACCESSORS`、`INVALID_SUBSCRIPT_ASSIGN_PARAMETER`、`INOUT_MODIFY_NON_CTYPE`+`TYPE_MISMATCH` 嵌套锚、`TYPEALIAS_UNUSED_TYPE_PARAMETERS`（V110 门禁段）等缺失；多报族（`EXTEND_SUPER_NOT_ALLOWED` 等 super 链、`ABSTRACT_MEMBER_NOT_IMPLEMENTED`/`CANNOT_WEAKEN_ACCESS_PRIVILEGE`/`NO_CONSTRUCTOR`、`CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE`、`CLASS_UNINITIALIZED_FIELD`、`RETURN_TYPE_MISMATCH`、static-context 的 `CANNOT_MODIFY_VAR`/`UNRESOLVED_REFERENCE`/`USED_BEFORE_INITIALIZATION`、interop 的 `ILLEGAL_MEMBER_OF_CSTRUCT`/`UNUSED_IMPORT` 等、`NOTHING_TO_OVERRIDE`、inheritanceGraph 四 kind）；kind 选择差异（`MISMATCHED_TYPES_MULTIPLE_ASSIGN` vs `TYPE_MISMATCH`、`INVALID_UNARY_EXPR(_WITH_TARGET)`、`MISMATCHED_TYPES_BECAUSE`/`NO_MATCH_OPERATOR_FUNCTION_CALL` vs `NO_MATCHING_OPERATOR_INVOKE` 族、coalescing 的 `CANNOT_CONVERT_LITERAL` vs `TYPE_MISMATCH`、constraints 的 String 可见类判定落到 `UNDECLARED_TYPE_NAME`、cjmp E2e 的 `NOT_MATCHED` ↔ `RETURN_TYPE_INCOMPATIBLE` 与多报 `AMBIGUOUS_FUNCTION_CALL`——cjmp 为多轮登记的既有失败）；`PSI / LightTree 前端行为差异`（subscriptAssignNoPositional 的 PSI 入口崩溃，夹具 DISABLE_WITH_PARSER 登记）。
+- 工具教训（本会话新证）：(1) **fixture 不是 test task 的输入**——修改 `testData/**` 后 Gradle test 直接复用上次结果（binary results 未变），必须 `cleanTest` 或删除 `build/test-results`；(2) **构建产物大目录删除会被沙箱批量删除阈值拦截**（>50 文件需确认），Gradle 自身在 test task 报告阶段清理 `build/test-results` / `build/reports/tests` 的大量旧 XML 同样失败，表现为 `Could not generate test report to '...\build\reports\tests\test'` 且 XML 永不更新——先手动清空这两个目录再跑即可；(3) 聚类脚本的正则 `<!([A-Z_0-9]+)!>` 解析不了合并标记 `<!A, B!>`，会把"实际报了"误判成"实际没报"，差集结论要用渲染差异原文复核。
+
+- raw builder 回归：`:cfir:raw-cfir:psi2cfir:test :cfir:raw-cfir:light-tree2cfir:test`（无过滤，覆盖全部 golden）→ `BUILD SUCCESSFUL in 2m 47s`，inout 实参 source 扩大对两条 raw 路径的树结构渲染零影响。
+
+## 2026-10-04（二）：CONDITIONAL_COMPILATION 五 kind 全缺（raw 求值缺失）
+
+- problem type: Diagnostics。whenConditionErrors.cj / whenConditionValueAndDebugOp.cj 期望 7 个失败形态（UNKNOWN_CONDITION / UNSUPPORTED_OPERATOR ×2 / INVALID_VERSION / INVALID_VALUE ×2 / UNSUPPORTED_VALUE），CFIR 一个都不报。
+- root cause: `CfirConditionalCompilationChecker` 与 `CfirConditionalCompilationCatalog`（内建条件规格、failure 数据结构、六类错误枚举、诊断映射）全部就绪并已注册（CommonDeclarationCheckers.kt:108），但 `CfirFile.conditionalCompilationFailures` 的生产者为零——raw pipeline 从未对 `@When` 条件做求值，checker 空转消费空列表。既有 raw 代码只有 import 前导 `@When` 的条件**提取**（LightTreeRawCfirDeclarationBuilder.whenConditionExpressionOrNull），无校验、无发布。
+- official Cangjie evidence: 两夹具头部固化的 cjc 1.0.5 / 1.1.3 双版实测（各条件的 kind / 文案 / 锚点逐条记录，含合法对照 `@When[os == "Windows"]`、`@When[cjc_version >= "1.0.5"]`；`@When[1]` 为官方 parse 阶段错误，本项目无对应诊断名、夹具不写标记）。
+- Kotlin counterpart files consulted: 官方条件编译属仓颉特有语法，Kotlin 无对应物；校验按 catalog 单一事实来源 + 官方规则链实现。
+- CFIR owner files changed: 新增 `cfir/cfir-tree/src/.../expressions/CfirWhenConditionEvaluation.kt`（`CfirComparisonExpression.whenConditionFailureOrNull()`——两条 raw 路径共享的唯一判定入口：条件名→操作符契约→右值字符串字面量→cjc_version 三段格式→枚举白名单，失败锚位按政策锚完整条件名/完整右值 token，非比较形态静默）；`cfir/raw-cfir/light-tree2cfir/.../LightTreeRawCfirDeclarationBuilder.kt`（buildFile 挂载 + 递归收集函数）；`cfir/raw-cfir/psi2cfir/.../PsiRawCfirBuilder.kt`（buildFile 挂载 + PSI 收集函数，走既有 `CjAnnotation.whenConditionExpression`）。触发条件层面 checker 的诊断映射零改动。
+- repair principle: "数据结构与消费者早已就绪、只缺生产者"——在 raw 阶段按官方规则链发布失败事实，判定入口单点共享（两条 raw 路径同一函数），checker 侧不做任何重复判定。
+- fixtures covered: conditional-compilation/whenConditionErrors.cj、conditional-compilation/whenConditionValueAndDebugOp.cj（锚位从官方 1 字符窄锚改为完整条件名/右值 token，头部矛盾注释同步更正）。
+- verification command(s) and outcome: 三模块编译 BUILD SUCCESSFUL；`--tests '*ConditionalCompilation'`（PSI 与非 PSI 两侧）→ **BUILD SUCCESSFUL**，4 用例全绿。
+
+## 2026-10-04（三）：多报族取证登记（下一批直接输入，未实现）
+
+lambda capture 族（lambdaCaptureVarRules.cj，20 标记）：取证结论——checker 与注册均正常，根因在 **resolve 侧 PCLA 推断崩溃**（`CfirPCLAInferenceSession` / `ConstraintSystemImpl` outer 前缀断言 3 vs 1），检查器从未收到可判定的树。属 resolve 深水区缺陷（与 REPAIR_LOG 2026-09-23 flow 缺陷同域），需要独立的崩溃修复批次，本轮未动。
+
+多报族 13 夹具的官方守卫三元组（kind：官方不报条件 → CFIR 报告点 → 缺失守卫），按修复聚类：
+- 聚类 1（义务分流）：ABSTRACT_MEMBER_NOT_IMPLEMENTED（abstractMemberAccessRules / inheritanceGraphRules）与漏报 WEAK_VISIBILITY——NotImplementedOverrideChecker 需两条分流：继承目标为 interface/extend 时归 NEED_MEMBER_IMPLEMENTATION 不进 abstract 义务；义务 owner = 当前类本身时不进义务（该类自己就是 abstract 容器）。
+- 聚类 2（嵌套函数/lambda 豁免）：INVALID_THIS_CALL_OUTSIDE_CTOR（thisAndSuperOutsideClass 多报）——closestFunctionLikeDeclaration 需跳过匿名函数/局部函数只认具名函数；CAPTURE_BEFORE_INITIALIZATION / USED_BEFORE_INITIALIZATION（instanceFieldInitializationRules 多报）——两个提取点（ExpressionCheckersDiagnosticComponent :206 与 :216）排除构造器体与嵌套函数，先例同文件 :237-240。
+- 聚类 3（static 排除）：CANNOT_MODIFY_VAR（staticContextAccessRules 多报）——static 成员排除，MutabilityCheckers :483-485。
+- 聚类 4（内建 operator 豁免）：EXTEND_MEMBER_CANNOT_SHADOW——operator 声明一律不进 extend 遮蔽检查（extend 对 operator[:] 的重定义是合法复用；CfirExtendExtraChecker :392-420 排除分支收窄为一律排除）；RETURN_TYPE_INCOMPATIBLE（operatorOverloadDeclarationRules 多报）——CfirOperatorDeclarationChecker :140-148 对内建 operator 的返回类型自加规则停用。
+- 其余单点：RETURN_TYPE_MISMATCH（returnInStaticInit 多报）——static init 时跳过函数体返回类型检查（须找 return 路径 enclosing static init 判定）；CLASS_UNINITIALIZED_FIELD（staticFieldInitializationRules 多报）——throw 终止后收集应停止且 static 排除（isStatic 置位时序未闭合，需实跑定位）；NO_CONSTRUCTOR（abstractMemberAccessRules 多报）——interface classifier 不映射该 cone 诊断（coneDiagnosticToCfirDiagnostic :1252-1266）；NOTHING_TO_OVERRIDE（overrideRedefRules 多报）——redefined-from 不报（CfirOverrideChecker :536 与 :598 两处报告点加 isRedefinedFrom）；WEAK_VISIBILITY vs CANNOT_WEAKEN（abstractMemberAccessRules 漏报+多报）——override 侧弱化应报 WEAK_VISIBILITY（FirOverrideChecker :584-586），现 producer factory 报 CANNOT_WEAKEN_ACCESS_PRIVILEGE；RECURSIVE_CONSTRUCTOR_CALL（inheritanceGraphRules / instanceFieldInitializationRules 多报）——自引用默认值不报。
+- 下批入口：本节三元组 + 夹具头部官方证据注释已可直达实现，无需重新取证。
+
+- 取证报告补充（Evidence Investigator 原始框架）：多报族 13 夹具按修复动作分三类——A 类真多报 9 条（官方零诊断，需补守卫：lambda 内 super() 误报 INVALID_THIS_CALL_OUTSIDE_CTOR、自身无体成员误报 ABSTRACT_MEMBER_NOT_IMPLEMENTED、static init throw 段误报 CLASS_UNINITIALIZED_FIELD、内建 operator 误报 EXTEND_MEMBER_CANNOT_SHADOW / RETURN_TYPE_INCOMPATIBLE 等）；B 类 kind 替换 6 条（NEED_MEMBER_IMPLEMENTATION 被改报、WEAK_VISIBILITY 被 CANNOT_WEAKEN 取代）；C 类官方伴随未写标记 11 条（RECURSIVE_CONSTRUCTOR_CALL、NON_INHERITABLE_SUPER_CLASS、UNUSED_IMPORT 等——**夹具口径问题，不需改 checker**，待与用户确认夹具是否补写伴随标记）。上节聚类即 A/B 类的收敛；C 类处置需用户裁决。
+
+## 2026-10-05：多报族 A/B 类守卫批次一（部分生效，进展登记）
+
+- 已生效（切片按 kind 差异行验证，两侧一致）：RETURN_TYPE_INCOMPATIBLE（CfirOperatorDeclarationChecker 停用内建返回类型自加规则）、EXTEND_MEMBER_CANNOT_SHADOW（CfirExtendExtraChecker checkMemberShadowing 跳过 operator 成员）、CANNOT_MODIFY_VAR（CfirMutabilityCheckers currentStructMutationRoot 排除 static 字段）、NOTHING_TO_OVERRIDE（CfirOverrideChecker 空目标仅 override 报 + CfirModifierChecker 停用 redef 追加，双报告点）。INVALID_THIS_CALL_OUTSIDE_CTOR 已消失（closestFunctionLikeDeclaration 跳过 CfirAnonymousFunction），superThisCallRules 剩余差异为 ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER 锚位（官方窄锚 → 按政策改夹具，待做）。
+- 未生效/未做（下一步输入）：
+  1. ABSTRACT_MEMBER_NOT_IMPLEMENTED 义务分流未命中——obligationOwner === ownerDeclaration 引用比较与 is CfirInterface 判定在 abstractMemberAccessRules/inheritanceGraphRules 的实际义务形态上不成立，需看实际义务符号的 owner 归属（ownerClassSymbol 返回值）再修；
+  2. NO_CONSTRUCTOR interface 静默未命中——ConeResolutionToClassifierError 分支已拆但夹具实际走的可能是 ConeNoConstructorError 或 :237 构造器符号分支，需按实际差异定位报告点；
+  3. CAPTURE/USED/ILLEGAL_USAGE_OF_MEMBER——ExpressionCheckersDiagnosticComponent 两个提取点的嵌套函数豁免未实现（本轮未动）；
+  4. RETURN_TYPE_MISMATCH——ErrorNodeDiagnosticCollectorComponent 的 static init 拦截未命中（该 fixture 的 RETURN_TYPE_MISMATCH 可能不来自 returnExpressionSourceForTypeMismatch 路径，需按实际差异重定位）；
+  5. CLASS_UNINITIALIZED_FIELD——throw 终止跳过未实现（isStatic 置位时序未闭合）。
+- 零新增失败（切片失败集合为基线子集）；重跑守卫切片时 fixture 不是 test task 输入的问题不影响源码改动（源码是 classpath 输入，会触发重编译重跑）。
+
+## 2026-10-05（二）：锚位批次二（TYPE_UNINITIALIZED checker + INHERITANCE_CYCLE fixture）
+
+- TYPE_UNINITIALIZED_STATIC_FIELD：官方 DiagnoseRefactor(kind, *decl, ...) 锚整条 static 字段声明（refactor kind，InitializationChecker.cpp:501-513），CFIR 只锚字段名比官方还窄——reportUninitializedStaticFields 改 `field.source ?: 变量名`，staticFieldInitializationRules.cj LightTree 侧转绿；PSI 侧仍红（field.source 在 PSI 路径的覆盖待查）。
+- INHERITANCE_CYCLE：官方 DEFAULT 定位策略，夹具期望窄锚；CFIR 声明头（inheritanceCycleDiagnosticSource）符合政策——夹具 6 处锚位改声明头（inheritanceGraphRules.cj），漏报段（IgCsxA/IgCexA 的 interface 环传递缺口）与 C 类伴随（RECURSIVE_CONSTRUCTOR_CALL/NON_INHERITABLE_SUPER_CLASS/ILLEGAL_EXTENDED_TYPE）登记不动。
+- 验证：Inheritance+StaticInit 切片 52 tests / 11 failed（基线 16，净减 5），零新增。
+- 剩余该切片失败：abstractMemberAccessRules（义务分流未命中）、cannotInheritSealedClass PSI 侧（上轮 range 批次的 PSI 残留）、inheritanceGraphRules（环传递漏报 + C 类）、overrideRedefRules（C 类/B 类剩余）、returnInStaticInit（RETURN_TYPE_MISMATCH 拦截路径错配）、staticFieldInitializationRules PSI 侧。
+
+## 2026-10-05（三）：批次三（throw 终止跳过 + inheritanceGraph 锚位）
+
+- TYPE_UNINITIALIZED_STATIC_FIELD：整条声明锚（checker 修复）+ throw 终止按类跳过（throwTerminatedOwners 按 nominalOwnerClassId 收集，reportUninitializedStaticFields 过滤）——LightTree 与 PSI 两侧的该 kind 差异全部消失。
+- INHERITANCE_CYCLE 6 处 + CLASS_INHERIT_NON_CLASS_NOR_INTERFACE 5 处 + INTERFACE_MEMBER_MUST_BE_IMPLEMENTED 7 处夹具锚位（声明头/全名口径，kind 集合一致行）——inheritanceGraphRules.cj 共 16 处替换。
+- 验证：StaticInit+Inheritance 切片 52 tests / 11 failed（上一轮 16 → 11，零新增）。
+- 残留（下一步）：
+  1. CLASS_UNINITIALIZED_FIELD 剩一处多报（锚 init）：类内普通 init() 与 static init throw 并存时，官方整段跳过含实例字段完整性检查——checkConstructorCompleteness 需要类级 throw 终止信息（throwTerminatedOwners 现挂在 checkFileStaticGlobalInitialization 局部，需提升为可传递状态）；
+  2. RETURN_TYPE_MISMATCH（returnInStaticInit）：ErrorNode 拦截未命中，真实路径待按差异重定位；
+  3. inheritanceGraphRules 的环传递漏报（IgCsxA/IgCexA interface 段）与 C 类伴随；
+  4. abstractMemberAccessRules 义务分流判定未命中（义务符号 owner 归属需实取）；
+  5. cannotInheritSealedClass / testExtendImmutableIndexAssignment 的 PSI 侧残留（上轮 range 批次 PSI 段）。
+- C 类 11 条官方伴随的夹具裁决仍待用户确认。
+
+## 2026-10-05（四）：用户裁决落地 + 批次四计划
+
+- 用户裁决（AskUserQuestion）：①override 可见性弱化统一保留 CANNOT_WEAKEN_ACCESS_PRIVILEGE（LLT class_access_control 口径），不切 WEAK_VISIBILITY——abstractMemberAccessRules.cj 两行（func f / prop p）已按实际输出改写，头部口径注释待补；②C 类官方伴随标记**补写**（与「夹具=官方语义全集」口径一致），不改 checker。
+- C 类补写清单（从差异底图提取，尚未写入）：instanceFieldInitializationRules 的 USED_BEFORE_INITIALIZATION（ifi10Sink(this.a)）与 ILLEGAL_USAGE_OF_MEMBER（this.reset()）；staticContextAccessRules 的 USED_BEFORE_INITIALIZATION；varrayConstructorRules 的 UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE；inheritanceGraphRules 的 RECURSIVE_CONSTRUCTOR_CALL（IgCaoSub）/NON_INHERITABLE_SUPER_CLASS（IgCveLeaf）/ILLEGAL_EXTENDED_TYPE（IgEoiA）。tupleFieldCTypeRules 的伴随为 LightTree-only 路径差异，两侧无法一致补写，维持登记。
+- 批次四新发现（instanceFieldInitializationRules 差异）：CLASS_UNINITIALIZED_FIELD 存在锚位族（期望首字符/实际构造器名或字段名——官方锚待夹具注释确认）与同 kind 重复报（同一 init 报两次，合并标记出现两次 CLASS_UNINITIALIZED_FIELD）；CAPTURE_BEFORE_INITIALIZATION 为 A 类真多报（官方不报 lambda 内赋值，取证聚类 2b 守卫未实现）。
+- 下批入口：C 类行对写入（行对已在本节）→ CLASS_UNINITIALIZED_FIELD 锚位/重复报确认官方锚后处理 → CAPTURE 守卫（先例 ExpressionCheckersDiagnosticComponent :237-240）→ CLASS_UNINITIALIZED_FIELD 类级跳过状态提升 → RETURN_TYPE_MISMATCH 路径重定位 → 全量回归。
+
+## 2026-10-05（五）：主 agent 逐文件审查结论（用户指令：审查上一轮更改并修复）
+
+- 方法：停掉超时审查员，主 agent 逐文件读 git diff 对照技能审查；两个未生效拦截点用探针插桩实测（PROBE 输出经 XML system-err 提取）。
+- 审查结论：
+  ✅ 合规：raw 两路挂载（light-tree/PSI 对称，import 前导 @When 一并被收集与官方一致）；CfirOperatorDeclarationChecker（RETURN_TYPE_INCOMPATIBLE 停用 + subscript 锚操作名）；CfirExtendExtraChecker checkMemberShadowing（operator 跳过）；CfirMutabilityCheckers（static 排除）；CfirConstructorDelegationCallChecker（跳过匿名函数）；CfirOverrideChecker/CfirModifierChecker（NOTHING_TO_OVERRIDE 双点）；CfirInitializationCheckers（throw 跳过，注记：体尾 throw 语法近似官方控制流终止，try 内 throw 形态存在近似缺口）；CfirWhenConditionEvaluation 新文件。
+  ❌ 发现并修复：问题 1——EXTEND_ILLEGAL_MEMBER 字段分支误用变量名 helper 后夹具未同步；用户裁决锚变量名正确 → 改夹具（var 段锚变量名 + 头部口径注释）。问题 2——义务分流用引用比较（obligationOwner === ownerDeclaration）不可靠（scope 义务符号可能来自 provider 物化的不同实例）→ 改 classId 身份比较（symbol.ownerClassId(context) vs ownerDeclaration.symbol.classId），编译通过。
+  ❌ 发现并回退（探针零命中=不在真实路径）：ErrorNode 的 static init 拦截、cone 的 CfirInterface 静默分支外的探针——两处 RETURN_TYPE_MISMATCH / NO_CONSTRUCTOR 的真实生产路径均未经过拦截点，按「失败尝试回退干净」移除探针；cone 的 CfirInterface 分支保留（接口实例化不映射 NO_CONSTRUCTOR 是官方语义对齐，非死代码）。
+- 夹具核验：C 类 9 处（instanceField 2 + varray 1 + staticContext 1 + inheritance 3）经 grep 计数核验落盘；varray 曾被脚本写错路径（operator/），已删错位文件并 Edit 重写正确文件。
+- 遗留（下一批）：RETURN_TYPE_MISMATCH 与接口实例化 NO_CONSTRUCTOR 的真实生产路径定位；CAPTURE 守卫（聚类 2b）；类级跳过状态提升；环传递漏报；全量回归；分批提交。
+
+## 2026-10-05（六）：批次四验证切片 + 批次五部分
+
+- 批次四验证切片（6 组×2 侧，84 tests）：基线 32 → **22 failed**（净减 10）。义务分流 classId 修正**生效**（ABSTRACT_MEMBER_NOT_IMPLEMENTED 从 abstractMemberAccessRules 差异消失）；C 类补写生效（staticContext/varray 部分行）；弱化口径生效。
+- 批次五（部分）：abstractMemberAccessRules 的 ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED 2 行锚位改全名。
+- 剩余失败（新会话按此接续，全部有定位）：
+  1. abstractMemberAccessRules：ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY 缺失（super.p 直接访问抽象成员——语义缺口）+ NO_CONSTRUCTOR 接口实例化（真实报告点待定位，CfirInterface 静默分支未命中）
+  2. inheritanceGraphRules：环传递漏报（IgCsxA/IgCexA interface 段）+ C 类伴随已补写后可能仍有残留行
+  3. overrideRedefRules：C 类/B 类剩余行
+  4. instanceField：CLASS_UNINITIALIZED_FIELD 锚位族（首字符 vs 构造器名/字段名，官方锚待夹具注释确认）+ 重复报 + CAPTURE 守卫（聚类 2b）
+  5. staticFieldInitializationRules PSI 侧、returnInStaticInit（RETURN_TYPE_MISMATCH 真实路径）、cannotInheritSealedClass/extendImmutableIndexAssignment PSI 侧（range 批次 PSI 残留）、extendImportedInterfaceOrphan/extendMutInterfaceOnPrimitive（REDUNDANT_MODIFIER 缺失等）
+  6. 全量回归（LLT 连带 61 个失败需按官方口径修 LLT 夹具——分类清单见 2026-10-05 全量条目）+ 分批提交
