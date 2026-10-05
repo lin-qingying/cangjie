@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -131,6 +132,11 @@ internal class CaCfirFileScope(
         val namesSet = names.toSet()
         return classifiers { it in namesSet }
     }
+
+    /**
+     * 文件作用域没有类型参数：类型参数只存在于泛型声明的声明体内。
+     */
+    override fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol> = emptySequence()
 
     /**
      * 文件作用域不直接提供构造器集合。

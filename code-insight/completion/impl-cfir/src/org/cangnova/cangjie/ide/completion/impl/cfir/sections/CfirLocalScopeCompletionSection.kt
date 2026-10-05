@@ -48,12 +48,12 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
             // `scopes` 已按真实查找次序从内到外排列，直接顺序遍历即可：
             // 再按 kind.indexInTower 重排会把同一 kind 的层内次序打乱。
             //
-            // 只取局部声明层。**类型参数层（TYPE_PARAMETER_SCOPE）取不到东西**：
-            // `CfirTypeParameterScopeImpl.getClassifierNames()` 报告了类型参数名，
-            // 但它的 `processClassifiersByName` 是空实现、`getCallableNames()` 也是空的，
-            // 两条公开通道都枚举不到——类型参数候选要等 Analysis 层补出专用通道
-            // （见 tasks.md 9.1 遗留项）才能加进来，这里不写一条永远为空的分支。
-            val lexicalScopes = scopeContext.scopes.filter { it.kind == CaScopeKind.LOCAL_SCOPE }
+            // 词法候选含两类：局部声明层（参数、`let`/`var`、局部函数）与类型参数层。
+            // 类型参数同样是当前位置可直接引用的名字，漏掉会让 `func f<T>(x: T)` 体内
+            // 补不出 `T`。
+            val lexicalScopes = scopeContext.scopes.filter {
+                it.kind == CaScopeKind.LOCAL_SCOPE || it.kind == CaScopeKind.TYPE_PARAMETER_SCOPE
+            }
             if (lexicalScopes.isEmpty()) return@analyze emptyList()
 
             val claimedNames = mutableSetOf<String>()
@@ -67,6 +67,23 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
                             callableSnapshot(
                                 symbol,
                                 CompletionItemKind.LOCAL,
+                                CompletionOrigin.LOCAL_SCOPE,
+                                documentStamp = request.documentStamp,
+                            ),
+                        )
+                    }
+                    // 类型参数走**专用通道** `typeParameters`，不能经 `classifiers`：
+                    // 底层类型参数 scope 的 `processClassifiersByName` 是空实现。
+                    for (typeParameter in entry.scope.typeParameters { true }) {
+                        val name = typeParameter.name?.asString() ?: continue
+                        if (!name.startsWith(prefix)) continue
+                        if (!claimedNames.add(name)) continue
+                        add(
+                            // CaTypeParameterSymbol 是 CaClassifierSymbol，复用同一工厂：
+                            // 身份按 TYPE 而非 SYMBOL，与「这个候选是一个类型名」一致。
+                            classifierSnapshot(
+                                typeParameter,
+                                CompletionItemKind.TYPE_PARAMETER,
                                 CompletionOrigin.LOCAL_SCOPE,
                                 documentStamp = request.documentStamp,
                             ),

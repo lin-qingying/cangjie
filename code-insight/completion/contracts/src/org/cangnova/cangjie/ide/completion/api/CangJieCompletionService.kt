@@ -127,6 +127,14 @@ enum class CompletionItemKind {
     /** 局部声明或参数。 */
     LOCAL,
 
+    /**
+     * 泛型类型参数。
+     *
+     * 与 [LOCAL] 分开：类型参数是分类器，插入形态与签名渲染都不同于局部值声明，
+     * 归入 LOCAL 会让弹窗把它渲染成带括号的调用形态。
+     */
+    TYPE_PARAMETER,
+
     /** 成员。 */
     MEMBER,
 

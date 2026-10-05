@@ -15,6 +15,8 @@ import javax.swing.Icon
  */
 internal fun iconOf(kind: CompletionItemKind): Icon = when (kind) {
     CompletionItemKind.LOCAL -> AllIcons.Nodes.Variable
+    // 类型参数是分类器不是值：复用 Parameter 图标，与 NAMED_ARGUMENT 的「实参名」区分形状语义。
+    CompletionItemKind.TYPE_PARAMETER -> AllIcons.Nodes.Parameter
     CompletionItemKind.MEMBER -> AllIcons.Nodes.Method
     CompletionItemKind.STATIC_MEMBER -> AllIcons.Nodes.Static
     CompletionItemKind.EXTEND_MEMBER -> AllIcons.Nodes.AbstractClass

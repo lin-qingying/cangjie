@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -69,6 +70,18 @@ internal abstract class CaCfirBasedScope<S : CfirScope>(
     override fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol> = withValidityAssertion {
         cfirScope.getClassifierSymbols(names, builder)
     }
+
+    /**
+     * 按名称过滤器查询类型参数序列。
+     *
+     * 名字来源用 [getPossibleClassifierNames]：类型参数作用域的 `getCallableNames()` 是空集，
+     * 而 `getClassifierNames()` 报告的正是类型参数名（尽管 `processClassifiersByName`
+     * 是空实现）。**名字来源与符号来源走两条不同通道**是这个 scope 的既有形状。
+     */
+    override fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol> =
+        withValidityAssertion {
+            cfirScope.getTypeParameterSymbols(getPossibleClassifierNames().filter(nameFilter), builder)
+        }
 
     /**
      * 当前作用域声明的构造器符号序列。

@@ -68,6 +68,34 @@ class CfirLocalScopeCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         assertTrue(snapshots.all { it.tailText.isNotEmpty() }, "快照应在分析内完成签名渲染")
     }
 
+    /**
+ * 泛型函数体内的类型参数必须作为词法候选出现，且类别独立于局部值声明。
+ *
+ * 类型参数是分类器、走 `CaScope.typeParameters` 专用通道；漏掉它会让
+ * `func f<T>(x: T)` 体内补不出 `T`。类别记 [CompletionItemKind.TYPE_PARAMETER]
+ * 而非 LOCAL——归入 LOCAL 会被渲染成带括号的调用形态。
+ */
+    @Test
+    fun typeParametersAreLexicalCandidates(mainFile: CjFile) {
+        val snapshots = section.collectCandidates(mainFile.requestAtReference("scopeTarget"))
+        val names = snapshots.lookupNames()
+
+        assertTrue("T" in names, "类型参数必须可见，实际 $names")
+        assertTrue("param" in names, "值参数必须仍然可见，实际 $names")
+        assertTrue("local" in names, "块内局部必须仍然可见，实际 $names")
+
+        assertEquals(
+            CompletionItemKind.TYPE_PARAMETER,
+            snapshots.single { it.lookupString == "T" }.kind,
+            "类型参数类别必须独立于局部值声明",
+        )
+        assertEquals(
+            CompletionItemKind.LOCAL,
+            snapshots.single { it.lookupString == "param" }.kind,
+            "值参数仍是局部候选",
+        )
+    }
+
     /** 使用的区段实例。 */
     private val section = CfirLocalScopeCompletionSection()
 }

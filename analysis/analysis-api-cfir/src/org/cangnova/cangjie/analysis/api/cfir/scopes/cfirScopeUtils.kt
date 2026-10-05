@@ -5,7 +5,9 @@ import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -77,6 +79,32 @@ internal fun CfirScope.getClassifierSymbols(classLikeNames: Collection<Name>, bu
             }
         }
     }
+
+/**
+ * 从 CFIR scope 中收集公开类型参数符号。
+ *
+ * 必须走 [CfirTypeParameterScope.processTypeParametersByName] 而不是
+ * [CfirScope.processClassifiersByName]：`CfirTypeParameterScopeImpl` 的后者是**空实现**
+ * （类型参数不是 class-like），走错通道的结果是类型参数永远枚举不到。
+ *
+ * 类型参数 scope 是 `CfirTypeParameterScope` 这个**子类**，不是 `CfirScope` 本身，
+ * 所以这里要向下转型；非类型参数 scope 返回空序列。
+ */
+internal fun CfirScope.getTypeParameterSymbols(
+    typeParameterNames: Collection<Name>,
+    builder: CaSymbolByCfirBuilder,
+): Sequence<CaTypeParameterSymbol> {
+    val typeParameterScope = this as? CfirTypeParameterScope ?: return emptySequence()
+    return sequence {
+        typeParameterNames.forEach { name ->
+            yieldList {
+                typeParameterScope.processTypeParametersByName(name) { cfirSymbol ->
+                    add(builder.classifierBuilder.buildTypeParameterSymbol(cfirSymbol))
+                }
+            }
+        }
+    }
+}
 
 /**
  * 从 CFIR scope 中收集构造器符号。

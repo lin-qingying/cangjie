@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
@@ -98,6 +99,22 @@ internal class CaCfirCompositeScope(
     override fun getPossibleClassifierNames(): Set<Name> = withValidityAssertion {
         delegates.flatMapTo(linkedSetOf()) { it.getPossibleClassifierNames() }
     }
+
+    /**
+     * 组合视图的类型参数等于各子作用域的并集，按首次出现去重。
+     */
+    override fun typeParameters(nameFilter: (Name) -> Boolean): Sequence<CaTypeParameterSymbol> =
+        withValidityAssertion {
+            sequence {
+                val seen = mutableSetOf<String>()
+                for (delegate in delegates) {
+                    for (symbol in delegate.typeParameters(nameFilter)) {
+                        val key = symbol.name?.asString() ?: continue
+                        if (seen.add(key)) yield(symbol)
+                    }
+                }
+            }
+        }
 
     /**
      * 依次查询各子作用域并按**声明身份**去重，保留首次出现的顺序。
