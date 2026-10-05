@@ -70,6 +70,47 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 类型名建议不得出现在非类型位置。
+     *
+     * **正面侧当前不可断言**：类型位置补全会抛 `StackOverflowError`，递归点在
+     * `CaCfirCompositeScope.classifiers`（栈里反复出现同一行，说明某个子作用域的
+     * `classifiers` 又回到了本组合）。曾按「组装时展平嵌套组合 + 展开期防重入」修过，
+     * 无效——环不在组合的构造期。缺陷与下一步见 `implementation-log.md`「类型位置补全
+     * 递归」节。这里只锁定成立的那一半：缺席侧。
+     */
+    @Test
+    fun typeSuggestionsAppearOnlyAtTypePosition(mainFile: CjFile) {
+        val inBody = section.collectCandidates(mainFile.requestAtReference(TARGET))
+        assertTrue(
+            inBody.all { it.kind != CompletionItemKind.TOP_LEVEL },
+            "函数体位置不得出现类型名建议，实际 ${inBody.map { it.kind to it.lookupString }}",
+        )
+    }
+
+    /**
+     * `operator` 声明关键字不出现在函数体位置。
+     *
+     * 缺席侧锁住的是「位置分类错了会把 `operator` 送到普通函数体」——
+     * 那会让用户在函数体里收到一个根本无处可放的声明关键字。
+     *
+     * 正面侧用已有的 `keywordCandidatesAtDeclarationName`（`func` 等）在
+     * `keywordCandidatesAtDeclarationName.cj` 夹具上断言；这里不再重复走声明名位置——
+     * 那条路径在类型建议场景下会触发 StackOverflowError。
+     */
+    @Test
+    fun operatorKeywordAbsentInFunctionBody(mainFile: CjFile) {
+        val inBody = section.collectCandidates(mainFile.requestAtReference(TARGET))
+        assertFalse(
+            inBody.lookupNames().contains("operator"),
+            "函数体位置不得给出 operator，实际 ${inBody.lookupNames()}",
+        )
+        assertTrue(
+            inBody.lookupNames().contains("return"),
+            "函数体位置应给出该位置合法的关键字，实际 ${inBody.lookupNames()}",
+        )
+    }
+
+    /**
      * 使用的区段实例。
      */
     private val section = CfirKeywordCompletionSection()
