@@ -51,8 +51,8 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     /**
      * 声明名位置只给声明关键字。
      *
-     * 此处**刻意不**断言类型名建议：在声明标识符上取导入作用域会与正在解析的声明
-     * 互相递归（实测 StackOverflowError），类型名建议因此只在类型位置给出。
+     * 此处**刻意不**断言类型名建议：声明标识符上的候选是关键字族，
+     * 类型名建议的正面侧由 `typeSuggestionsAppearOnlyAtTypePosition` 在类型位置断言。
      */
     @Test
     fun keywordCandidatesAtDeclarationName(mainFile: CjFile) {
@@ -100,9 +100,8 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
      * 缺席侧锁住的是「位置分类错了会把 `operator` 送到普通函数体」——
      * 那会让用户在函数体里收到一个根本无处可放的声明关键字。
      *
-     * 正面侧用已有的 `keywordCandidatesAtDeclarationName`（`func` 等）在
-     * `keywordCandidatesAtDeclarationName.cj` 夹具上断言；这里不再重复走声明名位置——
-     * 那条路径在类型建议场景下会触发 StackOverflowError。
+     * 正面侧用 `keywordCandidatesAtDeclarationName`（`func` 等）在
+     * `keywordCandidatesAtDeclarationName.cj` 夹具上断言；这里不重复走声明名位置。
      */
     @Test
     fun operatorKeywordAbsentInFunctionBody(mainFile: CjFile) {
