@@ -959,7 +959,9 @@ class LightTreeRawCfirExpressionBuilder(
         val isInout = tree.findChildByType(valueArgumentNode, CjTokens.INOUT_KEYWORD) != null
         val wrapped = if (isInout) {
             buildInoutArgumentExpression {
-                source = expressionNode.toSource()
+                // 官方 refactor 诊断锚 `inout s` 整段；source 覆盖整个 VALUE_ARGUMENT 节点
+                // （含 inout 关键字），与 named argument 包装的 source 口径一致。
+                source = valueArgumentNode.toSource()
                 expression = convertedExpression
             }
         } else {

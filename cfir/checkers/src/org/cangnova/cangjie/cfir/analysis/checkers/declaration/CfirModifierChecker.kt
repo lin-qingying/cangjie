@@ -182,12 +182,9 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
                 CfirErrors.REDEF_INSTANCE_ERROR,
                 callable.declarationKindName(),
             )
-            if (callable.hasInheritedNonStaticSignatureIgnoringStatic()) {
-                reporter.reportOn(
-                    callable.source,
-                    CfirErrors.NOTHING_TO_OVERRIDE,
-                )
-            }
+            // 官方对"实例 redef 命中父类非 static 成员"只报一条
+            // sema_func_no_override_or_redefine_modifier（StructInheritanceChecker.cpp:987-988），
+            // 不追加 NOTHING_TO_OVERRIDE（overrideRedefRules.cj 取证）。
         }
 
     }

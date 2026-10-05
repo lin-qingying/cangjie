@@ -384,7 +384,7 @@ func vcrMainS13() { 0 }
 // FILE: varrayElemUpperBound.cj
 class VCRClassS14 {}
 
-func VCRBound<T>(value: T): Int64 where T <: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>VCRClassS14<!>, $2> {
+func VCRBound<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(value: T): Int64 where T <: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>VCRClassS14<!>, $2> {
     let _ = value
     0
 }

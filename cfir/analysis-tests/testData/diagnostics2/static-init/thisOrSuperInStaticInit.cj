@@ -14,7 +14,7 @@ class Child <: Base {
         }
     }
 
-    static var fromSuper: Int64 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER!>s<!>uper.v
+    static var fromSuper: Int64 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER!>super<!>.v
 
-    static var fromThis: Int64 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER!>t<!>his.own
+    static var fromThis: Int64 = <!THIS_OR_SUPER_NOT_ALLOWED_TO_INITIALIZE_STATIC_MEMBER!>this<!>.own
 }
