@@ -85,6 +85,11 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
         return when (kind) {
             CompletionPositionKind.MEMBER_ACCESS -> thisKeyword
             CompletionPositionKind.FUNCTION_BODY -> thisKeyword + listOf("return", "let", "var", "if", "while", "for")
+            // 代码片段内的槽位与同形的普通位置一致：块片段可写语句，表达式片段只写表达式。
+            CompletionPositionKind.CODE_FRAGMENT_BLOCK ->
+                thisKeyword + listOf("return", "let", "var", "if", "while", "for")
+
+            CompletionPositionKind.CODE_FRAGMENT_EXPRESSION -> listOf("let", "if", "return") + thisKeyword
             CompletionPositionKind.EXPRESSION -> listOf("let", "if", "return") + thisKeyword
             CompletionPositionKind.TYPE -> listOf(
                 "class", "struct", "interface", "enum", "extend", "type", "func", "prop", "let", "var",

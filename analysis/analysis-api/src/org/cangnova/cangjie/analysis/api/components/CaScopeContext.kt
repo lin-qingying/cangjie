@@ -30,6 +30,21 @@ enum class CaScopeKind(
     /** 当前类型的成员作用域（含继承链与适用 extend）。 */
     TYPE_SCOPE(2),
 
+    /**
+     * 代码片段自身的顶层声明作用域。
+     *
+     * 对位 Kotlin 的 `KaScopeKind.ScriptMemberScope`，但**语义不同**：Kotlin 侧该 kind
+     * 只由 `FirScriptDeclarationsScope` 产生、服务 `.kts` 脚本；仓颉没有脚本文件，
+     * 这里建模的是「代码片段里写下的顶层声明对片段内表达式可见」这一真实语言特性，
+     * 因此改名 `CodeFragmentMemberScope` 而不是沿用脚本叫法。
+     *
+     * 优先级取 4：排在全部词法 / 类型带（`LOCAL_SCOPE` 0 … `STATIC_MEMBER_SCOPE` 3）之后、
+     * 文件级带（`FILE_SCOPE` 10）之前。这样片段顶层声明遮蔽宿主文件的同名顶层声明，
+     * 又被片段自己的局部变量遮蔽。取 4 而非复用 3 是为了不和 `STATIC_MEMBER_SCOPE` 撞值——
+     * 撞值会让二者在排序里等价，掩盖真实次序。
+     */
+    CODE_FRAGMENT_MEMBER_SCOPE(4),
+
     /** 类的静态成员作用域，可通过类型名限定访问。 */
     STATIC_MEMBER_SCOPE(3),
 

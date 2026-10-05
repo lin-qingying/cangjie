@@ -59,7 +59,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
+import org.cangnova.cangjie.psi.CjBlockCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.psiUtil.getParentOfType
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
@@ -356,6 +358,12 @@ private class ContextCollectorVisitor(
     }
 
     /**
+     * 判断该片段是否为块片段——只有块片段才有自身顶层声明可发布为成员作用域。
+     */
+    private val CfirCodeFragment.isBlockFragment: Boolean
+        get() = (source as? CjPsiSourceElement)?.psi is CjBlockCodeFragment
+
+    /**
      * 访问 code fragment 并在其专用上下文中收集 block 上下文。
      */
     override fun visitCodeFragment(codeFragment: CfirCodeFragment) = withProcessor(codeFragment) {
@@ -367,7 +375,10 @@ private class ContextCollectorVisitor(
             val holder = getSessionHolder(codeFragment)
             context.withCodeFragmentCompat(codeFragment, holder) {
                 dumpContext(codeFragment, ContextKind.BODY)
-                process(codeFragment.block)
+                // 只有**块**片段才有自身顶层声明可发布，投影为 CODE_FRAGMENT_MEMBER_SCOPE。
+                // 表达式/类型片段没有顶层声明，给它挂一层空的成员作用域会凭空多出一层，
+                // 与「不泄漏宿主专有符号」的验收直接冲突。
+                doVisitBlock(codeFragment.block, isCodeFragmentMemberScope = codeFragment.isBlockFragment)
             }
         }
     }
@@ -753,12 +764,13 @@ private class ContextCollectorVisitor(
     private fun doVisitBlock(
         block: org.cangnova.cangjie.cfir.expressions.CfirBlock,
         isolateBlock: Boolean = true,
+        isCodeFragmentMemberScope: Boolean = false,
     ) = withProcessor(block) {
         dumpContext(block, ContextKind.SELF)
 
         onActive {
             if (isolateBlock) {
-                context.withBlockScopeCompat {
+                context.withBlockScopeCompat(isCodeFragmentMemberScope) {
                     processBlockBody(block)
                 }
             } else {
@@ -1148,9 +1160,18 @@ private inline fun BodyResolveContext.withAnonymousFunctionCompat(
 /**
  * 在普通 block 局部作用域中执行 [block]。
  */
-private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
+private inline fun BodyResolveContext.withBlockScopeCompat(
+    isCodeFragmentMemberScope: Boolean = false,
+    block: () -> Unit,
+) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScope(file.moduleData.session))
+        addLocalScope(
+            if (isCodeFragmentMemberScope) {
+                CfirLocalScope.forCodeFragment(file.moduleData.session)
+            } else {
+                CfirLocalScope(file.moduleData.session)
+            }
+        )
         block()
     }
 }

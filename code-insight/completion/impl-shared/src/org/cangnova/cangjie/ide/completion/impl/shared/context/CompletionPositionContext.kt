@@ -4,8 +4,10 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.psi.CjBinaryExpression
+import org.cangnova.cangjie.psi.CjBlockCodeFragment
 import org.cangnova.cangjie.psi.CjContainerNode
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjExpressionCodeFragment
 import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
@@ -54,6 +56,12 @@ enum class CompletionPositionKind {
 
     /** 函数体内部。 */
     FUNCTION_BODY,
+
+    /** 表达式代码片段内部：没有所属声明，作用域只来自片段自身上下文。 */
+    CODE_FRAGMENT_EXPRESSION,
+
+    /** 块代码片段内部：同上，但片段带自己的块层级。 */
+    CODE_FRAGMENT_BLOCK,
 }
 
 /**
@@ -84,6 +92,12 @@ object CompletionPositionContexts {
     fun classify(position: PsiElement): CompletionPositionContext {
         val declaration = position.containingDeclarationOrNull()
 
+        // 代码片段必须**先于**块/函数体判定：片段内部也有 `CjBlockExpression`，
+        // 若按块位置处理，片段就退化���普通函数体，丢掉「无所属声明、作用域来自片段上下文」
+        // 这一事实——而这正是片段候选与文件候选的差别所在。
+        position.codeFragmentKindOrNull()?.let { kind ->
+            return CompletionPositionContext(kind, declaration = declaration)
+        }
         if (position.insideOf<CjImportDirective>() != null) {
             return CompletionPositionContext(CompletionPositionKind.IMPORT, declaration = declaration)
         }
@@ -117,6 +131,23 @@ object CompletionPositionContexts {
     }
 
     /**
+     * 取得位置所属的代码片段形态；不在片段内返回 `null`。
+ *
+     * 片段内**可能有**声明（例如块片段里写了一个 `let`），因此这里只回答
+     * 「片段形态是什么」，不回答「有没有声明」——后者由 [containingDeclarationOrNull] 负责。
+ */
+private fun PsiElement.codeFragmentKindOrNull(): CompletionPositionKind? {
+    var fragment: PsiElement = this
+    while (true) {
+        when (fragment) {
+            is CjBlockCodeFragment -> return CompletionPositionKind.CODE_FRAGMENT_BLOCK
+            is CjExpressionCodeFragment -> return CompletionPositionKind.CODE_FRAGMENT_EXPRESSION
+            else -> fragment = fragment.parent as? PsiElement ?: return null
+        }
+    }
+}
+
+/**
      * 判断位置是否处于 `receiver.` 形式成员访问中，并返回接收者表达式。
      */
     private fun PsiElement.qualifiedReceiverOrNull(): PsiElement? {

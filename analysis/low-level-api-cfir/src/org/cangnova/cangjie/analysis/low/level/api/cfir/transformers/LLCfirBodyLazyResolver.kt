@@ -796,7 +796,8 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         val resolutionFacade = module.getResolutionFacade(cjCodeFragment.project)
 
         fun CfirTowerDataContext.withExtraScopes(): CfirTowerDataContext {
-            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider.getExtraScopes(cjCodeFragment)
+            return resolutionFacade.useSiteCfirSession.codeFragmentScopeProvider
+                .getExtraScopes(cjCodeFragment, cfirCodeFragment)
                 .fold(this) { context, scope ->
                     val scopeWithProperSession = scope.withReplacedSessionOrNull(resolveTargetSession, resolveTargetScopeSession) ?: scope
                     val localScope = scopeWithProperSession as? CfirLocalScope

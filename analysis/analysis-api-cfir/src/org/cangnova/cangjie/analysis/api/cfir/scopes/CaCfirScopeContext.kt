@@ -181,6 +181,9 @@ internal fun CaCfirSession.fileLevelScopeEntries(cfirFile: CfirFile): List<CaSco
  * 按底层 scope 的真实类型与查找来源判定结构性来源，不按解析塔下标猜测。
  */
 private fun CfirScope.toScopeKind(isLocal: Boolean): CaScopeKind = when {
+    // 片段作用域必须在 `isLocal` 之前判定：它在查找行为上是局部作用域，
+    // 但公开层要单独成类——片段顶层声明与片段内 `let` 局部是两层，不是同一层。
+    this is CfirLocalScope && isCodeFragmentMemberScope -> CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE
     isLocal -> CaScopeKind.LOCAL_SCOPE
     this is CfirTypeParameterScopeImpl -> CaScopeKind.TYPE_PARAMETER_SCOPE
     this is CfirClassStaticScope -> CaScopeKind.STATIC_MEMBER_SCOPE

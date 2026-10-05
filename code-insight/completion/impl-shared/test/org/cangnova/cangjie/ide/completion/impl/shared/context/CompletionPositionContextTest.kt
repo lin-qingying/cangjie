@@ -5,6 +5,7 @@ import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
@@ -115,6 +116,78 @@ class CompletionPositionContextTest : CjParsingTestCase(
 
         val context = CompletionPositionContexts.classify(file.lastReference("ArrayList"))
         assertEquals(CompletionPositionKind.IMPORT, context.kind)
+    }
+
+    /**
+     * 表达式片段内部归为片段表达式位置，且不给出所属声明。
+     */
+    @Test
+    fun classifiesExpressionCodeFragment() {
+        val host = parse(
+            """
+            package sample.fragments
+
+            func host(): Int64 {
+                1
+            }
+            """.trimIndent(),
+        )
+        val fragment = CjPsiFactory.contextual(host).createExpressionCodeFragment("host()", host)
+        val target = PsiTreeUtil.findChildrenOfType(fragment, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "host" }
+
+        val context = CompletionPositionContexts.classify(target)
+        assertEquals(CompletionPositionKind.CODE_FRAGMENT_EXPRESSION, context.kind)
+        assertNull(context.declaration, "片段表达式没有所属声明")
+        assertNull(context.receiverExpression, "片段表达式不是成员访问位置")
+    }
+
+    /**
+     * 块片段内部归为片段块位置。
+     *
+     * 片段里带 `let` 时必须仍然是片段形态——这正是 3.9 的验收点：
+     * 片段内部也有块，若按普通块位置处理，片段就退化成函数体位置，
+     * 丢掉「作用域只来自片段自身上下文」这一事实。
+     */
+    @Test
+    fun classifiesBlockCodeFragment() {
+        val host = parse(
+            """
+            package sample.fragments
+
+            func host(): Int64 {
+                1
+            }
+            """.trimIndent(),
+        )
+        val fragment = CjPsiFactory.contextual(host)
+            .createBlockCodeFragment("let local = 1\nhost()", host)
+        val target = PsiTreeUtil.findChildrenOfType(fragment, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "host" }
+
+        val context = CompletionPositionContexts.classify(target)
+        assertEquals(CompletionPositionKind.CODE_FRAGMENT_BLOCK, context.kind)
+        assertNull(context.receiverExpression, "片段块不是成员访问位置")
+    }
+
+    /**
+     * 反例：普通文件里的块位置不得被误判成片段位置。
+     */
+    @Test
+    fun doesNotClassifyOrdinaryFileAsFragment() {
+        val file = parse(
+            """
+            package sample.fragments
+
+            func ordinary(): Int64 {
+                let local = 1
+                local
+            }
+            """.trimIndent(),
+        )
+
+        val context = CompletionPositionContexts.classify(file.lastReference("local"))
+        assertEquals(CompletionPositionKind.FUNCTION_BODY, context.kind)
     }
 }
 
