@@ -8,7 +8,9 @@
 // **两版对本文件全部段的 kind、文案、MainHint.Range 完全一致**（逐段比对），因此不拆 LANGUAGE_VERSION 夹具。
 // 1.1.3 本机对含 `@C` struct 的单元在语义检查**之后**的 codegen / Reflection 阶段失败（stdout 无 JSON，stderr 为
 // "Reflection format: modifier type is invalid"），语义诊断 JSON 仍完整；这些段在 1.1.3 上 JSON 为空即证明前端零语义错误。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1）。除
+// INVALID_CFUNC_PARAMETER_TYPE 外，本文件标记逐字符对齐官方范围；INVALID_CFUNC_PARAMETER_TYPE 按项目
+// Diagnostic Range Policy 锚形参的类型引用（完整类型 token），不镜像官方形参首字符窄锚。
 // 内联标记写法：由"小于感叹号 + 诊断名 + 大于感叹号 + 锚点文本 + 结束标记"五段构成；全文只在 `// FILE:` 段内出现，
 // 头部注释一律用文字描述，不出现该序列的字面量。
 //
@@ -204,7 +206,7 @@ foreign func csNamedAlone(<!CFUNC_CANNOT_HAVE_NAMED_ARGS!>value!: Int64<!>): Uni
 // 诊断 1 sema_cfunc_cannot_have_named_args 锚 `b` 1 字符；诊断 2 sema_invalid_cfunc_arg_type
 // 锚 `bad: String` 整段。1.0.5 / 1.1.3 一致。探针 cs02。CFIR 的锚点差异见头部 (1) / (3)。
 // FILE: cfuncForeignNamedArgumentWithNonCType.cj
-foreign func csNamedFirst(a: Int64, <!INVALID_CFUNC_PARAMETER_TYPE!><!CFUNC_CANNOT_HAVE_NAMED_ARGS!>b<!>ad!: String<!>): Unit
+foreign func csNamedFirst(a: Int64, <!CFUNC_CANNOT_HAVE_NAMED_ARGS!>bad!: <!INVALID_CFUNC_PARAMETER_TYPE!>String<!><!>): Unit
 // ── 形态 3：具名形参在**第二位** —— parser 先报 parse_named_parameter_after_unnamed（锚 `c: Unit` 整段），声明 IS_BROKEN，本族零诊断
 // 报告点 ParseParameterList（ParseDecl.cpp:1890-1899 `if (meetNamedParameter && !param->isNamedParam)`）→
 // ParserDiag.cpp:1250-1255；文案 DiagnosticParser.def:123。`b!: Int64`（第二个形参类型合法）是让 parser 诊断出现的必要搭配：
@@ -221,7 +223,7 @@ foreign func csUnitArgument(<!CFUNC_CANNOT_HAVE_UNIT_ARGS!>a: Unit<!>): Unit
 // 两条 Range 同起点，标记写成嵌套：外层 CANNOT_HAVE_UNIT_ARGS 从形参名起，内层 CANNOT_HAVE_NAMED_ARGS 只包首字符。
 // 1.0.5 / 1.1.3 一致。探针 cs05b / 主会话 s5（Range (1,36)..(1,37) 与 (1,36)..(1,46)）。
 // FILE: cfuncForeignNamedUnitArgument.cj
-foreign func csNamedUnit(a: Int64, <!CFUNC_CANNOT_HAVE_UNIT_ARGS!><!CFUNC_CANNOT_HAVE_NAMED_ARGS!>b<!>ad!: Unit<!>): Unit
+foreign func csNamedUnit(a: Int64, <!CFUNC_CANNOT_HAVE_NAMED_ARGS, CFUNC_CANNOT_HAVE_UNIT_ARGS!>bad!: Unit<!>): Unit
 // ── 形态 6：`CFunc` 形参的返回类型是 `VArray`（VArray 是 CType ⇒ 报 VARRAY_IN_CFUNC 而不是 INVALID_CFUNC_RETURN_TYPE）
 // kind：sema_varray_in_cfunc "return type of CFunc cannot be 'VArray' type"（refactor kind，DiagRefactor/DiagnosticSema.def:217，
 // 锚整个返回类型节点）；CFIR 名 VARRAY_IN_CFUNC（生成物 CfirErrors.kt:474，文案表
@@ -240,10 +242,10 @@ foreign func csStringArgument(cb: CFunc<(<!INVALID_CFUNC_PARAMETER_TYPE!>String<
 // FILE: cfuncForeignFourArgumentKinds.cj
 foreign func csFourKinds(
     a: Int64,
-    <!INVALID_CFUNC_PARAMETER_TYPE!>b: Rune<!>,
+    b: <!INVALID_CFUNC_PARAMETER_TYPE!>Rune<!>,
     <!CFUNC_CANNOT_HAVE_UNIT_ARGS!>c: Unit<!>,
     d: Int64,
-    <!CFUNC_CANNOT_HAVE_UNIT_ARGS!><!CFUNC_CANNOT_HAVE_NAMED_ARGS!>e<!>nd!: Unit<!>,
+    <!CFUNC_CANNOT_HAVE_NAMED_ARGS, CFUNC_CANNOT_HAVE_UNIT_ARGS!>end!: Unit<!>,
 ): Unit
 // ── 形态 9：非 CType 形参与具名形参**混排**（Rune + 具名 Rune）——三条 Sema 诊断
 // 诊断 1 锚 `b: Rune`；诊断 2 锚 `c` 1 字符；诊断 3 锚 `cr!: Rune` 整段（含形参名）。
@@ -251,15 +253,15 @@ foreign func csFourKinds(
 // FILE: cfuncForeignNonCTypeAndNamedArgument.cj
 foreign func csMixed(
     a: Int64,
-    <!INVALID_CFUNC_PARAMETER_TYPE!>b: Rune<!>,
-    <!INVALID_CFUNC_PARAMETER_TYPE!><!CFUNC_CANNOT_HAVE_NAMED_ARGS!>c<!>r!: Rune<!>,
+    b: <!INVALID_CFUNC_PARAMETER_TYPE!>Rune<!>,
+    <!CFUNC_CANNOT_HAVE_NAMED_ARGS!>cr!: <!INVALID_CFUNC_PARAMETER_TYPE!>Rune<!><!>,
 ): Unit
 // ── 形态 10：形参类型是**类型别名**指向非 CType（锚仍落在形参处的别名名）
 // kind：sema_invalid_cfunc_arg_type；锚 `text: CSRSpecText`。别名先在 `CheckTypeAlias` 合成。1.0.5 / 1.1.3 一致。探针 cs10。
 // FILE: cfuncForeignAliasArgument.cj
 type CSRSpecText = String
 
-foreign func csAliasArgument(<!INVALID_CFUNC_PARAMETER_TYPE!>text: CSRSpecText<!>): Unit
+foreign func csAliasArgument(text: <!INVALID_CFUNC_PARAMETER_TYPE!>CSRSpecText<!>): Unit
 // ── 形态 11：`foreign func` 的返回类型是 `Option`（refactor kind，锚整段返回类型，带官方 note "return type is Enum-Option"）
 // kind：sema_invalid_cfunc_return_type "return type of CFunc must be instantiated with CType"；锚 `?Int64`。探针 cs06c。
 // FILE: cfuncForeignOptionReturn.cj
@@ -271,7 +273,7 @@ foreign func csCFuncUnit(cb: CFunc<(<!CFUNC_CANNOT_HAVE_UNIT_ARGS!>Unit<!>) -> U
 // ── 形态 13：`foreign func` 形参是非 CFunc 的**普通函数类型**（`isC` 为假 ⇒ 只报 arg_type 一条，无 Unit 族叠加）
 // kind：sema_invalid_cfunc_arg_type；锚 `f: (Int64) -> Unit`。1.0.5 / 1.1.3 一致。探针 cs06e。
 // FILE: cfuncForeignPlainFunctionTypeArgument.cj
-foreign func csPlainFunc(<!INVALID_CFUNC_PARAMETER_TYPE!>f: (Int64) -> Unit<!>): Unit
+foreign func csPlainFunc(f: <!INVALID_CFUNC_PARAMETER_TYPE!>(Int64) -> Unit<!>): Unit
 // ── 形态 14：`CFunc` 构造器零实参（锚 `CFunc` 的首字母 1 字符，**不含**类型实参与实参表）
 // kind：sema_cfunc_too_many_arguments "too many arguments given to CFunc constructor, only accept 1 argument"
 //（官方 0 个实参也用这一个 kind，文案里的 "too many" 是官方原文）。探针 cs08a。

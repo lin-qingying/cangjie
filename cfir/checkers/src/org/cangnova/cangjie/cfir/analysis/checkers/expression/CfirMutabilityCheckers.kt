@@ -482,6 +482,10 @@ context(context: CheckerContext)
 private fun CfirExpression.currentStructMutationRoot(owner: CfirStruct): StructMutationRoot? {
     val ownerFieldSymbols = owner.declarations
         .filterIsInstance<CfirFieldVariable>()
+        // static 字段不属于 this 视角下的实例可变状态：实例上下文修改 static 成员
+        // 由官方 object_cannot_access_static_member 通道处理（TypeCheckReference.cpp:525），
+        // 不落 cannot_modify_var（staticContextAccessRules.cj 取证）。
+        .filterNot { it.status.isStatic }
         .mapTo(linkedSetOf()) { field -> field.symbol }
     var current: CfirExpression = this
 

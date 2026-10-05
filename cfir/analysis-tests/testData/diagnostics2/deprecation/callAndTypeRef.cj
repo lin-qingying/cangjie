@@ -24,7 +24,7 @@ func callDeprecated(): Int64 {
 @Deprecated["old", since: "1.0.0", strict: true]
 class ReturnRef {}
 
-func useDeprecatedType(): ?<!DEPRECATED_ERROR!>ReturnRef<!> {
+func useDeprecatedType(): <!DEPRECATED_ERROR!>?ReturnRef<!> {
     return None
 }
 
@@ -32,6 +32,6 @@ func useDeprecatedType(): ?<!DEPRECATED_ERROR!>ReturnRef<!> {
 @Deprecated["old", since: "1.0.0", strict: true]
 class CtorRef {}
 
-func useDeprecatedCtor(): ?<!DEPRECATED_ERROR!>CtorRef<!> {
+func useDeprecatedCtor(): <!DEPRECATED_ERROR!>?CtorRef<!> {
     return <!DEPRECATED_ERROR!>CtorRef<!>()
 }

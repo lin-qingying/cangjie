@@ -435,6 +435,49 @@ internal fun CfirValueParameter.valueParameterNameDiagnosticSource(): AbstractCj
         ?: source
 
 /**
+ * 取得变量声明名的诊断 source。
+ *
+ * 官方 `CANNOT_DEFINE_VAR_IN_CONST_FUNCTION` 锚 `MakeRange(vda.identifier)`，即变量名
+ * 完整 token（cjc 1.0.5 / 1.1.3 实测一致），不是整条 `var a = 1` 声明；局部变量声明
+ * 没有 nameIdentifier 之外的现成 helper，light-tree 路径按声明头关键字后的首个标识符定位。
+ */
+internal fun CfirVariable.variableNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val variablePsi = when (psi) {
+            is CjVariableDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjVariableDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjVariableDeclaration::class.java)
+        }
+        variablePsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findVariableNameSource()
+        ?: source
+
+/**
+ * 在 light-tree source 中查找变量声明名称 token。
+ *
+ * `var`/`let`/`const` 关键字之后、越过 `:`/`=`/`{` 之前的第一个标识符即变量名。
+ */
+private fun CjSourceElement.findVariableNameSource(): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType !in fieldVariableDeclarationKeywords) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.COLON && it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
+            .firstOrNull { it.tokenType == CjTokens.IDENTIFIER }
+            ?: continue
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(nameToken),
+            endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+
+    return null
+}
+
+/**
  * 取得 finalizer 名称区域的诊断 source。
  *
  * finalizer 在语法上由 `~init` 表示，因此优先返回从 `~` 到 `init` 的连续范围。

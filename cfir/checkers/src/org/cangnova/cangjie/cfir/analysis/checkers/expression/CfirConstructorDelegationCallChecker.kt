@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -55,5 +56,11 @@ private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
 
 /** 查找当前上下文中最近的函数级声明。 */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
-    return findClosestDeclaration<CfirFunction>()
+    // 官方 CheckRefConstructor（TypeCheckCall.cpp:2289-2305）只对"所在函数体不是构造器"报
+    // outside_ctor；构造器体内嵌套 lambda 的 this()/super() 由 CheckCallsInConstructor
+    // 按位置规则处理、不报 outside_ctor（superThisCallRules.cj 取证）——最近函数级声明的
+    // 查找因此跳过 lambda / 匿名函数。
+    return containingDeclarations.asReversed()
+        .mapNotNull { symbol -> symbol.cfir as? CfirFunction }
+        .firstOrNull { it !is CfirAnonymousFunction }
 }

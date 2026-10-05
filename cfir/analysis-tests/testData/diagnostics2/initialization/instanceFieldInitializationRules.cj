@@ -202,7 +202,7 @@ class IFI10ReadField {
     var a: Int64
 
     <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
-        ifi10Sink(this.a)
+        ifi10Sink(this.<!USED_BEFORE_INITIALIZATION!>a<!>)
     }
 }
 
@@ -215,7 +215,7 @@ class IFI11CallMember {
     var a: Int64
 
     <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
-        this.reset()
+        this.<!ILLEGAL_USAGE_OF_MEMBER!>reset<!>()
     }
 
     private func reset() {
