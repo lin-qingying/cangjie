@@ -33,7 +33,7 @@ import org.cangnova.cangjie.psi.stubs.elements.CjFileStubBuilder
  * 这里故意把 “文件 -> stub tree” 与 “stub tree -> 摘要” 两步拆开，
  * 这样 source / compiled 都走同一套摘要提取规则，而测试也可以直接喂手工 stub 树。
  */
-internal class CaStubSummaryBuilder(
+class CaStubSummaryBuilder(
     /**
      * 当 PSI 文件没有现成 stub 时用于构建文件 stub 树的 builder。
      */
@@ -87,7 +87,7 @@ internal class CaStubSummaryBuilder(
  *
  * 这层是整个模块的语义核心，必须保证 source 和 compiled 看到的是同一套规则。
  */
-internal class CaStubTreeSummaryExtractor {
+class CaStubTreeSummaryExtractor {
     /**
      * 从文件 stub 树中提取单文件摘要。
      */

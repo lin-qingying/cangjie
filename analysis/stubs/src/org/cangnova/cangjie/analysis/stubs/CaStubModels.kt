@@ -15,7 +15,7 @@ import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
  *
  * 避免把 IntelliJ stub 树直接泄漏到 analysis API 消费层。
  */
-internal data class CaStubFileSummary(
+data class CaStubFileSummary(
     /** 文件级稳定键，通常来自 virtual file URL，缺失时回退到文件名。 */
     val fileKey: String,
 
@@ -43,7 +43,7 @@ internal data class CaStubFileSummary(
  * 2. 刷新边界只由 modification count 决定；
  * 3. service 层不再重复实现去重和聚合规则。
  */
-internal data class CaStubSnapshot(
+data class CaStubSnapshot(
     /** 创建快照时使用的项目结构修改计数。 */
     val modificationCount: Long,
 
