@@ -41,6 +41,10 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjBlockCodeFragment
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.psi.CjFile
 
 /**
@@ -273,6 +277,27 @@ internal class CaCfirScopeProvider(
      */
     override val CjFile.importingScopeContext: CaScopeContext
         get() = withValidityAssertion { CaCfirScopeContext(analysisSession, this@importingScopeContext, this@importingScopeContext) }
+
+    /**
+     * 取得代码片段自身的顶层声明作用域；非块片段返回 `null`。
+     *
+     * 取片段内容区里最后一个引用作为查询位置——该位置必然落在片段自身作用域内，
+     * 因此不需要调用方再指定位置。与 [CaCfirScopeContext] 共用同一套投影逻辑，
+     * 两者不得各写一份。
+     */
+    override val CjCodeFragment.fragmentMemberScope: CaScope?
+        get() = withValidityAssertion {
+            val fragment = this@fragmentMemberScope
+            if (fragment !is CjBlockCodeFragment) return@withValidityAssertion null
+            // 取片段内最后一个引用作为查询位置：它必然落在片段自身作用域内，
+            // 调用方因此不必再指定位置。找不到引用时退回片段根，仍能取到该作用域。
+            val position = PsiTreeUtil.findChildrenOfType(fragment, CjSimpleNameExpression::class.java)
+                .lastOrNull() ?: fragment
+            CaCfirScopeContext(analysisSession, fragment, position)
+                .scopes
+                .firstOrNull { it.kind == CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE }
+                ?.scope
+        }
 
     /**
      * 把多个作用域组合为单一名称查询视图，保持顺序与符号身份。

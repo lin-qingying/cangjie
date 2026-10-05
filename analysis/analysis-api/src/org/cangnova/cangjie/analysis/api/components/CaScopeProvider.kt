@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 
@@ -124,6 +125,18 @@ interface CaScopeProvider : CaLifetimeOwner {
      * 该视图独立于 [getFileScope]，不会扩大文件声明作用域的既有结果集合。
      */
     val CjFile.importingScopeContext: CaScopeContext
+
+    /**
+     * 取得代码片段**自身**的顶层声明作用域。
+     *
+     * 对位 Kotlin `KaScopeProvider` 的同类入口，但语义不同：Kotlin 侧服务 `.kts` 脚本，
+     * 仓颉没有脚本文件，这里建模的是「片段自身写下的顶层声明」。
+     *
+     * 只有**块片段**有自身顶层声明；表达式 / 类型片段返回 `null`——那不是「找不到」，
+     * 而是没有这类声明。宿主文件的顶层声明不在本作用域内，需经 [scopeContext] 取。
+     */
+    @CaExperimentalApi
+    val CjCodeFragment.fragmentMemberScope: CaScope?
 
     /**
      * 把多个作用域组合为单一名称查询视图，保持入参顺序与全部符号身份。

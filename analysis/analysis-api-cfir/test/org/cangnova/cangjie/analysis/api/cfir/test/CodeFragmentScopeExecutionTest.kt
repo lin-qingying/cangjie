@@ -9,6 +9,7 @@ import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -79,6 +80,43 @@ class CodeFragmentScopeExecutionTest : AbstractAnalysisApiExecutionTest(
                 context.scopes.none { it.kind == CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE },
                 "表达式片段没有自身声明，不得产生片段成员作用域，实际 ${context.scopes.map { it.kind }}",
             )
+            assertTrue(
+                fragment.fragmentMemberScope == null,
+                "表达式片段的 fragmentMemberScope 必须为 null",
+            )
+        }
+    }
+
+    /**
+     * 公开入口 `fragmentMemberScope` 与 `scopeContext` 的投影必须同源。
+     *
+     * 两处各写一份算法时，片段成员作用域迟早会只在其中一条路径上出现。
+     */
+    @Test
+    fun fragmentMemberScopeMatchesScopeContextProjection(mainFile: CjFile) {
+        val fragment = CjPsiFactory.contextual(mainFile).createBlockCodeFragment(
+            """
+            func fragmentHelper(): Int64 {
+                1
+            }
+
+            hostTarget()
+            """.trimIndent(),
+            mainFile,
+        )
+        val position = fragment.lastReference("hostTarget")
+
+        analyzeForTest(fragment) {
+            val projected = fragment.scopeContext(position).scopes
+                .firstOrNull { it.kind == CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE }
+                ?.scope
+            val entry = fragment.fragmentMemberScope
+
+            assertTrue(projected != null, "scopeContext 必须投影出片段成员作用域")
+            assertTrue(entry != null, "fragmentMemberScope 必须给出同一作用域")
+            val projectedNames = projected!!.getAllPossibleNames().map { it.asString() }.sorted()
+            val entryNames = entry!!.getAllPossibleNames().map { it.asString() }.sorted()
+            assertEquals(projectedNames, entryNames, "两个入口必须给出同一组声明")
         }
     }
 }
