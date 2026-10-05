@@ -217,6 +217,18 @@ internal class StubBasedCfirTypeDeserializer(
      * 尝试把 PSI 类型引用反序列化为简单刚性类型。
      */
     private fun simpleType(typeReference: CjTypeReference, attributes: ConeAttributes): ConeRigidType? {
+        /*
+         * 基础类型在语法层是独立的 [CjBasicType] 节点，既不是 [CjUserType] 也没有
+         * classId，需要按名称直接映射到对应 primitive。它必须先于 [typeSymbol] 处理：
+         * `typeSymbol` 只认 function type 与 user type，会让 `Unit` 这类节点返回 null，
+         * 进而被 `simpleTypeOrError` 兜底成 `?!id:0` 错误类型。cjo 路径由
+         * `CfirTypeDeserializer` 的 `TypeKind.Unit -> ConePrimitiveType.UNIT` 覆盖，
+         * stub 路径此前缺失这一映射，导致 `println()` 这类返回 `Unit` 的库函数
+         * 因全部重载返回类型失效而误报 NO_MATCH_FUNCTION_DECLARATION_FOR_CALL。
+         */
+        val basicType = (typeReference.typeElement as? CjBasicType)?.let { basicTypeOf(it.name) }
+        if (basicType != null) return basicType
+
         val constructor = typeSymbol(typeReference) ?: return null
         if (constructor is ConeTypeParameterLookupTag) {
             return ConeTypeParameterTypeImpl(constructor, attributes)
@@ -277,6 +289,34 @@ internal class StubBasedCfirTypeDeserializer(
         }
         return type.classId().toLookupTag()
     }
+}
+
+/**
+ * 基础类型名到对应 primitive 的映射。
+ *
+ * 名称集合与语法层 `CjTokens.BASICTYPES` 保持一致：parser 只对该集合内的 token 产生
+ * [CjBasicType]（见 `CangJieParsing.parseBasicType`），因此这里返回 `null` 就意味着
+ * 该基础类型名尚未接入类型系统，应由调用方按未知类型兜底而不是猜一个类型。
+ */
+private fun basicTypeOf(name: String): ConePrimitiveType? = when (name) {
+    "Unit" -> ConePrimitiveType.UNIT
+    "Bool" -> ConePrimitiveType.BOOLEAN
+    "Int8" -> ConePrimitiveType.INT8
+    "Int16" -> ConePrimitiveType.INT16
+    "Int32" -> ConePrimitiveType.INT32
+    "Int64" -> ConePrimitiveType.INT64
+    "IntNative" -> ConePrimitiveType.INT_NATIVE
+    "UInt8" -> ConePrimitiveType.UINT8
+    "UInt16" -> ConePrimitiveType.UINT16
+    "UInt32" -> ConePrimitiveType.UINT32
+    "UInt64" -> ConePrimitiveType.UINT64
+    "UIntNative" -> ConePrimitiveType.UINT_NATIVE
+    "Float16" -> ConePrimitiveType.FLOAT16
+    "Float32" -> ConePrimitiveType.FLOAT32
+    "Float64" -> ConePrimitiveType.FLOAT64
+    "Rune" -> ConePrimitiveType.RUNE
+    "Nothing" -> ConePrimitiveType.NOTHING
+    else -> null
 }
 
 /**
