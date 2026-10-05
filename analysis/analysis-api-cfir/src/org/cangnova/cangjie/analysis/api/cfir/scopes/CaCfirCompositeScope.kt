@@ -47,7 +47,7 @@ internal class CaCfirCompositeScope(
      * 按名称过滤器查询 callable。
      */
     override fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol> =
-        callables { it.let(nameFilter) }
+        callables(getPossibleCallableNames().filter(nameFilter))
 
     /**
      * 当前组合视图可见的 classifier，按优先级与符号身份去重。
@@ -60,7 +60,7 @@ internal class CaCfirCompositeScope(
      * 按名称过滤器查询 classifier。
      */
     override fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol> =
-        classifiers { it.let(nameFilter) }
+        classifiers(getPossibleClassifierNames().filter(nameFilter))
 
     /**
      * 组合视图合并各子作用域声明的构造器。

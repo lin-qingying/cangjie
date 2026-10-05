@@ -70,13 +70,10 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
-     * 类型名建议不得出现在非类型位置。
+     * 类型名建议只在类型位置出现。
      *
-     * **正面侧当前不可断言**：类型位置补全会抛 `StackOverflowError`，递归点在
-     * `CaCfirCompositeScope.classifiers`（栈里反复出现同一行，说明某个子作用域的
-     * `classifiers` 又回到了本组合）。曾按「组装时展平嵌套组合 + 展开期防重入」修过，
-     * 无效——环不在组合的构造期。缺陷与下一步见 `implementation-log.md`「类型位置补全
-     * 递归」节。这里只锁定成立的那一半：缺席侧。
+     * 缺席侧是重点：类型名建议一旦泄漏到非类型位置，用户会在写表达式时收到一串类名，
+     * 选中即编译失败。
      */
     @Test
     fun typeSuggestionsAppearOnlyAtTypePosition(mainFile: CjFile) {
@@ -84,6 +81,16 @@ class CfirKeywordCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         assertTrue(
             inBody.all { it.kind != CompletionItemKind.TOP_LEVEL },
             "函数体位置不得出现类型名建议，实际 ${inBody.map { it.kind to it.lookupString }}",
+        )
+
+        val atType = section.collectCandidates(mainFile.requestAtReference("Holder"))
+        assertTrue(
+            atType.lookupNames().contains("Holder"),
+            "类型位置必须给出类型名建议，实际 ${atType.lookupNames()}",
+        )
+        assertTrue(
+            atType.any { it.kind == CompletionItemKind.TOP_LEVEL },
+            "类型建议必须标记为顶层来源，实际 ${atType.map { it.kind }}",
         )
     }
 
