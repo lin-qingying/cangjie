@@ -5,6 +5,6 @@ func notMain(a: Int64, b: Int64): Int64 {
     return a + b
 }
 
-<!UNEXPECTED_PARAM_FOR_ENTRY!>m<!>ain(a: Int64, b: Int64): Int64 {
+<!UNEXPECTED_PARAM_FOR_ENTRY!>main<!>(a: Int64, b: Int64): Int64 {
     return a + b
 }

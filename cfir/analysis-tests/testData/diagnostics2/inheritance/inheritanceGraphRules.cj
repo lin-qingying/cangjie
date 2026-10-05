@@ -108,7 +108,7 @@
 // kind：sema_inheritance_cycle "inheritance cycle detected: 'IgIpA->IgIpB->IgIpA'"；Range (1,1)..(1,2)，两版一致。
 // 官方只在 DFS 里第一次回到 VISITING 的那个 decl 上报一条，所以环上另一个 interface 不再报（实测仅 1 条）。
 // FILE: inheritanceCycleInterfacePair.cj
-<!INHERITANCE_CYCLE!>i<!>nterface IgIpA <: IgIpB {}
+<!INHERITANCE_CYCLE!>interface IgIpA<!> <: IgIpB {}
 interface IgIpB <: IgIpA {}
 
 // ── 形态 2：class ↔ interface 成环（interface 在中间）—— 锚 interface 声明，两个 class 侧都不报
@@ -116,7 +116,7 @@ interface IgIpB <: IgIpA {}
 // 与形态 1 的差别：环的根不是文件里第一个声明（`IgCiSub` 在环外）；DFS 从每个 class / interface 起点各走一遍。
 // FILE: inheritanceCycleClassViaInterface.cj
 class IgCiSub <: IgCiMid {}
-<!INHERITANCE_CYCLE!>i<!>nterface IgCiMid <: IgCiRoot {}
+<!INHERITANCE_CYCLE!>interface IgCiMid<!> <: IgCiRoot {}
 class IgCiRoot <: IgCiMid {}
 
 // ── 形态 3：经类型别名成环（别名指向 open class，class 父类写别名）—— 锚 class 声明的 `open` 修饰符首字母
@@ -126,7 +126,7 @@ class IgCiRoot <: IgCiMid {}
 // 锚 `IgCaoSub` 整段，notes "depends on"）属构造器族（diagnostics2/constructor/superThisCallRules.cj 已覆盖），
 // 本文件只记录不写标记。对照 LLT class1.cj 的 class ↔ class 环（那边锚 `class` 关键字，本段锚点规则一致）。
 // FILE: inheritanceCycleViaTypeAliasOpen.cj
-<!INHERITANCE_CYCLE!>o<!>pen class IgCaoSub <: IgCaoAlias {}
+open <!INHERITANCE_CYCLE!>class IgCaoSub<!> <: IgCaoAlias {}
 type IgCaoAlias = IgCaoSub
 
 // ── 形态 4：extend 参与的环（interface 三元环，extend 挂在环上）—— 锚 **extend 块**的 `extend` 首字母
@@ -138,7 +138,7 @@ class IgCeTarget {}
 interface IgCeA <: IgCeB {}
 interface IgCeB <: IgCeC {}
 interface IgCeC <: IgCeA {}
-<!INHERITANCE_CYCLE!>e<!>xtend IgCeTarget <: IgCeC {}
+<!INHERITANCE_CYCLE!>extend IgCeTarget<!> <: IgCeC {}
 
 // ── 形态 5：interface 环 + extend 挂在 **struct** 上 —— 锚环上第一个 interface
 // kind：sema_inheritance_cycle "…'IgCsxA->IgCsxB->IgCsxA'"；Range (2,1)..(2,2)，两版一致（仅 1 条）。
@@ -168,7 +168,7 @@ class IgCveRoot {}
 interface IgCveI1 <: IgCveI2 {}
 interface IgCveI2 <: IgCveI3 {}
 interface IgCveI3 <: IgCveI1 {}
-<!INHERITANCE_CYCLE!>e<!>xtend IgCveRoot <: IgCveI2 {}
+<!INHERITANCE_CYCLE!>extend IgCveRoot<!> <: IgCveI2 {}
 class IgCveLeaf <: IgCveRoot {}
 
 // ── 形态 8：interface 环 + extend 挂在 interface 上 —— 锚环上第一个 interface，extend 侧另有一条 refactor 诊断
@@ -177,7 +177,7 @@ class IgCveLeaf <: IgCveRoot {}
 // 锚 `IgEoiA` 整段，refactor kind；CFIR 名 ILLEGAL_EXTENDED_TYPE，已由 extend/extendIllegalMember.cj 覆盖）
 // 只记录不写标记。官方 PreCheckExtend 先报这条、Sema 再查环，两条互不屏蔽。
 // FILE: inheritanceCycleExtendOnInterface.cj
-<!INHERITANCE_CYCLE!>i<!>nterface IgEoiA <: IgEoiB {}
+<!INHERITANCE_CYCLE!>interface IgEoiA<!> <: IgEoiB {}
 interface IgEoiB <: IgEoiA {}
 extend IgEoiA <: IgEoiB {}
 
@@ -186,12 +186,12 @@ extend IgEoiA <: IgEoiB {}
 // interfaces"；Range (1,17)..(1,18)，两版一致。官方 TypeCheckClassLike.cpp:146-150。
 // 对照 LLT declared_supertype_classification.cj 的 struct / enum / struct 别名 / 泛型形参 T 四种，本段只补容器类型。
 // FILE: classInheritsArray.cj
-class IgNaqC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>A<!>rray<Int64> {}
+class IgNaqC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>Array<!><Int64> {}
 
 // ── 形态 10：class 的父类是 `Option<T>` —— 锚 `Option` 的首字母
 // kind：sema_class_inherit_non_class_nor_interface；Range (1,16)..(1,17)，两版一致。
 // FILE: classInheritsOption.cj
-class IgNoC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>O<!>ption<Int64> {}
+class IgNoC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>Option<!><Int64> {}
 
 // ── 形态 11：class 的父类是**两级别名**（别名指向 struct）—— 锚别名的首字母，不穿透到 struct
 // kind：sema_class_inherit_non_class_nor_interface "class 'IgNaC' …"；Range (4,16)..(4,17)，两版一致。
@@ -200,7 +200,7 @@ class IgNoC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>O<!>ption<Int64> {}
 struct IgNaS {}
 type IgNaA1 = IgNaS
 type IgNaA2 = IgNaA1
-class IgNaC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>I<!>gNaA2 {}
+class IgNaC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>IgNaA2<!> {}
 
 // ── 形态 12：class 的父类是**指向原始类型的别名** —— 锚别名首字母，伴随一条无 CFIR 名的 non-ref 诊断
 // kind：sema_class_inherit_non_class_nor_interface；Range (2,17)..(2,18)，两版一致。
@@ -210,7 +210,7 @@ class IgNaC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>I<!>gNaA2 {}
 // 直接写 `class C <: Int64` 会被 parser 拦（见"已删除的形态 1"），别名是唯一可达路径。
 // FILE: classInheritsAliasToPrimitive.cj
 type IgNapT = Int64
-class IgNapC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>I<!>gNapT {}
+class IgNapC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>IgNapT<!> {}
 
 // ── 形态 13：class 的父类是**指向元组的别名**（别名再套一层）—— 锚别名首字母
 // kind：sema_class_inherit_non_class_nor_interface；Range (3,17)..(3,18)，两版一致。
@@ -218,7 +218,7 @@ class IgNapC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>I<!>gNapT {}
 // FILE: classInheritsAliasToTuple.cj
 type IgNtnT1 = (Int64, Int64)
 type IgNtnT2 = IgNtnT1
-class IgNtnC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>I<!>gNtnT2 {}
+class IgNtnC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>IgNtnT2<!> {}
 
 // ── 形态 14：struct 宿主 + 两个接口的同名**带体**成员（struct 里已有同名实现）—— 锚 struct 首字母
 // kind：sema_interface_member_must_be_implemented "interface function 'foo' must be implemented in 'IgMsS'"；
@@ -235,7 +235,7 @@ interface IgMsI2 {
         return 2
     }
 }
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>s<!>truct IgMsS <: IgMsI1 & IgMsI2 {}
+struct <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgMsS<!> <: IgMsI1 & IgMsI2 {}
 
 // ── 形态 15：struct 宿主 + 两个接口的同名带体 **prop** 成员 —— 锚 struct 首字母
 // kind：sema_interface_member_must_be_implemented "interface property 'a' must be implemented in 'IgMpS'"；
@@ -255,7 +255,7 @@ interface IgMpI2 {
         }
     }
 }
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>s<!>truct IgMpS <: IgMpI1 & IgMpI2 {}
+struct <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgMpS<!> <: IgMpI1 & IgMpI2 {}
 
 // ── 形态 16：enum 宿主 + 两个接口的同名带体成员 —— 锚 enum 首字母
 // kind：sema_interface_member_must_be_implemented "… must be implemented in 'IgMfE'"；Range (11,1)..(11,2)。
@@ -289,7 +289,7 @@ interface IgMeI2 {
     }
 }
 struct IgMeS {}
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>xtend IgMeS <: IgMeI1 & IgMeI2 {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>extend<!> IgMeS <: IgMeI1 & IgMeI2 {}
 
 // ── 形态 18：泛型 struct 宿主 + 两个接口的同名泛型带体成员（实参化后）—— 锚 struct 首字母
 // kind：sema_interface_member_must_be_implemented "… must be implemented in 'IgMsgS'"；Range (11,1)..(11,2)。
@@ -304,7 +304,7 @@ interface IgMsgI2<T> {
         return x
     }
 }
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>s<!>truct IgMsgS <: IgMsgI1<Int64> & IgMsgI2<Int64> {}
+struct <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgMsgS<!> <: IgMsgI1<Int64> & IgMsgI2<Int64> {}
 
 // ── 形态 19：struct 宿主 + 三个接口的同名带体成员 —— 锚 struct 首字母，仍只报一条
 // kind：sema_interface_member_must_be_implemented "… must be implemented in 'IgM3S'"；Range (16,1)..(16,2)。
@@ -325,7 +325,7 @@ interface IgM3I3 {
         return 3
     }
 }
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>s<!>truct IgM3S <: IgM3I1 & IgM3I2 & IgM3I3 {}
+struct <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgM3S<!> <: IgM3I1 & IgM3I2 & IgM3I3 {}
 
 // ── 形态 20：struct 宿主 + 接口成员**没有实现体**（无默认实现）—— need-impl 系，锚 struct 首字母
 // kind：sema_need_member_implementation "implementation of function or property 'foo' is needed in 'IgNfS'"；

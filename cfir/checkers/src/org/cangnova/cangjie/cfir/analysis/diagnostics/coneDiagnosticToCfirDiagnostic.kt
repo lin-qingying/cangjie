@@ -2405,8 +2405,18 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeNoConstructorError,
         is ConeNoImplicitDefaultConstructorOnExpectClass,
-        is ConeResolutionToClassifierError,
         -> CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
+
+        is ConeResolutionToClassifierError -> {
+            // 官方对接口实例化报 sema_interface_can_not_be_instantiated（TypeCheckCall.cpp:2521-2522），
+            // 无对应 CFIR 诊断名，abstractMemberAccessRules.cj 形态 4 按 SUGGESTED 口径不写标记，
+            // 故该场景不映射 NO_CONSTRUCTOR。
+            if (classifier.cfir is CfirInterface) {
+                null
+            } else {
+                CfirErrors.NO_CONSTRUCTOR.on(diagnosticSource, session)
+            }
+        }
 
         is ConeTypeParameterInQualifiedAccess ->
             CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(

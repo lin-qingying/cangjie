@@ -256,6 +256,25 @@ private fun <S : CfirCallableSymbol<*>> List<S>.findUnimplementedObligationBySig
                     )
                 }
                 if (diagnosedAsIncompleteSuperExtend) continue
+
+                // 官方分流（StructInheritanceChecker.cpp:862-872）：
+                //  (a) 义务来自当前类自身声明的无体成员时，官方报 missing_func_body /
+                //      class_need_abstract_modifier（MISSING_FUNC_BODY 检查器已覆盖声明级），
+                //      ABSTRACT_MEMBER_NOT_IMPLEMENTED 只覆盖"继承来的抽象成员"；
+                //  (b) 义务来自接口的无默认实现成员时，官方报 need_member_implementation，
+                //      归 InterfaceRequirement 通道（inheritanceGraphRules.cj / abstractMemberAccessRules.cj 取证）。
+                // 判定用 classId 身份比较：scope 中的义务符号可能来自 provider 物化的不同声明实例，
+                // 引用比较不可靠（本批次审查发现）。
+                val obligationOwnerClassId = abstractSymbol.ownerClassId(context)
+                if (obligationOwnerClassId != null &&
+                    obligationOwnerClassId == (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId
+                ) continue
+                val obligationOwner = obligationOwnerClassId?.let {
+                    context.session.symbolProvider.getClassLikeSymbolByClassId(it)
+                }?.cfir
+                if (obligationOwner is CfirInterface) {
+                    return UnimplementedObligation.InterfaceRequirement(abstractSymbol, memberKind)
+                }
                 return UnimplementedObligation.AbstractDeclaration(abstractSymbol)
             }
         }

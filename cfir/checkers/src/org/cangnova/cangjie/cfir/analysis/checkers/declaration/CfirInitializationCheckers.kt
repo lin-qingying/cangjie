@@ -44,6 +44,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -252,6 +253,7 @@ private class CfirInitializationFlowAnalyzer(
         val recursiveStaticFunctionReads = mutableListOf<StaticGlobalUseEdge>()
         var state = InitializationState.empty().declareAll(trackedInfos, emptySet())
         var nextVisitOrder = 0
+        val throwTerminatedOwners = mutableSetOf<ClassId?>()
 
         for (declaration in trackedDeclarations) {
             when (declaration.kind) {
@@ -283,12 +285,18 @@ private class CfirInitializationFlowAnalyzer(
                     )
                     state = result.state
                     nextVisitOrder = result.nextVisitOrder
+                    // 官方 CheckStaticInitForTypeDecl（InitializationChecker.cpp:489-500）：static init
+                    // 函数体以 throw 直接终止时整段跳过，该类所有静态成员都不报本族诊断
+                    // （staticFieldInitializationRules.cj 取证）。
+                    if (declaration.body?.statements?.lastOrNull() is CfirThrowExpression) {
+                        throwTerminatedOwners += declaration.nominalOwnerClassId
+                    }
                 }
             }
         }
 
         reportRecursiveStaticFunctionReadsBeforeInitialization(recursiveStaticFunctionReads)
-        reportUninitializedStaticFields(trackedBySymbol.values)
+        reportUninitializedStaticFields(trackedBySymbol.values, throwTerminatedOwners)
     }
 
     /**
@@ -2311,14 +2319,24 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 报告最终仍未初始化的 static 字段。
      */
-    private fun reportUninitializedStaticFields(variables: Collection<StaticGlobalInitializerVariable>) {
+    private fun reportUninitializedStaticFields(
+        variables: Collection<StaticGlobalInitializerVariable>,
+        throwTerminatedOwners: Set<ClassId?>,
+    ) {
         for (variable in variables) {
             val field = variable.field ?: continue
             if (!field.status.isStatic) continue
             if (variable.initialized) continue
+            // 官方 throw 终止跳过按类生效：宿主类的 static init 以 throw 直接终止时，
+            // 该类所有静态成员都不报（InitializationChecker.cpp:489-500）。
+            val ownerClassId = (field.symbol as? CfirCallableSymbol<*>)?.callableId?.classId
+            if (ownerClassId in throwTerminatedOwners) continue
             with(context) {
                 reporter.reportOn(
-                    source = field.fieldVariableNameDiagnosticSource(),
+                    // 官方 `DiagnoseRefactor(kind, *decl, decl->identifier)` 是 refactor kind，
+                    // 锚整条 static 字段声明（MakeRealRange(decl)），不是只锚标识符
+                    // （InitializationChecker.cpp:501-513，staticFieldInitializationRules.cj 取证）。
+                    source = field.source ?: field.fieldVariableNameDiagnosticSource(),
                     factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD,
                     a = field.name,
                 )
