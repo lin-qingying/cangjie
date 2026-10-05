@@ -9,6 +9,7 @@ import org.cangnova.cangjie.ide.completion.impl.cfir.filter.CfirExpectedTypeComp
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirKeywordCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirLocalScopeCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirMemberCompletionSection
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirNamedArgumentCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirTopLevelCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.distinctByIdentity
 import org.cangnova.cangjie.ide.completion.impl.shared.CompletionResultSink
@@ -42,6 +43,7 @@ class CfirCompletionService(
         CfirLocalScopeCompletionSection(),
         CfirMemberCompletionSection(),
         CfirTopLevelCompletionSection(),
+        CfirNamedArgumentCompletionSection(),
     )
 
     /**
