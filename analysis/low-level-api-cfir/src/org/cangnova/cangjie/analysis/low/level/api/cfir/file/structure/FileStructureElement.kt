@@ -183,7 +183,7 @@ internal class ExtendDeclarationStructureElement(
 ) : FileStructureElement(
     declaration = extend,
     diagnostics = FileStructureElementDiagnostics(
-        SingleNonLocalDeclarationDiagnosticRetriever(
+        ExtendDiagnosticRetriever(
             declaration = extend,
             file = file,
             moduleComponents = moduleComponents,
@@ -204,10 +204,11 @@ internal val CfirClassLikeDeclaration.declarationsToIgnore: Set<CfirDeclaration>
     get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
 
 /**
- * extend structure element 当前不忽略其成员声明。
+ * extend 的成员声明各自拥有独立的 `DeclarationStructureElement`，与 class-like 成员一致，
+ * 不归入 extend 自身的 structure element。
  */
 internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
-    get() = emptySet()
+    get() = declarations.toSet()
 
 /**
  * The recorder is supposed to visit only elements that belong to the [container].

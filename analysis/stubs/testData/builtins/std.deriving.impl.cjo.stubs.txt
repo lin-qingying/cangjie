@@ -959,7 +959,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
             CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=impl]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=SettingsOutput]
-  CangJieStub$EXTEND[classId=std/deriving/impl/ClassDecl, extendId=std.deriving.impl:ClassDecl<:ClassLikeDecl, fqName=std.deriving.impl.ClassDecl, name=ClassDecl, receiverTypeName=ClassDecl, superNames=[ClassLikeDecl]]
+  CangJieStub$EXTEND[extendId=std.deriving.impl:ClassDecl<:ClassLikeDecl, fqName=std.deriving.impl.ClassDecl, name=ClassDecl, receiverTypeName=ClassDecl, superNames=[ClassLikeDecl]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -997,7 +997,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.impl, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=api]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=GenericDecl]
-  CangJieStub$EXTEND[classId=std/deriving/impl/StructDecl, extendId=std.deriving.impl:StructDecl<:ClassLikeDecl, fqName=std.deriving.impl.StructDecl, name=StructDecl, receiverTypeName=StructDecl, superNames=[ClassLikeDecl]]
+  CangJieStub$EXTEND[extendId=std.deriving.impl:StructDecl<:ClassLikeDecl, fqName=std.deriving.impl.StructDecl, name=StructDecl, receiverTypeName=StructDecl, superNames=[ClassLikeDecl]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

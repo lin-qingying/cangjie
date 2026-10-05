@@ -319,6 +319,16 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
                 }
             }
 
+            is CfirExtend -> {
+                // extend 的接收者类型引用与父类型列表都不是 class-like 成员的返回类型，需要单独匹配
+                extendedTypeRef.takeIf { it.psi == typeReference }?.let { return it }
+                for (typeRef in superTypeRefs) {
+                    if (typeRef.psi == typeReference) {
+                        return typeRef
+                    }
+                }
+            }
+
             is CfirTypeAlias -> {
                 expandedTypeRef.takeIf { it.psi == typeReference }?.let { return it }
             }

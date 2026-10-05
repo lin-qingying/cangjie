@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.util.containers.ContainerUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
 import org.cangnova.cangjie.cfir.CfirElement
@@ -43,14 +44,18 @@ internal class CfirElementFinder : CfirSessionComponent {
 
         /**
          * 为 [targetMemberDeclaration] 收集 designation 路径。
+         *
+         * [additionalPathPrefix] 表达位于文件与 class-like 之间的声明容器（仓颉 extend），对标 Kotlin 的 script 前缀。
          */
         fun collectDesignationPath(
             cfirFile: CfirFile,
             declarationContainerClassId: ClassId?,
+            additionalPathPrefix: List<CfirDeclaration> = emptyList(),
             targetMemberDeclaration: CfirDeclaration,
         ): CfirDesignation? = collectDesignationPath(
             cfirFile = cfirFile,
             containerClassId = declarationContainerClassId,
+            additionalPathPrefix = additionalPathPrefix,
             targetDeclarationName = CfirFileStructureNode.mappingName(targetMemberDeclaration),
             expectedDeclarationAcceptor = { it == targetMemberDeclaration },
         )
@@ -82,10 +87,17 @@ internal class CfirElementFinder : CfirSessionComponent {
             nonLocalDeclaration: CjDeclaration,
         ): CfirDesignation? = collectDesignationPath(
             cfirFile = cfirFile,
-            containerClassId = nonLocalDeclaration.containingTypeStatement?.getClassId(),
+            containerClassId = nonLocalDeclaration.containingClassLikeIn()?.getClassId(),
+            additionalPathPrefix = nonLocalDeclaration.findExtendDeclarationIn(cfirFile)?.let(::listOf).orEmpty(),
             targetDeclarationName = CfirFileStructureNode.mappingNameByPsi(nonLocalDeclaration),
             expectedDeclarationAcceptor = { it.psi == nonLocalDeclaration },
         )
+
+        /**
+         * 返回 [this] 的 class-like 容器；extend 容器不是 class-like，这里返回 `null`。
+         */
+        private fun CjDeclaration.containingClassLikeIn(): CjClassLikeDeclaration? =
+            containingTypeStatement?.takeUnless { it is CjExtend } as? CjClassLikeDeclaration
 
         /**
          * 在 [container] 子树中查找满足 [predicate] 的第一个 [E] 类型元素。
@@ -127,6 +139,7 @@ internal class CfirElementFinder : CfirSessionComponent {
         private fun collectDesignationPath(
             cfirFile: CfirFile,
             containerClassId: ClassId?,
+            additionalPathPrefix: List<CfirDeclaration> = emptyList(),
             targetDeclarationName: Name?,
             expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
         ): CfirDesignation? {
@@ -140,7 +153,9 @@ internal class CfirElementFinder : CfirSessionComponent {
                 }
             }
 
-            val pathSegments = containerClassId?.relativeClassName?.pathSegments().orEmpty()
+            // 前缀声明（extend）不是 class-like，没有 ClassId，按文件结构里的映射名作为首段路径进入。
+            val pathSegments = additionalPathPrefix.map(CfirFileStructureNode::mappingName) +
+                containerClassId?.relativeClassName?.pathSegments().orEmpty()
             val resultPath = ArrayList<CfirDeclaration>(pathSegments.size + 1)
             resultPath += cfirFile
 
@@ -148,6 +163,7 @@ internal class CfirElementFinder : CfirSessionComponent {
             val result = structure.find(
                 pathSegments = pathSegments,
                 resultPath = resultPath,
+                expectedPrefixDeclarations = additionalPathPrefix,
                 targetDeclarationName = targetDeclarationName,
                 expectedDeclarationAcceptor = expectedDeclarationAcceptor,
             ) ?: return null
@@ -256,6 +272,8 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
      *   The target declaration and the [CfirFile] is not included.
      *
      * @param resultPath a list into which a path to a target declaration will be added.
+     * @param expectedPrefixDeclarations the declarations expected at the first [expectedPrefixDeclarations].size segments
+     *   of [pathSegments]（仓颉 extend 容器），按身份匹配，避免同名的其他声明被误认成路径前缀。
      * @param targetDeclarationName the [mappingName] of a target declaration. It helps to perform the search more efficiently if present.
      * @param expectedDeclarationAcceptor a predicate that will be called on potential target declaration.
      *   It should return **true** for the expected target declaration.
@@ -265,12 +283,14 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
     fun find(
         pathSegments: List<Name>,
         resultPath: MutableList<CfirDeclaration>,
+        expectedPrefixDeclarations: List<CfirDeclaration> = emptyList(),
         targetDeclarationName: Name?,
         expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
     ): CfirDeclaration? = find(
         pathSegments = pathSegments,
         pathIndex = 0,
         resultPath = resultPath,
+        expectedPrefixDeclarations = expectedPrefixDeclarations,
         targetDeclarationName = targetDeclarationName,
         expectedDeclarationAcceptor = expectedDeclarationAcceptor,
     )
@@ -284,6 +304,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
         pathSegments: List<Name>,
         pathIndex: Int,
         resultPath: MutableList<CfirDeclaration>,
+        expectedPrefixDeclarations: List<CfirDeclaration>,
         targetDeclarationName: Name?,
         expectedDeclarationAcceptor: (CfirDeclaration) -> Boolean,
     ): CfirDeclaration? {
@@ -294,11 +315,15 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             val structures = elements[nextSegmentName] ?: return null
 
             for (structure in structures) {
+                val expectedDeclaration = expectedPrefixDeclarations.getOrNull(pathIndex)
+                if (expectedDeclaration != null && structure.element !== expectedDeclaration) continue
+
                 resultPath += structure.element
                 val result = structure.find(
                     pathSegments = pathSegments,
                     pathIndex = pathIndex + 1,
                     resultPath = resultPath,
+                    expectedPrefixDeclarations = expectedPrefixDeclarations,
                     targetDeclarationName = targetDeclarationName,
                     expectedDeclarationAcceptor = expectedDeclarationAcceptor,
                 )

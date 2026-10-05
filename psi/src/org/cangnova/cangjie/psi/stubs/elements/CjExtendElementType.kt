@@ -25,7 +25,6 @@
 package org.cangnova.cangjie.psi.stubs.elements
 
 import org.cangnova.cangjie.psi.CjExtend
-import org.cangnova.cangjie.psi.psiUtil.StubUtils
 import org.cangnova.cangjie.psi.psiUtil.getSuperNames
 import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
 import org.cangnova.cangjie.psi.stubs.elements.StubIndexService.Companion.getInstance
@@ -65,7 +64,6 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         val fqName = stub.getFqName()
         dataStream.writeName(fqName?.asString())
 
-        StubUtils.serializeClassId(dataStream, stub.getClassId())
         // 序列化被扩展类型名称
         dataStream.writeName(stub.receiverTypeName)
         val superNames = stub.getSuperNames()
@@ -84,7 +82,6 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         val extendId = dataStream.readName()
         val qualifiedName = dataStream.readName()
 
-        val classId = StubUtils.deserializeClassId(dataStream)
         // 反序列化被扩展类型名称
         val receiverTypeName = dataStream.readName()
         val superCount = dataStream.readVarInt()
@@ -99,7 +96,6 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
             CjStubElementTypes.EXTEND,
             parentStub,
             qualifiedName,
-            classId,
             name,
             extendId,
             superNames,
@@ -117,12 +113,10 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
         val fqName = psi.fqName
 
         val superNames = psi.getSuperNames()
-        val classId = StubUtils.createClassId(parentStub!!, psi)
         return CangJieExtendStubImpl(
             CjStubElementTypes.EXTEND,
             parentStub as StubElement<*>?,
             StringRef.fromString(fqName?.asString()),
-            classId,
             StringRef.fromString(psi.name),
             StringRef.fromString(psi.getExtendId()),
             Utils.wrapStrings(superNames),

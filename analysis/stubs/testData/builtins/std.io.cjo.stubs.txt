@@ -529,7 +529,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/io/BufferedInputStream, extendId=std.io:BufferedInputStream<:Resource, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Resource]]
+  CangJieStub$EXTEND[extendId=std.io:BufferedInputStream<:Resource, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -562,7 +562,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/io/BufferedInputStream, extendId=std.io:BufferedInputStream<:Seekable, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Seekable]]
+  CangJieStub$EXTEND[extendId=std.io:BufferedInputStream<:Seekable, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Seekable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -794,7 +794,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/io/BufferedOutputStream, extendId=std.io:BufferedOutputStream<:Resource, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Resource]]
+  CangJieStub$EXTEND[extendId=std.io:BufferedOutputStream<:Resource, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -827,7 +827,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/io/BufferedOutputStream, extendId=std.io:BufferedOutputStream<:Seekable, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Seekable]]
+  CangJieStub$EXTEND[extendId=std.io:BufferedOutputStream<:Seekable, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Seekable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1419,7 +1419,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
               CangJieStub$BASIC_TYPE[basicType=Rune]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/io/StringReader, extendId=std.io:StringReader<:Resource, fqName=std.io.StringReader, name=StringReader, receiverTypeName=StringReader, superNames=[Resource]]
+  CangJieStub$EXTEND[extendId=std.io:StringReader<:Resource, fqName=std.io.StringReader, name=StringReader, receiverTypeName=StringReader, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1452,7 +1452,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/io/StringReader, extendId=std.io:StringReader<:Seekable, fqName=std.io.StringReader, name=StringReader, receiverTypeName=StringReader, superNames=[Seekable]]
+  CangJieStub$EXTEND[extendId=std.io:StringReader<:Seekable, fqName=std.io.StringReader, name=StringReader, receiverTypeName=StringReader, superNames=[Seekable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1827,7 +1827,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
               CangJieStub$BASIC_TYPE[basicType=Rune]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/io/StringWriter, extendId=std.io:StringWriter<:Resource, fqName=std.io.StringWriter, name=StringWriter, receiverTypeName=StringWriter, superNames=[Resource]]
+  CangJieStub$EXTEND[extendId=std.io:StringWriter<:Resource, fqName=std.io.StringWriter, name=StringWriter, receiverTypeName=StringWriter, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1860,7 +1860,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/io/StringWriter, extendId=std.io:StringWriter<:Seekable, fqName=std.io.StringWriter, name=StringWriter, receiverTypeName=StringWriter, superNames=[Seekable]]
+  CangJieStub$EXTEND[extendId=std.io:StringWriter<:Seekable, fqName=std.io.StringWriter, name=StringWriter, receiverTypeName=StringWriter, superNames=[Seekable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

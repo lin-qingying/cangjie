@@ -920,7 +920,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.resolve, facadeFqN
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Scope]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/deriving/resolve/Scope, extendId=std.deriving.resolve:Scope<:, fqName=std.deriving.resolve.Scope, name=Scope, receiverTypeName=Scope, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.resolve:Scope<:, fqName=std.deriving.resolve.Scope, name=Scope, receiverTypeName=Scope, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
