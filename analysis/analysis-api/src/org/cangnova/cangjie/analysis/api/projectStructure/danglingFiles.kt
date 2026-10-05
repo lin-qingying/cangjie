@@ -73,6 +73,34 @@ val PsiFile.copyOrigin: PsiFile?
         ?: getUserData(PsiFileFactory.ORIGINAL_FILE)?.takeUnless { it == this }
 
 /**
+ * 存储内存文件显式上下文模块的 user-data key。
+ */
+private val CONTEXT_MODULE_KEY = Key.create<CaModule>("CONTEXT_MODULE")
+
+/**
+ * 显式指定分析当前内存文件时所处的**上下文模块**。
+ *
+ * 对齐 Kotlin `KtFile.contextModule`。上下文模块通常由上下文元素或原件自动推导；
+ * 本属性用于在自动推导不成立时显式指定——典型场景是 `psiFactory.createFile` 造出的
+ * 副本：它既没有 [copyOrigin] 也没有 [elementContext]，自动推导会落到
+ * 「不在任何内容根下」的模块上，下游的模块归属、可见性与解析全部走偏。
+ *
+ * **不能**给代码片段设置：代码片段按定义就在另一个元素的上下文中分析，这个行为不可覆盖。
+ */
+@CaExperimentalApi
+var CjFile.contextModule: CaModule?
+    get() = getUserData(CONTEXT_MODULE_KEY)
+    set(value) {
+        require(this !is CjCodeFragment) { "'contextModule' cannot be set for code fragments" }
+
+        val virtualFile = virtualFile
+        if (virtualFile != null) {
+            require(virtualFile is LightVirtualFile) { "'contextModule' is only available for in-memory files" }
+        }
+        putUserData(CONTEXT_MODULE_KEY, value)
+    }
+
+/**
  * 文件是否需要以游离模块分析。普通内存文件、副本与具有分析上下文的文件均属此类。
  */
 @OptIn(CaExperimentalApi::class)

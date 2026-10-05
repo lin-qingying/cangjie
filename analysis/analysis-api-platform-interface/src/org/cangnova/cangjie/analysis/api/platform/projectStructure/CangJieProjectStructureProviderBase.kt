@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.contextModule
 import org.cangnova.cangjie.analysis.api.projectStructure.copyOrigin
 import org.cangnova.cangjie.analysis.api.projectStructure.danglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.explicitModule
@@ -74,6 +75,11 @@ abstract class CangJieProjectStructureProviderBase : CangJieProjectStructureProv
      */
     @OptIn(CaExperimentalApi::class)
     protected open fun computeContextModule(file: CjFile): CaModule {
+        // 显式上下文模块优先：对齐 Kotlin `KtFile.contextModule`。
+        // 没有它时，`createFile` 造出的副本既无 copyOrigin 也无 elementContext，
+        // 会落到「不在任何内容根下」的模块上——那不是调用方要的上下文。
+        file.contextModule?.let { return it }
+
         val originalFile = file.copyOrigin
         val contextElement =
             (file as? CjCodeFragment)?.context?.takeIf(::isSupportedContextElement)

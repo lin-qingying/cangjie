@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.diagnosticProvider
 
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.contextModule
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
@@ -62,8 +64,16 @@ abstract class AbstractDanglingFileCollectDiagnosticsTest : AbstractCollectDiagn
  * 复制文件会被项目结构识别为 dangling file module，从而覆盖 dangling 分析路径。
  */
     override fun prepareCjFile(cjFile: CjFile, testServices: TestServices): PreparedFile {
+        val contextModule = CaModuleProvider.getModule(cjFile.project, cjFile, useSiteModule = null)
         val psiFactory = CjPsiFactory.contextual(cjFile, markGenerated = true)
         val fakeFile = psiFactory.createFile("fake.cj", cjFile.text).apply {
+            // 显式绑定上下文模块，对齐 Kotlin 夹具：副本既无 copyOrigin 也无 elementContext，
+            // 不绑定就会落到「不在任何内容根下」的模块上。
+            this.contextModule = contextModule
+            // `originalFile` 仍然**总是**设置：改成 Kotlin 的「仅 IGNORE_SELF_MODE 时设置」
+            // 会让 21 个生成用例失败，根因是非物理声明被当作 context 传进 class-like
+            // 符号缓存（LLCangJieSourceSymbolProvider.kt:177 的 require）。
+            // 补 contextModule 后仍失败，说明要修的是**调用方**，本夹具的对齐留待那时再做。
             originalFile = cjFile
         }
 
