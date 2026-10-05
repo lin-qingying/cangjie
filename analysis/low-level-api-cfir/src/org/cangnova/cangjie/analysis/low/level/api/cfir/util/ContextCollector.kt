@@ -706,6 +706,48 @@ private class ContextCollectorVisitor(
     }
 
     /**
+     * 访问 match 表达式：每个 `case` 分支是**独立的**局部作用域。
+     *
+     * 编译器侧 `resolveBranch` 用 `withNewLocalScope` 逐分支隔离，收集侧必须对齐：
+     * 若不做隔离，`case Circle(radius)` 的 `radius` 会留在同一个收集作用域里，
+     * 于是 `case Square(side)` 分支内也能看到 `radius`——
+     * 补全会把兄弟分支的绑定当成本分支候选，用户选中后无法通过编译。
+     */
+    override fun visitMatchExpression(
+        matchExpression: org.cangnova.cangjie.cfir.expressions.CfirMatchExpression,
+    ) = withProcessor(matchExpression) {
+        dumpContext(matchExpression, ContextKind.SELF)
+
+        onActive {
+            process(matchExpression.subject)
+            for (branch in matchExpression.branches) {
+                if (!isActive) break
+                context.withBlockScopeCompat {
+                    process(branch)
+                }
+            }
+        }
+    }
+
+    /**
+     * 访问 match 分支：模式与分支体共享同一个局部作用域（编译器侧同形）。
+     *
+     * 分支体若是 block，由 [visitBlock] 再开一层；直接是表达式时就在当前分支作用域里解析。
+     */
+    override fun visitMatchBranch(
+        matchBranch: org.cangnova.cangjie.cfir.expressions.CfirMatchBranch,
+    ) = withProcessor(matchBranch) {
+        dumpContext(matchBranch, ContextKind.SELF)
+
+        onActive {
+            process(matchBranch.pattern)
+            dumpContext(matchBranch, ContextKind.BODY)
+            process(matchBranch.guard)
+            process(matchBranch.body)
+        }
+    }
+
+    /**
      * 收集 [block] 的 SELF/BODY 上下文。
      */
     private fun doVisitBlock(
