@@ -49,6 +49,7 @@ import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirFloatConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
@@ -385,9 +386,30 @@ class PsiRawCfirBuilder(
                     } else {
                         declarations.addAll(converter.convertFileDeclarations(file))
                     }
+                    conditionalCompilationFailures.addAll(collectWhenConditionFailures(file))
                 }
             }
         }
+    }
+
+    /**
+     * 递归收集文件中 `@When` 条件的求值失败事实。
+     *
+     * 判定逻辑在 [whenConditionFailureOrNull]（两条 raw 路径共享）；本函数只负责
+     * PSI 侧的注解定位、条件表达式转换与失败挂载。`@When[1]` 这类官方 parse
+     * 阶段错误由共享判定的非比较形态静默，不产生失败事实。
+     */
+    private fun collectWhenConditionFailures(file: CjFile): List<CfirConditionalCompilationFailure> {
+        val failures = mutableListOf<CfirConditionalCompilationFailure>()
+        val annotations = PsiTreeUtil.collectElementsOfType(file, CjAnnotation::class.java)
+        for (annotation in annotations) {
+            val conditionExpression = annotation.whenConditionExpression ?: continue
+            val expression = converter.convertExpression(conditionExpression)
+            if (expression is CfirComparisonExpression) {
+                expression.whenConditionFailureOrNull()?.let { failures.add(it) }
+            }
+        }
+        return failures
     }
 
     /**
@@ -2752,8 +2774,9 @@ class PsiRawCfirBuilder(
             val isInout = (argument as? CjValueArgument)?.isInout == true
             val wrapped = if (isInout) {
                 buildInoutArgumentExpression {
-                    source = argument.getArgumentExpression()?.toCjPsiSourceElement()
-                        ?: argument.asElement().toCjPsiSourceElement()
+                    // 官方 refactor 诊断锚 `inout s` 整段；source 覆盖整个实参元素（含 inout 关键字），
+                    // 与 named argument 包装的 source 口径一致。
+                    source = argument.asElement().toCjPsiSourceElement()
                     expression = convertedExpression
                 }
             } else convertedExpression
