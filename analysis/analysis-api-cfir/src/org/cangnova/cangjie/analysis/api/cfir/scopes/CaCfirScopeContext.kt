@@ -83,9 +83,42 @@ internal class CaCfirScopeContext(
             val lexical = resolveTowerData()?.towerDataElements?.asReversed()
                 ?.flatMap(::toScopeEntries)
                 .orEmpty()
+            // 片段的宿主文件排在片段自身文件级之前：片段内引用的宿主符号必须解析得到，
+            // 而片段自己合成的文件级只带包成员与内建类型。
+            val hostFileLevel = hostFileLevelEntries()
             val fileLevel = fileLevelEntries()
-            (lexical + fileLevel).distinctBy { it.kind.indexInTower to it.scope }
+            (lexical + hostFileLevel + fileLevel).distinctBy { it.kind.indexInTower to it.scope }
         }
+    }
+
+    /**
+     * 代码片段锚定所在文件的顶层声明作用域。
+     *
+     * 片段自身的 CFIR 文件没有顶层声明，[fileLevelEntries] 因此给不出宿主符号；
+     * 不在这里补一层，片段内就看不到任何宿主顶层声明（设计 §6.2 的验收项之一）。
+     * 非片段位置、或片段锚定在自身文件内时返回空列表。
+     */
+    private fun hostFileLevelEntries(): List<CaScopeWithKind> = withValidityAssertion {
+        val fragment = file as? org.cangnova.cangjie.psi.CjCodeFragment ?: return@withValidityAssertion emptyList()
+        val contextFile = fragment.context?.containingFile as? CjFile ?: return@withValidityAssertion emptyList()
+        if (contextFile == file) return@withValidityAssertion emptyList()
+
+        val contextCfirFile = runCatching {
+            contextFile.getOrBuildCfirFile(session.resolutionFacade)
+        }.getOrNull() ?: return@withValidityAssertion emptyList()
+
+        listOfNotNull(
+            org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope(contextCfirFile)
+                .toPublicScopeOrNull(session.cfirSymbolBuilder)
+                ?.let { publicScope ->
+                    CaCfirScopeWithKind(
+                        token = session.token,
+                        scope = publicScope,
+                        kind = CaScopeKind.FILE_SCOPE,
+                        ownerSymbol = null,
+                    )
+                },
+        )
     }
 
     /**

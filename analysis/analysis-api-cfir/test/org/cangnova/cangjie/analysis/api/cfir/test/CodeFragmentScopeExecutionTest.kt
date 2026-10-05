@@ -29,12 +29,8 @@ class CodeFragmentScopeExecutionTest : AbstractAnalysisApiExecutionTest(
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     /**
-     * 正例：块片段内的顶层声明必须可见，且被投影成 `CODE_FRAGMENT_MEMBER_SCOPE`。
-     *
-     * **未覆盖**：设计 §6.2 还要求「目标文件可见符号」在片段内同样可见。
-     * 实测片段作用域上下文里只有片段自身的 `FILE_SCOPE`（合成片段文件，无顶层声明），
-     * 宿主文件的顶层声明**当前不可见**——这是独立缺口，已记入 `tasks.md` 3.7 的遗留项，
-     * 不在这里写成通过的断言。
+     * 正例：块片段内的顶层声明必须可见，且被投影成 `CODE_FRAGMENT_MEMBER_SCOPE`；
+     * 宿主文件的顶层声明同样可见——片段成员作用域**叠加**在宿主上下文之上，不是替换它。
      */
     @Test
     fun blockFragmentExposesOwnDeclarations(mainFile: CjFile) {
@@ -61,6 +57,7 @@ class CodeFragmentScopeExecutionTest : AbstractAnalysisApiExecutionTest(
 
             val names = context.compositeScope().getAllPossibleNames().map { it.asString() }
             assertTrue("fragmentHelper" in names, "片段自身顶层声明必须可见，实际 $names")
+            assertTrue("hostTarget" in names, "宿主文件的顶层声明必须可见，实际 $names")
         }
     }
 
