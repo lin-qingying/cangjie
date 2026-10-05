@@ -47,6 +47,12 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
             val scopeContext = file.scopeContext(position)
             // `scopes` 已按真实查找次序从内到外排列，直接顺序遍历即可：
             // 再按 kind.indexInTower 重排会把同一 kind 的层内次序打乱。
+            //
+            // 只取局部声明层。**类型参数层（TYPE_PARAMETER_SCOPE）取不到东西**：
+            // `CfirTypeParameterScopeImpl.getClassifierNames()` 报告了类型参数名，
+            // 但它的 `processClassifiersByName` 是空实现、`getCallableNames()` 也是空的，
+            // 两条公开通道都枚举不到——类型参数候选要等 Analysis 层补出专用通道
+            // （见 tasks.md 9.1 遗留项）才能加进来，这里不写一条永远为空的分支。
             val lexicalScopes = scopeContext.scopes.filter { it.kind == CaScopeKind.LOCAL_SCOPE }
             if (lexicalScopes.isEmpty()) return@analyze emptyList()
 
