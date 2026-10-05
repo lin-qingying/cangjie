@@ -27,6 +27,7 @@ package org.cangnova.cangjie.psi
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
@@ -88,6 +89,15 @@ class CjExtend : CjTypeStatement {
             else -> null
         }
     }
+
+    /**
+     * `extend` 不属于公开类型标识体系，没有 `ClassId`，稳定身份是 [getExtendId]。
+     *
+     * 早期实现用接收者类型文本拼出 `ClassId(文件包, 接收者文本)`：限定名或泛型接收者（`a.B`、`Array<T>`）
+     * 得到的短名与实际声明对不上，stub PSI 与 AST PSI 还会给出不同的短名，调用方无法区分“找不到容器”和“容器名不匹配”。
+     * 这里统一返回 `null`，让「无 class-like 身份」成为显式契约；归属判定改由 CFIR 的 extend 声明前缀表达。
+     */
+    override fun getClassId(): ClassId? = null
 
     /**
      * 被扩展的接收者类型。

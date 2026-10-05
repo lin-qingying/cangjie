@@ -743,7 +743,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Unit, extendId=std.unittest.prop_test:Unit<:Arbitrary, fqName=std.unittest.prop_test.Unit, name=Unit, receiverTypeName=Unit, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Unit<:Arbitrary, fqName=std.unittest.prop_test.Unit, name=Unit, receiverTypeName=Unit, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -781,7 +781,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Bool, extendId=std.unittest.prop_test:Bool<:Arbitrary, fqName=std.unittest.prop_test.Bool, name=Bool, receiverTypeName=Bool, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Bool<:Arbitrary, fqName=std.unittest.prop_test.Bool, name=Bool, receiverTypeName=Bool, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -819,7 +819,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int8, extendId=std.unittest.prop_test:Int8<:Arbitrary, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int8<:Arbitrary, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -857,7 +857,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int16, extendId=std.unittest.prop_test:Int16<:Arbitrary, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int16<:Arbitrary, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -895,7 +895,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int32, extendId=std.unittest.prop_test:Int32<:Arbitrary, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int32<:Arbitrary, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -933,7 +933,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int64, extendId=std.unittest.prop_test:Int64<:Arbitrary, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int64<:Arbitrary, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -971,7 +971,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/IntNative, extendId=std.unittest.prop_test:IntNative<:Arbitrary, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:IntNative<:Arbitrary, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1009,7 +1009,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt8, extendId=std.unittest.prop_test:UInt8<:Arbitrary, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt8<:Arbitrary, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1047,7 +1047,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt16, extendId=std.unittest.prop_test:UInt16<:Arbitrary, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt16<:Arbitrary, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1085,7 +1085,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt32, extendId=std.unittest.prop_test:UInt32<:Arbitrary, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt32<:Arbitrary, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1123,7 +1123,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt64, extendId=std.unittest.prop_test:UInt64<:Arbitrary, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt64<:Arbitrary, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1161,7 +1161,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UIntNative, extendId=std.unittest.prop_test:UIntNative<:Arbitrary, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UIntNative<:Arbitrary, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1199,7 +1199,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float16, extendId=std.unittest.prop_test:Float16<:Arbitrary, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float16<:Arbitrary, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1237,7 +1237,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float32, extendId=std.unittest.prop_test:Float32<:Arbitrary, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float32<:Arbitrary, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1275,7 +1275,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float64, extendId=std.unittest.prop_test:Float64<:Arbitrary, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float64<:Arbitrary, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1313,7 +1313,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Rune, extendId=std.unittest.prop_test:Rune<:Arbitrary, fqName=std.unittest.prop_test.Rune, name=Rune, receiverTypeName=Rune, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Rune<:Arbitrary, fqName=std.unittest.prop_test.Rune, name=Rune, receiverTypeName=Rune, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1351,7 +1351,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Array, extendId=std.unittest.prop_test:Array<:Arbitrary, fqName=std.unittest.prop_test.Array, name=Array, receiverTypeName=Array, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Array<:Arbitrary, fqName=std.unittest.prop_test.Array, name=Array, receiverTypeName=Array, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1409,7 +1409,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/ArrayList, extendId=std.unittest.prop_test:ArrayList<:Arbitrary, fqName=std.unittest.prop_test.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:ArrayList<:Arbitrary, fqName=std.unittest.prop_test.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1467,7 +1467,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/HashSet, extendId=std.unittest.prop_test:HashSet<:Arbitrary, fqName=std.unittest.prop_test.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:HashSet<:Arbitrary, fqName=std.unittest.prop_test.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1525,7 +1525,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/HashMap, extendId=std.unittest.prop_test:HashMap<:Arbitrary, fqName=std.unittest.prop_test.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:HashMap<:Arbitrary, fqName=std.unittest.prop_test.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1591,7 +1591,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/String, extendId=std.unittest.prop_test:String<:Arbitrary, fqName=std.unittest.prop_test.String, name=String, receiverTypeName=String, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:String<:Arbitrary, fqName=std.unittest.prop_test.String, name=String, receiverTypeName=String, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1639,7 +1639,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Option, extendId=std.unittest.prop_test:Option<:Arbitrary, fqName=std.unittest.prop_test.Option, name=Option, receiverTypeName=Option, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Option<:Arbitrary, fqName=std.unittest.prop_test.Option, name=Option, receiverTypeName=Option, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1697,7 +1697,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Ordering, extendId=std.unittest.prop_test:Ordering<:Arbitrary, fqName=std.unittest.prop_test.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Ordering<:Arbitrary, fqName=std.unittest.prop_test.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1745,7 +1745,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Function0Wrapper, extendId=std.unittest.prop_test:Function0Wrapper<:Arbitrary, fqName=std.unittest.prop_test.Function0Wrapper, name=Function0Wrapper, receiverTypeName=Function0Wrapper, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Function0Wrapper<:Arbitrary, fqName=std.unittest.prop_test.Function0Wrapper, name=Function0Wrapper, receiverTypeName=Function0Wrapper, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1841,7 +1841,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper2, extendId=std.unittest.prop_test:TupleWrapper2<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper2<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1967,7 +1967,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T1]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper3, extendId=std.unittest.prop_test:TupleWrapper3<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper3<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2112,7 +2112,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T2]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper4, extendId=std.unittest.prop_test:TupleWrapper4<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper4<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2276,7 +2276,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T3]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper5, extendId=std.unittest.prop_test:TupleWrapper5<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Arbitrary]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper5<:Arbitrary, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Arbitrary]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2515,7 +2515,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int64, extendId=std.unittest.prop_test:Int64<:ArbitraryRange, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int64<:ArbitraryRange, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2571,7 +2571,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt64, extendId=std.unittest.prop_test:UInt64<:ArbitraryRange, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt64<:ArbitraryRange, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2627,7 +2627,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int32, extendId=std.unittest.prop_test:Int32<:ArbitraryRange, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int32<:ArbitraryRange, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2683,7 +2683,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt32, extendId=std.unittest.prop_test:UInt32<:ArbitraryRange, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt32<:ArbitraryRange, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2739,7 +2739,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int16, extendId=std.unittest.prop_test:Int16<:ArbitraryRange, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int16<:ArbitraryRange, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2795,7 +2795,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt16, extendId=std.unittest.prop_test:UInt16<:ArbitraryRange, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt16<:ArbitraryRange, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2851,7 +2851,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int8, extendId=std.unittest.prop_test:Int8<:ArbitraryRange, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int8<:ArbitraryRange, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2907,7 +2907,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt8, extendId=std.unittest.prop_test:UInt8<:ArbitraryRange, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt8<:ArbitraryRange, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2963,7 +2963,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/IntNative, extendId=std.unittest.prop_test:IntNative<:ArbitraryRange, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:IntNative<:ArbitraryRange, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3019,7 +3019,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UIntNative, extendId=std.unittest.prop_test:UIntNative<:ArbitraryRange, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UIntNative<:ArbitraryRange, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3075,7 +3075,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float64, extendId=std.unittest.prop_test:Float64<:ArbitraryRange, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float64<:ArbitraryRange, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3131,7 +3131,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float32, extendId=std.unittest.prop_test:Float32<:ArbitraryRange, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float32<:ArbitraryRange, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3187,7 +3187,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float16, extendId=std.unittest.prop_test:Float16<:ArbitraryRange, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[ArbitraryRange]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float16<:ArbitraryRange, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[ArbitraryRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4982,7 +4982,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Random, extendId=std.unittest.prop_test:Random<:RandomSource, fqName=std.unittest.prop_test.Random, name=Random, receiverTypeName=Random, superNames=[RandomSource]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Random<:RandomSource, fqName=std.unittest.prop_test.Random, name=Random, receiverTypeName=Random, superNames=[RandomSource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5934,7 +5934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Unit, extendId=std.unittest.prop_test:Unit<:Shrink, fqName=std.unittest.prop_test.Unit, name=Unit, receiverTypeName=Unit, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Unit<:Shrink, fqName=std.unittest.prop_test.Unit, name=Unit, receiverTypeName=Unit, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5945,7 +5945,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Shrink]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Bool, extendId=std.unittest.prop_test:Bool<:Shrink, fqName=std.unittest.prop_test.Bool, name=Bool, receiverTypeName=Bool, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Bool<:Shrink, fqName=std.unittest.prop_test.Bool, name=Bool, receiverTypeName=Bool, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5956,7 +5956,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Shrink]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int8, extendId=std.unittest.prop_test:Int8<:Shrink, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int8<:Shrink, fqName=std.unittest.prop_test.Int8, name=Int8, receiverTypeName=Int8, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5982,7 +5982,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int16, extendId=std.unittest.prop_test:Int16<:Shrink, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int16<:Shrink, fqName=std.unittest.prop_test.Int16, name=Int16, receiverTypeName=Int16, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6008,7 +6008,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int32, extendId=std.unittest.prop_test:Int32<:Shrink, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int32<:Shrink, fqName=std.unittest.prop_test.Int32, name=Int32, receiverTypeName=Int32, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6034,7 +6034,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Int64, extendId=std.unittest.prop_test:Int64<:Shrink, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Int64<:Shrink, fqName=std.unittest.prop_test.Int64, name=Int64, receiverTypeName=Int64, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6060,7 +6060,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/IntNative, extendId=std.unittest.prop_test:IntNative<:Shrink, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:IntNative<:Shrink, fqName=std.unittest.prop_test.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6086,7 +6086,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt8, extendId=std.unittest.prop_test:UInt8<:Shrink, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt8<:Shrink, fqName=std.unittest.prop_test.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6112,7 +6112,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt16, extendId=std.unittest.prop_test:UInt16<:Shrink, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt16<:Shrink, fqName=std.unittest.prop_test.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6138,7 +6138,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt32, extendId=std.unittest.prop_test:UInt32<:Shrink, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt32<:Shrink, fqName=std.unittest.prop_test.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6164,7 +6164,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UInt64, extendId=std.unittest.prop_test:UInt64<:Shrink, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UInt64<:Shrink, fqName=std.unittest.prop_test.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6190,7 +6190,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/UIntNative, extendId=std.unittest.prop_test:UIntNative<:Shrink, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:UIntNative<:Shrink, fqName=std.unittest.prop_test.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6216,7 +6216,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float16, extendId=std.unittest.prop_test:Float16<:Shrink, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float16<:Shrink, fqName=std.unittest.prop_test.Float16, name=Float16, receiverTypeName=Float16, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6242,7 +6242,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float32, extendId=std.unittest.prop_test:Float32<:Shrink, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float32<:Shrink, fqName=std.unittest.prop_test.Float32, name=Float32, receiverTypeName=Float32, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6268,7 +6268,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Float64, extendId=std.unittest.prop_test:Float64<:Shrink, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Float64<:Shrink, fqName=std.unittest.prop_test.Float64, name=Float64, receiverTypeName=Float64, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6294,7 +6294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Rune, extendId=std.unittest.prop_test:Rune<:Shrink, fqName=std.unittest.prop_test.Rune, name=Rune, receiverTypeName=Rune, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Rune<:Shrink, fqName=std.unittest.prop_test.Rune, name=Rune, receiverTypeName=Rune, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6320,7 +6320,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Array, extendId=std.unittest.prop_test:Array<:Shrink, fqName=std.unittest.prop_test.Array, name=Array, receiverTypeName=Array, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Array<:Shrink, fqName=std.unittest.prop_test.Array, name=Array, receiverTypeName=Array, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6366,7 +6366,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/ArrayList, extendId=std.unittest.prop_test:ArrayList<:Shrink, fqName=std.unittest.prop_test.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:ArrayList<:Shrink, fqName=std.unittest.prop_test.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6412,7 +6412,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/HashSet, extendId=std.unittest.prop_test:HashSet<:Shrink, fqName=std.unittest.prop_test.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:HashSet<:Shrink, fqName=std.unittest.prop_test.HashSet, name=HashSet, receiverTypeName=HashSet, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6458,7 +6458,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/HashMap, extendId=std.unittest.prop_test:HashMap<:Shrink, fqName=std.unittest.prop_test.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:HashMap<:Shrink, fqName=std.unittest.prop_test.HashMap, name=HashMap, receiverTypeName=HashMap, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6512,7 +6512,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/String, extendId=std.unittest.prop_test:String<:Shrink, fqName=std.unittest.prop_test.String, name=String, receiverTypeName=String, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:String<:Shrink, fqName=std.unittest.prop_test.String, name=String, receiverTypeName=String, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6548,7 +6548,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Option, extendId=std.unittest.prop_test:Option<:Shrink, fqName=std.unittest.prop_test.Option, name=Option, receiverTypeName=Option, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Option<:Shrink, fqName=std.unittest.prop_test.Option, name=Option, receiverTypeName=Option, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6594,7 +6594,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/Function0Wrapper, extendId=std.unittest.prop_test:Function0Wrapper<:Shrink, fqName=std.unittest.prop_test.Function0Wrapper, name=Function0Wrapper, receiverTypeName=Function0Wrapper, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:Function0Wrapper<:Shrink, fqName=std.unittest.prop_test.Function0Wrapper, name=Function0Wrapper, receiverTypeName=Function0Wrapper, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6617,7 +6617,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Shrink]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper2, extendId=std.unittest.prop_test:TupleWrapper2<:Shrink, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper2<:Shrink, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6675,7 +6675,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T1]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper3, extendId=std.unittest.prop_test:TupleWrapper3<:Shrink, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper3<:Shrink, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6741,7 +6741,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T2]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper4, extendId=std.unittest.prop_test:TupleWrapper4<:Shrink, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper4<:Shrink, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6815,7 +6815,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T3]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper5, extendId=std.unittest.prop_test:TupleWrapper5<:Shrink, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Shrink]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper5<:Shrink, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Shrink]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7301,7 +7301,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper2, extendId=std.unittest.prop_test:TupleWrapper2<:ToString, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper2<:ToString, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7339,7 +7339,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper3, extendId=std.unittest.prop_test:TupleWrapper3<:ToString, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper3<:ToString, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7381,7 +7381,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper4, extendId=std.unittest.prop_test:TupleWrapper4<:ToString, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper4<:ToString, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7427,7 +7427,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper5, extendId=std.unittest.prop_test:TupleWrapper5<:ToString, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper5<:ToString, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7477,7 +7477,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper2, extendId=std.unittest.prop_test:TupleWrapper2<:Equatable, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper2<:Equatable, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7554,7 +7554,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T1]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper3, extendId=std.unittest.prop_test:TupleWrapper3<:Equatable, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper3<:Equatable, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7643,7 +7643,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T2]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper4, extendId=std.unittest.prop_test:TupleWrapper4<:Equatable, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper4<:Equatable, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7744,7 +7744,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T3]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper5, extendId=std.unittest.prop_test:TupleWrapper5<:Equatable, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper5<:Equatable, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7884,7 +7884,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper2, extendId=std.unittest.prop_test:TupleWrapper2<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[IndexAccess]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper2<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper2, name=TupleWrapper2, receiverTypeName=TupleWrapper2, superNames=[IndexAccess]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7934,7 +7934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper3, extendId=std.unittest.prop_test:TupleWrapper3<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[IndexAccess]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper3<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper3, name=TupleWrapper3, receiverTypeName=TupleWrapper3, superNames=[IndexAccess]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7988,7 +7988,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper4, extendId=std.unittest.prop_test:TupleWrapper4<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[IndexAccess]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper4<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper4, name=TupleWrapper4, receiverTypeName=TupleWrapper4, superNames=[IndexAccess]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8046,7 +8046,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-  CangJieStub$EXTEND[classId=std/unittest/prop_test/TupleWrapper5, extendId=std.unittest.prop_test:TupleWrapper5<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[IndexAccess]]
+  CangJieStub$EXTEND[extendId=std.unittest.prop_test:TupleWrapper5<:IndexAccess, fqName=std.unittest.prop_test.TupleWrapper5, name=TupleWrapper5, receiverTypeName=TupleWrapper5, superNames=[IndexAccess]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

@@ -1,0 +1,20 @@
+[ResolvedTo(BODY_RESOLVE)] FILE: extendMember.cj
+    package test
+    [ResolvedTo(BODY_RESOLVE)] internal? class Host {
+        [ResolvedTo(BODY_RESOLVE)] init()
+    }
+    [ResolvedTo(BODY_RESOLVE)] internal? abstract class Box<T> {
+        [ResolvedTo(BODY_RESOLVE)] init()
+        [ResolvedTo(BODY_RESOLVE)] public func unwrap(): R|T| {
+            RETURN {
+                NAMED_ACCESS(value -> CfirPropertySymbol(value))
+            }
+        }
+        [ResolvedTo(BODY_RESOLVE)] public abstract? prop value: R|T|
+    }
+    [ResolvedTo(TYPES)] extend<T> R|Box<T>| {
+        [ResolvedTo(IMPORTS)] public func tag(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        [ResolvedTo(IMPORTS)] public prop label: R|String|
+    }

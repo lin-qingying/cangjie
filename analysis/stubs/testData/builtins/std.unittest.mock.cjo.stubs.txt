@@ -2152,7 +2152,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Scenario]
-  CangJieStub$EXTEND[classId=std/unittest/mock/MethodActionSelector, extendId=std.unittest.mock:MethodActionSelector<:, fqName=std.unittest.mock.MethodActionSelector, name=MethodActionSelector, receiverTypeName=MethodActionSelector, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:MethodActionSelector<:, fqName=std.unittest.mock.MethodActionSelector, name=MethodActionSelector, receiverTypeName=MethodActionSelector, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4265,7 +4265,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/mock/TypedMatcher, extendId=std.unittest.mock:TypedMatcher<:, fqName=std.unittest.mock.TypedMatcher, name=TypedMatcher, receiverTypeName=TypedMatcher, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:TypedMatcher<:, fqName=std.unittest.mock.TypedMatcher, name=TypedMatcher, receiverTypeName=TypedMatcher, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4290,7 +4290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/unittest/mock/AnyMatcher, extendId=std.unittest.mock:AnyMatcher<:, fqName=std.unittest.mock.AnyMatcher, name=AnyMatcher, receiverTypeName=AnyMatcher, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:AnyMatcher<:, fqName=std.unittest.mock.AnyMatcher, name=AnyMatcher, receiverTypeName=AnyMatcher, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5110,7 +5110,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
-  CangJieStub$EXTEND[classId=std/unittest/mock/MockSession, extendId=std.unittest.mock:MockSession<:, fqName=std.unittest.mock.MockSession, name=MockSession, receiverTypeName=MockSession, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:MockSession<:, fqName=std.unittest.mock.MockSession, name=MockSession, receiverTypeName=MockSession, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5294,7 +5294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=MockSessionKind]
-  CangJieStub$EXTEND[classId=std/unittest/mock/StubChain, extendId=std.unittest.mock:StubChain<:, fqName=std.unittest.mock.StubChain, name=StubChain, receiverTypeName=StubChain, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:StubChain<:, fqName=std.unittest.mock.StubChain, name=StubChain, receiverTypeName=StubChain, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7528,7 +7528,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/unittest/mock/MockObject, extendId=std.unittest.mock:MockObject<:, fqName=std.unittest.mock.MockObject, name=MockObject, receiverTypeName=MockObject, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:MockObject<:, fqName=std.unittest.mock.MockObject, name=MockObject, receiverTypeName=MockObject, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7557,7 +7557,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=StubMode]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/unittest/mock/Invocation, extendId=std.unittest.mock:Invocation<:, fqName=std.unittest.mock.Invocation, name=Invocation, receiverTypeName=Invocation, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:Invocation<:, fqName=std.unittest.mock.Invocation, name=Invocation, receiverTypeName=Invocation, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7703,7 +7703,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=StubChain]
-  CangJieStub$EXTEND[classId=std/unittest/mock/MockSession, extendId=std.unittest.mock:MockSession<:, fqName=std.unittest.mock.MockSession, name=MockSession, receiverTypeName=MockSession, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:MockSession<:, fqName=std.unittest.mock.MockSession, name=MockSession, receiverTypeName=MockSession, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7769,7 +7769,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SessionHandleResult]
-  CangJieStub$EXTEND[classId=std/unittest/mock/StubChain, extendId=std.unittest.mock:StubChain<:, fqName=std.unittest.mock.StubChain, name=StubChain, receiverTypeName=StubChain, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:StubChain<:, fqName=std.unittest.mock.StubChain, name=StubChain, receiverTypeName=StubChain, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8295,7 +8295,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
             CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Location]
-  CangJieStub$EXTEND[classId=std/unittest/mock/Location, extendId=std.unittest.mock:Location<:, fqName=std.unittest.mock.Location, name=Location, receiverTypeName=Location, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:Location<:, fqName=std.unittest.mock.Location, name=Location, receiverTypeName=Location, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8368,7 +8368,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/unittest/mock/Matchers, extendId=std.unittest.mock:Matchers<:, fqName=std.unittest.mock.Matchers, name=Matchers, receiverTypeName=Matchers, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:Matchers<:, fqName=std.unittest.mock.Matchers, name=Matchers, receiverTypeName=Matchers, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -8394,7 +8394,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=NoneMatcher]
-  CangJieStub$EXTEND[classId=std/unittest/mock/NoneMatcher, extendId=std.unittest.mock:NoneMatcher<:, fqName=std.unittest.mock.NoneMatcher, name=NoneMatcher, receiverTypeName=NoneMatcher, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:NoneMatcher<:, fqName=std.unittest.mock.NoneMatcher, name=NoneMatcher, receiverTypeName=NoneMatcher, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -9059,7 +9059,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-  CangJieStub$EXTEND[classId=std/unittest/mock/Option, extendId=std.unittest.mock:Option<:UntypedOption, fqName=std.unittest.mock.Option, name=Option, receiverTypeName=Option, superNames=[UntypedOption]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:Option<:UntypedOption, fqName=std.unittest.mock.Option, name=Option, receiverTypeName=Option, superNames=[UntypedOption]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -10142,7 +10142,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
             CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=VerificationResult]
-  CangJieStub$EXTEND[classId=std/unittest/mock/VerifyIterator, extendId=std.unittest.mock:VerifyIterator<:, fqName=std.unittest.mock.VerifyIterator, name=VerifyIterator, receiverTypeName=VerifyIterator, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.unittest.mock:VerifyIterator<:, fqName=std.unittest.mock.VerifyIterator, name=VerifyIterator, receiverTypeName=VerifyIterator, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

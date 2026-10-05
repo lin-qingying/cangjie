@@ -30,6 +30,9 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 212:
+     * - extend stub 不再持久化 `ClassId`（extend 不属于公开类型标识体系，身份统一由 extendId 表达）
+     *
      * 210:
      * - common/specific 修饰符 token 进入 MODIFIER_KEYWORDS_ARRAY（尾部追加，存根掩码新增 2 位）
      */
@@ -58,7 +61,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 211
+    const val SOURCE_STUB_VERSION = 212
 
     /**
      * 保存 `BINARY_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。

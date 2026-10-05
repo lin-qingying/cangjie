@@ -9980,7 +9980,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Array, extendId=std.core:Array<:, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Array<:, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -10026,7 +10026,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/core/Array, extendId=std.core:Array<:Collection, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[Collection]]
+  CangJieStub$EXTEND[extendId=std.core:Array<:Collection, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[Collection]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -10118,7 +10118,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/core/Array, extendId=std.core:Array<:ToString, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Array<:ToString, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -10155,7 +10155,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Array, extendId=std.core:Array<:Equatable, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.core:Array<:Equatable, fqName=std.core.Array, name=Array, receiverTypeName=Array, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11099,7 +11099,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/core/Box, extendId=std.core:Box<:Hashable, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Box<:Hashable, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11136,7 +11136,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Box, extendId=std.core:Box<:Comparable, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Box<:Comparable, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11295,7 +11295,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/Box, extendId=std.core:Box<:ToString, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Box<:ToString, fqName=std.core.Box, name=Box, receiverTypeName=Box, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11327,7 +11327,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UInt8, extendId=std.core:UInt8<:, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:UInt8<:, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11460,7 +11460,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/core/CPointer, extendId=std.core:CPointer<T><:, fqName=std.core.CPointer, name=CPointer, receiverTypeName=CPointer<T>, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:CPointer<T><:, fqName=std.core.CPointer, name=CPointer, receiverTypeName=CPointer<T>, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11785,7 +11785,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/CString, extendId=std.core:CString<:ToString, fqName=std.core.CString, name=CString, receiverTypeName=CString, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:CString<:ToString, fqName=std.core.CString, name=CString, receiverTypeName=CString, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -11980,7 +11980,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/core/Rune, extendId=std.core:Rune<:, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Rune<:, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -12211,7 +12211,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Rune, extendId=std.core:Rune<:Comparable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Rune<:Comparable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13092,7 +13092,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Ordering, extendId=std.core:Ordering<:ToString, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Ordering<:ToString, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13119,7 +13119,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Ordering, extendId=std.core:Ordering<:Comparable, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Ordering<:Comparable, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13154,7 +13154,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/IntNative, extendId=std.core:IntNative<:Comparable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:IntNative<:Comparable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13179,7 +13179,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:Comparable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:Comparable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13288,7 +13288,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Int32, extendId=std.core:Int32<:Comparable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Int32<:Comparable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13397,7 +13397,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Int16, extendId=std.core:Int16<:Comparable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Int16<:Comparable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13506,7 +13506,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Int8, extendId=std.core:Int8<:Comparable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Int8<:Comparable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13615,7 +13615,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/UIntNative, extendId=std.core:UIntNative<:Comparable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:UIntNative<:Comparable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13640,7 +13640,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:Comparable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:Comparable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13749,7 +13749,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:Comparable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:Comparable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13858,7 +13858,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/UInt16, extendId=std.core:UInt16<:Comparable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt16<:Comparable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -13967,7 +13967,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/UInt8, extendId=std.core:UInt8<:Comparable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt8<:Comparable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14076,7 +14076,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Float16, extendId=std.core:Float16<:Comparable, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Float16<:Comparable, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14185,7 +14185,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Float32, extendId=std.core:Float32<:Comparable, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Float32<:Comparable, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14294,7 +14294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:Comparable, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[Comparable]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:Comparable, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14403,7 +14403,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/IntNative, extendId=std.core:IntNative<:Countable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:IntNative<:Countable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14429,7 +14429,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:Countable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:Countable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14455,7 +14455,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Int32, extendId=std.core:Int32<:Countable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:Int32<:Countable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14481,7 +14481,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/core/Int16, extendId=std.core:Int16<:Countable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:Int16<:Countable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14507,7 +14507,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/core/Int8, extendId=std.core:Int8<:Countable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:Int8<:Countable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14533,7 +14533,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/core/UIntNative, extendId=std.core:UIntNative<:Countable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:UIntNative<:Countable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14559,7 +14559,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:Countable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:Countable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14585,7 +14585,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:Countable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:Countable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14611,7 +14611,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/UInt16, extendId=std.core:UInt16<:Countable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt16<:Countable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14637,7 +14637,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/core/UInt8, extendId=std.core:UInt8<:Countable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt8<:Countable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14663,7 +14663,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/core/Rune, extendId=std.core:Rune<:Countable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Countable]]
+  CangJieStub$EXTEND[extendId=std.core:Rune<:Countable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -14982,7 +14982,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15007,7 +15007,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15022,7 +15022,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15055,7 +15055,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15070,7 +15070,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15095,7 +15095,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
-  CangJieStub$EXTEND[classId=std/core/StringBuilder, extendId=std.core:StringBuilder<:, fqName=std.core.StringBuilder, name=StringBuilder, receiverTypeName=StringBuilder, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:StringBuilder<:, fqName=std.core.StringBuilder, name=StringBuilder, receiverTypeName=StringBuilder, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15190,7 +15190,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Bool, extendId=std.core:Bool<:Equatable, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.core:Bool<:Equatable, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15210,7 +15210,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:Unit<:Equatable, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.core:Unit<:Equatable, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15230,7 +15230,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Unit]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Range, extendId=std.core:Range<:Equatable, fqName=std.core.Range, name=Range, receiverTypeName=Range, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.core:Range<:Equatable, fqName=std.core.Range, name=Range, receiverTypeName=Range, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15661,7 +15661,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$INTERFACE_BODY
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15682,7 +15682,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/Float32, extendId=std.core:Float32<:, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Float32<:, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15703,7 +15703,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Float16, extendId=std.core:Float16<:, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Float16<:, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15724,7 +15724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:BitCastRange, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:BitCastRange, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15735,7 +15735,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:BitCastRange, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:BitCastRange, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15746,7 +15746,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:BitCastRange, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:BitCastRange, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15757,7 +15757,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Float32, extendId=std.core:Float32<:BitCastRange, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:Float32<:BitCastRange, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15768,7 +15768,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/UInt16, extendId=std.core:UInt16<:BitCastRange, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:UInt16<:BitCastRange, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -15779,7 +15779,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Float16, extendId=std.core:Float16<:BitCastRange, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[extendId=std.core:Float16<:BitCastRange, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16185,7 +16185,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Ordering, extendId=std.core:Ordering<:Hashable, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Ordering<:Hashable, fqName=std.core.Ordering, name=Ordering, receiverTypeName=Ordering, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16207,7 +16207,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16224,7 +16224,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Bool, extendId=std.core:Bool<:Hashable, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Bool<:Hashable, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16241,7 +16241,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Rune, extendId=std.core:Rune<:Hashable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Rune<:Hashable, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16294,7 +16294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Float64]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/IntNative, extendId=std.core:IntNative<:Hashable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:IntNative<:Hashable, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16337,7 +16337,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:Hashable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:Hashable, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16380,7 +16380,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/Int32, extendId=std.core:Int32<:Hashable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Int32<:Hashable, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16423,7 +16423,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/Int16, extendId=std.core:Int16<:Hashable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Int16<:Hashable, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16466,7 +16466,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/Int8, extendId=std.core:Int8<:Hashable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Int8<:Hashable, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16509,7 +16509,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/UIntNative, extendId=std.core:UIntNative<:Hashable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:UIntNative<:Hashable, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16552,7 +16552,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:Hashable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:Hashable, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16595,7 +16595,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:Hashable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:Hashable, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16638,7 +16638,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/UInt16, extendId=std.core:UInt16<:Hashable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt16<:Hashable, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16681,7 +16681,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/UInt8, extendId=std.core:UInt8<:Hashable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:UInt8<:Hashable, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16724,7 +16724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:Hashable, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:Hashable, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -16885,7 +16885,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                       CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/core/Float32, extendId=std.core:Float32<:Hashable, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Float32<:Hashable, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17046,7 +17046,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                       CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/core/Float16, extendId=std.core:Float16<:Hashable, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Float16<:Hashable, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17207,7 +17207,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                       CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/core/Range, extendId=std.core:Range<:Hashable, fqName=std.core.Range, name=Range, receiverTypeName=Range, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Range<:Hashable, fqName=std.core.Range, name=Range, receiverTypeName=Range, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17772,7 +17772,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Iterator, extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17803,7 +17803,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Iterator, extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -17851,7 +17851,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/core/Iterator, extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Iterator<:, fqName=std.core.Iterator, name=Iterator, receiverTypeName=Iterator, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18898,7 +18898,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Unit]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/core/Option, extendId=std.core:Option<:Equatable, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[Equatable]]
+  CangJieStub$EXTEND[extendId=std.core:Option<:Equatable, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18967,7 +18967,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Option, extendId=std.core:Option<:ToString, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Option<:ToString, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -18999,7 +18999,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Option, extendId=std.core:Option<:Hashable, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[Hashable]]
+  CangJieStub$EXTEND[extendId=std.core:Option<:Hashable, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -19026,7 +19026,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Option, extendId=std.core:Option<:, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.core:Option<:, fqName=std.core.Option, name=Option, receiverTypeName=Option, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -19974,7 +19974,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Int64, extendId=std.core:Int64<:ToString, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Int64<:ToString, fqName=std.core.Int64, name=Int64, receiverTypeName=Int64, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -19996,7 +19996,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/IntNative, extendId=std.core:IntNative<:ToString, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:IntNative<:ToString, fqName=std.core.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20018,7 +20018,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Int32, extendId=std.core:Int32<:ToString, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Int32<:ToString, fqName=std.core.Int32, name=Int32, receiverTypeName=Int32, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20040,7 +20040,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Int16, extendId=std.core:Int16<:ToString, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Int16<:ToString, fqName=std.core.Int16, name=Int16, receiverTypeName=Int16, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20062,7 +20062,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Int8, extendId=std.core:Int8<:ToString, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Int8<:ToString, fqName=std.core.Int8, name=Int8, receiverTypeName=Int8, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20084,7 +20084,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UInt64, extendId=std.core:UInt64<:ToString, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:UInt64<:ToString, fqName=std.core.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20106,7 +20106,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UIntNative, extendId=std.core:UIntNative<:ToString, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:UIntNative<:ToString, fqName=std.core.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20128,7 +20128,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UInt32, extendId=std.core:UInt32<:ToString, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:UInt32<:ToString, fqName=std.core.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20150,7 +20150,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UInt16, extendId=std.core:UInt16<:ToString, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:UInt16<:ToString, fqName=std.core.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20172,7 +20172,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/UInt8, extendId=std.core:UInt8<:ToString, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:UInt8<:ToString, fqName=std.core.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20194,7 +20194,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Float64, extendId=std.core:Float64<:ToString, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Float64<:ToString, fqName=std.core.Float64, name=Float64, receiverTypeName=Float64, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20216,7 +20216,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Float32, extendId=std.core:Float32<:ToString, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Float32<:ToString, fqName=std.core.Float32, name=Float32, receiverTypeName=Float32, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20238,7 +20238,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Float16, extendId=std.core:Float16<:ToString, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Float16<:ToString, fqName=std.core.Float16, name=Float16, receiverTypeName=Float16, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20260,7 +20260,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Bool, extendId=std.core:Bool<:ToString, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Bool<:ToString, fqName=std.core.Bool, name=Bool, receiverTypeName=Bool, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20282,7 +20282,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Rune, extendId=std.core:Rune<:ToString, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Rune<:ToString, fqName=std.core.Rune, name=Rune, receiverTypeName=Rune, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -20304,7 +20304,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.core:Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

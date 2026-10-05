@@ -2343,7 +2343,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncDecl]
-  CangJieStub$EXTEND[classId=std/deriving/api/DerivingTarget, extendId=std.deriving.api:DerivingTarget<:, fqName=std.deriving.api.DerivingTarget, name=DerivingTarget, receiverTypeName=DerivingTarget, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:DerivingTarget<:, fqName=std.deriving.api.DerivingTarget, name=DerivingTarget, receiverTypeName=DerivingTarget, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2514,7 +2514,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=GenericConstraint]
-  CangJieStub$EXTEND[classId=std/deriving/api/ExtendDecl, extendId=std.deriving.api:ExtendDecl<:DerivingNode, fqName=std.deriving.api.ExtendDecl, name=ExtendDecl, receiverTypeName=ExtendDecl, superNames=[DerivingNode]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:ExtendDecl<:DerivingNode, fqName=std.deriving.api.ExtendDecl, name=ExtendDecl, receiverTypeName=ExtendDecl, superNames=[DerivingNode]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2611,7 +2611,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=DerivingInterfaceSettings]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/deriving/api/DerivingTarget, extendId=std.deriving.api:DerivingTarget<:, fqName=std.deriving.api.DerivingTarget, name=DerivingTarget, receiverTypeName=DerivingTarget, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:DerivingTarget<:, fqName=std.deriving.api.DerivingTarget, name=DerivingTarget, receiverTypeName=DerivingTarget, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2825,7 +2825,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=GenericParam]
-  CangJieStub$EXTEND[classId=std/deriving/api/TargetNamedAttribute, extendId=std.deriving.api:TargetNamedAttribute<:, fqName=std.deriving.api.TargetNamedAttribute, name=TargetNamedAttribute, receiverTypeName=TargetNamedAttribute, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:TargetNamedAttribute<:, fqName=std.deriving.api.TargetNamedAttribute, name=TargetNamedAttribute, receiverTypeName=TargetNamedAttribute, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2903,7 +2903,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/deriving/api/TargetNamedAttribute, extendId=std.deriving.api:TargetNamedAttribute<:ToString, fqName=std.deriving.api.TargetNamedAttribute, name=TargetNamedAttribute, receiverTypeName=TargetNamedAttribute, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:TargetNamedAttribute<:ToString, fqName=std.deriving.api.TargetNamedAttribute, name=TargetNamedAttribute, receiverTypeName=TargetNamedAttribute, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2932,7 +2932,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/deriving/api/TargetEnumCase, extendId=std.deriving.api:TargetEnumCase<:, fqName=std.deriving.api.TargetEnumCase, name=TargetEnumCase, receiverTypeName=TargetEnumCase, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:TargetEnumCase<:, fqName=std.deriving.api.TargetEnumCase, name=TargetEnumCase, receiverTypeName=TargetEnumCase, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2996,7 +2996,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
             CangJieStub$VALUE_PARAMETER_LIST
-  CangJieStub$EXTEND[classId=std/deriving/api/GenericDecl, extendId=std.deriving.api:GenericDecl<:, fqName=std.deriving.api.GenericDecl, name=GenericDecl, receiverTypeName=GenericDecl, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:GenericDecl<:, fqName=std.deriving.api.GenericDecl, name=GenericDecl, receiverTypeName=GenericDecl, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3020,7 +3020,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RefType]
-  CangJieStub$EXTEND[classId=std/deriving/api/Identifier, extendId=std.deriving.api:Identifier<:, fqName=std.deriving.api.Identifier, name=Identifier, receiverTypeName=Identifier, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:Identifier<:, fqName=std.deriving.api.Identifier, name=Identifier, receiverTypeName=Identifier, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3168,7 +3168,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=TypeNode]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/deriving/api/RefType, extendId=std.deriving.api:RefType<:AppendGenerics, fqName=std.deriving.api.RefType, name=RefType, receiverTypeName=RefType, superNames=[AppendGenerics]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:RefType<:AppendGenerics, fqName=std.deriving.api.RefType, name=RefType, receiverTypeName=RefType, superNames=[AppendGenerics]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3207,7 +3207,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=TypeNode]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/deriving/api/QualifiedType, extendId=std.deriving.api:QualifiedType<:AppendGenerics, fqName=std.deriving.api.QualifiedType, name=QualifiedType, receiverTypeName=QualifiedType, superNames=[AppendGenerics]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:QualifiedType<:AppendGenerics, fqName=std.deriving.api.QualifiedType, name=QualifiedType, receiverTypeName=QualifiedType, superNames=[AppendGenerics]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3309,7 +3309,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncParam]
-  CangJieStub$EXTEND[classId=std/deriving/api/Decl, extendId=std.deriving.api:Decl<:DeclExt, fqName=std.deriving.api.Decl, name=Decl, receiverTypeName=Decl, superNames=[DeclExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:Decl<:DeclExt, fqName=std.deriving.api.Decl, name=Decl, receiverTypeName=Decl, superNames=[DeclExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3336,7 +3336,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Decl]
-  CangJieStub$EXTEND[classId=std/deriving/api/Body, extendId=std.deriving.api:Body<:BodyExt, fqName=std.deriving.api.Body, name=Body, receiverTypeName=Body, superNames=[BodyExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:Body<:BodyExt, fqName=std.deriving.api.Body, name=Body, receiverTypeName=Body, superNames=[BodyExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3372,7 +3372,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Decl]
-  CangJieStub$EXTEND[classId=std/deriving/api/FuncParam, extendId=std.deriving.api:FuncParam<:FuncParamExt, fqName=std.deriving.api.FuncParam, name=FuncParam, receiverTypeName=FuncParam, superNames=[FuncParamExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:FuncParam<:FuncParamExt, fqName=std.deriving.api.FuncParam, name=FuncParam, receiverTypeName=FuncParam, superNames=[FuncParamExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3399,7 +3399,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncParam]
-  CangJieStub$EXTEND[classId=std/deriving/api/FuncDecl, extendId=std.deriving.api:FuncDecl<:FunctionExt, fqName=std.deriving.api.FuncDecl, name=FuncDecl, receiverTypeName=FuncDecl, superNames=[FunctionExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:FuncDecl<:FunctionExt, fqName=std.deriving.api.FuncDecl, name=FuncDecl, receiverTypeName=FuncDecl, superNames=[FunctionExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3435,7 +3435,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncParam]
-  CangJieStub$EXTEND[classId=std/deriving/api/PrimaryCtorDecl, extendId=std.deriving.api:PrimaryCtorDecl<:FunctionExt, fqName=std.deriving.api.PrimaryCtorDecl, name=PrimaryCtorDecl, receiverTypeName=PrimaryCtorDecl, superNames=[FunctionExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:PrimaryCtorDecl<:FunctionExt, fqName=std.deriving.api.PrimaryCtorDecl, name=PrimaryCtorDecl, receiverTypeName=PrimaryCtorDecl, superNames=[FunctionExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3471,7 +3471,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncParam]
-  CangJieStub$EXTEND[classId=std/deriving/api/ExtendDecl, extendId=std.deriving.api:ExtendDecl<:AstExt, fqName=std.deriving.api.ExtendDecl, name=ExtendDecl, receiverTypeName=ExtendDecl, superNames=[AstExt]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:ExtendDecl<:AstExt, fqName=std.deriving.api.ExtendDecl, name=ExtendDecl, receiverTypeName=ExtendDecl, superNames=[AstExt]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3609,7 +3609,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.api, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
-  CangJieStub$EXTEND[classId=std/deriving/api/QualifiedName, extendId=std.deriving.api:QualifiedName<:, fqName=std.deriving.api.QualifiedName, name=QualifiedName, receiverTypeName=QualifiedName, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.deriving.api:QualifiedName<:, fqName=std.deriving.api.QualifiedName, name=QualifiedName, receiverTypeName=QualifiedName, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

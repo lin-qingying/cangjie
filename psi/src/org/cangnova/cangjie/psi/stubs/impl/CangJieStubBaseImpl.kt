@@ -26,6 +26,7 @@ package org.cangnova.cangjie.psi.stubs.impl
 
 import org.cangnova.cangjie.psi.CjElementImplStub
 import org.cangnova.cangjie.psi.stubs.CangJieCallableStubBase
+import org.cangnova.cangjie.psi.stubs.CangJieClassLikeTypeStatementStub
 import org.cangnova.cangjie.psi.stubs.CangJieClassifierStub
 import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderWithTextStub
 import org.cangnova.cangjie.psi.stubs.CangJieStubElement
@@ -51,10 +52,17 @@ abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement
 
     companion object {
         private val LOGGER: Logger = Logger.getInstance(CangJieStubBaseImpl::class.java)
+
+        /**
+         * 渲染 stub 属性时允许继续向上递归的基接口集合。
+         *
+         * 新增基接口（如区分有无 `ClassId` 的类型声明 stub 层次）必须登记在这里，否则反射渲染会静默丢失属性。
+         */
         private val BASE_STUB_INTERFACES = listOf(
             CangJieStubWithFqName::class.java,
             CangJieClassifierStub::class.java,
             CangJieTypeStatementStub::class.java,
+            CangJieClassLikeTypeStatementStub::class.java,
             NamedStub::class.java,
             CangJieCallableStubBase::class.java,
             CangJiePlaceHolderWithTextStub::class.java,

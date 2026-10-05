@@ -175,7 +175,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Int8, extendId=std.overflow:Int8<:CarryingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int8<:CarryingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -307,7 +307,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Int16, extendId=std.overflow:Int16<:CarryingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int16<:CarryingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -439,7 +439,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Int32, extendId=std.overflow:Int32<:CarryingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int32<:CarryingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -571,7 +571,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Int64, extendId=std.overflow:Int64<:CarryingOp&CarryingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[CarryingOp, CarryingPow]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int64<:CarryingOp&CarryingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[CarryingOp, CarryingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -720,7 +720,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/IntNative, extendId=std.overflow:IntNative<:CarryingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:IntNative<:CarryingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -852,7 +852,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/UInt8, extendId=std.overflow:UInt8<:CarryingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt8<:CarryingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -984,7 +984,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/UInt16, extendId=std.overflow:UInt16<:CarryingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt16<:CarryingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1116,7 +1116,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/UInt32, extendId=std.overflow:UInt32<:CarryingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt32<:CarryingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1248,7 +1248,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/UInt64, extendId=std.overflow:UInt64<:CarryingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt64<:CarryingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1380,7 +1380,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/UIntNative, extendId=std.overflow:UIntNative<:CarryingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UIntNative<:CarryingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2363,7 +2363,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/overflow/Int8, extendId=std.overflow:Int8<:CheckedOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int8<:CheckedOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2545,7 +2545,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Int16, extendId=std.overflow:Int16<:CheckedOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int16<:CheckedOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2727,7 +2727,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Int32, extendId=std.overflow:Int32<:CheckedOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int32<:CheckedOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2909,7 +2909,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Int64, extendId=std.overflow:Int64<:CheckedOp&CheckedPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[CheckedOp, CheckedPow]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int64<:CheckedOp&CheckedPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[CheckedOp, CheckedPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3113,7 +3113,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/UInt8, extendId=std.overflow:UInt8<:CheckedOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt8<:CheckedOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3295,7 +3295,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/UInt16, extendId=std.overflow:UInt16<:CheckedOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt16<:CheckedOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3477,7 +3477,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/UInt32, extendId=std.overflow:UInt32<:CheckedOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt32<:CheckedOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3659,7 +3659,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/UInt64, extendId=std.overflow:UInt64<:CheckedOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt64<:CheckedOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -3841,7 +3841,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/IntNative, extendId=std.overflow:IntNative<:CheckedOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:IntNative<:CheckedOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4023,7 +4023,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/UIntNative, extendId=std.overflow:UIntNative<:CheckedOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UIntNative<:CheckedOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4456,7 +4456,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Int8, extendId=std.overflow:Int8<:SaturatingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int8<:SaturatingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4548,7 +4548,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Int16, extendId=std.overflow:Int16<:SaturatingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int16<:SaturatingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4640,7 +4640,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Int32, extendId=std.overflow:Int32<:SaturatingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int32<:SaturatingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4732,7 +4732,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Int64, extendId=std.overflow:Int64<:SaturatingOp&SaturatingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[SaturatingOp, SaturatingPow]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int64<:SaturatingOp&SaturatingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[SaturatingOp, SaturatingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4837,7 +4837,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/UInt8, extendId=std.overflow:UInt8<:SaturatingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt8<:SaturatingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -4929,7 +4929,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/UInt16, extendId=std.overflow:UInt16<:SaturatingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt16<:SaturatingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5021,7 +5021,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/UInt32, extendId=std.overflow:UInt32<:SaturatingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt32<:SaturatingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5113,7 +5113,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/UInt64, extendId=std.overflow:UInt64<:SaturatingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt64<:SaturatingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5205,7 +5205,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/IntNative, extendId=std.overflow:IntNative<:SaturatingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:IntNative<:SaturatingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5297,7 +5297,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/UIntNative, extendId=std.overflow:UIntNative<:SaturatingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UIntNative<:SaturatingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5640,7 +5640,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Int8, extendId=std.overflow:Int8<:ThrowingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int8<:ThrowingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5732,7 +5732,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Int16, extendId=std.overflow:Int16<:ThrowingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int16<:ThrowingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5824,7 +5824,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Int32, extendId=std.overflow:Int32<:ThrowingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int32<:ThrowingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -5916,7 +5916,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Int64, extendId=std.overflow:Int64<:ThrowingOp&ThrowingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[ThrowingOp, ThrowingPow]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int64<:ThrowingOp&ThrowingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[ThrowingOp, ThrowingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6021,7 +6021,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/UInt8, extendId=std.overflow:UInt8<:ThrowingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt8<:ThrowingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6113,7 +6113,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/UInt16, extendId=std.overflow:UInt16<:ThrowingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt16<:ThrowingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6205,7 +6205,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/UInt32, extendId=std.overflow:UInt32<:ThrowingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt32<:ThrowingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6297,7 +6297,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/UInt64, extendId=std.overflow:UInt64<:ThrowingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt64<:ThrowingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6389,7 +6389,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/IntNative, extendId=std.overflow:IntNative<:ThrowingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:IntNative<:ThrowingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6481,7 +6481,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/UIntNative, extendId=std.overflow:UIntNative<:ThrowingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UIntNative<:ThrowingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -6904,7 +6904,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Int8, extendId=std.overflow:Int8<:WrappingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int8<:WrappingOp, fqName=std.overflow.Int8, name=Int8, receiverTypeName=Int8, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7001,7 +7001,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Int16, extendId=std.overflow:Int16<:WrappingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int16<:WrappingOp, fqName=std.overflow.Int16, name=Int16, receiverTypeName=Int16, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7098,7 +7098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Int32, extendId=std.overflow:Int32<:WrappingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int32<:WrappingOp, fqName=std.overflow.Int32, name=Int32, receiverTypeName=Int32, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7195,7 +7195,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Int64, extendId=std.overflow:Int64<:WrappingOp&WrappingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[WrappingOp, WrappingPow]]
+  CangJieStub$EXTEND[extendId=std.overflow:Int64<:WrappingOp&WrappingPow, fqName=std.overflow.Int64, name=Int64, receiverTypeName=Int64, superNames=[WrappingOp, WrappingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7305,7 +7305,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/UInt8, extendId=std.overflow:UInt8<:WrappingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt8<:WrappingOp, fqName=std.overflow.UInt8, name=UInt8, receiverTypeName=UInt8, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7402,7 +7402,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/UInt16, extendId=std.overflow:UInt16<:WrappingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt16<:WrappingOp, fqName=std.overflow.UInt16, name=UInt16, receiverTypeName=UInt16, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7499,7 +7499,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/UInt32, extendId=std.overflow:UInt32<:WrappingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt32<:WrappingOp, fqName=std.overflow.UInt32, name=UInt32, receiverTypeName=UInt32, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7596,7 +7596,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/UInt64, extendId=std.overflow:UInt64<:WrappingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UInt64<:WrappingOp, fqName=std.overflow.UInt64, name=UInt64, receiverTypeName=UInt64, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7693,7 +7693,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/IntNative, extendId=std.overflow:IntNative<:WrappingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:IntNative<:WrappingOp, fqName=std.overflow.IntNative, name=IntNative, receiverTypeName=IntNative, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7790,7 +7790,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/UIntNative, extendId=std.overflow:UIntNative<:WrappingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[extendId=std.overflow:UIntNative<:WrappingOp, fqName=std.overflow.UIntNative, name=UIntNative, receiverTypeName=UIntNative, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
