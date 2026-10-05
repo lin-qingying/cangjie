@@ -9,11 +9,11 @@ class C {
     public init() {}
 
     public func notCtor(): Unit {
-        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>t<!>his()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>()
     }
 }
 
 // FILE: delegationOutsideClass.cj
 func outside(): Unit {
-    <!THIS_SUPER_USE_ERROR_OUTSIDE_CLASS!>s<!>uper(1)
+    <!THIS_SUPER_USE_ERROR_OUTSIDE_CLASS!>super<!>(1)
 }

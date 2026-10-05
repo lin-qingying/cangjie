@@ -4,7 +4,9 @@
 // 1.1.3 本机在 CHIR/codegen 阶段对含 const 构造器 / const 函数的单元会 LLVM ERROR 崩溃
 // （"Reflection format: modifier type is invalid" / "EnumReflection format: operand numbers error"），
 // 崩在语义检查之后，语义诊断 JSON 仍完整产出，本文件按语义诊断写期望。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围；
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1）；CLASS_CONST_INIT_WITH_VAR
+//（锚 `init`）、CANNOT_DEFINE_VAR_IN_CONST_FUNCTION（锚变量名）、EXPECT_CONST 下标形态（锚基表达式）三类官方
+// 锚本就是完整 token/表达式，标记直接对齐官方，CFIR 已同口径；其余段逐字符对齐官方范围；
 // 官方对不同表达式形态的锚点宽度不同（见各段注释：调用锚被调函数名、下标锚基表达式、赋值锚整条赋值、for 锚整条 for 语句）。
 // 两条官方事实决定了本文件各段的写法（都是实测，不是推测）：
 //   (1) `static var` 成员同样算 var 字段：ChkClassDeclHasConstInitNoVarMember 只排除 prop，不排除 static，

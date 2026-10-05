@@ -9,15 +9,16 @@
 //       （锚条件名首字母 1 个字符）
 // 本项目：分别对应 CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE 与 CONDITIONAL_COMPILATION_NOT_SUPPORT_OP；
 //   CFIR 对条件失效后读取被剔除变量会另报 UNRESOLVED_REFERENCE，官方没有这条诊断，故此处不写该标记；
-//   CFIR 把条件整体标在一处，与官方的 1 字符锚不同（实现缺口）。
+// 范围口径：官方 GetBegin 1 字符锚按项目 Diagnostic Range Policy 不镜像；CFIR 与本文件标记
+//   统一锚完整条件名（INVALID_CONDITION_VALUE 锚完整右值 token）。
 
 // FILE: valueIsVariable.cj
 func withVar(os: String) {
-    @When[os == <!CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE!>o<!>s]
+    @When[os == <!CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE!>os<!>]
     let a = 1
     let _ = a
 }
 
 // FILE: debugCompared.cj
-@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_OP!>d<!>ebug == "true"]
+@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_OP!>debug<!> == "true"]
 func debugCompared() {}

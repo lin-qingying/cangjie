@@ -100,7 +100,8 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
      *
      * 对齐官方 `TypeCheckerImpl::CheckOperatorOverloadFunc`：
      * - 命中内建一元/二元签名时报 built-in overload 诊断；
-     * - 若声明返回类型与内建返回类型不一致，再按函数名报告 `RETURN_TYPE_INCOMPATIBLE`。
+     * - 官方对内建命中不做返回类型检查（返回类型不一致形态官方零诊断），
+     *   本 checker 也不追加 RETURN_TYPE_INCOMPATIBLE。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkBuiltinPrimitiveOperatorOverload(declaration: CfirNamedFunction) {
@@ -137,15 +138,9 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
             )
         }
 
-        val actualReturnType = context.returnTypeCalculator.tryCalculateReturnType(declaration).coneType
-        if (actualReturnType is ConeErrorType) return
-        if (AbstractTypeChecker.equalTypes(context.session.typeContext, actualReturnType, builtinMatch.returnType)) return
-
-        reporter.reportOn(
-            source = declaration.functionNameDiagnosticSource(),
-            factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
-            a = declaration.name,
-        )
+        // 官方 `CheckOperatorOverloadFunc`（TypeCheckDecl.cpp:155-193）对内建签名命中只报告
+        // built-in 一条诊断，不追加"返回类型与内建不一致"的检查；夹具取证（cjc 1.0.5/1.1.3
+        // 双版一致）证实返回类型不一致形态官方零诊断，故此处不再报告 RETURN_TYPE_INCOMPATIBLE。
     }
 
     /**
@@ -171,7 +166,9 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
 
         if (positionalParameters.isEmpty()) {
             reporter.reportOn(
-                source = diagnosticSource,
+                // 官方 sema_invalid_subscript_assign_parameter_num 锚运算符名 `[]`（fixture 注释登记的
+                // 实现缺口）；functionNameDiagnosticSource 对 operator 声明落到操作名 token。
+                source = declaration.functionNameDiagnosticSource() ?: diagnosticSource,
                 factory = CfirErrors.INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM,
             )
         }
