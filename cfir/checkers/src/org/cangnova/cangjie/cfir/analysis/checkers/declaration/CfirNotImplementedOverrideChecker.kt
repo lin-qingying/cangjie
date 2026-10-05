@@ -257,17 +257,20 @@ private fun <S : CfirCallableSymbol<*>> List<S>.findUnimplementedObligationBySig
                 }
                 if (diagnosedAsIncompleteSuperExtend) continue
 
-                // 官方分流（StructInheritanceChecker.cpp:862-872）：
-                //  (a) 义务来自当前类自身声明的无体成员时，官方报 missing_func_body /
-                //      class_need_abstract_modifier（MISSING_FUNC_BODY 检查器已覆盖声明级），
-                //      ABSTRACT_MEMBER_NOT_IMPLEMENTED 只覆盖"继承来的抽象成员"；
-                //  (b) 义务来自接口的无默认实现成员时，官方报 need_member_implementation，
-                //      归 InterfaceRequirement 通道（inheritanceGraphRules.cj / abstractMemberAccessRules.cj 取证）。
+                // 官方 `DiagnoseForUnimplementedInterfaces`（StructInheritanceChecker.cpp:862-872）在这条
+                // 分支上按宿主种类分流：class-like 宿主报 class_need_abstract_modifier_or_func_need_impl，
+                // interface 宿主报 need_member_implementation（:873-875）。本仓落成两个可由
+                // use-site 成员图判定的等价维度：
+                //  (a) 义务 owner 就是当前类自身 → 该类自己就是 abstract 容器，不进本族；
+                //      声明级由 MISSING_FUNC_BODY 检查器覆盖（官方 :876 的补集分支）；
+                //  (b) 义务 owner 是接口 → 归 InterfaceRequirement 通道
+                //      （inheritanceGraphRules.cj / abstractMemberAccessRules.cj 取证）。
+                //
                 // 判定用 classId 身份比较：scope 中的义务符号可能来自 provider 物化的不同声明实例，
                 // 引用比较不可靠（本批次审查发现）。
                 val obligationOwnerClassId = abstractSymbol.ownerClassId(context)
                 if (obligationOwnerClassId != null &&
-                    obligationOwnerClassId == (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId
+                    obligationOwnerClassId == ownerDeclaration.symbol.classId
                 ) continue
                 val obligationOwner = obligationOwnerClassId?.let {
                     context.session.symbolProvider.getClassLikeSymbolByClassId(it)

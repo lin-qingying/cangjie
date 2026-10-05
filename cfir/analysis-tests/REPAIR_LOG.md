@@ -10550,3 +10550,102 @@ lambda capture 族（lambdaCaptureVarRules.cj，20 标记）：取证结论—�
   4. instanceField：CLASS_UNINITIALIZED_FIELD 锚位族（首字符 vs 构造器名/字段名，官方锚待夹具注释确认）+ 重复报 + CAPTURE 守卫（聚类 2b）
   5. staticFieldInitializationRules PSI 侧、returnInStaticInit（RETURN_TYPE_MISMATCH 真实路径）、cannotInheritSealedClass/extendImmutableIndexAssignment PSI 侧（range 批次 PSI 残留）、extendImportedInterfaceOrphan/extendMutInterfaceOnPrimitive（REDUNDANT_MODIFIER 缺失等）
   6. 全量回归（LLT 连带 61 个失败需按官方口径修 LLT 夹具——分类清单见 2026-10-05 全量条目）+ 分批提交
+
+## 审查报告：2026-10-05 独立审查（补做 HANDOFF §3 缺口）
+
+审查对象：`9e4e80de2` / `b9f183f03` / `69c7d4f40` / `2e49dd2a0`（HANDOFF §3 标记为"后半 13 源码 + 25 夹具未逐文件核对、LLT 连带 61 失败未审查"的缺口）。方法：干净上下文独立审查，逐 commit `git show` 对照技能全文与 Diagnostic Range Policy；官方引用逐条回 `external/cangjie_compiler`（tag v1.0.0）核对行号与语义；存疑形态用 cjc 1.0.5 探针仲裁。
+
+### 总体结论
+
+**需修复后合并**（1 高 / 1 次高 / 3 中 / 3 低）。四条主线成立：改动落在共享 owner（`checkMemberShadowing` / `findUnimplementedObligationBySignature` / `reportUninitializedStaticFields` 等），全树扫描**无 fixture 名/形态名硬编码**，无单夹具特判；锚位改动绝大多数有 Range Policy 或官方背书。**未发现回退整批的依据。**
+
+### 逐项判定
+
+| 项 | 判定 | 依据 |
+|---|---|---|
+| `CfirWhenConditionEvaluation.kt`（新增，132 行） | ✅ 合规 | 条件名→操作符契约→字面量→版本格式→白名单规则链完整，`CfirConditionalCompilationChecker` 消费链就绪（`CfirFile.conditionalCompilationFailures` → 7 类诊断映射）；判定入口单点、两条 raw 路径共享，符合"接口优先" |
+| 两份 @When 夹具锚位（`whenConditionErrors` / `whenConditionValueAndDebugOp`） | ✅ 合规 | 官方 GetBegin 1 字符窄锚按 Range Policy 不镜像，改锚完整条件名/右值 token |
+| `LightTreeRawCfirDeclarationBuilder` / `PsiRawCfirBuilder` 挂载 | ✅ 合规 | 两路对称，import 前导 `@When` 一并收集 |
+| 跨行标记与逗号多诊断名写法 | ✅ 合规 | 已核 `CodeMetaInfoParser`：全文字符区间扫描（非单行正则）+ LIFO 栈，跨行/逗号/嵌套三种写法均支持；24 个改动夹具结构校验无孤立标记/未闭合/非法交叉重叠/同 range 写成嵌套 |
+| `CfirConstDeclarationChecker`（3 处锚位） | ✅ 合规 | 官方 `MakeRange(identifier)` 锚变量名/`init` 完整 token；EXPECT_CONST 下标锚 receiver |
+| 新增 `variableNameDiagnosticSource()` | ⚠️ 存疑（未修） | light-tree 实现用 `firstOrNull { IDENTIFIER }`，同文件既有 `findFieldVariableNameSource`（:697）用 `fieldVariableNameTokenTypes` + 名称比对；多变量绑定形态下会取首个。功能正确，与邻近惯例不一致 |
+| `CfirExtendExtraChecker` EXTEND_ILLEGAL_MEMBER 两分支锚位 | ✅ 合规 | 用户裁决 2026-10-05；`CfirInheritanceDeepChecker.kt:543` 显式反对 fixture 特判的注释说明该文件守纪律 |
+| `CfirInheritanceDeepChecker` CANNOT_INHERIT_SEALED 锚子类名 | ✅ 相符 | 官方 `CheckSealedInheritance` 主锚子类名，OtherHint 指父类型引用 |
+| `CfirInoutSemanticsChecker` + 两条 raw 路径 source 扩大 | ✅ 合规 | 官方 refactor 锚 `inout X` 整段；调用点与 `checkInoutTarget` 口径一致（:64 已是 `argument.source`） |
+| `CfirMutabilityCheckers` static 排除 | ✅ 相符 | `TypeCheckReference.cpp:513-525` 先剔 static 再统一报 `object_cannot_access_static_member`，不经 `cannot_modify_var` |
+| `CfirOverrideChecker` + `CfirModifierChecker` NOTHING_TO_OVERRIDE 双点 | ✅ 行为相符 / ⚠️ 注释错 | 官方 `:1048-1052` 严格 else-if：`override` 无目标 → `sema_missing_overridden_func`；`redef` **且 static** 无目标 → `sema_missing_redefined_func`；`redef` 非 static 无目标 → **零诊断**。行为正确，但 Modifier 侧注释写"报两条"、`redef_modify_static_func` 在官方无此 kind → **已修（M1）** |
+| `CfirOperatorDeclarationChecker` 删 RETURN_TYPE_INCOMPATIBLE | ❌ **违规（语义降级）** | 见下"新发现"节，**未修，独立立项** |
+| `CfirOperatorDeclarationChecker` subscript 锚操作名 | ✅ 合符 | 官方锚运算符名 `[]` |
+| `CfirNotImplementedOverrideChecker` 义务分流 classId | ✅ 行为可用 / ⚠️ 注释维度错 | 切片验证差异消失；但官方 `:862-872` 分流维度是**宿主种类**（`IsClassLikeDecl()`），非"自身 vs 继承"（后者在 `:876` 互斥分支），CFIR 的 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 官方亦无同名 kind → **已修（M3）**，另删冗余 `as?` |
+| `CfirConstructorDelegationCallChecker` 跳过匿名函数 | ✅ 合规 / ⚠️ 风格 | 官方 `CheckRefConstructor` + `GetCurFuncBody`（`Utils.cpp:325-341`）对 lambda 返回 `le->funcBody`，而其 `funcDecl` 从未赋值（`LambdaExpr` 无该字段，parser 只赋 `funcBody`）→ `insideCtor=false` → 官方**会**报 outside_ctor。**但 cjc 1.0.5 探针实测构造器内 lambda 调 `super(a)` 官方零 outside_ctor**（只报 `no_non_param_constructor_in_super_class` + `illegal_place_of_calling_this_or_super`），与夹具一致 → **改动正确，探针推翻源码推断**；手写遍历与既有 `findClosestDeclaration` 等价 → **已修（M2）** |
+| `CfirExtendExtraChecker` operator 一律跳过 shadow | ❌ **违规（过度豁免→漏报）· 本轮未修** | 原注释援引的 `IsBuiltInOperatorFuncInExtend` 只豁免"未实现接口成员"（唯一调用点 `:843`），与遮蔽无关；遮蔽走 `CheckExtendMemberValid`（`:908-943`），**无 operator 豁免分支**。cjc 探针：B（宿主已有 `+`，extend 再定义 `+`）官方**报** sema_extend_member_cannot_shadow。**两次修复尝试均引入回归并已回退**（详见修复节）：①删粗闸 → 4 处误报；②改判 `sourceExtend != null` → 70 处误报（读反官方 `:913-916` 条件）。粗闸保留，漏报登记为待办 |
+| `coneDiagnosticToCfirDiagnostic` 接口静默分支 | ✅ 相符 / ⚠️ 未验证 | `TypeCheckCall.cpp:2521-2522` 相符；但 REPAIR_LOG 六节记载探针零命中，实为防御映射 → **已加注（L2）** |
+| `CfirInitializationCheckers` throw 终止按类跳过 | ⚠️ 近似（已知缺口） | 官方判据是 per-scope `scopeTerminationKinds` map（`:496-498`，记录 scope 内**首个**控制流表达式，带 tryDepth/optionalCtxDepth 守卫），本仓用"末语句是 throw"近似 → `try { throw }` 误跳过、`if (c) { throw }` 漏跳过。已在注释标注近似边界 |
+| `gen/` 与 `tests-gen/` 构建产物 | ✅ 排除 | 396 个未提交改动全在 `gen/`、`tests-gen/`；4 个 commit 均未触碰 `gen/` |
+
+### 问题清单（按严重度）
+
+1. **H1 过度豁免** — `EXTEND_MEMBER_CANNOT_SHADOW` 对非内建 operator 漏报（cjc 探针证实官方会报）。**问题确认但本轮未修**：两次修复尝试分别引入 4 处与 70 处误报，均已回退；取证不足，不重复尝试（详见修复节"两次失败尝试"）
+2. **H2 空 ClassId 污染跳过集合** — `throwTerminatedOwners: Set<ClassId?>`，顶层字段 `null in 集合` 恒真 → 静默漏报
+3. **M1/M3 官方引用不实** — 诊断条数记错、分流维度记错（行为对，依据错，会误导后续修复）
+4. **M2 重复实现** — 手写遍历等价于既有 `findClosestDeclaration`；同名 private 扩展在两个文件里语义分叉
+5. **L1/L2/L3** — 锚点注释引用了官方零命中的 `MakeRealRange`；防御分支未标注未验证；light-tree helper 与邻近惯例不一致
+
+### 总体结论：需修复后合并
+
+**本轮实际落地 5 项（H2 / M1 / M2 / M3 / L1 / L2），H1 经切片验证后撤回修复、改为登记待办。** 编译通过；切片验证见下节。**另有两项超出"修复审查文档所列问题"范围的问题已如实登记为独立待办批次，本轮不动 checker**：RETURN_TYPE_INCOMPATIBLE 误删（本轮审查新发现的违规）、H1 的正确判据设计。
+
+## 2026-10-05（七）：独立审查（补做）发现与修复
+
+审查对象：`9e4e80de2` / `b9f183f03` / `69c7d4f40` / `2e49dd2a0`。方法：干净上下文独立审查，逐 commit 对照 SKILL 与 Range Policy；官方引用逐条回 `external/cangjie_compiler`（v1.0.0）核对；存疑形态用 cjc 1.0.5 探针仲裁。
+
+- **H1 过度豁免（EXTEND_MEMBER_CANNOT_SHADOW 漏报）——问题确认，本轮未修**：漏报事实成立。`CfirExtendExtraChecker.checkMemberShadowing` 里"operator 成员一律 `continue`"过宽。原注释援引的 `IsBuiltInOperatorFuncInExtend` 只豁免"未实现接口成员"检查（唯一调用点 `StructInheritanceChecker.cpp:843`），与遮蔽检查无关；遮蔽走 `CheckExtendMemberValid`（`:908-943`），**全程无 operator 豁免分支**。cjc 1.0.5 三维探针：A `extend Int64 { operator func / }` 零遮蔽；B `class Vec` 已有 `operator func +`、`extend Vec` 再定义 `+` → **报** sema_extend_member_cannot_shadow；C `extend Bag { operator func == }`（宿主无 `==`）零遮蔽。
+  - **第一次尝试（删粗闸）已撤回**：删掉粗闸后 `*Operator*` 切片实测 `testOperatorOverloadDeclarationRules` 多报 4 处 `EXTEND_MEMBER_CANNOT_SHADOW`——形态 1 的 `extend Int64` 一元 `-`（两处）、`extend Bool` 一元 `!`、形态 4 的 `extend Int64` 二元 `/`。插桩（`System.err.println` 经 XML system-err 提取）定位根因：同文件窄守卫 `isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow` **不足以接管**——它按 `origin == Synthetic.FakeFunction` 二分，但 std.core 元数据里的内建算术/一元运算符候选（`unaryMinus` / `not` / `div`）**origin 同样是 `Source`**，会落到 Library 分支按返回类型分派，返回类型与内建一致时判为"不豁免"，于是形态 1/4 误报。探针显示窄守卫全程**零 bail**（未在任何 early-return 退出），确认它走到了 Library 分支而非解析失败。
+  - **正确修法所需的新判据**（未实施）：豁免条件必须逐条对齐官方 `CheckExtendMemberValid`（StructInheritanceChecker.cpp:908-943）三个分支及其前置条件，包括 `Attribute::DEFAULT` / `Attribute::IN_EXTEND` 在 CFIR 侧的来源与映射、`IsExtendedDefaultImpl` 的判定，以及内建运算符候选究竟经哪条路径进入 use-site scope。**在这些取证清楚之前不要改判定**——见下方"两次失败尝试"。
+  - 现状：**保留粗闸**（`git diff` 仅保留注释订正，不改行为），漏报作为已知缺口登记。
+
+  - **两次失败尝试（均已回退，勿重复）**：
+    1. *删除粗闸，交给 `isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow`*：`--tests '*Operator*'` 切片实测 `testOperatorOverloadDeclarationRules` 多报 4 处 `EXTEND_MEMBER_CANNOT_SHADOW`（形态 1 `extend Int64` 一元 `-` 两处、`extend Bool` 一元 `!`、形态 4 `extend Int64` 二元 `/`）。插桩定位：该窄守卫按 `origin == Synthetic.FakeFunction` 二分，但 std.core 元数据里的内建算术/一元运算符候选（`unaryMinus` / `not` / `div`）origin **同为 `Source`**，落到 Library 分支按返回类型分派，返回类型一致时判为不豁免。守卫全程零 bail，确认非解析失败。
+    2. *改为「候选来自 extend 即豁免」（`provenance.sourceExtend != null`）*：`'*Operator*' + '*Extend*'` 切片 **70 个失败**（基线 11 + 5），`ExtendFunctionConflict` / `Import6` / `LibraryShadowConflicts` 等 shadow 家族全线失效。根因是**读反了官方分支条件**：`StructInheritanceChecker.cpp:913-916` 的 `return true`（豁免）前置是 `!parent.decl->TestAnyAttr(DEFAULT, IN_EXTEND) && child.TestAttr(IN_EXTEND)`——只有**不带** `IN_EXTEND` 的 extend 成员才豁免，带 `IN_EXTEND` 的照报。我只看到 `return true` 就当成了"extend 成员一律豁免"。
+    - 两次的共同错误：**用一句推断代替读完条件**。第一次未验证"窄守卫能否接管"就写进报告（且未先跑对应域切片）；第二次未读完整个 if 条件就落码。SKILL pitfall 34 描述的正是这种错误推理链——错误前提稳定导出错误修法。纪律：改动前必须把官方分支条件读全 + 取证 CFIR 侧属性映射，再动代码。
+    - 环境变化：`~/.cangjie/sdks/cangjie-1.0.5/` 已从磁盘消失（此前探针可用）。现存 0.53.13 / 0.53.18 / 1.0.0 / 1.1.3；1.0.0 即 SKILL pitfall 37 要求的 pin 版本，取证优先用它。
+- **H2 空 ClassId 污染跳过集合**：`throwTerminatedOwners` 原声明 `Set<ClassId?>`，而 `nominalOwnerClassId` 在顶层/非 class-like 宿主下为 null（同文件有对应 continue 分支），`null in 集合` 恒为真会让这些字段的 TYPE_UNINITIALIZED_STATIC_FIELD 被静默吞掉。改为 `Set<ClassId>`，写入点判空后再加。
+- **M3 官方分流维度记错（注释）**：`StructInheritanceChecker.cpp:862-872` 的分流维度是宿主种类（`IsClassLikeDecl()`），不是"自身声明 vs 继承"；后者在 `:876` 的互斥分支。CFIR 的两个判定维度结论集合一致，但注释已按实际维度重写，并登记 CFIR 的 ABSTRACT_MEMBER_NOT_IMPLEMENTED 在官方无同名 kind（对应 `sema_interface_member_must_be_implemented` :873-875）。同时删掉对非空 `CfirClassLikeSymbol<*>` 的冗余 `as?`。
+- **M2 复用既有 helper**：`CfirConstructorDelegationCallChecker.closestFunctionLikeDeclaration` 手写的 `containingDeclarations.asReversed().mapNotNull{...}` 与 `findClosestDeclaration<CfirFunction>` 等价，改为 `findClosestDeclaration<CfirFunction> { it !is CfirAnonymousFunction }`。
+- **M1 诊断条数记错（注释）**：实例 redef 命中父类非 static 成员，官方 `StructInheritanceChecker.cpp:987-988` 只发**一条** sema_func_no_override_or_redefine_modifier（`else if` 链首支），原注释写的 `redef_modify_static_func` 在官方无此 kind。
+- **L1 TYPE_UNINITIALIZED_STATIC_FIELD 锚点注释订正**：官方 `InitializationChecker.cpp:506-507` 第三实参是 `decl->identifier`（锚标识符），该文件 `MakeRealRange` 零命中；本仓取整条声明是 Range Policy 下的合法选择，注释改为说明"锚点差异是政策而非语义"。
+- **L2 接口实例化静默分支（注释）**：`coneDiagnosticToCfirDiagnostic` 的 `ConeResolutionToClassifierError` 分支补上官方出处（`TypeCheckCall.cpp:2521-2522` 的 `case ASTKind::INTERFACE_DECL` 只发 `sema_interface_can_not_be_instantiated`）。该分支仍是**未经实测验证**的防御映射（REPAIR_LOG 六节记载探针零命中），下批处理接口实例化漏报时不要在此处加码，先按实际报告点定位。
+
+- **新发现·未修·独立立项：RETURN_TYPE_INCOMPATIBLE 被误删（语义降级）**。`b9f183f03` 以"`CheckOperatorOverloadFunc`（TypeCheckDecl.cpp:155-195）内无返回类型检查"为由删掉了内建 operator 的 RETURN_TYPE_INCOMPATIBLE 上报，并把该结论写进夹具头部。**该结论只看了那一个函数，漏了真正的发出点**：extend 里的内建 operator 成员是对内建运算的 override/实现，`AreReturnTypesCompatible` 不通过时官方在 `StructInheritanceChecker.cpp:1243` 报 sema_return_type_incompatible（"…is not identical or not a subtype of the overridden/redefined/implement function"），与 built-in 那条**并列、不互相屏蔽**。cjc 1.0.5 实测 `extend Int64 { operator func ==(right: Int64): Int64 }` 同时报 sema_operator_overload_built_in_binary_operator + sema_return_type_incompatible；LLT 夹具 `llt/Extend/extend_overload_builtin_op1.cj` 已写该标记——**夹具是对的，checker 是错的**，`testExtendOverloadBuiltinOp1`（PSI/非 PSI 两侧）因此转红。
+  - **本轮未修**（超出"审查文档 6 项"范围，需设计决策，另立批次）。证据矩阵（cjc 1.0.5，全部"返回类型与内建不一致"形态）：
+
+    | 构造 | sema_return_type_incompatible |
+    |---|---|
+    | `extend Int64 { operator func ==(right: Int64): Int64 }` | **报** |
+    | `extend Int64 { operator func !=(right: Int64): Int64 }` | **报** |
+    | `extend Int64 { operator func <(right: Int64): Int64 }`（ordering） | 不报 |
+    | `extend Int64 { operator func /(a: Int64): Bool }` | 不报 |
+    | `extend Int64 { operator func *(a: Int64): Bool }` | 不报 |
+    | `extend Int64 { operator func <<(a: Int64): Bool }` | 不报 |
+    | `extend UInt8 { operator func %(a: UInt8): Int64 }` | 不报 |
+    | `extend Bool { operator func !(): Int64 }` | 不报 |
+    | `struct SPair { operator func ==(other: SPair): Int64 }`（**类体内，非 extend**） | **报** |
+
+  - 判据不是"家族"（ordering 的 `<` 同样不报），而是**该 operator 在 std.core 是否有真实、可 override 的父成员**：`==`/`!=` 经 `extend <类型> <: Equatable` 显式声明，是真实成员；`/` `*` `<<` `%` `!` 是 synthetic 内建，无对应 FuncDecl。同一事实已在 `CfirExtendExtraChecker.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow` 的 KDoc 里记录（synthetic vs Library 成员之分）。
+  - **最后一行说明修法层级问题**：`struct SPair` 里**类体内**声明的 `operator func ==` 返回类型不匹配官方**也报**，而该路径不经过 `checkBuiltinPrimitiveOperatorOverload`（该函数要求 `findClosestDeclaration<CfirExtend>()` 非空）。即官方这条诊断的 owner 是**通用的 override/实现返回类型兼容检查**，`CfirOperatorDeclarationChecker` 里这条只覆盖 extend 内建 operator，是局部补丁、天然覆盖不全。正解应把检查落到继承/override 检查器让两条路径共用 owner（改动面与回归风险显著更大），而非在 operator checker 里加家族白名单（会违反"special cases"非协商项）。
+  - 另需取证：官方 `AreReturnTypesCompatible` 判据是"相同**或子类型**"，CFIR 现有规则用 `equalTypes`（仅相同）。子类型但不相同的情形是否也报尚未取证。
+  - 教训：判定"某诊断官方不报"时必须找齐该 kind 的**全部**发出点，只 grep 到某一处无命中不足以支撑停用。
+- **基线对比（补齐 HANDOFF §3 最后一行缺口）**：`testExtendOverloadBuiltinOp1` 的红是 `b9f183f03` 引入（删规则却未同步该 LLT 夹具），不属本轮审查修复。本轮六项修复用 `git stash` 把 `cfir/checkers/src` + REPAIR_LOG 暂存到 HEAD 态、跑同一条 `.\gradlew.bat :cfir:analysis-tests:test --tests '*Extend*'` 取干净基线（首跑被 Gradle build cache 命中、结果不可用，改 `--rerun-tasks` 重跑确认 "48 executed"），再与修复后 XML 逐用例做集合差：
+  - 基线（HEAD）失败 **11**，修复后失败 **11**，**ADDED = 0、REMOVED = 0**。
+  - 即六项修复**零回归**，同时也**未使任何 Extend 用例转绿**——它们修的是当前切片未覆盖的路径（H2 的顶层静态字段、H1 的非内建 operator 遮蔽形态在本仓无对应夹具，M1/M3/L1–L3 是注释与冗余代码）。这一点必须如实登记：**不能拿"零回归"当作"修复已验证生效"**。
+  - 11 个既有失败中，`testExtendOverloadBuiltinOp1`（PSI/非 PSI 两侧）对应上条 RETURN_TYPE_INCOMPATIBLE 待办；`testExtendImmutableIndexAssignment`（PSI 侧）、`testExtendImportedInterfaceOrphan`、`testExtendMutInterfaceOnPrimitive`（REDUNDANT_MODIFIER 缺失）、`testInheritedAbstractImportBoundary`、`BugPartImport#testMain` 属本批次之前既有的开放项，与本轮六项无关。
+  - 未跑全量 `:cfir:analysis-tests:test`；LLT 连带 61 失败仍未处置。
+
+- verification command(s) and outcome:
+  - `.\gradlew.bat :cfir:checkers:compileKotlin` → `BUILD SUCCESSFUL`（六项修复全部编译通过；唯一 warning 是既有的 `CfirInheritanceThreadContextChecker.kt:55` 参数名与超类型不一致，与本轮无关）。
+  - 基线与修复后各跑一次 `.\gradlew.bat :cfir:analysis-tests:test --tests '*Extend*'`（基线那次加 `--rerun-tasks`，因首跑 "8 from cache" 结果不可用），从 `cfir/analysis-tests/build/test-results/test/*.xml` 逐 testcase 抽取失败集合做双向差：**基线 11 / 修复后 11，ADDED = 0、REMOVED = 0**（详见上条）。
+  - 官方取证：cjc 1.0.5 探针 11 个（`D:/code/tmp/cjreview/probe*.cj`），覆盖 extend/member shadow 三维对照、构造器内 lambda 的 this/super、跨家族 operator 返回类型矩阵；`external/cangjie_compiler` @ v1.0.0 逐条核对 9 处引用。
+  - 夹具结构校验：24 个改动夹具的 `<!>` 标记无孤立/未闭合/非法交叉重叠/同 range 写成嵌套。
+  - **第二轮复审补跑 `*Operator*` 切片**（第一轮只跑了 `*Extend*`，漏掉 H1 的高风险面——形态 1/4 在 `operator/operatorOverloadDeclarationRules` 夹具里，属 Operator 组）：修复前 5 失败。撤回 H1 后重跑仍 5 失败，`testOperatorOverloadDeclarationRules` 的逐行 diff 中 `EXTEND_MEMBER_CANNOT_SHADOW` **0 条**（回归已消），剩余差异全是 `o<!>perator` vs `<!>operator<!>` 的锚点宽度问题（Range Policy 待办，属 b9f183f03 之后的既有项，非本轮引入）。这 5 个失败未取得独立基线，但逐行 diff 已确认与本轮改动无关。
+  - 插桩取证：`isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow` 各 bail 点 `System.err.println`，经 `grep -a -o "PROBE-SYNTH..."` 从 XML system-err 提取；结论为**零 bail**。插桩已完全移除（`grep -c PROBE-SYNTH` = 0，编译通过）。
+  - **未验证项**：全量回归未跑；`isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow`（H1 依赖的窄守卫）本轮未单独取证；L3 的多变量绑定形态未构造用例。

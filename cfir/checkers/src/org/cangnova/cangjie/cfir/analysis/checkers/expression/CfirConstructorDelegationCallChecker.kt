@@ -54,13 +54,11 @@ private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
     }
 }
 
-/** 查找当前上下文中最近的函数级声明。 */
+/** 查找当前上下文中最近的函数级声明，跳过 lambda / 匿名函数。 */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
     // 官方 CheckRefConstructor（TypeCheckCall.cpp:2289-2305）只对"所在函数体不是构造器"报
-    // outside_ctor；构造器体内嵌套 lambda 的 this()/super() 由 CheckCallsInConstructor
-    // 按位置规则处理、不报 outside_ctor（superThisCallRules.cj 取证）——最近函数级声明的
-    // 查找因此跳过 lambda / 匿名函数。
-    return containingDeclarations.asReversed()
-        .mapNotNull { symbol -> symbol.cfir as? CfirFunction }
-        .firstOrNull { it !is CfirAnonymousFunction }
+    // outside_ctor；构造器体内嵌套 lambda 的 this()/super() 不报该诊断（superThisCallRules.cj 取证，
+    // cjc 1.0.5 实测：仅报 no_non_param_constructor_in_super_class 与
+    // illegal_place_of_calling_this_or_super），位置规则由 CheckCallsInConstructor 另行处理。
+    return findClosestDeclaration<CfirFunction> { it !is CfirAnonymousFunction }
 }

@@ -182,8 +182,8 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
                 CfirErrors.REDEF_INSTANCE_ERROR,
                 callable.declarationKindName(),
             )
-            // 官方对"实例 redef 命中父类非 static 成员"报 redef_modify_static_func +
-            // no_override_or_redefine_modifier（StructInheritanceChecker.cpp:988，无对应 CFIR 名），
+            // 官方对"实例 redef 命中父类非 static 成员"只报一条
+            // sema_func_no_override_or_redefine_modifier（StructInheritanceChecker.cpp:987-988），
             // 不追加 NOTHING_TO_OVERRIDE（overrideRedefRules.cj 取证）。
         }
 
