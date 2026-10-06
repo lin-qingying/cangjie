@@ -58,15 +58,11 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.expressions.whenConditionFailureOrNull
 import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
-import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationFailure
-import org.cangnova.cangjie.cfir.session.CfirRawBuiltinAnnotationNames
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.symbols.*
@@ -235,7 +231,6 @@ class LightTreeRawCfirDeclarationBuilder(
                         this.packageDirective = packageDirective
                         imports.addAll(buildImportsFromFile(file))
                         declarations.addAll(buildFileDeclarations(file))
-                        conditionalCompilationFailures.addAll(collectWhenConditionFailures(file))
                     }
                 }
             }
@@ -2481,38 +2476,6 @@ class LightTreeRawCfirDeclarationBuilder(
             ?: return null
         val expressionNode = expressionBuilder.findFirstExpression(conditionNode) ?: return null
         return expressionBuilder.convertExpression(expressionNode)
-    }
-
-    /**
-     * 递归收集整棵文件树中 `@When` 条件的求值失败事实。
-     *
-     * 判定逻辑在 [whenConditionFailureOrNull]（两条 raw 路径共享）；本函数只负责
-     * light-tree 侧的注解定位、条件表达式转换与失败挂载。`@When[1]` 这类官方
-     * parse 阶段错误由共享判定的非比较形态静默，不产生失败事实。
-     */
-    private fun collectWhenConditionFailures(node: LighterASTNode): List<CfirConditionalCompilationFailure> {
-        val failures = mutableListOf<CfirConditionalCompilationFailure>()
-        collectWhenConditionFailuresRecursive(node, failures)
-        return failures
-    }
-
-    private fun collectWhenConditionFailuresRecursive(
-        node: LighterASTNode,
-        failures: MutableList<CfirConditionalCompilationFailure>,
-    ) {
-        tree.forEachChildren(node) { child ->
-            if (child.tokenType == CjNodeTypes.ANNOTATION &&
-                annotationNameInfo(child)?.rawName == CfirRawBuiltinAnnotationNames.WHEN
-            ) {
-                val conditionNode = findFirstDescendantByType(child, CjNodeTypes.ANNOTATION_WHEN_CONDITION)
-                val expressionNode = conditionNode?.let { expressionBuilder.findFirstExpression(it) }
-                val expression = expressionNode?.let { expressionBuilder.convertExpression(it) }
-                if (expression is CfirComparisonExpression) {
-                    expression.whenConditionFailureOrNull()?.let { failures.add(it) }
-                }
-            }
-            collectWhenConditionFailuresRecursive(child, failures)
-        }
     }
 
     /** 构造文件顶层声明列表。 */

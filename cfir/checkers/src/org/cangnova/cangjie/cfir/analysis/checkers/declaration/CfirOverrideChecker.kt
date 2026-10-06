@@ -96,10 +96,6 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             if (overriddenCandidates.isEmpty()) {
                 if (!hasOverrideLikeModifier) continue
-                // 官方对 `redef` 空目标报 sema_missing_redefined_func（无对应 CFIR 诊断名，
-                // overrideRedefRules.cj 按 SUGGESTED 口径不写标记）；只有 override 的空目标
-                // 才落 NOTHING_TO_OVERRIDE。
-                if (!callable.status.isOverride) continue
                 if (callable.hasInheritedSignatureIgnoringStatic(classScope, declaration)) {
                     continue
                 }

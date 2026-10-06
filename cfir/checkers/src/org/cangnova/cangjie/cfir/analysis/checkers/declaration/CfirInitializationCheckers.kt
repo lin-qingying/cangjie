@@ -44,7 +44,6 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -253,9 +252,6 @@ private class CfirInitializationFlowAnalyzer(
         val recursiveStaticFunctionReads = mutableListOf<StaticGlobalUseEdge>()
         var state = InitializationState.empty().declareAll(trackedInfos, emptySet())
         var nextVisitOrder = 0
-        // 元素类型是 ClassId 而非 ClassId?：宿主为 null（顶层/非class-like）时不入集合，
-        // 否则消费点 `null in 集合` 会命中并静默漏掉这些字段的诊断。
-        val throwTerminatedOwners = mutableSetOf<ClassId>()
 
         for (declaration in trackedDeclarations) {
             when (declaration.kind) {
@@ -287,23 +283,12 @@ private class CfirInitializationFlowAnalyzer(
                     )
                     state = result.state
                     nextVisitOrder = result.nextVisitOrder
-                    // 官方 CheckStaticInitForTypeDecl（InitializationChecker.cpp:489-500）：static init
-                    // 函数体以 throw 直接终止时整段跳过，该类所有静态成员都不报本族诊断
-                    // （staticFieldInitializationRules.cj 取证）。
-                    //
-                    // 近似：官方判据是 per-scope 的 scopeTerminationKinds map（:496-498，记录 scope 内
-                    // 首个控制流表达式，带 tryDepth/optionalCtxDepth 守卫），这里用末语句近似，
-                    // 故 `try { throw }` 与 `if (c) { throw }` 形态仍与官方不一致。
-                    val ownerClassId = declaration.nominalOwnerClassId
-                    if (ownerClassId != null && declaration.body?.statements?.lastOrNull() is CfirThrowExpression) {
-                        throwTerminatedOwners += ownerClassId
-                    }
                 }
             }
         }
 
         reportRecursiveStaticFunctionReadsBeforeInitialization(recursiveStaticFunctionReads)
-        reportUninitializedStaticFields(trackedBySymbol.values, throwTerminatedOwners)
+        reportUninitializedStaticFields(trackedBySymbol.values)
     }
 
     /**
@@ -2326,27 +2311,14 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 报告最终仍未初始化的 static 字段。
      */
-    private fun reportUninitializedStaticFields(
-        variables: Collection<StaticGlobalInitializerVariable>,
-        throwTerminatedOwners: Set<ClassId>,
-    ) {
+    private fun reportUninitializedStaticFields(variables: Collection<StaticGlobalInitializerVariable>) {
         for (variable in variables) {
             val field = variable.field ?: continue
             if (!field.status.isStatic) continue
             if (variable.initialized) continue
-            // 官方 throw 终止跳过按类生效：宿主类的 static init 以 throw 直接终止时，
-            // 该类所有静态成员都不报（InitializationChecker.cpp:489-500）。
-            // 无宿主的顶层字段 ownerClassId 为 null，不会命中非空元素类型的集合。
-            val ownerClassId = (field.symbol as? CfirCallableSymbol<*>)?.callableId?.classId
-            if (ownerClassId in throwTerminatedOwners) continue
             with(context) {
                 reporter.reportOn(
-                    // 官方 `DiagnoseRefactor(sema_type_uninitialized_static_field, *decl, decl->identifier)`
-                    // （InitializationChecker.cpp:506-507）第三个实参是 `decl->identifier`，
-                    // 即锚字段名标识符、而非整条声明（该文件 `MakeRealRange` 零命中）。
-                    // 本仓按项目 Diagnostic Range Policy 对"声明级 kind"取整条声明范围，
-                    // 取 `field.source`；两者都是合法的 IDE 宽度选择，锚点差异是政策而非语义。
-                    source = field.source ?: field.fieldVariableNameDiagnosticSource(),
+                    source = field.fieldVariableNameDiagnosticSource(),
                     factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD,
                     a = field.name,
                 )

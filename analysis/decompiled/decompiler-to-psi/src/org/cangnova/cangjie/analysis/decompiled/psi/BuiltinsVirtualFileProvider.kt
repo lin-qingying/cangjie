@@ -52,6 +52,20 @@ abstract class BuiltinsVirtualFileProvider {
         return files.any { builtin -> builtin == file || VfsUtilCore.isAncestor(builtin, file, false) }
     }
 
+    /**
+     * 批量判断给定文件是否**全部**位于 builtins 根内（含根本身）。
+     *
+     * 语义等价于对每个文件调用 [isInBuiltinRoot] 再取 `&&`，但允许宿主只解析一次 builtins 根。
+     * 逐个调用时每次都要重新解析根，而调用方常常是“同一个库下的每个 `.cjo` 各问一次”
+     * ——IDE 宿主解析根要走 SDK 服务查找 + 路径存在性检查 + VFS 查找，逐个调用会把
+     * 同一份磁盘 I/O 重复成百上千次。
+     *
+     * 典型调用方是项目结构快照里的“该库是否已被 builtins 通道完整覆盖”判定：
+     * 它位于写动作尾部的每键必经路径上，重复 I/O 会直接表现为编辑器输入卡顿。
+     */
+    open fun areAllInBuiltinRoot(files: Collection<VirtualFile>, project: Project?): Boolean =
+        files.all { file -> isInBuiltinRoot(file, project) }
+
     companion object {
         /**
          * 从 IntelliJ application service 容器中取得已注册的 builtins 文件 provider。
@@ -125,6 +139,17 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
     override fun isInBuiltinRoot(file: VirtualFile, project: Project?): Boolean {
         val roots = if (project == null) getBuiltinRootVirtualFiles() else getBuiltinRootVirtualFiles(project)
         return roots.any { root -> VfsUtilCore.isAncestor(root, file, false) }
+    }
+
+    /**
+     * 一次解析 builtins 根，再对整组文件做根路径包含判断。
+     *
+     * 与 [isInBuiltinRoot] 的差别只在“根解析的次数”：这里无论传入多少文件都只解析一次，
+     * 逐个调用则是每个文件解析一次。热路径上这决定了是纯内存判断还是每键上百次磁盘 I/O。
+     */
+    override fun areAllInBuiltinRoot(files: Collection<VirtualFile>, project: Project?): Boolean {
+        val roots = if (project == null) getBuiltinRootVirtualFiles() else getBuiltinRootVirtualFiles(project)
+        return files.all { file -> roots.any { root -> VfsUtilCore.isAncestor(root, file, false) } }
     }
 
     /**

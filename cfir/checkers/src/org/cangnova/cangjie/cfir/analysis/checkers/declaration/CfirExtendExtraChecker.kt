@@ -96,15 +96,13 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             when (member) {
                 is CfirConstructor -> {
                     reporter.reportOn(
-                        // 官方 sema_extend_illegal_member 锚非法成员的声明关键字（`init` / `var`），
-                        // 不是整条成员声明。
-                        source = member.constructorNameDiagnosticSource() ?: member.source ?: extend.source,
+                        source = member.source ?: extend.source,
                         factory = CfirErrors.EXTEND_ILLEGAL_MEMBER,
                     )
                 }
                 is CfirFieldVariable -> {
                     reporter.reportOn(
-                        source = member.variableNameDiagnosticSource() ?: member.source ?: extend.source,
+                        source = member.source ?: extend.source,
                         factory = CfirErrors.EXTEND_ILLEGAL_MEMBER,
                     )
                 }
@@ -193,9 +191,6 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val reportContext = importedContext ?: context
 
         for (member in extend.declarations) {
-            // 官方 IsBuiltInOperatorFuncInExtend：operator 成员命中内建签名时走 built-in 诊断入口，
-            // 不参与 extend 遮蔽检查（对 operator[] 等的重定义是合法复用，cjc 双版实测零遮蔽诊断）。
-            if (member is CfirNamedFunction && member.status.isOperator) continue
             val memberName = member.shadowableName() ?: continue
             if (!member.shadowsExistingMember(targetScope, context, targetType, importedContext)) continue
 

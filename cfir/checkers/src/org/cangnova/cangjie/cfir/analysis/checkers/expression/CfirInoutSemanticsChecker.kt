@@ -63,7 +63,7 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
             if (argumentExpression.coneTypeOrNull !is ConeErrorType &&
                 checkInoutTarget(argumentExpression, argument.source)
             ) {
-                checkInoutTypeConstraints(argument)
+                checkInoutTypeConstraints(argumentExpression)
             }
         }
     }
@@ -147,11 +147,10 @@ object CfirInoutSemanticsChecker : CfirFunctionCallChecker() {
      * CString、非 C 类型和堆对象接收者分别对应不同官方诊断。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInoutTypeConstraints(argument: CfirInoutArgumentExpression) {
-        val argType = argument.expression.coneTypeOrNull?.fullyExpandedType(context.session) ?: return
+    private fun checkInoutTypeConstraints(argument: CfirExpression) {
+        val argType = argument.coneTypeOrNull?.fullyExpandedType(context.session) ?: return
         if (argType is ConeErrorType) return
 
-        // 官方对 `inout` 限定诊断锚 `inout s` 整段（refactor kind），用包装实参的 source。
         val source = argument.source
         if (argType is ConeCStringType) {
             reporter.reportOn(
