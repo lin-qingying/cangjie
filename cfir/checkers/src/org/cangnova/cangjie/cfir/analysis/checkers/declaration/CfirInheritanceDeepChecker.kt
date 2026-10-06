@@ -1011,10 +1011,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                 val currentPackage = classDecl.symbol.classId.packageFqName
                 if (superPackage != currentPackage) {
                     reporter.reportOn(
-                        // 官方 CheckSealedInheritance 主锚子类名（OtherHint 指父类型引用），
-                        // 不是父类型引用本身。
-                        source = classDecl.classLikeNameDiagnosticSource()
-                            ?: superTypeRef.source ?: classDecl.source,
+                        source = superTypeRef.source ?: classDecl.source,
                         factory = CfirErrors.CANNOT_INHERIT_SEALED,
                         a = "class",
                         b = classDecl.name.asString(),

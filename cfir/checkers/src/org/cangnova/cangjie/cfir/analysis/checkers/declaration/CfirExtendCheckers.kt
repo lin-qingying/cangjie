@@ -461,8 +461,7 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
                     declaration.status.isOperator &&
                     declaration.name == OperatorNameConventions.SET -> {
                     reporter.reportOn(
-                        // 官方锚 `[]` 操作名；functionNameDiagnosticSource 对 operator 声明落到操作名 token。
-                        source = declaration.functionNameDiagnosticSource() ?: declaration.source,
+                        source = declaration.source,
                         factory = CfirErrors.EXTEND_IMMUTABLE_INDEX_ASSIGNMENT,
                         a = declaration.name,
                     )

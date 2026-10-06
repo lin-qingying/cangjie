@@ -135,8 +135,7 @@ object CfirConstDeclarationChecker : CfirClassLikeChecker() {
 
         for (constructor in constConstructors) {
             reporter.reportOn(
-                // 官方 cjc 锚完整 `init` 标识符（MakeRange(identifier)），不含前置 const 修饰符。
-                source = constructor.constructorNameDiagnosticSource(),
+                source = constructor.constructorNameDiagnosticSource(includeConstKeyword = true),
                 factory = CfirErrors.CLASS_CONST_INIT_WITH_VAR,
             )
         }
@@ -631,11 +630,7 @@ private class CfirConstExpressionEvaluator(
     ): Boolean {
         val receiverType = expression.receiver.coneTypeOrNull
         if (!receiverType.isTupleOrVArray()) {
-            // 官方 ChkSubscriptExpr 锚基表达式（receiver），不是整个下标表达式。
-            reportExpectExpression(
-                expression.receiver.takeIf { it.source != null } ?: expression,
-                isWeak,
-            )
+            reportExpectExpression(expression, isWeak)
             return false
         }
 
@@ -834,8 +829,7 @@ private class CfirConstExpressionEvaluator(
         if (variable.isVar) {
             context(context) {
                 reporter.reportOn(
-                    // 官方 `MakeRange(vda.identifier)` 锚变量名完整 token，不是整条 `var a = 1` 声明。
-                    source = variable.variableNameDiagnosticSource(),
+                    source = variable.source,
                     factory = CfirErrors.CANNOT_DEFINE_VAR_IN_CONST_FUNCTION,
                 )
             }
