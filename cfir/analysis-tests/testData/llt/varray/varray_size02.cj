@@ -9,6 +9,6 @@ struct S {
 
 unsafe main() {
     var a = VArray<Int64, $3>(repeat: 0)
-    foo1(<!INOUT_MUST_BE_VAR_VARIABLE!>inout a.size<!>)
+    foo1(inout <!INOUT_MUST_BE_VAR_VARIABLE!>a.size<!>)
     return 0
 }

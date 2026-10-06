@@ -9,7 +9,7 @@ interface TARBA {}
 
 class TARBB<X> where X <: TARBA {}
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARBC<T, K><!> = TARBB<T>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARBC<T, K> = TARBB<T>
 
 func tarMainUnusedConstraint() {}
 
@@ -18,16 +18,16 @@ func tarMainUnusedConstraint() {}
 // `typealias_unused_type_parameters`。两段**必须用不同声明名**：写成同名会触发官方 `sema_redefinition`
 // （DiagnosticSema.def:21，锚声明名 `TARBF`，1 字符），那是重定义家族、与别名规则无关，所以分家。
 // FILE: typeAliasCycleUnusedParamGate.cj
-<!TYPEALIAS_CYCLE!>type TARBD<T><!> = TARBE<T>
+<!TYPEALIAS_CYCLE!>t<!>ype TARBD<T> = TARBE<T>
 
-<!TYPEALIAS_CYCLE!>type TARBE<U><!> = TARBD<U>
+<!TYPEALIAS_CYCLE!>t<!>ype TARBE<U> = TARBD<U>
 
 func tarMainCycleUnusedGate() {}
 
 // FILE: typeAliasAccessibilityOnlyV105.cj
 private class TARBnV3 {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBoV3<!><!> = Array<TARBnV3>
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBoV3<!> = Array<TARBnV3>
 
 func tarMainAccessibilityOnlyV105() {}
 
@@ -35,7 +35,7 @@ func tarMainAccessibilityOnlyV105() {}
 // FILE: typeAliasAccessibilityFuncTypeV105.cj
 private class TARBpV4 {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBqV4<!><!> = (Int64) -> TARBpV4
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBqV4<!> = (Int64) -> TARBpV4
 
 func tarMainAccessibilityFuncTypeV105() {}
 
@@ -43,7 +43,7 @@ func tarMainAccessibilityFuncTypeV105() {}
 // FILE: typeAliasAccessibilityTupleV105.cj
 private class TARBrS28 {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBsV5<!><!> = (TARBrS28, Int64)
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBsV5<!> = (TARBrS28, Int64)
 
 func tarMainAccessibilityTupleV105() {}
 
@@ -51,7 +51,7 @@ func tarMainAccessibilityTupleV105() {}
 // FILE: typeAliasAccessibilityOptionV105.cj
 private class TARBt {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBuV6<!><!> = Option<TARBt>
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBuV6<!> = Option<TARBt>
 
 func tarMainAccessibilityOptionV105() {}
 

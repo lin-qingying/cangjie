@@ -9,7 +9,7 @@ open class Base {
     public init() {}
 }
 
-class Child <: Marker & <!SUPERCLASS_MUST_BE_PLACED_AT_FIRST!>Base<!> {
+class Child <: Marker & <!SUPERCLASS_MUST_BE_PLACED_AT_FIRST!>B<!>ase {
     init() {
         super()
     }

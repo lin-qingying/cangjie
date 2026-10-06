@@ -17,19 +17,18 @@
 // 取证环境：cjc 1.0.5 自身版本为 1.0.5（`cjc_version` 比较按编译器版本求值），arch=x86_64、os=Windows。
 // 本项目：上述条件编译 kind 依次对应 CFIR 的 CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION、
 //   _NOT_SUPPORT_OP、_NOT_SUPPORT_CJC_VERSION_FORMAT、_INVALID_CONDITION_VALUE、_NOT_SUPPORT_BUILTIN_VALUE；
-// 范围口径：官方 GetBegin 1 字符锚按项目 Diagnostic Range Policy 不镜像；CFIR 与本文件标记
-//   统一锚完整条件名（INVALID_CONDITION_VALUE 锚完整右值 token）。
+//   CFIR 把条件整体标在一处，与官方"锚条件名 / 右值 1 个字符"不同（实现缺口）。
 
 // FILE: unknownCondition.cj
-@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION!>unknown<!> == "x"]
+@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_THIS_CONDITION!>u<!>nknown == "x"]
 func unknownCondition() {}
 
 // FILE: unsupportedOperator.cj
-@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_OP!>os<!> > "Windows"]
+@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_OP!>o<!>s > "Windows"]
 func unsupportedOperator() {}
 
 // FILE: badVersionFormat.cj
-@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT!>cjc_version<!> == "1.0"]
+@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_CJC_VERSION_FORMAT!>c<!>jc_version == "1.0"]
 func badVersion() {}
 
 // FILE: goodVersionFormat.cj
@@ -41,7 +40,7 @@ func goodVersion() {}
 func nonLiteralValue() {}
 
 // FILE: unsupportedBuiltinValue.cj
-@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE!>arch<!> == "arm"]
+@When[<!CONDITIONAL_COMPILATION_NOT_SUPPORT_BUILTIN_VALUE!>a<!>rch == "arm"]
 func unsupportedBuiltinValue() {}
 
 // FILE: nonComparisonExpression.cj

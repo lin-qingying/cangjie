@@ -3,7 +3,7 @@
 class A {
     var x = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {}
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {}
 }
 
 main() {}
