@@ -157,12 +157,12 @@ abstract class AbsAccInstantiateWithArgs {
 }
 
 func absAccInstantiateNoArg(): Int64 {
-    let a = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>AbsAccInstantiateParent<!>()
+    let a = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>A<!>bsAccInstantiateParent()
     return 0
 }
 
 func absAccInstantiateWithArg(): Int64 {
-    let b = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>AbsAccInstantiateWithArgs<!>(1)
+    let b = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>A<!>bsAccInstantiateWithArgs(1)
     return 0
 }
 
@@ -267,13 +267,13 @@ open class AbsAccWeakVisParent {
 }
 
 class AbsAccWeakVisChildProtected <: AbsAccWeakVisParent {
-    protected override func <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>f<!>(): Int64 {
+    protected override func <!WEAK_VISIBILITY!>f<!>(): Int64 {
         return 2
     }
 }
 
 class AbsAccWeakVisChildProtectedProp <: AbsAccWeakVisParent {
-    protected override prop <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>p<!>: Int64 {
+    protected override prop <!WEAK_VISIBILITY!>p<!>: Int64 {
         get() {
             return 2
         }

@@ -321,41 +321,41 @@
 
 // ===== 形态 1：两别名互环（`TARA -> TARB -> TARA`），两版一致；与既有 typealias6.cj 的区别是无形参。
 // FILE: typeAliasCycleTwoWay.cj
-<!TYPEALIAS_CYCLE!>type TARA<!> = TARB
+<!TYPEALIAS_CYCLE!>t<!>ype TARA = TARB
 
-<!TYPEALIAS_CYCLE!>type TARB<!> = TARA
+<!TYPEALIAS_CYCLE!>t<!>ype TARB = TARA
 
 func tarMainCycleTwoWay() {}
 
 // ===== 形态 2：三别名成环，报三条且链条各异；既有夹具未覆盖。
 // FILE: typeAliasCycleThreeWay.cj
-<!TYPEALIAS_CYCLE!>type TARB1<!> = TARB2
+<!TYPEALIAS_CYCLE!>t<!>ype TARB1 = TARB2
 
-<!TYPEALIAS_CYCLE!>type TARB2<!> = TARB3
+<!TYPEALIAS_CYCLE!>t<!>ype TARB2 = TARB3
 
-<!TYPEALIAS_CYCLE!>type TARB3<!> = TARB1
+<!TYPEALIAS_CYCLE!>t<!>ype TARB3 = TARB1
 
 func tarMainCycleThreeWay() {}
 
 // ===== 形态 3：环上别名**带形参且形参被使用** → 1.0.5 与 1.1.3 都**不**报未用形参（1.1.3 实测为两条 CYCLE + 两条
 // UNUSED，见形态 8 的版本分歧说明；本段不加 UNUSED 标记，1.0.5 零附加诊断）。既有 typealias7.cj 的形参**未被使用**。
 // FILE: typeAliasCycleWithUsedTypeParam.cj
-<!TYPEALIAS_CYCLE!>type TARB4<T><!> = TARB5<T>
+<!TYPEALIAS_CYCLE!>t<!>ype TARB4<T> = TARB5<T>
 
-<!TYPEALIAS_CYCLE!>type TARB5<U><!> = TARB4<U>
+<!TYPEALIAS_CYCLE!>t<!>ype TARB5<U> = TARB4<U>
 
 func tarMainCycleUsedParam() {}
 
 // ===== 形态 4：单形参未使用（`type A<T> = Int64`），1 字符锚 `t`；既有 typealias2.cj 的同一形态带使用点与伴随诊断。
 // FILE: typeAliasUnusedSingleParam.cj
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB6<T><!> = Int64
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARB6<T> = Int64
 
 func tarMainUnusedSingle() {}
 
 // ===== 形态 5：多个形参只用一个 → **一条**诊断、逗号无空格连接两个未用形参（`1.0.5` / `1.1.3` 实测同为
 // `'type arg(s) Generics-T,Generics-K are not used'`，**不带尖括号**）；`Option<?Int64>` 脱糖成 `Enum-Option` 也不影响判定。
 // FILE: typeAliasUnusedMultipleParams.cj
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB7<T, K><!> = Option<?Int64>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARB7<T, K> = Option<?Int64>
 
 func tarMainUnusedMultiple() {}
 
@@ -364,9 +364,9 @@ func tarMainUnusedMultiple() {}
 // TARB8 的 RHS 类型树里不再有 T —— **T 也算未用**。两版都报两条 warning：`Generics-T` 报在 TARB8（链头）、
 // `Generics-K` 报在 TARB9。对照：K 被用到的链（`type A<T> = B<T>`、`type B<K> = Array<K>`）两版零诊断（合法对照 31）。
 // FILE: typeAliasUnusedPropagatedToNonGenericAlias.cj
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB8<T><!> = TARB9<T>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARB8<T> = TARB9<T>
 
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB9<K><!> = Int64
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARB9<K> = Int64
 
 func tarMainUnusedPropagated() {}
 
@@ -377,7 +377,7 @@ func tarMainUnusedPropagated() {}
 // 1.1.3 对同样的"约束传播型"别名**零诊断**（探针另测 `type A<T,K> = C<T>`、`type A<T1,T2,T3> = C<T1,T1>` 两例同此）；
 // 1.1.3 下本段必须零诊断，故加 `// LANGUAGE_VERSION 指令 1.0.5`。
 // FILE: typeAliasUnusedParamInTypeArgument.cj
-<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARBH<T><!> = TARBIS10<Int64>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype TARBH<T> = TARBIS10<Int64>
 
 type TARBIS10<K> = Array<K>
 
@@ -399,7 +399,7 @@ func tarMainUnusedInsideTypeArg() {}
 // FILE: typeAliasAccessPublicRefPrivate.cj
 private class TARBJ {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBjV9<!><!> = TARBJ
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBjV9<!> = TARBJ
 
 func tarMainAccessPublicRefPrivate() {}
 
@@ -408,7 +408,7 @@ func tarMainAccessPublicRefPrivate() {}
 // FILE: typeAliasAccessPublicRefInternal.cj
 class TARBK {}
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBlV10<!><!> = TARBK
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBlV10<!> = TARBK
 
 func tarMainAccessPublicRefInternal() {}
 
@@ -416,7 +416,7 @@ func tarMainAccessPublicRefInternal() {}
 // FILE: typeAliasAccessInternalRefPrivate.cj
 private class TARBmV11 {}
 
-<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBnV11<!><!> = TARBmV11
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>t<!>ype <!ACCESSIBILITY_ERROR!>TARBnV11<!> = TARBmV11
 
 func tarMainAccessInternalRefPrivate() {}
 
@@ -425,7 +425,7 @@ func tarMainAccessInternalRefPrivate() {}
 // FILE: typeAliasAccessNestedTypeArgument.cj
 private class TARBoV12 {}
 
-<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBpV12<!><!> = Array<TARBoV12>
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>t<!>ype <!ACCESSIBILITY_ERROR!>TARBpV12<!> = Array<TARBoV12>
 
 func tarMainAccessNestedTypeArg() {}
 
@@ -436,7 +436,7 @@ private class TARBqV13 {}
 
 private class TARBrS16 {}
 
-<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBsV13<!><!> = (TARBqV13, TARBrS16)
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>t<!>ype <!ACCESSIBILITY_ERROR!>TARBsV13<!> = (TARBqV13, TARBrS16)
 
 func tarMainAccessTupleFirstOnly() {}
 
@@ -446,7 +446,7 @@ func tarMainAccessTupleFirstOnly() {}
 // FILE: typeAliasAccessChainToInternalAlias.cj
 type TARBuV14 = Int64
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type TARBvV14<!> = TARBuV14
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type TARBvV14 = TARBuV14
 
 func tarMainAccessChainToInternal() {}
 
@@ -458,7 +458,7 @@ private class TARBwS18 {}
 
 private type TARBxV15 = TARBwS18
 
-<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARByV15<!><!> = TARBxV15
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>t<!>ype <!ACCESSIBILITY_ERROR!>TARByV15<!> = TARBxV15
 
 func tarMainAccessChainToPrivate() {}
 
@@ -479,7 +479,7 @@ class TARBb<T> {}
 
 type TARBc<T> = TARBb<T>
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBd<!><!> = TARBc<Int64>
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBd<!> = TARBc<Int64>
 
 func tarMainAccessThroughGeneric() {}
 
@@ -509,7 +509,7 @@ private class TARBi {}
 
 private type TARBh = TARBi
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARCd<!><!> = TARBh
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARCd<!> = TARBh
 
 func tarMainAccessAliasTargetFirst() {}
 
@@ -531,7 +531,7 @@ func tarMainAccessWithTypeParam() {}
 // FILE: typeAliasAccessAndUnusedSameStart.cj
 private type TARBlV22 = Int64
 
-<!TYPEALIAS_EXTERNAL_REFER_INTERNAL, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARBmV22<T><!> = TARBlV22
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!><!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!><!>ype TARBmV22<T> = TARBlV22
 
 func tarMainAccessAndUnused() {}
 
@@ -543,7 +543,7 @@ private class TARBwS30 {}
 
 type TARBvV23<T> = TARBwS30
 
-public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBxV23<!><!> = TARBvV23<Int64>
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>p<!>ublic type <!ACCESSIBILITY_ERROR!>TARBxV23<!> = TARBvV23<Int64>
 
 func tarMainAccessibilityAliasTarget() {}
 

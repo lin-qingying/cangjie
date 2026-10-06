@@ -82,7 +82,7 @@
 class IFI01VarNoInit {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
     }
 }
 
@@ -92,7 +92,7 @@ class IFI01VarNoInit {
 class IFI02LetNoInit {
     let a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(x: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(x: Int64) {
         println(x)
     }
 }
@@ -101,14 +101,14 @@ class IFI02LetNoInit {
 // kind：sema_class_uninitialized_field；Range (2,5)..(2,6)，两版一致。
 // FILE: classNoCtorVarNoInit.cj
 class IFI03NoCtor {
-    var <!CLASS_UNINITIALIZED_FIELD!>a<!>: Int64
+    <!CLASS_UNINITIALIZED_FIELD!>v<!>ar a: Int64
 }
 
 // ── 形态 4：struct 不写构造器 —— 同样锚字段声明首字母（官方文案里的 "class or struct" 就是为这条）
 // kind：sema_class_uninitialized_field；Range (2,5)..(2,6)，两版一致。
 // FILE: structNoCtorLetNoInit.cj
 struct IFI04StructNoCtor {
-    let <!CLASS_UNINITIALIZED_FIELD!>a<!>: Int64
+    <!CLASS_UNINITIALIZED_FIELD!>l<!>et a: Int64
 }
 
 // ── 形态 5：`this(...)` 委托：委托方构造器不报，被委托到的构造器报（锚它的 `init`）
@@ -123,7 +123,7 @@ class IFI05ThisDelegate {
         this(1)
     }
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(x: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(x: Int64) {
         this.b = x
     }
 }
@@ -134,13 +134,13 @@ class IFI05ThisDelegate {
 // 官方 :1577-1598 `GetNonFuncDeclsInSuperClass` 把父类体里**非 private、非 prop** 的 var / let 并入子类的待检查集合。
 // FILE: classSuperFieldUninitialized.cj
 open class IFI06SuperNoCtor {
-    var <!CLASS_UNINITIALIZED_FIELD!>x<!>: Int64
+    <!CLASS_UNINITIALIZED_FIELD!>v<!>ar x: Int64
 }
 
 class IFI06Sub <: IFI06SuperNoCtor {
     var y: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
         this.y = 1
     }
 }
@@ -150,7 +150,7 @@ class IFI06Sub <: IFI06SuperNoCtor {
 // 两版一致。官方 `GetNonFuncDeclsInSuperClass` 的过滤条件是 `!vd->TestAttr(Attribute::PRIVATE)`。与形态 6 对照。
 // FILE: classSuperPrivateFieldUninitialized.cj
 open class IFI07SuperPrivate {
-    private var <!CLASS_UNINITIALIZED_FIELD!>x<!>: Int64
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>rivate var x: Int64
 }
 
 class IFI07Sub <: IFI07SuperPrivate {
@@ -171,7 +171,7 @@ class IFI08TwoMissing {
     var b: Int64
     var c: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
         this.a = 0
     }
 }
@@ -183,7 +183,7 @@ class IFI08TwoMissing {
 class IFI09LambdaAssign {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
         let f = { => this.a = 0 }
         f()
     }
@@ -201,8 +201,8 @@ func ifi10Sink(v: Int64): Int64 {
 class IFI10ReadField {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
-        ifi10Sink(this.<!USED_BEFORE_INITIALIZATION!>a<!>)
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
+        ifi10Sink(this.a)
     }
 }
 
@@ -214,8 +214,8 @@ class IFI10ReadField {
 class IFI11CallMember {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
-        this.<!ILLEGAL_USAGE_OF_MEMBER!>reset<!>()
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
+        this.reset()
     }
 
     private func reset() {
@@ -236,7 +236,7 @@ class IFI12RecursiveDelegate {
         this()
     }
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(x: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(x: Int64) {
         println(x)
     }
 }
@@ -247,7 +247,7 @@ class IFI12RecursiveDelegate {
 class IFI13CondInit {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(b: Bool) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(b: Bool) {
         if (b) {
             this.a = 1
         }
@@ -260,7 +260,7 @@ class IFI13CondInit {
 class IFI14LoopAssign {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
         for (i in 0..1) {
             this.a = i
         }
@@ -274,7 +274,7 @@ class IFI14LoopAssign {
 class IFI15ReturnFirst {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(b: Bool) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(b: Bool) {
         if (b) {
             return
         }
@@ -288,7 +288,7 @@ class IFI15ReturnFirst {
 struct IFI16StructInitMiss {
     let a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init<!>(b: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit(b: Int64) {
         println(b)
     }
 }

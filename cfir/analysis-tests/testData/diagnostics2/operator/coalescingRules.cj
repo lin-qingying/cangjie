@@ -98,11 +98,11 @@ struct CoalPoint {
 
 func coalLeftClassStructCheck(b: CoalBox, p: CoalPoint): Unit {
     let _ = <!INVALID_COALESCING!>b<!> ?? 0
-    let _ = <!INVALID_COALESCING!>b.v<!> ?? 0
-    let _ = <!INVALID_COALESCING!>b.coalM()<!> ?? 0
+    let _ = <!INVALID_COALESCING!>b<!>.v ?? 0
+    let _ = <!INVALID_COALESCING!>b<!>.coalM() ?? 0
     let _ = <!INVALID_COALESCING!>p<!> ?? 0
-    let _ = <!INVALID_COALESCING!>CoalPoint()<!> ?? 0
-    let _ = <!INVALID_COALESCING!>p.x<!> ?? 0
+    let _ = <!INVALID_COALESCING!>C<!>oalPoint() ?? 0
+    let _ = <!INVALID_COALESCING!>p<!>.x ?? 0
 }
 
 // 形态 3：左操作数是本包 enum 值 / Array / 元组 / 字符串下标 / 数组下标（结果类型不是 Option）。
@@ -117,12 +117,12 @@ func coalLeftEnumArrayTupleCheck(oEnum: Option<CoalEnum>, oArr: Option<Array<Int
     let e = CoalEnum.C1
     let _ = <!INVALID_COALESCING!>e<!> ?? CoalEnum.C2
     let arr = [1, 2]
-    let _ = <!INVALID_COALESCING!>arr<!> ?? arr
+    let _ = <!INVALID_COALESCING!>a<!>rr ?? arr
     let tup = (1, 2)
-    let _ = <!INVALID_COALESCING!>tup<!> ?? (1, 2)
+    let _ = <!INVALID_COALESCING!>t<!>up ?? (1, 2)
     let s = "ab"
-    let _ = <!INVALID_COALESCING!>s[0]<!> ?? 0
-    let _ = <!INVALID_COALESCING!>arr[0]<!> ?? 0
+    let _ = <!INVALID_COALESCING!>s<!>[0] ?? 0
+    let _ = <!INVALID_COALESCING!>a<!>rr[0] ?? 0
     let _ = oEnum ?? CoalEnum.C1
     let _ = oArr ?? arr
 }
@@ -137,10 +137,10 @@ func coalG1(): Int64 {
 }
 
 func coalLeftFunctionValueCheck(): Unit {
-    let _ = <!INVALID_COALESCING!>coalG1<!> ?? coalG1
+    let _ = <!INVALID_COALESCING!>c<!>oalG1 ?? coalG1
     let f = { x: Int64 => x }
     let _ = <!INVALID_COALESCING!>f<!> ?? 0
-    let _ = <!INVALID_COALESCING!>f(1)<!> ?? 0
+    let _ = <!INVALID_COALESCING!>f<!>(1) ?? 0
 }
 
 // 形态 5：左操作数是括号表达式（GetBegin 含左括号）/ if 表达式的结果类型不是 Option / 括号包裹的 `??` 结果。
@@ -153,15 +153,15 @@ func coalLeftFunctionValueCheck(): Unit {
 // FILE: coalLeftParenAndIfExpr.cj
 func coalLeftParenAndIfExprCheck(): Unit {
     let i = 1
-    let _ = (<!INVALID_COALESCING!>i<!>) ?? 1
+    let _ = <!INVALID_COALESCING!>(<!>i) ?? 1
     let s = "a"
-    let _ = (((<!INVALID_COALESCING!>s<!>))) ?? ""
-    let _ = (<!INVALID_COALESCING!>1 + 1<!>) ?? 2
+    let _ = <!INVALID_COALESCING!>(<!>((s))) ?? ""
+    let _ = <!INVALID_COALESCING!>(<!>1 + 1) ?? 2
     let a = if (true) { 1 } else { 2 }
     let _ = <!INVALID_COALESCING!>a<!> ?? 0
     let _ = if (true) { 1 } else { <!INVALID_COALESCING!>2<!> ?? 3 }
     let x = Some(1)
-    let _ = (<!INVALID_COALESCING!>x ?? 2<!>) ?? 3
+    let _ = <!INVALID_COALESCING!>(<!>x ?? 2) ?? 3
     let c = if (true) { Some(1) } else { Some(2) }
     let _ = c ?? 0
 }
@@ -208,7 +208,7 @@ func coalLeftNonCoreOptionCheck(): Unit {
     let n: CoalSameNameOption<Int64> = OptNone
     let _ = <!INVALID_COALESCING!>n<!> ?? 0
     let oo: CoalOtherOption<Int64> = OSome(1)
-    let _ = <!INVALID_COALESCING!>oo<!> ?? 0
+    let _ = <!INVALID_COALESCING!>o<!>o ?? 0
 }
 
 // 形态 9：左操作数是合法 Option，右操作数与元素类型（realTgtTy）不符——Coalescing 检查器的第二个报告点。
@@ -225,7 +225,7 @@ func coalRightOperandMismatchCheck(oi: Option<Int64>, ob: Option<Bool>, os: Opti
     let _ = oi ?? <!TYPE_MISMATCH!>pOpt<!>
     let _ = ob ?? <!CANNOT_CONVERT_LITERAL!>1<!>
     let _ = os ?? <!CANNOT_CONVERT_LITERAL!>1<!>
-    let _ = oi ?? <!CANNOT_CONVERT_LITERAL!>1.5<!>
+    let _ = oi ?? <!CANNOT_CONVERT_LITERAL!>1<!>.5
 }
 
 // 形态 10：声明的目标类型比 Option 的元素类型窄（官方 BinaryExpr.cpp:1127-1133，锚**左操作数**）。
@@ -250,7 +250,7 @@ func coalIdtNonOption<T>(x: T): T {
 }
 
 func coalGenericLeftNonOptionCheck(): Unit {
-    let _ = <!INVALID_COALESCING!>coalIdtNonOption(1)<!> ?? 0
+    let _ = <!INVALID_COALESCING!>c<!>oalIdtNonOption(1) ?? 0
     let _ = coalIdtNonOption(Some(1)) ?? 0
 }
 
