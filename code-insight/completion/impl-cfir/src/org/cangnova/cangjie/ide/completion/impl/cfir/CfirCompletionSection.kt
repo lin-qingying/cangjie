@@ -21,6 +21,10 @@ abstract class CfirCompletionSection(
      * 执行优先级，值越小越先执行。
      */
     final override val executionPriority: Int,
+    /**
+     * 是否属于延迟阶段；默认否。需要索引或跨模块查询的区段应置为 `true`。
+     */
+    final override val isDelayed: Boolean = false,
 ) : CompletionSection {
     /**
      * 计算本区段的候选快照。

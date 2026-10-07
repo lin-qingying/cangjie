@@ -41,6 +41,7 @@ import org.cangnova.cangjie.name.FqName
 class CfirIndexCompletionSection : CfirCompletionSection(
     id = ID,
     executionPriority = PRIORITY,
+    isDelayed = IS_DELAYED,
 ) {
     /**
      * 计算索引召回候选。
@@ -146,6 +147,12 @@ class CfirIndexCompletionSection : CfirCompletionSection(
          * 执行优先级：索引候选最慢，排在所有作用域候选之后。
          */
         const val PRIORITY: Int = 50
+
+        /**
+         * 属于**延迟阶段**：索引要枚举源码倒排表与 `.cjo` 名字视图，是整条管线里最慢的一步。
+         * 用户应当先看到作用域候选，索引候选随后补上；继续输入时它应当整段被跳过。
+         */
+        const val IS_DELAYED: Boolean = true
 
         /**
          * 使用索引的位置。

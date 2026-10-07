@@ -37,6 +37,17 @@ interface CompletionSection {
     val executionPriority: Int
 
     /**
+     * 该区段是否属于**延迟阶段**。
+     *
+     * 延迟阶段的候选只有在快速阶段全部跑完、且请求仍未被取消时才会计算。
+     * 典型成员是需要索引或跨模块查询的区段：它们慢，但不该拖住用户已经能看到的结果。
+     *
+     * 阶段划分与**平台何时开始延迟阶段**是两件事：本层只保证「快速阶段的批次先于
+     * 延迟阶段」，真正的延迟时长由宿主决定（它才知道用户是否还在继续输入）。
+     */
+    val isDelayed: Boolean get() = false
+
+    /**
      * 执行该区段并把结果推入 [sink]。
      *
      * 实现必须在 [indicator] 被取消时及时抛出取消异常，
@@ -73,7 +84,13 @@ interface CompletionRunner {
  */
 class SerialCompletionRunner : CompletionRunner {
     /**
-     * 按执行优先级稳定排序后逐个执行；同一优先级保持注册顺序。
+     * 先跑快速阶段，再跑延迟阶段；每阶段内部按执行优先级稳定排序，同一优先级保持注册顺序。
+     *
+     * **延迟阶段在进入前重新检查取消**：用户已经继续输入时，前半段结果早已送达并可以
+     * 直接展示，此时再去算索引候选纯属浪费——而且会把一次被取消的请求拖成一次慢请求。
+     *
+     * 收尾只在**全部完成后**通知一次：延迟阶段被取消时整个调用抛取消异常，
+     * 由调用方区分「未完成」与「完成」，不会出现「已经收尾了但候选还在来」。
      */
     override fun runSerial(
         request: CompletionRequest,
@@ -82,12 +99,26 @@ class SerialCompletionRunner : CompletionRunner {
         indicator: ProgressIndicator,
     ) {
         val ordered = sections.sortedBy { it.executionPriority }
-        ordered.forEachIndexed { index, section ->
+        val (fast, delayed) = ordered.partition { !it.isDelayed }
+        runPhase(fast, request, sink, indicator)
+        runPhase(delayed, request, sink, indicator)
+        sink.consume(emptyList(), isLast = true)
+    }
+
+    /**
+     * 执行一个阶段。
+     *
+     * 每个区段执行前检查取消：区段内部的取消检查由区段自己负责（它才知道自己的循环在哪）。
+     */
+    private fun runPhase(
+        sections: List<CompletionSection>,
+        request: CompletionRequest,
+        sink: CompletionResultSink,
+        indicator: ProgressIndicator,
+    ) {
+        for (section in sections) {
             indicator.checkCanceled()
             section.execute(request, sink, indicator)
-            // 最后一个区段负责通知收尾，保证 UI 在异常路径上也能区分「未完成」。
-            if (index == ordered.lastIndex) sink.consume(emptyList(), isLast = true)
         }
-        if (ordered.isEmpty()) sink.consume(emptyList(), isLast = true)
     }
 }
