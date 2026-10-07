@@ -24,6 +24,10 @@ import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
+import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.psi.CjSuperExpression
+import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.analysis.api.components.type
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -61,7 +65,9 @@ class CfirMemberCompletionSection : CfirCompletionSection(
         val file = position.containingCjFile ?: return emptyList()
 
         return analyze(file) {
-            val resolved = resolveAccessTarget(receiver)
+            // `super` 必须**先判**：它不是普通接收者，`expressionType` 会给出错误类型
+            // 而不是 null，判在后面前面的分支就把结果占住了（与未导入 receiver 那次同一形态）。
+            val resolved = resolveSuperTarget(receiver, position) ?: resolveAccessTarget(receiver)
             // 触发条件不能只判 null：未解析引用的 `expressionType` 返回的是**错误类型**而不是 null，
             // 只判 null 会让恢复路径永远不触发（成员候选恒为空，且不报任何错）。
             val recovered = if (resolved == null || resolved.type is CaErrorType) {
@@ -119,6 +125,22 @@ class CfirMemberCompletionSection : CfirCompletionSection(
                 }
             }.distinctByIdentity()
         }
+    }
+
+    /**
+     * 解析 `super.` 的接收者类型；接收者不是 `super` 时返回 `null`。
+     *
+     * 仓颉的 `super` 只指向**直接父类**，因此只取超类型列表里的第一个类型引用：
+     * 接口不参与 super 成员查找，把列表里其余条目混进来会让用户看到父类上根本没有的成员。
+     *
+     * 判据是 PSI 类型（`CjSuperExpression`）而不是文本 `"super"`：
+     * 仓颉允许 `` `super` `` 作为转义标识符，按文本判会把一个普通变量当成 super。
+     */
+    private fun CaSession.resolveSuperTarget(receiver: CjElement, position: CjElement): AccessTarget? {
+        if (receiver !is CjSuperExpression) return null
+        val owner = PsiTreeUtil.getParentOfType(position, CjTypeStatement::class.java, false) ?: return null
+        val superTypeReference = owner.superTypeListEntries.firstNotNullOfOrNull { it.typeReference } ?: return null
+        return AccessTarget(superTypeReference.type, CaTypeAccessKind.INSTANCE_THROUGH_RECEIVER)
     }
 
     /**

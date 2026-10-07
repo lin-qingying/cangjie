@@ -34,6 +34,22 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         listOf(IndexSectionTestServiceRegistrar)
 
     /**
+     * `super.` 之后给父类的成员。
+     *
+     * `super` 的接收者不是表达式而是关键字：它没有 `expressionType`，
+     * 按普通接收者解析必然拿不到类型，结果是用户在 `return super.` 后面一个候选都得不到。
+     * 父类取超类型列表里的**第一个**——仓颉的 super 只指向直接父类，接口不参与。
+     */
+    @Test
+    fun superQualifierOffersParentMembers(superQualifierOffersParentMembers: CjFile) {
+        val names = section.collectCandidates(
+            superQualifierOffersParentMembers.requestAtReference(TARGET),
+        ).lookupNames()
+
+        assertTrue("inherited" in names, "super 之后必须给出父类成员，实际 $names")
+    }
+
+    /**
      * 未导入 receiver：按精确同名恢复类型，成员候选照常给出，并带上接收者类型的导入。
      *
      * 只插入 `Widget.size` 而不导入 `Widget`，得到的是一段编译不过的代码——
