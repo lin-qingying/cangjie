@@ -174,6 +174,28 @@ class CfirTopLevelCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 泛型类候选显示**适用的类型参数**。
+     *
+     * `Box` 与 `Box<Int64>` 对用户是两种写法；不显示可用的类型参数，他只能凭记忆写，
+     * 写错则是编译错误而不是补全问题——排查成本高得多。
+     */
+    @Test
+    fun genericClassCandidateShowsTypeParameters(genericClassCandidateShowsTypeParameters: CjFile) {
+        val candidate = section.collectCandidates(
+            genericClassCandidateShowsTypeParameters.requestAtReference(TARGET),
+        ).single { it.lookupString == "Box" }
+
+        assertTrue(
+            candidate.tailText.startsWith("<T>"),
+            "泛型候选的尾文本必须以类型参数开头，实际 ${candidate.tailText}",
+        )
+        assertTrue(
+            candidate.tailText.contains("value: T"),
+            "实参组合必须同时显示，实际 ${candidate.tailText}",
+        )
+    }
+
+    /**
      * 使用的区段实例。
      */
     private val section = CfirTopLevelCompletionSection()

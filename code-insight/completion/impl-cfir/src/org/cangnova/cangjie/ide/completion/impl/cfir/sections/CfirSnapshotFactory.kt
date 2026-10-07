@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
@@ -121,7 +122,15 @@ internal fun CaSession.classifierSnapshot(
     // 构造器候选与类型候选的区别只有两点：尾文本渲染**实参组合**，插入时补一对括号。
     // 同一个类可以有多个构造器（不同实参组合），它们靠尾文本区分——
     // 只给一个 `Foo` 会让用户无从选择调用哪一种。
-    val tailText = constructor?.let { renderConstructorTail(it) }.orEmpty()
+    // 类型参数进尾文本：`Box` 与 `Box<Int64>` 对用户是两种写法，
+    // 不显示可用的类型参数，他就只能凭记忆写。
+    val typeParameterPrefix = (classifier as? CaTypeParameterOwnerSymbol)
+        ?.typeParameters
+        ?.mapNotNull { it.name?.asString() }
+        ?.takeIf { it.isNotEmpty() }
+        ?.joinToString(", ", prefix = "<", postfix = ">")
+        .orEmpty()
+    val tailText = typeParameterPrefix + constructor?.let { renderConstructorTail(it) }.orEmpty()
     return completionSnapshot(
         lookupString = name.ifEmpty { handle },
         kind = kind,
