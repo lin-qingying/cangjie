@@ -7,6 +7,7 @@ import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositio
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -92,6 +93,26 @@ class CfirTopLevelCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         )
         val names = section.collectCandidates(mainFile.requestAtReference(TARGET)).lookupNames()
         assertTrue(names.contains("helper"), "非成员访问位置必须给出顶层候选，实际 $names")
+    }
+
+    /**
+     * 弃用候选降权但不剔除。
+     *
+     * 迁移期的代码仍要能选到 `@Deprecated` 的声明，但不该让它排在同等可用的替代项之前。
+     * 只认**内置**注解：这也顺带锁定「注解提取走的是内置种类而不是名字字符串」。
+     */
+    @Test
+    fun deprecatedCandidateIsDemoted(mainFile: CjFile) {
+        val snapshots = section.collectCandidates(mainFile.requestAtReference("target"))
+        val legacy = snapshots.single { it.lookupString == "targetLegacy" }
+        val fresh = snapshots.single { it.lookupString == "targetFresh" }
+
+        assertTrue(legacy.sort.isDeprecated, "带内置 @Deprecated 的声明必须标为弃用")
+        assertFalse(fresh.sort.isDeprecated, "未标注的声明不得被判为弃用")
+        assertTrue(
+            fresh.weight > legacy.weight,
+            "同来源同可达性时可用候选必须排在弃用候选之前，实际 ${fresh.weight} vs ${legacy.weight}",
+        )
     }
 
     /**

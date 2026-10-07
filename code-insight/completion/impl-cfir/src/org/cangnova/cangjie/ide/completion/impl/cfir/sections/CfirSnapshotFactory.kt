@@ -10,8 +10,11 @@ import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
@@ -86,7 +89,11 @@ internal fun CaSession.callableSnapshot(
             deduplicationKey = callableIdentityKey(symbol),
         )
         this.importPlan = importResolution
-        this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
+        this.sort = CompletionSortDataImpl(
+            origin = origin,
+            importCost = importCost,
+            isDeprecated = symbol.isDeprecatedSymbol(),
+        )
     }.build()
 }
 
@@ -124,9 +131,25 @@ internal fun CaSession.classifierSnapshot(
             deduplicationKey = handle,
         )
         this.importPlan = importResolution
-        this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
+        this.sort = CompletionSortDataImpl(
+            origin = origin,
+            importCost = importCost,
+            isDeprecated = classifier.isDeprecatedSymbol(),
+        )
     }.build()
 }
+
+/**
+ * 该符号是否带有内置弃用注解。
+ *
+ * 只认**内置** `@Deprecated`：自定义注解里恰好叫这个名字不是语言层面的弃用，
+ * 把它们也算进来会让一批正常声明被降权。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSymbol.isDeprecatedSymbol(): Boolean =
+    (this as? CaAnnotatedSymbol)
+        ?.annotations
+        ?.any { it.builtInKind == BuiltInAnnotationKind.DEPRECATED } == true
 
 /** 类状声明按 ClassId 区分来源；局部类型与类型参数没有全局 ClassId。 */
 internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =

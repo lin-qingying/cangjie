@@ -179,7 +179,53 @@ class LookupElementFactoryTest : CjParsingTestCase(
     }
 
     /**
-     * 替换期望类型结论必须保留来源、导入成本与声明次序。
+     * 弃用候选在同来源、同导入成本、同匹配度内部降权。
+     *
+     * 降权而不是剔除：迁移期的代码仍要能选到它，但不该排在同等可用的替代项之前。
+     */
+    @Test
+    fun deprecatedCandidatesAreDemotedWithinTheSameBand() {
+        val usable = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL).toWeight()
+        val deprecated = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, isDeprecated = true).toWeight()
+        assertTrue(usable > deprecated, "同等条件下弃用候选必须排在可用候选之后，实际 $usable vs $deprecated")
+
+        // 但降权不得越过更高的维度：已可达的弃用候选仍应排在需要追加 import 的可用候选之前。
+        val deprecatedDirect = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, isDeprecated = true).toWeight()
+        val usableAddImport = CompletionSortDataImpl(
+            CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+        ).toWeight()
+        assertTrue(
+            deprecatedDirect > usableAddImport,
+            "弃用只应影响同层次序，不得越过导入成本维度，实际 $deprecatedDirect vs $usableAddImport",
+        )
+    }
+
+    /**
+     * 同级声明次序有上限，不得越过更高的维度。
+     *
+     * 声明次序是无界的：不给它限幅，一个排在很后面的候选就能越过「是否需要导入」，
+     * 让需要追加 import 的候选排到已可达候选之前。
+     */
+    @Test
+    fun declarationOrderIsBoundedBelowHigherDimensions() {
+        val lateButReachable = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            declarationOrder = Int.MAX_VALUE,
+        ).toWeight()
+        val earlyButNeedsImport = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+            declarationOrder = -Int.MAX_VALUE,
+        ).toWeight()
+        assertTrue(
+            lateButReachable > earlyButNeedsImport,
+            "声明次序不得越过导入成本维度，实际 $lateButReachable vs $earlyButNeedsImport",
+        )
+    }
+
+    /**
+     * 替换期望类型结论必须保留来源、导入成本、声明次序与弃用标记。
      */
     @Test
     fun withExpectedTypeMatchPreservesOtherDimensions() {
@@ -187,12 +233,14 @@ class LookupElementFactoryTest : CjParsingTestCase(
             origin = CompletionOrigin.EXTEND,
             importCost = ImportCost.ADD_IMPORT,
             declarationOrder = 3,
+            isDeprecated = true,
         )
         val rewritten = original.withExpectedTypeMatch(ExpectedTypeMatch.MATCH)
         assertEquals(CompletionOrigin.EXTEND, rewritten.origin)
         assertEquals(ImportCost.ADD_IMPORT, rewritten.importCost)
         assertEquals(3, rewritten.declarationOrder)
         assertEquals(ExpectedTypeMatch.MATCH, rewritten.expectedTypeMatch)
+        assertTrue(rewritten.isDeprecated, "重写匹配结论不得丢掉弃用标记")
     }
 
     /**

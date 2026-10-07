@@ -88,6 +88,15 @@ interface CompletionSortData {
      * 用于在同一来源内部稳定排序（如按声明顺序），不参与跨来源比较。
      */
     val declarationOrder: Int
+
+    /**
+     * 该声明是否已被弃用。
+     *
+     * 弃用候选**降权但不剔除**：用户仍可能需要它（迁移期的代码就是靠它跑起来的），
+     * 但把它排在同等可用的替代项之前会让用户持续选中不该再用的声明。
+     * 剔除是另一回事，由诊断负责，不在补全里做。
+     */
+    val isDeprecated: Boolean
 }
 
 /**
@@ -115,6 +124,7 @@ data class CompletionSortDataImpl(
     override val importCost: Int = ImportCost.DIRECT,
     override val expectedTypeMatch: ExpectedTypeMatch = ExpectedTypeMatch.UNKNOWN,
     override val declarationOrder: Int = 0,
+    override val isDeprecated: Boolean = false,
 ) : CompletionSortData {
     companion object {
         /** 已知来源的默认排序数据：不匹配未知导入成本、不确定期望类型。 */
@@ -135,21 +145,44 @@ fun CompletionSortData.withExpectedTypeMatch(match: ExpectedTypeMatch): Completi
         importCost = importCost,
         expectedTypeMatch = match,
         declarationOrder = declarationOrder,
+        isDeprecated = isDeprecated,
     )
 
 /**
  * 分析期权重：由结构化排序数据折算成一个可比较的整数。
  *
  * 权重是**分析期**产物，冻结在快照里；平台侧只做等比映射，不重新判断语义。
- * 折算顺序即优先级顺序：来源 > 导入成本 > 期望类型 > 声明次序。
+ * 折算顺序即优先级顺序：来源 > 导入成本 > 期望类型 > 弃用 > 同级声明次序。
+ *
+ * **每一维占一个互不重叠的位段**，因此低位维度无论取到多大都不会越过高位维度。
+ * 同级声明次序原先是无界的，一个声明靠后的候选足以越过「是否需要导入」这一维——
+ * 那正是用户最容易察觉的错误排序，所以这里显式限幅。
  */
 fun CompletionSortData.toWeight(): Int {
-    val originScore = (CompletionOrigin.entries.size - origin.ordinal) * 1_000_000
-    val importScore = (ImportCost.QUALIFY_THEN_SHORTEN - importCost) * 1_000
+    val originScore = (CompletionOrigin.entries.size - origin.ordinal) * ORIGIN_BAND
+    val importScore = (ImportCost.QUALIFY_THEN_SHORTEN - importCost) * IMPORT_BAND
     val typeScore = when (expectedTypeMatch) {
-        ExpectedTypeMatch.MATCH -> 100
+        ExpectedTypeMatch.MATCH -> TYPE_BAND
         ExpectedTypeMatch.UNKNOWN -> 0
-        ExpectedTypeMatch.MISMATCH -> -100
+        ExpectedTypeMatch.MISMATCH -> -TYPE_BAND
     }
-    return originScore + importScore + typeScore + declarationOrder
+    val deprecationScore = if (isDeprecated) -DEPRECATION_BAND else 0
+    // 低位各段之和必须小于更高一维的步长，否则维度之间会互相穿透。
+    return originScore + importScore + typeScore + deprecationScore +
+        declarationOrder.coerceIn(0, DECLARATION_ORDER_BAND)
 }
+
+/** 来源维度步长；必须大于其余各维之和。 */
+private const val ORIGIN_BAND = 1_000_000
+
+/** 导入成本维度步长；必须大于期望类型、弃用与声明次序之和。 */
+private const val IMPORT_BAND = 1_000
+
+/** 期望类型匹配的加权量。 */
+private const val TYPE_BAND = 100
+
+/** 弃用降权量：足以在同来源同导入成本同匹配度内部排到最后，又不越过期望类型维度。 */
+private const val DEPRECATION_BAND = 50
+
+/** 同级声明次序的上限；与弃用降权量之和仍小于 [TYPE_BAND]。 */
+private const val DECLARATION_ORDER_BAND = 49
