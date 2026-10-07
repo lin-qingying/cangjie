@@ -135,6 +135,10 @@ data class InsertionResult(val wroteText: Boolean, val caretOffset: Int)
  * 顺序固定为「先校验、再写任何字符」：校验未通过时**一个字符都不许写**。
  * 把括号补齐放在校验之后，可以避免失效候选在文档里留下半截括号。
  *
+ * 括号形态以**文档现状**为准，不以分析期结论为准：分析期看到的括号是当时的文本，
+ * 用户此后可能已经手写了左括号甚至填好了实参。三种触发（Enter / Tab / 继续键入）
+ * 共用同一套判断——差别只在平台给出的替换区间，不在括号处理。
+ *
  * @param validity 插入前校验结论。
  * @param setCaret caret 落点回调。
  */
@@ -149,10 +153,28 @@ fun performCangjieInsertion(
 
     var caret = caretOffset
     var wrote = false
-    if (snapshot.insertion.insertParenthesis && !isFollowedByOpeningParen(sink, caret)) {
-        sink.insert(caret, "()")
-        caret += 1
-        wrote = true
+    if (snapshot.insertion.insertParenthesis) {
+        when (val existing = existingCallParens(sink, caret)) {
+            // 用户已经手写了左括号：绝不能再补一对，否则写出 `foo((`。
+            is ExistingCallParens.Closed -> {
+                // 括号里已经有实参时 caret 停在右括号之前，把用户写好的实参让出来；
+                // 空括号（含只有空白）则停在括号内，用户可以接着写第一个实参。
+                caret = if (sink.hasContent(existing.open + 1, existing.close)) {
+                    existing.close
+                } else {
+                    existing.open + 1
+                }
+            }
+
+            // 括号还没闭合：补一对会写出 `foo(()`，只能把 caret 交给用户接着写。
+            is ExistingCallParens.Unclosed -> caret = existing.open + 1
+
+            ExistingCallParens.Absent -> {
+                sink.insert(caret, "()")
+                caret += 1
+                wrote = true
+            }
+        }
     }
     if (snapshot.insertion.caretPolicy == CaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS) {
         // 候选后面已经有实参和闭合括号：caret 必须停在右括号之前，
@@ -161,6 +183,61 @@ fun performCangjieInsertion(
     }
     setCaret(caret)
     return InsertionResult(wroteText = wrote, caretOffset = caret)
+}
+
+/**
+ * 判断区间内是否有非空白内容。
+ *
+ * 只按非空白字符判断：`foo( )` 与 `foo()` 一样是「用户还没写实参」，
+ * 不能因为中间有一个空格就把 caret 让到右括号之前。
+ */
+private fun CompletionTextSink.hasContent(from: Int, to: Int): Boolean {
+    for (index in from until to) {
+        if (!charAt(index).isWhitespace()) return true
+    }
+    return false
+}
+
+/**
+ * 探测 [caret] 之后是否已经存在调用括号。
+ *
+ * 只做括号配对，不解析表达式：这里在写事务里跑，不能调用 Analysis，
+ * 而需要的结论只是「这一对括号是否已经存在、里面有没有内容」。
+ *
+ * **未闭合也是有效信息**：用户可能刚敲下 `(` 就触发了补全，
+ * 此时补一对会写出 `foo(()`，比不补更糟。
+ */
+private fun existingCallParens(sink: CompletionTextSink, caret: Int): ExistingCallParens {
+    var open = caret
+    while (open < sink.length && sink.charAt(open).isWhitespace()) open++
+    if (open >= sink.length || sink.charAt(open) != '(') return ExistingCallParens.Absent
+    var depth = 0
+    var index = open
+    while (index < sink.length) {
+        when (sink.charAt(index)) {
+            '(' -> depth++
+            ')' -> {
+                depth--
+                if (depth == 0) return ExistingCallParens.Closed(open, index)
+            }
+        }
+        index++
+    }
+    return ExistingCallParens.Unclosed(open)
+}
+
+/**
+ * 插入点之后的调用括号现状。
+ */
+private sealed interface ExistingCallParens {
+    /** 后面没有左括号，可以补一对。 */
+    data object Absent : ExistingCallParens
+
+    /** 有左括号且已闭合。 */
+    data class Closed(val open: Int, val close: Int) : ExistingCallParens
+
+    /** 有左括号但尚未闭合。 */
+    data class Unclosed(val open: Int) : ExistingCallParens
 }
 
 /**
@@ -179,18 +256,6 @@ fun performNamedArgumentInsertion(
     val caret = caretOffset + prefix.length
     setCaret(caret)
     return InsertionResult(wroteText = true, caretOffset = caret)
-}
-
-/**
- * 插入点之后是否已经是左括号。
- *
- * 已有括号时**不再补**：用户在 `foo(bar)` 里补 `foo` 的实参，重复补会得到
- * `foo((bar))`，而这正是 Tab 补全最常见的落点。
- */
-private fun isFollowedByOpeningParen(sink: CompletionTextSink, offset: Int): Boolean {
-    var index = offset
-    while (index < sink.length && sink.charAt(index).isWhitespace()) index++
-    return index < sink.length && sink.charAt(index) == '('
 }
 
 /**

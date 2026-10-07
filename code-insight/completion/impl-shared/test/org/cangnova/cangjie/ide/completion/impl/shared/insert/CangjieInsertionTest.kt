@@ -95,10 +95,10 @@ class CangjieInsertionTest {
     }
 
     /**
-     * 插入点之后已有左括号时不再补括号。
+     * 插入点之后已有左括号时不再补括号，caret 落进这一对括号里。
      *
      * 这是 Tab 补全最常见的落点：`foo(|)` 里补 `foo` 的实参，
-     * 重复补会得到 `foo((|))`。
+     * 重复补会得到 `foo((|))`。caret 必须进到括号内，否则用户接着敲的实参会落在括号外。
      */
     @Test
     fun doesNotDuplicateExistingParenthesis() {
@@ -112,7 +112,70 @@ class CangjieInsertionTest {
         ) { caret = it }
         assertFalse(result.wroteText, "已有左括号时不得再补括号")
         assertEquals("alpha() beta", target.text(), "文档不得被改动")
-        assertEquals(5, caret, "已有括号时 caret 停在插入点")
+        assertEquals(6, caret, "caret 必须落进已有的空括号内")
+    }
+
+    /**
+     * 已有实参时不得重写括号，caret 让到右括号之前。
+     *
+     * 用户已经填好的实参必须原样保留——这是 Tab/继续键入补全最容易被破坏的场景：
+     * 补一对新括号会把 `(a, b)` 挤成 `((a, b)`。
+     */
+    @Test
+    fun keepsExistingArgumentsWhenAddingParenthesis() {
+        text("alpha(a, b) beta")
+        var caret = 5
+        val result = performCangjieInsertion(
+            snapshot = callableSnapshot(insertParenthesis = true),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 5,
+        ) { caret = it }
+        assertFalse(result.wroteText, "已有实参时不得写任何字符")
+        assertEquals("alpha(a, b) beta", target.text(), "已填实参不得被破坏")
+        // `alpha(a, b) beta` 里右括号在索引 10。
+        assertEquals(10, caret, "caret 必须停在右括号之前，给已填实参让位")
+    }
+
+    /**
+     * 只含空白的括号等同于空括号。
+     *
+     * 不能因为中间有一个空格就把 caret 让到右括号之前，那会让用户接着写的第一个实参
+     * 落在括号外。
+     */
+    @Test
+    fun whitespaceOnlyParenthesisCountsAsEmpty() {
+        text("alpha( ) beta")
+        var caret = 5
+        performCangjieInsertion(
+            snapshot = callableSnapshot(insertParenthesis = true),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 5,
+        ) { caret = it }
+        assertEquals("alpha( ) beta", target.text(), "文档不得被改动")
+        assertEquals(6, caret, "caret 落在左括号之后，而不是跳过空格")
+    }
+
+    /**
+     * 左括号尚未闭合时也不补括号。
+     *
+     * 用户刚敲下 `(` 就触发补全：补一对会写出 `foo(()`，
+     * 比不补更糟——那是一段无法通过增量输入恢复的文本。
+     */
+    @Test
+    fun unclosedParenthesisIsNotDoubled() {
+        text("alpha( beta")
+        var caret = 5
+        val result = performCangjieInsertion(
+            snapshot = callableSnapshot(insertParenthesis = true),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 5,
+        ) { caret = it }
+        assertFalse(result.wroteText, "未闭合括号时不得补括号")
+        assertEquals("alpha( beta", target.text(), "不得写入 `(` 造成 `((`")
+        assertEquals(6, caret, "caret 落在已写下的左括号之后")
     }
 
     /**
