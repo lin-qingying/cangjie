@@ -34,6 +34,21 @@ interface CompletionRequest {
     /** 经 dummy 修正后的实际分析位置；未修正时等于 [originalPosition]。 */
     val completionPosition: CjElement
 
+    /**
+     * 用于**位置形态分类**的原始元素；默认取 [completionPosition]。
+     *
+     * 之所以与 [completionPosition] 分开：有些位置不在仓颉 PSI 里，最典型的是文档注释——
+     * 文档注释由 CDoc 词法产出 `CDocElement`，**不是 `CjElement`**，
+     * 因此文档注释内最近的 `CjElement` 祖先是整个文件，按它分类只会得到 `EXPRESSION`。
+     * 兜底取 `completionPosition` 会让 `DOCUMENTATION` 这个位置种类**永远到不了**，
+     * 而按语言规则，注释内的候选与代码内的候选完全不同。
+     *
+     * [CangJieCompletionService] 的实现必须在构造请求时填入光标处的**原始叶子元素**
+     * （平台侧就是 `CompletionParameters.position`），不能只填修正后的分析位置。
+     */
+    val positionElement: com.intellij.psi.PsiElement
+        get() = completionPosition
+
     /** 补全前缀文本。 */
     val prefix: String
 

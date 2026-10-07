@@ -98,6 +98,12 @@ class TestCompletionRequest(
      * 插入校验由 InsertionValidator 的专项测试覆盖。
      */
     override val documentStamp: Long = 0L,
+    /**
+     * 位置形态分类用的原始元素；默认与分析位置相同。
+     *
+     * 文档注释等不在仓颉 PSI 里的位置需要单独指定，否则分类只会得到文件层的形态。
+     */
+    override val positionElement: com.intellij.psi.PsiElement = position,
 ) : CompletionRequest {
     /** 原始位置与分析位置在测试中相同：dummy 修正由共享入口单独验证。 */
     override val originalPosition: CjElement get() = position

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
 import org.cangnova.cangjie.ide.completion.impl.cfir.filter.CfirExpectedTypeCompletionFilter
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirCDocCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirEnumEntryCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirIndexCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirKeywordCompletionSection
@@ -42,6 +43,7 @@ class CfirCompletionService(
      */
     private val sections: List<CompletionSection> = listOf(
         CfirKeywordCompletionSection(),
+        CfirCDocCompletionSection(),
         CfirLocalScopeCompletionSection(),
         CfirMemberCompletionSection(),
         CfirEnumEntryCompletionSection(),

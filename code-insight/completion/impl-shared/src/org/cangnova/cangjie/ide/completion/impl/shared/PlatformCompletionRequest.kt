@@ -23,6 +23,10 @@ class PlatformCompletionRequest(
     override val replaceStartOffset: Int,
     override val replaceEndOffset: Int,
     override val documentStamp: Long,
+    /**
+     * 光标处的原始元素；位置形态分类用它而不是 [completionPosition]（见契约 KDoc）。
+     */
+    override val positionElement: PsiElement,
 ) : CompletionRequest {
     /**
      * 供日志与测试使用的稳定描述，不包含文档内容。
@@ -67,6 +71,9 @@ fun completionRequestFrom(
         // 版本戳取**原始文件**：分析副本上的 dummy 修正与用户文档无关，
         // 插入发生在原始文档上，只有原始文档的戳能反映「用户是否在弹窗期间改过文本」。
         documentStamp = parameters.originalFile.viewProvider.document?.modificationStamp ?: 0L,
+        // 位置分类必须用**平台给的原始元素**：文档注释不在仓颉 PSI 里，
+        // 只看修正后的分析位置会把注释内当成文件里的表达式。
+        positionElement = parameters.position,
     )
 }
 
