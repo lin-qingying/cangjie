@@ -44,6 +44,17 @@ fun completionRequestFrom(
     dummy: CompletionDummyContext,
 ): CompletionRequest {
     val cangjiePosition = dummy.position
+    // `originalPosition` 这里与 `completionPosition` 同值（都在 dummy 副本里）。
+    //
+    // 契约把它描述为「触发本次补全的原始 PSI 位置」并补充「未修正时等于 completionPosition」，
+    // 设计 B2 则说「原件/副本」——两处措辞指向两种读法：**用户原件里的位置**，
+    // 或**副本里修正前的位置**。目前两者都不满足（这里是修正后的位置），
+    // 但**没有任何消费者**：语义复查走 `CompletionRecoveryService` 自己的 use-site 参数，
+    // 插入校验用的是 `documentStamp`（那个确实取的是原件）。
+    //
+    // 因此不猜着改：等第一个真正的消费者出现时，按它需要的语义（大概率是「用户原件里的位置」，
+    // 用于把候选写回文档）再定，并同时补上「两者必须可区分」的用例。
+    // 在此之前，这里如实反映现状，不用一个看起来更对的值掩盖歧义。
     return PlatformCompletionRequest(
         originalPosition = cangjiePosition,
         completionPosition = cangjiePosition,

@@ -51,6 +51,40 @@ object CompletionDummyIdentifierProvider {
      */
     fun provide(parameters: CompletionParameters): CompletionDummyContext? {
         val position = parameters.position.nearestCangJieElement() ?: return null
+        return provideAt(position)
+    }
+
+    /**
+     * 不依赖平台补全参数的修正入口：给定文件与文档偏移。
+     *
+     * 存在的理由是**可测与可复用**：平台入口需要构造 `CompletionParameters`，
+     * 那在测试里几乎不可得，于是这套修正逻辑长期没有回归；而它恰恰是「候选为空但不报错」
+     * 这类最难定位的失败的源头。无头宿主（LSP）同样拿不到平台补全参数，
+     * 也需要一个直接入口。
+     *
+     * 与平台入口的差别只有「怎么找到位置」：这里按偏移取叶子节点再向上找最近的仓颉元素，
+     * 之后的修正逻辑完全共用。
+     *
+     * **必须在命令或 undo-transparent 动作内调用**：占位替换是一次 PSI 写，
+     * 命令外调用会被平台拒绝（`IncorrectOperationException: Must not change PSI outside
+     * command or undo-transparent action`）。平台补全入口本身处于补全命令内，因此天然满足；
+     * 无头宿主需要自己开命令。
+     *
+     * @param file 含 dummy 文本的文件（平台副本或调用方自建的副本）。
+     * @param offset 文档偏移。
+     * @return 修正结果；位置不允许补全时返回 `null`。
+     * @throws com.intellij.util.IncorrectOperationException 在命令外调用时。
+     */
+    fun provideFor(file: CjFile, offset: Int): CompletionDummyContext? {
+        val leaf = file.findElementAt(offset) ?: return null
+        val position = leaf.nearestCangJieElement() ?: return null
+        return provideAt(position)
+    }
+
+    /**
+     * 对已定位的仓颉元素执行修正。两个入口共用，保证「怎么找到位置」不影响修正结论。
+     */
+    private fun provideAt(position: CjElement): CompletionDummyContext? {
         val dummyFile = position.containingCjFile ?: return null
         if (position.isInsideRawStringLiteral()) return null
 
@@ -78,7 +112,10 @@ object CompletionDummyIdentifierProvider {
         val expression = position as? CjExpression ?: position.parent as? CjExpression ?: return null
         val factory = CjPsiFactory(dummyFile.project)
         val placeholder = factory.createExpression(PLACEHOLDER_CALL) ?: return null
-        return runCatching { expression.replace(placeholder) }.getOrNull() as? CjElement
+        // **不吞异常**：替换失败若被静默忽略，位置就留着裸 dummy，
+        // 后续分析得到空候选且不报错——本文件 KDoc 里点名的「最难定位的失败」
+        // 正是这样产生的。失败必须显形，由调用方决定是降级还是上报。
+        return expression.replace(placeholder) as? CjElement
     }
 
     /**
