@@ -2,6 +2,9 @@
 
 package org.cangnova.cangjie.analysis.api.standalone.base.index
 
+import com.intellij.openapi.progress.EmptyProgressIndicatorBase
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexEntryKind
@@ -11,6 +14,7 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -51,6 +55,11 @@ class CaStandaloneSymbolIndexQueryTest : AbstractAnalysisApiExecutionTest(
         val owner = dots.single().ownerClassId
         assertEquals("IndexedShape", owner?.shortClassName?.asString(), "条目必须带上所属枚举")
 
+        // 类型别名与类走同一条分类通道：名称层无法区分二者，恢复阶段才分化。
+        val aliases = query.findDeclarations(CaSymbolIndexNameFilter("IndexedAlias"))
+        assertEquals(1, aliases.size, "类型别名必须能被按名发现")
+        assertEquals(setOf(CaSymbolIndexEntryKind.CLASS_LIKE), aliases.map { it.kind }.toSet())
+
         val names = query.findDeclarations(CaSymbolIndexNameFilter("indexed")).map { it.name.asString() }
         assertFalse("indexedOutside" in names, "不能召回没有依赖关系的模块")
         assertTrue("indexedLoad" in names)
@@ -65,5 +74,60 @@ class CaStandaloneSymbolIndexQueryTest : AbstractAnalysisApiExecutionTest(
         assertEquals(summaries, service.summaryBuildCount.get(), "连续查询不重新读取 stub 摘要")
         assertEquals(1, collections)
         assertTrue(service.queryNanos.get() > 0)
+    }
+
+    /**
+     * 平台失效后必须重建索引，不得继续用旧快照回答。
+     *
+     * 缓存键是平台修改计数；失效会推进它，因此下一次查询必须重新收集文件。
+     * 若缓存键取错（例如只按会话或永不失效），用户会在模块图变更后一直看到旧候选，
+     * 而且是**静默**的——没有任何异常，只是候选永远不更新。
+     */
+    @Test
+    fun indexRebuildsAfterInvalidation(indexRebuildsAfterInvalidation: CjFile) {
+        var version = 1L
+        val service = CaStandaloneSymbolIndexQueryService(indexRebuildsAfterInvalidation.project)
+        service.versionProvider = { version }
+        val query = service.createSymbolIndexQuery(analyze(indexRebuildsAfterInvalidation) { analysisScope })
+        val filter = CaSymbolIndexNameFilter("rebuildCandidate")
+
+        assertTrue(query.findDeclarations(filter).isNotEmpty(), "失效前应能发现依赖模块的声明")
+        val collectionsBefore = service.fileCollectionCount.get()
+        query.findDeclarations(filter)
+        assertEquals(collectionsBefore, service.fileCollectionCount.get(), "同一版本内不得重建")
+
+        // 版本推进等价于平台失效：下一次查询必须重新收集文件。
+        version++
+        assertTrue(query.findDeclarations(filter).isNotEmpty(), "重建后仍应能发现同一声明")
+        assertTrue(
+            service.fileCollectionCount.get() > collectionsBefore,
+            "版本推进后必须重新收集文件，实际计数未推进",
+        )
+    }
+
+    /**
+     * 索引查询必须响应取消，不得把取消吞成空候选。
+     *
+     * 把取消吞掉的后果是用户在长查询期间按下取消，界面收到的是「没有候选」
+     * 而不是「这次请求被取消」，两者在补全上的处理完全不同。
+     */
+    @Test
+    fun indexQueryHonoursCancellation(indexQueryHonoursCancellation: CjFile) {
+        val service = CaStandaloneSymbolIndexQueryService(indexQueryHonoursCancellation.project)
+        val query = service.createSymbolIndexQuery(analyze(indexQueryHonoursCancellation) { analysisScope })
+        val filter = CaSymbolIndexNameFilter("cancelCandidate")
+        // 先建立索引：本用例要验证的是**查询**响应取消，不是构建期。
+        assertTrue(query.findDeclarations(filter).isNotEmpty())
+
+        val canceled = object : EmptyProgressIndicatorBase() {
+            override fun isCanceled(): Boolean = true
+            override fun cancel() = Unit
+            override fun start() = Unit
+            override fun stop() = Unit
+            override fun isRunning(): Boolean = true
+        }
+        assertThrows(ProcessCanceledException::class.java) {
+            ProgressManager.getInstance().runProcess<Any?>({ query.findDeclarations(filter) }, canceled)
+        }
     }
 }

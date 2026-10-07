@@ -11,6 +11,7 @@ package index.first
 public class IndexedWidget {}
 public func indexedLoad(): Int64 { 1 }
 public func indexedLoad(value: Int64): Int64 { value }
+public type IndexedAlias = IndexedWidget
 public enum IndexedShape {
     | IndexedDot
     | IndexedDot(Int64)

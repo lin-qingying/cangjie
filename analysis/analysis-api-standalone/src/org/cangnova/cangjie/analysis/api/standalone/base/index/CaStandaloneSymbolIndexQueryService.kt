@@ -36,6 +36,18 @@ import java.util.concurrent.atomic.AtomicLong
  * `CaSymbolProvider` 侧合并。
  */
 class CaStandaloneSymbolIndexQueryService(private val project: Project) : CaSymbolIndexQueryService {
+    /**
+     * 索引缓存键的版本来源。
+     *
+     * 默认取平台的修改计数。**刻意不是构造参数**：平台按 `(Project)` 单参构造实例化
+     * 该服务，带默认值的双参构造器会让容器去解析 `Function0` 依赖并直接失败。
+     * 做成可替换属性是为了让「失效即重建」这条契约可被直接验证——缓存键取错的表现
+     * 是静默的：不报错，只是候选永远不更新。
+     */
+    internal var versionProvider: () -> Long = {
+        project.getService(CaModificationTracker::class.java).modificationCount
+    }
+
     private val collector = CangJieStandaloneSourceFileCollector(project)
     private val summaryBuilder = CaStubSummaryBuilder()
     private val assembler = CaStubSnapshotAssembler()
@@ -77,7 +89,7 @@ class CaStandaloneSymbolIndexQueryService(private val project: Project) : CaSymb
 
     @Synchronized
     private fun sourceIndex(): SourceIndex {
-        val version = project.getService(CaModificationTracker::class.java).modificationCount
+        val version = versionProvider()
         cached?.takeIf { it.version == version }?.let { return it }
         ProgressManager.checkCanceled()
         fileCollectionCount.incrementAndGet()
