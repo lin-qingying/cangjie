@@ -93,6 +93,7 @@ internal fun CaSession.callableSnapshot(
             origin = origin,
             importCost = importCost,
             isDeprecated = symbol.isDeprecatedSymbol(),
+            kind = kind,
         )
     }.build()
 }
@@ -135,6 +136,7 @@ internal fun CaSession.classifierSnapshot(
             origin = origin,
             importCost = importCost,
             isDeprecated = classifier.isDeprecatedSymbol(),
+            kind = kind,
         )
     }.build()
 }

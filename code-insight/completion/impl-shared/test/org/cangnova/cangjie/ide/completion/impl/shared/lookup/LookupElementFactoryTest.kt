@@ -225,6 +225,61 @@ class LookupElementFactoryTest : CjParsingTestCase(
     }
 
     /**
+     * 附属类别压到真实符号之下：文档标签/引用不该盖过声明本身。
+     */
+    @Test
+    fun documentationItemsRankBelowRealSymbols() {
+        val real = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.TOP_LEVEL).toWeight()
+        val documentation =
+            CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.DOCUMENTATION).toWeight()
+        val keyword = CompletionSortDataImpl(CompletionOrigin.TOP_LEVEL, kind = CompletionItemKind.KEYWORD).toWeight()
+        assertTrue(real > documentation, "文档项不得盖过声明本身，实际 $real vs $documentation")
+        assertEquals(real, keyword, "真实候选之间不引入类别次序——位置分类已经限制在同种类里")
+    }
+
+    /**
+     * 类别不得越过更高的维度：期望类型匹配仍然优先。
+     *
+     * 位段划分若算错，这种「低位维度拿到极值就越过高位维度」的错误排序会静默发生——
+     * 它不报错，只是候选顺序看起来没道理。
+     */
+    @Test
+    fun categoryNeverCrossesHigherDimensions() {
+        // 最差类别 + 最差弃用 + 最差次序，对上最好的更高维度。
+        val worstMatched = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            expectedTypeMatch = ExpectedTypeMatch.MATCH,
+            kind = CompletionItemKind.DOCUMENTATION,
+            isDeprecated = true,
+            declarationOrder = Int.MAX_VALUE,
+        ).toWeight()
+        val bestUnknown = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            expectedTypeMatch = ExpectedTypeMatch.UNKNOWN,
+            kind = CompletionItemKind.TOP_LEVEL,
+            declarationOrder = 0,
+        ).toWeight()
+        assertTrue(worstMatched > bestUnknown, "类型匹配必须压过类别，实际 $worstMatched vs $bestUnknown")
+
+        // 最差类别 + 最差弃用 + 最差次序，对上更好一档的导入成本。
+        val worstDirect = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.DIRECT,
+            kind = CompletionItemKind.DOCUMENTATION,
+            isDeprecated = true,
+            declarationOrder = Int.MIN_VALUE,
+        ).toWeight()
+        val bestAddImport = CompletionSortDataImpl(
+            origin = CompletionOrigin.TOP_LEVEL,
+            importCost = ImportCost.ADD_IMPORT,
+            kind = CompletionItemKind.TOP_LEVEL,
+            declarationOrder = Int.MAX_VALUE,
+            expectedTypeMatch = ExpectedTypeMatch.MATCH,
+        ).toWeight()
+        assertTrue(worstDirect > bestAddImport, "导入成本必须压过其下各维，实际 $worstDirect vs $bestAddImport")
+    }
+
+    /**
      * 替换期望类型结论必须保留来源、导入成本、声明次序与弃用标记。
      */
     @Test

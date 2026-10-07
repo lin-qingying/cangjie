@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.ide.completion.api.lookup
 
+import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
+
 /**
  * 候选来源。
  *
@@ -90,6 +92,14 @@ interface CompletionSortData {
     val declarationOrder: Int
 
     /**
+     * 候选类别。
+     *
+     * 类别参与排序的方式见 [categoryRank]：只有「兜底方案」与「附属条目」被压低，
+     * 其余类别等值——位置分类已经把候选限制在同种类内。
+     */
+    val kind: CompletionItemKind
+
+    /**
      * 该声明是否已被弃用。
      *
      * 弃用候选**降权但不剔除**：用户仍可能需要它（迁移期的代码就是靠它跑起来的），
@@ -125,6 +135,7 @@ data class CompletionSortDataImpl(
     override val expectedTypeMatch: ExpectedTypeMatch = ExpectedTypeMatch.UNKNOWN,
     override val declarationOrder: Int = 0,
     override val isDeprecated: Boolean = false,
+    override val kind: CompletionItemKind = CompletionItemKind.TOP_LEVEL,
 ) : CompletionSortData {
     companion object {
         /** 已知来源的默认排序数据：不匹配未知导入成本、不确定期望类型。 */
@@ -146,17 +157,19 @@ fun CompletionSortData.withExpectedTypeMatch(match: ExpectedTypeMatch): Completi
         expectedTypeMatch = match,
         declarationOrder = declarationOrder,
         isDeprecated = isDeprecated,
+        kind = kind,
     )
 
 /**
  * 分析期权重：由结构化排序数据折算成一个可比较的整数。
  *
  * 权重是**分析期**产物，冻结在快照里；平台侧只做等比映射，不重新判断语义。
- * 折算顺序即优先级顺序：来源 > 导入成本 > 期望类型 > 弃用 > 同级声明次序。
+ * 折算顺序即优先级顺序：
+ * **来源 > 导入成本 > 期望类型 > 类别 > 弃用 > 同级声明次序**。
  *
- * **每一维占一个互不重叠的位段**，因此低位维度无论取到多大都不会越过高位维度。
- * 同级声明次序原先是无界的，一个声明靠后的候选足以越过「是否需要导入」这一维——
- * 那正是用户最容易察觉的错误排序，所以这里显式限幅。
+ * **每一维占一个互不重叠的位段**，即高位维度的最小步长严格大于低位各维的全幅跨度，
+ * 因此低位维度无论取到多大都不会越过高位维度。这条约束必须逐维验算而不是凭感觉：
+ * 同级声明次序原先是无界的，一个声明靠后的候选足以越过「是否需要导入」这一维。
  */
 fun CompletionSortData.toWeight(): Int {
     val originScore = (CompletionOrigin.entries.size - origin.ordinal) * ORIGIN_BAND
@@ -166,23 +179,44 @@ fun CompletionSortData.toWeight(): Int {
         ExpectedTypeMatch.UNKNOWN -> 0
         ExpectedTypeMatch.MISMATCH -> -TYPE_BAND
     }
+    val categoryScore = categoryRank(kind) * CATEGORY_BAND
     val deprecationScore = if (isDeprecated) -DEPRECATION_BAND else 0
-    // 低位各段之和必须小于更高一维的步长，否则维度之间会互相穿透。
-    return originScore + importScore + typeScore + deprecationScore +
+    return originScore + importScore + typeScore + categoryScore + deprecationScore +
         declarationOrder.coerceIn(0, DECLARATION_ORDER_BAND)
 }
 
-/** 来源维度步长；必须大于其余各维之和。 */
+/**
+ * 类别维度：只区分「附属条目」与真实候选。
+ *
+ * 不给出各类符号之间的次序：同一位置上的候选已经被位置分类限制在同种类里
+ * （类型位置只出类型、成员位置只出成员），跨种类的相对次序没有可依据的规范，
+ * 编一套出来只会让排序看起来有道理却无法解释。
+ *
+ * 只有文档标签/引用被压低：它是同一批补全里的附属条目，盖过声明本身没有道理。
+ * **注意**：`CompletionItemKind` 目前没有「声明生成建议」这一项（它在
+ * `CompletionIdentityKind` 里）；将来补全入口引入该类别时，它的权重必须落在
+ * [CompletionItemKind.DOCUMENTATION] 这一档或更低——「要不要新建一个声明」
+ * 是兜底方案，不是命中。
+ */
+fun categoryRank(kind: CompletionItemKind): Int = when (kind) {
+    CompletionItemKind.DOCUMENTATION -> 0
+    else -> 1
+}
+
+/** 来源维度步长；必须大于其余各维的全幅跨度。 */
 private const val ORIGIN_BAND = 1_000_000
 
-/** 导入成本维度步长；必须大于期望类型、弃用与声明次序之和。 */
+/** 导入成本维度步长；必须大于期望类型及其下各维的全幅跨度。 */
 private const val IMPORT_BAND = 1_000
 
-/** 期望类型匹配的加权量。 */
-private const val TYPE_BAND = 100
+/** 期望类型匹配的加权量；必须大于类别、弃用与声明次序的全幅跨度（119）。 */
+private const val TYPE_BAND = 200
 
-/** 弃用降权量：足以在同来源同导入成本同匹配度内部排到最后，又不越过期望类型维度。 */
-private const val DEPRECATION_BAND = 50
+/** 类别维度步长；必须大于弃用与声明次序的全幅跨度（19）。 */
+private const val CATEGORY_BAND = 50
 
-/** 同级声明次序的上限；与弃用降权量之和仍小于 [TYPE_BAND]。 */
-private const val DECLARATION_ORDER_BAND = 49
+/** 弃用降权量；必须大于声明次序的上限。 */
+private const val DEPRECATION_BAND = 10
+
+/** 同级声明次序的上限。 */
+private const val DECLARATION_ORDER_BAND = 9
