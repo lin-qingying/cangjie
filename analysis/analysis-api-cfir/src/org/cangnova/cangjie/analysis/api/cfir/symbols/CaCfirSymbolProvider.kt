@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
+import com.intellij.openapi.progress.ProgressManager
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
@@ -300,22 +301,70 @@ internal class CaCfirSymbolProvider(
         namePrefix: String,
         isRepeatedInvocation: Boolean,
     ): List<CaDeclarationSymbol> = withValidityAssertion {
-        val indexQuery = analysisSession.project
+        val filter = CaSymbolIndexNameFilter(namePrefix, isRepeatedInvocation)
+        // **先去重名称、再解析符号**：同一名字可能同时被源码索引与二进制名字视图报出，
+        // 若各自解析一遍，同一个声明会变成两个候选。反过来也不能按「解析结果」去重——
+        // 同名重载的 `callableId` 完全相同，那样会把合法重载合并掉。
+        // 因此在**名称**层按「包 + 短名 + 种类 + 所属类型」合并，解析只做一次。
+        val entries = linkedSetOf<DiscoveryEntry>()
+        // 源码侧：宿主名称索引。宿主没有索引实现时不产出这一路候选，也不退化为全工作区扫描。
+        analysisSession.project
             .getService(CaSymbolIndexQueryService::class.java)
             ?.createSymbolIndexQuery(analysisSession.analysisScope)
-            ?: return@withValidityAssertion emptyList()
-        indexQuery.findDeclarations(CaSymbolIndexNameFilter(namePrefix, isRepeatedInvocation))
-            .flatMap(::resolveIndexEntry)
-            .distinct()
+            ?.findDeclarations(filter)
+            ?.mapTo(entries) { DiscoveryEntry(it.packageFqName, it.name, it.kind, it.ownerClassId) }
+        collectBinaryNames(filter, entries)
+        entries.flatMap(::resolveDiscoveryEntry)
     }
 
     /**
-     * 把名称条目恢复成公开符号。
+     * 把 `.cjo` 只读名字视图里的顶层名字并入名称集合。
      *
-     * 条目里没有符号，只有身份：这一步是**唯一**把名称变成符号的地方，
-     * 三个索引实现共用它，因此换索引不会改变候选符号集合。
+     * 二进制库没有 PSI 也没有源码索引，它的顶层名字只能问 CFIR 会话的名字提供者——
+     * 该提供者已组合本模块与全部依赖，内部走 `CjoExportedTopLevelNamesResolver`，
+     * 因此 public import 的 re-export 与 alias 都在名字集合里。
+     *
+     * 名字提供者报告「无法有效计算」时什么都不并入：那表示该宿主没有可用的名字视图，
+     * 不是「没有候选」。
      */
-    private fun resolveIndexEntry(entry: CaSymbolIndexEntry): List<CaDeclarationSymbol> = when (entry.kind) {
+    private fun collectBinaryNames(
+        filter: CaSymbolIndexNameFilter,
+        destination: MutableSet<DiscoveryEntry>,
+    ) {
+        val names = analysisSession.cfirSession.symbolProvider.symbolNamesProvider
+        val packages = names.getPackageNames() ?: return
+        for (packageName in packages) {
+            ProgressManager.checkCanceled()
+            val packageFqName = FqName.fromString(packageName)
+            names.getTopLevelClassifierNamesInPackage(packageFqName)
+                ?.filterTo(mutableListOf(), filter::matches)
+                ?.mapTo(destination) { DiscoveryEntry(packageFqName, it, CaSymbolIndexEntryKind.CLASS_LIKE, null) }
+            names.getTopLevelCallableNamesInPackage(packageFqName)
+                ?.filterTo(mutableListOf(), filter::matches)
+                ?.mapTo(destination) { DiscoveryEntry(packageFqName, it, CaSymbolIndexEntryKind.CALLABLE, null) }
+        }
+    }
+
+    /**
+     * 一条待恢复的名称。
+     *
+     * 与平台契约的 `CaSymbolIndexEntry` 同形，但**只在分析层使用**：
+     * 二进制名字视图不产出枚举构造器（它只暴露顶层名字），因此这里允许 `ownerClassId` 为空。
+     */
+    private data class DiscoveryEntry(
+        val packageFqName: FqName,
+        val name: Name,
+        val kind: CaSymbolIndexEntryKind,
+        val ownerClassId: ClassId?,
+    )
+
+    /**
+     * 把名称恢复成公开符号。
+     *
+     * 名称里没有符号：这一步是**唯一**把名称变成符号的地方，
+     * 源码索引与二进制名字视图共用它，因此换来源不会改变候选符号集合。
+     */
+    private fun resolveDiscoveryEntry(entry: DiscoveryEntry): List<CaDeclarationSymbol> = when (entry.kind) {
         CaSymbolIndexEntryKind.CLASS_LIKE,
         CaSymbolIndexEntryKind.TYPE_ALIAS,
         -> getTopLevelClassLikeSymbols(entry.packageFqName, entry.name)
