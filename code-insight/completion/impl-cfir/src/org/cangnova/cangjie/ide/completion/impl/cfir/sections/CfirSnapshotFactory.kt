@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.asSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -112,24 +113,34 @@ internal fun CaSession.classifierSnapshot(
     importCost: Int = ImportCost.DIRECT,
     documentStamp: Long = 0L,
     importResolution: ImportResolution = ImportResolution.NoImport,
+    constructor: CaConstructorSymbol? = null,
 ): CompletionSnapshot {
     val name = (classifier as? CaNamedSymbol)?.name?.asString().orEmpty()
     val handle = classifierIdentityKey(classifier)
     val qualifiedName = (classifier as? CaClassLikeSymbol)?.classId?.asSingleFqName()?.asString() ?: name
+    // 构造器候选与类型候选的区别只有两点：尾文本渲染**实参组合**，插入时补一对括号。
+    // 同一个类可以有多个构造器（不同实参组合），它们靠尾文本区分——
+    // 只给一个 `Foo` 会让用户无从选择调用哪一种。
+    val tailText = constructor?.let { renderConstructorTail(it) }.orEmpty()
     return completionSnapshot(
         lookupString = name.ifEmpty { handle },
         kind = kind,
         origin = origin,
         identityKind = CompletionIdentityKind.TYPE,
         qualifiedName = qualifiedName,
+        tailText = tailText,
+        typeText = name,
         documentStamp = documentStamp,
+        insertParenthesis = constructor != null,
     ).apply {
         this.identity = CompletionIdentityData(
             kind = CompletionIdentityKind.TYPE,
             handle = handle,
             name = name,
             qualifiedName = qualifiedName,
-            deduplicationKey = handle,
+            // 去重键必须含参数列表：同一个类的多个构造器共享 ClassId 身份，
+            // 只用 `handle` 会把它们合并成一个候选。
+            deduplicationKey = handle + tailText,
         )
         this.importPlan = importResolution
         this.sort = CompletionSortDataImpl(
@@ -158,6 +169,23 @@ internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =
     (classifier as? CaClassLikeSymbol)?.classId?.toString()
         ?: (classifier as? CaNamedSymbol)?.name?.asString()
         ?: classifier.toString()
+
+/**
+ * 渲染构造器的实参组合。
+ *
+ * 构造函数是**特例**：`renderSignatureTail` 的 `(params): ReturnType` 形态对类型候选合适，
+ * 而构造器候选要写的是一次调用，返回类型在调用位置上没有信息量，
+ * 写上反而让 `Foo(a: Int64): Foo` 这种尾文本显得啰嗦。
+ * 因此只渲染参数列表，并显示参数名（用户可能就是按名字选实参组合的）。
+ */
+@OptIn(CaExperimentalApi::class)
+private fun renderConstructorTail(constructor: CaConstructorSymbol): String {
+    val parameters = when (constructor) {
+        is CaValueParameterOwnerSymbol -> constructor.valueParameters.map { renderParameter(it) }
+        else -> emptyList()
+    }
+    return "(${parameters.joinToString(", ")})"
+}
 
 /**
  * 渲染签名尾文本。

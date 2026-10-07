@@ -116,6 +116,64 @@ class CfirTopLevelCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 表达式位置：类型候选变成**构造器候选**，带括号且尾文本显示实参组合。
+     */
+    @Test
+    fun constructorCandidateAtExpressionPosition(constructorCandidateAtExpressionPosition: CjFile) {
+        val candidate = section.collectCandidates(
+            constructorCandidateAtExpressionPosition.requestAtReference(TARGET),
+        ).single { it.lookupString == "Widget" }
+
+        assertTrue(candidate.insertion.insertParenthesis, "调用位置上必须补出括号")
+        assertTrue(
+            candidate.tailText.contains("alpha: Int64"),
+            "尾文本必须显示实参组合，实际 ${candidate.tailText}",
+        )
+    }
+
+    /**
+     * 类型位置：仍是类型候选，**不得**跟随左括号。
+     */
+    @Test
+    fun typeCandidateAtTypePosition(typeCandidateAtTypePosition: CjFile) {
+        val candidate = section.collectCandidates(
+            typeCandidateAtTypePosition.requestAtReference(TARGET),
+        ).single { it.lookupString == "Widget" }
+
+        assertTrue(
+            !candidate.insertion.insertParenthesis,
+            "类型位置不得跟随左括号，否则用户会写出 `Widget(`，实际 ${candidate.tailText}",
+        )
+    }
+
+    /**
+     * 一个类的多个构造器逐个给出，靠尾文本区分实参组合。
+     *
+     * 它们共享同一个 ClassId：只用身份键去重会把两个合法构造器合并成一个，
+     * 用户就无从选择调用哪一种。
+     */
+    @Test
+    fun constructorCandidatesShowEveryArgumentCombination(
+        constructorCandidatesShowEveryArgumentCombination: CjFile,
+    ) {
+        val candidates = section.collectCandidates(
+            constructorCandidatesShowEveryArgumentCombination.requestAtReference(TARGET),
+        ).filter { it.lookupString == "Widget" }
+
+        assertEquals(2, candidates.size, "两个构造器必须各自成候选，实际 ${candidates.map { it.tailText }}")
+        assertEquals(
+            2,
+            candidates.map { it.tailText }.distinct().size,
+            "两个构造器必须靠尾文本区分，实际 ${candidates.map { it.tailText }}",
+        )
+        assertEquals(
+            2,
+            candidates.map { it.identity.deduplicationKey }.distinct().size,
+            "两个构造器的去重键必须不同，否则会被合并，实际 ${candidates.map { it.identity.deduplicationKey }}",
+        )
+    }
+
+    /**
      * 使用的区段实例。
      */
     private val section = CfirTopLevelCompletionSection()
