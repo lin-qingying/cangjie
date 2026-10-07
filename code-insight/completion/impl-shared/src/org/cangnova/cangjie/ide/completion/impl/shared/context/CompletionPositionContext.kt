@@ -30,8 +30,11 @@ import org.cangnova.cangjie.psi.CjValueArgument
  * - `DOCUMENTATION`：文档注释由 CDoc 词法产出 `CDocImpl`，**不是 `CjElement`**，
  *   注释内最近的 CjElement 祖先是整个文件，过去一直落到 `EXPRESSION`。
  *   现已修通（`CompletionRequest.positionElement` 承载光标处的原始叶子元素）。
- * - `MACRO_TOKENS`：**至今没有判据产出它**。因此关键字区段与期望类型过滤器里
- *   对它的排除是死分支，`11.5` 的宏补全也还没有可挂载的位置。
+ * - `MACRO_TOKENS`：曾经也没有判据。现已补上（判据落在 `CjMacroAttr` 上）。
+ * - `PACKAGE`：**至今没有判据产出它**。包名位置会落到 `EXPRESSION`。
+ *
+ * 「每个取值是否可产出」由 `CompletionPositionKindCoverageTest` 守门：
+ * 新增取值而不在它的四张表里登记，测试直接失败——比让它悄悄变成死分支好得多。
  *
  * 没有配套判据的取值，请在 [classify] 里补判据，或把缺口记进变更文档——
  * 别让它停在这里像一项已完成的能力。
