@@ -15,6 +15,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionRecoveryService
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.api.lookup.RecoveredTarget
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.callableIdentityKey
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.classifierIdentityKey
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
@@ -68,7 +69,7 @@ class CfirCompletionRecoveryService : CompletionRecoveryService {
             when (identity.kind) {
                 CompletionIdentityKind.TYPE -> {
                     for (classifier in entry.scope.classifiers { true }) {
-                        if ((classifier as? CaNamedSymbol)?.name?.asString() == identity.name) {
+                        if (classifierIdentityKey(classifier) == identity.deduplicationKey) {
                             return identity.qualifiedName.ifEmpty { identity.name }
                         }
                     }
@@ -98,7 +99,7 @@ class CfirCompletionRecoveryService : CompletionRecoveryService {
         when (identity.kind) {
             CompletionIdentityKind.TYPE ->
                 if (packageScope.classifiers { true }
-                        .any { (it as? CaNamedSymbol)?.name?.asString() == identity.name }
+                        .any { classifierIdentityKey(it) == identity.deduplicationKey }
                 ) {
                     return identity.qualifiedName
                 }

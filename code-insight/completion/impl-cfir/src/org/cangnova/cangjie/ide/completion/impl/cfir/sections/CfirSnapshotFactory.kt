@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.asSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -18,6 +19,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
 
 /**
@@ -55,6 +57,7 @@ internal fun CaSession.callableSnapshot(
     origin: CompletionOrigin,
     importCost: Int = ImportCost.DIRECT,
     documentStamp: Long = 0L,
+    importResolution: ImportResolution = ImportResolution.NoImport,
 ): CompletionSnapshot {
     val name = symbol.displayName()
     val signature = with(this) { symbol.asSignature() }
@@ -82,6 +85,7 @@ internal fun CaSession.callableSnapshot(
             // 身份键走与 extend 通道同源的 callableIdentityKey，不在这里另写一份公式。
             deduplicationKey = callableIdentityKey(symbol),
         )
+        this.importPlan = importResolution
         this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
     }.build()
 }
@@ -99,27 +103,36 @@ internal fun CaSession.classifierSnapshot(
     origin: CompletionOrigin,
     importCost: Int = ImportCost.DIRECT,
     documentStamp: Long = 0L,
+    importResolution: ImportResolution = ImportResolution.NoImport,
 ): CompletionSnapshot {
     val name = (classifier as? CaNamedSymbol)?.name?.asString().orEmpty()
-    val handle = name.ifEmpty { classifier.toString() }
+    val handle = classifierIdentityKey(classifier)
+    val qualifiedName = (classifier as? CaClassLikeSymbol)?.classId?.asSingleFqName()?.asString() ?: name
     return completionSnapshot(
-        lookupString = handle,
+        lookupString = name.ifEmpty { handle },
         kind = kind,
         origin = origin,
         identityKind = CompletionIdentityKind.TYPE,
-        qualifiedName = name,
+        qualifiedName = qualifiedName,
         documentStamp = documentStamp,
     ).apply {
         this.identity = CompletionIdentityData(
             kind = CompletionIdentityKind.TYPE,
             handle = handle,
-            name = handle,
-            qualifiedName = name,
+            name = name,
+            qualifiedName = qualifiedName,
             deduplicationKey = handle,
         )
+        this.importPlan = importResolution
         this.sort = CompletionSortDataImpl(origin = origin, importCost = importCost)
     }.build()
 }
+
+/** 类状声明按 ClassId 区分来源；局部类型与类型参数没有全局 ClassId。 */
+internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =
+    (classifier as? CaClassLikeSymbol)?.classId?.toString()
+        ?: (classifier as? CaNamedSymbol)?.name?.asString()
+        ?: classifier.toString()
 
 /**
  * 渲染签名尾文本。
@@ -168,7 +181,7 @@ private fun renderParameter(parameter: CaValueParameterSymbol): String {
  */
 @OptIn(CaExperimentalApi::class)
 internal fun CaSession.callableIdentityKey(symbol: CaCallableSymbol): String {
-    val name = symbol.displayName()
+    val name = symbol.callableId?.toString() ?: symbol.displayName()
     val returnType = with(this) { symbol.asSignature() }.returnType
     val parameters = when (symbol) {
         is CaEnumConstructorSymbol -> symbol.payloadTypes.map { it.toString() }

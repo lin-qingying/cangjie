@@ -9,6 +9,7 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.CangJieBindingPatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieCallableStubBase
 import org.cangnova.cangjie.psi.stubs.CangJieClassStub
+import org.cangnova.cangjie.psi.stubs.CangJieEnumConstructorStub
 import org.cangnova.cangjie.psi.stubs.CangJieEnumPatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieEnumStub
 import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
@@ -163,6 +164,10 @@ class CaStubTreeSummaryExtractor {
             when (child) {
                 is CangJiePlaceHolderStub<*> -> {
                     collectClassMemberNamesFromChildren(child.childrenStubs, destination, memberNames)
+                }
+
+                is CangJieEnumConstructorStub -> {
+                    child.name?.let { memberNames += Name.identifier(it) }
                 }
 
                 is CangJieCallableStubBase<*>,

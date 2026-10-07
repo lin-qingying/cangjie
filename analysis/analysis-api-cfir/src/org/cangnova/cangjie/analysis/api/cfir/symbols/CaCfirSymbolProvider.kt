@@ -5,11 +5,16 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexEntry
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexEntryKind
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexNameFilter
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
@@ -25,6 +30,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -281,5 +287,50 @@ internal class CaCfirSymbolProvider(
             ?.getExtendsForClass(targetClassId)
             ?.map { extend -> analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol) }
             .orEmpty()
+    }
+
+    /**
+     * 按名称前缀发现声明：名称来自宿主索引，符号由本提供器按包作用域恢复。
+     *
+     * 索引只给名称，恢复走与 [getTopLevelClassLikeSymbols] / [getTopLevelCallableSymbols]
+     * 同一条查询路径，因此索引候选与作用域候选的来源、可见性语义完全一致。
+     * 索引不可用时返回空集合，不降级为全工作区声明遍历。
+     */
+    override fun getDeclarationsByNamePrefix(
+        namePrefix: String,
+        isRepeatedInvocation: Boolean,
+    ): List<CaDeclarationSymbol> = withValidityAssertion {
+        val indexQuery = analysisSession.project
+            .getService(CaSymbolIndexQueryService::class.java)
+            ?.createSymbolIndexQuery(analysisSession.analysisScope)
+            ?: return@withValidityAssertion emptyList()
+        indexQuery.findDeclarations(CaSymbolIndexNameFilter(namePrefix, isRepeatedInvocation))
+            .flatMap(::resolveIndexEntry)
+            .distinct()
+    }
+
+    /**
+     * 把名称条目恢复成公开符号。
+     *
+     * 条目里没有符号，只有身份：这一步是**唯一**把名称变成符号的地方，
+     * 三个索引实现共用它，因此换索引不会改变候选符号集合。
+     */
+    private fun resolveIndexEntry(entry: CaSymbolIndexEntry): List<CaDeclarationSymbol> = when (entry.kind) {
+        CaSymbolIndexEntryKind.CLASS_LIKE,
+        CaSymbolIndexEntryKind.TYPE_ALIAS,
+        -> getTopLevelClassLikeSymbols(entry.packageFqName, entry.name)
+
+        CaSymbolIndexEntryKind.CALLABLE -> getTopLevelCallableSymbols(entry.packageFqName, entry.name)
+
+        // 枚举构造器是枚举的成员：索引只记名字，这里按 ClassId 定位所属枚举再取其成员，
+        // 因此同名不同 payload 个数的构造器会各自保留。
+        CaSymbolIndexEntryKind.ENUM_CONSTRUCTOR -> {
+            val owner = entry.ownerClassId?.let(::getClassLikeSymbol) ?: return emptyList()
+            with(analysisSession) {
+                owner.declaredMemberScope.callables(listOf(entry.name))
+                    .filterIsInstance<CaEnumConstructorSymbol>()
+                    .toList()
+            }
+        }
     }
 }

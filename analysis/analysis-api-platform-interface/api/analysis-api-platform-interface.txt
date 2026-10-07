@@ -133,16 +133,16 @@ CangJieEmptyDeclarationProvider.public override val hasSpecificClassifierPackage
 CangJieEmptyDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
 ## org/cangnova/cangjie/analysis/api/platform/index/CaSymbolIndexQuery.kt
 package org.cangnova.cangjie.analysis.api.platform.index
-public data class CaSymbolIndexEntry( val name: Name, val fqName: FqName, val kind: CaSymbolIndexEntryKind, )
-CaSymbolIndexEntry.public val packageFqName: FqName
+public data class CaSymbolIndexEntry( val packageFqName: FqName, val name: Name, val kind: CaSymbolIndexEntryKind, val ownerClassId: ClassId? = null, )
 public enum class CaSymbolIndexEntryKind
-public interface CaSymbolIndexQuery : CaPlatformComponent
-CaSymbolIndexQuery.public fun getDeclarationsByName(name: Name, analysisScope: GlobalSearchScope): Collection<CaSymbolIndexEntry>
-CaSymbolIndexQuery.public fun getDeclarationsByNamePrefix(namePrefix: String, analysisScope: GlobalSearchScope): Collection<CaSymbolIndexEntry>
-CaSymbolIndexQuery.public val indexPersistence: CaSymbolIndexPersistence
+public data class CaSymbolIndexNameFilter( val prefix: String, val isRepeatedInvocation: Boolean = false, )
+CaSymbolIndexNameFilter.public fun matches(name: Name): Boolean
 public enum class CaSymbolIndexPersistence
+public interface CaSymbolIndexQuery : CaPlatformComponent
+CaSymbolIndexQuery.public fun findDeclarations(filter: CaSymbolIndexNameFilter): Collection<CaSymbolIndexEntry>
+CaSymbolIndexQuery.public val indexPersistence: CaSymbolIndexPersistence
 public fun Project.createCaSymbolIndexQuery(analysisScope: GlobalSearchScope): CaSymbolIndexQuery
-public interface CaSymbolIndexQueryService
+public interface CaSymbolIndexQueryService : CaPlatformComponent
 CaSymbolIndexQueryService.public fun createSymbolIndexQuery(analysisScope: GlobalSearchScope): CaSymbolIndexQuery
 CaSymbolIndexQueryService.public companion object
 CaSymbolIndexQueryService.Companion.public fun getInstance(project: Project): CaSymbolIndexQueryService

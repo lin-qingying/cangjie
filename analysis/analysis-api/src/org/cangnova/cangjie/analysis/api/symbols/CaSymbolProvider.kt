@@ -168,6 +168,24 @@ interface CaSymbolProvider : CaLifetimeOwner {
      * 查询针对某个目标 `ClassId` 的全部 `extend`。
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
+
+    /**
+     * 按名称前缀发现声明。
+     *
+     * 与 [getTopLevelClassLikeSymbols] / [getTopLevelCallableSymbols] 的区别是入口：
+     * 那两个方法要求调用方**已经知道**包名与短名，本方法面向「用户正在敲名字」的
+     * 补全场景，因此走宿主的名称索引而不是逐包试精确名。
+     *
+     * 结果保留全部声明身份：同名重载、同名不同 payload 个数的枚举构造器必须各自保留，
+     * 按显示名去重会让用户选不到目标声明。
+     *
+     * **索引不可用时返回空集合**，不得降级为遍历工作区声明——那样每次键入都会
+     * 付出与项目规模成正比的代价，且会把无关模块的声明一并交给用户。
+     */
+    fun getDeclarationsByNamePrefix(
+        namePrefix: String,
+        isRepeatedInvocation: Boolean = false,
+    ): List<CaDeclarationSymbol>
 }
 
 /**
