@@ -73,6 +73,36 @@ class CompletionDummyIdentifierProviderTest : CjParsingTestCase(
     }
 
     /**
+     * 泛型限定名后的位置同样替换。
+     *
+     * `holder<Int64>.裸dummy` 里的裸标识符不是合法表达式；不替换就得到空候选。
+     */
+    @Test
+    fun positionAfterGenericQualifierIsReplaced() {
+        val file = fileWith("func f(): Int64 {\n    holder<Int64>.IntellijIdeaRulezzz\n}")
+        val context = requireNotNull(dummyAt(file)) { "该位置必须允许补全" }
+
+        assertTrue(
+            context.position.text.contains("cangjieCompletionPlaceholder"),
+            "泛型限定名后的裸 dummy 必须被替换，实际 ${context.position.text}",
+        )
+    }
+
+    /**
+     * 字符串插值内的位置替换；与原始字符串的区别是**这里会求值**。
+     */
+    @Test
+    fun positionInsideStringInterpolationIsReplaced() {
+        val file = fileWith("func f(): String {\n    let s = \"\${IntellijIdeaRulezzz}\"\n    return s\n}")
+        val context = requireNotNull(dummyAt(file)) { "插值内必须允许补全" }
+
+        assertTrue(
+            context.position.text.contains("cangjieCompletionPlaceholder"),
+            "插值内的裸 dummy 必须被替换，实际 ${context.position.text}",
+        )
+    }
+
+    /**
      * 原始字符串内的位置直接排除：那里不插值，补出来的代码永远不会被求值。
      */
     @Test
