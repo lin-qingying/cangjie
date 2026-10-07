@@ -5,13 +5,19 @@ import com.intellij.codeInsight.completion.CompletionParameters
 import com.intellij.codeInsight.completion.CompletionResultSet
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupEvent
+import com.intellij.codeInsight.lookup.LookupListener
+import com.intellij.openapi.progress.ProcessCanceledException
 import org.cangnova.cangjie.ide.completion.api.CompletionKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionRecoveryService
 import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyContext
 import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
+import org.cangnova.cangjie.ide.completion.impl.shared.insert.revalidateSelection
 import org.cangnova.cangjie.ide.completion.impl.shared.lookup.LookupElementFactory
+import org.cangnova.cangjie.psi.CjElement
 
 /**
  * 仓颉原生补全的平台入口。
@@ -55,8 +61,7 @@ abstract class AbstractCangJieCompletionContributor : CompletionContributor() {
         val dummy = CompletionDummyIdentifierProvider.provide(parameters) ?: return
         val service = completionService(parameters) ?: return
         val request = buildRequest(parameters, dummy)
-        val snapshots = service.complete(request)
-        result.addAllElements(snapshots.map(::toLookupElement))
+        result.addAllElements(service.complete(request).map(::toLookupElement))
     }
 
     /**
@@ -75,4 +80,31 @@ abstract class AbstractCangJieCompletionContributor : CompletionContributor() {
      */
     protected open fun toLookupElement(snapshot: CompletionSnapshot): LookupElement =
         LookupElementFactory.create(snapshot)
+
+    /**
+     * 候选语义复查服务；未装配时为 `null`。
+     *
+     * 未装配表示本宿主不做语义复查——插入仍受文档版本与区间校验约束，
+     * 只是不会因为「候选指向的声明已经不在了」而拒绝写入。
+     */
+    protected open val recoveryService: CompletionRecoveryService? get() = null
+
+    /**
+     * 复查一个候选的语义目标，把结论回挂到 lookup 元素上。
+     *
+     * **谁调用**：宿主的 Lookup 监听器（候选被选中时）。之所以不在本模块安装监听器，
+     * 是因为本模块的 `compileOnly` 只有 `intellij-core`、`analysis` 与 `indexing`，
+     * 不含平台的 `LookupManager`；按 B1 的分工，Lookup 接线属于宿主。
+     *
+     * **为什么不在插入时查**：插入发生在写事务里，那里不能跑分析，
+     * 而「这个候选现在还能不能插」只有分析能回答。
+     *
+     * **复查失败降级为「未复查」而不是「失效」**：线程模型不允许在 EDT 上分析、
+     * 会话已过期、用户取消——这些环境限制不等于候选过期，判成失效会让用户
+     * 在正常环境里选什么都插不进去。只有复查**确实回答**目标不存在时才拒绝写入。
+     */
+    fun revalidateSelection(item: LookupElement, useSite: CjElement) {
+        val recovery = recoveryService ?: return
+        item.revalidateSelection(useSite, recovery)
+    }
 }

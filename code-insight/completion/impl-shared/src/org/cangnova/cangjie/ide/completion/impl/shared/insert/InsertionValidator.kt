@@ -30,7 +30,13 @@ object InsertionValidator {
         tailOffset: Int,
         document: Document,
         currentStamp: Long,
+        revalidation: RevalidationVerdict = RevalidationVerdict.NotPerformed,
     ): InsertionValidity {
+        // 语义目标已失效时**先于**文档版本判定：候选指向的声明都不在了，
+        // 再讨论「文档有没有变」没有意义，而且插入结果一定是个未解析的名字。
+        if (revalidation == RevalidationVerdict.Invalid) {
+            return InsertionValidity.DanglingCandidate(snapshot.identity)
+        }
         if (!snapshot.requiresDocumentStamp()) {
             return if (isRangeSane(startOffset, tailOffset, document.textLength)) {
                 InsertionValidity.Valid

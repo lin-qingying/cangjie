@@ -49,6 +49,7 @@ private object DefaultHandler : InsertHandler<LookupElement> {
             context.tailOffset,
             document,
             document.modificationStamp,
+            item.getUserData(COMPLETION_REVALIDATION) ?: RevalidationVerdict.NotPerformed,
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel
@@ -75,6 +76,7 @@ private object NamedArgumentHandler : InsertHandler<LookupElement> {
             context.tailOffset,
             document,
             document.modificationStamp,
+            item.getUserData(COMPLETION_REVALIDATION) ?: RevalidationVerdict.NotPerformed,
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel

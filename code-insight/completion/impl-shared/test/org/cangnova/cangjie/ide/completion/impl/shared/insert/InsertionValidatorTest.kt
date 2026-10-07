@@ -81,6 +81,53 @@ class InsertionValidatorTest : CjParsingTestCase(
     }
 
     /**
+     * 语义目标已失效：报告悬空候选，且结论**优先于**文档版本判定。
+     *
+     * 候选指向的声明都不在了，再讨论「文档有没有变」没有意义，
+     * 而两种结论对应不同的用户提示（重新触发补全 vs 重新确认位置）。
+     */
+    @Test
+    fun danglingCandidateIsReportedBeforeDocumentStamp() {
+        val expected = document.modificationStamp
+        java.awt.EventQueue.invokeAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                document.insertString(document.textLength, "!")
+            }
+        }
+        assertEquals(
+            InsertionValidity.DanglingCandidate(symbolSnapshot(expected).identity),
+            InsertionValidator.validate(
+                symbolSnapshot(expected), 0, 5, document, document.modificationStamp,
+                RevalidationVerdict.Invalid,
+            ),
+            "语义目标失效必须先于文档过期被报告",
+        )
+    }
+
+    /**
+     * 复查未执行不影响既有校验：不能把「没查」当成「失效」。
+     *
+     * 宿主未安装复查监听器时若被当成失效，用户在正常环境里选什么都插不进去。
+     */
+    @Test
+    fun notPerformedKeepsExistingValidation() {
+        val stamp = document.modificationStamp
+        assertEquals(
+            InsertionValidity.Valid,
+            InsertionValidator.validate(
+                symbolSnapshot(stamp), 0, 5, document, stamp, RevalidationVerdict.NotPerformed,
+            ),
+        )
+        assertEquals(
+            InsertionValidity.OutOfRange(0, 999, document.textLength),
+            InsertionValidator.validate(
+                symbolSnapshot(stamp), 0, 999, document, stamp, RevalidationVerdict.NotPerformed,
+            ),
+            "未复查时区间校验仍必须生效",
+        )
+    }
+
+    /**
      * 替换区间越界：必须拒绝写入，而不是抛 IndexOutOfBounds 升级成 IDE 故障。
      */
     @Test

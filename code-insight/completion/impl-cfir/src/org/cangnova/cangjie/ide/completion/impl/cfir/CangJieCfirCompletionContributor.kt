@@ -2,6 +2,8 @@ package org.cangnova.cangjie.ide.completion.impl.cfir
 
 import com.intellij.codeInsight.completion.CompletionParameters
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionRecoveryService
+import org.cangnova.cangjie.ide.completion.impl.cfir.recovery.CfirCompletionRecoveryService
 import org.cangnova.cangjie.ide.completion.impl.shared.AbstractCangJieCompletionContributor
 
 /**
@@ -16,4 +18,11 @@ class CangJieCfirCompletionContributor : AbstractCangJieCompletionContributor() 
      */
     override fun completionService(parameters: CompletionParameters): CangJieCompletionService? =
         cfirCompletionServiceOrNull(parameters.position.project)
+
+    /**
+     * 候选语义复查实现。
+     *
+     * 与补全服务同源：两者都按身份重新进入分析，复查结论因此与候选生成一致。
+     */
+    override val recoveryService: CompletionRecoveryService = CfirCompletionRecoveryService()
 }
