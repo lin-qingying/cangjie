@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.ide.completion.impl.shared.imports
 
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.psi.PsiDocumentManager
@@ -230,6 +231,51 @@ class PsiImportPlanApplierTest : CjParsingTestCase(
         requireNotNull(PsiDocumentManager.getInstance(project).getDocument(file)) { "夹具文件必须带文档" }
 
     /**
+     * 导入写入必须落在调用方给的命令里，从而与候选文本共享一次撤销。
+     *
+     * 这是「完整支持单次撤销」的实际含义：补全插入是**一条**命令
+     * （候选文本由平台替换、导入由应用器追加），若应用器自己开一条命令，
+     * 用户按一次 Ctrl+Z 只会撤掉一半，留下一条指向不存在声明的 import。
+     *
+     * 断言的是**同一条命令**而不是撤销结果：撤销子系统在轻量解析夹具里没有注册，
+     * `UndoManager.getInstance(project)` 直接返回 `null`，无法在这里真的按一次 Ctrl+Z。
+     * 而「单次撤销」成立的条件恰恰是「两次写入属于同一条命令」——这条在夹具里可观察：
+     * 应用器若自己开了命令，命令名就会被它改写。
+     */
+    @Test
+    fun importWriteSharesTheEnclosingCommand() {
+        val file = parse(FILE_WITH_IMPORT)
+        var commandNameInsideApplier: String? = null
+
+        java.awt.EventQueue.invokeAndWait {
+            WriteCommandAction.runWriteCommandAction(
+                project,
+                ENCLOSING_COMMAND,
+                null,
+                Runnable {
+                    PsiImportPlanApplier(project).apply(
+                        file,
+                        mapOf("k" to addImport("std.collection.HashMap", "HashMap")),
+                    )
+                    commandNameInsideApplier = CommandProcessor.getInstance().currentCommandName
+                },
+            )
+        }
+
+        assertTrue(
+            documentText(file).contains("import std.collection.HashMap"),
+            "写命令内必须真的写入 import",
+        )
+        // 用命名参数：`kotlin.test.assertEquals` 在「期望值与被测值都是字符串」时会选中
+        // message-first 重载，位置参数会把断言消息当成被测值。
+        assertEquals(
+            expected = ENCLOSING_COMMAND,
+            actual = commandNameInsideApplier,
+            message = "应用器不得另开命令，否则一次撤销只会退回一半",
+        )
+    }
+
+    /**
      * 在写命令内应用导入计划：应用器的调用契约就是写事务。
      *
      * PSI 文档写入要求 EDT + 命令上下文：测试工作线程必须切到 EDT，
@@ -254,6 +300,9 @@ class PsiImportPlanApplierTest : CjParsingTestCase(
         )
 
     companion object {
+        /** 外层命令名：应用器必须留在它里面。 */
+        private const val ENCLOSING_COMMAND = "仓颉补全插入"
+
         /** 带一条 import 的夹具。 */
         private val FILE_WITH_IMPORT = """
             package completion.imports
