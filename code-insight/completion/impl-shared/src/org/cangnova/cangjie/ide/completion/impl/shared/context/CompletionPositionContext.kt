@@ -22,6 +22,18 @@ import org.cangnova.cangjie.psi.CjValueArgument
  * 对齐 Kotlin `KotlinPositionContext`：这里只做**位置形态**分类，
  * 不产出候选，也不做可见性判断。仓颉特有的形态（`match`、命名实参、CDoc）
  * 单独登记，不按 Kotlin 的 `when`/trailing lambda 直接映射。
+ *
+ * **声明了不等于能产出。** 枚举值由 `classify` 的判据产生，判据没写到的取值就是死分支——
+ * 它不会报错，只会让依赖它的代码永远不执行。本变更新发现的两例：
+ *
+ * - `DOCUMENTATION`：文档注释由 CDoc 词法产出 `CDocImpl`，**不是 `CjElement`**，
+ *   注释内最近的 CjElement 祖先是整个文件，过去一直落到 `EXPRESSION`。
+ *   现已修通（`CompletionRequest.positionElement` 承载光标处的原始叶子元素）。
+ * - `MACRO_TOKENS`：**至今没有判据产出它**。因此关键字区段与期望类型过滤器里
+ *   对它的排除是死分支，`11.5` 的宏补全也还没有可挂载的位置。
+ *
+ * 没有配套判据的取值，请在 [classify] 里补判据，或把缺口记进变更文档——
+ * 别让它停在这里像一项已完成的能力。
  */
 enum class CompletionPositionKind {
     /** 普通表达式位置。 */
