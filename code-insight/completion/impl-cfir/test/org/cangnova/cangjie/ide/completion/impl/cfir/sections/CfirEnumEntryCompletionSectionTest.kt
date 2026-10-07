@@ -77,6 +77,38 @@ class CfirEnumEntryCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * `match` 模式位置给出主语类型的枚举构造器。
+     *
+     * 仓颉按主语类型的枚举构造器分派，用户在这里敲的几乎总是其中之一；
+     * 而他此刻**没有任何接收者可写**——`Dot` 不像 `Shape.Dot` 那样有个类型名可以打出来。
+     */
+    @Test
+    fun matchPatternOffersEnumConstructors(matchPatternOffersEnumConstructors: CjFile) {
+        val snapshots = section.collectCandidates(matchPatternOffersEnumConstructors.requestAtReference(TARGET))
+        val names = snapshots.lookupNames()
+
+        assertTrue("Dot" in names, "无参枚举构造器必须可见，实际 $names")
+        assertTrue("Boxed" in names, "有参枚举构造器必须可见，实际 $names")
+        assertTrue(
+            snapshots.all { it.kind == CompletionItemKind.ENUM_ENTRY },
+            "模式位置的候选类别必须统一为 ENUM_ENTRY，实际 ${snapshots.map { it.kind }}",
+        )
+    }
+
+    /**
+     * `match` 之外不产出：模式候选只在模式位置有意义。
+     */
+    @Test
+    fun matchPatternAbsentOutsideMatch(matchPatternAbsentOutsideMatch: CjFile) {
+        val snapshots = section.collectCandidates(matchPatternAbsentOutsideMatch.requestAtReference(TARGET))
+
+        assertTrue(
+            snapshots.none { it.kind == CompletionItemKind.ENUM_ENTRY },
+            "普通表达式位置不得出现枚举值候选，实际 ${snapshots.map { it.kind to it.lookupString }}",
+        )
+    }
+
+    /**
      * 使用的区段实例。
      */
     private val section = CfirEnumEntryCompletionSection()

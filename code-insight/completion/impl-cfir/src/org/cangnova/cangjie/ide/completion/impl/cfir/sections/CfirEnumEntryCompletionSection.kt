@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.components.CaTypeAccessKind
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
@@ -15,7 +16,11 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjExpression
+import org.cangnova.cangjie.psi.CjMatchEntry
+import org.cangnova.cangjie.psi.CjMatchExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
 
 /**
@@ -39,11 +44,18 @@ class CfirEnumEntryCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
+        val prefix = request.prefix
+        val file = position.containingCjFile ?: return emptyList()
+
+        // `match` 的模式位置与成员访问位置的候选来源是同一条：都是某个枚举的构造器，
+        // 区别只在「枚举从哪来」——成员访问从接收者，模式位置从 match 的**主语类型**。
+        matchSubject(position)?.let { subject ->
+            return analyze(file) { enumConstructorsOf(expressionTypeOf(subject), prefix, request.documentStamp) }
+        }
+
         val context = CompletionPositionContexts.classify(position)
         if (context.kind != CompletionPositionKind.MEMBER_ACCESS) return emptyList()
         val receiver = context.receiverExpression as? CjElement ?: return emptyList()
-        val prefix = request.prefix
-        val file = position.containingCjFile ?: return emptyList()
 
         return analyze(file) {
             val enumClass = resolveEnumClass(receiver) ?: return@analyze emptyList()
@@ -63,6 +75,57 @@ class CfirEnumEntryCompletionSection : CfirCompletionSection(
                     )
                 }
         }
+    }
+
+    /**
+     * 取出光标所在模式对应的 `match` 主语表达式。
+     *
+     * 仓颉的 `match` 按主语类型的枚举构造器分派，用户在 `case` 后面敲的几乎总是其中之一。
+     * 只认**模式位置**：主语表达式自己所在的位置不是模式位置，那里该走普通表达式候选。
+     */
+    private fun matchSubject(position: CjElement): CjExpression? {
+        val entry = PsiTreeUtil.getParentOfType(position, CjMatchEntry::class.java) ?: return null
+        // 一个 case 子句里既有模式也有体（`case Dot => 1`）：只有模式那一段才是模式位置，
+        // 体里该给的是普通表达式候选。按偏移划界，不靠「有没有解析出模式」——
+        // 用户正打到一半时模式往往还没成型。
+        val body = entry.expression ?: return null
+        if (position.textRange.startOffset >= body.textRange.startOffset) return null
+        val match = PsiTreeUtil.getParentOfType(entry, CjMatchExpression::class.java) ?: return null
+        return match.subjectExpression
+    }
+
+    /**
+     * 主语表达式的类型；取不到时返回 `null`。
+     */
+    private fun CaSession.expressionTypeOf(expression: CjExpression): CaType? =
+        with(expression) { expressionType }
+
+    /**
+     * 枚举类型上的构造器候选。
+     *
+     * 不先判「这是不是一个枚举」：直接按 `CaEnumConstructorSymbol` 过滤，
+     * 非枚举类型自然得到空集合。多一次枚举判定只多一处可能与实际符号族脱节的条件。
+     */
+    private fun CaSession.enumConstructorsOf(
+        type: CaType?,
+        prefix: String,
+        documentStamp: Long,
+    ): List<CompletionSnapshot> {
+        if (type == null) return emptyList()
+        return type.memberScopeQueries(CaTypeAccessKind.INSTANCE_THROUGH_RECEIVER)
+            .mapNotNull { it.scope }
+            .flatMap { it.callables { true } }
+            .filterIsInstance<CaEnumConstructorSymbol>()
+            .filter { (it as CaNamedSymbol).name?.asString()?.startsWith(prefix) == true }
+            .map { constructor ->
+                callableSnapshot(
+                    constructor,
+                    CompletionItemKind.ENUM_ENTRY,
+                    CompletionOrigin.MEMBER,
+                    documentStamp = documentStamp,
+                )
+            }
+            .toList()
     }
 
     /**
