@@ -11,11 +11,16 @@ import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
+import org.cangnova.cangjie.analysis.api.types.CaErrorType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
+import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
@@ -23,6 +28,7 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjReferenceExpression
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 
 /**
  * 显式接收者成员候选。
@@ -55,7 +61,18 @@ class CfirMemberCompletionSection : CfirCompletionSection(
         val file = position.containingCjFile ?: return emptyList()
 
         return analyze(file) {
-            val target = resolveAccessTarget(receiver) ?: return@analyze emptyList()
+            val resolved = resolveAccessTarget(receiver)
+            // 触发条件不能只判 null：未解析引用的 `expressionType` 返回的是**错误类型**而不是 null，
+            // 只判 null 会让恢复路径永远不触发（成员候选恒为空，且不报任何错）。
+            val recovered = if (resolved == null || resolved.type is CaErrorType) {
+                recoverUnimportedReceiver(receiver)
+            } else {
+                null
+            }
+            val target = recovered?.target ?: resolved ?: return@analyze emptyList()
+            // 未导入 receiver 的成员要能插出去，必须同时把**接收者类型**导入进来：
+            // 只插入 `Type.member` 而 `Type` 仍不可解析，得到的是一段编译不过的代码。
+            val receiverImport = recovered?.importResolution ?: ImportResolution.NoImport
             val receiverType = target.type
 
             // 先收集适用且可见的 extend 成员，再枚举成员通道。
@@ -78,6 +95,7 @@ class CfirMemberCompletionSection : CfirCompletionSection(
                                 kindFor(query.accessedThroughTypeName, fromExtend),
                                 if (fromExtend) CompletionOrigin.EXTEND else CompletionOrigin.MEMBER,
                                 documentStamp = request.documentStamp,
+                                importResolution = receiverImport,
                             ),
                         )
                     }
@@ -94,6 +112,7 @@ class CfirMemberCompletionSection : CfirCompletionSection(
                                 CompletionItemKind.EXTEND_MEMBER,
                                 CompletionOrigin.EXTEND,
                                 documentStamp = request.documentStamp,
+                                importResolution = receiverImport,
                             ),
                         )
                     }
@@ -153,6 +172,50 @@ class CfirMemberCompletionSection : CfirCompletionSection(
         val expressionType = (receiver as? CjExpression)?.expressionType ?: return null
         return AccessTarget(expressionType, CaTypeAccessKind.INSTANCE_THROUGH_RECEIVER)
     }
+
+    /**
+     * 未导入 receiver 的类型恢复。
+     *
+     * 使用点写在 `Type.member`，而 `Type` 尚未导入时，接收者解析必然失败，
+     * 用户于是拿不到任何成员候选——但类型本身就在依赖模块里，完全可以找到。
+     *
+     * 三条边界都是刻意的，缺一条就会把「有界的恢复」变成「猜」：
+     * 1. **只认裸标识符**：用类型检查表达，不看文本。receiver 是 `CjSimpleNameExpression`
+     *    才继续；写成 `a.b.c` 时它就是限定表达式，直接放弃——
+     *    任意深度的表达式链搜索不属于本恢复的范围，代价与收益完全不成比例。
+     * 2. **只认精确同名**：索引接口按前缀召回（长前缀退化为子串匹配），
+     *    这里必须再按「短名完全相等」过滤一次，否则 `Foo` 会把 `FooBar` 也带进来。
+     * 3. **必须唯一**：同名类型来自多个包时给不出一个确定的接收者类型，
+     *    与其随便挑一个、把用户带到错误的成员集合，不如不给。
+     */
+    private fun CaSession.recoverUnimportedReceiver(receiver: CjElement): RecoveredReceiver? {
+        val simpleName = receiver as? CjSimpleNameExpression ?: return null
+        val name = simpleName.referencedName ?: return null
+        com.intellij.openapi.progress.ProgressManager.checkCanceled()
+        val classifier = getDeclarationsByNamePrefix(name)
+            .filterIsInstance<CaClassLikeSymbol>()
+            .filter { it.name?.asString() == name }
+            .singleOrNull()
+            ?: return null
+        val packageFqName = classifier.classId?.packageFqName ?: return null
+        if (packageFqName == receiver.containingCjFile?.packageFqName) return null
+        return RecoveredReceiver(
+            AccessTarget(classifier.defaultType, CaTypeAccessKind.STATIC_THROUGH_TYPE_NAME),
+            ImportResolution(
+                CompletionImportPlan.AddImport(
+                    CompletionImportTargetData(ImportPath(packageFqName, false), name),
+                ),
+            ),
+        )
+    }
+
+    /**
+     * 恢复出的接收者：类型与它需要的导入计划。
+     */
+    private data class RecoveredReceiver(
+        val target: AccessTarget,
+        val importResolution: ImportResolution,
+    )
 
     /**
      * 判断候选是否在当前位置可见。
