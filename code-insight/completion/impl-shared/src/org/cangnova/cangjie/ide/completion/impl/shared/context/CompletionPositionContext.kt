@@ -14,6 +14,7 @@ import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjMacroAttr
+import org.cangnova.cangjie.psi.CjPackageDirective
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjValueArgument
 
@@ -31,9 +32,11 @@ import org.cangnova.cangjie.psi.CjValueArgument
  *   注释内最近的 CjElement 祖先是整个文件，过去一直落到 `EXPRESSION`。
  *   现已修通（`CompletionRequest.positionElement` 承载光标处的原始叶子元素）。
  * - `MACRO_TOKENS`：曾经也没有判据。现已补上（判据落在 `CjMacroAttr` 上）。
- * - `PACKAGE`：**至今没有判据产出它**。包名位置会落到 `EXPRESSION`。
+ * - `PACKAGE`：曾经也没有判据，包名位置落到 `EXPRESSION`。现已补上
+ *   （判据落在 `CjPackageDirective` 上，且必须排在声明名判定**之前**——
+ *   `CjPackageDirective` 本身是声明，包名表达式会被 `isOnDeclarationIdentifier()` 认走）。
  *
- * 「每个取值是否可产出」由 `CompletionPositionKindCoverageTest` 守门：
+ * 三例都已修通；「每个取值是否可产出」由 `CompletionPositionKindCoverageTest` 守门：
  * 新增取值而不在它的四张表里登记，测试直接失败——比让它悄悄变成死分支好得多。
  *
  * 没有配套判据的取值，请在 [classify] 里补判据，或把缺口记进变更文档——
@@ -141,6 +144,12 @@ object CompletionPositionContexts {
         // 内容是声明或表达式）区分开——后者仍走正常分类。
         if (position.insideOf<CjMacroAttr>() != null) {
             return CompletionPositionContext(CompletionPositionKind.MACRO_TOKENS, declaration = declaration)
+        }
+        // 包声明里的包名位置。必须排在声明名判定**之前**：`CjPackageDirective` 本身是一个
+        // 声明，包名表达式会被 `isOnDeclarationIdentifier()` 认走，落到 DECLARATION_NAME。
+        // 而「补一个包名」与「给这个声明起个名字」是两件事，候选来源也完全不同。
+        if (position.insideOf<CjPackageDirective>() != null) {
+            return CompletionPositionContext(CompletionPositionKind.PACKAGE, declaration = declaration)
         }
         position.qualifiedReceiverOrNull()?.let { receiver ->
             return CompletionPositionContext(CompletionPositionKind.MEMBER_ACCESS, receiver, declaration)

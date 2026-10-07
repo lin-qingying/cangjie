@@ -120,6 +120,10 @@ class CompletionPositionKindCoverageTest : CjParsingTestCase(
                 marker = "import ",
                 text = "package p\n\nimport std.collection.ArrayList\n",
             ),
+            CompletionPositionKind.PACKAGE to Snippet(
+                marker = "package p.",
+                text = "package p.q\n\nfunc f(): Int64 { 0 }\n",
+            ),
             CompletionPositionKind.NAMED_ARGUMENT to Snippet(
                 marker = "alpha: ",
                 text = "func host(alpha!: Int64): Int64 { alpha }\n\nfunc site(): Int64 { host(alpha: 1) }\n",
@@ -175,11 +179,7 @@ class CompletionPositionKindCoverageTest : CjParsingTestCase(
          * 登记它们不是为了心安，而是让「这是一处缺口」变成可读的事实；
          * 将来补上判据时，本测试会提醒把登记改掉。
          */
-        val KNOWN_UNPRODUCIBLE: Map<CompletionPositionKind, String> = mapOf(
-            CompletionPositionKind.PACKAGE to
-                "classify 里没有产出 PACKAGE 的判据（全文只有 IMPORT 等分支），" +
-                    "包名位置目前落到 EXPRESSION",
-        )
+        val KNOWN_UNPRODUCIBLE: Map<CompletionPositionKind, String> = emptyMap()
 
         /**
          * 尚未确定能否产出的种类。
