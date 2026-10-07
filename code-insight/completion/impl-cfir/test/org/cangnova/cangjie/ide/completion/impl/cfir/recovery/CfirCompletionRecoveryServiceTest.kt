@@ -2,15 +2,19 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.recovery
 
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirIndexCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirTopLevelCompletionSection
+import org.cangnova.cangjie.ide.completion.impl.cfir.sections.IndexSectionTestServiceRegistrar
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.collectCandidates
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.requestAtReference
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -32,6 +36,12 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
     "code-insight/completion/impl-cfir/testData/recovery",
 ) {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
+
+    /**
+     * 注册名称索引服务：索引区段用它产出「导入作用域里看不到」的候选。
+     */
+    override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
+        listOf(IndexSectionTestServiceRegistrar)
 
     /**
      * 分析结束后凭身份恢复回同一个重载。
@@ -125,6 +135,43 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 声明级导入已存在时，复查不得再要求写 import。
+     *
+     * 仓颉里同一个目标有三种等价的导入写法（包级 / 声明级 / 星号），
+     * 只比对整行文本必然漏判，而漏判的后果是往已经能用的文件里重复写一行 import。
+     */
+    @Test
+    fun recoveryAcceptsDeclarationLevelImport(mainFile: CjFile) {
+        assertAlreadyReachable(mainFile)
+    }
+
+    /**
+     * 星号导入已存在时，复查同样不得再要求写 import。
+     */
+    @Test
+    fun recoveryAcceptsStarImport(mainFile: CjFile) {
+        assertAlreadyReachable(mainFile)
+    }
+
+    /**
+     * 未导入的候选由索引区段产出（作用域路径看不到它），再交给复查。
+     */
+    private fun assertAlreadyReachable(mainFile: CjFile) {
+        val snapshot = CfirIndexCompletionSection()
+            .collectCandidates(mainFile.requestAtReference(IMPORTED_TARGET))
+            .single { it.lookupString == IMPORTED_TARGET }
+
+        val recovered = requireNotNull(recoveryService.recover(mainFile, snapshot.identity)) {
+            "已导入的声明必须能被复查定位"
+        }
+        assertEquals(
+            CompletionImportPlan.NoImport,
+            recovered.importPlan,
+            "文件里已有等价 import 时复查不得再要求写一行",
+        )
+    }
+
+    /**
      * 取得夹具里 `overload` 的全部重载快照。
      *
      * 快照经区段产出：签名必须在分析内渲染，这同时验证了
@@ -142,6 +189,9 @@ class CfirCompletionRecoveryServiceTest : AbstractAnalysisApiExecutionTest(
     companion object {
         /** 夹具中待补全的标识符。 */
         private const val TARGET = "completionTarget"
+
+        /** 已导入夹具中的目标声明名。 */
+        private const val IMPORTED_TARGET = "recoverTarget"
 
         /** 夹具中的重载函数名。 */
         private const val OVERLOAD = "overload"

@@ -16,6 +16,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.api.lookup.RecoveredTarget
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.callableIdentityKey
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.classifierIdentityKey
+import org.cangnova.cangjie.ide.completion.impl.shared.imports.toImportPath
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
@@ -144,20 +145,50 @@ class CfirCompletionRecoveryService : CompletionRecoveryService {
         identity: CompletionIdentity,
         qualifiedName: String,
     ): CompletionImportPlan {
-        val packagePath = qualifiedName.substringBeforeLast('.', "")
-        if (packagePath.isEmpty() || qualifiedName == identity.name) return CompletionImportPlan.NoImport
-        val targetPackage = FqName.fromSegments(packagePath.split('.'))
+        val targetFqName = FqName.fromString(qualifiedName)
+        val targetPackage = targetFqName.parent()
+        if (targetPackage.isRoot || qualifiedName == identity.name) return CompletionImportPlan.NoImport
         if (targetPackage == file.packageFqName) return CompletionImportPlan.NoImport
+        if (file.isReachable(targetFqName, targetPackage)) return CompletionImportPlan.NoImport
         val path = ImportPath(targetPackage, false)
-        val alreadyImported = file.text.lineSequence().any { line ->
-            line.trim().removePrefix("import ").trim() == path.pathStr
-        }
-        if (alreadyImported) return CompletionImportPlan.NoImport
         return CompletionImportPlan.AddImport(
             CompletionImportTargetData(importPath = path, expressionText = identity.name),
         )
     }
 }
+
+/**
+ * 目标是否已被现有的某条 import 覆盖。
+ *
+ * 走 PSI 的 import 项而不是逐行文本比较：仓颉里同一个目标有三种等价的导入写法，
+ * 只比对整行文本必然漏判，而漏判的后果是**往已经能用的文件里重复写一行 import**：
+ *
+ * ```cangjie
+ * import probe.dep             // 包级导入：包的声明直接可用
+ * import probe.dep.target      // 声明级导入
+ * import probe.dep.*           // 星号导入
+ * ```
+ *
+ * 三种写法都已用 cjc 1.1.3 实测可编译并可直接引用 `target()`。
+ * 因此判定要按**结构**而不是文本：包级与星号导入按包名比对，声明级按完整名比对。
+ *
+ * 别名不改可达性：`import a.b as c` 只是把短名换成 `c`，目标本身仍然可达，
+ * 复查阶段不该因此再要求写一行 import。
+ */
+private fun CjFile.isReachable(targetFqName: FqName, targetPackage: FqName): Boolean =
+    importDirectives.any { directive ->
+        directive.importItems.any { item ->
+            val imported = item.toImportPath() ?: return@any false
+            when {
+                // 星号导入按包比对：它引入的是包内全部声明。
+                imported.isAllUnder -> imported.fqName == targetPackage
+                // 包级导入（本次候选会写出的那种形式）与声明级导入都按完整名比对；
+                // 二者在语法上同形，`import a.b` 既可指包 `a.b` 也可指 `a` 中的声明 `b`，
+                // 无法从路径本身区分，按「至少覆盖其一」判定即可——多写一行 import 才是要避免的。
+                else -> imported.fqName == targetFqName || imported.fqName == targetPackage
+            }
+        }
+    }
 
 /**
  * 把复查结论包装成导入解析结果，供插入阶段与 [ImportResolution] 一起消费。

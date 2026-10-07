@@ -288,7 +288,10 @@ private class ExistingImports private constructor(
  * 走 PSI 而非字符串反解：别名与组织限定在 PSI 上是结构化字段，
  * 用 `ImportPath.fromString` 重新解析会在带 `` ` `` 转义的标识符上出错。
  */
-private fun CjImportItem.toImportPath(): ImportPath? {
-    val fqName = importedFqName?.takeIf { !isAllUnder } ?: return null
+fun CjImportItem.toImportPath(): ImportPath? {
+    // 星号导入同样要还原成 ImportPath：`isAllUnder` 正是为它存在的字段，
+    // 早先把它丢弃会让「文件里已经 import a.b.*」这类事实在路径集合里完全消失，
+    // 调用方因此无法判断包内声明是否已经可达。
+    val fqName = importedFqName ?: return null
     return ImportPath(fqName, isAllUnder, aliasName?.let { org.cangnova.cangjie.name.Name.identifier(it) }, organizationName)
 }
