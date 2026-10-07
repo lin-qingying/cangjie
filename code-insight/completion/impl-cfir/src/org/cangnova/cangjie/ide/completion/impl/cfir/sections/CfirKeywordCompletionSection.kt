@@ -12,7 +12,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
@@ -34,7 +34,7 @@ class CfirKeywordCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CompletionPositionContexts.classify(position).kind
+        val context = request.positionContext.kind
         if (context == CompletionPositionKind.IMPORT || context == CompletionPositionKind.DOCUMENTATION) {
             return emptyList()
         }

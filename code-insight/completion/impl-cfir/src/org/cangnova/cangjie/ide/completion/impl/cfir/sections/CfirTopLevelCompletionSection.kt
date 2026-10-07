@@ -12,7 +12,7 @@ import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
@@ -37,7 +37,7 @@ class CfirTopLevelCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CompletionPositionContexts.classify(position).kind
+        val context = request.positionContext.kind
         // 成员访问只补接收者成员；import 位置由导入区段负责。
         if (context == CompletionPositionKind.MEMBER_ACCESS) return emptyList()
 

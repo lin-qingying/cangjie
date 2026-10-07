@@ -21,7 +21,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.name.FqName
@@ -48,7 +48,7 @@ class CfirIndexCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val kind = CompletionPositionContexts.classify(position).kind
+        val kind = request.positionContext.kind
         if (kind !in SUPPORTED_POSITIONS) return emptyList()
         val file = position.containingCjFile ?: return emptyList()
         // 重复触发时放宽匹配：用户再次请求补全，通常意味着上一轮前缀太窄。

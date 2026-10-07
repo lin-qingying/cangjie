@@ -10,7 +10,7 @@ import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
@@ -32,7 +32,7 @@ class CfirLocalScopeCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CompletionPositionContexts.classify(position)
+        val context = request.positionContext
         // 成员访问与 import 位置不使用词法候选：它们的候选来自接收者与导入上下文。
         if (context.kind == CompletionPositionKind.MEMBER_ACCESS ||
             context.kind == CompletionPositionKind.IMPORT

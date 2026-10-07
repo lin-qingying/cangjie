@@ -14,7 +14,7 @@ import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.psi.CjElement
@@ -53,7 +53,7 @@ class CfirEnumEntryCompletionSection : CfirCompletionSection(
             return analyze(file) { enumConstructorsOf(expressionTypeOf(subject), prefix, request.documentStamp) }
         }
 
-        val context = CompletionPositionContexts.classify(position)
+        val context = request.positionContext
         if (context.kind != CompletionPositionKind.MEMBER_ACCESS) return emptyList()
         val receiver = context.receiverExpression as? CjElement ?: return emptyList()
 

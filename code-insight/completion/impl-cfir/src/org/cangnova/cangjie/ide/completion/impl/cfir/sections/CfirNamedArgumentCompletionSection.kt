@@ -8,7 +8,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.ide.completion.impl.shared.namedArgumentSnapshot
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -35,7 +35,7 @@ class CfirNamedArgumentCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CompletionPositionContexts.classify(position)
+        val context = request.positionContext
         if (context.kind != CompletionPositionKind.NAMED_ARGUMENT) {
             return emptyList()
         }

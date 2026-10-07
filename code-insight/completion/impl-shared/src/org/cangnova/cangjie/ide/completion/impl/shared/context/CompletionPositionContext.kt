@@ -91,6 +91,20 @@ data class CompletionPositionContext(
 )
 
 /**
+ * 当前请求的位置形态分类。
+ *
+ * **一律走 [org.cangnova.cangjie.ide.completion.api.CompletionRequest.positionElement]，
+ * 而不是 `completionPosition`**：后者是**分析位置**，对于不在仓颉 PSI 里的位置
+ * （文档注释、宏 token）它的最近 `CjElement` 祖先是整个文件，分类只会得到 `EXPRESSION`，
+ * 于是所有区段都会按表达式位置产出候选。实测：属性宏 token 位置上关键字区段给出
+ * `[let, if, return]`、索引区段给出**整个 SDK 的全部声明名**。
+ *
+ * 区段不要各自写 `classify(request.completionPosition)`——那条路会在这些位置上静默走错。
+ */
+val org.cangnova.cangjie.ide.completion.api.CompletionRequest.positionContext: CompletionPositionContext
+    get() = CompletionPositionContexts.classify(positionElement)
+
+/**
  * 按 PSI 形态判定补全位置。
  *
  * 只读取位置附近的语法结构，不做名称解析：把「这里是什么形状的槽位」与

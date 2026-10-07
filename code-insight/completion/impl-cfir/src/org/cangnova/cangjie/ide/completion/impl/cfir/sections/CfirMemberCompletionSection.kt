@@ -22,7 +22,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
@@ -54,7 +54,7 @@ class CfirMemberCompletionSection : CfirCompletionSection(
      */
     override fun compute(request: CompletionRequest): List<CompletionSnapshot> {
         val position = request.completionPosition
-        val context = CompletionPositionContexts.classify(position)
+        val context = request.positionContext
         if (context.kind != CompletionPositionKind.MEMBER_ACCESS) return emptyList()
         val receiver = context.receiverExpression as? CjElement ?: return emptyList()
         val prefix = request.prefix

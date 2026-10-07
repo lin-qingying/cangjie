@@ -14,7 +14,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.ExpectedTypeMatch
 import org.cangnova.cangjie.ide.completion.api.lookup.toWeight
 import org.cangnova.cangjie.ide.completion.api.lookup.withExpectedTypeMatch
 import org.cangnova.cangjie.ide.completion.impl.shared.CompletionSnapshotData
-import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
+import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
 
 /**
@@ -92,7 +92,9 @@ class CfirExpectedTypeProvider : CompletionExpectedTypeProvider {
     override fun expectedTypeAt(request: CompletionRequest): CompletionExpectedType {
         val position = request.completionPosition
         val file = position.containingCjFile ?: return CompletionExpectedType.None
-        val context = CompletionPositionContexts.classify(position)
+        // 位置分类走请求级入口：文档注释与宏 token 不在仓颉 PSI 里，
+        // 按分析位置分类只会得到 EXPRESSION，期望类型会走错分支。
+        val context = request.positionContext
         return analyze(file) {
             when (context.kind) {
                 // 类型位置：候选必须是一个类型，不存在「表达式期望类型」。
