@@ -34,8 +34,14 @@ import org.cangnova.cangjie.psi.CjFile
 class CfirCompletionRecoveryService : CompletionRecoveryService {
     override fun recover(useSite: CjElement, identity: CompletionIdentity): RecoveredTarget? {
         // 关键字与文档标签没有可失效的声明身份：有效性只取决于语言版本。
+        //
+        // 声明生成建议同理，但理由不同：它**不引用已有声明**，而是「这里可以生成一个新成员」。
+        // 它的有效性取决于「该类型此刻是否仍缺这个成员」，那是生成器的判断，
+        // 不是按身份恢复符号能回答的。把它交给符号恢复会让每个声明建议都被判失效——
+        // 而失效的表现是用户选什么都插不进去，且不报错。
         if (identity.kind == CompletionIdentityKind.KEYWORD ||
-            identity.kind == CompletionIdentityKind.DOCUMENTATION
+            identity.kind == CompletionIdentityKind.DOCUMENTATION ||
+            identity.kind == CompletionIdentityKind.DECLARATION_SUGGESTION
         ) {
             return RecoveredTarget(identity, identity.qualifiedName, CompletionImportPlan.NoImport, visible = true)
         }

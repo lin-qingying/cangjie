@@ -199,7 +199,13 @@ fun CompletionSortData.toWeight(): Int {
  * 是兜底方案，不是命中。
  */
 fun categoryRank(kind: CompletionItemKind): Int = when (kind) {
-    CompletionItemKind.DOCUMENTATION -> 0
+    // 声明生成建议同样是「兜底方案」：它不是命中，而是「这里没有现成的，要不要新建一个」。
+    // 与文档项同档而不是更高——它比文档项更远离「用户想要的东西」，
+    // 但压低到文档项之下会让它在与文档同时出现时消失在列表末尾，反而不好找。
+    CompletionItemKind.DECLARATION_SUGGESTION,
+    CompletionItemKind.DOCUMENTATION,
+    -> 0
+
     else -> 1
 }
 

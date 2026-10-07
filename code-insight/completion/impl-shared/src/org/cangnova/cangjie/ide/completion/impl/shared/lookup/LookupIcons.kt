@@ -27,4 +27,7 @@ internal fun iconOf(kind: CompletionItemKind): Icon = when (kind) {
     CompletionItemKind.NAMED_ARGUMENT -> AllIcons.Nodes.Parameter
     CompletionItemKind.ENUM_ENTRY -> AllIcons.Nodes.Enum
     CompletionItemKind.DOCUMENTATION -> AllIcons.Actions.Edit
+    // 声明生成建议插入的是**新声明**而不是一次引用：用「新增」图标与真实候选区分开，
+    // 否则用户会以为选中它就引用了某个已有成员。
+    CompletionItemKind.DECLARATION_SUGGESTION -> AllIcons.General.Add
 }

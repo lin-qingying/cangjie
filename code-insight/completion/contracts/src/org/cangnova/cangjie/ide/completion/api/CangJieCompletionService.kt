@@ -179,6 +179,14 @@ enum class CompletionItemKind {
 
     /** 文档标签或引用。 */
     DOCUMENTATION,
+
+    /**
+     * 声明生成建议：不是引用已有声明，而是「这里可以生成一个新成员」。
+     *
+     * 与其余类别并列而不是单独成族：它对用户就是一个候选，
+     * 只是插入的是**新声明**而不是一次引用。
+     */
+    DECLARATION_SUGGESTION,
 }
 
 /**
