@@ -13,6 +13,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjImportDirective
+import org.cangnova.cangjie.psi.CjMacroAttr
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjValueArgument
 
@@ -115,6 +116,14 @@ object CompletionPositionContexts {
         }
         if (position.insideOf<PsiComment>() != null) {
             return CompletionPositionContext(CompletionPositionKind.DOCUMENTATION, declaration = declaration)
+        }
+        // 属性宏的 token 输入：`@Foo[1+]` 的方括号里是 **token 序列**而不是表达式。
+        // 那里没有可解析的代码上下文（"#"、"`"、未转义的 "@" 都不是合法 token），
+        // 因此普通表达式候选在里面没有意义，必须单独登记。
+        // 判据落在 `CjMacroAttr` 上，与 `CjMacroInput`（小括号里的普通宏输入，
+        // 内容是声明或表达式）区分开——后者仍走正常分类。
+        if (position.insideOf<CjMacroAttr>() != null) {
+            return CompletionPositionContext(CompletionPositionKind.MACRO_TOKENS, declaration = declaration)
         }
         position.qualifiedReceiverOrNull()?.let { receiver ->
             return CompletionPositionContext(CompletionPositionKind.MEMBER_ACCESS, receiver, declaration)

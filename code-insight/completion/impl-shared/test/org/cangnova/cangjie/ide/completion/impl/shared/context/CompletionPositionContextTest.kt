@@ -4,6 +4,8 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjMacroAttr
+import org.cangnova.cangjie.psi.CjMacroInput
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -12,6 +14,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
@@ -189,7 +192,59 @@ class CompletionPositionContextTest : CjParsingTestCase(
         val context = CompletionPositionContexts.classify(file.lastReference("local"))
         assertEquals(CompletionPositionKind.FUNCTION_BODY, context.kind)
     }
+
+    /**
+     * 属性宏的 token 输入单独登记为 `MACRO_TOKENS`。
+     *
+     * `@Foo[1+]` 的方括号里是 **token 序列**而不是表达式：`#`、`` ` ``、未转义的 `@`
+     * 都不是合法 token。那里没有可解析的代码上下文，普通候选无从谈起。
+     */
+    @Test
+    fun macroAttributeTokensAreClassifiedAsMacroTokens() {
+        val file = parse(MACRO_FILE)
+        val attr = PsiTreeUtil.findChildrenOfType(file, CjMacroAttr::class.java).first()
+        val position = requireNotNull(attr.findElementAt(1)) { "方括号内必须存在叶子元素" }
+
+        assertEquals(
+            expected = CompletionPositionKind.MACRO_TOKENS,
+            actual = CompletionPositionContexts.classify(position).kind,
+            message = "属性宏的 token 输入必须单独登记",
+        )
+    }
+
+    /**
+     * 普通宏输入（小括号）不登记为 `MACRO_TOKENS`。
+     *
+     * 那里是正常的表达式/声明输入，走常规分类——把两者混为一谈会让普通宏调用里的
+     * 代码补全整段失效。
+     */
+    @Test
+    fun macroInputIsNotClassifiedAsMacroTokens() {
+        val file = parse(MACRO_FILE)
+        val input = PsiTreeUtil.findChildrenOfType(file, CjMacroInput::class.java).first()
+        val position = requireNotNull(input.findElementAt(1)) { "小括号内必须存在叶子元素" }
+
+        assertNotEquals(
+            illegal = CompletionPositionKind.MACRO_TOKENS,
+            actual = CompletionPositionContexts.classify(position).kind,
+            message = "普通宏输入不得被当成 token 输入",
+        )
+    }
 }
+
+/**
+ * 属性宏定义与两种调用形态。
+ *
+ * 取自官方手册《实现宏》：属性宏多一个 `Tokens` 入参，调用时经 `[]` 传入。
+ */
+// `trimIndent()` 的结果不是编译期常量，因此只能是 `val` 而不是 `const val`。
+private val MACRO_FILE = """
+    macro Foo(attrTokens: Tokens, inputTokens: Tokens): Tokens {
+        attrTokens
+    }
+
+    var a: Int64 = @Foo[1+](2+3)
+""".trimIndent()
 
 /**
  * 取得最后一个引用指定名字的表达式。
