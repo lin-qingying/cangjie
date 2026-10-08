@@ -305,6 +305,14 @@ class LspIntegrationTestConnection private constructor(
         return awaitFuture(serverProxy.workspaceService.executeCommand(params))
     }
 
+    /**
+     * 服务端已发出的 `workspace/applyEdit` 请求。
+     *
+     * 补全插入的两端分工是「服务端算编辑 + 客户端落盘」，
+     * 因此服务端侧可断言的就是这些请求里的编辑内容。
+     */
+    fun appliedEdits(): List<ApplyWorkspaceEditParams> = client.appliedEdits.toList()
+
     /** 发起 workspace/symbol 请求并等待结果。 */
     fun workspaceSymbol(params: WorkspaceSymbolParams): Either<List<SymbolInformation>, List<WorkspaceSymbol>> {
         return awaitFuture(serverProxy.workspaceService.symbol(params))
@@ -470,6 +478,20 @@ class LspIntegrationTestConnection private constructor(
          * 已发布的 diagnostics 通知列表。
          */
         val publishedDiagnostics: MutableList<PublishDiagnosticsParams> = CopyOnWriteArrayList()
+
+        /**
+         * 服务端发来的 `workspace/applyEdit` 请求列表。
+         *
+         * 补全插入是「服务端算编辑、客户端落盘」：服务端侧能验证的就是**发出的编辑内容**，
+         * 因此这里必须记录请求本身（按设计 §7.11.7，不验证服务端的写事务）。
+         */
+        val appliedEdits: MutableList<ApplyWorkspaceEditParams> = CopyOnWriteArrayList()
+
+        /** 接受并记录 `workspace/applyEdit`。 */
+        override fun applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture<ApplyWorkspaceEditResponse> {
+            appliedEdits += params
+            return CompletableFuture.completedFuture(ApplyWorkspaceEditResponse(true))
+        }
 
         /** 忽略 telemetry 通知。 */
         override fun telemetryEvent(`object`: Any) {}

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.lsp.server
 
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommandHandler
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
 import org.eclipse.lsp4j.DidChangeConfigurationParams
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams
 import org.eclipse.lsp4j.DidChangeWorkspaceFoldersParams
@@ -74,14 +76,37 @@ class CangjieWorkspaceService(
     /**
      * 处理 workspace/executeCommand 请求。
      *
-     * 当前未定义具体命令语义，因此返回空对象作为协议占位并保留日志。
+     * 目前只路由补全的 `applyCompletion`：候选带空 `textEdit`，客户端接受候选后自动执行该命令，
+     * 服务端据此算出编辑并**请求** `workspace/applyEdit` 让客户端落盘。
+     *
+     * 未识别的命令仍返回空对象作为协议占位（客户端可能发送别处声明的命令），
+     * 但补全命令的失败路径一律返回**明确错误**，不静默成功。
      */
     override fun executeCommand(params: ExecuteCommandParams): CompletableFuture<Any> {
         logger.info("====> executeCommand: ${params.command}")
+        if (params.command == LspCompletionCommands.APPLY_COMPLETION) {
+            return completionCommands.applyCompletion(params.arguments ?: emptyList())
+        }
         return CompletableFuture.completedFuture(Any()).also {
             it.thenAccept { logger.info("<==== executeCommand") }
         }
     }
+
+    /**
+     * 补全命令处理器。
+     *
+     * 客户端在 `initialize` 之后才有，因此用取值函数而不是构造期直传。
+     */
+    private val completionCommands = LspCompletionCommandHandler(
+        sessions = serverContext.completionSessions,
+        documentStore = serverContext.documentStore,
+        project = serverContext.environment.project,
+        clientProvider = { serverContext.client },
+        // 补全插入靠客户端应用编辑：客户端能力在 initialize 时记进 workspaceState。
+        supportsApplyEdit = {
+            serverContext.workspaceState.initializeParams()?.capabilities?.workspace?.applyEdit == true
+        },
+    )
 
     /**
      * 处理 workspace/symbol 查询。

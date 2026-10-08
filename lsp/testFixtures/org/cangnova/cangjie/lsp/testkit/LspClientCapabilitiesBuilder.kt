@@ -109,6 +109,9 @@ object LspClientCapabilitiesBuilder {
         }
         capabilities.workspace = capabilities.workspace.apply {
             workspaceFolders = true
+            // 补全插入靠 `workspace/applyEdit` 落盘（服务端算编辑、客户端应用）：
+            // 「全能力客户端」必须声明它，否则该路径在夹具里根本不会启用。
+            applyEdit = true
         }
         capabilities.general = GeneralClientCapabilities().apply {
             this.positionEncodings = positionEncodings

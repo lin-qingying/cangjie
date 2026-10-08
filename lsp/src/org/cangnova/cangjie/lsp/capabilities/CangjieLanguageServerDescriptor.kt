@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.capabilities
 
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenType
 import org.eclipse.lsp4j.CodeActionKind
@@ -106,8 +107,11 @@ data class CangjieLanguageServerDescriptor(
 
     /**
      * workspace/executeCommand 可接受的命令名称集合。
+     *
+     * 默认含补全的 `applyCompletion`：候选带空 `textEdit`，客户端接受候选后自动执行该命令，
+     * 服务端据此发 `workspace/applyEdit`。不声明它客户端就不会调用，表现是「接受候选后什么都没发生」。
      */
-    val executeCommands: List<String> = emptyList(),
+    val executeCommands: List<String> = listOf(LspCompletionCommands.APPLY_COMPLETION),
 
     /**
      * 服务端框架层默认愿意暴露的功能集合。

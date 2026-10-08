@@ -7,6 +7,7 @@ import org.cangnova.cangjie.lsp.analysis.CangjieAnalysisLifecycleContext
 import org.cangnova.cangjie.lsp.analysis.CangjieAnalysisRequestContext
 import org.cangnova.cangjie.lsp.capabilities.CangjieLanguageServerDescriptor
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
+import org.cangnova.cangjie.lsp.completion.LspCompletionSessionStore
 import org.cangnova.cangjie.lsp.state.LspDocumentStore
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
@@ -35,6 +36,11 @@ class CangjieServerContext(
      * 当前打开文档的协议层快照存储。
      */
     val documentStore: LspDocumentStore = LspDocumentStore(),
+
+    /**
+     * 补全会话存储：候选与替换区间要保留到客户端接受候选那一刻（有上界，超限即过期）。
+     */
+    val completionSessions: LspCompletionSessionStore = LspCompletionSessionStore(),
 
     /**
      * 当前工作区初始化参数、目录和项目配置状态。
