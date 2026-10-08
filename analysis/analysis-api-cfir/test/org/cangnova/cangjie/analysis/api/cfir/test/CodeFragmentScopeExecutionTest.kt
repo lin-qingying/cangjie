@@ -88,6 +88,35 @@ class CodeFragmentScopeExecutionTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
+     * 反例：类型片段同样没有自己的顶层声明，不得产生片段成员作用域。
+     *
+     * 与表达式片段是同一条边界，但走的是**另一条内容节点**（`CjTypeReference`）：
+     * 只测表达式片段时，类型片段这条路上「凭空多一层」的实现照样能过。
+     */
+    @Test
+    fun typeFragmentHasNoMemberScope(mainFile: CjFile) {
+        val fragment = CjPsiFactory.contextual(mainFile)
+            .createTypeCodeFragment("hostType", mainFile)
+        // 是 Kotlin 声明的函数而不是 Java getter，因此不合成属性：必须按函数调用。
+        val position = requireNotNull(fragment.getContentElement()) { "类型片段必须解析出内容元素（CjTypeReference）" }
+
+        analyzeForTest(fragment) {
+            val context = fragment.scopeContext(position)
+            assertTrue(
+                context.scopes.none { it.kind == CaScopeKind.CODE_FRAGMENT_MEMBER_SCOPE },
+                "类型片段没有自身声明，不得产生片段成员作用域，实际 ${context.scopes.map { it.kind }}",
+            )
+            assertTrue(
+                fragment.fragmentMemberScope == null,
+                "类型片段的 fragmentMemberScope 必须为 null",
+            )
+            // 正例：片段必须能看到**宿主**的类型——「没有片段成员作用域」不等于「什么都看不见」。
+            val names = context.compositeScope().getAllPossibleNames().map { it.asString() }
+            assertTrue("hostType" in names, "类型片段必须能看到宿主文件的类型，实际 $names")
+        }
+    }
+
+    /**
      * 公开入口 `fragmentMemberScope` 与 `scopeContext` 的投影必须同源。
      *
      * 两处各写一份算法时，片段成员作用域迟早会只在其中一条路径上出现。

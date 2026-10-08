@@ -579,6 +579,18 @@ class CjPsiFactory private constructor(
     }
 
     /**
+     * 创建类型代码片段（片段文本是一段类型引用）。
+     *
+     * 三种片段各有自己的 `CjNodeTypes` 内容节点，因此不能复用块/表达式片段的构造：
+     * 类型片段的 `getContentElement` 取的是 `CjTypeReference`，而块片段取语句列表。
+     * 补这个入口是因为此前**类与文件类型都在、只缺工厂**——调用方只能自己 new，
+     * 于是「类型片段」这条路在测试里根本走不到（3.7 的验收要求表达式与类型各一组）。
+     */
+    fun createTypeCodeFragment(@NonNls text: String, context: PsiElement?): CjTypeCodeFragment {
+        return CjTypeCodeFragment(project, "fragment.cj", text, context)
+    }
+
+    /**
      * 提供 `createSemicolon` 操作，封装仓颉 PSI节点的访问、构造或判断逻辑。
      */
     fun createSemicolon(): PsiElement {
