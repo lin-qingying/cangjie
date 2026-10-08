@@ -104,10 +104,8 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
     /**
      * 同一副本并行分析采用各线程自己的模式，模式状态互不污染且结果与串行一致。
      *
-     * 已知缺口：dangling 副本的 PREFER_SELF 解析当前返回 `null`
-     * （低层 dangling PREFER_SELF 路径的 not-null 上下文缓存缺陷），
-     * 因此副本自身的顶层声明在 PREFER_SELF 下不可见。该断言记录现状，
-     * 低层修复后应改为「PREFER_SELF 解析到副本、IGNORE_SELF 解析到原件」。
+     * PREFER_SELF 解析到副本、IGNORE_SELF 解析到原件：副本自身顶层的 `tracked` 与上下文模块的
+     * 同名声明是同一份声明的两种身份，须由等价调用去重保留先到者，而不是报重载歧义。
      */
     @Test
     fun danglingThreadIsolation(mainFile: CjFile) {
@@ -116,7 +114,7 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
         val serialTargets = readAction {
             modes.map { mode -> analyzeCopy(copy, mode) { copy.reference("tracked").resolveToSymbol()?.psi?.containingFile } }
         }
-        assertEquals(listOf(null, mainFile), serialTargets, "PREFER_SELF 当前无法解析副本顶层声明")
+        assertEquals(listOf(copy, mainFile), serialTargets, "PREFER_SELF 必须解析到副本，IGNORE_SELF 必须解析到原件")
         val entered = CyclicBarrier(modes.size)
         val analyzed = CyclicBarrier(modes.size)
         val executor = Executors.newFixedThreadPool(modes.size)
@@ -153,9 +151,7 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
     /**
      * 两副本、两模式分别建模：模块与 LL 会话身份互不混用，且显式声明查询始终取自副本。
      *
-     * 已知缺口：dangling 副本的 PREFER_SELF 非局部解析当前返回 `null`
-     * （低层 dangling PREFER_SELF 路径缺陷），因此顶层声明只在 IGNORE_SELF 下可解析；
-     * 低层修复后应补「PREFER_SELF 解析到副本」的断言。
+     * PREFER_SELF 解析到副本、IGNORE_SELF 解析到原件；非局部引用的策略不改变显式声明查询。
      */
     @Test
     fun danglingCopyAndModeIsolation(mainFile: CjFile) = readAction {
@@ -169,7 +165,7 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
                     if (mode == IGNORE_SELF) {
                         assertSame(mainFile, target?.psi?.containingFile)
                     } else {
-                        assertNull(target, "PREFER_SELF 当前无法解析副本顶层声明")
+                        assertSame(copy, target?.psi?.containingFile, "PREFER_SELF 必须解析到副本顶层声明")
                     }
                     assertLocalFromCopy(copy)
                     // 显式请求声明不受非局部引用的 IGNORE_SELF 策略影响。
@@ -194,10 +190,9 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
     /**
      * 修改副本 PSI 后必须替换会话并能按指针恢复声明；原件会话与源码均不受影响。
      *
-     * 已知缺口一：dangling 副本的 PREFER_SELF 非局部解析当前返回 `null`，
-     * 因此指针只能从 IGNORE_SELF 解析到的声明建立。
+     * 指针刻意从 IGNORE_SELF 解析到的原件声明建立，用于验证指针落点仍是原件快照。
      *
-     * 已知缺口二：修改副本 PSI 后，Analysis 会话缓存不会失效，
+     * 已知缺口：修改副本 PSI 后，Analysis 会话缓存不会失效，
      * 会话与指针都会继续复用旧快照。Kotlin 为此让不稳定副本绕过上层缓存，
      * 但仓颉侧绕过会让 LL 的 not-null 上下文缓存拿不到值，因此该修复必须落在
      * LL 的副本失效链路上。这里断言现状，修复后改为 assertNotSame。
@@ -241,7 +236,7 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
     /**
      * 由当前文档文本构造的补全副本在两种模式下都必须可用，且不修改原文件。
      *
-     * 已知缺口：副本自身的顶层声明在 PREFER_SELF 下不可解析（同 2.3）。
+     * PREFER_SELF 下副本自身顶层声明可解析，IGNORE_SELF 下解析到原件。
      * 该环境的文档修改会被 PSI 同步提交，因此无法构造真正的「未提交」状态，
      * 这里验证的是「副本文本来自当前文档」以及 `analyzeCopy` 不回写原文件。
      */
@@ -264,7 +259,7 @@ class AnalysisApiDanglingFileExecutionTest : AbstractAnalysisApiExecutionTest(
                 val copy = copyFromText(mainFile, currentText)
                 assertEquals(currentText, copy.text, "副本必须来自当前文档文本")
                 analyzeCopy(copy, PREFER_SELF) {
-                    assertNull(copy.reference("tracked").resolveToSymbol(), "PREFER_SELF 当前无法解析副本顶层声明")
+                    assertSame(copy, copy.reference("tracked").resolveToSymbol()?.psi?.containingFile, "PREFER_SELF 必须解析到副本顶层声明")
                     assertLocalFromCopy(copy)
                 }
                 analyzeCopy(copy, IGNORE_SELF) {

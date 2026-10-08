@@ -49,7 +49,7 @@ abstract class ConeCallConflictResolverFactory : CfirComposableSessionComponent<
             ?: TypeSpecificityComparator.NONE
         // NB: Adding new resolvers is strongly discouraged because the results are order-dependent.
         return ConeCompositeConflictResolver(
-//            ConeEquivalentCallConflictResolver(session),
+            ConeEquivalentCallConflictResolver,
             *createAdditionalResolvers(session).toTypedArray(),
 //            ConeIntegerOperatorConflictResolver,
             ConeOverloadConflictResolver(specificityComparator, components, transformerComponents),
