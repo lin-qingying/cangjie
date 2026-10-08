@@ -86,6 +86,16 @@ class CfirBuiltinSymbolProvider(
     override val symbolNamesProvider: CfirSymbolNamesProvider = BuiltinNamesProvider
 
     /**
+     * 合成 builtins 属于**库侧**：`Int64` 这类名字没有对应的项目源码文件，
+     * 也不该由宿主名称索引给出（索引只覆盖源码根），因此整套名字都并入库侧视图。
+     *
+     * 这一路不是可有可无：实测（临时去掉本覆写）`std.core` 的 `.cjo` 只导出
+     * `AtomicInt64`、`Int64Less` 这些派生名字，**`Int64` 本身只由本 provider 暴露**。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
+
+    /**
      * 返回 primitive 或官方 BuiltInDecl 对应的合成 class-like symbol。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =

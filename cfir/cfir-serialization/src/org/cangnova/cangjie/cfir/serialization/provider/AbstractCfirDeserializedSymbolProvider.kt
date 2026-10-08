@@ -52,6 +52,12 @@ abstract class AbstractCfirDeserializedSymbolProvider(
     /** 反序列化包的顶层名称索引提供器。 */
     abstract override val symbolNamesProvider: CfirSymbolNamesProvider
 
+    /**
+     * 反序列化声明全部来自 `.cjo`，本身就是库侧视图，不需要另建一份。
+     */
+    final override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
+
     /** 完整包名到包级反序列化器持有对象的缓存。 */
     private val contextCache = ConcurrentHashMap<String, PackageDeserializers>()
     /** 已确认无法加载的完整包名集合。 */

@@ -41,6 +41,15 @@ class CfirCompositeSymbolProvider(
         CfirCompositeSymbolNamesProvider.fromSymbolProviders(providers)
 
     /**
+     * 聚合子 provider 中的**库侧**名称视图。
+     *
+     * 只并入各子 provider 自己的库侧视图，因此源码符号源不会因组合而重新进入名称发现通道：
+     * 源码符号源的库侧贡献为空视图，并入它不改变并集。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider =
+        CfirCompositeSymbolNamesProvider.create(providers.map { it.libraryDeclarationsNamesProvider })
+
+    /**
      * 按 provider 顺序返回第一个 class-like symbol 命中项。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {

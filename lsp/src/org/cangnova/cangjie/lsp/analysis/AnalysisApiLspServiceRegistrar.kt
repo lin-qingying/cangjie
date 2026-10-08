@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclaratio
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.index.CaSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
@@ -19,9 +20,11 @@ import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvide
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneAnnotationsResolverFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger
+import org.cangnova.cangjie.analysis.api.standalone.base.index.CaStandaloneSymbolIndexQueryService
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
 import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
+import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**
@@ -92,6 +95,27 @@ internal object AnalysisApiLspServiceRegistrar {
         project.registerService(
             CangJiePackageProviderMerger::class.java,
             CangJieStandalonePackageProviderMerger::class.java,
+        )
+        /*
+         * 名称索引是补全「未导入声明」的唯一源码侧来源：源码声明的名字必须由宿主索引给出，
+         * 不能让每个符号源自己遍历源码文件（那正是索引要取代的代价）。
+         * LSP 不加载 standalone 的整份描述符，因此这一条必须在这里显式补上，
+         * 否则源码模块的候选会整类缺席。
+         */
+        project.registerService(
+            CaSymbolIndexQueryService::class.java,
+            CaStandaloneSymbolIndexQueryService::class.java,
+        )
+        /*
+         * 补全服务的项目级提供者。
+         *
+         * 上游补全描述符只声明了 `completion.contributor`，**没有** `<projectService>` 条目；
+         * LSP 走分支 B（不注册 contributor，直接驱动管线），因此必须在这里手工注册，
+         * 否则 `cfirCompletionServiceOrNull(project)` 取到 `null` → 零候选且不报错。
+         */
+        project.registerService(
+            CfirCompletionServiceProvider::class.java,
+            CfirCompletionServiceProvider::class.java,
         )
 
         project.registerService(

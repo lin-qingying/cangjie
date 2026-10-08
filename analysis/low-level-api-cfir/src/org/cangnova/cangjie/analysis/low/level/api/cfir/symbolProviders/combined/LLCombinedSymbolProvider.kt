@@ -3,6 +3,8 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined
 
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
@@ -19,6 +21,21 @@ internal abstract class LLCombinedSymbolProvider<P : CfirSymbolProvider>(session
      * 当前 combined provider 聚合的底层 provider 列表。
      */
     abstract val providers: List<P>
+
+    /**
+     * 聚合底层 provider 中**库侧**声明的名称视图，供名称发现使用。
+     *
+     * 取的是各子 provider 自己的库侧视图，因此源码符号源不会因组合重新进入名称发现通道：
+     * 源码名字由宿主名称索引给出，源码符号源的库侧贡献为空视图。
+     *
+     * 必须延迟初始化：[providers] 由子类在构造参数中提供，基类初始化期尚不可读。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider by lazy {
+        CfirCompositeCachedSymbolNamesProvider.create(
+            session,
+            providers.map { it.libraryDeclarationsNamesProvider },
+        )
+    }
 
     override fun getImportNamespace(context: CfirImportNamespaceContext): CfirImportNamespace =
         compositeImportNamespace(providers, context)

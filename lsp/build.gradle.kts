@@ -16,6 +16,14 @@ dependencies {
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-api-standalone"))
     implementation(project(":analysis:cj-references"))
+    /*
+     * 补全三模块：LSP 与 IDE **共用同一份候选生成实现**（规格 L1）。
+     * 分支 B（见 tasks.md 15.1 的结论）下 LSP 直接调用 `CangJieCompletionService`，
+     * 不注册 `completion.contributor`，因此这里只加依赖，不 prime 平台补全扩展点。
+     */
+    implementation(project(":code-insight:completion:contracts"))
+    implementation(project(":code-insight:completion:impl-shared"))
+    implementation(project(":code-insight:completion:impl-cfir"))
     implementation(project(":code-insight:formatting"))
     implementation(project(":code-insight:folding"))
     implementation(project(":code-insight:highlighting"))
@@ -43,6 +51,9 @@ dependencies {
     testImplementation(project(":analysis:analysis-api-impl-base"))
     testImplementation(project(":analysis:analysis-api-standalone"))
     testImplementation(project(":analysis:cj-references"))
+    testImplementation(project(":code-insight:completion:contracts"))
+    testImplementation(project(":code-insight:completion:impl-shared"))
+    testImplementation(project(":code-insight:completion:impl-cfir"))
     testImplementation(project(":code-insight:formatting"))
     testImplementation(project(":code-insight:folding"))
     testImplementation(project(":code-insight:highlighting"))

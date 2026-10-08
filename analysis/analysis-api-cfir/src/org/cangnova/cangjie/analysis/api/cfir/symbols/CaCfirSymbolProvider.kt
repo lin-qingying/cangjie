@@ -291,7 +291,7 @@ internal class CaCfirSymbolProvider(
     }
 
     /**
-     * 按名称前缀发现声明：名称来自宿主索引，符号由本提供器按包作用域恢复。
+     * 按名称前缀发现声明：名称来自宿主索引与库侧名字视图，符号由本提供器按包作用域恢复。
      *
      * 索引只给名称，恢复走与 [getTopLevelClassLikeSymbols] / [getTopLevelCallableSymbols]
      * 同一条查询路径，因此索引候选与作用域候选的来源、可见性语义完全一致。
@@ -302,7 +302,7 @@ internal class CaCfirSymbolProvider(
         isRepeatedInvocation: Boolean,
     ): List<CaDeclarationSymbol> = withValidityAssertion {
         val filter = CaSymbolIndexNameFilter(namePrefix, isRepeatedInvocation)
-        // **先去重名称、再解析符号**：同一名字可能同时被源码索引与二进制名字视图报出，
+        // **先去重名称、再解析符号**：同一名字可能同时被源码索引与库侧名字视图报出，
         // 若各自解析一遍，同一个声明会变成两个候选。反过来也不能按「解析结果」去重——
         // 同名重载的 `callableId` 完全相同，那样会把合法重载合并掉。
         // 因此在**名称**层按「包 + 短名 + 种类 + 所属类型」合并，解析只做一次。
@@ -313,25 +313,29 @@ internal class CaCfirSymbolProvider(
             ?.createSymbolIndexQuery(analysisSession.analysisScope)
             ?.findDeclarations(filter)
             ?.mapTo(entries) { DiscoveryEntry(it.packageFqName, it.name, it.kind, it.ownerClassId) }
-        collectBinaryNames(filter, entries)
+        collectLibraryDeclarationNames(filter, entries)
         entries.flatMap(::resolveDiscoveryEntry)
     }
 
     /**
-     * 把 `.cjo` 只读名字视图里的顶层名字并入名称集合。
+     * 把**库侧**（`.cjo` 反序列化库与 stub 库）的顶层名字并入名称集合。
      *
-     * 二进制库没有 PSI 也没有源码索引，它的顶层名字只能问 CFIR 会话的名字提供者——
-     * 该提供者已组合本模块与全部依赖，内部走 `CjoExportedTopLevelNamesResolver`，
-     * 因此 public import 的 re-export 与 alias 都在名字集合里。
+     * 库没有 PSI 也没有源码索引，它的顶层名字只能问 CFIR 会话的库侧名字视图——
+     * 该视图内部走 `CjoExportedTopLevelNamesResolver`，因此 public import 的 re-export
+     * 与 alias 都在名字集合里。
      *
-     * 名字提供者报告「无法有效计算」时什么都不并入：那表示该宿主没有可用的名字视图，
+     * 这里**刻意不走** `symbolNamesProvider`：那一路含源码符号源，枚举它等于遍历源码文件，
+     * 而源码声明的名字由上面的宿主索引给出（见 `CfirSymbolProvider.libraryDeclarationsNamesProvider`）。
+     * 走错这一路的表现是索引形同虚设——候选仍然正确，代价却随项目规模线性增长。
+     *
+     * 名字视图报告「无法有效计算」时什么都不并入：那表示该宿主没有可用的库侧视图，
      * 不是「没有候选」。
      */
-    private fun collectBinaryNames(
+    private fun collectLibraryDeclarationNames(
         filter: CaSymbolIndexNameFilter,
         destination: MutableSet<DiscoveryEntry>,
     ) {
-        val names = analysisSession.cfirSession.symbolProvider.symbolNamesProvider
+        val names = analysisSession.cfirSession.symbolProvider.libraryDeclarationsNamesProvider
         val packages = names.getPackageNames() ?: return
         for (packageName in packages) {
             ProgressManager.checkCanceled()
@@ -349,7 +353,7 @@ internal class CaCfirSymbolProvider(
      * 一条待恢复的名称。
      *
      * 与平台契约的 `CaSymbolIndexEntry` 同形，但**只在分析层使用**：
-     * 二进制名字视图不产出枚举构造器（它只暴露顶层名字），因此这里允许 `ownerClassId` 为空。
+     * 库侧名字视图不产出枚举构造器（它只暴露顶层名字），因此这里允许 `ownerClassId` 为空。
      */
     private data class DiscoveryEntry(
         val packageFqName: FqName,
@@ -362,7 +366,7 @@ internal class CaCfirSymbolProvider(
      * 把名称恢复成公开符号。
      *
      * 名称里没有符号：这一步是**唯一**把名称变成符号的地方，
-     * 源码索引与二进制名字视图共用它，因此换来源不会改变候选符号集合。
+     * 源码索引与库侧名字视图共用它，因此换来源不会改变候选符号集合。
      */
     private fun resolveDiscoveryEntry(entry: DiscoveryEntry): List<CaDeclarationSymbol> = when (entry.kind) {
         CaSymbolIndexEntryKind.CLASS_LIKE,

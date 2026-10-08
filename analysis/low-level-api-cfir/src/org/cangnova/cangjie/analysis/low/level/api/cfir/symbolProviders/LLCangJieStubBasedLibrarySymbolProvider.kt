@@ -124,6 +124,13 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
     }
 
     /**
+     * 本 provider 只服务库模块：其声明来自库自己的 stub（IDE 宿主经 stub 索引取文件），
+     * 不是被编辑的项目源码，因此整份名称视图都属于库侧。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = symbolNamesProvider
+
+    /**
      * typealias 符号缓存，支持按 class ID 和按 PSI 精确反序列化。
      */
     private val typeAliasCache = LLPsiAwareClassLikeSymbolCache(

@@ -36,6 +36,15 @@ class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolP
         get() = delegate.symbolNamesProvider
 
     /**
+     * 库侧名称视图同样透传 [delegate]。
+     *
+     * 包装层只做去重与行为收窄，不改变「哪些名字属于库侧」；
+     * 漏透传的表现是悬空文件会话里整条名称发现通道静默为空。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = delegate.libraryDeclarationsNamesProvider
+
+    /**
      * 从 [delegate] 查询 [classId] 对应的 class-like 符号。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {

@@ -37,6 +37,24 @@ abstract class CfirSymbolProvider(val session: CfirSession) : CfirSessionCompone
     abstract val symbolNamesProvider: CfirSymbolNamesProvider
 
     /**
+     * 当前符号源中**库侧**声明（`.cjo` 反序列化库、stub 库、合成 builtins）的名称视图。
+     *
+     * 名称发现（按名字枚举项目里有哪些声明）只走该视图，不走 [symbolNamesProvider]：
+     * 后者包含源码符号源，而枚举源码名字意味着遍历源码文件——在 IDE 与批量宿主里，
+     * 那一步由**宿主的名称索引**承担，而不是由每个符号源自己扫一遍。
+     *
+     * 默认是**空视图**而不是「无法枚举」：以源码 PSI 为事实来源的符号源，其库侧贡献确定为零，
+     * 这是「知道没有」而不是「不知道」。这个区别在组合时是硬约束——
+     * 组合方按并集合并，一个「无法枚举」会把整组合拖成 `null`，
+     * 于是真实存在的库侧名字会因为某个源码符号源在场而全部消失。
+     *
+     * 覆写它意味着该符号源的声明**全部**属于库侧（`.cjo`/stub/合成），
+     * 漏覆写的表现是该符号源从名称发现通道**缺席**，而不是静默把全项目扫描带回来。
+     */
+    open val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = CfirEmptySymbolNamesProvider
+
+    /**
      * 返回给定 [classId] 的 class-like symbol；若不存在则返回 `null`。
      */
     abstract fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>?

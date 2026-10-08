@@ -79,6 +79,24 @@ internal class LLModuleWithDependenciesSymbolProvider(
     }
 
     /**
+     * 组合当前模块与依赖中**库侧**声明的名称视图。
+     *
+     * 与 [symbolNamesProvider] 的区别是这一路**不含源码符号源**：按名字枚举声明时，
+     * 源码声明的名字由宿主名称索引给出，枚举源码名字要遍历源码文件，
+     * 那是索引存在的理由。这里取每个子 provider 自己的库侧视图（源码符号源的贡献为空视图），
+     * 因此组合不会把源码来源悄悄带回来。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider by lazy {
+        CfirCompositeCachedSymbolNamesProvider.create(
+            session,
+            buildList {
+                providers.mapTo(this) { it.libraryDeclarationsNamesProvider }
+                dependencyProvider.providers.mapTo(this) { it.libraryDeclarationsNamesProvider }
+            },
+        )
+    }
+
+    /**
      * 先在当前模块自身内容中查找 [classId]，未命中时再查找依赖。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =

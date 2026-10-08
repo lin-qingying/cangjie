@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.extensions
 
+import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptySymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
@@ -76,6 +77,16 @@ open class CfirSwitchableExtensionDeclarationsSymbolProvider protected construct
         override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
             if (disabled) null else delegate.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName)
     }
+
+    /**
+     * 扩展生成声明属于**库侧**：它们由委托 provider 生成，不对应项目源码文件。
+     *
+     * 禁用时贡献为**空**而不是「未知」（[symbolNamesProvider] 在那里必须返回 `null`）：
+     * 名称发现的组合按并集合并，一个「未知」会把整组合拖成 `null`，
+     * 让别的符号源真实存在的名字一起消失。
+     */
+    override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = if (disabled) CfirEmptySymbolNamesProvider else delegate.libraryDeclarationsNamesProvider
 
     /**
      * 返回扩展生成的 class-like symbol；禁用时视为不存在。
