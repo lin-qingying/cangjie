@@ -118,6 +118,40 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
         )
     }
 
+    /**
+     * 约束不满足的 extend 成员不得出现；同一个 extend 在约束满足时必须出现。
+     *
+     * 只测「满足」的那半不够：约束检查若整段失效，满足的一半照样绿。
+     */
+    @Test
+    fun memberCandidatesExcludeConstraintFailingExtend(mainFile: CjFile) {
+        val satisfied = section.collectCandidates(mainFile.requestAtReference(SATISFIED_TARGET)).lookupNames()
+        assertTrue(
+            satisfied.contains("shapedOnly"),
+            "约束满足时 extend 成员必须出现，实际 $satisfied",
+        )
+
+        val failing = section.collectCandidates(mainFile.requestAtReference(FAILING_TARGET)).lookupNames()
+        assertFalse(
+            failing.contains("shapedOnly"),
+            "约束不满足时 extend 成员不得出现，实际 $failing",
+        )
+    }
+
+    /**
+     * private 的 extend 成员不得出现；同 extend 里的公开成员必须出现。
+     *
+     * 权限与约束是两条独立的适用性判据，各自都要有反例——
+     * 只测其中一条时，另一条整段失效不会被任何用例发现。
+     */
+    @Test
+    fun memberCandidatesExcludePrivateExtend(mainFile: CjFile) {
+        val names = section.collectCandidates(mainFile.requestAtReference(TARGET)).lookupNames()
+
+        assertFalse(names.contains("secret"), "private extend 成员不得出现，实际 $names")
+        assertTrue(names.contains("open"), "同 extend 里的公开成员必须出现，实际 $names")
+    }
+
     /** 非成员访问位置不产出成员候选。 */
     @Test
     fun memberCandidatesAbsentAtExpression(mainFile: CjFile) {
@@ -138,5 +172,11 @@ class CfirMemberCompletionSectionTest : AbstractAnalysisApiExecutionTest(
     companion object {
         /** 夹具中待补全的标识符。 */
         private const val TARGET = "completionTarget"
+
+        /** 约束满足位置（`Box<Shaped>`）。 */
+        private const val SATISFIED_TARGET = "satisfiedTarget"
+
+        /** 约束不满足位置（`Box<Plain>`）。 */
+        private const val FAILING_TARGET = "failingTarget"
     }
 }
