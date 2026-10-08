@@ -53,8 +53,12 @@ class LspIntegrationTestConnection private constructor(
 
     /**
      * 被测语言服务器实例。
+     *
+     * 公开是**刻意的**：有些验证必须进到服务端容器里做（例如确认补全管线在生产容器中
+     * 能否跑通、或读取装配好的 project 做探针）。这类验证不能改由测试自建容器替代——
+     * 夹具容器的结论不能外推到生产容器（设计 §12.7）。
      */
-    private val server: CangjieLanguageServer = CangjieLanguageServer(options)
+    val server: CangjieLanguageServer = CangjieLanguageServer(options)
 
     /**
      * 服务端侧 LSP4J launcher。

@@ -95,6 +95,18 @@ class CangjieLanguageServer(
     private val serverContext by serverContextLazy
 
     /**
+     * 已装配的服务端上下文（只读入口）。
+     *
+     * 供嵌入式宿主与集成测试读取装配结果——例如取出 project 与环境，验证补全管线在
+     * **生产容器**里能否跑通；这类验证不能改由测试自建容器替代（设计 §12.7 的教训：
+     * 夹具容器的结论不能外推到生产容器）。
+     *
+     * 协议处理不依赖本入口：文本与工作区请求一律走 [textDocumentService] / [workspaceService]。
+     */
+    val context: CangjieServerContext
+        get() = serverContext
+
+    /**
      * 惰性创建文本服务。
      */
     private val textDocumentServiceLazy = lazy(LazyThreadSafetyMode.SYNCHRONIZED) {

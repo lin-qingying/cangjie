@@ -24,6 +24,7 @@ import org.cangnova.cangjie.analysis.api.standalone.base.index.CaStandaloneSymbo
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
 import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
+import org.cangnova.cangjie.ide.completion.api.CangJieCompletionServiceRegistry
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
@@ -107,12 +108,18 @@ internal object AnalysisApiLspServiceRegistrar {
             CaStandaloneSymbolIndexQueryService::class.java,
         )
         /*
-         * 补全服务的项目级提供者。
+         * 补全服务的项目级提供者与注册表。
          *
          * 上游补全描述符只声明了 `completion.contributor`，**没有** `<projectService>` 条目；
-         * LSP 走分支 B（不注册 contributor，直接驱动管线），因此必须在这里手工注册，
-         * 否则 `cfirCompletionServiceOrNull(project)` 取到 `null` → 零候选且不报错。
+         * LSP 走分支 B（不注册 contributor，直接驱动管线），因此这两条必须在这里手工注册。
+         * 缺第一条 `cfirCompletionServiceOrNull` 取到 `null`；缺第二条更隐蔽——
+         * 提供者内部走 `project.service()` 取注册表，异常被 `runCatching` 吞掉后同样得到 `null`，
+         * 表现都是**零候选且不报错**。
          */
+        project.registerService(
+            CangJieCompletionServiceRegistry::class.java,
+            CangJieCompletionServiceRegistry::class.java,
+        )
         project.registerService(
             CfirCompletionServiceProvider::class.java,
             CfirCompletionServiceProvider::class.java,
