@@ -3,6 +3,7 @@ package org.cangnova.cangjie.lsp.analysis
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 import org.cangnova.cangjie.lsp.capabilities.CangjieLanguageServerDescriptor
 import org.cangnova.cangjie.lsp.completion.LspCompletionSessionStore
+import org.cangnova.cangjie.lsp.server.LspRequestCancellation
 import org.cangnova.cangjie.lsp.state.LspDocumentStore
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
@@ -68,6 +69,14 @@ data class CangjieAnalysisRequestContext(
      * 当前打开文档的快照存储。
      */
     val documentStore: LspDocumentStore,
+
+    /**
+     * 本次请求的取消状态。
+     *
+     * 默认 [LspRequestCancellation.NONE]：没有请求上下文时（测试、非请求路径）不可取消。
+     * 需要支持 `$/cancelRequest` 的路径（补全）由文档服务传入可取消实例。
+     */
+    val cancellation: LspRequestCancellation = LspRequestCancellation.NONE,
 ) {
     /**
      * 查询指定 URI 当前打开的文档快照。

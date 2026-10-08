@@ -3,6 +3,8 @@ package org.cangnova.cangjie.lsp.analysis
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.impl.DocumentImpl
 import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProcessCanceledException
+import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
@@ -211,7 +213,7 @@ class AnalysisApiCangjieAnalysisFacade(
         if (lifecycle.descriptor.useLegacyCompletion) {
             return legacyCompletion(context, document, params)
         }
-        return Either.forLeft(pipelineCompletion(document, params))
+        return Either.forLeft(pipelineCompletion(context, document, params))
     }
 
     /**
@@ -227,7 +229,11 @@ class AnalysisApiCangjieAnalysisFacade(
      * 前缀与替换区间取自修正结果：用户在补全前敲的那半截标识符由服务端负责替换
      * （候选自带的 `textEdit` 是空的）。
      */
-    private fun pipelineCompletion(document: LspTextDocument, params: CompletionParams): List<CompletionItem> {
+    private fun pipelineCompletion(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CompletionParams,
+    ): List<CompletionItem> {
         val project = lifecycle.environment.project
         val uri = document.uri
         val analysisText = document.analysisText
@@ -270,10 +276,34 @@ class AnalysisApiCangjieAnalysisFacade(
             LOG.warning("补全服务未注册（CfirCompletionServiceProvider 缺失），$uri 不产出候选")
             return emptyList()
         }
-        val snapshots = ProgressManager.getInstance().runProcess(
-            Computable { service.complete(completionRequest) },
-            EmptyProgressIndicator(),
-        )
+        /*
+         * 取消闸门（前）：本容器里 `ProgressManager.checkCanceled()` 不生效——实测推入一个
+         * 已取消的进度指示器它也不抛（容器的 `ProgressIndicatorProvider` 未接线，全局指示器恒为 null）。
+         * 因此不能只靠指示器，至少要在这两处直接查请求的取消状态。
+         */
+        context.cancellation.throwIfCancelled()
+        /*
+         * 进度指示器仍接**本次请求的取消状态**：容器将来接上全局指示器时，
+         * 管线里的 `checkCanceled()` 就能中途收场，不必等整轮跑完。
+         */
+        val delegateIndicator = EmptyProgressIndicator()
+        val indicator = object : ProgressIndicator by delegateIndicator {
+            override fun isCanceled(): Boolean =
+                context.cancellation.isCancelled() || delegateIndicator.isCanceled()
+        }
+        val snapshots = try {
+            ProgressManager.getInstance().runProcess(
+                Computable { service.complete(completionRequest) },
+                indicator,
+            )
+        } catch (cancelled: ProcessCanceledException) {
+            // 取消不是失败：转成 LSP 的 `RequestCancelled`，客户端据此丢弃结果而不弹错。
+            context.cancellation.throwIfCancelled()
+            throw cancelled
+        }
+        // 取消闸门（后）：管线期间收到的取消在这里生效——宁可丢弃算好的结果，也不返回给用户
+        // 一份他已经不要的候选（指示器路径若将来生效，这里也会同样命中）。
+        context.cancellation.throwIfCancelled()
         val session = lifecycle.completionSessions.create(
             uri = uri,
             version = document.version,

@@ -108,6 +108,15 @@ class CangjieServerContext(
     }
 
     /**
+     * 带取消状态的请求上下文。
+     *
+     * 需要支持 `$/cancelRequest` 的路径（补全）用这个重载：取消状态必须随请求一起
+     * 进到管线里，否则客户端取消后语义工作仍会跑完。
+     */
+    fun requestContext(cancellation: LspRequestCancellation): CangjieAnalysisRequestContext =
+        requestContext().copy(cancellation = cancellation)
+
+    /**
      * 统一刷新 LSP 平台层的项目结构快照。
      *
      * 文档打开、修改、保存、关闭，以及工作区目录或磁盘文件变化，都必须先更新这份结构状态，

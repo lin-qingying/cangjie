@@ -51,6 +51,7 @@ import org.eclipse.lsp4j.WorkspaceEdit
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either3
 import org.eclipse.lsp4j.services.TextDocumentService
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
@@ -151,9 +152,24 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.completion) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
-            serverContext.analysisFacade.completion(serverContext.requestContext(), document, params)
-        }.also { it.thenAccept { logger.info("<==== completion") } }
+        /*
+         * 取消要显式传进去：客户端 `$/cancelRequest` 后 LSP4J 对下面的 future 调 `cancel(true)`
+         * （`RemoteEndpoint` 收到取消通知即如此），但工作跑在执行器自己的线程上，
+         * `supplyAsync` 的取消**不中断**正在跑的 supplier。所以这里把取消状态翻给管线，
+         * 让 `ProgressManager.checkCanceled()` 真正能抛出。
+         */
+        val cancellation = CancellableRequest()
+        val future = serverContext.requestExecutor.compute {
+            serverContext.analysisFacade.completion(
+                serverContext.requestContext(cancellation),
+                document,
+                params,
+            )
+        }
+        future.whenComplete { _, failure ->
+            if (failure is CancellationException) cancellation.cancel()
+        }
+        return future.also { it.thenAccept { logger.info("<==== completion") } }
     }
 
     /**
