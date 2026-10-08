@@ -167,13 +167,16 @@ internal fun CaCfirSession.checkCompletionCandidate(
         is CaPackageSymbol -> true
         else -> false
     }
+    // 四种状态各按自己的理由给出，**不把「不适用」与「未知」并进 HIDDEN**（设计 §6.6）：
+    // 权限/遮蔽是「确定看不见」，文件符号是「不是一类东西」，最后一种情况是「判定不出来」。
+    // 后两者一旦并进 HIDDEN，消费者就再也分不出「该移除」与「不知道」。
     val status = when {
         !visible -> CaCompletionCandidateStatus.HIDDEN
-        symbol is CaFileSymbol -> CaCompletionCandidateStatus.HIDDEN
+        symbol is CaFileSymbol -> CaCompletionCandidateStatus.NOT_APPLICABLE
         symbol is CaPackageSymbol -> CaCompletionCandidateStatus.DIRECT
         isDirectlyReachable(symbol, file) -> CaCompletionCandidateStatus.DIRECT
         importPath != null -> CaCompletionCandidateStatus.REQUIRES_IMPORT
-        else -> CaCompletionCandidateStatus.HIDDEN
+        else -> CaCompletionCandidateStatus.UNKNOWN
     }
     return CaCfirCompletionCandidateDecisionImpl(
         symbol = symbol,
@@ -195,7 +198,10 @@ internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaRefer
             val shortName = target.shortNameOrNull() ?: return@mapNotNull null
             if (expression.text == shortName.asString()) return@mapNotNull null
             val decision = checkCompletionCandidate(target, expression)
-            if (decision.status == CaCompletionCandidateStatus.HIDDEN) return@mapNotNull null
+            // 缩短必须写下一个**一定能解析**的短名，因此这里要的是「确定可用」，
+            // 不是 shouldHide 的反面：未知同样不能缩短（它与 HIDDEN 一样会被这一步挡掉，
+            // 但理由不同——见两个属性的 KDoc）。
+            if (!decision.status.isDeterminedUsable) return@mapNotNull null
             CaCfirReferenceShorteningOperationImpl(
                 expression = expression,
                 target = target,
