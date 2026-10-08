@@ -126,6 +126,20 @@ interface CangjieAnalysisFacade : AutoCloseable {
     ): Either<List<CompletionItem>, CompletionList>
 
     /**
+     * 补齐候选的文档（LSP `completionItem/resolve`）。
+     *
+     * 文档**延迟到这一刻**才算：候选快照按契约不持有符号或会话，而查文档必须重进分析；
+     * 若在生成候选时顺手算好，每个候选都要背一份渲染结果，而绝大多数候选永远不会被查看。
+     *
+     * 默认返回原样：实现不支持、会话已过期、恢复不出声明时都**只是不填文档**——
+     * 候选本身仍然可用，`resolve` 失败不该让候选消失。
+     */
+    fun resolveCompletionItem(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem = item
+
+    /**
      * 计算指定文档位置的悬停信息。
      */
     fun hover(

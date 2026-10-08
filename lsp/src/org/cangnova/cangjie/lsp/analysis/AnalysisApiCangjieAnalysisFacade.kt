@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.google.gson.JsonObject
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.impl.DocumentImpl
 import com.intellij.openapi.progress.EmptyProgressIndicator
@@ -30,10 +31,12 @@ import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.cfirCompletionServiceOrNull
 import org.cangnova.cangjie.ide.completion.impl.shared.PlatformCompletionRequest
 import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
+import org.cangnova.cangjie.ide.completion.impl.shared.resolve.completionDeclarationResolverOrNull
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
+import org.cangnova.cangjie.lsp.completion.LspCompletionCommands
 import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
 import org.cangnova.cangjie.lsp.server.LspRequestCancellation
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
@@ -346,6 +349,88 @@ class AnalysisApiCangjieAnalysisFacade(
             statistics.recordRejection(CompletionRejection.CANCELLED)
             throwIfCancelled()
         }
+    }
+
+    /**
+     * 补齐候选的文档（LSP `completionItem/resolve`）。
+     *
+     * 恢复分两步，各自用最合适的层：
+     * 1. **恢复声明**交给 `CompletionDeclarationResolver`（在生成候选的那一层实现，
+     *    用的是与快照工厂**同一套身份算法**；放到这里就要复制那份算法）；
+     * 2. **渲染 Markdown** 用本类既有的 CDoc 渲染（与 hover 同一份，不另写渲染器）。
+     *
+     * 任一步拿不到结果都返回原 item：`resolve` 只是补文档，失败不该让候选消失。
+     */
+    @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
+    override fun resolveCompletionItem(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem {
+        val data = item.data as? JsonObject ?: return skipResolve("item 没有 data", item)
+        val sessionKey = data.get(LspCompletionCommands.SESSION_KEY_FIELD)?.asString
+            ?: return skipResolve("data 里没有会话键", item)
+        val index = data.get(LspCompletionCommands.INDEX_FIELD)?.asInt
+            ?: return skipResolve("data 里没有候选下标", item)
+        val session = lifecycle.completionSessions.find(sessionKey)
+            ?: return skipResolve("会话已过期（key=$sessionKey）", item)
+        val snapshot = session.itemAt(index) ?: return skipResolve("会话里没有第 $index 个候选", item)
+        val document = lifecycle.documentStore.get(session.uri)
+            ?: return skipResolve("文档已关闭（${session.uri}）", item)
+        val resolver = completionDeclarationResolverOrNull(lifecycle.environment.project)
+            ?: return skipResolve("宿主没有装配候选声明解析器", item)
+
+        val documentation = semanticSupport.analyzeSnapshot(document) { psiSnapshot ->
+            val leaf = psiSnapshot.psiFile.findElementAt(session.replaceEnd)
+                ?: return@analyzeSnapshot skipResolveDocumentation("使用点偏移 ${session.replaceEnd} 处没有元素")
+            val useSite = leaf.nearestCangjieElement()
+                ?: return@analyzeSnapshot skipResolveDocumentation("使用点不在仓颉 PSI 里")
+            // 恢复与消费都在**同一个分析会话内**：符号不得跨会话带出（见契约 KDoc）。
+            val documentation = resolver.resolveDeclaration(this@analyzeSnapshot, snapshot) { symbol ->
+                documentationOf(symbol)
+            }
+            documentation ?: return@analyzeSnapshot skipResolveDocumentation(
+                "按身份恢复不出声明（name=${snapshot.identity.name}, qualified=${snapshot.identity.qualifiedName}）",
+            )
+        }
+        if (documentation.isNullOrBlank()) {
+            // 恢复成功却没有文档：本容器里 light PSI 上的 `docComment` 为空（见 implementation-log）。
+            LOG.fine("resolve 不填文档：声明恢复成功但没有可渲染的 CDoc（${snapshot.identity.qualifiedName}）")
+            return item
+        }
+        return item.apply {
+            this.documentation = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, documentation))
+        }
+    }
+
+    /**
+     * 跳过 resolve 并留下原因。
+     *
+     * resolve 的失败路径**必须留痕**：它按协议是「原样返回」，客户端看不出区别，
+     * 没有日志就只能看到「文档没填」，而这可能是过期、缺装配、身份对不上三种完全不同的原因。
+     */
+    private fun skipResolve(reason: String, item: CompletionItem): CompletionItem {
+        LOG.fine("resolve 跳过：$reason")
+        return item
+    }
+
+    /**
+     * 同上，供 `analyzeSnapshot` 的 lambda 里使用（返回值即「没有文档」）。
+     */
+    private fun skipResolveDocumentation(reason: String): String? {
+        LOG.fine("resolve 跳过：$reason")
+        return null
+    }
+
+    /**
+     * 取距离叶子最近的仓颉元素（叶子本身不是仓颉 PSI 时向上找）。
+     */
+    private fun PsiElement.nearestCangjieElement(): CjElement? {
+        var current: PsiElement? = this
+        while (current != null) {
+            if (current is CjElement) return current
+            current = current.parent
+        }
+        return null
     }
 
     /**

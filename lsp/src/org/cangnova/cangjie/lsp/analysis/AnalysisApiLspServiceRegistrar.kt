@@ -26,6 +26,7 @@ import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandal
 import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionServiceRegistry
 import org.cangnova.cangjie.ide.completion.api.statistics.CangJieCompletionStatistics
+import org.cangnova.cangjie.ide.completion.impl.shared.resolve.CompletionDeclarationResolverRegistry
 import org.cangnova.cangjie.ide.completion.impl.shared.statistics.installOtelCompletionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
@@ -135,6 +136,14 @@ internal object AnalysisApiLspServiceRegistrar {
         project.registerService(
             CangJieCompletionStatistics::class.java,
             CangJieCompletionStatistics::class.java,
+        )
+        /*
+         * 候选声明解析器的装配点：`resolve`（延迟文档）用它按候选身份重进分析恢复符号。
+         * 服务未注册时 `resolve` 只是不填文档（旁路能力不得影响主路径）。
+         */
+        project.registerService(
+            CompletionDeclarationResolverRegistry::class.java,
+            CompletionDeclarationResolverRegistry::class.java,
         )
         if (!installOtelCompletionStatistics(project)) {
             LOG.info("LSP 容器没有 OpenTelemetry provider，补全统计保持 noop")

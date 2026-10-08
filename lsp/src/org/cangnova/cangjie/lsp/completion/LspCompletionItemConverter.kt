@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.lsp.completion
 
-import com.google.gson.JsonPrimitive
+import com.google.gson.JsonObject
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.eclipse.lsp4j.Command
 import org.eclipse.lsp4j.CompletionItem
@@ -52,7 +52,12 @@ object LspCompletionItemConverter {
             LspCompletionCommands.APPLY_COMPLETION,
             listOf(sessionKey, index),
         )
-        data = JsonPrimitive(sessionKey)
+        // `data` 是给 `resolve` 用的定位信息：会话键 + 下标。放对象而不是单个字符串，
+        // 因为 resolve 只拿到 item，没有命令实参里的那个下标。
+        data = JsonObject().apply {
+            addProperty(LspCompletionCommands.SESSION_KEY_FIELD, sessionKey)
+            addProperty(LspCompletionCommands.INDEX_FIELD, index)
+        }
     }
 
     /**

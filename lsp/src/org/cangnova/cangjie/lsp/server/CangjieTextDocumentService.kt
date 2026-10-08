@@ -173,6 +173,18 @@ class CangjieTextDocumentService(
     }
 
     /**
+     * 处理 `completionItem/resolve` 请求。
+     *
+     * 补文档要重进分析，因此走同一条请求队列；**失败不改变候选**（门面里各步拿不到结果就原样返回）。
+     */
+    override fun resolveCompletionItem(item: CompletionItem): CompletableFuture<CompletionItem> {
+        logger.info("====> resolveCompletionItem: ${item.label}")
+        return serverContext.requestExecutor.compute {
+            serverContext.analysisFacade.resolveCompletionItem(serverContext.requestContext(), item)
+        }.also { it.thenAccept { logger.info("<==== resolveCompletionItem") } }
+    }
+
+    /**
      * 处理悬停请求。
      *
      * 文档缺失或能力关闭时返回空 hover；启用时转发到分析 facade。

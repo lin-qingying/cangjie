@@ -4,6 +4,8 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
 import org.cangnova.cangjie.ide.completion.api.completionServiceRegistry
+import org.cangnova.cangjie.ide.completion.impl.cfir.resolve.CfirCompletionDeclarationResolver
+import org.cangnova.cangjie.ide.completion.impl.shared.resolve.completionDeclarationResolverRegistry
 
 /**
  * 仓颉补全服务的项目级提供者。
@@ -16,9 +18,13 @@ import org.cangnova.cangjie.ide.completion.api.completionServiceRegistry
 class CfirCompletionServiceProvider {
     /**
      * 当前项目可用的补全服务。
+     *
+     * 同时装入**候选声明解析器**：它按候选身份重进分析恢复符号，供延迟文档（`resolve`）使用。
+     * 两者必须同源装配——解析器用的身份算法与生成候选的是同一套，缺了它 `resolve` 只能空手而归。
      */
     fun service(project: Project): CangJieCompletionService {
         val registry = completionServiceRegistry(project)
+        completionDeclarationResolverRegistry(project)?.service = CfirCompletionDeclarationResolver()
         return registry.service ?: CfirCompletionService().also { registry.service = it }
     }
 }

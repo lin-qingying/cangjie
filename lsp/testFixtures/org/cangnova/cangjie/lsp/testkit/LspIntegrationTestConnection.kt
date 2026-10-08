@@ -300,6 +300,16 @@ class LspIntegrationTestConnection private constructor(
         serverProxy.workspaceService.didChangeWorkspaceFolders(params)
     }
 
+    /**
+     * 发起 `completionItem/resolve` 请求并等待结果。
+     *
+     * 协议上 resolve **不带文档 URI**——item 自己带着定位信息（`data`），
+     * 因此助手也不接受 URI 参数。
+     */
+    fun resolveCompletionItem(item: CompletionItem): CompletionItem {
+        return awaitFuture(serverProxy.textDocumentService.resolveCompletionItem(item))
+    }
+
     /** 发起 workspace/executeCommand 请求并等待结果。 */
     fun executeCommand(params: ExecuteCommandParams): Any {
         return awaitFuture(serverProxy.workspaceService.executeCommand(params))

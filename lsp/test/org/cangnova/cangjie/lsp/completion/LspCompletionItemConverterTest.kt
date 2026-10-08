@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.lsp.completion
 
-import com.google.gson.JsonPrimitive
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
@@ -126,7 +125,9 @@ class LspCompletionItemConverterTest {
         assertEquals(CARET, edit.range.start, "空编辑落在光标处")
         assertEquals(LspCompletionCommands.APPLY_COMPLETION, item.command.command)
         assertEquals(listOf("session-7", 3), item.command.arguments)
-        assertEquals("session-7", (item.data as JsonPrimitive).asString, "data 携带会话键")
+        val data = item.data as com.google.gson.JsonObject
+        assertEquals("session-7", data.get(LspCompletionCommands.SESSION_KEY_FIELD).asString, "data 携带会话键")
+        assertEquals(3, data.get(LspCompletionCommands.INDEX_FIELD).asInt, "data 携带候选下标（resolve 靠它回到候选）")
     }
 
     /**

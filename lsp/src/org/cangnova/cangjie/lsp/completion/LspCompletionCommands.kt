@@ -19,10 +19,18 @@ object LspCompletionCommands {
     /**
      * 候选项 `data` 里携带的会话键字段名。
      *
-     * `data` 是结构化 JSON：只放会话键，不放候选内容——
+     * `data` 是结构化 JSON：只放**定位信息**（会话键 + 下标），不放候选内容——
      * 候选必须由服务端按会话键去会话存储里取，不能由客户端回传后直接信任。
      */
     const val SESSION_KEY_FIELD: String = "sessionKey"
+
+    /**
+     * 候选项 `data` 里携带的候选下标字段名。
+     *
+     * `resolve`（延迟文档）只拿到一个 `CompletionItem`，靠这个下标才能回到是哪个候选；
+     * 用标签反查在同名重载上会挑错。
+     */
+    const val INDEX_FIELD: String = "index"
 
     /**
      * 命令实参里的候选下标字段位序。
