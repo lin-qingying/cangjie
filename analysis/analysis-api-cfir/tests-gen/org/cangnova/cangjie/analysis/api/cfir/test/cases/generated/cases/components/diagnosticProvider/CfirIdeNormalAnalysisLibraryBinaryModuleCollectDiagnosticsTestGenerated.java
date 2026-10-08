@@ -53,6 +53,12 @@ public class CfirIdeNormalAnalysisLibraryBinaryModuleCollectDiagnosticsTestGener
   }
 
   @Test
+  @TestMetadata("danglingUnresolvedReferencePreferSelf.cj")
+  public void testDanglingUnresolvedReferencePreferSelf() {
+    run("danglingUnresolvedReferencePreferSelf.cj");
+  }
+
+  @Test
   @TestMetadata("multipleDiagnostics.cj")
   public void testMultipleDiagnostics() {
     run("multipleDiagnostics.cj");
