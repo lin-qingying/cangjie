@@ -25,6 +25,8 @@ import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandal
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
 import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionServiceRegistry
+import org.cangnova.cangjie.ide.completion.api.statistics.CangJieCompletionStatistics
+import org.cangnova.cangjie.ide.completion.impl.shared.statistics.installOtelCompletionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionServiceProvider
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
@@ -124,6 +126,19 @@ internal object AnalysisApiLspServiceRegistrar {
             CfirCompletionServiceProvider::class.java,
             CfirCompletionServiceProvider::class.java,
         )
+        /*
+         * 补全统计装配点。
+         *
+         * 服务本身要注册（`completionStatistics(project)` 走 `project.service(...)`）；实现默认是 noop，
+         * 有 OpenTelemetry provider 时才装上 OTel 实现——用户关掉遥测时就不该产生任何信号。
+         */
+        project.registerService(
+            CangJieCompletionStatistics::class.java,
+            CangJieCompletionStatistics::class.java,
+        )
+        if (!installOtelCompletionStatistics(project)) {
+            LOG.info("LSP 容器没有 OpenTelemetry provider，补全统计保持 noop")
+        }
 
         project.registerService(
             AnalysisApiLspProjectStructureState::class.java,
@@ -158,4 +173,9 @@ internal object AnalysisApiLspServiceRegistrar {
             AnalysisApiLspPlatformSettings::class.java,
         )
     }
+    /**
+     * 注册器日志：记录统计装配这类「静默生效/静默不生效」的装配结果。
+     */
+    private val LOG: java.util.logging.Logger =
+        java.util.logging.Logger.getLogger("org.cangnova.cangjie.lsp.analysis.registrar")
 }

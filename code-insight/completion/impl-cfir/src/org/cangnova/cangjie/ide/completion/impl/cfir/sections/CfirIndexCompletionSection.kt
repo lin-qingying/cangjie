@@ -15,6 +15,8 @@ import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionStage
+import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
@@ -56,6 +58,9 @@ class CfirIndexCompletionSection : CfirCompletionSection(
         val file = position.containingCjFile ?: return emptyList()
         // 重复触发时放宽匹配：用户再次请求补全，通常意味着上一轮前缀太窄。
         val repeated = request.invocationCount > 1
+        // 索引区段是整条管线里最慢的一步，单独记一笔：它还能回答「索引到底有没有被用到」。
+        val statistics = completionStatistics(file.project)
+        val startedNanos = System.nanoTime()
 
         return analyze(file) {
             val visibility = createUseSiteVisibilityChecker(file.symbol, position = position)
@@ -110,6 +115,8 @@ class CfirIndexCompletionSection : CfirCompletionSection(
                     )
                 }
             }
+        }.also {
+            statistics.recordStage(CompletionStage.INDEX_QUERY, System.nanoTime() - startedNanos)
         }
     }
 

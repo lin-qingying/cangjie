@@ -24,6 +24,9 @@ import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
 import org.cangnova.cangjie.formatter.CangJieFormatter
 import org.cangnova.cangjie.formatter.cangjieCommonSettings
 import org.cangnova.cangjie.ide.completion.api.CompletionKind
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionRejection
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionStage
+import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.cfirCompletionServiceOrNull
 import org.cangnova.cangjie.ide.completion.impl.shared.PlatformCompletionRequest
 import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
@@ -32,6 +35,7 @@ import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
 import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
+import org.cangnova.cangjie.lsp.server.LspRequestCancellation
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenCollector
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
@@ -235,6 +239,8 @@ class AnalysisApiCangjieAnalysisFacade(
         params: CompletionParams,
     ): List<CompletionItem> {
         val project = lifecycle.environment.project
+        val statistics = completionStatistics(project)
+        val setupStartedNanos = System.nanoTime()
         val uri = document.uri
         val analysisText = document.analysisText
         val caret = document.analysisOffsetAt(params.position).coerceIn(0, analysisText.length)
@@ -268,12 +274,20 @@ class AnalysisApiCangjieAnalysisFacade(
                 positionElement = dummy.position,
             )
         }
-        val completionRequest = request ?: return emptyList()
+        val completionRequest = request ?: run {
+            // 位置不允许补全（原始字符串内部等）：这是分流结果，不是错误——记下来才能回答
+            // 「用户没看到候选是位置不对还是别的」。
+            statistics.recordRejection(CompletionRejection.POSITION_NOT_ALLOWED)
+            statistics.recordStage(CompletionStage.SETUP, System.nanoTime() - setupStartedNanos)
+            return emptyList()
+        }
+        statistics.recordStage(CompletionStage.SETUP, System.nanoTime() - setupStartedNanos)
 
         val service = cfirCompletionServiceOrNull(project)
         if (service == null) {
             // 不静默：服务未注册时用户会看到「没有候选」，日志里必须留下原因。
             LOG.warning("补全服务未注册（CfirCompletionServiceProvider 缺失），$uri 不产出候选")
+            statistics.recordRejection(CompletionRejection.SERVICE_UNAVAILABLE)
             return emptyList()
         }
         /*
@@ -281,7 +295,7 @@ class AnalysisApiCangjieAnalysisFacade(
          * 已取消的进度指示器它也不抛（容器的 `ProgressIndicatorProvider` 未接线，全局指示器恒为 null）。
          * 因此不能只靠指示器，至少要在这两处直接查请求的取消状态。
          */
-        context.cancellation.throwIfCancelled()
+        context.cancellation.throwIfCancelledRecording(statistics)
         /*
          * 进度指示器仍接**本次请求的取消状态**：容器将来接上全局指示器时，
          * 管线里的 `checkCanceled()` 就能中途收场，不必等整轮跑完。
@@ -298,12 +312,12 @@ class AnalysisApiCangjieAnalysisFacade(
             )
         } catch (cancelled: ProcessCanceledException) {
             // 取消不是失败：转成 LSP 的 `RequestCancelled`，客户端据此丢弃结果而不弹错。
-            context.cancellation.throwIfCancelled()
+            context.cancellation.throwIfCancelledRecording(statistics)
             throw cancelled
         }
         // 取消闸门（后）：管线期间收到的取消在这里生效——宁可丢弃算好的结果，也不返回给用户
         // 一份他已经不要的候选（指示器路径若将来生效，这里也会同样命中）。
-        context.cancellation.throwIfCancelled()
+        context.cancellation.throwIfCancelledRecording(statistics)
         val session = lifecycle.completionSessions.create(
             uri = uri,
             version = document.version,
@@ -311,8 +325,26 @@ class AnalysisApiCangjieAnalysisFacade(
             replaceEnd = completionRequest.replaceEndOffset,
             items = snapshots,
         )
-        return snapshots.mapIndexed { index, snapshot ->
+        val renderStartedNanos = System.nanoTime()
+        val items = snapshots.mapIndexed { index, snapshot ->
             LspCompletionItemConverter.toCompletionItem(snapshot, index, params.position, session.key)
+        }
+        statistics.recordStage(CompletionStage.RENDER, System.nanoTime() - renderStartedNanos)
+        return items
+    }
+
+    /**
+     * 取消闸门：已取消时记一笔原因再抛 `RequestCancelled`。
+     *
+     * 记原因是必要的——「用户取消」与「位置不允许」「服务没装」在数字上完全一样（都是没有候选），
+     * 混在一起就回答不了「用户为什么没看到候选」。
+     */
+    private fun LspRequestCancellation.throwIfCancelledRecording(
+        statistics: org.cangnova.cangjie.ide.completion.api.statistics.CompletionStatisticsSink,
+    ) {
+        if (isCancelled()) {
+            statistics.recordRejection(CompletionRejection.CANCELLED)
+            throwIfCancelled()
         }
     }
 

@@ -3,6 +3,9 @@ package org.cangnova.cangjie.lsp.completion
 import com.google.gson.JsonPrimitive
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionRejection
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionStage
+import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
 import org.cangnova.cangjie.lsp.state.LspDocumentStore
 import org.eclipse.lsp4j.ApplyWorkspaceEditParams
 import org.eclipse.lsp4j.WorkspaceEdit
@@ -57,30 +60,37 @@ class LspCompletionCommandHandler(
      * @param arguments 命令实参，按约定是 `[会话键, 候选下标]`。
      */
     fun applyCompletion(arguments: List<Any>): CompletableFuture<Any> {
+        val statistics = completionStatistics(project)
         val sessionKey = sessionKeyOf(arguments.getOrNull(0))
             ?: return failed("applyCompletion 缺少会话键：实参 ${arguments.map { describe(it) }}")
         val index = indexOf(arguments.getOrNull(LspCompletionCommands.ARG_INDEX_OFFSET))
             ?: return failed("applyCompletion 缺少候选下标：实参 ${arguments.map { describe(it) }}")
 
         val session = sessions.find(sessionKey)
-            ?: return failed("补全会话已过期，请重新触发补全（key=$sessionKey）")
+            ?: run {
+                statistics.recordRejection(CompletionRejection.SESSION_EXPIRED)
+                return failed("补全会话已过期，请重新触发补全（key=$sessionKey）")
+            }
         val item = session.itemAt(index)
             ?: return failed("补全会话里没有第 $index 个候选，请重新触发补全")
 
         val document = documentStore.get(session.uri)
             ?: return failed("文档已关闭，无法插入候选（${session.uri}）")
         if (document.version != session.version) {
+            statistics.recordRejection(CompletionRejection.VERSION_MISMATCH)
             return failed(
                 "文档已变（会话版本 ${session.version}，当前 ${document.version}），请重新触发补全",
             )
         }
 
+        val insertStartedNanos = System.nanoTime()
         val edits = try {
             editsFor(session, item, document.text)
         } catch (failure: Exception) {
             // 区间越界/导入冲突等都在这里变成明确失败：绝不带着可疑区间去写文档。
             return failed("计算插入编辑失败：${failure.message}")
         }
+        statistics.recordStage(CompletionStage.INSERT, System.nanoTime() - insertStartedNanos)
         val client = clientProvider() ?: return failed("客户端未连接，无法应用编辑")
         if (!supportsApplyEdit()) {
             return failed("客户端未声明 workspace/applyEdit，无法插入候选——补全插入靠客户端应用编辑")

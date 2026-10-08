@@ -5,6 +5,8 @@ import org.cangnova.cangjie.ide.completion.api.CompletionFilter
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
+import org.cangnova.cangjie.ide.completion.api.statistics.CompletionStage
+import org.cangnova.cangjie.ide.completion.api.statistics.completionStatistics
 import org.cangnova.cangjie.ide.completion.impl.cfir.filter.CfirExpectedTypeCompletionFilter
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirCDocCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirDeclarationSuggestionCompletionSection
@@ -71,6 +73,9 @@ class CfirCompletionService(
      * 取消与失败都向上传播：把异常吞成空列表会让真实缺陷看起来像「没有候选」。
      */
     override fun complete(request: CompletionRequest): List<CompletionSnapshot> {
+        // 统计只记数值、不做 IO：弹窗路径上宁可少记，也不能因为埋点变慢（设计 §7.10）。
+        val statistics = completionStatistics(request.completionPosition.project)
+        val startedNanos = System.nanoTime()
         val collected = mutableListOf<CompletionSnapshot>()
         val sink = object : CompletionResultSink {
             /**
@@ -81,9 +86,13 @@ class CfirCompletionService(
             }
         }
         runner.runSerial(request, sections, sink, ProgressManager.getInstance().progressIndicator)
-        return collected
+        val delivered = collected
             .distinctByIdentity()
             .let { filter.apply(request, it) }
             .sortedByAnalysisWeight()
+        statistics.recordStage(CompletionStage.CANDIDATES, System.nanoTime() - startedNanos)
+        // 产出与交付分开记：只记其一都看不出「过滤吃掉了多少」。
+        statistics.recordCandidates(produced = collected.size, delivered = delivered.size)
+        return delivered
     }
 }
