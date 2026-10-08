@@ -40,8 +40,12 @@ data class CompletionDummyContext(
 object CompletionDummyIdentifierProvider {
     /**
      * 平台 dummy 标识符的稳定标记。
+     *
+     * 公开是因为**无头宿主必须自己插入它**：IDE 侧由平台在副本里插好再交给 contributor，
+     * 而 LSP 侧没有平台补全进程（分支 B），得自己拼那份带标记的副本。
+     * 两侧用同一个常量，避免「标记拼错 → 占位替换找不到位置 → 静默零候选」。
      */
-    private const val DUMMY_MARKER = "IntellijIdeaRulezzz"
+    const val DUMMY_MARKER: String = "IntellijIdeaRulezzz"
 
     /**
      * 对平台参数执行 dummy 修正，返回可用于分析的上下文。

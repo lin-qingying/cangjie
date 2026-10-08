@@ -1,6 +1,10 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.impl.DocumentImpl
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.codeStyle.CodeStyleSettings
@@ -17,10 +21,15 @@ import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
 import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
 import org.cangnova.cangjie.formatter.CangJieFormatter
 import org.cangnova.cangjie.formatter.cangjieCommonSettings
+import org.cangnova.cangjie.ide.completion.api.CompletionKind
+import org.cangnova.cangjie.ide.completion.impl.cfir.cfirCompletionServiceOrNull
+import org.cangnova.cangjie.ide.completion.impl.shared.PlatformCompletionRequest
+import org.cangnova.cangjie.ide.completion.impl.shared.dummy.CompletionDummyIdentifierProvider
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
+import org.cangnova.cangjie.lsp.completion.LspCompletionItemConverter
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenCollector
 import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
@@ -50,6 +59,11 @@ class AnalysisApiCangjieAnalysisFacade(
      * LSP 文档到 PSI 快照的工厂。
      */
     private val psiDocumentFactory = AnalysisApiPsiDocumentFactory(lifecycleContext)
+
+    /**
+     * 生命周期上下文：补全路径需要工程、描述符开关与补全会话存储。
+     */
+    private val lifecycle = lifecycleContext
 
     /**
      * Analysis API 语义查询和 LSP 坐标转换的共享支持层。
@@ -96,6 +110,9 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     override fun didChange(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         upsertSnapshot(document)
+        // 内容变了：旧会话的替换区间与候选都可能不再成立，留在那里只会让用户
+        // 接受一个落在错误区间的编辑（applyCompletion 会因版本不同而拒绝）。
+        lifecycle.completionSessions.invalidate(document.uri)
     }
 
     /**
@@ -110,6 +127,7 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     override fun didClose(context: CangjieAnalysisRequestContext, document: LspTextDocument) {
         psiDocumentFactory.removeSnapshot(document.uri)
+        lifecycle.completionSessions.invalidate(document.uri)
     }
 
     /**
@@ -180,9 +198,120 @@ class AnalysisApiCangjieAnalysisFacade(
     /**
      * 计算当前位置的补全项。
      *
-     * 优先使用引用 variants；缺少 variants 时补充当前文件作用域和工作区源码声明。
+     * 默认走**与 IDE 共用的候选管线**（设计 L1：LSP 只做协议适配，不重新实现候选生成）。
+     * 旧实现留在 [legacyCompletion]，由 `descriptor.useLegacyCompletion` 打开——
+     * 两条路径不混用（旧实现按击键遍历工作区、类别一律 `Text`、无导入计划，
+     * 混用会让候选质量类验收无法判定，见设计 §7.11.5）。
      */
     override fun completion(
+        context: CangjieAnalysisRequestContext,
+        document: LspTextDocument,
+        params: CompletionParams,
+    ): Either<List<CompletionItem>, CompletionList> {
+        if (lifecycle.descriptor.useLegacyCompletion) {
+            return legacyCompletion(context, document, params)
+        }
+        return Either.forLeft(pipelineCompletion(document, params))
+    }
+
+    /**
+     * 共享补全管线（分支 B）。
+     *
+     * 形态由 15.1② 的实验判定（见 `implementation-log.md`）：
+     * 1. **在副本上**做 dummy 修正——修正是 PSI 写，改文档那份会污染 `LspDocumentStore`；
+     *    副本的路径与文档相同，因此仍落进正确的模块作用域；
+     * 2. 修正在 **EDT 的写命令**内执行（本线程直调 `CommandProcessor` 会静默不执行）；
+     * 3. 管线调用要有**进度指示器**（RPC 线程没有）；
+     * 4. 候选存进会话存储，客户端稍后接受时由 `applyCompletion` 按会话键取回。
+     *
+     * 前缀与替换区间取自修正结果：用户在补全前敲的那半截标识符由服务端负责替换
+     * （候选自带的 `textEdit` 是空的）。
+     */
+    private fun pipelineCompletion(document: LspTextDocument, params: CompletionParams): List<CompletionItem> {
+        val project = lifecycle.environment.project
+        val uri = document.uri
+        val analysisText = document.analysisText
+        val caret = document.analysisOffsetAt(params.position).coerceIn(0, analysisText.length)
+
+        // 副本文本 = 文档文本 + 光标处的 dummy 标记（IDE 侧由平台插入，无头宿主自己插）。
+        val copyText = StringBuilder(analysisText)
+            .insert(caret, CompletionDummyIdentifierProvider.DUMMY_MARKER)
+            .toString()
+        val copy = LspAnalysisPsiFileFactory.createFile(project, uri, lspFileNameOf(uri), copyText)
+
+        var request: PlatformCompletionRequest? = null
+        runInWriteCommand(project) {
+            val dummy = CompletionDummyIdentifierProvider.provideFor(copy, caret)
+            if (dummy == null) {
+                LOG.fine("dummy 修正在 $uri@$caret 返回 null：该位置不允许补全")
+                return@runInWriteCommand
+            }
+            request = PlatformCompletionRequest(
+                originalPosition = dummy.position,
+                completionPosition = dummy.position,
+                prefix = dummy.prefix,
+                // LSP 没有智能补全触发：恒为 BASIC（15.1③）。
+                kind = CompletionKind.BASIC,
+                // 同一位置重复请求 = 用户再要一次，对应索引段放宽前缀匹配的那条分支。
+                invocationCount = lifecycle.completionSessions.invocationCountFor(uri, document.version, caret),
+                offset = caret,
+                replaceStartOffset = caret - dummy.prefix.length,
+                replaceEndOffset = caret,
+                // 过期判定接**LSP 文档版本**：分析副本上的改动与用户文档无关（15.4②）。
+                documentStamp = document.version.toLong(),
+                positionElement = dummy.position,
+            )
+        }
+        val completionRequest = request ?: return emptyList()
+
+        val service = cfirCompletionServiceOrNull(project)
+        if (service == null) {
+            // 不静默：服务未注册时用户会看到「没有候选」，日志里必须留下原因。
+            LOG.warning("补全服务未注册（CfirCompletionServiceProvider 缺失），$uri 不产出候选")
+            return emptyList()
+        }
+        val snapshots = ProgressManager.getInstance().runProcess(
+            Computable { service.complete(completionRequest) },
+            EmptyProgressIndicator(),
+        )
+        val session = lifecycle.completionSessions.create(
+            uri = uri,
+            version = document.version,
+            replaceStart = completionRequest.replaceStartOffset,
+            replaceEnd = completionRequest.replaceEndOffset,
+            items = snapshots,
+        )
+        return snapshots.mapIndexed { index, snapshot ->
+            LspCompletionItemConverter.toCompletionItem(snapshot, index, params.position, session.key)
+        }
+    }
+
+    /**
+     * 在 EDT 的写命令内执行一段 PSI 写。
+     *
+     * 两条约束都**实测**过（见 `implementation-log.md` 15.1 节）：PSI 写必须在命令内，
+     * 而 RPC 线程不是 EDT——直接在本线程调 `CommandProcessor.executeCommand` 会**静默不执行**
+     * （命令块不运行、也不抛异常），因此统一走 `EventQueue.invokeAndWait`。
+     */
+    private fun runInWriteCommand(project: com.intellij.openapi.project.Project, body: () -> Unit) {
+        java.awt.EventQueue.invokeAndWait {
+            WriteCommandAction.runWriteCommandAction(project, COMMAND_NAME, null, Runnable(body))
+        }
+    }
+
+    /**
+     * 从文档 URI 取文件名；导入/包判定按文件名与路径走，取不到时给稳定占位名。
+     */
+    private fun lspFileNameOf(uri: String): String =
+        uri.substringAfterLast('/').substringBefore('?').ifEmpty { "document.cj" }
+
+    /**
+     * 旧补全实现：引用 variants 优先，缺省回落到文件作用域 + 全工作区声明扫描。
+     *
+     * 保留是为了对照（设计 §7.11.5）：按击键遍历工作区、类别一律 `Text`、无导入计划，
+     * 因此只在 `useLegacyCompletion` 打开时使用，不作为默认路径的一部分。
+     */
+    private fun legacyCompletion(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CompletionParams,
@@ -1155,3 +1284,20 @@ class AnalysisApiCangjieAnalysisFacade(
         }
     }
 }
+
+/**
+ * 补全路径的日志记录器。
+ *
+ * 用于记录「不产出候选」的原因（服务未注册、位置不允许补全）：
+ * 这些情况在协议上都是空列表，不写日志就只剩「用户没看到候选」这一条线索。
+ */
+private val LOG: java.util.logging.Logger =
+    java.util.logging.Logger.getLogger("org.cangnova.cangjie.lsp.completion")
+
+/**
+ * dummy 修正所在的写命令名。
+ *
+ * 固定的命令名让 `UndoManager` 里这条修正可与插入区分——虽然它发生在**副本**上、
+ * 不进用户文档的撤销栈，但排查时能一眼认出。
+ */
+private const val COMMAND_NAME: String = "cangjie.completion.dummy-correction"

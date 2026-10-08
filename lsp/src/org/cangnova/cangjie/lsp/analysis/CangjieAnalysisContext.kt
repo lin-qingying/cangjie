@@ -2,6 +2,7 @@ package org.cangnova.cangjie.lsp.analysis
 
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 import org.cangnova.cangjie.lsp.capabilities.CangjieLanguageServerDescriptor
+import org.cangnova.cangjie.lsp.completion.LspCompletionSessionStore
 import org.cangnova.cangjie.lsp.state.LspDocumentStore
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
@@ -32,6 +33,14 @@ data class CangjieAnalysisLifecycleContext(
      * 当前打开文档的快照存储。
      */
     val documentStore: LspDocumentStore,
+
+    /**
+     * 补全会话存储。
+     *
+     * 放在生命周期上下文里，是因为它有**两个使用者**：门面产出候选时写入（一次补全一个会话），
+     * `applyCompletion` 命令消费候选时读取。两边必须是同一份，否则命令永远取不到会话。
+     */
+    val completionSessions: LspCompletionSessionStore,
 )
 
 /**

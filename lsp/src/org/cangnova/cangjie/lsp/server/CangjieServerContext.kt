@@ -72,6 +72,7 @@ class CangjieServerContext(
             descriptor = descriptor,
             workspaceState = workspaceState,
             documentStore = documentStore,
+            completionSessions = completionSessions,
         ),
     )
 

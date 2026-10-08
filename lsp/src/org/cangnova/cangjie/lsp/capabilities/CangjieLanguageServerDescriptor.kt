@@ -106,6 +106,15 @@ data class CangjieLanguageServerDescriptor(
     val semanticTokenModifiers: List<String> = CangJieSemanticTokenModifier.lspValues,
 
     /**
+     * 是否回退到旧补全实现。
+     *
+     * **默认关闭**：补全走与 IDE 共用的候选管线（设计 L1），旧实现只在需要对照时打开。
+     * 旧实现按击键遍历工作区源码、类别一律 `Text`、不带导入计划，因此不混用两条路径——
+     * 混用会让「候选质量」这类验收无法判定（设计 §7.11.5）。
+     */
+    val useLegacyCompletion: Boolean = false,
+
+    /**
      * workspace/executeCommand 可接受的命令名称集合。
      *
      * 默认含补全的 `applyCompletion`：候选带空 `textEdit`，客户端接受候选后自动执行该命令，

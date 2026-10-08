@@ -106,10 +106,12 @@ class LspCompletionCommandHandlerTest : AbstractLspIntegrationTest() {
     }
 
     /**
-     * 文档版本已变 → 明确错误：会话创建时的替换区间可能已经不对，写下去会改坏用户代码。
+     * 文档变更 → 该文档的会话被丢弃，命令报「已过期」且不发 applyEdit。
+     *
+     * 这是**第一道**防线（在源头丢弃）：`didChange` 时就失效，不必等到应用时才发现。
      */
     @Test
-    fun staleDocumentVersionFails() {
+    fun changedDocumentDropsSession() {
         withConnection { connection, uri, text ->
             val caret = text.indexOf(PARTIAL) + PARTIAL.length
             val session = connection.server.context.completionSessions.create(
@@ -119,7 +121,6 @@ class LspCompletionCommandHandlerTest : AbstractLspIntegrationTest() {
                 replaceEnd = caret,
                 items = listOf(candidate("buildUser")),
             )
-            // 文档变了：版本前进一格，会话随之失效。
             connection.changeDocument(uri, text.replace("return 1", "return 2"), DOCUMENT_VERSION + 1)
 
             val failure = assertThrows(ExecutionException::class.java) {
@@ -127,10 +128,40 @@ class LspCompletionCommandHandlerTest : AbstractLspIntegrationTest() {
             }
 
             assertTrue(
-                failure.cause?.message?.contains("文档已变") == true,
-                "版本不一致必须明确报错，实际 ${failure.cause?.message}",
+                failure.cause?.message?.contains("已过期") == true,
+                "文档变更后会话必须失效，实际 ${failure.cause?.message}",
             )
-            assertTrue(connection.appliedEdits().isEmpty(), "过期会话不得发 applyEdit")
+            assertTrue(connection.appliedEdits().isEmpty(), "失效会话不得发 applyEdit")
+        }
+    }
+
+    /**
+     * **第二道**防线：会话仍在但版本已变（例如失效回调没走到）时，按版本拒绝写入。
+     *
+     * 这里刻意不走 `didChange`：直接造一个版本号对不上的会话，验证命令侧的版本复验，
+     * 而不是验证失效回调。
+     */
+    @Test
+    fun versionMismatchIsRejectedEvenIfSessionSurvives() {
+        withConnection { connection, uri, text ->
+            val caret = text.indexOf(PARTIAL) + PARTIAL.length
+            val session = connection.server.context.completionSessions.create(
+                uri = uri,
+                version = DOCUMENT_VERSION + 99,
+                replaceStart = caret - PARTIAL.length,
+                replaceEnd = caret,
+                items = listOf(candidate("buildUser")),
+            )
+
+            val failure = assertThrows(ExecutionException::class.java) {
+                connection.executeCommand(applyCommand(session.key, index = 0))
+            }
+
+            assertTrue(
+                failure.cause?.message?.contains("文档已变") == true,
+                "版本不一致必须拒绝写入，实际 ${failure.cause?.message}",
+            )
+            assertTrue(connection.appliedEdits().isEmpty(), "版本不一致不得发 applyEdit")
         }
     }
 

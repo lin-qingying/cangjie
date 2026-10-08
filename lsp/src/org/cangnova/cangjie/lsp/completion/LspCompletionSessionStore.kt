@@ -49,6 +49,14 @@ class LspCompletionSessionStore(private val capacity: Int = DEFAULT_CAPACITY) {
     /** 按创建顺序保存的会话；超出容量时从最早的一端淘汰。 */
     private val sessions = LinkedHashMap<String, Session>()
 
+    /**
+     * 同一位置被请求的次数。
+     *
+     * 只按位置记少量条目：位置随版本变化，旧条目在 `invalidate`/`clear` 时一并丢弃，
+     * 因此不会随编辑无限增长。
+     */
+    private val requestCounts = HashMap<RequestKey, Int>()
+
     /** 会话键的单调序号。 */
     private var sequence = 0L
 
@@ -94,6 +102,7 @@ class LspCompletionSessionStore(private val capacity: Int = DEFAULT_CAPACITY) {
     @Synchronized
     fun invalidate(uri: String) {
         sessions.entries.removeIf { entry -> entry.value.uri == uri }
+        requestCounts.keys.removeIf { key -> key.uri == uri }
     }
 
     /**
@@ -102,7 +111,31 @@ class LspCompletionSessionStore(private val capacity: Int = DEFAULT_CAPACITY) {
     @Synchronized
     fun clear() {
         sessions.clear()
+        requestCounts.clear()
     }
+
+    /**
+     * 本次请求的调用计数（设计 15.1③ 的映射规则）。
+     *
+     * IDE 侧的 `invocationCount` 由 PSI 上的 `INVOCATION_COUNT_KEY` 携带；LSP 侧没有这个键，
+     * 因此按「同一位置（文档 + 版本 + 偏移）被请求了几次」来数：**同位置再次请求**
+     * 正是「上一轮候选不够用，用户再要一次」的信号，对应上游索引段里
+     * `invocationCount > 1` 那条放宽前缀匹配的分支。
+     *
+     * 文档版本一变即从头计（用户继续输入后是新的位置，不是重复请求）。
+     */
+    @Synchronized
+    fun invocationCountFor(uri: String, version: Int, offset: Int): Int {
+        val key = RequestKey(uri, version, offset)
+        val count = (requestCounts[key] ?: 0) + 1
+        requestCounts[key] = count
+        return count
+    }
+
+    /**
+     * 一次补全请求的位置标识。
+     */
+    private data class RequestKey(val uri: String, val version: Int, val offset: Int)
 
     companion object {
         /**
