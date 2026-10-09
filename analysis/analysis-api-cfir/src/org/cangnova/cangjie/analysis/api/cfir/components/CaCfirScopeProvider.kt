@@ -243,6 +243,11 @@ internal class CaCfirScopeProvider(
 
     /**
      * 构造类型的 use-site 成员作用域（CFIR 层）。
+     *
+     * **未替换**视图：把类型还原成 class-like 声明后取 unsubstituted scope，
+     * 因此成员签名里仍是声明自身的类型参数（`Box<Int64>` 的成员仍是 `T`）。
+     * 需要实际类型实参的消费方走 `CaTypeScopeProvider.typeScope`（任务 4.1 的新入口，
+     * 复用接收者查找共用的 `typeToScope` 接缝）。
      */
     private fun useSiteTypeScopeOf(type: CaType): CfirTypeScope? = type
         .requireCfirConeType("成员作用域查询")

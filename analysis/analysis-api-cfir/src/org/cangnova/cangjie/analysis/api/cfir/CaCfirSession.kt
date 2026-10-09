@@ -21,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirReferenceShortene
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirRenderer
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirResolver
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirScopeProvider
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirTypeScopeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSourceProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSubstitutorProvider
@@ -81,6 +82,7 @@ internal class CaCfirSession private constructor(
     symbolInformationProvider = CaCfirSymbolInformationProvider(analysisSessionProvider),
     diagnosticProvider = CaCfirDiagnosticProvider(analysisSessionProvider),
     scopeProvider = CaCfirScopeProvider(analysisSessionProvider),
+    typeScopeProvider = CaCfirTypeScopeProvider(analysisSessionProvider),
     analysisScopeProvider = CaCfirAnalysisScopeProvider(analysisSessionProvider,useSiteScope),
     defaultImportProvider = CaCfirDefaultImportsProvider( ),
     completionCandidateChecker = CaCfirCompletionCandidateChecker(analysisSessionProvider),

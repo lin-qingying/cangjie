@@ -19,6 +19,7 @@ import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
 import org.cangnova.cangjie.analysis.api.components.CaRenderer
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider
 
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
@@ -51,6 +52,7 @@ abstract class CaBaseSession(
 
     diagnosticProvider: CaDiagnosticProvider,
     scopeProvider: CaScopeProvider,
+    typeScopeProvider: CaTypeScopeProvider,
     defaultImportProvider: CaDefaultImportsProvider,
     completionCandidateChecker: CaCompletionCandidateChecker,
     completionExtensionCandidateChecker: CaCompletionExtensionCandidateChecker,
@@ -83,6 +85,7 @@ abstract class CaBaseSession(
 
     CaDiagnosticProvider by diagnosticProvider,
     CaScopeProvider by scopeProvider,
+    CaTypeScopeProvider by typeScopeProvider,
     CaBaseAnalysisScopeProviderEx by analysisScopeProvider,
     CaDefaultImportsProvider by defaultImportProvider,
     CaCompletionCandidateChecker by completionCandidateChecker,

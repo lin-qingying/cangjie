@@ -2,18 +2,32 @@
 
 ## org/cangnova/cangjie/analysis/api/impl/base/CaBaseSession.kt
 package org.cangnova.cangjie.analysis.api.impl.base
-public abstract class CaBaseSession( final override val token: CaLifetimeToken, resolver: CaResolver, symbolRelationProvider: CaSymbolRelationProvider, symbolProvider: CaSymbolProvider, symbolInformationProvider: CaSymbolInformationProvider, diagnosticProvider: CaDiagnosticProvider, scopeProvider: CaScopeProvider, defaultImportProvider: CaDefaultImportsProvider, completionCandidateChecker: CaCompletionCandidateChecker, expressionTypeProvider: CaExpressionTypeProvider, expressionInformationProvider: CaExpressionInformationProvider, evaluator: CaEvaluator, analysisScopeProvider: CaBaseAnalysisScopeProviderEx, dataFlowProvider: CaDataFlowProvider, typeProvider: CaTypeProvider, typeInformationProvider: CaTypeInformationProvider, typeRelationChecker: CaTypeRelationChecker, typeCreator: CaTypeCreator, substitutorProvider: CaSubstitutorProvider, signatureSubstitutor: CaSignatureSubstitutor, referenceShortener: CaReferenceShortener, importOptimizer: CaImportOptimizer, renderer: CaRenderer, visibilityChecker: CaVisibilityChecker, originalPsiProvider: CaOriginalPsiProvider, sourceProvider: CaSourceProvider, cInteropComponent: CaCInteropComponent, cDocProvider: CaCDocProvider, ) : CaSession, CaResolver
+public abstract class CaBaseSession( final override val token: CaLifetimeToken, resolver: CaResolver, symbolRelationProvider: CaSymbolRelationProvider, symbolProvider: CaSymbolProvider, symbolInformationProvider: CaSymbolInformationProvider, diagnosticProvider: CaDiagnosticProvider, scopeProvider: CaScopeProvider, typeScopeProvider: CaTypeScopeProvider, defaultImportProvider: CaDefaultImportsProvider, completionCandidateChecker: CaCompletionCandidateChecker, completionExtensionCandidateChecker: CaCompletionExtensionCandidateChecker, expressionTypeProvider: CaExpressionTypeProvider, expressionInformationProvider: CaExpressionInformationProvider, evaluator: CaEvaluator, analysisScopeProvider: CaBaseAnalysisScopeProviderEx, dataFlowProvider: CaDataFlowProvider, typeProvider: CaTypeProvider, typeInformationProvider: CaTypeInformationProvider, typeRelationChecker: CaTypeRelationChecker, typeCreator: CaTypeCreator, substitutorProvider: CaSubstitutorProvider, signatureSubstitutor: CaSignatureSubstitutor, referenceShortener: CaReferenceShortener, importOptimizer: CaImportOptimizer, renderer: CaRenderer, visibilityChecker: CaVisibilityChecker, originalPsiProvider: CaOriginalPsiProvider, sourceProvider: CaSourceProvider, cInteropComponent: CaCInteropComponent, cDocProvider: CaCDocProvider, ) : CaSession, CaResolver
 ## org/cangnova/cangjie/analysis/api/impl/base/annotations/CaBaseAnnotationImpl.kt
 package org.cangnova.cangjie.analysis.api.impl.base.annotations
-public class CaBaseAnnotationImpl( classId: ClassId?, shortName: Name?, psi: CjCallElement?, lazyArguments: Lazy<List<CaNamedAnnotationValue>>, constructorSymbol: CaConstructorSymbol?, override val token: CaLifetimeToken, ) : CaAnnotation
+public class CaBaseAnnotationImpl( classId: ClassId?, shortName: Name?, psi: CjCallElement?, lazyArguments: Lazy<List<CaNamedAnnotationValue>>, constructorSymbol: CaConstructorSymbol?, override val token: CaLifetimeToken, builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind? = null, origin: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin = org.cangnova.cangjie.annotations.CangjieAnnotationOrigin.CUSTOM, platformKind: org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind? = null, versionSupport: org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus? = null, isCompileTimeVisible: Boolean? = null, isForcedCustom: Boolean? = null, target: org.cangnova.cangjie.annotations.CangjieAnnotationTarget? = null, runtimeVisible: Boolean? = null, resolutionStatus: CaAnnotationResolutionStatus = CaAnnotationResolutionStatus.UNKNOWN, evaluatedInstance: CaAnnotationValue? = null, ) : CaAnnotation
+CaBaseAnnotationImpl.public override val builtInKind: org.cangnova.cangjie.annotations.BuiltInAnnotationKind?
+CaBaseAnnotationImpl.public override val origin: org.cangnova.cangjie.annotations.CangjieAnnotationOrigin
+CaBaseAnnotationImpl.public override val platformKind: org.cangnova.cangjie.annotations.CangjiePlatformAnnotationKind?
+CaBaseAnnotationImpl.public override val versionSupport: org.cangnova.cangjie.annotations.AnnotationVersionSupportStatus?
+CaBaseAnnotationImpl.public override val isCompileTimeVisible: Boolean?
+CaBaseAnnotationImpl.public override val isForcedCustom: Boolean?
+CaBaseAnnotationImpl.public override val target: org.cangnova.cangjie.annotations.CangjieAnnotationTarget?
+CaBaseAnnotationImpl.public override val runtimeVisible: Boolean?
+CaBaseAnnotationImpl.public override val resolutionStatus: CaAnnotationResolutionStatus
+CaBaseAnnotationImpl.public override val evaluatedInstance: CaAnnotationValue?
 CaBaseAnnotationImpl.public override val classId: ClassId?
 CaBaseAnnotationImpl.public override val shortName: Name?
 CaBaseAnnotationImpl.public override val psi: CjCallElement?
 CaBaseAnnotationImpl.public override val arguments: List<CaNamedAnnotationValue>
 CaBaseAnnotationImpl.public override val constructorSymbol: CaConstructorSymbol?
+CaBaseAnnotationImpl.public override fun equals(other: Any?): Boolean
+CaBaseAnnotationImpl.public override fun hashCode(): Int
 ## org/cangnova/cangjie/analysis/api/impl/base/annotations/CaBaseAnnotationValues.kt
 package org.cangnova.cangjie.analysis.api.impl.base.annotations
 public object CaBaseAnnotationValues
+CaBaseAnnotationValues.public fun unitValue(sourcePsi: CjElement?): CaConstantValue.UnitValue
+CaBaseAnnotationValues.public fun arrayValue(values: List<CaAnnotationValue>, sourcePsi: CjElement?, token: CaLifetimeToken): CaAnnotationValue.ArrayValue
 CaBaseAnnotationValues.public fun constant( value: CaConstantValue, sourcePsi: CjElement?, token: CaLifetimeToken, ): CaAnnotationValue.ConstantValue
 CaBaseAnnotationValues.public fun enumValue( callableId: CallableId?, arguments: List<CaAnnotationValue>, sourcePsi: CjElement?, token: CaLifetimeToken, ): CaAnnotationValue.EnumValue
 CaBaseAnnotationValues.public fun tupleValue( values: List<CaAnnotationValue>, sourcePsi: CjElement?, token: CaLifetimeToken, ): CaAnnotationValue.TupleValue
@@ -51,6 +65,8 @@ public class CaBaseNamedAnnotationValue( name: Name, expression: CaAnnotationVal
 CaBaseNamedAnnotationValue.public override val token: CaLifetimeToken
 CaBaseNamedAnnotationValue.public override val name: Name
 CaBaseNamedAnnotationValue.public override val expression: CaAnnotationValue
+CaBaseNamedAnnotationValue.public override fun equals(other: Any?): Boolean
+CaBaseNamedAnnotationValue.public override fun hashCode(): Int
 ## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseAnalysisScopeProviderEx.kt
 package org.cangnova.cangjie.analysis.api.impl.base.components
 public interface CaBaseAnalysisScopeProviderEx : CaAnalysisScopeProvider
@@ -74,6 +90,10 @@ public class: $
 public companion object
 Companion.public fun create(session: CaSession, psi: PsiElement): CaBaseIllegalPsiException
 Companion.public fun <T> allowIllegalPsiAccess(action: () -> T): T
+## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseResolver.kt
+package org.cangnova.cangjie.analysis.api.impl.base.components
+public abstract class CaBaseResolver<S : CaSession>( final override val analysisSessionProvider: () -> S, ) : CaBaseSessionComponent<S>(), CaResolver
+CaBaseResolver.public final override fun CjElement.resolveToCall(): CaCallInfo?
 ## org/cangnova/cangjie/analysis/api/impl/base/components/CaBaseSessionComponent.kt
 package org.cangnova.cangjie.analysis.api.impl.base.components
 public abstract class CaBaseSessionComponent<T : CaSession> : CaSessionComponent
@@ -85,7 +105,9 @@ public val <T : CaSession> analysisSession: T
 package org.cangnova.cangjie.analysis.api.impl.base.components
 public abstract class CaBaseSignatureSubstitutor<T : CaSession>
 public abstract override fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S>
+public abstract override fun <S : CaEnumConstructorSymbol> S.asSignature(): CaEnumConstructorSignature<S>
 public abstract override fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S>
+public override fun <S : CaEnumConstructorSymbol> S.substitute(substitutor: CaSubstitutor): CaEnumConstructorSignature<S>
 public override fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S>
 public override fun <S : CaVariableSymbol> S.substitute(substitutor: CaSubstitutor): CaVariableSignature<S>
 public override fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableSignature<S>
@@ -147,6 +169,15 @@ public abstract class CaBaseSimpleNameReference(expression: CjSimpleNameExpressi
 CaBaseSimpleNameReference.public override val resolvesByNames: Collection<Name>
 CaBaseSimpleNameReference.public val element
 CaBaseSimpleNameReference.public val specialNames
+## org/cangnova/cangjie/analysis/api/impl/base/resolution/CaBaseCallResolutionError.kt
+package org.cangnova.cangjie.analysis.api.impl.base.resolution
+public class CaBaseCallResolutionError( candidateCalls: List<CaCall>, override val diagnostic: CaDiagnostic, ) : CaCallResolutionError
+CaBaseCallResolutionError.public override val candidateCalls: List<CaCall>
+CaBaseCallResolutionError.public override val token: CaLifetimeToken
+## org/cangnova/cangjie/analysis/api/impl/base/resolution/CaBaseCallResolutionSuccess.kt
+package org.cangnova.cangjie.analysis.api.impl.base.resolution
+public class CaBaseCallResolutionSuccess( override val call: CaCall, ) : CaCallResolutionSuccess
+CaBaseCallResolutionSuccess.public override val token: CaLifetimeToken
 ## org/cangnova/cangjie/analysis/api/impl/base/sessions/CaBaseSessionProvider.kt
 package org.cangnova.cangjie.analysis.api.impl.base.sessions
 public abstract class CaBaseSessionProvider(project: Project) : CaSessionProvider(project)

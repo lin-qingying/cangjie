@@ -18,6 +18,7 @@ import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
 import org.cangnova.cangjie.analysis.api.components.CaRenderer
 import org.cangnova.cangjie.analysis.api.components.CaResolver
 import org.cangnova.cangjie.analysis.api.components.CaScopeProvider
+import org.cangnova.cangjie.analysis.api.components.CaTypeScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.components.CaSubstitutorProvider
@@ -61,6 +62,7 @@ interface CaSession : CaLifetimeOwner,
 
     CaDiagnosticProvider,
     CaScopeProvider,
+    CaTypeScopeProvider,
     CaAnalysisScopeProvider,
     CaDefaultImportsProvider,
     CaCompletionCandidateChecker,

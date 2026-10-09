@@ -24,6 +24,8 @@
 
 package org.cangnova.cangjie.cfir.calls
 
+import org.cangnova.cangjie.cfir.CfirImplementationDetail
+
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
@@ -81,6 +83,7 @@ sealed interface ReceiverValue {
  *
  * @property receiverExpression 原始表达式 receiver。
  */
+@OptIn(CfirImplementationDetail::class)
 class ExpressionReceiverValue(
     /**
      * 调用点显式写出的 receiver 表达式，后续类型与 qualifier scope 都从该表达式读取。
@@ -116,6 +119,7 @@ class ExpressionReceiverValue(
  * @property session receiver 所属 use-site session。
  * @property scopeSession 成员 scope 缓存会话。
  */
+@OptIn(CfirImplementationDetail::class)
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     /**
      * 隐式 receiver 绑定的 this owner symbol，用于构造 implicit-this 引用和成员归属。
@@ -378,8 +382,16 @@ private fun CfirExpression.memberScopeKind(): CfirClassMemberScopeKind = when (t
 
 /**
  * 将 receiver 类型转换为可查找成员的类型 scope。
+ *
+ * 该函数是**接收者查找与 Analysis 类型作用域共用的唯一接缝**（任务 4.2）：它统一处理类型变量上界、
+ * 交叉类型、ideal literal、primitive extend 与普通 class-like 类型，并始终以**完整 Cone 类型**
+ * （而非 class-like 声明）为 owner 构造成员 scope——同一泛型声明的不同实例拥有不同成员签名，
+ * 按 ClassId 复用会把 `Box<Int64>` 的成员当成 `Box<String>` 的。
+ * 需要"实际类型实参、上界、intersection、builtin extend、继承替换"任一项的调用方都应走这里，
+ * 不要各自复制一份 scope 构造。
  */
-private fun typeToScope(
+@CfirImplementationDetail
+fun typeToScope(
     session: CfirSession,
     scopeSession: ScopeSession,
     type: ConeCangJieType,
@@ -418,6 +430,23 @@ private fun collectTypeScopes(
     visitedTypes: MutableSet<ConeCangJieType>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
 ) {
+    // typealias 不是独立的成员来源：成员集合与类型替换都按**展开后的真实类型**计算。
+    // 不展开时会退到别名自身的 classId，别名类型的接收者要么找不到成员、要么拿到未替换的签名
+    // （Analysis 侧 `typealias IntBoxAlias = Box<Int64>` 的类型作用域就取不到成员）。
+    val expandedAliasType = (type as? ConeTypeAliasType)?.expandedType
+    if (expandedAliasType != null) {
+        collectTypeScopes(
+            session = session,
+            scopeSession = scopeSession,
+            type = expandedAliasType,
+            scopeKind = scopeKind,
+            destination = destination,
+            visitedTypes = visitedTypes,
+            visitedTypeParameters = visitedTypeParameters,
+        )
+        return
+    }
+
     when (type) {
         is ConeTypeVariableType -> {
             val originalTypeParameter = type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return

@@ -2,7 +2,7 @@
 
 ## org/cangnova/cangjie/analysis/api/CaSession.kt
 package org.cangnova.cangjie.analysis.api
-public interface CaSession : CaLifetimeOwner, CaResolver, CaSymbolRelationProvider, CaSymbolProvider, CaSymbolInformationProvider, CaSignatureSubstitutor, CaDiagnosticProvider, CaScopeProvider, CaAnalysisScopeProvider, CaDefaultImportsProvider, CaCompletionCandidateChecker, CaCompletionExtensionCandidateChecker, CaExpressionTypeProvider, CaExpressionInformationProvider, CaEvaluator, CaDataFlowProvider, CaTypeProvider, CaTypeInformationProvider, CaTypeRelationChecker, CaTypeCreator, CaSubstitutorProvider, CaReferenceShortener, CaImportOptimizer, CaRenderer, CaVisibilityChecker, CaOriginalPsiProvider, CaSourceProvider, CaCInteropComponent, CaCDocProvider
+public interface CaSession : CaLifetimeOwner, CaResolver, CaSymbolRelationProvider, CaSymbolProvider, CaSymbolInformationProvider, CaSignatureSubstitutor, CaDiagnosticProvider, CaScopeProvider, CaTypeScopeProvider, CaAnalysisScopeProvider, CaDefaultImportsProvider, CaCompletionCandidateChecker, CaCompletionExtensionCandidateChecker, CaExpressionTypeProvider, CaExpressionInformationProvider, CaEvaluator, CaDataFlowProvider, CaTypeProvider, CaTypeInformationProvider, CaTypeRelationChecker, CaTypeCreator, CaSubstitutorProvider, CaReferenceShortener, CaImportOptimizer, CaRenderer, CaVisibilityChecker, CaOriginalPsiProvider, CaSourceProvider, CaCInteropComponent, CaCDocProvider
 CaSession.public val useSiteModule: CaModule
 CaSession.public val useSiteSession: CaSession
 public val useSiteSession: CaSession
@@ -130,6 +130,8 @@ CaCodeFragmentCapturedValue.public class CoroutineContext( isCrossingInlineBound
 ## org/cangnova/cangjie/analysis/api/completion/CaCompletionCandidate.kt
 package org.cangnova.cangjie.analysis.api.completion
 public enum class CaCompletionCandidateStatus
+CaCompletionCandidateStatus.public val shouldHide: Boolean
+CaCompletionCandidateStatus.public val isDeterminedUsable: Boolean
 ## org/cangnova/cangjie/analysis/api/completion/CaCompletionCandidateDecision.kt
 package org.cangnova.cangjie.analysis.api.completion
 public interface CaCompletionCandidateDecision : CaLifetimeOwner
@@ -374,6 +376,13 @@ package org.cangnova.cangjie.analysis.api.components
 public interface CaTypeRelationChecker : CaLifetimeOwner
 CaTypeRelationChecker.public fun CaType.isSubTypeOf(superType: CaType): Boolean
 CaTypeRelationChecker.public fun CaType.semanticallyEquals(other: CaType): Boolean
+## org/cangnova/cangjie/analysis/api/components/CaTypeScopeProvider.kt
+package org.cangnova.cangjie.analysis.api.components
+public interface CaTypeScopeProvider : CaLifetimeOwner
+CaTypeScopeProvider.public val CaType.typeScope: CaTypeScope?
+CaTypeScopeProvider.public val CaTypeScope.declarationScope: CaScope
+public val CaType.typeScope: CaTypeScope?
+public val CaTypeScope.declarationScope: CaScope
 ## org/cangnova/cangjie/analysis/api/components/CaVisibilityChecker.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaVisibilityChecker : CaLifetimeOwner
@@ -1159,6 +1168,16 @@ CaScopeLike.public fun getAllPossibleNames(): Set<Name>
 CaScopeLike.public fun getPossibleCallableNames(): Set<Name>
 CaScopeLike.public fun getPossibleClassifierNames(): Set<Name>
 CaScopeLike.public fun mayContainName(name: Name): Boolean
+## org/cangnova/cangjie/analysis/api/scopes/CaTypeScope.kt
+package org.cangnova.cangjie.analysis.api.scopes
+public interface CaTypeScope : CaScopeLike
+CaTypeScope.public fun callableSignatures(nameFilter: (Name) -> Boolean =
+CaTypeScope.public fun callableSignatures(names: Collection<Name>): Sequence<CaCallableSignature<*>>
+CaTypeScope.public fun callableSignatures(vararg names: Name): Sequence<CaCallableSignature<*>>
+CaTypeScope.public fun classifiers(nameFilter: (Name) -> Boolean =
+CaTypeScope.public fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol>
+CaTypeScope.public fun classifiers(vararg names: Name): Sequence<CaClassifierSymbol>
+CaTypeScope.public val constructors: Sequence<CaConstructorSymbol>
 ## org/cangnova/cangjie/analysis/api/session/CaSessionPointerRestore.kt
 package org.cangnova.cangjie.analysis.api.session
 public fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S?
