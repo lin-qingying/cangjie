@@ -34,5 +34,5 @@
 - 宿主 `intellij-ide`：`modules/ide/base`、`modules/ide/lsp`、`modules/test-support`、`product/idea-plugin`、版本兼容目录、Version Catalog、复合构建和责任域 XML。
 - **第三宿主 `deveco`**：`settings.gradle.kts` substitution、`product` 模块清单、扁平 `plugin.xml` 的手工注册。该产品 jar 形态下 `xi:include` 解析失败，只能手工展开；**其过期注册是静默失效**，与 IDE 侧的构建期失败性质不同。
 - 兼容性：优先新增能力与兼容桥接；不在本计划中直接删除既有候选三态 API，不把文件声明作用域无条件扩展为所有可见声明，不复制 Java/JVM、Kotlin K1 或 Kotlin 专属语法。
-- **范围例外**：`PluginStructureProvider.allowedExtensionPointNames` 的改动是本变更**唯一一处「为消费点改动上游 Analysis 模块」**，它同时改变 standalone 与测试容器的行为，须在责任域文档登记并单独验收。
+- **范围例外（按 15.1 结论已消解）**：原计划需改 `PluginStructureProvider.allowedExtensionPointNames` 以装载补全描述符，这是本变更**唯一一处「为消费点改动上游 Analysis 模块」**。15.1 判定 LSP 走**分支 B**（无头容器不可能提供 `Editor`/`CompletionProcess`，见 `implementation-log.md`），分支 B **不装载补全描述符、不注册 `completion.contributor`**，故**该例外在分支 B 下不存在**——上游 Analysis 模块无需为消费点改动。若将来改走分支 A，该例外与登记义务一并恢复。
 - 边界：不承诺 Kotlin 全语言特性的逐项等价，不把已有测试报告作为当前工作树验证结果，不自动启用并行补全或运行沙箱。

@@ -1,4 +1,39 @@
-# 本轮文档验证记录
+# 变更文档验证记录
+
+## 2026-10-08 重跑（当前有效）
+
+对象：**文档一致性**，不是实现验收。工具：`openspec-cn`（`/c/Users/lin17/AppData/Local/pnpm/openspec-cn`）+ 两个只读脚本。
+
+| 检查 | 结果 |
+|---|---|
+| OpenSpec 严格校验 | `openspec-cn validate align-cangjie-completion-with-kotlin-k2` → **验证通过** |
+| 产出物状态 | `openspec-cn status` → **4/4**（proposal / design / specs / tasks 均 done） |
+| 需求与场景计数 | `analysis-completion-support` 9 需求 / 17 场景；`ide-completion-support` 12 / 20；`lsp-completion-support` 9 / 18 ⇒ **30 需求 / 55 场景** |
+| 任务计数与勾选态 | **107 项**：已勾选 **59**、未勾选 **48**（2026-10-08 实测计数） |
+| 相对链接 | 89 条，重算层级后**全部可定位**（修复前 84 条按当前文档位置解析失败，见下） |
+| 文本检查 | 无 U+FFFD、无行尾空白（各修掉一处，见下） |
+| 未重跑 | ① `design.md` 的源码行号锚点未逐条核对——本轮实现改动会移动部分行号，且锚点以主检出为准；② `source-baseline.json` 的 SHA-256 漂移核对（其锚定状态只在上游工作树成立） |
+
+### 本轮修掉的三处文档缺陷
+
+1. **相对链接层级错误（84 条）**。文档里的链接有两族深度，分别是在别的位置写成的：
+   7 层上跳（`../../../../../../../`）按「文档位于**另一个工作树**的 `openspec/changes/<name>/`」写成，
+   3 层上跳的 `modules/`、`product/`、`gradle/`、`settings.gradle.kts` 按「文档位于 **intellij-ide 仓内**」写成。
+   文档现在住在 `cangjie/openspec/changes/<name>/`，两族都对不上。已按当前位置统一重算
+   （7 层 → 3 层；IDE 目标补 `intellij-ide/` 前缀），重算后 89 条全部可定位。
+2. **`tasks.md` 3.8 行有一处损坏字符**（`fragmentMemberScopeMatchesScopeContextProjection` 前的「用例」被写成三个 U+FFFD），已还原。
+3. **`implementation-log.md` 一处行尾空白**（表格行内），已去除。
+
+### 实现验证不在本文件范围
+
+编译/测试的执行记录在 `implementation-log.md`（按套件列出用例数与失败数）。
+本文件只回答「文档自身是否自洽、是否可定位」。
+
+> 下方 2026-10-02 的记录已被本轮取代，仅作历史留存。
+
+---
+
+# 本轮文档验证记录（2026-10-02，已被 2026-10-08 重跑取代）
 
 日期：2026-10-02。对象：Kotlin K2 补全对齐计划，不是实现验收。
 
@@ -14,7 +49,7 @@
 >
 > **重跑要求**（见设计 §12.11）：OpenSpec 严格校验、需求→任务映射重算、任务计数与勾选态重算、源码依据与链接重跑、文本检查。**在重跑之前，不得引用本文件的任何数字作为当前状态。**
 >
-> 下方原始记录仅作历史留存。
+> 上方 2026-10-08 的记录即该重跑的结果。
 
 ## 已完成的检查（2026-10-02，已过期）
 

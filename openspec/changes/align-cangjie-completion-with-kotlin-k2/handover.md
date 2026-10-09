@@ -2,7 +2,7 @@
 
 > 记录时间：2026-10-03
 > 目标：把仓颉补全对齐到 Kotlin K2 原生 IDE 补全（`openspec/changes/align-cangjie-completion-with-kotlin-k2/`）
-> 当前进度：**33/82 已勾选**（2026-10-05 更新：本轮新增 1.6、8.8 上游侧、5.7、10.1、10.4、3.10、3.6、3.9、9.1；3.7/3.8 部分完成；本节以上进度描述保留为 2026-10-03 当时的状态）
+> 当前进度：**40/82 已勾选**（2026-10-07 更新：新增 6.5、6.7、6.10、9.4、9.5、9.6、9.10；6.6 部分完成（②未做，①③④已落地）；本行以上进度描述保留为当时状态）
 
 ---
 
@@ -149,7 +149,7 @@ export CANGJIE_UPSTREAM_ROOT=D:/code/intellij/cangjie/.claude/worktrees/completi
 1. ~~**同名重载被判为同一符号**~~ —— **已修**（提交 `f6b306951`，2026-10-04）。`CaCfirCallableSymbolCacheKey` / `CaCfirExtendMemberCallableSymbolCacheKey` 增带 `CfirCallableSignature`，恢复端按签名筛选，形状对齐 `KaFirCallableIdPlusSignature`。对照实验证明新用例能抓住该缺陷（签名置空即精确变红），而既有 `symbolEquivalence` 在缺陷存在时照样通过——这解释了它此前为何没被拦住。详见 `implementation-log.md`「缺陷 D-2」节。
 2. **dangling 副本的 PREFER_SELF 非局部解析返回 `null`** —— 必须修在 LL 的副本失效链路上（`CfirCacheWithInvalidation.getNotNullValueForNotNullContext` 抛 Failed requirement）。试过两条绕法（改 `AbstractDanglingFileCollectDiagnosticsTest` 的 `originalFile` 条件、在 Analysis 层绕过模块缓存），都会让 21 个生成用例失败，**已全部回退**。
 3. ~~**块内局部声明未进入解析塔快照**~~ —— **已修**（提交 `3b1f2fdcf`，2026-10-05）。根因**不是**本条原先记录的 `addLocalVariable` 空 `localScopes` 早退（那处确实丢，但丢的是函数参数、随后被 `preloadValueParameters` 补回），而是 `ContextCollector` 把绑定变量入作用域放在 `visitPatternVariable` 的 `withLocalVariableBodyCompat`（即 `withTowerDataCleanup`）内部、退出时被回滚。存储已移到各自清理之外。解锁任务 3.7、3.10、9.1。副作用记录仍然成立：`scopeContext(position)` 额外拼接文件级查找层，函数体内才能看到顶层声明。
-4. **类字段/属性不出现在成员作用域** —— 上一轮补了四处 `processVariablesByName` 覆写后仍复现，根因未最终定位。
+4. ~~**类字段/属性不出现在成员作用域**~~ —— **已修**（2026-10-07 回写）。根因不是「四层作用域没覆写 `processVariablesByName`」——那四处确实补齐了但症状仍在；真正的包装层是 **`CfirClassUseSiteMemberScope`**（`CaType.scope` 实际落到它），它同样只覆写了 callable、属性与名称集合。补上后字段候选出现，并连带暴露第二个缺口：`CaCfirFieldSymbol.createPointer` 直接抛 `Field symbol cannot create a stable pointer`，成员作用域一旦真的暴露字段就无法渲染，已按 `CaCfirMemberFunctionSymbolPointer` 的形状补齐字段指针。**回归已锁定**：共享夹具 `analysis/analysis-api/testData/components/scopeProvider/memberScope/memberScopeQueries.cj` 补入 `public var field` 与 `public let state` 及对应可用名/按名查询指令，golden 已重生成。本条原先写作「根因未最终定位」，那是过时表述。详见 `implementation-log.md`「字段成员缺失缺陷」节。
 
 ---
 
@@ -215,3 +215,87 @@ export CANGJIE_UPSTREAM_ROOT=D:/code/intellij/cangjie/.claude/worktrees/completi
 - `tasks.md` 回写 10.1、10.4（现 27/82）。10.2/10.3/10.5/10.6/10.7/10.8 部分完成，缺口与理由同节列出。
 - 下一步优先级：10.2 recovery 实现（接口已就位）→ 9.4 命名实参 / 9.6 enum → 7.2 生成器定位 → 10.6/10.8 的端到端插入验证（host fixture）。
 - 平台环境事实（排查耗时较长，已单独记忆）：本版本 `LookupElementBuilder` 不可变；轻量夹具不注册 `EditorFactory`；PSI 文档写入要求 EDT + 命令上下文。
+---
+
+## 0. 变更文档的存放位置（2026-10-07 补充）
+
+本变更的文档**规范副本在主检出**：`D:\code\intellij\cangjie\openspec\changes\align-cangjie-completion-with-kotlin-k2\`。
+
+实施工作树 `.claude/worktrees/completion-k2-musing-bun/` 里也有一份 `openspec/` 副本，
+是 `openspec-cn` CLI（`status` / `instructions` 要求变更位于当前目录树内）而放的，**未纳入
+该工作树的 git**。两份内容的唯一来源仍是主检出：在工作树副本上改完后必须
+`cp` 回主检出，否则主检出（也就是 `/goal` 判定的目标）看到的是旧状态。
+
+---
+
+## 11. 2026-10-08 续作记录
+
+承接 §10 之后的实现（第 11 组：语义分流与降级）。与本文档其余部分的关系：**§3 的未完成清单未变**。
+
+### 11.1 已完成并验证：11.5②「`.cjo` 无源码 / 无索引」降级
+
+- 根因：名称发现通道的第二条（自我描述为「`.cjo` 名字视图」）实际取自
+  `symbolProvider.symbolNamesProvider`，它把**源码符号源**也组合进来——在 standalone/LSP 宿主下
+  那个符号源的声明 provider 会遍历源码根目录下全部 `.cj` 文件。于是「按前缀发现名字」退化成
+  「每键入一次遍历一遍项目源码」，索引形同虚设。
+- 修法：`CfirSymbolProvider` 新增 `libraryDeclarationsNamesProvider`（只覆盖 `.cjo`/stub/合成 builtins）；
+  库侧实现覆写它，组合方组合子视图，**源码符号源不覆写 → 贡献为空**。
+- 过程中打出的第二个缺陷（比第一个更隐蔽）：默认值若取「无法枚举」（`CfirNullSymbolNamesProvider`），
+  组合的并集 `flatMapToNullableSet` 会被它拖成 `null`，**别的符号源真实存在的名字一起消失**
+  （实测：`.cjo` 的 46 个包被一个源码符号源清空）。默认值改为**空视图**后，漏覆写的表现退化为
+  「该符号源缺席」，不再波及他人。
+- 证据与执行记录：`implementation-log.md` §11.5②（含探针输出与三套件用例数）。
+
+### 11.2 ⚠️ 这条改动给两个宿主加了硬前置（交接要点）
+
+修好后**源码侧名字只能来自宿主名称索引**。宿主没注册 `CaSymbolIndexQueryService` 时，
+「未导入的源码模块声明」这一类候选会整类缺席（这是 §13.1 要求的降级形态，不是可长期保留的状态）：
+
+- **LSP**：本次已在 `AnalysisApiLspServiceRegistrar` 按该文件既有写法补注册
+  （`CaStandaloneSymbolIndexQueryService`）。LSP 的补全目前仍走旧实现，接入本管线是 §15 的工作。
+- **IDE 插件**（`intellij-ide/`，不在本工作区）：**未做**，属 §6.6② 范围。
+  只读核对过 `CaIdeDeclarationProviderFactory`：它的 source 收集器同样是遍历 `allSourceFiles`，
+  没有索引实现可依赖；选项是「先注册 standalone 实现（能跑但不快）」或「直接做 6.6② 的持久索引」。
+
+### 11.3 仍未做（本次未动）
+
+- 11.5① 宏展开后可映射代码的识别与可靠源映射：**缺分析层契约**（全仓无
+  `macroExpand`/`expandedFrom`/`sourceMapping` 任何入口，展开结果不进可分析 PSI/CFIR），
+  须先在分析层立「展开后可映射代码」的表示。
+- 第 2/3/4/5/6/7/8/10/12/13/14/15 组的未勾选项同 §3，本次未推进。
+
+### 11.4 文档同步纪律（重申 §0）
+
+`tasks.md` / `implementation-log.md` 的规范副本在**主检出**；工作树副本因 `openspec-cn` CLI 而存在、
+未纳入 git。**改完必须 `cp` 回主检出**，否则 `/goal` 看到的是旧状态。
+
+### 11.5 第 15 组（LSP 接入）已开始：15.1 结论＝分支 B
+
+- **15.1 三项结论已写入 `implementation-log.md`**（任务措辞要求「未记录即视为本组未开始」）：
+  ① 无头容器**不可能**提供 `Editor`/`CompletionProcess`（`:lsp` 的 `intellijCore()` 制品里
+  `com/intellij/openapi/editor` 类数为 0；平台 `core` 制品在该包下 42 个类里没有 `Editor`/`EditorFactory`；
+  `CoreApplicationEnvironment` 常量池亦无 `EditorFactory`）⇒ **分支 B**：不注册 `completion.contributor`，直接驱动管线；
+  ② 分析对象＝ **B-2 且已存在**（`createAnalyzableSnapshot` → `LspAnalysisPsiFileFactory.createFile` + 真实 use-site 模块）；
+  ③ `kind` 恒 `BASIC`；`invocationCount` = `1 + 同一 (uri, version, offset) 的重复请求数`（信号：`TriggerForIncompleteCompletions`）。
+- **接线已做、待编译验证**：`lsp/build.gradle.kts` 加三模块依赖；`AnalysisApiLspServiceRegistrar` 注册
+  `CfirCompletionServiceProvider` 与 `CaSymbolIndexQueryService`。
+- **15.4 前置① 不必再做**：`CompletionDummyIdentifierProvider.provideFor(file, offset)` 在 8.4 已落地（`c4c6c55af`）。
+- **15.2/15.3 按分支 B 调整**（tasks.md 已注明）：15.2 只保留「加依赖」一半；15.3 的「上游范围例外」在分支 B 下**不存在**，
+  `docs/architecture-host-plugin.md` 应据此改记（proposal.md 的影响面已同步更正）。
+
+### 11.6 变更文档重跑（§12.11）
+
+`verification.md` 已按 §12.11 重跑并回写：`openspec-cn validate` **通过**、4/4 产出物、
+**30 需求 / 55 场景**、任务 **107 项（勾选 59 / 未勾选 48）**、相对链接 **89 条全部可定位**。
+本轮修掉三处文档缺陷：**84 条相对链接层级错误**（两族深度分别在「另一个工作树内」「intellij-ide 仓内」写成）、
+`tasks.md` 3.8 行一处损坏字符、`implementation-log.md` 一处行尾空白。**未重跑**：`design.md` 的逐条源码行号锚点、
+`source-baseline.json` 的 SHA-256 漂移核对（理由记在 `verification.md`）。
+
+### 11.7 本轮环境阻塞（交接须知）
+
+另一会话的 Gradle 守护进程长时间占用共享缓存锁 `~/.gradle/caches/9.4.0/generated-gradle-jars`，
+导致 **`:lsp` 侧改动（编译 + 套件）与 `impl-shared` 回归未能执行**（八次尝试皆因该锁失败；
+`jcmd` 显示持有者 164 线程、确实在构建，不是死锁，故未干预）。**下一次能做主的工作**：
+先补跑 `:lsp:compileKotlin`、`:lsp:test --tests '*CangjieSemanticFeatureIntegrationTest*'`、
+`:code-insight:completion:impl-shared:test`，再继续 15.5/15.7。清单与状态见
+`implementation-log.md`「15.x 分支 B 起步与待验证项」。
