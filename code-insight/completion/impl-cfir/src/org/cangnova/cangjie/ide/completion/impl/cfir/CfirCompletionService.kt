@@ -20,7 +20,8 @@ import org.cangnova.cangjie.ide.completion.impl.cfir.sections.CfirTopLevelComple
 import org.cangnova.cangjie.ide.completion.impl.cfir.sections.distinctByIdentity
 import org.cangnova.cangjie.ide.completion.impl.shared.CompletionResultSink
 import org.cangnova.cangjie.ide.completion.impl.shared.CompletionSection
-import org.cangnova.cangjie.ide.completion.impl.shared.SerialCompletionRunner
+import org.cangnova.cangjie.ide.completion.impl.shared.CompletionRunner
+import org.cangnova.cangjie.ide.completion.impl.shared.createCompletionRunner
 import org.cangnova.cangjie.ide.completion.impl.shared.lookup.sortedByAnalysisWeight
 
 /**
@@ -57,9 +58,11 @@ class CfirCompletionService(
     )
 
     /**
-     * 串行执行器；并行准入通过前不更换。
+     * 执行器：默认串行；并行执行器只有通过 13.4 的准入后由宿主显式开启
+     * （[org.cangnova.cangjie.ide.completion.impl.shared.CangJieCompletionRunnerOptions]），
+     * 装配点只认 [createCompletionRunner] 这一个入口。
      */
-    private val runner = SerialCompletionRunner()
+    private val runner: CompletionRunner = createCompletionRunner()
 
     /**
      * 执行补全并返回稳定快照。
@@ -85,7 +88,10 @@ class CfirCompletionService(
                 collected += batch
             }
         }
-        runner.runSerial(request, sections, sink, ProgressManager.getInstance().progressIndicator)
+        // 无进度上下文（无头宿主、测试）时退化为不可取消的空指示器：
+        // 取消能力由宿主提供，没有它不该把一次补全变成 NPE。
+        val indicator = ProgressManager.getInstance().progressIndicator ?: HeadlessIndicator
+        runner.runSerial(request, sections, sink, indicator)
         val delivered = collected
             .distinctByIdentity()
             .let { filter.apply(request, it) }
@@ -95,4 +101,10 @@ class CfirCompletionService(
         statistics.recordCandidates(produced = collected.size, delivered = delivered.size)
         return delivered
     }
+
+/**
+ * 无进度上下文时使用的空指示器：不取消、不抛异常，只让执行器的取消检查有对象可用。
+ */
+private object HeadlessIndicator : com.intellij.openapi.progress.EmptyProgressIndicator()
+
 }

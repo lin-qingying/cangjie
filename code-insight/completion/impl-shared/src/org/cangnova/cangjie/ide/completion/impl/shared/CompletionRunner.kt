@@ -8,7 +8,7 @@ import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
  * 补全结果的下游接收端。
  *
  * sink 只接收**已渲染完成的快照**，不接受符号、类型或分析序列：
- * 这样即使 runner 被取消，已经发出的批次也可以安全地继续展示。
+ * 这样即使 runner 被取消，已经发出的批次也可以继续安全地展示。
  */
 interface CompletionResultSink {
     /**
@@ -24,6 +24,11 @@ interface CompletionResultSink {
  *
  * 区段把「同一类语义位置的候选」组织在一起：执行优先级由 [executionPriority] 决定，
  * 展示权重由候选自身的排序数据决定，两者不得混为一谈。
+ *
+ * **并发契约**：并行执行器会同时调用多个区段的 [execute]，因此
+ * 1. 区段之间不得共享可变状态（尤其不得共享裸 Analysis 会话对象——每个区段自己开 `analyze` 块）；
+ * 2. 同一个区段实例在同一次请求里只会被调用一次，但**不同请求**可能落在不同线程上，
+ *    实现必须保证自身状态要么不可变、要么按请求隔离。
  */
 interface CompletionSection {
     /** 区段标识，仅用于日志与测试断言。 */
@@ -74,13 +79,28 @@ interface CompletionRunner {
         sink: CompletionResultSink,
         indicator: ProgressIndicator,
     )
+
+    /**
+     * 并行执行给定区段，但**按串行语义的次序**把批次推给 [sink]。
+     *
+     * 默认实现退化为串行：只有真正实现了「会话隔离 + 稳定归并 + 取消传播」的执行器才覆写它。
+     * 这样「能不能并行」是一个显式的实现声明，而不是调用方按名字猜的。
+     */
+    fun runParallel(
+        request: CompletionRequest,
+        sections: List<CompletionSection>,
+        sink: CompletionResultSink,
+        indicator: ProgressIndicator,
+    ) {
+        runSerial(request, sections, sink, indicator)
+    }
 }
 
 /**
  * 串行执行器。
  *
  * 这是默认且唯一启用的执行路径：并行执行必须先通过会话隔离、确定顺序、
- * 取消传播与串并行结果等价四项准入，否则不得启用。
+ * 取消传播与串并行结果等价四项准入，否则不得启用（见 [ParallelCompletionRunner]）。
  */
 class SerialCompletionRunner : CompletionRunner {
     /**
