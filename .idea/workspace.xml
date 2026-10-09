@@ -39,13 +39,58 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e15012e-e26c-4b45-a5dc-4283160ad6fc" name="更改" comment="update action">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/kotlinc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/kotlinc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/REPAIR_LOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/call/genericCallArgumentMappingRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/call/genericCallArgumentMappingRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/cannotInheritSealedClass.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/cannotInheritSealedClass.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/inheritanceGraphRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/inheritanceGraphRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/superAlone.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/superAlone.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/superclassMustBePlacedFirst.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/superclassMustBePlacedFirst.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/thisAndSuperOutsideClass.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inheritance/thisAndSuperOutsideClass.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/initialization/instanceFieldInitializationRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/initialization/instanceFieldInitializationRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutCString.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutCString.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCFuncCall.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCFuncCall.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCType.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/inout/inoutNonCType.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/lambda/lambdaCaptureVarRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/lambda/lambdaCaptureVarRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/mut/mutableFunctionReferenceRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/mut/mutableFunctionReferenceRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/property/propertyInheritanceRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/property/propertyInheritanceRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-init/staticFieldInitializationRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-init/staticFieldInitializationRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-init/thisOrSuperInStaticInit.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-init/thisOrSuperInStaticInit.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-members/staticContextAccessRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/static-members/staticContextAccessRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/type-mismatch/typeReferenceRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/type-mismatch/typeReferenceRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/typealias/typeAliasRules.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/typealias/typeAliasRules.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/typealias/typeAliasRulesV105.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/diagnostics2/typealias/typeAliasRulesV105.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/InitializationCheck/variable_use_before_init_03.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/InitializationCheck/variable_use_before_init_03.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/InitializationCheck/variable_use_before_init_04.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/InitializationCheck/variable_use_before_init_04.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case03.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case03.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case04.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case04.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case05.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/case05.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/err_optional_chain_00.cj" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/analysis-tests/testData/llt/assign/multipleAssignExpr/err_optional_chain_00.cj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirLambdaParameterData.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirLambdaParameterData.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirLambdaParameterInferenceUtils.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/CfirLambdaParameterInferenceUtils.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationDiagnosticSources.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirDeclarationDiagnosticSources.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFunctionLambdaChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirFunctionLambdaChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/declaration/CfirInitializationCheckers.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirAssignmentTypeMismatchChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClosureCaptureUsageChecker.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/checkers/expression/CfirClosureCaptureUsageChecker.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/coneDiagnosticToCfirDiagnostic.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CandidateFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CandidateFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirSyntheticCallGenerator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/transformers/CfirSyntheticCallGenerator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/calls/CfirLambdaParameterTypeRules.kt" beforeDir="false" afterPath="$PROJECT_DIR$/cfir/semantics/src/org/cangnova/cangjie/cfir/resolve/calls/CfirLambdaParameterTypeRules.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/domain/toolchain/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/foundation/src/main/kotlin/org/cangnova/cangjie/utils/psiUtil.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/LanguageVersionSettingsProvider.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/deveco/product/src/main/resources/META-INF/plugin.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/IdeBuiltinsVirtualFileProviderImpl.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysis/builtins/IdeBuiltinsVirtualFileProviderImpl.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/analysisApiPlatform/projectStructure/provider/CaIdeProjectStructureState.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/toolwindow/doc/CangJieDocWindowFactory.kt" beforeDir="false" afterPath="$PROJECT_DIR$/intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/toolwindow/doc/CangJieDocWindowFactory.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/evidence.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/evidence.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/handover.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/handover.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/implementation-log.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/implementation-log.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/proposal.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/proposal.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/tasks.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/verification.md" beforeDir="false" afterPath="$PROJECT_DIR$/openspec/changes/align-cangjie-completion-with-kotlin-k2/verification.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -248,7 +293,7 @@
         <entry key="$PROJECT_DIR$" value="codex/cjmp-framework-review-fixes-20260929" />
       </map>
     </option>
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/intellij-ide" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="DONT_SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -453,6 +498,7 @@
     &quot;Gradle.Initialization.testControlFlowInitialization.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Interface.testComparable.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Interop.testObjcMirrorImplTypeBoundaryPlaceholder.executor&quot;: &quot;Debug&quot;,
+    &quot;Gradle.Lambda.testLambdaCaptureVarRules.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.LightTree2CfirConverterTest.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.LightTree2CfirConverterTestGenerated.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.LlvmBackendFactoryTest.returns in-memory backend when configured as in-memory.executor&quot;: &quot;Debug&quot;,
@@ -476,7 +522,7 @@
     &quot;Gradle.Redeclaration.testSimple.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Run All Test.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Run Cfir Test All.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.Run Cfir Test.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Run Cfir Test.executor&quot;: &quot;Debug&quot;,
     &quot;Gradle.Run IDE with Plugin.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.Service.testServiceDescriptor.executor&quot;: &quot;Run&quot;,
     &quot;Gradle.SoftKeywordTest.testPublicSortKeywordPatternVariable.executor&quot;: &quot;Run&quot;,
@@ -576,7 +622,7 @@
     &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;copilot.chat.legacySessionMetadata.migrated&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;cfir-new&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/code/intellij/cangjie/deveco&quot;,
@@ -645,7 +691,7 @@
       <command value="gradle codeStats" />
     </option>
   </component>
-  <component name="RunManager" selected="Gradle.Run IDE with Plugin">
+  <component name="RunManager" selected="Gradle.Run Cfir Test">
     <configuration default="true" type="JUnit" factoryName="JUnit">
       <shortenClasspath name="ARGS_FILE" />
       <option name="TEST_OBJECT" value="class" />
@@ -692,33 +738,6 @@
       <GradleCoverageDisabled>false</GradleCoverageDisabled>
       <method v="2" />
     </configuration>
-    <configuration name="Binary" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
-      <ExternalSystemSettings>
-        <option name="executionName" />
-        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
-        <option name="externalSystemIdString" value="GRADLE" />
-        <option name="scriptParameters" value="" />
-        <option name="taskDescriptions">
-          <list />
-        </option>
-        <option name="taskNames">
-          <list>
-            <option value=":cangjie:cfir:analysis-tests:test" />
-            <option value="--tests" />
-            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Binary&quot;" />
-          </list>
-        </option>
-        <option name="vmOptions" />
-      </ExternalSystemSettings>
-      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
-      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
-      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
-      <DebugAllEnabled>false</DebugAllEnabled>
-      <RunAsTest>true</RunAsTest>
-      <GradleProfilingDisabled>false</GradleProfilingDisabled>
-      <GradleCoverageDisabled>false</GradleCoverageDisabled>
-      <method v="2" />
-    </configuration>
     <configuration name="Const" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -760,6 +779,33 @@
             <option value=":cangjie:cfir:analysis-tests:test" />
             <option value="--tests" />
             <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Const&quot;" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <configuration name="Lambda.testLambdaCaptureVarRules" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/intellij-ide" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":cangjie:cfir:analysis-tests:test" />
+            <option value="--tests" />
+            <option value="&quot;org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisDiagnostics2PsiTestGenerated$Lambda.testLambdaCaptureVarRules&quot;" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -917,22 +963,23 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Gradle.Run IDE with Plugin" />
       <item itemvalue="Gradle.Run All Test" />
       <item itemvalue="Gradle.Run Cfir Test" />
+      <item itemvalue="Gradle.Run IDE with Plugin" />
+      <item itemvalue="Gradle.Binary" />
+      <item itemvalue="Gradle.Const" />
+      <item itemvalue="Gradle.Lambda.testLambdaCaptureVarRules" />
       <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
       <item itemvalue="Gradle.cangjie [:lsp:jar]" />
       <item itemvalue="Gradle.deveco [:product:runIde]" />
-      <item itemvalue="Gradle.Binary" />
-      <item itemvalue="Gradle.Const" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Gradle.Lambda.testLambdaCaptureVarRules" />
         <item itemvalue="Gradle.cangjie [:analysis:analysis-performance-test:test]" />
         <item itemvalue="Gradle.cangjie [:lsp:jar]" />
         <item itemvalue="Gradle.deveco [:product:runIde]" />
         <item itemvalue="Gradle.Const" />
-        <item itemvalue="Gradle.Binary" />
       </list>
     </recent_temporary>
   </component>
@@ -1494,7 +1541,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="claude/completion-k2-musing-bun" />
                       </list>
                     </value>
                   </entry>
