@@ -528,8 +528,8 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
     private fun reportIllegalMemberAccess(expression: CfirQualifiedAccessExpression, memberName: String) {
         with(context) {
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source ,
                 factory = CfirErrors.ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER,
                 a = memberName,
                 b = place.diagnosticContext,
@@ -543,8 +543,8 @@ private class ConstructorMemberAccessBeforeInitializationVisitor(
     private fun reportCaptureHasShadowVariable(expression: CfirQualifiedAccessExpression, parameter: CfirValueParameter) {
         with(context) {
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source ,
                 factory = CfirErrors.CAPTURE_HAS_SHADOW_VARIABLE,
                 a = parameter.name,
             )

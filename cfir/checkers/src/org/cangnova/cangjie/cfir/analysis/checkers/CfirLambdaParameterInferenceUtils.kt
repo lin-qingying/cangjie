@@ -3,16 +3,10 @@ package org.cangnova.cangjie.cfir.analysis.checkers
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterInferenceFailedAtDefinition
+import org.cangnova.cangjie.cfir.resolve.calls.hasUninferredLambdaParameterType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
-import org.cangnova.cangjie.cfir.types.type
 
 /**
  * Lambda 参数推断失败的共享判定。
@@ -23,17 +17,25 @@ import org.cangnova.cangjie.cfir.types.type
  */
 internal fun CfirAnonymousFunction.firstOmittedLambdaParameterForInferenceFailure(): CfirValueParameter? {
     if (!isLambda || !hasExplicitParameterList) return null
-    if (!valueParameters.any { it.hasOmittedLambdaParameterType() && it.hasUninferredLambdaParameterType() }) {
-        return null
-    }
-    return valueParameters.firstOrNull { it.hasOmittedLambdaParameterType() }
+    val omittedParameters = valueParameters.filter { it.hasOmittedLambdaParameterType() }
+    if (omittedParameters.isEmpty()) return null
+
+    // 官方在 lambda 自身合成结束（SolveLamExprParamTys）时决定结论，之后出现的约束
+    // （例如后续 `g(i)` 反解 placeholder）不改变结论；CFIR 的最终类型会被后续约束改写，
+    // 所以优先消费 resolve 侧记录的定义点事实，事实缺失时才回退到实时类型判定。
+    val inferenceFailed = lambdaParameterInferenceFailedAtDefinition
+        ?: omittedParameters.any { it.hasUninferredLambdaParameterType() }
+    return if (inferenceFailed) omittedParameters.first() else null
 }
 
 /**
  * 是否存在仍未解出的省略类型 lambda 参数。
+ *
+ * 该判定用于抑制由 placeholder 派生的二级错误，关注的是 body 检查时的最终类型状态，
+ * 因此刻意只读实时类型（不消费定义点事实）。
  */
 internal fun CfirAnonymousFunction.hasUninferredOmittedLambdaParameterType(): Boolean =
-    firstOmittedLambdaParameterForInferenceFailure() != null
+    valueParameters.any { it.hasOmittedLambdaParameterType() && it.hasUninferredLambdaParameterType() }
 
 /**
  * 取得源码显式写出的 lambda 参数类型。
@@ -52,29 +54,3 @@ internal fun CfirValueParameter.explicitLambdaParameterType(): ConeCangJieType? 
     }
     return explicitType
 }
-
-/**
- * 判断参数类型是否仍含无法作为真实参数类型发布的 placeholder。
- */
-private fun CfirValueParameter.hasUninferredLambdaParameterType(): Boolean {
-    val typeRef = returnTypeRef
-    return when {
-        typeRef is CfirImplicitTypeRef -> true
-        typeRef is CfirErrorTypeRef ->
-            typeRef.diagnostic.unwrapForLambdaParameterInference() is ConeCannotInferValueParameterType
-        typeRef is CfirResolvedTypeRef -> typeRef.coneType.containsUninferredLambdaParameterType()
-        else -> false
-    }
-}
-
-/** 判断类型树中是否仍含未推断的 lambda 参数 placeholder（无原始类型参数的 type variable 或其派生错误）。 */
-private fun ConeCangJieType.containsUninferredLambdaParameterType(): Boolean {
-    if (this is ConeTypeVariableType && typeConstructor.originalTypeParameter == null) return true
-    val diagnostic = (this as? ConeErrorType)?.diagnostic?.unwrapForLambdaParameterInference()
-    if (diagnostic is ConeCannotInferValueParameterType) return true
-    return typeArguments.any { projection -> projection.type.containsUninferredLambdaParameterType() }
-}
-
-/** 剥离未上报重复诊断包装，取原始诊断供推断失败判定使用。 */
-private fun ConeDiagnostic.unwrapForLambdaParameterInference(): ConeDiagnostic =
-    (this as? ConeUnreportedDuplicateDiagnostic)?.original ?: this

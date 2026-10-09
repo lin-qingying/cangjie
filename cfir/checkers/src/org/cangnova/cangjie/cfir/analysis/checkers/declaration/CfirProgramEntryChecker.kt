@@ -54,7 +54,7 @@ fun reportMissingProgramEntryIfNeeded(
     if (files.any(CfirFile::hasProgramEntry)) return
 
     val firstFile = files.firstOrNull() ?: return
-    val source = firstFile.source?.firstCharacterDiagnosticSource() ?: return
+    val source = firstFile.source  ?: return
     reporter.reportOn(
         source = source,
         factory = CfirErrors.MISSING_ENTRY,

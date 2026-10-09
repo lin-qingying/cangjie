@@ -64,7 +64,7 @@ object CfirMemberBodyDeclarationChecker : CfirDeclarationChecker<CfirMemberDecla
         if (declaration is CfirProperty && isFromDeclarationFile(context)) return
 
         reporter.reportOn(
-            source = declaration.source?.firstCharacterDiagnosticSource(),
+            source = declaration.source ,
             factory = CfirErrors.MISSING_FUNC_BODY,
             a = member.kind,
             b = member.name,

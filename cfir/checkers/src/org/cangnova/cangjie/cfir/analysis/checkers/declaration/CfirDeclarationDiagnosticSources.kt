@@ -229,15 +229,6 @@ internal fun CfirTypeAlias.typeAliasNameDiagnosticSource(): AbstractCjSourceElem
     return (source as? CjSourceElement)?.findTypeAliasNameSource(name) ?: source
 }
 
-/**
- * 官方 cjc 的部分声明级诊断锚定在声明节点起始位置，JSON 主范围只有首字符。
- * 使用 offsets-only source 避免 PSI 默认范围扩展到整条声明。
- */
-internal fun AbstractCjSourceElement.firstCharacterDiagnosticSource(): AbstractCjSourceElement =
-    CjOffsetsOnlySourceElement(
-        startOffset = startOffset,
-        endOffset = (startOffset + 1).coerceAtMost(endOffset),
-    )
 
 /** extend 没有独立声明名；声明级诊断覆盖完整的 extend 关键字。 */
 internal fun CfirExtend.extendKeywordDiagnosticSource(): AbstractCjSourceElement? {

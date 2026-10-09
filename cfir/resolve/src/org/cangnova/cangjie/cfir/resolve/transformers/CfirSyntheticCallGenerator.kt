@@ -34,7 +34,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.hasOmittedLambdaParameterType
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.lambdaParameterInferenceFailedAtDefinition
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
@@ -50,6 +52,7 @@ import org.cangnova.cangjie.cfir.resolve.CfirResolutionSnapshot
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.hasUninferredLambdaParameterType
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -162,6 +165,7 @@ class CfirSyntheticCallGenerator(
             inferenceData.reanalyzeTopLevelLambdaBodyIfPossible(reference)
         }
         val resultingCall = components.callCompleter.completeCall(fakeCall, ResolutionMode.ContextIndependent)
+        recordLambdaParameterInferenceOutcome(anonymousFunctionExpression.anonymousFunction)
         (resultingCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
             ?.let { diagnostic ->
                 anonymousFunctionExpression.restoreActualTypeAfterSyntheticTypeMismatch(diagnostic)
@@ -169,6 +173,23 @@ class CfirSyntheticCallGenerator(
 
         components.dataFlowAnalyzer.exitFunctionCall(resultingCall, callCompleted = true)
         return resultingCall.argumentList.arguments.single()
+    }
+
+    /**
+     * 固化 lambda 定义点的形参推断结论。
+     *
+     * 合成外层调用是 CFIR 承载官方 `SynLamExpr` / `SolveLamExprParamTys` 的位置：官方在
+     * lambda 自身合成完成时决定省略类型形参能否解出，之后语句产生的约束（例如 `g(i)`
+     * 反解同一个 placeholder）不改变该结论。CFIR 的解析会让后续约束改写形参类型，
+     * 因此这里只按第一次完成的结果写一次事实，供 checker 消费，避免用最终类型反推。
+     */
+    private fun recordLambdaParameterInferenceOutcome(anonymousFunction: CfirAnonymousFunction) {
+        if (anonymousFunction.lambdaParameterInferenceFailedAtDefinition != null) return
+        val omittedParameters = anonymousFunction.valueParameters
+            .filter { it.hasOmittedLambdaParameterType() }
+        if (omittedParameters.isEmpty()) return
+        anonymousFunction.lambdaParameterInferenceFailedAtDefinition =
+            omittedParameters.any { it.hasUninferredLambdaParameterType() }
     }
 
     /**
