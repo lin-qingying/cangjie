@@ -366,6 +366,26 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         item: CompletionItem,
     ): CompletionItem {
+        // 与候选生成分开计时：resolve 是用户按下候选才触发的第二次分析，
+        // 它的耗时直接影响「翻候选卡不卡」，混进 CANDIDATES 就看不出来了。
+        // 失败路径（含所有 skipResolve 早退）同样计时——「没填文档」也花了时间。
+        val statistics = completionStatistics(lifecycle.environment.project)
+        val resolveStartedNanos = System.nanoTime()
+        try {
+            return resolveCompletionItemInternal(context, item)
+        } finally {
+            statistics.recordStage(CompletionStage.RESOLVE, System.nanoTime() - resolveStartedNanos)
+        }
+    }
+
+    /**
+     * resolve 的实际实现；计时与统计在 [resolveCompletionItem] 里做。
+     */
+    @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
+    private fun resolveCompletionItemInternal(
+        context: CangjieAnalysisRequestContext,
+        item: CompletionItem,
+    ): CompletionItem {
         val data = item.data as? JsonObject ?: return skipResolve("item 没有 data", item)
         val sessionKey = data.get(LspCompletionCommands.SESSION_KEY_FIELD)?.asString
             ?: return skipResolve("data 里没有会话键", item)

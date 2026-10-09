@@ -28,6 +28,14 @@ enum class CompletionStage {
 
     /** 接受候选时的插入计算与写入。 */
     INSERT,
+
+    /**
+     * 延迟解析（`completionItem/resolve`）：按候选身份重进分析、取回文档这类按需补充的信息。
+     *
+     * 与 [CANDIDATES] 分开记：resolve 是**用户触发**的第二次分析，它的耗时直接体现在
+     * 「用户按下箭头时卡不卡」上，混进候选生成会看不出来。
+     */
+    RESOLVE,
 }
 
 /**

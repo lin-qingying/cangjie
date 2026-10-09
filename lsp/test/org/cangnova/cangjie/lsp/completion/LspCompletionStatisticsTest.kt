@@ -97,6 +97,32 @@ class LspCompletionStatisticsTest : AbstractLspIntegrationTest() {
     }
 
     /**
+     * `completionItem/resolve` 必须**单独**计时。
+     *
+     * resolve 是用户按下候选才触发的第二次分析（按身份重进分析、取回文档），
+     * 它的耗时直接决定「翻候选卡不卡」。混进候选生成就看不出来，漏埋点同样不报错——
+     * 所以这里用记录式 sink 直接断言这一阶段存在。
+     */
+    @Test
+    fun resolveRecordsItsOwnStage() {
+        withServer { connection, fixture ->
+            val recorder = installRecordingSink(connection)
+            val uri = fixture.uri(USE_FILE)
+            connection.openDocument(uri, fixture.text(USE_FILE))
+            val item = connection.completion(
+                CompletionParams(TextDocumentIdentifier(uri), positionAt(fixture.text(USE_FILE))),
+            ).left.firstOrNull() ?: error("前置条件：该位置本来就有候选")
+
+            connection.resolveCompletionItem(item)
+
+            assertTrue(
+                recorder.stageCounts.containsKey(CompletionStage.RESOLVE),
+                "resolve 必须单独计时（与候选生成分开），实际 ${recorder.stageCounts}",
+            )
+        }
+    }
+
+    /**
      * 把工程的统计实现换成记录式。
      */
     private fun installRecordingSink(connection: LspIntegrationTestConnection): RecordingCompletionStatisticsSink {
