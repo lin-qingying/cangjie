@@ -8,6 +8,9 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.components.createUseSiteVisibilityChecker
+import org.cangnova.cangjie.analysis.api.components.CaScopeKind
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningOperation
@@ -16,8 +19,7 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.symbols.*
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
-import org.cangnova.cangjie.cfir.resolve.createFileLookupScopes
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.*
@@ -167,14 +169,22 @@ internal fun CaCfirSession.checkCompletionCandidate(
         is CaPackageSymbol -> true
         else -> false
     }
-    // 四种状态各按自己的理由给出，**不把「不适用」与「未知」并进 HIDDEN**（设计 §6.6）：
+    // 短名在**当前位置**的绑定（A1/A2 的位置 scope + shadow）：只查文件 lookup scope 会漏掉
+    // 局部遮蔽与成员层，也就分不出「够不着」和「被别的声明占了」。
+    val shortNameBinding =
+        if (visible) resolveShortNameBinding(symbol, file, position) else ShortNameBinding.UNBOUND
+    // 五种状态各按自己的理由给出，**不把「不适用」与「未知」并进 HIDDEN**（设计 §6.6）：
     // 权限/遮蔽是「确定看不见」，文件符号是「不是一类东西」，最后一种情况是「判定不出来」。
     // 后两者一旦并进 HIDDEN，消费者就再也分不出「该移除」与「不知道」。
     val status = when {
         !visible -> CaCompletionCandidateStatus.HIDDEN
         symbol is CaFileSymbol -> CaCompletionCandidateStatus.NOT_APPLICABLE
         symbol is CaPackageSymbol -> CaCompletionCandidateStatus.DIRECT
-        isDirectlyReachable(symbol, file) -> CaCompletionCandidateStatus.DIRECT
+        shortNameBinding == ShortNameBinding.EQUIVALENT -> CaCompletionCandidateStatus.DIRECT
+        // 短名被位置作用域里**别的**声明占了（局部变量、类型参数、成员……）：
+        // 加 import 也救不回来——import 不参与遮蔽，写下的短名照样绑到那个声明上。
+        // 因此这是「确定不可用」，与权限并列进 HIDDEN，而不是 REQUIRES_IMPORT。
+        shortNameBinding == ShortNameBinding.SHADOWED -> CaCompletionCandidateStatus.HIDDEN
         importPath != null -> CaCompletionCandidateStatus.REQUIRES_IMPORT
         else -> CaCompletionCandidateStatus.UNKNOWN
     }
@@ -184,6 +194,93 @@ internal fun CaCfirSession.checkCompletionCandidate(
         requiredImport = importPath?.takeIf { status == CaCompletionCandidateStatus.REQUIRES_IMPORT },
         token = token,
     )
+}
+
+/**
+ * 候选短名在当前位置作用域链上的绑定结果。
+ */
+private enum class ShortNameBinding {
+    /** 作用域链上没有任何同名声明——短名可用性取决于是否需要 import。 */
+    UNBOUND,
+
+    /** 同名声明里包含本候选（同一层的合法重载/同名族都算命中）。 */
+    EQUIVALENT,
+
+    /** 同名声明被**别的**声明占了：局部遮蔽、类型参数、成员等。 */
+    SHADOWED,
+}
+
+/**
+ * 在 [position] 的作用域链上解析 [symbol] 短名的绑定。
+ *
+ * **位置层**（词法、类型/成员、片段顶层）只能从位置上下文取：这些层按真实查找次序
+ * 从内到外排列，**首次绑定即结论**——内层先绑定就代表外层同名声明已被遮蔽。
+ * 这与 `CfirLocalScopeCompletionSection` 的「首个同名者胜」同源，也是解析塔的真实次序——
+ * 官方编译器实测（cjc 1.1.3）：`let Foo = 3` 之后连类型位置写 `Foo` 都报
+ * `'Foo' is not a type`，即仓颉的类型名与值名共享一套遮蔽，不存在「值遮蔽不影响类型位置」
+ * 的例外，所以这里不必按符号种类分情况。
+ *
+ * **文件层**（本文件顶层、包、显式/默认导入、内建）改走 resolver 共用的
+ * `CfirFileLookupScopes`：位置上下文的公开投影只包装 names-aware 作用域，而导入作用域
+ * （`CfirImportScope`）与内建原始类型作用域不是，于是投影里**没有这两层**——
+ * 早先只查文件查找布局的实现之所以能看见 `import sample.*` 带来的名字，正是因为它是
+ * 直接在 CFIR 作用域上查询的。这里保持同一通道，行为不因投影缺口而改变。
+ *
+ * 片段是例外：宿主文件顶层声明那一层**只存在于位置上下文**里，因此片段位置一并消费
+ * 位置上下文的文件级带（导入层仍由上面的 CFIR 通道补齐）。
+ *
+ * 只按名字查询（classifiers / callables / typeParameters），不枚举作用域全部声明：
+ * 成员作用域与包作用域的全量枚举代价随被查类型/包规模增长，而这些名字查询走的是
+ * 各 scope 的按名通道。
+ */
+private fun CaCfirSession.resolveShortNameBinding(
+    symbol: CaSymbol,
+    file: CjFile,
+    position: CjElement,
+): ShortNameBinding {
+    val shortName = symbol.shortNameForBinding() ?: return ShortNameBinding.UNBOUND
+
+    val isCodeFragment = file is CjCodeFragment
+    val positionEntries = with(this) { file.scopeContext(position) }.scopes
+    for (entry in positionEntries) {
+        if (entry.kind.indexInTower >= CaScopeKind.FILE_SCOPE.indexInTower && !isCodeFragment) continue
+        val scope = entry.scope
+        val bound = buildList<CaSymbol> {
+            scope.classifiers(shortName).forEach { add(it) }
+            scope.callables(shortName).forEach { add(it) }
+            scope.typeParameters { it == shortName }.forEach { add(it) }
+        }
+        if (bound.isEmpty()) continue
+        return if (bound.any { candidate -> with(this) { candidate.isEquivalentTo(symbol) } }) {
+            ShortNameBinding.EQUIVALENT
+        } else {
+            ShortNameBinding.SHADOWED
+        }
+    }
+
+    val currentCfirSession = cfirSession
+    val cfirFile = file.getOrBuildCfirFile(resolutionFacade)
+    val fileScopes = currentCfirSession.createFileLookupScopes(
+        file = cfirFile,
+        scopeSession = getScopeSessionFor(currentCfirSession),
+    ).typeResolutionScopes
+    for (scope in fileScopes) {
+        val bound = buildList<CaSymbol> {
+            scope.processClassifiersByName(shortName) { classifier ->
+                add(cfirSymbolBuilder.buildSymbol(classifier))
+            }
+            scope.processCallablesByName(shortName) { callable ->
+                add(cfirSymbolBuilder.buildSymbol(callable))
+            }
+        }
+        if (bound.isEmpty()) continue
+        return if (bound.any { candidate -> with(this) { candidate.isEquivalentTo(symbol) } }) {
+            ShortNameBinding.EQUIVALENT
+        } else {
+            ShortNameBinding.SHADOWED
+        }
+    }
+    return ShortNameBinding.UNBOUND
 }
 
 /**
@@ -314,33 +411,6 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
 }
 
 /**
- * 判断符号是否已经可通过文件作用域或当前包作用域以短名直接访问。
- *
- * 使用 resolver 共用的 `CfirFileLookupScopes`，使显式、星号和默认导入与名字解析采用同一组绑定。
- */
-private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
-    val shortName = symbol.shortNameOrNull() ?: return false
-    val currentCfirSession = cfirSession
-    val cfirFile = file.getOrBuildCfirFile(resolutionFacade)
-    val lookupScopes = currentCfirSession.createFileLookupScopes(
-        file = cfirFile,
-        scopeSession = getScopeSessionFor(currentCfirSession),
-    ).typeResolutionScopes
-    val visibleSymbols = buildList<CaSymbol> {
-        for (scope in lookupScopes) {
-            scope.processClassifiersByName(shortName) { classifier ->
-                add(cfirSymbolBuilder.buildSymbol(classifier))
-            }
-            scope.processCallablesByName(shortName) { callable ->
-                add(cfirSymbolBuilder.buildSymbol(callable))
-            }
-        }
-    }
-    return visibleSymbols
-        .any { visibleSymbol -> with(this) { visibleSymbol.isEquivalentTo(symbol) } }
-}
-
-/**
  * 提取符号可参与补全、导入和缩短判定的短名。
  */
 private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
@@ -348,6 +418,19 @@ private fun CaSymbol.shortNameOrNull(): Name? = when (this) {
     is CaCallableSymbol -> callableId?.callableName
     is CaPackageSymbol -> name
     else -> name
+}
+
+/**
+ * 短名**绑定查询**用的名字。
+ *
+ * 与 [shortNameOrNull] 的差别只有局部声明这一类：局部变量/局部函数是 callable，但**没有**
+ * callableId（不属于任何包/类），只按 callableId 取名字会把它们判成「没有短名」，
+ * 于是位置作用域里的遮蔽与命中统统看不见——而这正是 A1/A2 要覆盖的那一层。
+ */
+private fun CaSymbol.shortNameForBinding(): Name? = when (this) {
+    is CaClassLikeSymbol -> classId?.shortClassName
+    is CaCallableSymbol -> callableId?.callableName ?: (this as? CaNamedSymbol)?.name
+    else -> shortNameOrNull()
 }
 
 /**

@@ -24,6 +24,7 @@ import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -88,6 +89,59 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
 
             val importPlan = mainFile.collectImportOptimizationPlan()
             assertEquals(listOf(requiredImport), importPlan.missingImports)
+        }
+    }
+
+    /**
+     * 短名可达性绑定到**位置**作用域：局部遮蔽、局部候选与成员候选（任务 5.4）。
+     *
+     * 旧实现只查文件 lookup scope，于是三件事都判不出来：局部遮蔽看不见（顶层同名符号照样
+     * 报 DIRECT）、局部候选落 UNKNOWN、成员候选落 UNKNOWN。三条断言各自对应一件：
+     * ①同名局部变量在位置上先绑定 → 顶层符号**不再可达**（HIDDEN，不是 REQUIRES_IMPORT：
+     * 加 import 也改不了「短名已经绑到别的声明」这个事实，cjc 实测 `let Foo = 3` 之后连
+     * 类型位置写 `Foo` 都报 `'Foo' is not a type`）；
+     * ②局部候选自身在位置上就是第一个绑定 → DIRECT；
+     * ③成员候选在位置上经隐式接收者所在成员层绑定 → DIRECT。
+     */
+    @Test
+    fun completionCandidateShadowing(mainFile: CjFile, testServices: TestServices) {
+        val functions = testServices.allNamedFunctions()
+        val topLevelShadowed = functions.single { it.name == "shadowedByLocal" }
+        val memberCandidate = functions.single { it.name == "memberCandidate" }
+        val memberUseSite = functions.single { it.name == "useMember" }
+        // 遮蔽位置取 `consume` 里**使用**局部变量的那个引用：绑定名本身也是简单名（绑定模式），
+        // 按文件序取最后一个即使用点，同时显式排除绑定模式，免得定语依赖书写顺序。
+        val shadowingPosition = PsiTreeUtil
+            .findChildrenOfType(memberUseSite.containingFile, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "shadowedByLocal" && it !is CjBindingPattern }
+        val memberPosition = PsiTreeUtil
+            .findChildrenOfType(memberUseSite, CjSimpleNameExpression::class.java)
+            .single { it.referencedName == "memberCandidate" }
+
+        analyzeForTest(mainFile) {
+            val topLevelDecision = topLevelShadowed.symbol.checkCompletionCandidate(shadowingPosition)
+            assertEquals(
+                CaCompletionCandidateStatus.HIDDEN,
+                topLevelDecision.status,
+                "同名局部变量在位置上先绑定，顶层短名就不可达；给出 REQUIRES_IMPORT 会让用户插入一个解析到别处的短名",
+            )
+
+            val localSymbol = requireNotNull(shadowingPosition.resolveToSymbol()) {
+                "位置上的 shadowedByLocal 必须解析到局部变量（局部遮蔽顶层同名函数）"
+            }
+            val localDecision = localSymbol.checkCompletionCandidate(shadowingPosition)
+            assertEquals(
+                CaCompletionCandidateStatus.DIRECT,
+                localDecision.status,
+                "局部候选自身就是位置作用域的首个绑定",
+            )
+
+            val memberDecision = memberCandidate.symbol.checkCompletionCandidate(memberPosition)
+            assertEquals(
+                CaCompletionCandidateStatus.DIRECT,
+                memberDecision.status,
+                "成员候选经隐式接收者所在的成员层绑定，不应落到 UNKNOWN",
+            )
         }
     }
 

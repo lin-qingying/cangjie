@@ -269,8 +269,40 @@ internal class CaCfirScopeProvider(
      * 位置在解析塔内时按真实查找顺序投影；否则退化为文件级导入上下文。
      */
     override fun CjFile.scopeContext(position: CjElement): CaScopeContext = withValidityAssertion {
-        CaCfirScopeContext(analysisSession, this@scopeContext, position)
+        val stamp = modificationStamp
+        val cached = lastScopeContext
+        if (cached != null && lastScopeContextPosition === position && lastScopeContextStamp == stamp) {
+            return@withValidityAssertion cached
+        }
+        return@withValidityAssertion CaCfirScopeContext(analysisSession, this@scopeContext, position).also {
+            lastScopeContextPosition = position
+            lastScopeContextStamp = stamp
+            lastScopeContext = it
+        }
     }
+
+    /**
+     * 最近一次 [scopeContext] 的位置身份、文件修改戳与结果。
+     *
+     * 一次补全请求会对**同一位置**反复判定候选（索引段、导入规划、缩短各自遍历），
+     * 而位置作用域投影每次都要跑一遍 ContextCollector——按候选重算会把补全主路径
+     * 拖成 O(候选数 × 上下文收集)。调用方天然是「同一位置连判多个候选」的形状，
+     * 所以只缓存最近一条：命中即省掉一次上下文收集，也不会累积 PSI 引用。
+     *
+     * 文件修改戳参与键，副本被改动后同一 PSI 位置不会复用旧快照。
+     * 会话按 AA 契约单线程使用，因此这几个字段不加同步。
+     */
+    private var lastScopeContextPosition: CjElement? = null
+
+    /**
+     * [lastScopeContext] 对应文件的修改戳。
+     */
+    private var lastScopeContextStamp: Long = Long.MIN_VALUE
+
+    /**
+     * [lastScopeContextPosition] 处的作用域上下文快照。
+     */
+    private var lastScopeContext: CaScopeContext? = null
 
     /**
      * 取得该文件的导入/包/顶层声明上下文。
