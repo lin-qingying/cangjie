@@ -2723,8 +2723,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource, expectedType, actualType, because, session,
         )
 
-        is ConeMismatchedTypesMultipleAssignError -> CfirErrors.TYPE_MISMATCH.on(
-            diagnosticSource, expectedType, actualType, false, session,
+        // 该 cone 诊断在 resolve 侧始终被 `ConeUnreportedDuplicateDiagnostic` 包裹（映射层对其
+        // 直接跳过），实际由 `CfirAssignmentTypeMismatchChecker` 专用分支上报；此处仅保持语义一致。
+        is ConeMismatchedTypesMultipleAssignError -> CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN.on(
+            diagnosticSource, actualType, session,
         )
 
         is ConeParamCountMismatchError -> CfirErrors.PARAM_COUNT_MISMATCH.on(

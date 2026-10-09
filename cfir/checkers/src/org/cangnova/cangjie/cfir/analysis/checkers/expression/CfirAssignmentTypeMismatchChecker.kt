@@ -1,7 +1,6 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 
@@ -53,15 +52,15 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             else -> null
         }
         if (multipleAssignmentDiagnostic != null) {
-            // 官方 `Diags.cpp` 的 `DiagInvalidMultipleAssignExpr` 以 RHS 表达式作为诊断目标。
+            // 官方 `Diags.cpp` 的 `DiagInvalidMultipleAssignExpr` 以 RHS 表达式作为诊断目标，
+            // 主提示实参是整个 RHS 的类型（`rightExpr.ty->String()`）；cone 诊断里的 expected/actual
+            // 是首个不兼容分量对，不能用作主提示实参。
             // RHS 的 source 取不到时才退回整条赋值；不能因为取不到 source 就静默丢弃诊断。
             val rValueSource = expression.rValue.source ?: expression.source ?: return
             reporter.reportOn(
                 rValueSource,
-                CfirErrors.TYPE_MISMATCH,
-                multipleAssignmentDiagnostic.expectedType,
-                multipleAssignmentDiagnostic.actualType,
-                false,
+                CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN,
+                expression.rValue.coneTypeOrNull ?: multipleAssignmentDiagnostic.actualType,
             )
             return
         }
@@ -121,7 +120,7 @@ object CfirAssignmentTypeMismatchChecker : CfirAssignmentChecker() {
             val assignmentSource = expression.source as? AbstractCjSourceElement
             if (assignmentSource != null) {
                 reporter.reportOn(
-                    assignmentSource.firstCharacterDiagnosticSource(),
+                    assignmentSource,
                     CfirErrors.TYPE_INCOMPATIBLE,
                     "assignment expression",
                 )

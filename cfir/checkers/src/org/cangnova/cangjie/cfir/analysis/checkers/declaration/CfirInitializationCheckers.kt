@@ -2009,7 +2009,7 @@ private class CfirInitializationFlowAnalyzer(
 
                 with(context) {
                     reporter.reportOn(
-                        source = staticField.source?.firstCharacterDiagnosticSource(),
+                        source = staticField.source,
                         factory = CfirErrors.STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER,
                         a = memberName,
                     )

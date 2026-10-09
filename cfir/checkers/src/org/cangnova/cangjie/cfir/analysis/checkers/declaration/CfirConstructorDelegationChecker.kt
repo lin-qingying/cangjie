@@ -70,7 +70,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                 if (delegation.kind == ConstructorDelegationCallKind.THIS && declaration.isPrimary) {
                     reporter.reportOn(
                         source = delegation.call.delegationDiagnosticSource()
-                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                            ?: declaration.source,
                         factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return@forEach
@@ -78,7 +78,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
 
                 reporter.reportOn(
                     source = delegation.call.delegationDiagnosticSource()
-                        ?: declaration.source?.firstCharacterDiagnosticSource(),
+                        ?: declaration.source,
                     factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER,
                     a = delegation.kind.keyword,
                 )
@@ -91,7 +91,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                 if (declaration.isPrimary) {
                     reporter.reportOn(
                         source = firstStatementDelegation.call.delegationDiagnosticSource()
-                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                            ?: declaration.source,
                         factory = CfirErrors.ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR,
                     )
                     return
@@ -158,7 +158,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         if (this === firstPrimary) return
 
         reporter.reportOn(
-            source = source?.firstCharacterDiagnosticSource(),
+            source = source ,
             factory = CfirErrors.MULTIPLE_PRIMARY_CONSTRUCTORS,
         )
     }

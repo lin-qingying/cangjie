@@ -27,7 +27,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
@@ -383,8 +382,8 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
 
         val classKind = if (owner.status.isOpen) "open" else "abstract"
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source ,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "constructor of $classKind class",
         )
@@ -454,8 +453,8 @@ object CfirThisAsExpressionInMutFuncChecker : CfirBasicExpressionChecker() {
         val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
             a = "mutable function '${outermost.name.asString()}'",
         )
@@ -482,8 +481,8 @@ object CfirThisCaptureInMutFuncChecker : CfirBasicExpressionChecker() {
         val outermost = functions.first().takeIf { it.isMutStructMemberContext() } as? CfirNamedFunction ?: return
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
             a = Name.identifier("this"),
             b = "mutable function '${outermost.name.asString()}'",
@@ -512,15 +511,15 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
 
         when (accessKind) {
             StaticNonStaticAccessKind.FUNCTION -> reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source,
                 factory = CfirErrors.STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER,
                 a = memberName,
             )
 
             StaticNonStaticAccessKind.LAMBDA -> reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source,
                 factory = CfirErrors.STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC,
                 a = memberName,
             )
@@ -645,8 +644,8 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
         }
 
         reporter.reportOn(
-            source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: expression.source?.firstCharacterDiagnosticSource(),
+            source = expression.calleeReference.source
+                ?: expression.source,
             factory = CfirErrors.ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR,
             a = memberKind,
             b = target.symbol.callableId.callableName.asString(),
@@ -734,8 +733,8 @@ object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
         if (!target.status.isAbstract) return
 
         reporter.reportOn(
-            source = receiver.calleeReference.source?.firstCharacterDiagnosticSource()
-                ?: receiver.source?.firstCharacterDiagnosticSource()
+            source = receiver.calleeReference.source
+                ?: receiver.source
                 ?: expression.source,
             factory = CfirErrors.ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY,
         )
