@@ -540,7 +540,7 @@ DevEco 的机制不是本设计能裁决的：其 `plugin.xml` 头部已记录�
 - **选择**：在已有设施上增加包装与模式覆盖，**不再造临时项目或另一套引擎**。
 - **实现**：模式覆盖须线程隔离、可嵌套、异常/取消后恢复。缓存键和模块身份不得污染原件或另一副本。保留 original/completion file 映射，明确局部与非局部声明解析策略。
 - **验收**：原件/副本、两种模式、未提交文档、取消、嵌套、跨线程、修改失效和 pointer 恢复。已有原件/副本测试继续保留，**不把包装函数完成当作全部验收**。[T10]
-- **依赖**：既有 LL/平台模块设施，是 §7.3 并行的前置闸门。**前置：缺陷 D-3 必须先修。**
+- **依赖**：既有 LL/平台模块设施，是 §7.3 并行的前置闸门。**前置：缺陷 D-3（已于 2026-10-08 修复）。**
 
 ### 6.8 A7 期望类型与不完整表达式支持
 
@@ -708,10 +708,10 @@ LSP 通过平台补全管线接入，与 IDE 共用同一份候选生成实现�
 3. **`CfirCompletionServiceProvider` 必须在 LSP 容器注册**。`cfirCompletionServiceOrNull(project)` 走 `project.getService(...)`，而上游补全描述符只声明了 `completion.contributor`，**没有 `<projectService>` 条目**。分支 B 下须由 registrar 手工注册（本仓库先例：`AnalysisApiLspServiceRegistrar` 为 `CangJieOpenTelemetryProvider`、refactoring registrar 为 `RefactoringListenerManager` 都手工补了）。否则取到 `null` → 零候选且不报错。
 4. **转换对象要说清**。上游管线终点是 `CfirCompletionService.complete(): List<CompletionSnapshot>`，**不是 `LookupElement`**。分支 B 下 `LspCompletionItemConverter` 的输入是 `CompletionSnapshot`，**不经过 `LookupElementFactory`**，因此 §7.11.3 字段表中依赖 `presentation.*` 的三行须改读快照的 `presentableText` / `tailText` / `typeText`。
 5. **分析跑在哪份 `CjFile` 上（分支 B 最关键的未决点）**。IDE 路径由平台提供 `parameters.originalFile` 及其补全副本；分支 B 没有 `CompletionParameters`，**拿不到平台生成的副本**，必须自己决定：
-   - **(B-1)** 走 §6.7 的 `analyzeCopy` + `CaDanglingFileModule`（PREFER_SELF）自行构造补全副本——语义与 IDE 一致，但**受缺陷 D-3 阻塞**（副本模式下 PREFER_SELF 非局部解析当前返回 `null`，未修）；
+   - **(B-1)** 走 §6.7 的 `analyzeCopy` + `CaDanglingFileModule`（PREFER_SELF）自行构造补全副本——语义与 IDE 一致（D-3 已于 2026-10-08 修复：副本模式下 PREFER_SELF 非局部解析可用）；
    - **(B-2)** 直接对 LSP 侧 `CjFile` 分析——绕开副本，但**与 IDE 的分析语义不等价**，且未提交文档下的行为需另行验证。注意 `LspAnalysisVirtualFile` 是 `LspAnalysisPsiFileFactory` 内的 **private 类**，不能直接引用；B-2 须经该工厂的 `createFile` 路径取得 `CjFile`（即复用 `AnalysisApiLspServiceRegistrar` 已装配的 PSI 工厂链路）。
 
-   **§7.11.0 的实验必须同时判定这一项**，并写明选了哪条。若选 B-1，则 D-3 从「阻塞 §6.7」扩展为「同时阻塞分支 B」；若选 B-2，必须补一条「两端分析语义等价性」的对照用例，否则「同源候选」这一 G5 准入无法成立。
+   **§7.11.0 的实验必须同时判定这一项**，并写明选了哪条。若选 B-1，则 D-3 从「阻塞 §6.7」扩展为「同时阻塞分支 B」；若选 B-2，必须补一条「两端分析语义等价性」的对照用例，否则「同源候选」这一 G5 准入无法成立。（**2026-10-08 更新**：15.1 已判 B-2 路线，D-3 另在 LL 冲突消解链上修复；本段的条件式表述存史。）
 6. **`invocationCount` 与 `completionKind` 的来源**。`CompletionRequest` 需要 `invocationCount`（IDE 侧由 PSI 上的 `INVOCATION_COUNT_KEY` 用户数据携带，**新解析的 LSP 文档不会带**）与 `kind`（由 `completionType` 推导，而 LSP 的 `CompletionParams.context.triggerKind` 与 `CompletionType.BASIC`/`SMART` 并非一一对应）。分支 B 必须定义二者的映射规则，并纳入 §7.11.0 实验结论。
 
 **实验结论与最终分支必须写入 `implementation-log.md`**，未记录即视为 §7.11 未开始。
@@ -815,7 +815,7 @@ kotlin-lsp 的 VS Code 客户端即未自行注册 `jetbrains.kotlin.completion.
 |---|---|---|---|---|---|
 | **D-1** | 块内局部声明未进入解析塔快照。副作用：`scopeContext(position)` 必须额外拼接文件级查找层，否则函数体内看不到任何顶层声明 | `BodyResolveContext.storeVariable` → `CfirTowerDataContext.addLocalVariable`（`localScopes.lastOrNull()` 为空时静默丢弃） | 未修 | §6.1 公开层局部测试 → §7.4 局部候选；§6.2 代码片段 | 块内 `let`/模式绑定在补全区段中**可见**的正例断言 |
 | **D-2** | 同名重载被判为同一符号。`CaCfirPublicSymbolKeyMapping` 对非局部 `CfirNamedFunctionSymbol` 只生成 `CaCfirCallableSymbolCacheKey(callableId, kind)`，而 `callableId` 不含参数列表 | `analysis/analysis-api-cfir` | 未修（**现网以「按声明 PSI 去重」绕开**） | §7.6 排序与去重、§7.5 身份 | 同名不同参数的候选**同时出现**且带各自实例化签名 |
-| **D-3** | dangling 副本的 PREFER_SELF 非局部解析返回 `null`，须修在 LL 的副本失效链路上（`CfirCacheWithInvalidation.getNotNullValueForNotNullContext` 抛 Failed requirement）。**已试过两条绕法（改测试的 `originalFile` 条件、在 Analysis 层绕过模块缓存），都会让 21 个生成用例失败，已全部回退** | LL 副本失效链路 | 未修 | §6.7 副本模式验收 | 副本模式下 PREFER_SELF 非局部解析返回非 null；**若判定 LL 修复不可行，必须给出记录在案的决策而非继续绕行** |
+| **D-3** | dangling 副本的 PREFER_SELF 非局部解析返回 `null`。**2026-10-08 实测根因与早前记录不同**：不是缓存不一致、也不是 `require(context.isPhysical)`，而是**漏移植 Kotlin 的 `ConeEquivalentCallConflictResolver`**——副本自身 provider 与上下文模块依赖 provider 同时给出同一份声明的两种身份，调用解析得到两个等价候选、判重载歧义，`resolveToSymbol()`（内部 `singleOrNull()`）返回 `null` | LL 冲突消解链（`cfir/resolve` 的 `ConeCallConflictResolverFactory`），非副本失效链路 | **已修（2026-10-08）** | §6.7 副本模式验收 | 副本模式下 PREFER_SELF 非局部解析返回非 null ✔（实测解析到**副本**；`:analysis:analysis-api-cfir:test` 1629/0）。旧记录的两条绕法与 21 失败路径属冲突检查器，另案，见 `implementation-log.md` |
 | **D-4** | 类字段/属性不出现在成员作用域 | `CfirClassUseSiteMemberScope` 等四层作用域均未覆写 `processVariablesByName`；实际落点是 `CfirClassUseSiteMemberScope`（`CaType.scope` 落到的那一层） | **已修 + 回归锁定**（`implementation-log.md` 「字段成员缺失缺陷：已修复并加回归锁定」） | — （曾阻塞 §7.4，现解除） | 复核既有回归仍绿；把 `handover.md` §5 第 4 条「根因未最终定位」更正为已修 |
 | **D-5** | `Ca` 前缀下线时机械重命名**只改了文件名、漏改类名**。①`ngJieCfirCompletionContributor.kt` 丢失首字母 `C`（内声明的是 `class CangJieCfirCompletionContributor`，只有文件名错）；②`impl-shared/test` 下 5 个文件已改名但**类名仍带 `Ca` 前缀**（`CaCompletionPositionContextTest` / `CaPsiImportPlanApplierTest` / `CaCangjieInsertionTest` / `CaInsertionValidatorTest` / `CaLookupElementFactoryTest`） | `code-insight/completion` | 未修 | §7.1 平台入口；§3.1 命名规则 | 用 `git mv` 重命名 ①；把 ② 的 5 个类名改为无层前缀（测试引用同步）；验收：**`intellij-ide` 与 `deveco` 两个生产描述符**中 contributor 均唯一且可解析，且全树无残留 `Ca` 类声明 |
 | **D-6** | `CaScopeProvider` 新增成员的 `context(session)` 桥接尚未由生成器产出；目前编译通过是因为上下文接收者直接暴露接口成员 | context 桥接生成器未定位 | 未修 | §6.10 生成器 | 跑真实生成器产出桥接；手改桥接被禁止 |
@@ -832,7 +832,7 @@ kotlin-lsp 的 VS Code 客户端即未自行注册 `jetbrains.kotlin.completion.
 D-1 ──▶ §6.1 局部/嵌套块公开层测试 ──▶ §7.4 局部候选
      └──▶ §6.2 代码片段
 D-2 ──▶ §7.6 排序与去重（并须重跑两个绕行去重点）
-D-3 ──▶ §6.7 副本模式验收
+D-3 ──▶ §6.7 副本模式验收（**已修，2026-10-08**）
 D-5 ──▶ §7.1 平台入口
 D-6 ──▶ §6.10 生成器
 ```
@@ -911,7 +911,7 @@ LSP 侧停用需保证能回到现有 `AnalysisApiCangjieAnalysisFacade.completi
 6. **代码片段在两类宿主中的可用性**：见 §6.2 未决项。IDE 求值窗口与调试器求值窗口是否共用同一 `CodeFragmentScopeProvider` 路径需实测；不通则该场景单独降级并记录。
 7. **LSP 分支判定**：§7.11.0 的最小实验结论（A 走平台补全进程 / B 直接驱动管线）必须先写入 `implementation-log.md`。LSP 生产容器是否注册 `EditorFactory` 尚未验证——已记录的「轻量夹具不注册」只覆盖**测试夹具**，不能直接外推。
 8. **LSP 客户端 `CompletionItem.command` 支持度**：宿主 LSP 客户端（`modules/ide/lsp`）是否执行 `CompletionItem.command` 需实测；不执行则 §7.11.8 降级并记录，LSP 补全主渠道仍为标准外部编辑器。
-9. **D-3 可行性**：dangling 副本 PREFER_SELF 的 LL 修复若判定不可行，**必须给出记录在案的决策**，不得继续绕行。
+9. **D-3 可行性**：dangling 副本 PREFER_SELF 的 LL 修复若判定不可行，**必须给出记录在案的决策**，不得继续绕行。（**2026-10-08：已修**——补上漏移植的 `ConeEquivalentCallConflictResolver`，不涉及不可行判定，见 `implementation-log.md`「缺陷 D-3 修复」。）
 10. **D-4 复核**：该缺陷已修（`implementation-log.md`「字段成员缺失缺陷：已修复并加回归锁定」），但 `handover.md` §5 第 4 条仍写「根因未最终定位」。G3 需复核回归仍绿，并回写 handover。
 11. **变更文档计数与一致性**：`verification.md` 的需求数、场景数、任务数与「全部未勾选」表述均已失效；`proposal.md` 的能力清单缺 `lsp-completion-support`、影响面缺 `:lsp`、且仍写「LSP 与原生 IDE 补全是不同入口」——与 §2 冲突。三份文件须在任务清单同步后一并重跑/重写。
 12. **上游工作树状态**：`Ca` 前缀下线的重命名与补全三模块均**只存在于工作树，未并回主检出**。所有「已存在/已完成」的断言都以工作树为准；并回主检出是独立一步，不得在文档中把工作树状态写成主检出状态。

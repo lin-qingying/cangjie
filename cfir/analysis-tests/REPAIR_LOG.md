@@ -10502,3 +10502,42 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - 覆盖边界（诚实声明）: standalone 的 `CaStandalonePlatformSettings.deserializedDeclarationsOrigin == BINARIES`，IDE 的 `CaIdePlatformSettings` 为 `STUBS`。本夹具因此只覆盖 `BINARIES` 分支（`.cjo` 经 `CfirDeclDeserializer` 直接反序列化为已完成解析的 `CfirExtend`，不走 LL designation）；`STUBS` 分支的库 extend 目前在 `StubBasedCfirMemberDeserializer` 中没有任何 `CjExtend` 分支，无法用同一夹具覆盖。即"IDE 内置库端到端不再崩"仍未在本仓库内被夹具证明。
 
 - verification: `java -jar D:/code/intellij/cangjie/gradle-queue-cli/build/libs/gradle-queue-cli.jar --project-dir <worktree> :analysis:analysis-api-standalone:test --tests '*StandaloneDecompiledExtendMemberTest*' --console=plain --max-workers=1` → `BUILD SUCCESSFUL`（前两次失败分别是上面的 stub 构建 NPE 与 extend 语义模型缺口，第三次删掉 `getExtendSymbols` 断言后通过）。全量 `:analysis:analysis-api-standalone:test` → `679 tests completed, 5 failed`：基线 678 用例 / 5 失败不变，新增 1 个即本夹具（通过）；5 个失败仍是既有的注解族 4 个（`testStructAnnotations` / `testClassAnnotations` / `testMetaAnnotation` / `testNamedAnnotation`）加 `StandaloneBehaviorTest.stubbedAnnotationArguments`。
+
+## 2026-10-06：多重赋值诊断名对齐（`sema_mismatched_types_multiple_assign` → `MISMATCHED_TYPES_MULTIPLE_ASSIGN`，批次 6 缺口销账）
+
+- problem type: 多重赋值类型不匹配的诊断名与官方 kind 对齐。2026-09-20 条目建立的单通道机制（resolve 产出 `ConeMismatchedTypesMultipleAssignError` 并以 `ConeUnreportedDuplicateDiagnostic` 包裹，由 `CfirAssignmentTypeMismatchChecker` 专用分支唯一上报）当时按旧口径渲染为 `TYPE_MISMATCH`；2026-10-01 批次 6 口径要求内联标记写与官方 kind 同名的 CFIR 名（`CfirDiagnosticsList` 已有 `MISMATCHED_TYPES_MULTIPLE_ASSIGN`），两个 diagnostics2 用例已按官方改正并登记为缺口（README:272）。
+
+- official evidence: `DiagRefactor/DiagnosticSema.def:13`（专用 kind）；`Sema/TypeCheckExpr/Diags.cpp:16-22`（锚 `rightExpr`，主提示实参 `rightExpr.ty->String()` = 整个 RHS 类型，左值分量仅作附带 hint）；`AssignExpr.cpp:141-172`（元数 / 非元组 / 分量子类型任一失败统一走该诊断）。四类失败的 cjc 1.0.5 实测已在 2026-09-20 条目记录（if 位置与语句位置诊断名/锚点相同）。
+
+- CFIR owner files changed:
+  - `cfir/checkers/src/.../checkers/expression/CfirAssignmentTypeMismatchChecker.kt:55-67`：专用分支改报 `CfirErrors.MISMATCHED_TYPES_MULTIPLE_ASSIGN`，实参取整个 RHS 类型（`expression.rValue.coneTypeOrNull`，兜底 cone 诊断 `actualType`）——cone 诊断里存的是首个不兼容分量对，不能直接当主提示实参。
+  - `cfir/checkers/src/.../diagnostics/coneDiagnosticToCfirDiagnostic.kt:2726-2730`：该 error 的映射分支对齐为同一工厂。该分支恒不可达（resolve 侧始终以 duplicate 包裹，映射层 `:97` 对 duplicate `return emptyList()`），仅保持语义一致。
+
+- fixtures changed: `llt/assign/multipleAssignExpr/{case03(5 处),case04(5),case05(4),err_optional_chain_00(1)}` + `llt/InitializationCheck/variable_use_before_init_03(3)/04(1)` 共 19 处标记 `TYPE_MISMATCH` → `MISMATCHED_TYPES_MULTIPLE_ASSIGN`。未动 `llt/tuple/tuple4.cj`（元组 pattern 声明走 `CfirTuplePatternDeclarationChecker:45`）与 `llt/if/structural_branch_bounds.cj`（let 声明），二者作为对照组全绿；其余 46 个 `TYPE_MISMATCH` 上报点（普通赋值兜底、条件 / 返回值 / 元组 pattern 声明等）未触碰。
+
+- verification command(s) and outcome: 聚焦（改动前 → 后）`gradlew-queue.bat :cfir:analysis-tests:test --tests "*MultipleAssignExpr*" --tests "*testMismatchedTypesMultipleAssign*" --tests "*testArrayLiteralAndMultipleAssign*" --tests "*testVariableUseBeforeInit03*" --tests "*testVariableUseBeforeInit04*"`：前 `30 tests / 4 failed / 2 skipped`（两个 diagnostics2 用例 × LLT/PSI 红）→ 后全绿（同 2 个既有 SKIP）。全量 `:cfir:analysis-tests:test` → `9221 tests completed, 163 failed, 461 skipped`；163 条失败中 0 条与多重赋值相关（受影响 22 条用例全 PASS，`WithoutAliasExpansion` 变体按既有规则 SKIP），其余失败均为 README 批次 6–13 已登记缺口与既有基线失败（Macro `Llt` 族、`CommonSpecific$E2e` 等）。
+
+- 附带: diagnostics2 README `:272` 缺口行标注 2026-10-06 已修复；编辑过程中 `CfirAssignmentTypeMismatchChecker.kt` 被工具去掉的 BOM 与 CRLF 已恢复（`git ls-files --eol` 复核 `w/crlf`）。
+
+## 2026-10-08：PCLA 前缀断言崩溃 —— 函数值 invoke 候选把同源 receiver 存储当外层系统导入（diagnostics2/lambda/lambdaCaptureVarRules 的 21 标记全缺根因）
+
+- problem type: Constraint System / PCLA × Diagnostics —— `CfirAnalysisDiagnostics2{,Psi}TestGenerated$Lambda.testLambdaCaptureVarRules` 报 `Multiple Failures (2 failures)`：① 21 个内联标记全部缺失（得到为未加任何标记的源文件）；② `SourceCodeAnalysisException: java.lang.IllegalArgumentException: Expected to be 3, but 1 found`。
+
+- root cause: 顶层无期望类型 lambda（`let f = {i: Int64 => let g = {j => j}; g(i)}`，夹具 337-343 行）的 body 二次推断中，`CfirSyntheticCallGenerator.runLambdaBodyReinferPass` 新建 `CfirPCLAInferenceSession`，其 `currentCommonSystem` 经 `addOuterSystem(outerCandidate.system)` 把 outer 前缀冻结为 1（唯一变量=外层 lambda 返回占位）；体内 `let g = {j => j}` 完成后 common 变量数涨到 3（内层形参/返回占位）而前缀仍为 1。随后 `g(i)` 走函数值 invoke 入口（`CfirCallResolver.collectCallableValueInvokeCandidates` → `CandidateFactory.createCallableValueInvokeCandidate`），`withCallableValueReceiverSystems` 在 receiver storage `usesOuterCs` 时把它 `addOuterSystem` 成 invoke 候选的外层系统：同源兄弟候选存储的 `allTypeVariables.size`(=3) 被当成外层前缀，且 invoke 候选 `outerCS` 偏离 common system，`processPartiallyResolvedCall` → `replaceContentWith` 的 `require(前缀相等)` 必然失败。崩溃使 façade 步骤失败、`TestRunner.runPipelineOnSingleUnit` 走 `ErrorFromFacade` 提前返回，诊断 handler 不再运行 → 21 个标记全部零产出（README 批次 8 原记的“checker 未触发或未接入”归因不成立）。
+
+- official evidence: 诊断语义未改（夹具期望仍由 cjc 1.0.5 / 1.1.3 逐段实测背书）；官方位置分派见 `external/cangjie_compiler/src/Sema/TypeChecker.cpp:1786-1818`（`ReturnExpr` 分支只检查直接表达式、实参经 `CallExpr` 分支报 `_cannot_param`），用于定位残余差异。
+
+- Kotlin counterpart files consulted: `external/kotlin/compiler/resolution.common/src/org/jetbrains/kotlin/resolve/calls/inference/model/NewConstraintSystemImpl.kt:331-401,468-481`；`external/kotlin/compiler/fir/resolve/src/org/jetbrains/kotlin/fir/resolve/calls/candidate/CandidateFactory.kt:40-50,319-327`（`addSubsystemFromAtom` 对 `usesOuterCs` 存储直接跳过）；`.../inference/FirPCLAInferenceSession.kt:50-82`、`.../inference/FirInferenceSession.kt:96-104`（`addOuterSystem` 唯一调用点=上游主候选）；`.../calls/tower/FirInvokeResolveTowerExtension.kt:134-222,340-423`。Kotlin 全树不存在 receiver-as-outer 等价物。
+
+- CFIR owner files changed: `cfir/resolve/src/org/cangnova/cangjie/cfir/resolve/calls/candidate/CandidateFactory.kt:606-624`（`withCallableValueReceiverSystems` 删除 `addOuterSystem` 分支：`usesOuterCs` 的 receiver 不再并入，交由它自己的 `processPartiallyResolvedCall` 集成），与同文件既有规则 `addSubsystemFromAtom:1238-1246`、`withSubsystemFromInvokeReceiver:553-561` 对齐。
+
+- repair principle: 同源（当前会话派生）候选存储不得充当 invoke 的外层系统；invoke 候选基础系统保持 `usesOuterCs=false`，由 `Candidate.system` 懒初始化根基到 `currentCommonSystem`（`outerCS === common`），使 PCLA 回灌在 Kotlin 既有的前缀/血缘不变量下合法。
+
+- fixtures covered: `cfir/analysis-tests/testData/diagnostics2/lambda/lambdaCaptureVarRules.cj`（PSI + LightTree）；回归守卫：LLT `Lambda`（含 `LambdaCapture`）/`Function`/`TypeInfer` 全族与 diagnostics2 双套件。
+
+- verification command(s) and outcome:
+  * 定向：`gradlew-queue.bat :cfir:analysis-tests:test --tests '...CfirAnalysisDiagnostics2PsiTestGenerated$Lambda.testLambdaCaptureVarRules' --tests '...CfirAnalysisDiagnostics2TestGenerated$Lambda.testLambdaCaptureVarRules'` → 崩溃 0 复现；21 个标记全部恢复产出（11 精确一致 / 7 锚宽差异 / 2 处 `_PARAM`→`_RETURN` / 1 缺失，逐条见 README 批次 8 行）。
+  * 邻域（修复前 stash 回退 → 修复后，同过滤）：`--tests '*CfirAnalysisLLTTestGenerated$Lambda*' --tests '*CfirAnalysisLLTPsiTestGenerated$Lambda*' --tests '*CfirAnalysisLLT{,Psi}TestGenerated$Function*' --tests '*CfirAnalysisLLT{,Psi}TestGenerated$TypeInfer*' --tests '*CfirAnalysisDiagnostics2{,Psi}TestGenerated*'` → 两轮均 `1236 tests / 109 failed / 3 skipped`，失败集合逐用例一致（无新增、无消失）；崩溃计数 8 → 0；LLT `Lambda/Function/TypeInfer` 零失败。
+  * 全量：`gradlew-queue.bat :cfir:analysis-tests:test --console=plain --max-workers=1` → `9221 tests completed, 163 failed, 461 skipped`，与 2026-10-06 基线完全一致；1309 个 XML 中前缀断言与 `SourceCodeAnalysisException` 均为 0。
+
+- 残余差异（不在本次修复范围，需单独定论）：① 7 处 `FUNC_CAPTURE_VAR_CANNOT_*` lambda 锚点宽度（CFIR 锚整个 lambda，官方 1 字符 `{`，属 Diagnostic Range Policy 决策）；② 2 处实参位置 kind（CFIR 报 `_RETURN`、官方 `_PARAM`——`CfirClosureCaptureUsageChecker.valueUsage` 的祖先判断需改为“最近位置”分派）；③ 1 处缺失：内层 `{j => j}` 的 `LAMBDA_MUST_HAVE_TYPE_ANNOTATION`（定义点占位已被后续 `g(i)` 调用解出，checker 事后判定失效）。
