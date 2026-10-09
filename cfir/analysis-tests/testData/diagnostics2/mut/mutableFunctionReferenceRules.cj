@@ -54,8 +54,8 @@ struct CtorLambdaCaptureStruct {
     let tag: Int64 = 1
 
     init() {
-        let g = { => <!ILLEGAL_CAPTURE_THIS!>t<!>his.value }
-        let h = { => <!ILLEGAL_CAPTURE_THIS!>t<!>his.tag }
+        let g = { => <!ILLEGAL_CAPTURE_THIS!>this<!>.value }
+        let h = { => <!ILLEGAL_CAPTURE_THIS!>this<!>.tag }
         let _ = g
         let _ = h
     }
@@ -70,7 +70,7 @@ struct CtorNestedFuncStruct {
 
     init() {
         func inner(): Int64 {
-            return <!ILLEGAL_CAPTURE_THIS!>t<!>his.value
+            return <!ILLEGAL_CAPTURE_THIS!>this<!>.value
         }
         let _ = inner()
     }
@@ -109,7 +109,7 @@ open class OC {
     var value: Int64 = 0
 
     init() {
-        let g = { => <!ILLEGAL_CAPTURE_THIS!>t<!>his.value }
+        let g = { => <!ILLEGAL_CAPTURE_THIS!>this<!>.value }
         let _ = g
     }
 }
@@ -121,7 +121,7 @@ abstract class AC {
     var value: Int64 = 0
 
     init() {
-        let g = { => <!ILLEGAL_CAPTURE_THIS!>t<!>his.value }
+        let g = { => <!ILLEGAL_CAPTURE_THIS!>this<!>.value }
         let _ = g
     }
 }
@@ -158,7 +158,7 @@ struct MutLambdaFieldStruct {
     var value: Int64 = 0
 
     mut func inc(): Unit {
-        let g = { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>v<!>alue }
+        let g = { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>value<!> }
         let _ = g
     }
 }
@@ -172,7 +172,7 @@ struct MutNestedFuncFieldStruct {
 
     mut func inc(): Unit {
         func inner(): Int64 {
-            return <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>v<!>alue
+            return <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>value<!>
         }
         let _ = inner()
     }

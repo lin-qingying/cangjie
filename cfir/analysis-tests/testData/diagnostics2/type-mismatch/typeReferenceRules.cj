@@ -75,7 +75,7 @@ func trAliasTargetFunc(): Int64 {
     return 0
 }
 
-func trFuncAsParamType(x: <!NOT_A_TYPE!>t<!>rAliasTargetFunc): Unit {
+func trFuncAsParamType(x: <!NOT_A_TYPE!>trAliasTargetFunc<!>): Unit {
     let _ = x
 }
 
@@ -84,7 +84,7 @@ func trFuncAsParamType(x: <!NOT_A_TYPE!>t<!>rAliasTargetFunc): Unit {
 // kind：sema_not_a_type "'loc' is not a type"，锚 `l`（1 个字符）。1.0.5 / 1.1.3 一致。
 func trLocalNameAsType(): Unit {
     let loc = 1
-    var a: <!NOT_A_TYPE!>l<!>oc = 0
+    var a: <!NOT_A_TYPE!>loc<!> = 0
     a = 1
 }
 
@@ -96,7 +96,7 @@ func trFuncAliasTarget(): Int64 {
     return 0
 }
 
-type trFuncAlias = <!NOT_A_TYPE!>t<!>rFuncAliasTarget
+type trFuncAlias = <!NOT_A_TYPE!>trFuncAliasTarget<!>
 
 // FILE: enumConstructorAsType.cj
 // 形态：把枚举构造器写在类型位置（`EnumType.Ctor`）。官方 PreCheck.cpp:497（QualifiedType 分支，
@@ -255,7 +255,7 @@ enum trYearEnum<T> {
     | Month
 }
 
-var trYearEnumAccess = <!INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS!>t<!>rYearEnum<Int32>.Year<Int64>(4)
+var trYearEnumAccess = <!INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS!>trYearEnum<!><Int32>.Year<Int64>(4)
 
 // FILE: typeReferenceOk.cj
 // 合法对照：类型名的正确用法——构造器调用、枚举构造器、typealias 作类型、枚举类型作类型。1.0.5 / 1.1.3 零 error。

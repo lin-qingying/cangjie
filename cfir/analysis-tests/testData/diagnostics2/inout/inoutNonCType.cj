@@ -10,6 +10,6 @@ foreign func swap(value: Int64, other: Int64): Unit
 func useString(): Unit {
     var s = "x"
     unsafe {
-        swap(<!INOUT_MODIFY_NON_CTYPE!>inout <!TYPE_MISMATCH!>s<!><!>, 1)
+        swap(inout <!INOUT_MODIFY_NON_CTYPE, TYPE_MISMATCH!>s<!>, 1)
     }
 }

@@ -441,7 +441,7 @@ func gamS13Height(h: Int64): Int64 {
 }
 
 func gamMainS13(): Int64 {
-    let b = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>G<!>AMBox13<Int64>(<!TYPE_MISMATCH!>gamS13Height<!>)
+    let b = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>GAMBox13<!><Int64>(<!TYPE_MISMATCH!>gamS13Height<!>)
     return b.value
 }
 // ── 形态 14：同上，但**显式类型实参是函数类型** `(Int32) -> Int32`，与实参 `gamS14Height: (Int64) -> Int64` 不符

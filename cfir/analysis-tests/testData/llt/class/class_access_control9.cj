@@ -7,8 +7,8 @@ open class A {
 }
 
 class B <: A {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>rivate var a: Int32 = 2
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>rotected let d: Int32 = 3
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>private var a: Int32 = 2<!>
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>protected let d: Int32 = 3<!>
 }
 
 main(): Int64 {

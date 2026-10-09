@@ -33,7 +33,7 @@ open class OverrideTypeDiffBase {
 }
 
 class OverrideTypeDiffSub <: OverrideTypeDiffBase {
-    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>p<!>ublic override prop v: String {
+    public override prop <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>v<!>: String {
         get() {
             return "x"
         }

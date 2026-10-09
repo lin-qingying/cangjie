@@ -13,8 +13,8 @@ open class A {
 }
 
 abstract class B <: A {
-    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic func f(): String
-    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic prop a: Int
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>public func f(): String<!>
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>public prop a: Int<!>
 }
 
 main() {}

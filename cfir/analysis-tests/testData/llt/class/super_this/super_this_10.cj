@@ -12,7 +12,7 @@ open class Base<T> {
 }
 
 class Test <: Base<Int32> {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var i: Int32 = 1
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public var i: Int32 = 1<!>
     public init(a: Int32) {}
     public init(a: Test) {}
     public init() {

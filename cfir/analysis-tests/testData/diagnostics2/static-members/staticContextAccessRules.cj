@@ -157,7 +157,7 @@
 class SCAClassThisVar {
     var a: Int64 = 0
     static func f(): Int64 {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a
     }
 }
 
@@ -170,7 +170,7 @@ class SCAClassThisFunc {
         return 1
     }
     static func f(): Int64 {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.g()
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.g()
     }
 }
 
@@ -179,7 +179,7 @@ class SCAClassThisFunc {
 // FILE: classStaticFuncThisAlone.cj
 class SCAClassThisAlone {
     static func f() {
-        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>
     }
 }
 
@@ -191,7 +191,7 @@ class SCAClassThisAlone {
 class SCAStaticInitThis {
     var a: Int64 = 0
     static init() {
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a = 1
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a = 1
     }
 }
 

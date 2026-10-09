@@ -8,7 +8,7 @@ abstract class FaTest {
 
 class Test1 <: FaTest {
     public init(x: Int32) {
-        a = <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.f()
+        a = <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>super<!>.f()
     }
     public func f(): Int32 {
         return 5

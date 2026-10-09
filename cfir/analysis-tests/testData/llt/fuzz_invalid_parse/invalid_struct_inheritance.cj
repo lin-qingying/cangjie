@@ -11,8 +11,8 @@ interface I<T> {
     }
 }
 
-<!TYPE_IMPLEMENT_NON_INTERFACE!>s<!>truct A<T> <: A<A<T>> & I<T> {
-}
+<!TYPE_IMPLEMENT_NON_INTERFACE!>struct A<T> <: A<A<T>> & I<T> {
+}<!>
 
 main() {
     var a: A<Int64> = A<Int64>()

@@ -13,6 +13,6 @@ class Cls {
 
 main() {
     var cls = Cls()
-    <!TYPE_INCOMPATIBLE!>c<!>ls.c += 2
+    <!TYPE_INCOMPATIBLE!>cls.c += 2<!>
     return 0
 }

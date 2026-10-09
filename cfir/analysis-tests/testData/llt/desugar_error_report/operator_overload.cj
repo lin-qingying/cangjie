@@ -9,6 +9,6 @@ open class A {
 
 main(): Int64 {
     var a: A = A()
-    <!TYPE_INCOMPATIBLE!>a<!> -= a
+    <!TYPE_INCOMPATIBLE!>a -= a<!>
     return 0
 }

@@ -3,7 +3,7 @@
 func f1() {
     var a: Int64
     var b: Int64
-    if ((a, b) = <!TYPE_MISMATCH!>(1, 2, 3)<!>) {
+    if ((a, b) = <!MISMATCHED_TYPES_MULTIPLE_ASSIGN!>(1, 2, 3)<!>) {
     }
     b - a - a
 }
@@ -11,7 +11,7 @@ func f1() {
 func f2() {
     var a: Int64
     var b: Int64
-    if ((a, b) = <!TYPE_MISMATCH!>(1, 2, 3)<!>) {
+    if ((a, b) = <!MISMATCHED_TYPES_MULTIPLE_ASSIGN!>(1, 2, 3)<!>) {
         a = 1
     }
     b - a - a
@@ -20,7 +20,7 @@ func f2() {
 func f3() {
     var a: Int64
     var b: Int64
-    if ((a, b) = <!TYPE_MISMATCH!>(1, 2, 3)<!>) {
+    if ((a, b) = <!MISMATCHED_TYPES_MULTIPLE_ASSIGN!>(1, 2, 3)<!>) {
         b = 1
     }
     b - a - a

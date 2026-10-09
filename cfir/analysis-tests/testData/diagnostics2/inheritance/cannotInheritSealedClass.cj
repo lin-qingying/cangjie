@@ -19,7 +19,7 @@ package pb
 
 import pa.Sealed
 
-public class <!CANNOT_INHERIT_SEALED!>Sub<!> <: Sealed {
+public class Sub <: <!CANNOT_INHERIT_SEALED!>Sealed<!> {
     public init() {
         super()
     }

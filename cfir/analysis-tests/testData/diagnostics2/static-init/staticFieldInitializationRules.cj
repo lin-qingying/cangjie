@@ -67,7 +67,7 @@
 // 附注：无 static init → "you may add an initializer inline or define a 'static init' to perform initialization"。
 // FILE: classStaticVarNoInit.cj
 class StaticFieldClassNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 2：class 的 static let 无初值、无 static init（var / let 同一 kind、同一锚点）
@@ -75,7 +75,7 @@ class StaticFieldClassNoInit {
 // 官方 CheckStaticInitForTypeDecl 只看 ASTKind::VAR_DECL + STATIC 属性，var / let 一视同仁。
 // FILE: classStaticLetNoInit.cj
 class StaticFieldClassLetNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static let y: Int64<!>
+    static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>y<!>: Int64
 }
 
 // ── 形态 3：struct 的 static var 无初值、无 static init（struct 与 class 同走本检查）
@@ -83,14 +83,14 @@ class StaticFieldClassLetNoInit {
 // 官方调用点 InitializationChecker.cpp:428-432（STRUCT_DECL preVisiter）同样调 CheckStaticInitForTypeDecl。
 // FILE: structStaticVarNoInit.cj
 struct StaticFieldStructNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 4：struct 的 static let 无初值（struct + let 交叉形态）
 // kind：sema_type_uninitialized_static_field，锚整条声明。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: structStaticLetNoInit.cj
 struct StaticFieldStructLetNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static let y: Int64<!>
+    static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>y<!>: Int64
 }
 
 // ── 形态 5：class 有 static init 但字段只在 static init 的 if 单支里赋值 —— 条件赋值不算初始化
@@ -98,7 +98,7 @@ struct StaticFieldStructLetNoInit {
 // 附注：有 static init → "…or initialize the variable in the 'static init'" + "static init defined here"。
 // FILE: classStaticInitConditionalAssign.cj
 class StaticFieldConditionalAssign {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 
     static init() {
         if (true) {
@@ -111,7 +111,7 @@ class StaticFieldConditionalAssign {
 // kind：sema_type_uninitialized_static_field，锚整条声明。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: classStaticInitIndirectAssign.cj
 class StaticFieldIndirectAssign {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 
     static func setIt(): Unit {
         x = 1
@@ -126,7 +126,7 @@ class StaticFieldIndirectAssign {
 // kind：sema_type_uninitialized_static_field，锚整条声明。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: classStaticInitLoopAssign.cj
 class StaticFieldLoopAssign {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 
     static init() {
         for (i in 0..3) {
@@ -143,7 +143,7 @@ class StaticFieldLoopAssign {
 // USED_BEFORE_INITIALIZATION 交织，本段只聚焦"未调用 lambda 不算初始化"。
 // FILE: classStaticInitLambdaNotCalled.cj
 class StaticFieldLambdaNotCalled {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 
     static init() {
         let f = { => x = 1 }
@@ -157,7 +157,7 @@ class StaticFieldLambdaNotCalled {
 // static 字段赋值来不及置 INITIALIZED。实例字段 y 有初值，不伴随 CLASS_UNINITIALIZED_FIELD。
 // FILE: classStaticVarAssignedInInstanceInit.cj
 class StaticFieldAssignedInInstanceInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
     var y: Int64 = 0
 
     init() {
@@ -170,8 +170,8 @@ class StaticFieldAssignedInInstanceInit {
 // 1.0.5 / 1.1.3 一致 Range (2,5)..(2,24) 与 (3,5)..(3,24)。
 // FILE: classTwoStaticFieldsNoInit.cj
 class StaticFieldTwoNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var a: Int64<!>
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static let b: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
+    static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>b<!>: Int64
 }
 
 // ── 形态 11：class 有 static init 但只给另一个 static 字段赋值，未赋值的那个报错
@@ -179,7 +179,7 @@ class StaticFieldTwoNoInit {
 // b 已由 static init 赋值，不报。
 // FILE: classStaticInitAssignsOther.cj
 class StaticFieldInitAssignsOther {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var a: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
     static var b: Int64
 
     static init() {
@@ -191,18 +191,18 @@ class StaticFieldInitAssignsOther {
 // kind：sema_type_uninitialized_static_field，锚整条声明（含 public）。1.0.5 / 1.1.3 一致 Range (2,5)..(2,31)。
 // FILE: classStaticVarPublicNoInit.cj
 class StaticFieldPublicNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>public static var x: Int64<!>
+    public static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 13：同文件两个 class 各有一个未初始化 static 字段 —— 各自独立检查、各报一条
 // kind：sema_type_uninitialized_static_field × 2。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24) 与 (6,5)..(6,24)。
 // FILE: twoClassesEachStaticNoInit.cj
 class StaticFieldTC1 {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var a: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
 }
 
 class StaticFieldTC2 {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static let b: Int64<!>
+    static let <!TYPE_UNINITIALIZED_STATIC_FIELD!>b<!>: Int64
 }
 
 // ── 形态 14（合法对照 A）：class 的 static var 有内联初值 —— 不报
@@ -264,7 +264,7 @@ class StaticFieldPropNoInitOk {
 // 1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: classStaticVarAndPropNoInit.cj
 class StaticFieldVarAndProp {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 
     static prop q: Int64 {
         get() {
@@ -277,14 +277,14 @@ class StaticFieldVarAndProp {
 // kind：sema_type_uninitialized_static_field，锚整条声明。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: openClassStaticVarNoInit.cj
 open class StaticFieldOpenNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 21：abstract class 的 static var 未初始化 —— 与普通 class 同诊断
 // kind：sema_type_uninitialized_static_field，锚整条声明。1.0.5 / 1.1.3 一致 Range (2,5)..(2,24)。
 // FILE: abstractClassStaticVarNoInit.cj
 abstract class StaticFieldAbstractNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 22：泛型 class 的 static var 未初始化（字段类型不依赖泛型参数）—— 与普通 class 同诊断
@@ -293,7 +293,7 @@ abstract class StaticFieldAbstractNoInit {
 // 本段刻意用 Int64 排除那条。
 // FILE: genericClassStaticVarNoInit.cj
 class StaticFieldGenericNoInit<T> {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 // ── 形态 23：子类继承含未初始化 static 字段的父类 —— 伴随一条 CLASS_UNINITIALIZED_FIELD（不写标记）
@@ -304,7 +304,7 @@ class StaticFieldGenericNoInit<T> {
 // 与 diagnostics2/generic/genericBoundRules.cj 覆盖，本文件不重复。
 // FILE: classInheritsStaticFieldNoInit.cj
 open class StaticFieldSuperNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var x: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>x<!>: Int64
 }
 
 class StaticFieldSubInherits <: StaticFieldSuperNoInit {
@@ -316,7 +316,7 @@ class StaticFieldSubInherits <: StaticFieldSuperNoInit {
 // Range (8,5)..(8,6)），已在 diagnostics/initialization/classUninitializedFieldRich.cj 覆盖，本文件不重复。
 // FILE: classStaticAndInstanceFieldNoInit.cj
 class StaticFieldAndInstanceNoInit {
-    <!TYPE_UNINITIALIZED_STATIC_FIELD!>static var a: Int64<!>
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
     var b: Int64
 
     static init() {

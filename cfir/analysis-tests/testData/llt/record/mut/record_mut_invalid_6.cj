@@ -8,9 +8,9 @@ interface I1 {
 }
 
 struct R1 <: I1 {
-    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic mut func foo1() {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>public mut func foo1() {
         return 0
-    }
+    }<!>
 }
 
 interface I2 {
