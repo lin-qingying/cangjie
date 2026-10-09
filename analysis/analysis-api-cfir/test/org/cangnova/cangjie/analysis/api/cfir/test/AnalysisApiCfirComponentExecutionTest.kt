@@ -106,14 +106,19 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun completionCandidateShadowing(mainFile: CjFile, testServices: TestServices) {
         val functions = testServices.allNamedFunctions()
-        val topLevelShadowed = functions.single { it.name == "shadowedByLocal" }
+        // 同名顶层函数有两个（shadowed.cj 与 provider.cj），按文件区分：本用例要的是被遮蔽的那个。
+        val topLevelShadowed = functions.single {
+            it.name == "shadowedByLocal" && it.containingFile.name == "shadowed.cj"
+        }
         val memberCandidate = functions.single { it.name == "memberCandidate" }
         val memberUseSite = functions.single { it.name == "useMember" }
         // 遮蔽位置取 `consume` 里**使用**局部变量的那个引用：绑定名本身也是简单名（绑定模式），
         // 按文件序取最后一个即使用点，同时显式排除绑定模式，免得定语依赖书写顺序。
+        val consumeUseSite = functions.single { it.name == "consume" }
+        // 绑定名与使用点都是简单名，按文件序取最后一个即使用点。
         val shadowingPosition = PsiTreeUtil
-            .findChildrenOfType(memberUseSite.containingFile, CjSimpleNameExpression::class.java)
-            .last { it.referencedName == "shadowedByLocal" && it !is CjBindingPattern }
+            .findChildrenOfType(consumeUseSite, CjSimpleNameExpression::class.java)
+            .last { it.referencedName == "shadowedByLocal" }
         val memberPosition = PsiTreeUtil
             .findChildrenOfType(memberUseSite, CjSimpleNameExpression::class.java)
             .single { it.referencedName == "memberCandidate" }
@@ -141,6 +146,20 @@ class AnalysisApiCfirComponentExecutionTest : AbstractAnalysisApiExecutionTest(
                 CaCompletionCandidateStatus.DIRECT,
                 memberDecision.status,
                 "成员候选经隐式接收者所在的成员层绑定，不应落到 UNKNOWN",
+            )
+
+            // ④ 缩短回归（5.6①「旧三态调用者」）：被局部遮蔽的短名不得进入缩短规划。
+            // 只把状态判成 HIDDEN 还不够——旧三态调用者若按 shouldHide 的反面放行，就会把
+            // 「provider.shadowedByLocal()」缩短成一个解析到局部变量的短名。正对照同样必要：
+            // 没有它，「全都不缩短」也能让上一条断言变绿。
+            val plan = mainFile.collectReferenceShorteningPlan()
+            assertTrue(
+                plan.operations.none { it.expression.text == "provider.shadowedByLocal()" },
+                "短名被局部遮蔽时不得缩短：加 import 也改不了短名绑定，写下的短名会解析到局部变量",
+            )
+            assertTrue(
+                plan.operations.any { it.expression.text == "provider.plain()" },
+                "未遮蔽的限定引用必须照常进入缩短规划（正对照）",
             )
         }
     }
