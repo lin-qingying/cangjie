@@ -8,6 +8,6 @@ open class Base {
 
 class Child <: Base {
     public init() {
-        <!ILLEGAL_SUPER_ALONE!>s<!>uper
+        <!ILLEGAL_SUPER_ALONE!>super<!>
     }
 }

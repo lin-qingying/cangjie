@@ -12,6 +12,6 @@ foreign func consumeCString(p: CString): Unit
 func inoutOnCString(): Unit {
     unsafe {
         var s = getCString()
-        consumeCString(<!INOUT_MODIFY_CSTRING_OR_ZEROSIZED!>inout s<!>)
+        consumeCString(inout <!INOUT_MODIFY_CSTRING_OR_ZEROSIZED!>s<!>)
     }
 }

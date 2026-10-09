@@ -21,8 +21,8 @@ struct R {
     }
 }
 
-<!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>e<!>xtend R <: I {
+<!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>extend R <: I {
     public func cc(): Int32 {
         return 1
     }
-}
+}<!>

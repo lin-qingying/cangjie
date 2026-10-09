@@ -32,12 +32,14 @@
 //   - sema_use_func_capture_var_alone 走 `DiagnoseRefactor(kind, expr)`（Diags.cpp:572-573）→ MakeRange(begin, end)，
 //     锚**整个**被使用的闭包表达式：lambda 是整个 `{...}` 字面量（多行 lambda 从 `{` 起、到 `}` 止），具名局部函数是函数名标识符。
 //   - sema_func_capture_var_cannot_assign / _return / _param / _expr 走 `diag.Diagnose(e, kind, ...)`（TypeChecker.cpp:1773/1779），
-//     没有 MainHint.Range，取 GetBegin() 一个字符，锚被使用闭包表达式的**首字符**：lambda 是 `{`，函数引用是标识符；1 字符锚点按房规写成"开标记 + `{` + 闭标记"
-//     （标记之间只含 `{`，本文件里 9 处 FUNC_CAPTURE_VAR_CANNOT_* 的 lambda 锚点都是这个形式；注释里不能出现字面的标记序列）。
+//     没有 MainHint.Range，官方在 JSON 里退化成 GetBegin() 一个字符：lambda 只锚 `{`、函数引用只锚标识符首字符。
+//     **内联标记不跟这个窄锚**：本项目 range policy 要求锚点覆盖完整最小单位（单个 token 或以上，不切 token），
+//     所以这里的标记按"整个被使用的闭包表达式"写——lambda 是整个 `{...}` 字面量、函数引用是整个标识符；
+//     各段注释里的官方 Range 数字只是取证记录，二者对多字符锚点宽度不同是预期。
 //   - sema_lambdaExpr_must_have_type_annotation 走 `DiagnoseRefactor(kind, *node)`，node 是第一个仍无类型的形参节点，实测锚形参名标识符。
 //   位置决定 kind：变量声明的初始化器 → _cannot_assign；return 的表达式 → _cannot_return；调用实参 → _cannot_param；
 //   其余位置（裸 lambda 表达式语句、lambda 函数体里的裸函数名）→ _cannot_expr。
-//   cjc 的 MainHint.Range 结束列是开区间，本文件标记逐字符对齐官方范围。
+//   cjc 的 MainHint.Range 结束列是开区间；官方 Range 与 CFIR 标记按上一条的两种口径分别书写。
 // 取证时必须避开的干扰：
 //   - `let {…} = …`（lambda 字面量紧跟 `let`）是解析错误 "expected identifier or pattern after 'let', found '{'"，两版都报，
 //     而且因为 CanBeEmitted 只发第一个错误类别，同段的语义诊断被吞掉。`let name = {…}`、`var name = {…}`、`let name: T = {…}`
@@ -49,12 +51,10 @@
 //   - `let f = {=> v}`（把捕获 var 的 lambda 存进变量再调用）官方照样报 use_func_capture_var_alone——捕获 var 的闭包只能
 //     字面量直接调用（`{=> v}()`）；合法对照段用 `let x = {=> v}()` 这种立即调用形态。
 //   - 段内多余的 `func` 会在 CHIR 阶段多出 chir_dce_unused_function 警告（Level::WARNING，不参与框架比较），尽量避免。
-// 已知 CFIR 锚点 / 诊断名差异（期望一律按官方写，CFIR 侧红即缺口）：
+// 已知 CFIR 诊断名 / 文案差异（诊断名与锚点按上一条口径书写，文案差异不参与内联比较）：
 //   - CfirClosureCaptureUsageChecker 的四个 CANNOT_* 用文案 "cannot be returned" / "cannot be passed as an argument" /
 //     "cannot be used as an expression"（CfirErrorsDefaultMessages.kt:911-913），官方是 "cannot be used as a return value" /
 //     "... as a param" / "... as a expression"（DiagnosticSema.def:48-50）。
-//   - CfirFunctionLambdaChecker 把 LAMBDA_MUST_HAVE_TYPE_ANNOTATION 锚在**整个形参节点**（含 `: Type`），
-//     官方只锚形参名标识符（官方 DiagInferParamTyFail 只报第一个无类型的形参，且该形参不可能带类型）。
 //   - FUNC_CAPTURE_VAR_CANNOT_PARAM / _RETURN 的官方报告点（函数引用 + 参数 / 返回值位置）在本机两个版本上不可达，
 //     只对 lambda 报；见文末"已删除的形态"1-3。
 // 已有覆盖不重复（testData/llt 旧套件，CRLF）：lambda/lambda_capture/（capture3、capture4、capture5、capture7、capture_transitive、
@@ -154,7 +154,7 @@ func transitiveCaptureLambdaCannotAssign(): Int64 {
     func f(): Int64 {
         return v
     }
-    let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{<!>=> f()}
+    let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{=> f()}<!>
     return x()
 }
 
@@ -169,7 +169,7 @@ func transitiveCaptureLambdaCannotAssignInLoopBlock(): Int64 {
     var i: Int64 = 0
     do {
         i = i + 1
-        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{<!>=> f()}
+        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{=> f()}<!>
         i = i + x()
     } while (i < 3)
     return i
@@ -184,7 +184,7 @@ func transitiveCaptureLambdaCannotReturn(): () -> Int64 {
     func f(): Int64 {
         return v
     }
-    return <!FUNC_CAPTURE_VAR_CANNOT_RETURN!>{<!>=> f()}
+    return <!FUNC_CAPTURE_VAR_CANNOT_RETURN!>{=> f()}<!>
 }
 
 // FILE: transitiveCaptureLambdaCannotParam.cj
@@ -200,7 +200,7 @@ func transitiveCaptureLambdaCannotParam(): Int64 {
     func f(): Int64 {
         return v
     }
-    return transitiveTakeLambda(<!FUNC_CAPTURE_VAR_CANNOT_PARAM!>{<!>=> f()})
+    return transitiveTakeLambda(<!FUNC_CAPTURE_VAR_CANNOT_PARAM!>{=> f()}<!>)
 }
 
 // FILE: transitiveCaptureLambdaCannotParamAsMemberCallArg.cj
@@ -218,7 +218,7 @@ func transitiveCaptureLambdaCannotParamAsMemberCallArg(): Int64 {
         return v
     }
     let obj = TransitiveArgTaker()
-    return obj.take(<!FUNC_CAPTURE_VAR_CANNOT_PARAM!>{<!>=> f()})
+    return obj.take(<!FUNC_CAPTURE_VAR_CANNOT_PARAM!>{=> f()}<!>)
 }
 
 // FILE: ifBlockInnerLambdaCannotAssign.cj
@@ -231,8 +231,8 @@ func ifBlockInnerLambdaCannotAssign(b: Bool): Unit {
         return v
     }
     if (b) {
-        let inner = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{<!>=> f()}
-        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{<!>=> f()}
+        let inner = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{=> f()}<!>
+        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{=> f()}<!>
         inner()
         x()
     }
@@ -250,7 +250,7 @@ func whileBlockInnerLambdaCannotAssign(): Unit {
     var i: Int64 = 0
     while (i < 3) {
         i = i + 1
-        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{<!>=> f()}
+        let x = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>{=> f()}<!>
         x()
     }
     return
@@ -265,7 +265,7 @@ func transitiveCaptureLambdaCannotExpr(): Unit {
     func f(): Int64 {
         return v
     }
-    <!FUNC_CAPTURE_VAR_CANNOT_EXPR!>{<!>=> f()}
+    <!FUNC_CAPTURE_VAR_CANNOT_EXPR!>{=> f()}<!>
     return
 }
 

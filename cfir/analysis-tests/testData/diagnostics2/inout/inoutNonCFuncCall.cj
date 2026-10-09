@@ -8,5 +8,5 @@ func norm(x: Int64): Unit {
 
 func useNonCFunc(): Unit {
     var v = 1
-    norm(<!INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING!>inout v<!>)
+    norm(inout <!INOUT_CAN_ONLY_USED_IN_CFUNC_CALLING!>v<!>)
 }

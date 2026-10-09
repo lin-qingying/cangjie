@@ -269,7 +269,7 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | `extend/extendMutInterfaceOnPrimitive` | `extend` 首字母；无 `REDUNDANT_MODIFIER`；`mut` 上另有 `PROPERTY_MUST_HAVE_ACCESSORS` | `extend` 整词；接口成员 `public` 不报 redundant；无 `PROPERTY_MUST_HAVE_ACCESSORS` |
 | `extend/extendImportedInterfaceOrphan` | 接口成员 `public` 各一条 `REDUNDANT_MODIFIER` | 不产出 |
 | `general/coreObjectNotFoundNoPrelude` | 锚 `Object` 首字母；文件首字符无标记 | 锚整个 `Object`；文件首字符多一条 `CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE` |
-| `inference/arrayLiteralAndMultipleAssign`、`assign/mismatchedTypesMultipleAssign` | `MISMATCHED_TYPES_MULTIPLE_ASSIGN` | `TYPE_MISMATCH` |
+| `inference/arrayLiteralAndMultipleAssign`、`assign/mismatchedTypesMultipleAssign` | `MISMATCHED_TYPES_MULTIPLE_ASSIGN` | `TYPE_MISMATCH`（2026-10-06 已修复：`CfirAssignmentTypeMismatchChecker` 专用分支改报 `MISMATCHED_TYPES_MULTIPLE_ASSIGN`，实参取整个 RHS 类型；LLT `multipleAssignExpr` 族与 `InitializationCheck/variable_use_before_init_03/04` 的旧 `TYPE_MISMATCH` 标记同步迁移） |
 | `inheritance/cannotInheritSealedClass` | 锚子类名 `Sub` | 锚父类型引用 `Sealed` |
 | `inheritance/superAlone`、`inheritance/superclassMustBePlacedFirst`、`static-init/thisOrSuperInStaticInit` | 关键字首字母 1 字符 | 整个关键字 |
 | `inout/inoutCString`、`inout/inoutNonCFuncCall` | 锚 `inout s` / `inout v` | 锚实参 `s` / `v` |
@@ -412,7 +412,7 @@ cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官
 | `const/constFunctionRules` 形态 22 | 下标表达式 `EXPECT_CONST` 锚基表达式 `constSubscriptArr` | 锚 `constSubscriptArr[0]` 含下标 |
 | `const/constFunctionRules` 合法对照 L5 | lambda 捕获 const 函数里的局部 `let` 零诊断 | 多报一条 `EXPECT_CONST` 锚 `b`（CFIR 把捕获的 let 当非常量） |
 | `const/constFunctionRules` 其余 26 个标记 | 与 CFIR 一致 | 绿（PSI / LightTree 一致） |
-| `lambda/lambdaCaptureVarRules` | 21 个标记（5 USE_FUNC_CAPTURE_VAR_ALONE / 12 FUNC_CAPTURE_VAR_CANNOT_* / 4 LAMBDA_MUST_HAVE_TYPE_ANNOTATION） | 全部零产出：PSI 与 LightTree 两条路径在 FRONTEND 阶段对这 21 个标记一条诊断都不报（`CfirClosureCaptureUsageChecker` 未在这些形态上触发或未接入） |
+| `lambda/lambdaCaptureVarRules` | 21 个标记（5 USE_FUNC_CAPTURE_VAR_ALONE / 12 FUNC_CAPTURE_VAR_CANNOT_* / 4 LAMBDA_MUST_HAVE_TYPE_ANNOTATION） | 2026-10-08 二次修复后**全绿**（PSI / LightTree / WithoutAliasExpansion 三套件）。三项残余差异逐条销账：① 锚点宽度——`FUNC_CAPTURE_VAR_CANNOT_*` 锚整个被使用闭包表达式（lambda 整个 `{…}` 字面量、函数引用整个标识符），这是本项目 range policy 的"完整最小单位"口径，官方 `GetBegin()` 单字符窄锚不跟，标记即按此书写；② 实参位置 kind——`CfirClosureCaptureUsageChecker.valueUsage` 改为官方"直接子节点"分派（initializer / result / 实参 identity 判定），`transitiveTakeLambda({=> f()})` 与 `obj.take({=> f()})` 报 `_PARAM`；③ 内层 `{j => j}` 的 `LAMBDA_MUST_HAVE_TYPE_ANNOTATION`——新增 resolve 侧"定义点推断失败"事实 `lambdaParameterInferenceFailedAtDefinition`（`CfirSyntheticCallGenerator` 在合成外层调用完成后固化，只写一次），checker 优先消费该事实、事实缺失才回退实时类型判定。此前"全部零产出"是 `CandidateFactory.withCallableValueReceiverSystems` 把同源 receiver 存储当 outer 导入触发 PCLA 前缀断言崩溃、模块分析中止所致（已修，见 REPAIR_LOG 2026-10-08） |
 
 `CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的两个新用例（Const / Lambda）均未失败（该套件本次被跳过）。
 

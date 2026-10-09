@@ -215,18 +215,18 @@ interface GenericOperatorInInterface {
 // 1.0.5 / 1.1.3 一致。附带一条 sema_class_uninitialized_field（锚 `let` 的首字母 `l`，1 字符）—— struct 的 let 字段；该伴随诊断已按官方写 CLASS_UNINITIALIZED_FIELD 标记（锚字段声明首字符 `let` 的首字母，官方 Diagnose 取 VarDecl 的 GetBegin）
 // 不带初始化时官方必然报未初始化；改成 `= X()` 又会触发 sema_recursive_constructor_call，见文件末"已删除的形态 7"。
 // FILE: valueTypeRecursiveSelfField.cj
-<!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveSelfField {
+<!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveSelfField {
     let <!CLASS_UNINITIALIZED_FIELD!>self<!>: ValueTypeRecursiveSelfField
-}
+}<!>
 
 // ── 形态 17：两个 struct 的非 static 字段互相引用
 // kind：sema_value_type_recursive，上界串
 //      'ValueTypeRecursiveMutualFieldA->ValueTypeRecursiveMutualFieldB->ValueTypeRecursiveMutualFieldA'；
 // 锚源码序最靠前的 struct 声明首字符。1.0.5 / 1.1.3 一致。两条 sema_class_uninitialized_field 同形态 16，两条均已按官方写 CLASS_UNINITIALIZED_FIELD 标记（锚字段声明首字符 `let` 的首字母，官方 Diagnose 取 VarDecl 的 GetBegin）
 // FILE: valueTypeRecursiveMutualFields.cj
-<!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveMutualFieldA {
+<!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveMutualFieldA {
     let <!CLASS_UNINITIALIZED_FIELD!>other<!>: ValueTypeRecursiveMutualFieldB
-}
+}<!>
 
 struct ValueTypeRecursiveMutualFieldB {
     let <!CLASS_UNINITIALIZED_FIELD!>back<!>: ValueTypeRecursiveMutualFieldA
@@ -237,9 +237,9 @@ struct ValueTypeRecursiveMutualFieldB {
 //      'ValueTypeRecursiveTupleFieldA->ValueTypeRecursiveTupleFieldB->ValueTypeRecursiveTupleFieldA'；锚 A 的声明首字符。
 // 1.0.5 / 1.1.3 一致。
 // FILE: valueTypeRecursiveThroughTupleField.cj
-<!VALUE_TYPE_RECURSIVE!>s<!>truct ValueTypeRecursiveTupleFieldA {
+<!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveTupleFieldA {
     let <!CLASS_UNINITIALIZED_FIELD!>pair<!>: (ValueTypeRecursiveTupleFieldB, Int64)
-}
+}<!>
 
 struct ValueTypeRecursiveTupleFieldB {
     let <!CLASS_UNINITIALIZED_FIELD!>back<!>: ValueTypeRecursiveTupleFieldA

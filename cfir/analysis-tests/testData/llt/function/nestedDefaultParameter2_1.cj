@@ -32,7 +32,7 @@ class Class {
             func test3(b!: Bool = {
                     =>
                     Class().var1
-                    true && <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>t<!>est()
+                    true && <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>test<!>()
                 }()): Bool {
                 b;
             }

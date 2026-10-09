@@ -5,7 +5,7 @@ abstract class A {
     var b: B
     init() {
         b = B()
-        b.bind(<!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his)
+        b.bind(<!THIS_AS_EXPRESSION_IN_FUNC!>this<!>)
     }
 }
 

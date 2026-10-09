@@ -10,5 +10,5 @@ class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>A<!> <: I {}
 interface I2 <: I {}
 
 class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!> {
-    <!MISSING_FUNC_BODY!>s<!>tatic func a(): Unit
+    <!MISSING_FUNC_BODY!>static func a(): Unit<!>
 }
