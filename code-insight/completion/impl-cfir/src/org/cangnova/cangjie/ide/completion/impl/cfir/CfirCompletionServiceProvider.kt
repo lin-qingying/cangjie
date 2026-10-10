@@ -1,11 +1,15 @@
 package org.cangnova.cangjie.ide.completion.impl.cfir
 
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.ide.completion.api.CangJieCompletionService
 import org.cangnova.cangjie.ide.completion.api.completionServiceRegistry
 import org.cangnova.cangjie.ide.completion.impl.cfir.resolve.CfirCompletionDeclarationResolver
 import org.cangnova.cangjie.ide.completion.impl.shared.resolve.completionDeclarationResolverRegistry
+
+/** 装配失败的日志出口：见 [cfirCompletionServiceOrNull] 的失败语义说明。 */
+private val LOG = logger<CfirCompletionServiceProvider>()
 
 /**
  * 仓颉补全服务的项目级提供者。
@@ -37,4 +41,9 @@ class CfirCompletionServiceProvider {
  */
 fun cfirCompletionServiceOrNull(project: Project): CangJieCompletionService? = runCatching {
     project.getService(CfirCompletionServiceProvider::class.java)?.service(project)
+}.onFailure {
+    // 装配**失败**与「实现不在 classpath」必须可区分：后者由 `getService` 返回 null（不抛），
+    // 前者被 `runCatching` 吞掉后只剩「零候选」这一种表现——正是本模块 KDoc 点名的
+    // 最难定位的失败形态。因此这里必须留下可检索的日志。
+    LOG.warn("CangJie completion service assembly failed; this completion will produce no candidates.", it)
 }.getOrNull()

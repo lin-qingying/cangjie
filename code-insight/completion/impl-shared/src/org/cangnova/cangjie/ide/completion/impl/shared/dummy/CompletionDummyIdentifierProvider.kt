@@ -1,6 +1,9 @@
 package org.cangnova.cangjie.ide.completion.impl.shared.dummy
 
 import com.intellij.codeInsight.completion.CompletionParameters
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.psi.DummyHolderViewProvider
+import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionContexts
@@ -52,10 +55,16 @@ object CompletionDummyIdentifierProvider {
      *
      * 返回 `null` 表示该位置不允许补全：调用方必须停止，
      * 绝不能在仍含裸 dummy 的 PSI 上继续分析。
+     *
+     * **不做占位替换**（`replace = false`）：平台补全副本的 PSI 由平台自己持有，
+     * 替换（改文档提交或换元素）会让平台随后访问的元素失效——产品级 light fixture 实测
+     * 报 `Invalid PSI Element ... containing file is null; hierarchy=CjNameReferenceExpression`
+     * 或 `different providers: DummyHolderViewProvider(...)`，症状是整类测试失败而候选看不出问题。
+     * 裸 dummy 在这个入口上仍能产出局部/关键字候选（实测 9 条），因此这里选择**不写**。
      */
     fun provide(parameters: CompletionParameters): CompletionDummyContext? {
         val position = parameters.position.nearestCangJieElement() ?: return null
-        return provideAt(position)
+        return provideAt(position, replace = false)
     }
 
     /**
@@ -66,15 +75,14 @@ object CompletionDummyIdentifierProvider {
      * 这类最难定位的失败的源头。无头宿主（LSP）同样拿不到平台补全参数，
      * 也需要一个直接入口。
      *
-     * 与平台入口的差别只有「怎么找到位置」：这里按偏移取叶子节点再向上找最近的仓颉元素，
-     * 之后的修正逻辑完全共用。
+     * 与平台入口的差别有两处：**怎么找到位置**（这里按偏移取叶子再向上找最近的仓颉元素），
+     * 以及**可以做占位替换**（`replace = true`）——调用方持有副本，没有别的人在用它的 PSI。
      *
      * **必须在命令或 undo-transparent 动作内调用**：占位替换是一次 PSI 写，
      * 命令外调用会被平台拒绝（`IncorrectOperationException: Must not change PSI outside
-     * command or undo-transparent action`）。平台补全入口本身处于补全命令内，因此天然满足；
-     * 无头宿主需要自己开命令。
+     * command or undo-transparent action`）。无头宿主需要自己开命令。
      *
-     * @param file 含 dummy 文本的文件（平台副本或调用方自建的副本）。
+     * @param file 含 dummy 文本的文件（调用方自建的副本）。
      * @param offset 文档偏移。
      * @return 修正结果；位置不允许补全时返回 `null`。
      * @throws com.intellij.util.IncorrectOperationException 在命令外调用时。
@@ -82,18 +90,19 @@ object CompletionDummyIdentifierProvider {
     fun provideFor(file: CjFile, offset: Int): CompletionDummyContext? {
         val leaf = file.findElementAt(offset) ?: return null
         val position = leaf.nearestCangJieElement() ?: return null
-        return provideAt(position)
+        return provideAt(position, replace = true)
     }
 
     /**
-     * 对已定位的仓颉元素执行修正。两个入口共用，保证「怎么找到位置」不影响修正结论。
+     * 对已定位的仓颉元素执行修正。两个入口共用，保证「怎么找到位置」不影响修正结论；
+     * 唯一按入口区分的是**能不能替换**（见 [provide] 的说明）。
      */
-    private fun provideAt(position: CjElement): CompletionDummyContext? {
+    private fun provideAt(position: CjElement, replace: Boolean): CompletionDummyContext? {
         val dummyFile = position.containingCjFile ?: return null
         if (position.isInsideRawStringLiteral()) return null
 
         val kind = CompletionPositionContexts.classify(position).kind
-        val replaced = replaceWithPlaceholder(dummyFile, position, kind) ?: position
+        val replaced = if (replace) replaceWithPlaceholder(dummyFile, position, kind) ?: position else position
         return CompletionDummyContext(
             dummyFile = dummyFile,
             position = replaced,
@@ -114,11 +123,74 @@ object CompletionDummyIdentifierProvider {
     ): CjElement? {
         if (!kind.needsCallablePlaceholder) return null
         val expression = position as? CjExpression ?: position.parent as? CjExpression ?: return null
+        val start = expression.textRange.startOffset
+        val end = expression.textRange.endOffset
+        if (end <= start) return null
+
+        // 两条载体路径，**语义完全一致**（同一段文本被换成同一个占位调用），差别只在载体形态：
+        //
+        // - **PSI 跟随文档**（文档驱动的副本）：改文本并提交，PSI 随文档重解析。
+        // - **PSI 不跟随文档**（light 副本）：文本在创建时就固定，只能改 PSI 树本身；
+        //   此时若目标挂在平台 `DummyHolder` 视图提供器下则**放弃替换**（见 [replaceExpressionViaPsi]）。
+        //
+        // 参照实现（Kotlin `AbstractCompletionDummyIdentifierProvider`）只算**文本**后缀
+        // 交给平台，从不跨文件搬 PSI 元素。
+        replaceTextViaDocument(dummyFile, start, end, expression.text)?.let { return it }
+        return replaceExpressionViaPsi(dummyFile, expression)
+    }
+
+    /**
+     * 首选路径：经文档替换占位文本，返回按偏移重新定位后的元素。
+     *
+     * 写入落在**副本**的文档上：平台补全命令内允许；无头宿主必须自己开命令（见 [provideFor]）。
+     *
+     * **文档获取要兜底**：平台补全副本的 view provider 不是 event-system enabled，
+     * `PsiDocumentManager.getDocument(psiFile)` 直接返回 null，只能退到
+     * `FileDocumentManager.getDocument(虚拟文件)`——实测平台副本在那一层有文档。
+     *
+     * **为什么要自检**：「有文档」不等于「PSI 跟着文档走」。light 载体（LSP 自建副本、
+     * 解析夹具）的 PSI 文本在创建时就固定，`getDocument` 会为它现场造一个文档，
+     * 改完只得到 PSI 与文档互相矛盾的树（实测断言
+     * `Inconsistent cangjie.FILE tree ... nodeLength=54; fileLength=65`）。
+     *
+     * 判据取**结果**：提交后核对 PSI 文本是否已变成占位调用（按区间比对，不按元素文本——
+     * 偏移末尾的叶子是 `)`，它最近的仓颉元素是实参列表 `()`，拿它比对整串占位文本必然不匹配）。
+     * 没跟随就**撤销文档改动**再返回 `null`，由调用方走 PSI 回退；绝不能把改过的文档
+     * 留给一个没重解析的 PSI。
+     */
+    private fun replaceTextViaDocument(dummyFile: CjFile, start: Int, end: Int, originalText: String): CjElement? {
+        val manager = PsiDocumentManager.getInstance(dummyFile.project)
+        val document = manager.getDocument(dummyFile)
+            ?: FileDocumentManager.getInstance().getDocument(dummyFile.viewProvider.virtualFile)
+            ?: return null
+        document.replaceString(start, end, PLACEHOLDER_CALL)
+        manager.commitDocument(document)
+        // 判据是「PSI 有没有跟随文档」，且只能按**文本**判断：平台补全副本的 view provider
+        // 不是 event-system enabled，`getDocument(psiFile)` 直接返回 null，只能经虚拟文件拿到
+        // 文档（实测 doc=true），而这类副本提交后 PSI 会跟随；light 载体的 PSI 文本在创建时
+        // 就固定，改文档只会让两者互相矛盾。
+        if (dummyFile.textLength == document.textLength && dummyFile.text.startsWith(PLACEHOLDER_CALL, start)) {
+            val leaf = dummyFile.findElementAt(start)
+            val element = leaf?.nearestCangJieElement()
+            if (element != null) return element
+        }
+        // PSI 未跟随（light 载体）：把文档还原，交给 PSI 路径。
+        document.replaceString(start, start + PLACEHOLDER_CALL.length, originalText)
+        manager.commitDocument(document)
+        return null
+    }
+
+    /**
+     * 回退路径：PSI 不跟随文档的载体上直接替换 PSI 元素。
+     *
+     * **平台 `DummyHolder` 载体上放弃替换**：那里的 PSI 由平台视图提供器托管，
+     * 从另一个文件搬来的元素会被判「different providers」并记 ERROR。此时返回 `null`
+     * 表示「保留裸 dummy」——这是刻意降级，不是遗漏（裸 dummy 仍能解析出局部/关键字候选）。
+     */
+    private fun replaceExpressionViaPsi(dummyFile: CjFile, expression: CjExpression): CjElement? {
+        if (dummyFile.viewProvider is DummyHolderViewProvider) return null
         val factory = CjPsiFactory(dummyFile.project)
         val placeholder = factory.createExpression(PLACEHOLDER_CALL) ?: return null
-        // **不吞异常**：替换失败若被静默忽略，位置就留着裸 dummy，
-        // 后续分析得到空候选且不报错——本文件 KDoc 里点名的「最难定位的失败」
-        // 正是这样产生的。失败必须显形，由调用方决定是降级还是上报。
         return expression.replace(placeholder) as? CjElement
     }
 

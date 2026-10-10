@@ -12,7 +12,9 @@ import org.cangnova.cangjie.analysis.api.platform.CangJieAnalysisInWriteActionLi
 import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.isStable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
@@ -72,13 +74,40 @@ class CaCfirSessionProvider(
         // 并在取用时检查副本文件的修改戳。绕过这里会让 LL 的 not-null 上下文缓存
         // 在新建会话后拿不到值（`getNotNullValueForNotNullContext` Failed requirement），
         // 因此不稳定副本的失效必须由 LL 侧解决，而不是在 Analysis 层丢弃缓存。
-        val session = cache.getOrPut(useSiteModule) {
+        val cached = cache.getOrPut(useSiteModule) {
             createAnalysisSession(useSiteModule)
+        }
+
+        // **不稳定副本必须自愈**：LL 的 session 失效事件按设计**不覆盖**不稳定 dangling module
+        // （见 `LLCfirSessionInvalidationEventPublisher.collectSession` 的提前返回），
+        // 于是这类模块的缓存条目永远不会被事件逐出；而副本每被编辑一次，底层 LL session
+        // 就会失效一次。平台补全正是这条路径：dummy 副本先被插入、再被占位替换，
+        // 同一个模块第二次取 session 时缓存里已经是失效 token 的旧 session。
+        //
+        // Kotlin 对齐做法是对不稳定 dangling module **干脆不进缓存**（`KaFirSessionProvider`：
+        // `if (useSiteModule is KaDanglingFileModule && !useSiteModule.isStable) return createAnalysisSession(...)`）。
+        // 这里保留缓存（上面说的 not-null 上下文约束），改为命中失效条目时**逐出并重建**——
+        // 对外行为与 Kotlin 一致：任何一次调用都不会拿到失效 session。
+        // 稳定模块不走自愈，失效即视为真缺陷，仍由 `checkSessionValidity` 抛出。
+        val session = if (!cached.token.isValid() && useSiteModule.isUnstableDanglingModule()) {
+            val fresh = createAnalysisSession(useSiteModule)
+            cache[useSiteModule] = fresh
+            fresh
+        } else {
+            cached
         }
 
         checkSessionValidity(session)
         return session
     }
+
+    /**
+     * 判断该模块是否为**不稳定**的 dangling file 模块（临时副本）。
+     *
+     * `isStable` 在模块已失效时可能抛异常，因此先查 `isValid`，与 LL 失效事件发布器同一顺序。
+     */
+    private fun CaModule.isUnstableDanglingModule(): Boolean =
+        this is CaDanglingFileModule && isValid && !isStable
 
     /**
      * 进入基于 PSI 元素的分析前发布写动作分析事件。
