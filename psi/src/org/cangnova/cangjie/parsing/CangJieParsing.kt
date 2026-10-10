@@ -851,10 +851,14 @@ class CangJieParsing private constructor(
     private fun parseImportDirectives() {
         val importList = mark()
 
-//        if (!(at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD)) {
-//            // 允许注释绑定到首个声明
-//            importList.setCustomEdgeTokenBinders(DoNotBindAnything, null)
-//        }
+        // 没有任何 import 时，import 列表**不得吞掉它后面的注释**——否则 `package`/`import` 之后的
+        // 文档注释会被绑定进 import list 子树，而声明的 `docComment` 只找自己的子节点与前驱兄弟，
+        // 于是「有 CDoc 的声明取不到文档」且不报错（LSP 的 resolve/hover 一直为空文档即此因）。
+        // 这段曾在移植时被注释掉，实测恢复后 `findDocComment` 能从紧邻前驱取到注释。
+        if (!(at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD)) {
+            // 允许注释绑定到首个声明
+            importList.setCustomEdgeTokenBinders(DoNotBindAnything, null)
+        }
 
         while (at(IMPORT_KEYWORD) || atSet(IMPORT_ACCESS_MODIFIER_SET) && lookahead(1) == IMPORT_KEYWORD || isWhenAnnotation()) {
             if (!parseImportDirective()) {

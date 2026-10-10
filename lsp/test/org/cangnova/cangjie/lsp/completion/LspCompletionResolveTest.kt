@@ -95,29 +95,30 @@ class LspCompletionResolveTest : AbstractLspIntegrationTest() {
     }
 
     /**
-     * 容器事实（**记录当前行为，不是期望行为**）：本容器里 resolve **填不出文档**。
+     * **有 CDoc 的候选**：resolve 后必须拿到 Markdown 文档（设计 §7.11.3 的 `documentation` 一行）。
      *
-     * 实测根因：LSP 的分析文件是 light virtual file，其上 `CjDeclaration.docComment` 为空
-     * ——文档注释的附着走的是 stub/物理文件那条路（仓内 `docComment` 的提供者用例在
-     * **真实文件**夹具上是绿的，实测 `CfirIdeNormalAnalysisSourceModuleCDocProviderTestGenerated` 2/0）。
-     * 因此「恢复出声明 → `findCDoc()`」在 LSP 容器里恒为 null。
-     *
-     * 本用例断言 `documentation` 仍为 null：容器哪天支持了，它会失败，
-     * 提醒把这条说明改掉并补一条「文档确实被填上」的用例。
+     * 这条曾经是反过来的：彼时它断言「本容器里填不出文档」并写明「容器哪天支持了它会失败，
+     * 提醒改成正向用例」。2026-10-11 查到真因——`parseImportDirectives` 里一段被注释掉的注释绑定器
+     * （`DoNotBindAnything`，注释原文「允许注释绑定到首个声明」）导致**没有 import 的文件**里
+     * `package` 之后的文档注释被绑定进 import list 子树，声明的 `docComment` 因此恒空且不报错。
+     * 恢复该绑定器后，身份恢复 + CDoc 渲染两半合起来，文档确实被填上——本用例即其端到端验收。
      */
     @Test
-    fun resolveCannotFillDocumentationInThisContainer() {
+    fun resolveFillsDocumentationForDocumentedCandidate() {
         withSession { connection, uri, text ->
             val resolved = connection.resolveCompletionItem(completionItemFor(connection, uri, text, "documented"))
 
-            assertNull(
-                resolved.documentation,
-                "本容器里 CDoc 无法从 light PSI 上取到；若这里变成了非空，说明容器已支持，" +
-                    "请把本用例改写为「文档确实被填上」并同步 implementation-log",
+            val documentation = resolved.documentation?.right?.value
+            assertTrue(
+                !documentation.isNullOrBlank(),
+                "有 CDoc 的候选 resolve 后必须带文档，实际 ${resolved.documentation}",
+            )
+            assertTrue(
+                documentation!!.contains("被记录的声明"),
+                "文档内容必须来自该声明的 CDoc，实际 ${documentation}",
             )
         }
     }
-
     /**
      * 没有 CDoc 的候选：resolve 后不带文档，但候选的其余字段不变。
      */
