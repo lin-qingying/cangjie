@@ -51,13 +51,17 @@ CFIR 子模块在前端管线中的位置（见 `../docs/cjfir-compiler-stages.m
 
 ```
 Raw CFIR 构建                         → raw-cfir/*
+macro construction step               → providers/…/resolve/providers/macro + compiler/frontend
 ordinary resolve（至 BODY_RESOLVE）   → resolve (+ providers + semantics)
 独立诊断管线                          → checkers + diagnostic-renderers
 .cjo 读取、反序列化与元数据写出       → cfir-serialization
 ```
 
+宏展开不在 `resolve` 的 phase 序列内，而是 source final provider 注册前的 construction step（`CfirResolvePhase` 不含 `MACRO_EXPAND`）。宏管线代码注释引用的「Baseline 第 N 节」「Batch Xy」见 `../docs/macro-construction-baseline.md`。
+
 ## 相关文档
 
+- `../docs/macro-construction-baseline.md` — 宏展开 construction step 基线（硬性边界 / surface 字段集合 / Batch 划分与状态）
 - `../docs/cjfir-compiler-stages.md` — 阶段设计
 - `cfir-tree/tree-generator/Readme.md` — CFIR 节点生成器
 - `../docs/module-catalog.md` — Gradle 模块目录
