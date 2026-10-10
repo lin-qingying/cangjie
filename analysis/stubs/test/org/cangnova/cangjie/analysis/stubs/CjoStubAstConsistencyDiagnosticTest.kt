@@ -155,7 +155,45 @@ class CjoStubAstConsistencyDiagnosticTest : AbstractAnalysisApiBasedTest() {
         }
 
         dumpSpineReconciliation(sb, astNodes)
+        dumpRealFileReconciliation(sb, file)
         return sb.toString()
+    }
+
+    /**
+     * 平台口径的对账：拿**真实反编译文件自己**的 AST 与 stub 树比一次。
+     *
+     * 上面的探针解析（`CjPsiFactory.forPackage`）与真实文件的差别正是宿主实测暴露
+     * `Stub count (46489) doesn't match stubbed node length (47881)` 的地方——
+     * 那份断言来自平台 `FileTrees.reconcilePsi`，只有真实文件的 stub 树与 AST 同时存在时才会跑。
+     * 这里把两侧都取出来按同一口径数节点；任一侧抛异常也如实报告（宿主就是抛异常的那条路径）。
+     */
+    private fun dumpRealFileReconciliation(sb: StringBuilder, file: CjDecompiledFile) {
+        sb.appendLine("  --- 真实文件对账（平台 FileTrees 口径）---")
+        sb.appendLine("    textLength=" + (file.text?.length ?: -1))
+        val stubSide = runCatching {
+            val tree = (file as com.intellij.psi.impl.source.PsiFileImpl).stubTree
+            val root = tree?.root ?: return@runCatching "stubTree=null"
+            "stubTreeCount=" + flattenStubs(root).size
+        }.getOrElse { "stubTree 取用失败: " + it.javaClass.name + ": " + (it.message ?: "") }
+        sb.appendLine("    $stubSide")
+
+        val astSide = runCatching {
+            val node = (file as com.intellij.psi.impl.source.PsiFileImpl).node
+            "stubbedAstNodes=" + collectStubbedAstNodes(node).size
+        }.getOrElse { "node 取用失败: " + it.javaClass.name + ": " + (it.message ?: "") }
+        sb.appendLine("    $astSide")
+
+        val bothAgain = runCatching {
+            val node = (file as com.intellij.psi.impl.source.PsiFileImpl).node
+            val tree = (file as com.intellij.psi.impl.source.PsiFileImpl).stubTree
+            "再取一次 stubTreeCount=" + (tree?.root?.let { flattenStubs(it).size } ?: -1) +
+                " byShouldCreateStub=" + (1 + collectStubbedAstNodes(node).drop(1).count { n ->
+                    n is com.intellij.psi.impl.source.tree.CompositeElement &&
+                        com.intellij.psi.stubs.StubElementRegistryService.getInstance()
+                            .getStubFactory(n.elementType)?.shouldCreateStub(n) == true
+                })
+        }.getOrElse { "二次取用失败: " + it.javaClass.name + ": " + (it.message ?: "") }
+        sb.appendLine("    $bothAgain")
     }
 
     /**
