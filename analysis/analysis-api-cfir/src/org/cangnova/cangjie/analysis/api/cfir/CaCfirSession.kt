@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirEvaluator
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirExpressionTypeProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirImportOptimizer
+import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirInternalCacheStorage
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirReferenceShortener
@@ -88,6 +89,7 @@ internal class CaCfirSession private constructor(
     completionCandidateChecker = CaCfirCompletionCandidateChecker(analysisSessionProvider),
     completionExtensionCandidateChecker = CaCfirCompletionExtensionCandidateChecker(analysisSessionProvider),
     expressionTypeProvider = CaCfirExpressionTypeProvider(analysisSessionProvider),
+    macroExpansionMappingProvider = CaCfirMacroExpansionMappingProvider(analysisSessionProvider),
     expressionInformationProvider = CaCfirExpressionInformationProvider(analysisSessionProvider),
     evaluator = CaCfirEvaluator(analysisSessionProvider),
     dataFlowProvider = CaCfirDataFlowProvider(analysisSessionProvider),

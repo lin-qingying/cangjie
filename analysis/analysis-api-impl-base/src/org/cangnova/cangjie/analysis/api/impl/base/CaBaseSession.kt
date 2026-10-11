@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.components.CaEvaluator
 import org.cangnova.cangjie.analysis.api.components.CaExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.components.CaImportOptimizer
 import org.cangnova.cangjie.analysis.api.components.CaOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
@@ -57,6 +58,7 @@ abstract class CaBaseSession(
     completionCandidateChecker: CaCompletionCandidateChecker,
     completionExtensionCandidateChecker: CaCompletionExtensionCandidateChecker,
     expressionTypeProvider: CaExpressionTypeProvider,
+    macroExpansionMappingProvider: CaMacroExpansionMappingProvider,
     expressionInformationProvider: CaExpressionInformationProvider,
     evaluator: CaEvaluator,
     analysisScopeProvider: CaBaseAnalysisScopeProviderEx,
@@ -91,6 +93,7 @@ abstract class CaBaseSession(
     CaCompletionCandidateChecker by completionCandidateChecker,
     CaCompletionExtensionCandidateChecker by completionExtensionCandidateChecker,
     CaExpressionTypeProvider by expressionTypeProvider,
+    CaMacroExpansionMappingProvider by macroExpansionMappingProvider,
     CaExpressionInformationProvider by expressionInformationProvider,
     CaEvaluator by evaluator,
     CaDataFlowProvider by dataFlowProvider,

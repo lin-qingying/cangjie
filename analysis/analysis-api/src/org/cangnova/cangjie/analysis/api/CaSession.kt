@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.api.components.CaDiagnosticProvider
 import org.cangnova.cangjie.analysis.api.components.CaEvaluator
 import org.cangnova.cangjie.analysis.api.components.CaExpressionInformationProvider
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionMappingProvider
 import org.cangnova.cangjie.analysis.api.components.CaImportOptimizer
 import org.cangnova.cangjie.analysis.api.components.CaOriginalPsiProvider
 import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
@@ -68,6 +69,7 @@ interface CaSession : CaLifetimeOwner,
     CaCompletionCandidateChecker,
     CaCompletionExtensionCandidateChecker,
     CaExpressionTypeProvider,
+    CaMacroExpansionMappingProvider,
     CaExpressionInformationProvider,
     CaEvaluator,
     CaDataFlowProvider,

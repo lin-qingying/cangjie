@@ -3,6 +3,8 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionMapping
+import org.cangnova.cangjie.analysis.api.components.CaMacroExpansionReliability
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
@@ -58,6 +60,57 @@ class CfirMacroTokenPositionTest : AbstractAnalysisApiExecutionTest(
         assertTrue(
             offending.isEmpty(),
             "token 位置不得产出任何语义候选，实际 ${offending.mapValues { (_, v) -> v.map { it.lookupString } }}",
+        )
+    }
+
+    /**
+     * 宏 token 位置的**映射结论**与**候选来源**必须同时成立。
+     *
+     * 变更 `macro-expansion-source-mapping` 的 3.1 要求：位置在**可靠展开**的内容内时，
+     * 候选来源限定为「展开自身可见的名字 + 宏调用处作用域」——也就是**与展开无关的工作区名字禁止出现**。
+     *
+     * 本用例把两件事钉在一起：
+     * 1. 映射查询确实把这个位置判为「落在可靠展开面内」（不是「无展开」）；
+     * 2. 候选集合里确实没有索引/工作区来源的名字。
+     *
+     * 只验其一都会得出错误的结论：只看 ① 会以为「映射已就绪但没人消费」，
+     * 只看 ② 会把「位置分流挡掉了」误当成「按映射收紧生效了」。
+     */
+    @Test
+    fun macroTokenPositionIsInsideReliableExpansion(
+        macroTokenPositionIsInsideReliableExpansion: CjFile,
+    ) {
+        val file = macroTokenPositionIsInsideReliableExpansion
+        val position = macroTokenLeaf(file)
+        val offset = position.textRange.startOffset
+
+        lateinit var mapping: CaMacroExpansionMapping
+        analyzeForTest(file) { mapping = macroExpansionMappingAt(file, offset) }
+
+        val inside = mapping as? CaMacroExpansionMapping.Inside
+            ?: error("宏 token 位置必须落在展开面内，实际是 $mapping")
+        assertEquals(
+            CaMacroExpansionReliability.RELIABLE,
+            inside.reliability,
+            "顶层宏调用没有父边，通道不存在歧义，可靠性必须是「可靠」",
+        )
+
+        // 位置分流与映射结论是两件事：这里分别断言，避免任一条坏了另一条替它背锅。
+        assertEquals(
+            CompletionPositionKind.MACRO_TOKENS,
+            CompletionPositionContexts.classify(position).kind,
+            "夹具必须落在属性宏的 token 输入里",
+        )
+        val indexCandidates = CfirIndexCompletionSection().collectCandidates(
+            TestCompletionRequest(
+                position = file,
+                prefix = "",
+                positionElement = position,
+            ),
+        )
+        assertTrue(
+            indexCandidates.isEmpty(),
+            "可靠展开内不得出现工作区来源的名字，实际 ${indexCandidates.map { it.lookupString }}",
         )
     }
 
