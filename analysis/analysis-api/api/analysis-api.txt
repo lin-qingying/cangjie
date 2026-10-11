@@ -2,7 +2,7 @@
 
 ## org/cangnova/cangjie/analysis/api/CaSession.kt
 package org.cangnova.cangjie.analysis.api
-public interface CaSession : CaLifetimeOwner, CaResolver, CaSymbolRelationProvider, CaSymbolProvider, CaSymbolInformationProvider, CaSignatureSubstitutor, CaDiagnosticProvider, CaScopeProvider, CaTypeScopeProvider, CaAnalysisScopeProvider, CaDefaultImportsProvider, CaCompletionCandidateChecker, CaCompletionExtensionCandidateChecker, CaExpressionTypeProvider, CaExpressionInformationProvider, CaEvaluator, CaDataFlowProvider, CaTypeProvider, CaTypeInformationProvider, CaTypeRelationChecker, CaTypeCreator, CaSubstitutorProvider, CaReferenceShortener, CaImportOptimizer, CaRenderer, CaVisibilityChecker, CaOriginalPsiProvider, CaSourceProvider, CaCInteropComponent, CaCDocProvider
+public interface CaSession : CaLifetimeOwner, CaResolver, CaSymbolRelationProvider, CaSymbolProvider, CaSymbolInformationProvider, CaSignatureSubstitutor, CaDiagnosticProvider, CaScopeProvider, CaTypeScopeProvider, CaAnalysisScopeProvider, CaDefaultImportsProvider, CaCompletionCandidateChecker, CaCompletionExtensionCandidateChecker, CaExpressionTypeProvider, CaMacroExpansionMappingProvider, CaExpressionInformationProvider, CaEvaluator, CaDataFlowProvider, CaTypeProvider, CaTypeInformationProvider, CaTypeRelationChecker, CaTypeCreator, CaSubstitutorProvider, CaReferenceShortener, CaImportOptimizer, CaRenderer, CaVisibilityChecker, CaOriginalPsiProvider, CaSourceProvider, CaCInteropComponent, CaCDocProvider
 CaSession.public val useSiteModule: CaModule
 CaSession.public val useSiteSession: CaSession
 public val useSiteSession: CaSession
@@ -208,6 +208,21 @@ CaExpressionTypeProvider.public val CjCallableDeclaration.returnType: CaType?
 package org.cangnova.cangjie.analysis.api.components
 public interface CaImportOptimizer : CaLifetimeOwner
 CaImportOptimizer.public fun CjFile.collectImportOptimizationPlan(): CaImportOptimizationPlan
+## org/cangnova/cangjie/analysis/api/components/CaMacroExpansionMapping.kt
+package org.cangnova.cangjie.analysis.api.components
+public enum class CaMacroExpansionReliability
+public sealed interface CaMacroExpansionMapping
+CaMacroExpansionMapping.public val reliability: CaMacroExpansionReliability
+CaMacroExpansionMapping.public data object None : CaMacroExpansionMapping
+CaMacroExpansionMapping.None.public override val reliability: CaMacroExpansionReliability
+CaMacroExpansionMapping.public data object Ambiguous : CaMacroExpansionMapping
+CaMacroExpansionMapping.Ambiguous.public override val reliability: CaMacroExpansionReliability
+CaMacroExpansionMapping.public data class Inside( val surfaceId: Long, val startOffset: Int, val endOffset: Int, override val reliability: CaMacroExpansionReliability, ) : CaMacroExpansionMapping
+## org/cangnova/cangjie/analysis/api/components/CaMacroExpansionMappingProvider.kt
+package org.cangnova.cangjie.analysis.api.components
+public interface CaMacroExpansionMappingProvider : CaLifetimeOwner
+CaMacroExpansionMappingProvider.public val PsiElement.macroExpansionMapping: CaMacroExpansionMapping
+CaMacroExpansionMappingProvider.public fun macroExpansionMappingAt(file: CjFile, offset: Int): CaMacroExpansionMapping
 ## org/cangnova/cangjie/analysis/api/components/CaMemberScopeQuery.kt
 package org.cangnova.cangjie.analysis.api.components
 public enum class CaTypeAccessKind
@@ -245,6 +260,22 @@ CaResolver.public fun CjElement.resolveToCall(): CaCallInfo?
 CaResolver.public fun CjElement.tryResolveSymbols(): CaSymbolResolutionAttempt?
 CaResolver.public fun CjElement.resolveSymbols(): Collection<CaSymbol>
 CaResolver.public fun CjElement.resolveSymbol(): CaSymbol?
+## org/cangnova/cangjie/analysis/api/components/CaScopeContext.kt
+package org.cangnova.cangjie.analysis.api.components
+public enum class CaScopeKind( val indexInTower: Int, )
+CaScopeKind.public val isImporting: Boolean
+CaScopeKind.public val isExplicitImporting: Boolean
+public interface CaScopeWithKind : CaLifetimeOwner
+CaScopeWithKind.public val scope: CaScope
+CaScopeWithKind.public val kind: CaScopeKind
+CaScopeWithKind.public val ownerSymbol: CaSymbol?
+public interface CaImplicitReceiver : CaLifetimeOwner
+CaImplicitReceiver.public val type: CaType
+CaImplicitReceiver.public val ownerSymbol: CaSymbol
+CaImplicitReceiver.public val scopeIndexInTower: Int
+public interface CaScopeContext : CaLifetimeOwner
+CaScopeContext.public val scopes: List<CaScopeWithKind>
+CaScopeContext.public val implicitReceivers: List<CaImplicitReceiver>
 ## org/cangnova/cangjie/analysis/api/components/CaScopeProvider.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaScopeProvider : CaLifetimeOwner
