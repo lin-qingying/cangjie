@@ -147,7 +147,7 @@ export CANGJIE_UPSTREAM_ROOT=D:/code/intellij/cangjie/.claude/worktrees/completi
 ## 5. 已确认但未修的框架缺陷（属 LL 层，勿在插件侧绕过）
 
 1. ~~**同名重载被判为同一符号**~~ —— **已修**（提交 `f6b306951`，2026-10-04）。`CaCfirCallableSymbolCacheKey` / `CaCfirExtendMemberCallableSymbolCacheKey` 增带 `CfirCallableSignature`，恢复端按签名筛选，形状对齐 `KaFirCallableIdPlusSignature`。对照实验证明新用例能抓住该缺陷（签名置空即精确变红），而既有 `symbolEquivalence` 在缺陷存在时照样通过——这解释了它此前为何没被拦住。详见 `implementation-log.md`「缺陷 D-2」节。
-2. **dangling 副本的 PREFER_SELF 非局部解析返回 `null`** —— 必须修在 LL 的副本失效链路上（`CfirCacheWithInvalidation.getNotNullValueForNotNullContext` 抛 Failed requirement）。试过两条绕法（改 `AbstractDanglingFileCollectDiagnosticsTest` 的 `originalFile` 条件、在 Analysis 层绕过模块缓存），都会让 21 个生成用例失败，**已全部回退**。
+2. ~~**dangling 副本的 PREFER_SELF 非局部解析返回 `null`**~~ —— **已修**（提交 `8d90d83c6`，2026-10-08）。本条原先记的根因（`CfirCacheWithInvalidation.getNotNullValueForNotNullContext` 抛 Failed requirement）**不对**：真身是**漏移植** Kotlin 的 `ConeEquivalentCallConflictResolver`——副本 provider 与上下文模块依赖 provider 同时给出同一份声明的两种身份，调用解析得到两个等价候选、判重载歧义，`resolveToSymbol()`（内部 `singleOrNull()`）返回 `null`。净效果：修掉 7 个既有失败（5 个 cjmp E2E + 2 个 LL caller-first），零新增。`getNotNullValueForNotNullContext` 与 `require(context.isPhysical)` 是**另外两条**路径。详见 `implementation-log.md`「缺陷 D-3 修复」。
 3. ~~**块内局部声明未进入解析塔快照**~~ —— **已修**（提交 `3b1f2fdcf`，2026-10-05）。根因**不是**本条原先记录的 `addLocalVariable` 空 `localScopes` 早退（那处确实丢，但丢的是函数参数、随后被 `preloadValueParameters` 补回），而是 `ContextCollector` 把绑定变量入作用域放在 `visitPatternVariable` 的 `withLocalVariableBodyCompat`（即 `withTowerDataCleanup`）内部、退出时被回滚。存储已移到各自清理之外。解锁任务 3.7、3.10、9.1。副作用记录仍然成立：`scopeContext(position)` 额外拼接文件级查找层，函数体内才能看到顶层声明。
 4. ~~**类字段/属性不出现在成员作用域**~~ —— **已修**（2026-10-07 回写）。根因不是「四层作用域没覆写 `processVariablesByName`」——那四处确实补齐了但症状仍在；真正的包装层是 **`CfirClassUseSiteMemberScope`**（`CaType.scope` 实际落到它），它同样只覆写了 callable、属性与名称集合。补上后字段候选出现，并连带暴露第二个缺口：`CaCfirFieldSymbol.createPointer` 直接抛 `Field symbol cannot create a stable pointer`，成员作用域一旦真的暴露字段就无法渲染，已按 `CaCfirMemberFunctionSymbolPointer` 的形状补齐字段指针。**回归已锁定**：共享夹具 `analysis/analysis-api/testData/components/scopeProvider/memberScope/memberScopeQueries.cj` 补入 `public var field` 与 `public let state` 及对应可用名/按名查询指令，golden 已重生成。本条原先写作「根因未最终定位」，那是过时表述。详见 `implementation-log.md`「字段成员缺失缺陷」节。
 
@@ -299,3 +299,152 @@ export CANGJIE_UPSTREAM_ROOT=D:/code/intellij/cangjie/.claude/worktrees/completi
 先补跑 `:lsp:compileKotlin`、`:lsp:test --tests '*CangjieSemanticFeatureIntegrationTest*'`、
 `:code-insight:completion:impl-shared:test`，再继续 15.5/15.7。清单与状态见
 `implementation-log.md`「15.x 分支 B 起步与待验证项」。
+
+## 12. 2026-10-08/09 续作记录（D-3 修复与 2.4/3.8/4.x/5.4/5.6/7.x 落地）
+
+**本节是最新状态；§2/§3 的计数是历史值，不要当现状读。**
+当前进度：**tasks.md 107 项中 81 勾选 / 26 未勾选**（规范副本在主检出，见 §0）。
+
+### 12.1 本工作树新增提交（都在 `claude/completion-k2-musing-bun` 分支，未推送）
+
+| 提交 | 内容 |
+|---|---|
+| `8d90d83c6` | **缺陷 D-3 修复**：漏移植 Kotlin 的 `ConeEquivalentCallConflictResolver`（详见 12.2） |
+| `5b31305c5` | 2.4 收尾：指令→模式映射守卫 + `PREFER_SELF_MODE` 数据文件（PREFER_SELF 夹具路径首次端到端） |
+| `1e5c1c0fb` | 5.4：短名可达性绑定到**位置**作用域（局部遮蔽→HIDDEN、局部/成员候选→DIRECT） |
+| `964eadf7f` | 4.1/4.2/4.5：`CaTypeScope` + `CaTypeScopeProvider` + 接缝 `typeToScope` 提取（含 typealias 展开） |
+| `0690f8b02` | 3.8②：`CaScopeKind` 塔序契约用例 |
+| `95e1bda4b` | 5.6①：被遮蔽短名不得进入缩短规划（旧三态调用者回归） |
+| `421542bb7` | 7.5：context 桥接清单校验（D-6 守门，源码级） |
+
+### 12.2 D-3 的真根因（与早前两轮取证都不同，交接要点）
+
+症状「dangling 副本 PREFER_SELF 非局部解析返回 `null`」的真身是**漏移植等价调用去重**：
+副本会话的合成 provider 同时给出副本自身与上下文模块原件的**同一份声明**，调用解析得到两个
+等价候选 → 判重载歧义 → `resolveToSymbol()`（内部 `singleOrNull()`）返回 `null`。
+Kotlin 侧由 `ConeCallConflictResolverFactory` 链首的 `ConeEquivalentCallConflictResolver` 承担，
+仓颉把该行注释掉且**该类从未移植**；`CfirModuleData.areRedeclarationsEquivalent` 已移植却无人消费
+——「半移植机制」是找这类缺陷的可靠判据。
+`getNotNullValueForNotNullContext` 与 `require(context.isPhysical)` 是**另外两条**路径，不产生本症状。
+
+**净效果**：修复 7 个既有失败（5 个 cjmp E2E + 2 个 LL caller-first），未引入任何新失败
+（全套同过滤器 A/B 见 `implementation-log.md`）。
+
+### 12.3 当前各套件基线（评审者请以此为准）
+
+| 套件 | 结果 | 说明 |
+|---|---|---|
+| `:analysis:analysis-api-cfir:test` | **1653 / 0** | ✔ 全绿（含 TypeScopeExecutionTest / 塔序契约 / 桥接清单 / 遮蔽回归 / DSL 之外的全部新用例） |
+| `:analysis:analysis-api-standalone:test` | 719 / **0** | ✔ |
+| `:code-insight:completion:impl-cfir:test` | **72 / 0** | ✔（含 14.1 的 6 个 DSL 夹具用例） |
+| `:code-insight:completion:impl-shared:test` | **74 / 0** | ✔（含 13.4 的 runner 用例；串并行等价在此锁定） |
+| `:lsp:test` | **85 / 0** | ✔（含 13.2 的 resolve 阶段计时用例） |
+| `:cfir:resolve:test` | 137 / 1 | 既有：`CfirMapArgumentsTest > Defaults > number of default arguments is counted`（停用本次改动后同样失败） |
+| `:analysis:low-level-api-cfir:test` | 136 / 2 | 既有：`CfirCjmpCallerFirstDiagnosticsTest` 的 2 个（D-3 修复前是 4 个） |
+| `:cfir:analysis-tests:test` | 8965 / 44 | **全部既有**：宏语料 + cjmp 诊断语料（D-3 修复后 44，与修复前同数即「净修 5 个、无新增」） |
+
+- **一次全量 run 出现过的偶发**：`CfirIdeNormalAnalysisLibraryBinaryModuleTypeScopeTestGenerated` 报过一次 `Symbol was not restored: CaCfirConstructorSymbol ... sample.scope.User.<init>`；单独重跑该生成类与整套重跑均绿，判定为顺序/会话状态相关的偶发（未归因到本变更）。若再次复现，从该类的符号恢复路径（`AbstractSymbolTest` 的指针恢复）查，而不是从本次的类型作用域改动查。
+
+### 12.3.1 2026-10-09 全量回归（八个套件，当前权威数字）
+
+| 套件 | tests | failures | 说明 |
+|---|---|---|---|
+| `:cfir:analysis-tests:test` | 8964 | **44** | 全属既有（宏语料 + cjmp 诊断语料）；D-3 修复时同过滤器 A/B 已证明「净修 5 个、无新增」 |
+| `:analysis:analysis-api-cfir:test` | 1653 | 0 | ✔ |
+| `:analysis:analysis-api-standalone:test` | 719 | 0 | ✔ |
+| `:cfir:resolve:test` | 137 | 1 | 既有：`CfirMapArgumentsTest` 的默认参数计数用例 |
+| `:analysis:low-level-api-cfir:test` | 136 | 2 | 既有：`CfirCjmpCallerFirstDiagnosticsTest`（D-3 修复前为 4） |
+| `:code-insight:completion:impl-cfir:test` | 72 | 0 | ✔（含 14.1 的 6 个 DSL 用例） |
+| `:code-insight:completion:impl-shared:test` | 74 | 0 | ✔（含 13.4 的 runner 用例） |
+| `:lsp:test` | 85 | 0 | ✔（含 13.2 的 resolve 计时用例） |
+
+合计 **12,240 项、47 失败，全部失败均为既有并逐条归因**（见 12.3 与 `implementation-log.md`）。
+`analysis-api-cfir` 一行取自其 02:48 的全量运行——该次之后 `analysis/*`、`cfir/*` 无任何源码改动（后续改动集中在
+`code-insight` 与 `lsp`），故数字有效；其余七套件均为 03:04–03:27 的本轮运行。
+
+### 12.4 已记录在案的决策（不要再当待办重复「开工」）
+
+- **7.5 / D-6**：桥接**生成器**在参考实现里不存在（上游无对应模块），可机械化的是**校验**；
+  已实现 `ScopeProviderBridgeCoverageTest`（清单 + 源码扫描），本项已勾选。
+- **10.3**：七维权重里「参数匹配」缺口径（设计未给、仓内无参数签名契约，真正的适用性检查属未实现的 A4），
+  **不臆造规则**——`ExpectedTypeMatch.UNKNOWN` 即当前降级行为。
+- **13.1**：分析侧降级已落地（`CfirIndexDegradationTest` / `SourceDeclarationsNeedHostIndexTest`）；
+  dumb mode 在分支 B 下由平台天然成立（不注册 contributor）；**无 SDK 基线在现有测试框架下不可构造**。
+- **13.2**：统计接缝已落地；冷/热与大/小项目基线与预算需真实 SDK 规模，**不编造数字**。
+- **8.7 / 8.8 / 12.2**：剩余面是 `intellij-ide`/`deveco` 的宿主描述符与 Version Catalog，**不在本工作区**。
+- **15.3**：需改记「无此例外」的 `docs/architecture-host-plugin.md` 在 **intellij-ide 仓**。
+- **15.5 / 15.10 / 15.11 / 15.12**：剩余项都需要 IDE 侧或真实工程夹具（15.10 的 `resolve` 已实现，
+  只是本容器 light PSI 取不到 docComment，由容器限制用例锁定）。
+
+### 12.5 仍在分区内、可继续做的事（按建议顺序）
+
+1. **6.6③→预算**：`13.2` 的耗时预算需要真实 SDK 规模的工程；若接手方有可用 SDK，可一并把
+   `CaSymbolProvider.getDeclarationsByNamePrefix` 的查询量与耗时记进具名配置文件。
+2. **11.5①**：宏展开后可映射代码的表示（缺分析层契约）——须先在分析层立表示，属独立课题。
+3. **10.3 的参数匹配**：等 A4（`CaCompletionExtensionCandidateChecker`）具备参数签名契约后再谈排序口径。
+4. 其余未勾选项均已在 tasks.md 就地写明剩余面归属（宿主侧/真实运行时），不是「没人认领」。
+
+### 12.6 设计 §12 未决项的本轮收尾
+
+- **§12 第 10 条（D-4 复核回写）**：本条已满足——handover §5 第 4 条早在 2026-10-07 就改成了
+  「已修 + 回归已锁定」，本轮再次确认其回归（`memberScopeQueries.cj` 的 memberScope 生成套件）随
+  `:analysis:analysis-api-cfir:test` **1653/0** 全绿。
+- **§12 第 11 条（变更文档重跑）**：已重跑并写入 `verification.md`「2026-10-09 重跑」——
+  严格校验通过、产出物 4/4、需求场景 30/55、任务 **107（勾选 85 / 未勾选 22）**、
+  相对链接 89 条全部可定位（主检出为基准）、文本无 U+FFFD 与行尾空白；
+  未重跑项仍是 `design.md` 行号锚点与 `source-baseline.json` 的 SHA 漂移（理由同上一轮）。
+  另加一条新检查：**22 个未勾选项逐条带就地记录**，无「沉默未认领」项。
+- **§12 第 5 条（并行与阈值）**：串行基线与四条准入已落地（13.3/13.4 勾选项），
+  并行执行器**默认关闭**（`CangjieCompletionRunnerOptions.parallelEnabled=false`）；
+  真实工程耗时对比与预算需真实 SDK 规模，未做（13.2 的注已写明）。
+
+### 12.7 本次会话踩过、值得记住的坑
+
+- `gradlew-queue.bat` 的 `--rerun` **只作用于紧邻其前的那个任务**：`a b --rerun` 只强制 `b`。
+  生成器任务因此「看着跑了其实 UP-TO-DATE」，两模块要分开写。
+- `checkApiSurfaceDump` 会**自动先跑 generate**（dump 文件由生成任务提供），所以「检查通过」
+  同时意味着「dump 已被重写」——跑完要看 `git status`，别以为基线本来就是新的。
+- 夹具语法一律以 **cjc** 为准：`typealias X = Y` 被 cjc 拒绝（只接受 `type X = Y`）；
+  可继承的类必须显式 `open`。两者都在 4.x 的接缝/夹具上实测过。
+- 「声明了却没人消费」在本仓是**反复出现**的缺陷形态（PREFER_SELF 模式、`areRedeclarationsEquivalent`、
+  `IGNORE_SELF_MODE` 指令、桥接成员）：查缺口时先找「声明了但全仓没有消费者」的符号。
+
+## 13. 宿主侧待办交接清单（给 `intellij-ide` / `deveco` 会话）
+
+本工作区（主仓 + `:lsp`）已把分区内的部分做完并验证；下列 12 项**只能在宿主仓完成**，
+按分工交回。每项给出：目标 / 涉及位置 / 验收判据 / 本工作区已提供的前置。
+（本清单是 tasks.md 各条注释的汇总视图，勾选仍以 tasks.md 为准。）
+
+### 13.1 `intellij-ide`
+
+| 项 | 目标 | 涉及位置（该仓） | 验收判据 | 本工作区已提供 |
+|---|---|---|---|---|
+| 8.7 | 原生补全入口的生产资源与真实入口验证 | `modules/ide/base` 的描述符；contributor 已在描述符注册给 `CangJieCfirCompletionContributor`（**不得重复注册**，会执行两遍） | 真实入口触发一次补全并断言走仓颉管线；错误态与安全排除位置不崩溃 | 候选管线与 dummy 资源（`code-insight` 8.4/8.5）；LSP 侧同源验收 `LspCompletionPipelineIntegrationTest`（15.2） |
+| 8.8 | D-5 剩余验收：两个生产描述符 contributor 唯一性核对 | `product/idea-plugin/src/main/resources/META-INF/plugin.xml`、`modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml` | 两处 contributor 声明唯一且 `implementationClass` 可解析 | `code-insight` 侧两处重命名漏改已修（`133851357`），全树无 `Ca` 前缀残留 |
+| 12.3 | base/product/test-support 三处依赖与描述符 | `modules/ide/base/build.gradle.kts`、`product/idea-plugin/build.gradle.kts`、`modules/test-support/build.gradle.kts` | 测试 `plugin.xml` 不混入产品；runtimeOnly/test 分工正确 | 主仓 `settings.gradle.kts` 制品与 `docs/module-catalog.md` 登记（12.2） |
+| 12.4 | 单职责补全 XML 的 include 与唯一注册 | `modules/ide/base/src/main/resources/org.cangnova.cangjie.ide.base.xml` | 所有 class/resource 可加载且只注册一次；不使用不存在的 `cangjie-all.xml` | 上游三模块 XML（`code-insight` 侧，12.1 勾选项） |
+| 12.5 | 真实产品 contributor/service 接线测试 | 仿 quick-fix 生产描述符测试模式（该仓测试源） | 真实触发并插入一次补全 | `CangJieCompletionServiceRegistry`/扩展点 prime 机制（8.x） |
+| 12.6 | 制品与最终 ZIP 的类/XML 唯一性 | 发布产物与插件 ZIP | 源码桥接与发布制品一致；非开发机绝对路径可解析依赖 | 12.2 的 fat jar 内容实测（147 类全在 `ide/completion` 下） |
+| 12.7 | 平台 API 差异目录与平台矩阵 | `platform` 对应目录（该仓） | 承诺的平台矩阵逐项验证；未测平台不声明兼容 | — |
+| 14.2 | host light fixture 上的真实补全行为 | 该仓 light fixture 测试源 | BASIC/SMART、自动/手动、增量修改、after/caret/import/undo、源码/库、正反候选 | 全部候选生成语义与排序基线（本工作区 13 套件） |
+| 14.5 | 真实 sandbox 与最终分发插件验收 | 该仓运行时环境 | 加载/触发/排序/插入/撤销/错误态/平台矩阵；保存可复查记录 | 14.4 的窄集与跨层回归记录 |
+| 15.3 | 责任域文档改记「无此例外」 | `docs/architecture-host-plugin.md` | 不再登记已不成立的范围例外 | 15.1 的分支 B 判定（不注册 contributor，故无需扩 `allowedExtensionPointNames`） |
+| 15.5 | 「两端一致」对照 | 该仓 IDE 侧对照测试 | 同一候选两端 `label`/`tailText`/`typeText`/`kind` 一致、`sortText` 顺序一致 | 服务端三组件与用例（`9472d1c18`）、`resolve`（`a654d27d1`） |
+| 15.11 | 宿主 LSP 客户端补全能力与命令执行 | `modules/ide/lsp` | 客户端 capability 与服务端声明一致；实测是否执行 `CompletionItem.command`，不执行则降级并记录 | 服务端 `executeCommands`/`applyEdit` gate（15.6） |
+
+### 13.2 `deveco`
+
+| 项 | 目标 | 涉及位置 | 验收判据 | 本工作区已提供 |
+|---|---|---|---|---|
+| 15.12 | 第三个出货宿主接线 | `deveco/settings.gradle.kts`（completion substitution）、`deveco/product/build.gradle.kts`（三个 completion 模块）、`deveco/product/src/main/resources/META-INF/plugin.xml`（**手工追加**一条 `completion.contributor language="CangJie"`，参照同文件 533/753 行既有条目；该产品 jar 形态下 `xi:include` 解析失败，属已知限制） | **过期注册是静默失效**，须与 IDE 侧一并纳入唯一性验收 | 三模块产物与描述符格式（12.x） |
+
+### 13.3 交接时请一并遵守的纪律
+
+- **不要重复注册 contributor**（8.7）：重复会让每次补全执行两遍，症状是「变慢」而不是报错。
+- **唯一性验收要在两个宿主都做**（8.8 + 15.12）：单侧通过不构成完成。
+- 回归基线以本工作区的最新数字为准：`analysis-tests` 8964/44（全属既有）、`analysis-api-cfir` 1653/0、
+  `standalone` 719/0、`resolve` 137/1（既有）、`low-level-api-cfir` 136/2（既有）、
+  `impl-cfir` 72/0、`impl-shared` 74/0、`lsp` 85/0、`psi2cfir` 686/0、`light-tree2cfir` 262/0、
+  `cfir-serialization` 115/0、`analysis:stubs` 8/0。
+- 若需要本工作区补做（例如 `:lsp` 侧适配、主仓制品调整），把该输入写清后开新的会话即可——
+  宿主侧会话不应改主仓的 `code-insight`/`analysis` 源码。

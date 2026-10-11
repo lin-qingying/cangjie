@@ -507,7 +507,7 @@ DevEco 的机制不是本设计能裁决的：其 `plugin.xml` 头部已记录�
 
 ### 6.4 A3 类型作用域与替换后签名
 
-- **现状**：公开 `CaType.scope` 将具体类型还原成 class-like，再调用 `unsubstitutedScope`，**不能保证实际类型实参保留**。compiler 接收者 scope 路径已有具体 receiver、上界、intersection 和 builtin extend 处理。[A03、A13]
+- **现状**：公开 `CaType.scope` 将具体类型还原成 class-like，再调用 `unsubstitutedScope`，**不能保证实际类型实参保留**（**2026-10-08 新入口已落地**：`CaTypeScope` + `CaTypeScopeProvider.typeScope` / `declarationScope`，保留实际类型实参；旧 `CaType.scope` 行为不动，调用方迁移另案；接收者查找的 `typeToScope` / `collectTypeScopes` 已提为跨模块可复用接缝，并补上 typealias 展开。见 `implementation-log.md`「4.1/4.2/4.5」）。compiler 接收者 scope 路径已有具体 receiver、上界、intersection 和 builtin extend 处理。[A03、A13]
 - **选择**：新增 `CaTypeScope` 和保留原声明身份的签名查询，复用 type-to-scope 接缝和现有替换组件。先增加新入口，保留旧 `CaType.scope: CaScope?`；变更旧返回类型必须单独迁移全部调用者。
 - **实现**：将适用的底层 scope 构造抽成可复用接口，不能从 resolver 复制到插件。保留继承实例化、override/provenance、typealias 展开和原名展示信息。
 - **已有但受限的签名实现**：首次函数签名替换已有代码；替换后的签名再次做非空替换会抛错。变量签名渲染的底层类型强转也必须用 property 专项验证。本项包含组合替换与属性签名闭环，不能只新建类型接口。[A18]
@@ -527,7 +527,7 @@ DevEco 的机制不是本设计能裁决的：其 `plugin.xml` 头部已记录�
 ### 6.6 A5 可见性、遮蔽、可达性和导入规划
 
 - **现状**：`CaCfirVisibilityChecker` 的 receiver 参数**只进入有效性断言**，后续运行自己的访问分支。compiler 调用访问经 `CfirAccessContext` 使用公共 accessibility checker，应收敛适配，不以分支齐全宣称语义完整。[A08–A09]
-- **现状**：三态判定直接可达性只查文件 lookup scopes，**不能替代任意位置的局部遮蔽**。缩短目前只覆盖可独立短名化的 class-like 与顶层 callable，不是通用成员导入方案。[A06–A07]
+- **现状**：三态判定直接可达性只查文件 lookup scopes，**不能替代任意位置的局部遮蔽**（**2026-10-08 已改**：可达性改为「位置层用位置上下文、文件层用 CFIR 查找布局」的绑定判定，局部遮蔽判 HIDDEN、局部与成员候选判 DIRECT；alias 名字仍不在范围内。见 `implementation-log.md`「5.4」）。缩短目前只覆盖可独立短名化的 class-like 与顶层 callable，不是通用成员导入方案。[A06–A07]
 - **实现**：将 Analysis 的文件、位置、receiver 和来源适配 compiler 可访问性接口；区分词法可见性、类型适用性、权限、导入后名称和冲突。
 - **导入规划**：复用现有 plan/command，补目标身份、alias 及冲突复验信息。Analysis 只计算方案，写入属于 §7.7。**`requiredImport != null` 不代表加入 import 后一定能安全插入短名。**
 - **文档**：本地 Kotlin 参考未定义 `KaImportOptimizer`，**不得根据仓颉 KDoc 虚构同名对位类型**。保留仓颉已有规划能力并说明本项目契约。

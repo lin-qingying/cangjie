@@ -2581,3 +2581,503 @@ D-3 的验收（PREFER_SELF 解析返回非 null）不依赖它。
 
 **验证**：`:analysis:analysis-api-cfir:test` 定靶 85 用例 0 失败（7 个 dangling 生成类全量文件 +
 守卫 + 夹具用例）；`:analysis:analysis-api-standalone:test` 定靶 62 用例 0 失败。
+
+## 5.4 短名可达性绑定到位置作用域（2026-10-08）
+
+设计 §6.6 的现状条目写的正是这条：「三态判定直接可达性只查文件 lookup scopes，
+**不能替代任意位置的局部遮蔽**」。旧 `checkCompletionCandidate` 的实现只查文件级作用域
+（本文件顶层、包、导入、内建），于是三件事都判不出来：
+
+| 场景 | 旧行为 | 新行为 |
+|---|---|---|
+| 顶层同名符号被**局部变量**遮蔽 | DIRECT（错：短名在位置上已绑到别处） | HIDDEN |
+| **局部**候选自身 | UNKNOWN | DIRECT |
+| **成员**候选（隐式接收者） | UNKNOWN | DIRECT |
+
+### cjc 取证（1.1.3，`--diagnostic-format json`）
+
+```
+let Foo = 3 ; let x: Foo = …   → sema_not_a_type    'Foo' is not a type
+let call = 2 ; call()          → sema_no_match_operator_function_call
+```
+
+即仓颉的**类型名与值名共享同一套遮蔽**，不存在「值遮蔽不影响类型位置」的例外——
+遮蔽判定因此不必按符号种类分情况，`'Foo' is not a type` 就是「短名被占了」的直接证据。
+
+### 改法
+
+`CaCfirImportPlanning.isDirectlyReachable` 换成 `resolveShortNameBinding`，返回
+`UNBOUND / EQUIVALENT / SHADOWED` 三态，`checkCompletionCandidate` 据此把
+SHADOWED 判成 **HIDDEN**（而不是 REQUIRES_IMPORT）：import 不参与遮蔽，
+加一条 import 也改不了「短名已经绑到别的声明」这个事实。
+
+- **位置层**（词法、类型/成员、片段顶层）从 `CaScopeContext.scopes` 取——它已按真实查找
+  次序从内到外排列，**首次绑定即结论**，与 `CfirLocalScopeCompletionSection` 的
+  「首个同名者胜」同源。
+- **文件层**（本文件顶层/包/显式与默认导入/内建）仍走 resolver 共用的
+  `CfirFileLookupScopes`，**不**从位置上下文取。原因是一个顺手查出来的既有缺口：
+  位置上下文的公开投影只包装 names-aware 作用域（`toPublicScopeOrNull`），而
+  `CfirImportScope`（显式/默认导入）与内建原始类型作用域**不是** names-aware，
+  投影里根本没有这两层。第一版改法整段依赖位置上下文，直接把 `import sample.*` 的
+  可达性判没了——12 个缩短类 15 个用例红（期望 DIRECT 实得 REQUIRES_IMPORT），
+  正是这个缺口造成的。该缺口**未在本项修**（属公开作用域投影的独立问题），
+  已在 `resolveShortNameBinding` 的 KDoc 里写明，避免下一个人再踩。
+- 片段例外：宿主文件顶层声明那一层只存在于位置上下文里，因此片段位置一并消费
+  位置上下文的文件级带（导入层仍由上面的 CFIR 通道补齐）。
+- 局部声明的短名取 `callableId?.callableName ?: 声明名`：局部声明是 callable 但**没有**
+  callableId，只按 callableId 取名字会把它们整体判成「没有短名」，遮蔽与命中就都看不见
+  （第一版就撞在这里：断言拿到 UNKNOWN，排查后才定位到 `shortNameOrNull` 的 callableId 分支）。
+- `CaCfirScopeProvider.scopeContext` 补**单条位置缓存**（键 = 位置身份 + 文件修改戳）：
+  一次补全请求会对同一位置反复判候选，而位置投影每次都要跑一遍 ContextCollector，
+  不加缓存主路径就变成 O(候选数 × 上下文收集)。
+- 只按名查询（classifiers / callables / typeParameters），不枚举作用域全量声明：
+  成员作用域与包作用域的全量枚举代价随被查类型/包规模增长。
+
+### 验证
+
+- 新增 `completionCandidateShadowing`（上表三例，正反同夹具）：`AnalysisApiCfirComponentExecutionTest` 6/0。
+  旧实现下三条里两条必红，因此这是真回归用例而不是记录现状。
+- 回归：`:analysis:analysis-api-cfir:test` **1649/0**、`:analysis:analysis-api-standalone:test` **719/0**、
+  `:code-insight:completion:impl-cfir:test` **66/0**、`:lsp:test` **84/0**。
+
+### 边界（未做，如实记录）
+
+- **alias 名字的可达性不在本项**：`checkCompletionCandidate` 问的是「候选按**自己的**短名是否可达」，
+  而 alias 是名字层概念（`import foo.Bar as Baz` 之后 `Bar` 仍需限定）；展示哪个名字由候选生成侧决定。
+- **A4 适用性检查**（`CaCompletionExtensionCandidateChecker` / `CaExtensionApplicabilityResult`）仍是独立入口，
+  本项只动可达性，不越界替它判适用性。
+
+## 4.1/4.2/4.5 具体类型作用域与替换后签名（2026-10-08）
+
+设计 §6.4 的现状条目：「公开 `CaType.scope` 将具体类型还原成 class-like，再调用 `unsubstitutedScope`，
+**不能保证实际类型实参保留**」——`Box<Int64>` 的成员签名里仍是声明侧的 `T`。
+
+### 4.2 抽接缝（含一个被实测发现的缺口）
+
+`cfir/providers` 的 `CfirReceivers.kt` 里，`typeToScope`/`collectTypeScopes` 是唯一一处统一处理
+「类型变量上界、交叉类型、ideal literal、primitive extend、class-like 类型」且**以完整 Cone 类型
+（而非 class-like 声明）为 owner** 构造成员 scope 的地方（源码注释就写着「同一个泛型声明的不同实例
+拥有不同的成员签名，不能只按 ClassId 去重」）。此前它是**文件私有**，现提为跨模块接缝并加
+`@CfirImplementationDetail`，KDoc 写明「需要实际类型实参/上界/intersection/builtin extend/继承替换的
+调用方都走这里，不要各自复制一份 scope 构造」。
+
+**顺手修掉 typealias 缺口**：`collectTypeScopes` 不展开别名类型，别名类型的接收者会退到别名自身的
+classId，于是成员取不到——实测 `type IntBoxAlias = Box<Int64>` 的类型作用域为 `null`。
+按 `ConeTypeAliasType.expandedType` 递归展开后恢复。
+
+**夹具拼写取证**：cjc 1.1.3 只接受 `type X = Y`；`typealias X = Y` 被 parse 直接拒绝
+（`parse_expected_decl: expected declaration, found 'typealias'`）。仓内 `typealiasType.cj` 用的是后者
+（前端比 cjc 宽松），写夹具时以 cjc 为准。另：cjc 要求可继承的类显式 `open`，
+`class IntBox <: Box<Int64>` 会被拒（`sema_non_inheritable_super_class`），夹具已改为 `open class Box<T>`。
+
+### 4.1 新入口
+
+- 新增 `CaTypeScope`（对齐 Kotlin `KaTypeScope`：只暴露**替换后**的签名与 classifier，不暴露未替换的 `callables`）
+  与 `CaTypeScopeProvider`（`val CaType.typeScope: CaTypeScope?` + `val CaTypeScope.declarationScope: CaScope`），
+  接进 `CaSession` / `CaBaseSession` / `CaCfirSession`；实现走上面那条接缝（`USE_SITE` 种类），
+  声明视图复用旧路径（`unsubstitutedScope`）作为对照。
+- **旧 `CaType.scope` 的行为一字未动**，符合设计「先增加新入口……变更旧返回类型必须单独迁移全部调用者」。
+- 两处偏差记录在案：①Kotlin 复用同一名字 `KaType.scope`，仓颉因旧入口占用而取名 `typeScope`；
+  ②`CaCallableSignature` 目前**没有** `valueParameters`（Kotlin 有），替换后的值参数只挂在
+  `CaFunctionSignature.valueParameters` 上——所以 4.5 的值参数断言走函数签名通道，补齐属后续。
+- **D-6 触面**：新组件按既有形态补了两条手写 `context(session)` 桥接（那套标记「自动生成，请勿手工修改」
+  的桥接**没有生成器**，见 7.5 的记录在案决策）——本项再次印证 7.5 的结论：新增成员必须手写桥接，
+  可机械化的是「校验」而不是「生成」。
+- API surface baseline：`analysis-api` 与 `analysis-api-impl-base` 的 dump 已重生成
+  （新增 `CaTypeScope`/`CaTypeScopeProvider` 与 5.5 的 `CaCompletionCandidateStatus.shouldHide/isDeterminedUsable`），
+  `checkApiSurfaceDump` 四模块全绿。
+
+### 4.5 用例
+
+`TypeScopeExecutionTest.typeScopeSubstitution`（夹具 `testData/typeScope/typeScopeSubstitution.cj`，经 cjc 校验）七例：
+
+| # | 形态 | 断言要点 |
+|---|---|---|
+| ① | 泛型本类 `Box<Int64>` | `unwrap` 签名 `(Int64): Int64`，且 `symbol` 仍是 `Box.unwrap`（替换不换身份） |
+| ② | **声明视图对照** | 同一成员在 `declarationScope` 里仍是 `T`——这是两个视图的分工处 |
+| ③ | 泛型父类 `IntBox` | 继承链上的成员同样替换为 `Int64` |
+| ④ | type alias | `type IntBoxAlias = Box<Int64>` 同样替换 |
+| ⑤ | 完全实例化受约束 extend | `Box<Shaped>` 有 `shapedTag: Shaped`；`Box<Int64>` **没有**（约束不满足） |
+| ⑥ | 属性 | `Container<Int64>.stored: Int64`，声明视图仍 `T` |
+| ⑦ | 非 class-like receiver | 有上界的类型参数按其上界 `Shaped` 取到 `area` |
+
+断言全部比**类型**而不是名字：名字在两种视图里完全相同，只比名字的断言抓不到「看起来对但其实没替换」这种失效。
+「连续替换」不在本项重复——它由 4.3（已勾选）的用例承担。
+
+### 未做（如实记录）
+
+`CaCallableSignature.valueParameters` 的补齐、旧入口（`CaType.scope` / `instanceMemberScope` /
+`staticMemberScope`）的调用方迁移，都是设计里明确「单独迁移」的部分，本项只加新入口。
+
+### 验证
+
+`TypeScopeExecutionTest` 1/0；回归：`:analysis:analysis-api-cfir:test` **1650/0**、
+`:analysis:analysis-api-standalone:test` **719/0**、`:code-insight:completion:impl-cfir:test` **66/0**、`:lsp:test` **84/0**、
+`:cfir:analysis-tests:test` **8965 中 44 失败**（与 D-3 修复后的基线**完全一致**，即接缝扩展既未新增失败也未修掉 LLT 失败）、
+`:analysis:low-level-api-cfir:test` 136 中 2 失败（既有）、`:cfir:resolve:test` 137 中 1 失败（既有）。
+
+**偶发（未归因）**：本节验证后的一次全量 `:analysis:analysis-api-cfir:test` 里，`CfirIdeNormalAnalysisLibraryBinaryModuleTypeScopeTestGenerated` 报过一次 `Symbol was not restored: CaCfirConstructorSymbol（sample.scope.User.<init>）`；该生成类单独重跑与整套重跑均绿（1653/0），判定为顺序/会话状态相关的偶发，不从本次类型作用域改动出发排查。
+
+
+## 13.3/13.4 并行执行器与串并行等价（2026-10-09）
+
+设计对并行的唯一要求写在 G4 准入行（「§7.8、完整 SMART、并行准入」），口径由 tasks.md 给出：
+**独立 Analysis 会话 + 稳定归并 + 禁止共享裸会话状态**，且**通过准入前不得开启**。
+
+### 实现（13.3）
+
+`CompletionRunner` 接口补 `runParallel(...)`（默认实现退化为串行——「能不能并行」变成显式的实现声明），
+新增 `ParallelCompletionRunner`：
+
+- 阶段划分与阶段内次序**逐条照搬**串行（快速 → 延迟；`executionPriority` 升序、同优先级保持注册顺序）；
+- 每个区段在自己的工作线程上执行、拿**自己的缓冲 sink**（区段之间看不到彼此的批次）；
+- 归并在调用线程上按区段次序完成：第 i 个区段一结束就发它的批次，**不按完成先后发**——
+  否则候选次序随调度抖动，与串行结果不再等价；
+- **取消检查放在归并之后**：串行在区段执行时批次已经进 sink，用户继续输入不会收回已发结果；
+  并行必须同义，否则同样的取消时机会让并行少给一批候选（第一版写成「先检查后归并」，被等价用例逼出来）；
+- 失败/取消按执行次序等待，因此**最早**的那一个就是向外抛出的那一个；已提交区段 `shutdownNow` 中断、
+  未归并批次丢弃、不发收尾（与串行一致）。
+- 装配点 `createCompletionRunner()`：默认串行；`CangJieCompletionRunnerOptions.parallelEnabled`
+  （系统属性 `cangjie.completion.parallel` 作为实验入口）**未通过准入前不得打开**。
+- `CompletionSection` 的并发契约（不共享可变状态、不共享裸 Analysis 会话、同实例跨请求可能落在不同线程）
+  写进接口 KDoc——这是区段作者必须遵守的部分，执行器只能保证自己不引入共享。
+
+### 准入与用例（13.4）
+
+`ParallelCompletionRunnerTest`（8 例）逐条对照串行：①区段跑在工作线程且互不同线程（显式给两个线程，
+避免单核机器上误判）；②**后序区段先跑完仍按区段次序发出**（先断言完成次序确为 second→first，再断言归并次序）；
+③**串并行批次与收尾信号序列完全一致**（含延迟阶段与同优先级）；④区段不共享 sink；⑤失败按原样传播、
+后续批次一律不发；⑥**取消时机一致**（同一夹具分别跑串行与并行比较批次序列）；⑦空区段仍收尾一次；
+⑧并行执行器的串行入口可用。
+
+**未达成项（故保持默认关闭）**：真实工程上的冷/热耗时对比需要真实 SDK 规模（与 13.2 的预算同批）。
+
+## 14.1 补全测试 DSL（2026-10-09）
+
+移植**适用**的六个指令 `EXIST` / `ABSENT` / `NUMBER` / `NOTHING_ELSE` / `WITH_ORDER` / `INVOCATION_COUNT`，
+新增 `PREFIX`（前缀写在请求上；缺它 `NOTHING_ELSE` 只能断言一个随无关候选漂移的集合）。
+两处有意偏差：位置用既有夹具约定 `completionTarget` 引用名标注（Kotlin 的 `<caret>` 不是合法仓颉，
+会让夹具无法分析）；断言跑在**真实服务**上而不是某个区段（用户看到的那份候选表由服务归并产生）。
+夹具见 `impl-cfir/testData/completionDsl/`（6 个），用例 `CompletionDslTest` 6/0。
+
+顺带锁住一条生产规则：`repeatedInvocationWidensCandidates` 断言「首轮 ⊆ 重复轮 且确实变大」——
+索引区段在 `invocationCount > 1` 时按设计放宽匹配，**不点名具体多出哪个候选**（那会把用例绑死在某个 `.cjo` 版本上）。
+
+为让 DSL 在无进度上下文里可跑，`CfirCompletionService` 的指示器取值补了回退：无头宿主/测试里退化为
+**空指示器**而不是 NPE（取消能力由宿主提供，没有它不该把一次补全变成异常）。
+
+**验证**：impl-cfir 72/0（15 类）、impl-shared 74/0（含 14 个 runner 用例）、lsp 84/0。
+
+### 续：13.2 的 `resolve` 阶段耗时已接线（2026-10-09）
+
+`CompletionStage` 补 `RESOLVE`（与 `CANDIDATES` **分开**记：resolve 是用户按下候选才触发的
+第二次分析，耗时直接体现在「翻候选卡不卡」上，混进候选生成看不出来）。
+计时在 `AnalysisApiCangjieAnalysisFacade.resolveCompletionItem` 用 try/finally 包裹整个实现——
+**失败路径与所有 `skipResolve` 早退同样计时**（「没填文档」也花了时间，漏记会让面板上这项永远只有成功样本）。
+用例 `LspCompletionStatisticsTest.resolveRecordsItsOwnStage` 断言该阶段存在（记录式 sink，不报错也发现不了漏埋点）。
+
+13.2 **仍未勾选**：冷/热与大/小项目基线与预算需要真实 SDK 规模的工程（与 6.6 的耗时预算同批），
+按设计「预算须写入具名测试配置文件后才可评估阶段门禁」，本工作区不编造数字。
+
+## 14.4 窄集与跨层回归记录（2026-10-09）
+
+按任务要求逐项留痕：命令、基线、结果、未覆盖项。**命令统一经队列包装器**
+（`./gradlew-queue.bat`，参数原样转发）；所有结果以 `build/test-results/test/TEST-*.xml`
+根节点的 `tests/skipped/failures/errors` 为准，不只看 `BUILD SUCCESSFUL`。
+
+### 窄集（受影响模块）
+
+| 命令（节选，`--rerun` 视需要） | 结果 | 说明 |
+|---|---|---|
+| `:analysis:analysis-api-cfir:test` | 1653 / 0 | D-3、2.4、3.8、4.x、5.4、5.6 的落点 |
+| `:analysis:analysis-api-standalone:test` | 719 / 0 | 同一批夹具在 standalone 配置下的镜像 |
+| `:code-insight:completion:impl-cfir:test` | 72 / 0 | 补全区段 + 14.1 的 DSL 6 例 |
+| `:code-insight:completion:impl-shared:test` | 74 / 0 | 13.3/13.4 的 runner 用例 |
+| `:lsp:test` | 85 / 0 | 分支 B 全链路（含 13.2 的 resolve 计时） |
+| `:cfir:resolve:test` | 137 / 1 | 唯一失败是既有：`CfirMapArgumentsTest > Defaults > number of default arguments is counted`（停用本变更后同样失败） |
+| `:analysis:low-level-api-cfir:test` | 136 / 2 | 既有：`CfirCjmpCallerFirstDiagnosticsTest` 2 个（D-3 修复前为 4 个） |
+
+### 跨层回归
+
+| 命令 | 结果 | 说明 |
+|---|---|---|
+| `:cfir:analysis-tests:test`（8965 项，约 17 分钟） | 44 失败 / 395 跳过 | **全部既有**（宏语料 + cjmp 诊断语料）。同过滤器 A/B：停用 D-3 的消解器时 40 个用例名失败、启用后 35 个——净修 5 个、无新增；4.x 的接缝扩展后仍为 44（无新增、也未再修） |
+| `:analysis:analysis-api-cfir:test`（A/B 前） | 1629 / 0 | 5.5 基线 |
+| `:cfir:raw-cfir:psi2cfir:test` | 686 / 0 | ✔ 2026-10-09 补跑（`CfirReceivers` 接缝的直接下游） |
+| `:cfir:raw-cfir:light-tree2cfir:test` | 262 / 0 | ✔ 同上 |
+| `:cfir:cfir-serialization:test` | 115 / 0 | ✔ 同上 |
+| `:analysis:stubs:test` | 8 / 0 | ✔ 同上（此前记录过的 `BuiltinsStubsTest` 差异当前不复现） |
+
+### 未覆盖项（如实记录）
+
+1. ~~最后两轮改动之后未重跑 `:cfir:analysis-tests`~~ —— **2026-10-09 已补跑**：
+   `:cfir:analysis-tests:test` **8964 项、44 失败、395 跳过**，与既有基线完全一致（宏语料 + cjmp 诊断语料），
+   即 14.1 的 DSL 夹具与 13.2 的 resolve 计时对 LLT 层**无影响**——不再靠「推测不受影响」支撑。
+2. **偶发（未归因）**：一次全量 `:analysis:analysis-api-cfir:test` 里
+   `CfirIdeNormalAnalysisLibraryBinaryModuleTypeScopeTestGenerated` 报过一次 `Symbol was not restored`
+   （`sample.scope.User.<init>`）；单独重跑与整套重跑均绿，判定为顺序/会话状态相关。
+3. **本工作区可跑的层已尽量跑满**：除窄集与 `analysis-tests` 外，还补跑了 `psi2cfir` / `light-tree2cfir` / `cfir-serialization` / `analysis:stubs` 四套（合计 1071 项、0 失败），覆盖 `CfirReceivers` 接缝的全部直接下游。**宿主侧回归不在本工作区**：`intellij-ide` 与 `deveco` 的插件加载/描述符唯一性/运行时插入
+   （8.7、8.8、12.3–12.7、14.2、14.5、15.11、15.12）按分工由宿主侧会话执行。
+4. **预算类指标未测**：13.2 的冷/热与大/小项目基线、6.6 的查询耗时预算需要真实 SDK 规模的工程，
+   本工作区不编造数字（设计亦要求预算先落入具名测试配置文件）。
+
+### 11.5① 展开映射的现状核查与决策（2026-10-09）
+
+**结论：不实现，记录在案。**11.5 的两半——上下文分流与 `.cjo` 无源码/缺 SDK 降级——已落地并勾选项之外的部分
+（见本项既有记录）；剩下的「宏展开后可映射代码的识别与可靠源映射」**不是本变更能补的缺口**，理由有三条，
+都可在仓内验证：
+
+1. **宏管线的产物按设计不进 CFIR。** `cfir/providers/.../macro/MacroSurface.kt` 的 KDoc 写明：
+   「`MacroSurface*` **不实现** `CfirElement`，**不**进入 generated `cfir-tree` visitor / checker。
+   任何把 surface 放进 provider-visible final CFIR 的尝试都应当被 `recordExpandedRawFilesOnce` 拒绝。」
+   `recordExpandedFilesOnce` 的状态机（`RecordingState.EMPTY → OPEN_FOR_EXPANDED_RECORD → FINALIZED`，
+   `CfirSourceSymbolProvider`）也正是围绕这条边界设的。要给出「展开后可映射代码」的分析层表示，
+   先得让展开结果**成为可分析的 CFIR/PSI**，而那与这条硬性边界直接冲突——属于宏管线自己的路线决定，
+   不该由补全变更顺手改掉。
+2. **宏管线有自己的批次计划，且该计划引用的基线文档不在仓库里。** 代码多处引用「Baseline 第 2 节硬性边界 #7」、
+   「第 7 节字段集合」、「Batch 4a / 4b」，但 `grep -rn "硬性边界|Batch 4a|Batch 4b" --include=*.md`
+   在**工作树与主检出**都**没有命中**：计划只活在代码注释里。这既是「无法按原计划核对进度」的原因，
+   也说明这条路线当前由宏侧自行推进（`MacroCallForest` / `MacroFragmentParser` /
+   `TokenBackedMacroFragmentParser` / `MacroSymbolIndex` / `MacroDemandClassification` 一整套已就位）。
+3. **本变更没有消费方。** 需要「展开映射」的 IDE 功能（在展开代码里导航/找定义）不在 G1–G5 任何准入项里；
+   补全侧要的是「宏 token 位置不产出无关候选」，那一条已由 11.5 的分流用例锁住（手写全部区段清单，
+   断言所有区段都不产出且不抛异常）。为没有消费方的能力造契约，正是本变更反复拒绝的做法（同 10.3）。
+
+**留给宏侧的最小欠账（本项如实记录，不代为完成）**：把那份 Baseline 计划落进仓库，
+否则「哪些批次承诺了展开映射」无从核对。
+
+### 宿主面收尾与 15.10 定案（2026-10-10 ~ 10-11）
+
+**结论：tasks.md 102/107。本工作区能闭环的全部闭环；余下 5 项见文末「未闭环项的准入」。**
+
+**本轮提交**（工作树 `completion-k2-musing-bun`，分支 `claude/completion-k2-musing-bun`）：
+
+| 提交 | 内容 |
+| --- | --- |
+| `6b0c0fab4` | 不稳定 dangling 副本的 Analysis session 自愈（LL 失效事件按设计不覆盖这类模块）；dummy 占位替换按入口分流（平台入口不写副本、无头入口「文档优先 + 自检 + PSI 回退」）；`cfirCompletionServiceOrNull` 的装配异常改 `LOG.warn` 不再静默 |
+| `4036db61c` | `CjoStubAstConsistencyDiagnosticTest` 补「真实文件对账」（真实 `stubTree` vs `node` 的 stubbed spine）与 `textLength` 输出 |
+| `52074b59b` | `LspIdeTwoEndPresentationTest`：同一条快照在 IDE 与 LSP 两端渲染的主文本/签名/类型求值结果一致 |
+| `ddf5f62f4` | 阶段预算具名文件 + 覆盖守卫 + 冷/热小/大基线门禁（`LspCompletionStageBaselineTest`）+ 无 SDK 会话不扫描用例（`LspCompletionWithoutStdlibTest`） |
+| `f61a03f32` | **解析器修复**：恢复 `parseImportDirectives` 里被注释掉的 `DoNotBindAnything` 注释绑定器——15.10「resolve 空文档」的真因 |
+
+**关键定案一：15.10 的真因是解析器吞注释，不是「light PSI 没有 CDoc」。**
+证据链（LSP resolve 路径逐层埋点）：`symbol.psiSafe` 非空、`file.isCompiled=false`、文件文本里有 `/** */`、
+`PsiTreeUtil.findChildOfType(file, CDoc)` 为真；但 `declaration.docComment` 恒空，`documented` 的 AST 直接
+前驱是 `IMPORT_LIST`，且 CDoc 的 AST 父节点落在 import list 里、PSI 父节点却是 `CjFile`——两棵树对不上。
+真因：`psi/src/.../parsing/CangJieParsing.kt#parseImportDirectives` 里 `setCustomEdgeTokenBinders(DoNotBindAnything, null)`
+被注释掉（其上方注释「允许注释绑定到首个声明」即用途），于是**没有 import 的文件**里 `package` 之后的文档注释
+被绑定进 import list 子树。恢复后 resolve 端到端填出 `被记录的声明。\n\n第二段说明。`，
+验收用例由 `resolveCannotFillDocumentationInThisContainer`（记录空文档）改为正向的
+`resolveFillsDocumentationForDocumentedCandidate`。回归：`:lsp:test` 0 失败；`:psi:test` 96 例中 1 例失败，
+且**临时撤回该改动后在同一断言（`ForeignAndAnnotationParsingTest.kt:137`）同样失败** ⇒ 既有基线。
+
+**关键定案二：宿主的 stub/AST 不一致（14.2 原「库侧候选不可用」）是瘦身夹具缺模块。**
+宿主夹具只装 `std.cjo`/`std.core`/`std.ast`/`std.objectpool`，而 `std.ast` 大量引用 `std.collection.ArrayList`：
+缺它时反编译文本在类型位置渲染出 `<error>`（两边文本转储 diff：宿主 235181 字符 vs 上游完整夹具 240482，
+142 处差异全是这一种），AST 与 compiled stub 树节点数因此对不上（46489 vs 47881）。
+修法：`CangJieStdlibLightProjectDescriptor` 补 `std/std.collection.cjo`——顺带把宿主
+`CangJieCompiledFilesHighlightingTest` 里同一条断言的**既有失败**转绿。
+**宿主三处改动未提交**（本会话 git 守卫拦跨工作树操作）：上述夹具、`CangJieCompletionRegistrationTest.kt`
+（真实入口用例 + 两条记录式探针）、`PlatformMatrixDeclarationTest.kt`（新增）。
+
+**关键定案三：宿主 light fixture 的两条限制（14.2 ①撤销、②库侧候选）已用对照实验证伪「产品缺陷」。**
+①撤销：对照实验里普通 `WriteCommandAction` + `commitDocument` 的文档改动，`ACTION_UNDO` **同样不回退**
+（`CJD-UNDOCTRL commandEdit changed=true reverted=false`），且 `isUndoAvailable(fileEditor)` 在补全**之前**已为 true
+⇒ 夹具的撤销栈被夹具自身命令占用，不能作为补全撤销语义的证据。②库侧：`cfir.index` 区段确被执行
+（埋点 `CJD-IDX all=0 prefix='Str' kind=TYPE claimed=1`），但该夹具的 std 库不提供按前缀发现声明的能力，
+各过滤点均未触发。两条的真机复验归 14.5。
+
+**本轮跑过的验证**（均为实跑结果，命令见各任务行）：宿主 `CangJieCompletionRegistrationTest` 7/7 运行通过、
+`PlatformMatrixDeclarationTest` 通过、`buildPlugin` 产出 `intellij-cangjie-2.1.4.zip`；
+上游 `:lsp:test`（含新增 4 例）0 失败、`:analysis:analysis-api-cfir:test`、`:analysis:stubs:test`、
+`:code-insight:completion:impl-shared:test`、`:code-insight:completion:impl-cfir:test` 全绿；
+`:psi:test` 96 例 / 1 例既有基线失败。
+
+### 未闭环项的准入（2026-10-11：5 条，均为「已决定的缺口 / 他分区工作 / 真机准入」，不是未完成的实现）
+
+| 任务 | 准入 | 谁做 |
+| --- | --- | --- |
+| 6.6 持久化符号索引 | ①③④已落地；**②（IDE 侧跨会话持久实现）属宿主装配面**，且查询耗时预算须在真实 SDK 规模下测得，本工作区不编造数字。**2026-10-11 核查（同日修正）**：起初按 `grep -rl "FileBasedIndexExtension|StubIndexExtension|..."` 在上下游**均无命中**判定「没有可挂索引」，随后在 `psi/src/.../stubs/elements/StubIndexService.kt` 发现**写侧接缝已经预留**：该类是全空实现的开放类（每个 `indexXxx` 都空），而每个 stub 元素类型的 `indexStub(stub, sink: 平台 IndexSink)` 都已经调用 `getInstance().indexXxx(...)`，取用端 `?: NO_INDEX` 兜底；全仓缺的只是「索引键与扩展 + 写侧实现 + 读侧实现 + 四处注册」。**实施方案已出**：`design-6.6-persistent-symbol-index.md`（键设计、写侧/读侧、注册与版本升级规则、S1–S8 步骤、等价性/增量/持久/预算验证、extend 与嵌套的钉死用例、回滚路径）。 | 宿主侧会话 |
+| 10.3 参数匹配权重 | 七维中六维已落地；「参数匹配」设计只提过一次、仓内无「期望参数」契约，**刻意不臆造排序规则**（等 A4 `CaCompletionExtensionCandidateChecker`） | 待 A4 |
+| 11.5 宏展开映射 | 已决策「不实现，记录在案」（三条仓内可核理由见上节）；欠账是宏侧把 Baseline 计划落进仓库 | 宏侧 |
+| 14.5 真实 sandbox | 需真人 GUI 会话在真实 IDE 里跑分发插件并留可复查记录（14.2 的撤销与库侧候选两条也在此复验）；静态面已核：ZIP 内 `since-build=253 until-build=253.*` | 变更负责人 |
+| 14.6 默认开关 | 按其自身文字，须等 14.1–14.5 全部准入通过（含 14.5） | 14.5 之后 |
+
+### 6.6② 持久化符号索引：S1–S4 实施与实测（2026-10-11）
+
+**结论：S1–S4 已实现并端到端通过；6.6 仍未勾选（S5 等价性 / S6 增量与持久 / S7 预算未做）。**
+
+**落点与文件**（方案 `design-6.6-persistent-symbol-index.md`）：
+
+| 件 | 位置 |
+| --- | --- |
+| 四个索引键 + `VERSION` | `intellij-ide/modules/ide/base/src/main/kotlin/org/cangnova/cangjie/ide/base/index/CangJieStubIndexKeys.kt` |
+| 四个 `StringStubIndexExtension` | 同目录 `CangJieStubIndexExtensions.kt` |
+| 写侧（接前端已有的 `StubIndexService` 空钩子） | 同目录 `CangJieStubIndexService.kt` |
+| 读侧（`CaSymbolIndexQueryService` 实现，`PERSISTENT`） | 同目录 `CangJieSymbolIndexQueryService.kt` |
+| 注册（`stubIndex` ×4 + `applicationService` + `projectService`） | `modules/ide/base/src/main/resources/META-INF/cangjie-decompiled.xml` |
+| 端到端用例（5 例） | `product/idea-plugin/src/test/kotlin/org/cangnova/cangjie/ide/index/CangJieSymbolIndexQueryTest.kt` |
+
+**实测**：`:product:idea-plugin:test --tests "*CangJieSymbolIndexQueryTest*"` → **5/5 通过**，覆盖：
+未打开文件里四类顶层声明可按前缀召回（种类正确）；嵌套类与 extend 成员不入索引；
+枚举构造器条目带 `ownerClassId`（分析层靠它定位所属枚举，缺了会静默丢弃）；
+>3 字符前缀走子串口径且**区分大小写**；查询计数与键扫描量有观测。
+
+**实施中发现的两条事实**（已写进代码注释）：
+1. **枚举构造器的父桩是枚举体**（不是枚举桩），因此「所属枚举顶层」必须向上找最近的类型声明桩再判；
+2. **过滤器区分大小写**（契约的 `CaSymbolIndexNameFilter.matches`）：`Alpha*` 不会被 `"alpha"` 命中——
+   用例最初就踩了这个，读侧返回的条目本身是对的。
+
+ **（2026-10-11 续：S5–S7 补齐，6.6 勾选）**读侧补 `queryNanos`；宿主用例扩到 8 例全绿（新增 scope 限定、增量可见、扫描量上界、耗时记录四项）；语义等价性取「两端各自锁定同一口径」（standalone 侧 `CaStandaloneSymbolIndexQueryTest` ↔ 宿主侧 `CangJieSymbolIndexQueryTest`）；跨会话持久由机制保证（平台持久索引），真机复验记在 14.5。
+
+（原记录）仍未做**：S5 与无平台实现（`CaStandaloneSymbolIndexQueryService`）在同一 filter+scope 下的等价性断言；
+S6 增量更新与跨会话持久的实测证据；S7 键扫描量预算（接 13.2 的预算文件）。
+
+## 2026-10-11：14.5「授权运行时」——最终制品的平台核验 + 撤销项独立复验
+
+**可机械化的一半跑完了**（完整记录：`verification-14.5-plugin-verifier.md`，与主检出同步）。
+
+### 1. JetBrains Plugin Verifier（制品 × 真实平台）
+
+宿主 `build-logic/src/main/kotlin/cangjie.intellij-product.gradle.kts` 新增 `pluginVerification { ides { ide(ideToRunType, ideRunVersion) } }`，
+被测平台与声明矩阵同源（IU-253.29346.50）。对 `intellij-cangjie-2.1.4.zip` 跑 verifier 1.410（20 m 50 s，另下载依赖插件 1.17 GB），
+判定 **Compatible**：14 项 scheduled-for-removal / 168 项 deprecated / 265 项 experimental / 104 项 internal /
+2 项 non-extendable，另有 3 条 plugin structure warnings；`Dynamic Plugin Eligibility: 可启停无需重启`。
+报告：`product/idea-plugin/build/reports/pluginVerifier/IU-253.29346.50/report.html`。
+
+三条结构告警是「描述符声明 + 依赖插件集里同样有」被判为重复依赖（`org.toml.lang` / `com.redhat.devtools.lsp4ij` / `com.intellij.modules.json`）——
+**不能照字面删**：lsp4ij 是运行时必需且不随 IDE 分发的外部插件，删了加载面直接变红。按「需一次 runIde 冒烟再改」的打包决策处理，本轮不动描述符。
+另有一条非制品问题的下载告警（`org.jetbrains.plugins.clion.radler` 下载 11 m 19 s 后 closed，verifier 记 failures 后继续）。
+
+### 2. 撤销项：物理文件 + 真编辑器，四变体全不回退
+
+14.2① 原先只在**内存 light 文档**上观测到「撤销不回退」。本轮换成**磁盘真实文件**（`tempDirFixture.createFile` +
+`configureFromExistingVirtualFile`）并加**对照组**（普通 `WriteCommandAction` 编辑），触发各给两种
+（`ACTION_UNDO` / `UndoManager.undo(FileEditor)`，后者经 `FileEditorManager.getAllEditors` 取 `FileEditor`——
+`EditorImpl` 不是 `FileEditor`，直接强转会 CCE）：
+
+| 编辑 | 触发 | 结果 |
+| --- | --- | --- |
+| 对照组（普通命令内编辑） | `ACTION_UNDO` | 不回退 |
+| 对照组 | `UndoManager.undo` | 不回退 |
+| 补全接受候选 | `ACTION_UNDO` | 不回退 |
+| 补全接受候选 | `UndoManager.undo` | 不回退 |
+
+⇒ **该夹具对任何命令内文档改动都撤不回来**（与载体、改动种类、触发方式都无关），故 14.2① 的判定维持：
+这是夹具限制而非补全缺陷；真机撤销验收归 14.5 的 GUI 会话。
+随后把这条夹具事实**钉成两条通过用例**（`CangJieCompletionUndoOnFileTest`）：撤销触发后文本必须仍停在编辑后；
+将来平台或夹具修好撤销时它们会失败，届时翻成「撤销后逐字回到补全前」的真验收。
+
+### 3. 仍未闭环（要真人 GUI 会话）
+
+14.5 的**触发 / 排序 / 插入 / 撤销 / 错误态**在真实 sandbox 里的验收（`runIde`），以及 14.2 的第二条夹具限制
+（库侧候选按前缀发现）。verifier 只覆盖加载/结构/兼容面，替代不了 GUI 会话；故 14.5 仍不勾选。
+
+## 2026-10-11（真机验收驱动）：图标按声明形态、泛型插入决策翻转、10.3 与 11.5 收口
+
+### 1. 真机沙箱查出并修复的两条（补全自身的缺陷）
+
+产品侧在 `runIde` 沙箱里实测报了两条：**候选图标全是 class 图标**、**`A<T>` 补全后只剩 `A`**。
+
+- **图标**：`LookupIcons.iconOf` 原先只按 `CompletionItemKind` 取图标，而顶层一类里同时有
+  class / interface / struct / enum / typealias / 函数，于是它们共用 `AllIcons.Nodes.Class`（成员也一律 Method）。
+  修法：契约新增 `CompletionSymbolKind`（**声明形态**，与「候选类别」分工：类别决定排序与插入形态，形态只管图标），
+  `CaSymbol.completionSymbolKind()` 由符号类型判定（`CaClassKind` → class/interface/struct/enum、`CaTypeAliasSymbol` → typealias、
+  构造器/枚举构造器/属性/字段/变量/形参/类型参数各自映射），映射改为 `iconOf(kind, symbolKind)`；
+  **形态未定按类别兜底**（引入前行为），漏标只会少一次精细化、不会空图标。
+- **泛型插入**：原先（11.1 的决策）刻意不插 `<`，`<T>` 只进尾文本；真机实测「补出 `A` 之后用户无从知道要写几个类型实参」，
+  **决策翻转为插入**：契约加 `CompletionInsertion.typeParameterList` 与 `CaretPolicy.INSIDE_NEW_TYPE_ARGUMENTS`，
+  插入 `Box<T>`（caret 落在 `<>` 内），构造位置是 `Box<T>(`（caret 仍在 `<>` 内，类型实参在语法上先于调用实参）；
+  用户已写 `<` 或 `<...>` 时**绝不重复插**，`<` 未闭合时不补括号。插入仍走 `performCangjieInsertion`
+  ——**IDE 与 LSP 共用同一份实现**，因此 LSP 侧编辑自动一致，并补了 LSP 用例。
+
+### 2. 10.3（`completion-parameter-matching-weight`）完成——并更正立项前提
+
+立项时写的「分析层没有从实参位推导期望类型的代码」**是错的**：`CaCfirExpressionTypeProvider.getExpectedTypeOfFunctionParameter`
+早就实现了（`CjValueArgument` → 所在调用 → `valueArgumentMapping[实参].returnType`），且被生成套件的
+`expectedExpressionType/functionArgument.cj` 覆盖。立项时的 grep 用错了词（找 `argumentIndex`/`valueArguments`）。
+本轮实际交付：契约文档补「实参位」上下文（含位置/命名实参两种绑定），新增 `AnalysisApiCfirExpectedParameterTypeTest`
+（位置实参取类型 ✓、**命名实参按名绑定**用「写序与形参序相反」的夹具区分、形参名不存在 → 未知 ✓）。
+**变长参数位给出「未知」**（理由与判定见第 4 节；最初写的「尾随数组形参被误判」已被取证更正）。
+**夹具坑两条**（写用例时撞到，已记进用例注释）：仓颉的命名参数要在**声明侧**用 `!` 标注；「实参多于形参」的夹具会让
+`resolveToCall` 在诊断转换处抛 `ClassCastException: CjOffsetsOnlySimpleDiagnostic -> CjPsiDiagnostic`（既存缺陷），故该用例缺位并写明。
+
+### 3. 11.5（`macro-expansion-source-mapping`）完成
+
+- 契约：`analysis-api` 新增 `CaMacroExpansionMapping`（`None` / `Ambiguous` / `Inside(surfaceId, start, end, reliability)`）
+  与三态 `CaMacroExpansionReliability`；**不暴露 `MacroSurface` 本身**，边界不变。入口两个：`PsiElement.macroExpansionMapping` 与
+  `macroExpansionMappingAt(file, offset)`。
+- 实现：`cfir/providers` 新增 `MacroSurfaceLookup.kt`（`MacroCallForest.lookupSurfaceAt`：闭区间、取最内层、歧义如实上报；
+  与 `MacroCallNode.incomingChannel()`）；`analysis-api-cfir` 新增 `CaCfirMacroExpansionMappingProvider`，
+  从 raw builder 的 surface 存储按 PSI 文件身份取表（与 `CfirImportsChecker` 同源）并建森林。可靠性只看父边通道：
+  `ATTR`/`INPUT` ⇒ 可靠，`UNRESOLVED` ⇒ 不可靠，root ⇒ 可靠。
+- 用例：`MacroSurfaceLookupTest` 8 例（嵌套取最内层 / 端点归属 / 跨行 / 无展开 / 重叠不嵌套报歧义 / 无 range 不参与 / 通道来自父边 / 未覆盖通道 ⇒ UNRESOLVED）。
+  消费侧**未改任何区段**：宏位置本来就由位置分流挡成「所有区段不产出」，新增用例
+  `macroTokenPositionIsInsideReliableExpansion` 把「映射判为 `Inside(RELIABLE)`」与「索引候选为空」钉在同一个用例里——
+  只验其一都会得出错误结论。
+
+### 4. 变长参数判定：更正前提并修掉真缺陷
+
+最初我以为 `isVararg` 的「最后一个形参且类型是 Array」是**启发式**、会把正常的尾随数组形参误判。
+取证后**更正**（证据：官方指南的变参糖说明、官方编译器 `Sema/TypeCheckCall.cpp#IsFuncDeclPossibleVariadic`、
+cjc 1.1.3 实测 `func sum(arr: Array<Int64>)` 可 `sum()`/`sum(1,2,3)`/`sum(arr)`）：
+**仓颉没有 `vararg` 语法记号**，「变长参数」就是「最后一个**非命名**形参是 `Array<T>`」这条调用语义规则
+（`...` 只用于 C FFI 的 `hasVariableLenArg`，且已被 raw builder 从 `valueParameters` 剔除）。
+
+真缺陷是另外两条：
+1. 分析层用的是**整张形参表的最后一位**，而不是「最后一个非命名形参」——
+   `func collect(arr: Array<Int64>, extra!: Int64)` 现在判 `false`，按官方应当 `true`（`collect(1,2,3, extra: 4)` 合法）；
+2. 缺两个官方例外（enum 构造器不可变长；除 `()`/`[]` 外的运算符重载不可变长），
+   且判定与 `cfir:resolve` 的 `CangjieVariadicUtils` 重复、已经漂移。
+
+修法：把判定收成一份——`CfirDeclaration.cangjieVariadicParameterOrNull()`（`cfir:resolve`）作为唯一出口，
+`CaValueParameterSymbol.isVararg` 直接委托；分析层的期望类型在变长位返回「未知」
+（该位可传数组本身或 0..n 个元素，无统一期望）。回归用例：
+`arrayParameterBeforeNamedParameterIsVariadic`（旧实现此处会误返回 `Array<Int64>`）、
+`variadicArgumentYieldsNoExpectedType`。**未覆盖**：enum 构造器与运算符两个例外尚无用例。
+
+**本轮提交**（本工作树 `claude/completion-k2-musing-bun`）：
+- `3bbeb6a14` feat(completion)：候选图标按声明形态、泛型类型插入类型参数列表（真机查出的两条）。
+- `e5b1cf89b` feat(analysis,cfir)：宏展开源映射的只读契约与实现（11.5）。
+- `1d6464a16` fix(analysis,cfir)：实参位期望类型收口——变长判定统一、变长位不给期望类型（10.3）。
+
+**验证**（本轮全绿）：`MacroSurfaceLookupTest` 8、`CfirMacroTokenPositionTest` 2、
+`AnalysisApiCfirExpectedParameterTypeTest` 5、`CangjieInsertionTest`、`LookupElementFactoryTest`、
+`LspCompletionEditCalculatorTest`。
+
+**2026-10-11 续（10.3 的 1.3 定位 + 运算符例外用例）**
+- `b7534edf8` test(analysis)：`()` 运算符允许变长改走**真实调用**断言。
+  原先直接查声明符号的 `isVararg`，实测发现那会因为**形参类型未解析**而一律 `false`——
+  `+` 那条会因错误的原因通过、`()` 那条直接失败；改成 `callable(1, 2, 3)` 后取实参位的期望类型，
+  才真的在判别运算符例外。**未覆盖**：除 `()`/`[]` 外的运算符不得变长这一支（二元写法拿不到实参映射，已记录）。
+- **10.3 的 1.3 从「未区分」升级为「已定位到段」**：命名实参调用**能解析**（1 条 `CaBaseSimpleFunctionCall`）、
+  PSI `isNamed()==true`，但 **`valueArgumentMapping` 为空** → 空缺在「CFIR 实参映射 → 公开映射的投影」段
+  （`CaCfirResolver.buildValueArgumentMapping` 取键或取下标时静默跳过）。用例保留为「缺口记录」。
+- **14.5 的 GUI 面分工已定**：由用户自建 UI 机器人（`runIdeForUiTests` + `remote-robot`）打通后出证据；
+  本工作区留好 verifier 报告、`verification-14.5-plugin-verifier.md`、`real-machine-checklist-14.5.md`，
+  并核实了两条基建事实（253 分发包**不自带** Robot Server；宿主 IPGP 为 2.10.5）。
+
+**2026-10-11 续二（10.3 的 1.3 真正修好）**
+`774fe2dbc` fix(analysis)：命名实参进公开实参映射——投影时拆到值表达式。
+
+- 现象：`CaFunctionCall.valueArgumentMapping` 对**命名实参**恒为空（调用能解析、PSI `isNamed()==true`，映射 size 0）。
+- 根因：CFIR 的实参映射对命名实参给的是 `name: value` **节点**，其 PSI 是 `CjValueArgument` 而不是表达式，
+  投影时 `as? CjExpression` 落空后 `continue` **静默跳过**（只影响命名实参；位置实参不受影响）。
+- 修法：投影前先拆到值表达式（`CfirNamedArgumentExpression.expression`），与 `CfirMapArguments` 里 `CallArgumentInfo` 的口径一致。
+- 结果：命名实参位能取到该形参的期望类型 → SMART 补全在这类位置可按形参类型过滤/加权；
+  用例 `namedArgumentBindsByParameterName` 从「缺口记录」翻成**正向断言**并绿。
+  未覆盖：乱序写法在本解析器下整条调用不解析（实测），故「按名而非按位次」的判别仍只有反例。
+
+**过程教训（写下来免得再犯）**：这一轮出现过一次「自我验证的空转」——
+两条编辑因用了**相对路径**（当时 shell 的 cwd 已漂到 `build/test-results/test`）没有落到文件上，
+而随后的测试跑的是**旧文件**、自然通过，我据此报了「修好了」。
+后来核 `mtime` 与文件内容才发现。**规则**：①编辑一律用**绝对路径**并当场回读校验；
+②读测试结果前先核 `mtime` 是否属于本轮，别把上一轮的 XML 当本轮结论。
+
+**2026-10-11 续三（图标修复的后续 + 1.3 的最终提交）**
+- `774fe2dbc`：命名实参进公开实参映射（10.3 的 1.3 真正修好，见上节）。
+- `5e1bd01be` fix(completion)：**内建类型落 OTHER 形态**。`completionSymbolKind` 直接读 `classKind`，
+  而内建类型符号（`Int64`/`String`）该 getter 抛 `Unsupported class-like symbol` → 补全到内建类型时
+  整条候选计算被打断。**这是 3bbeb6a14 引入的回归**，由区段级集成用例 `CfirInsertionIntegrationTest` 抓到——
+  教训：图标/展示类改动也要跑区段级集成用例，只跑工厂与插入的单元用例抓不到。
+
