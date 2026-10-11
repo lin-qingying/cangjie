@@ -208,11 +208,15 @@ internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =
  */
 @OptIn(CaExperimentalApi::class)
 internal fun CaSymbol.completionSymbolKind(): CompletionSymbolKind = when (this) {
-    is CaClassSymbol -> when (classKind) {
+    // 内建类型（`Int64` / `String` …）的符号没有源码 class-like 形态：`classKind` 会抛
+    // `Unsupported class-like symbol`。这里如实落 OTHER（图标按类别兜底），
+    // 而不是让取图标这一步把整条候选计算带崩。
+    is CaClassSymbol -> when (runCatching { classKind }.getOrNull()) {
         CaClassKind.CLASS -> CompletionSymbolKind.CLASS
         CaClassKind.INTERFACE -> CompletionSymbolKind.INTERFACE
         CaClassKind.STRUCT -> CompletionSymbolKind.STRUCT
         CaClassKind.ENUM -> CompletionSymbolKind.ENUM
+        null -> CompletionSymbolKind.OTHER
     }
 
     is CaTypeAliasSymbol -> CompletionSymbolKind.TYPE_ALIAS
