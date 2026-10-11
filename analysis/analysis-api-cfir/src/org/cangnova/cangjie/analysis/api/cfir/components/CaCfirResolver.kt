@@ -51,6 +51,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -535,7 +536,11 @@ internal class CaCfirResolver(
 
         return buildMap {
             for ((argument, parameter) in argumentMapping) {
-                val psiExpression = (argument.realPsi ?: argument.psi) as? CjExpression ?: continue
+                // 命名实参在 CFIR 里是 `name: value` 节点，其 PSI 是 `CjValueArgument` 而不是表达式；
+                // 公开映射按**值表达式**取键（期望类型与补全都按值表达式查），因此先拆到值表达式。
+                // 不拆的后果是命名实参被整段静默跳过——实测：只剩命名实参的调用映射为空。
+                val valueArgument = (argument as? CfirNamedArgumentExpression)?.expression ?: argument
+                val psiExpression = (valueArgument.realPsi ?: valueArgument.psi) as? CjExpression ?: continue
                 val parameterIndex = valueParametersBySymbol[parameter.symbol] ?: continue
                 val parameterSignature = signature.valueParameters.getOrNull(parameterIndex) ?: continue
                 put(psiExpression, parameterSignature)

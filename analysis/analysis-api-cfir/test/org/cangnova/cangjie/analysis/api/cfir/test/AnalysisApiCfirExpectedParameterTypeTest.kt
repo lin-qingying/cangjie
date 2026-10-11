@@ -50,26 +50,19 @@ class AnalysisApiCfirExpectedParameterTypeTest : AbstractAnalysisApiExecutionTes
     }
 
     /**
-     * 命名实参位当前取不到期望类型——**实测记录的缺口**，不是通过用例。
+     * 命名实参（`name: value`）按形参名绑定时能取到该位的期望类型。
      *
-     * 夹具是合法的命名实参写法（声明侧用 `!` 标注命名参数，调用侧写 `name: value` 且与声明同序），
-     * 但该位在 `valueArgumentMapping` 里没有条目，期望类型为 `null`。
-     * **实测三件事**（2026-10-11 探针）：①该调用**能解析**（`resolveToCall().calls` 恰 1 条 `CaBaseSimpleFunctionCall`，
-     * 不是「调用不解析」）；②PSI 上该实参 `isNamed() == true`（写成 `name: value`）；
-     * ③但 **`valueArgumentMapping` 为空**（size 0），所以期望类型为 `null`。
-     * 即空缺在「CFIR 实参映射 → 公开 `valueArgumentMapping` 的投影」这一段：要么 CFIR 侧没为命名实参建映射，
-     * 要么投影时形参符号对不上被 `continue` 掉了（`CaCfirResolver.buildValueArgumentMapping` 按
-     * `argument.realPsi/psi as? CjExpression` 取键、再按形参符号取下标，任一步落空都会静默跳过）。要定位需要 CFIR 侧探针，另立条目。
-     *
-     * 对补全而言当前结论是安全的：取不到 = 未知 = 不参与过滤与加权，与「推导不出来一律未知」一致。
-     * 哪天命名实参进了映射，本用例会失败并提示把它翻成正向断言。
+     * 这条是回归：CFIR 的实参映射对命名实参给的是 `name: value` **节点**，
+     * 它的 PSI 是 `CjValueArgument` 而不是表达式——投影时若不拆到值表达式，
+     * 命名实参会被静默跳过，整个映射为空（实测：调用能解析、`isNamed()==true`，但 `valueArgumentMapping` size 0）。
      */
     @Test
     fun namedArgumentBindsByParameterName(mainFile: CjFile) {
         analyzeForTest(mainFile) {
-            assertNull(
-                mainFile.argumentOf("namedArgumentBindsByParameterName", 1).expectedType,
-                "命名实参位目前取不到期望类型（缺口已记录）；取到类型说明映射已补齐，应翻成正向断言",
+            assertEquals(
+                "completion/expectedparametertype/Alpha",
+                mainFile.argumentOf("namedArgumentBindsByParameterName", 1).expectedType?.toString(),
+                "命名实参位必须能取到该形参的类型（取不到说明命名实参没进实参映射）",
             )
         }
     }
