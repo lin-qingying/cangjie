@@ -3,8 +3,12 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.analysis.api.resolution.CaFunctionCall
+import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
+import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFile
@@ -50,8 +54,12 @@ class AnalysisApiCfirExpectedParameterTypeTest : AbstractAnalysisApiExecutionTes
      *
      * 夹具是合法的命名实参写法（声明侧用 `!` 标注命名参数，调用侧写 `name: value` 且与声明同序），
      * 但该位在 `valueArgumentMapping` 里没有条目，期望类型为 `null`。
-     * **未区分**两种可能：①解析层没把命名实参放进 `valueArgumentMapping`；
-     * ②该写法在本解析器下整条调用不解析。两者都表现为「取不到映射」，要分开需要解析层探针，另立条目。
+     * **实测三件事**（2026-10-11 探针）：①该调用**能解析**（`resolveToCall().calls` 恰 1 条 `CaBaseSimpleFunctionCall`，
+     * 不是「调用不解析」）；②PSI 上该实参 `isNamed() == true`（写成 `name: value`）；
+     * ③但 **`valueArgumentMapping` 为空**（size 0），所以期望类型为 `null`。
+     * 即空缺在「CFIR 实参映射 → 公开 `valueArgumentMapping` 的投影」这一段：要么 CFIR 侧没为命名实参建映射，
+     * 要么投影时形参符号对不上被 `continue` 掉了（`CaCfirResolver.buildValueArgumentMapping` 按
+     * `argument.realPsi/psi as? CjExpression` 取键、再按形参符号取下标，任一步落空都会静默跳过）。要定位需要 CFIR 侧探针，另立条目。
      *
      * 对补全而言当前结论是安全的：取不到 = 未知 = 不参与过滤与加权，与「推导不出来一律未知」一致。
      * 哪天命名实参进了映射，本用例会失败并提示把它翻成正向断言。
@@ -106,6 +114,27 @@ class AnalysisApiCfirExpectedParameterTypeTest : AbstractAnalysisApiExecutionTes
             assertNull(
                 mainFile.argumentOf("arrayParameterBeforeNamedParameterIsVariadic", 0).expectedType,
                 "命名的尾随形参不影响变长判定：`arr` 仍是变长位，必须返回 null",
+            )
+        }
+    }
+
+    /**
+     * `()` 运算符是官方例外中**允许**变长的两个之一。
+     *
+     * 断言走**真实调用**后的实参位：`callable(1, 2, 3)` 里第一个实参位没有统一的期望类型
+     * （元素可以是 `Int64`，也可以整传 `Array<Int64>`）。若 `()` 被误当成「不许变长的运算符」，
+     * 该位会返回 `Array<Int64>`——因此这条用例真的在判别运算符例外。
+     *
+     * **未覆盖**：除 `()`/`[]` 外的运算符（如 `+`）**不得**变长这一支没有用例。
+     * 判别它需要在运算符使用点取到实参位，而二元写法 `a + b` 在公开解析 API 里拿不到实参映射；
+     * 直接查声明符号又会因为形参类型未解析而一律得到 `false`（实测）——那样的用例会因为错误的原因通过，故不留。
+     */
+    @Test
+    fun invokeOperatorParameterIsVariadic(mainFile: CjFile) {
+        analyzeForTest(mainFile) {
+            assertNull(
+                mainFile.argumentOf("invokeOperatorParameterIsVariadic", 0).expectedType,
+                "`()` 运算符允许变长：该位不给期望类型（判成不许变长会返回 Array<Int64>）",
             )
         }
     }
