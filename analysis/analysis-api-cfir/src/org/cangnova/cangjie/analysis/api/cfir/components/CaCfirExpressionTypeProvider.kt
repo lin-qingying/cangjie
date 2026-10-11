@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.resolution.CaEnumConstructorCall
 import org.cangnova.cangjie.analysis.api.resolution.CaFunctionCall
 import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
@@ -181,7 +182,9 @@ internal class CaCfirExpressionTypeProvider(
         val valueArgument = argumentExpression.parent as? CjValueArgument ?: return null
         val callExpression = valueArgument.parent?.parent as? CjCallExpression ?: return null
         val call = with(analysisSession) { callExpression.resolveToCall() }?.successfulFunctionCallOrNull() ?: return null
-        return call.valueArgumentMapping[argumentExpression]?.returnType
+        // 位置实参与命名实参走同一条映射：`valueArgumentMapping` 已按位次或形参名完成绑定，
+        // 因此这里不需要（也不该）另写一套按名匹配。
+        return call.expectedTypeOfMappedArgument(argumentExpression)
     }
 
     /**
@@ -307,9 +310,27 @@ internal class CaCfirExpressionTypeProvider(
     /**
      * 取出单个调用候选为该实参映射到的参数类型。
      */
-    private fun recoveredArgumentType(call: CaCall, argument: CjExpression): CaType? = when (call) {
-        is CaFunctionCall<*> -> call.valueArgumentMapping[argument]?.returnType
-        is CaEnumConstructorCall<*> -> call.payloadArgumentMapping[argument]
+    private fun recoveredArgumentType(call: CaCall, argument: CjExpression): CaType? =
+        call.expectedTypeOfMappedArgument(argument)
+
+    /**
+     * 单个调用候选为某实参映射到的**期望类型**。
+     *
+     * 变长（variadic）形参位返回 `null`：该位既可以传 `Array<T>` 本身，也可以传 0..n 个 `T`，
+     * 两种写法都合法，因此**不存在**统一的「该位的期望类型」；给出其中任一个都会让另一种写法的候选被错误加权。
+     * 判定走 `CaValueParameterSymbol.isVararg`（仓颉的变长参数不是语法记号，而是
+     * 「最后一个非命名形参是 `Array<T>`」这条调用语义规则，唯一实现在 cfir:resolve 的 `CangjieVariadicUtils`）。
+     *
+     * **已解析调用与候选恢复两条分支必须共用本函数**：只补其中一条时，另一条仍会把
+     * 数组类型当成元素的期望类型（历史缺陷）。
+     */
+    private fun CaCall.expectedTypeOfMappedArgument(argument: CjExpression): CaType? = when (this) {
+        is CaFunctionCall<*> -> valueArgumentMapping[argument]
+            ?.takeIf { (it.symbol as? CaValueParameterSymbol)?.isVararg != true }
+            ?.returnType
+
+        // 枚举构造器按语言规则不可变长，无需变长判定。
+        is CaEnumConstructorCall<*> -> payloadArgumentMapping[argument]
         else -> null
     }
 

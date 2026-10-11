@@ -17,8 +17,10 @@ import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.isArray
@@ -170,26 +172,18 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = parameterDeclaration.isNamed
 
     /**
-     * 值参数是否为 vararg 参数。
+     * 值参数是否为变长（variadic）参数。
+     *
+     * 判定**不在本层**：仓颉的变长参数不是语法记号（那是 Kotlin 的 `vararg`），而是
+     * 「最后一个**非命名**形参的类型是 `Array<T>`」这条调用语义规则，外加 enum 构造器与
+     * 除 `()`/`[]` 外的运算符重载两个例外。唯一实现在
+     * [org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterOrNull]，
+     * 调用解析与分析层共用，避免两边各写一份后漂移。
      */
     override val isVararg: Boolean
         get() = withValidityAssertion {
-            if (parameterDeclaration.isNamed) {
-                return false
-            }
-
-            val ownerDeclaration = cfirSymbol.containingDeclarationSymbol.cfir as? CfirFunction ?: return false
-            val parameterIndex = ownerDeclaration.valueParameters.indexOfFirst { candidate ->
-                candidate.symbol.cfir === parameterDeclaration
-            }
-            if (parameterIndex < 0 || parameterIndex != ownerDeclaration.valueParameters.lastIndex) {
-                return false
-            }
-
-            parameterDeclaration.returnTypeRef.coneTypeOrNull?.let { return it.isArray }
-
-            val publicReturnType = returnType as? CaClassLikeType ?: return false
-            return publicReturnType.classId == ARRAY_CLASS_ID
+            val owner = cfirSymbol.containingDeclarationSymbol.cfir as? CfirDeclaration ?: return false
+            owner.cangjieVariadicParameterOrNull() === parameterDeclaration
         }
 
     /**

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls
 
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -59,6 +60,25 @@ internal fun Candidate.cangjieVariadicCallShapeOrNull(
 
     val elementType = parameter.cangjieVariadicElementTypeOrNull() ?: return null
     return CangjieVariadicCallShape(parameter, elementType, parameterIndex)
+}
+
+/**
+ * 从声明本身识别仓颉普通变参参数。
+ *
+ * **这是本语言「变长参数」判定的唯一出口**：调用解析（`Candidate` 路径）与分析层
+ * （`CaValueParameterSymbol.isVararg`）都走这里，避免「最后一个非命名 Array 形参」这条规则
+ * 在两边各写一份后漂移（历史上分析层用的是整表的最后一位，且缺 enum/运算符例外）。
+ *
+ * 不解构声明形状的调用方（已有 `List<CfirValueParameter>`）直接用下面的列表重载。
+ */
+fun CfirDeclaration.cangjieVariadicParameterOrNull(): CfirValueParameter? {
+    val parameters = when (this) {
+        is CfirFunction -> valueParameters
+        is CfirConstructor -> valueParameters
+        is CfirEnumConstructor -> valueParameters
+        else -> return null
+    }
+    return parameters.cangjieVariadicParameterOrNull(this)
 }
 
 /** 从参数列表和声明形态中识别仓颉普通变参参数。 */
