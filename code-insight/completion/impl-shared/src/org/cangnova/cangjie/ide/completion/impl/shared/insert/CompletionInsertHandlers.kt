@@ -137,9 +137,12 @@ data class InsertionResult(val wroteText: Boolean, val caretOffset: Int)
  * 顺序固定为「先校验、再写任何字符」：校验未通过时**一个字符都不许写**。
  * 把括号补齐放在校验之后，可以避免失效候选在文档里留下半截括号。
  *
- * 括号形态以**文档现状**为准，不以分析期结论为准：分析期看到的括号是当时的文本，
+ * 形态以**文档现状**为准，不以分析期结论为准：分析期看到的括号是当时的文本，
  * 用户此后可能已经手写了左括号甚至填好了实参。三种触发（Enter / Tab / 继续键入）
  * 共用同一套判断——差别只在平台给出的替换区间，不在括号处理。
+ *
+ * 类型实参列表先于调用括号处理：语法上它先出现，且它在文档里的落点决定了括号探测从哪里开始。
+ * 两者都插时 caret 落在**尖括号内**（见 [CaretPolicy.INSIDE_NEW_TYPE_ARGUMENTS]）。
  *
  * @param validity 插入前校验结论。
  * @param setCaret caret 落点回调。
@@ -153,15 +156,45 @@ fun performCangjieInsertion(
 ): InsertionResult {
     if (!validity.writable) return InsertionResult(wroteText = false, caretOffset = caretOffset)
 
-    var caret = caretOffset
     var wrote = false
-    if (snapshot.insertion.insertParenthesis) {
-        when (val existing = existingCallParens(sink, caret)) {
+    // 期望的 caret 落点（尖括号内），仅在策略允许且确实处理了类型实参列表时生效。
+    var caretInsideTypeArguments: Int? = null
+    // 括号探测的起点；为 null 表示「无法判断位置，不处理括号」。
+    var probeFrom: Int? = caretOffset
+
+    val typeArguments = snapshot.insertion.typeParameterList
+    if (typeArguments.isNotEmpty()) {
+        when (val existing = existingTypeArguments(sink, caretOffset)) {
+            // 用户还没写尖括号：补上声明自己的类型参数名当占位。
+            ExistingTypeArguments.Absent -> {
+                sink.insert(caretOffset, typeArguments)
+                caretInsideTypeArguments = caretOffset + 1
+                probeFrom = caretOffset + typeArguments.length
+                wrote = true
+            }
+
+            // 已经写了完整的 `<...>`：绝不重复插，caret 交给括号内，括号探测从列表之后开始。
+            is ExistingTypeArguments.Closed -> {
+                caretInsideTypeArguments = existing.open + 1
+                probeFrom = existing.close + 1
+            }
+
+            // 只写了 `<`：列表边界未知，此时补括号会写出 `Box<T()>` 这类错位文本，直接不处理括号。
+            is ExistingTypeArguments.Unclosed -> {
+                caretInsideTypeArguments = existing.open + 1
+                probeFrom = null
+            }
+        }
+    }
+
+    var parenCaret: Int? = null
+    if (probeFrom != null && snapshot.insertion.insertParenthesis) {
+        when (val existing = existingCallParens(sink, probeFrom)) {
             // 用户已经手写了左括号：绝不能再补一对，否则写出 `foo((`。
             is ExistingCallParens.Closed -> {
                 // 括号里已经有实参时 caret 停在右括号之前，把用户写好的实参让出来；
                 // 空括号（含只有空白）则停在括号内，用户可以接着写第一个实参。
-                caret = if (sink.hasContent(existing.open + 1, existing.close)) {
+                parenCaret = if (sink.hasContent(existing.open + 1, existing.close)) {
                     existing.close
                 } else {
                     existing.open + 1
@@ -169,11 +202,11 @@ fun performCangjieInsertion(
             }
 
             // 括号还没闭合：补一对会写出 `foo(()`，只能把 caret 交给用户接着写。
-            is ExistingCallParens.Unclosed -> caret = existing.open + 1
+            is ExistingCallParens.Unclosed -> parenCaret = existing.open + 1
 
             ExistingCallParens.Absent -> {
-                sink.insert(caret, "()")
-                caret += 1
+                sink.insert(probeFrom, "()")
+                parenCaret = probeFrom + 1
                 wrote = true
             }
         }
@@ -181,7 +214,12 @@ fun performCangjieInsertion(
     if (snapshot.insertion.caretPolicy == CaretPolicy.BEFORE_EXISTING_CLOSING_PARENTHESIS) {
         // 候选后面已经有实参和闭合括号：caret 必须停在右括号之前，
         // 否则用户写好的实参会被挤到括号外。
-        caret = closingParenOffset(sink, caret) ?: caret
+        parenCaret = closingParenOffset(sink, parenCaret ?: caretOffset) ?: parenCaret
+    }
+    val caret = if (snapshot.insertion.caretPolicy == CaretPolicy.INSIDE_NEW_TYPE_ARGUMENTS) {
+        caretInsideTypeArguments ?: parenCaret ?: caretOffset
+    } else {
+        parenCaret ?: caretOffset
     }
     setCaret(caret)
     return InsertionResult(wroteText = wrote, caretOffset = caret)
@@ -240,6 +278,48 @@ private sealed interface ExistingCallParens {
 
     /** 有左括号但尚未闭合。 */
     data class Unclosed(val open: Int) : ExistingCallParens
+}
+
+/**
+ * 探测 [caret] 之后是否已经存在类型实参列表。
+ *
+ * 与括号探测同源的理由：这里在写事务里跑，不能调用 Analysis，需要的结论只是
+ * 「用户是不是已经自己写了尖括号」。**已经有 `<` 就绝不重复补**，
+ * 否则会在 `Box<` 后面再插一段 `<T>`，写出 `Box<<T>`。
+ *
+ * 只做尖括号配对，不解析类型：嵌套 `Box<Box<Int64>>` 靠深度计数识别为已闭合。
+ */
+private fun existingTypeArguments(sink: CompletionTextSink, caret: Int): ExistingTypeArguments {
+    var open = caret
+    while (open < sink.length && sink.charAt(open).isWhitespace()) open++
+    if (open >= sink.length || sink.charAt(open) != '<') return ExistingTypeArguments.Absent
+    var depth = 0
+    var index = open
+    while (index < sink.length) {
+        when (sink.charAt(index)) {
+            '<' -> depth++
+            '>' -> {
+                depth--
+                if (depth == 0) return ExistingTypeArguments.Closed(open, index)
+            }
+        }
+        index++
+    }
+    return ExistingTypeArguments.Unclosed(open)
+}
+
+/**
+ * 插入点之后的类型实参列表现状。
+ */
+private sealed interface ExistingTypeArguments {
+    /** 后面没有 `<`，可以补一段类型参数列表。 */
+    data object Absent : ExistingTypeArguments
+
+    /** 已有完整 `<...>`。 */
+    data class Closed(val open: Int, val close: Int) : ExistingTypeArguments
+
+    /** 只写了 `<`，列表尚未闭合。 */
+    data class Unclosed(val open: Int) : ExistingTypeArguments
 }
 
 /**

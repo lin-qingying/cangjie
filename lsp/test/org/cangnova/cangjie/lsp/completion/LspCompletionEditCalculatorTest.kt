@@ -154,6 +154,36 @@ class LspCompletionEditCalculatorTest {
     }
 
     /**
+     * 泛型类型候选把类型参数列表一起写进编辑。
+     *
+     * 两端共用共享的插入实现：IDE 侧补出 `Box<T>`，LSP 侧必须**逐字一致**——
+     * 否则同一个候选在两个端点上落盘成不同文本，而这是用户直接看得见的差异。
+     */
+    @Test
+    fun genericTypeCandidateInsertsTypeParameterList() {
+        val text = "func f() {\n    let x: Box\n}"
+        val start = text.indexOf("Box")
+
+        val edits = LspCompletionEditCalculator.candidateEdits(
+            text = text,
+            replaceStart = start,
+            replaceEnd = start + "Box".length,
+            snapshot = snapshot(
+                lookupString = "Box",
+                kind = CompletionItemKind.TOP_LEVEL,
+                tailText = "<T>",
+                typeParameterList = "<T>",
+            ),
+        )
+
+        assertEquals(
+            "func f() {\n    let x: Box<T>\n}",
+            apply(text, edits),
+            "泛型候选必须把类型参数列表写进编辑，实际 $edits",
+        )
+    }
+
+    /**
      * 把编辑应用到原文，得到最终文本。
      *
      * 编辑全部相对**原文**，因此按偏移升序一次走完：复制区间之间的原文、替换被编辑的区间。
@@ -200,6 +230,7 @@ class LspCompletionEditCalculatorTest {
         tailText: String = "",
         insertParenthesis: Boolean = false,
         namedArgumentPrefix: String = "",
+        typeParameterList: String = "",
     ): CompletionSnapshot = completionSnapshot(
         lookupString = lookupString,
         kind = kind,
@@ -207,5 +238,6 @@ class LspCompletionEditCalculatorTest {
         tailText = tailText,
         insertParenthesis = insertParenthesis,
         namedArgumentPrefix = namedArgumentPrefix,
+        typeParameterList = typeParameterList,
     ).build()
 }

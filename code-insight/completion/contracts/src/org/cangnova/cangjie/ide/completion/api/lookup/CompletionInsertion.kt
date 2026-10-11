@@ -14,6 +14,14 @@ enum class CaretPolicy {
     INSIDE_NEW_PARENTHESIS,
 
     /**
+     * caret 落在新写入的类型实参列表（`<` `>`）之间。
+     *
+     * 与 [INSIDE_NEW_PARENTHESIS] 同时成立时本策略优先：类型实参在语法上先于调用实参，
+     * 用户也必须先写类型实参才能写实参，caret 落在括号里会让他先写错位置。
+     */
+    INSIDE_NEW_TYPE_ARGUMENTS,
+
+    /**
      * caret 停在**已存在**的右括号之前。
      *
      * 用于「候选后面已经有实参和闭合括号」的情况：直接插到末尾会把用户写好的实参挤到括号外。
@@ -51,6 +59,18 @@ interface CompletionInsertion {
     val caretPolicy: CaretPolicy
 
     /**
+     * 跟随名称一起写入的类型参数列表文本（如 `<T>`）；无类型参数时为空串。
+     *
+     * 写入的是**声明自己的类型参数名**当占位，不是推导出来的类型实参：
+     * 泛型类型 `Box<T>` 补出来后应当是 `Box<T>`，用户把 `T` 改成真实类型实参即可；
+     * 不写这一段的后果是用户面对 `Box` 无从知道它需要几个实参。
+     *
+     * 与括号同样以**文档现状**为准：用户已经亲手写了 `<` 时不得再补一个，
+     * 否则写出 `Box<<`。若后续接入期望类型推导，本字段承载推导结果，调用方无需改变。
+     */
+    val typeParameterList: String
+
+    /**
      * 分析完成时的文档版本戳。
      *
      * 插入前必须复验：文档在此期间被改动（键入、格式化、协同编辑）时，
@@ -69,4 +89,5 @@ data class CompletionInsertionData(
     override val namedArgumentPrefix: String = "",
     override val caretPolicy: CaretPolicy = CaretPolicy.AFTER_INSERTED_TEXT,
     override val documentStamp: Long = 0L,
+    override val typeParameterList: String = "",
 ) : CompletionInsertion

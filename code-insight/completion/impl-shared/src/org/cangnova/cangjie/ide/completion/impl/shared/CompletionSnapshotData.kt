@@ -10,6 +10,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionInsertionData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.api.lookup.toWeight
 
@@ -29,6 +30,13 @@ data class CompletionSnapshotData(
     override val tailText: String = "",
     override val typeText: String = "",
     override val weight: Int = sort.toWeight(),
+    /**
+     * 声明形态。
+     *
+     * 默认按 [kind] 兜底而不是要求每个调用点都传：漏标只会让图标退回粗粒度映射，
+     * 不会让候选失去图标。
+     */
+    override val symbolKind: CompletionSymbolKind = CompletionSymbolKind.fallbackFor(kind),
 ) : CompletionSnapshot
 
 /**
@@ -64,6 +72,13 @@ class CompletionSnapshotBuilder(
     /** 渲染后的类型文本。 */
     var typeText: String = ""
 
+    /**
+     * 声明形态。
+     *
+     * 缺省与 [CompletionSnapshotData] 一致，按类别兜底；知道具体形态的区段自行覆盖。
+     */
+    var symbolKind: CompletionSymbolKind = CompletionSymbolKind.fallbackFor(kind)
+
     /** 构建不可变快照。 */
     fun build(): CompletionSnapshotData = CompletionSnapshotData(
         lookupString = lookupString,
@@ -74,6 +89,7 @@ class CompletionSnapshotBuilder(
         insertion = insertion,
         tailText = tailText,
         typeText = typeText,
+        symbolKind = symbolKind,
     )
 }
 
@@ -94,6 +110,7 @@ fun completionSnapshot(
     documentStamp: Long = 0L,
     insertParenthesis: Boolean = false,
     namedArgumentPrefix: String = "",
+    typeParameterList: String = "",
 ): CompletionSnapshotBuilder = CompletionSnapshotBuilder(lookupString, kind).apply {
     this.identity = CompletionIdentityData(
         kind = identityKind,
@@ -108,9 +125,14 @@ fun completionSnapshot(
     this.insertion = CompletionInsertionData(
         insertParenthesis = insertParenthesis,
         namedArgumentPrefix = namedArgumentPrefix,
-        // 有括号需求时 caret 必须落在括号内；否则落在插入文本之后。
-        caretPolicy = if (insertParenthesis) CaretPolicy.INSIDE_NEW_PARENTHESIS else CaretPolicy.AFTER_INSERTED_TEXT,
+        // 类型实参列表优先于调用括号：语法上它先出现，caret 落在括号里会逼用户先写错位置。
+        caretPolicy = when {
+            typeParameterList.isNotEmpty() -> CaretPolicy.INSIDE_NEW_TYPE_ARGUMENTS
+            insertParenthesis -> CaretPolicy.INSIDE_NEW_PARENTHESIS
+            else -> CaretPolicy.AFTER_INSERTED_TEXT
+        },
         documentStamp = documentStamp,
+        typeParameterList = typeParameterList,
     )
 }
 

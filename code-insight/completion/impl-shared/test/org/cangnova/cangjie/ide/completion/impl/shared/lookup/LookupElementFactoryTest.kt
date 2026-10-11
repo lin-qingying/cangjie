@@ -5,9 +5,11 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementDecorator
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupElementRenderer
+import com.intellij.icons.AllIcons
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
 import org.cangnova.cangjie.ide.completion.api.lookup.ExpectedTypeMatch
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.api.lookup.toWeight
@@ -19,6 +21,7 @@ import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import javax.swing.Icon
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -78,6 +81,67 @@ class LookupElementFactoryTest : CjParsingTestCase(
         assertEquals("(x: Int64): Int64", presentation.tailText)
         assertEquals("Int64", presentation.typeText)
         assertNotNull(presentation.icon, "候选必须有图标：没有图标会让弹窗出现空白行")
+    }
+
+    /**
+     * 图标按**声明形态**取，不按候选类别取。
+     *
+     * 顶层一类里同时有 class、interface、struct、enum、typealias 与函数：
+     * 只按类别取图标会让它们全部显示成 class 图标（真机实测就是「全是 class 图标」）。
+     */
+    @Test
+    fun iconFollowsDeclarationKindNotCandidateCategory() {
+        val classIcon = iconOfSnapshot("Widget", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.CLASS)
+        val interfaceIcon = iconOfSnapshot("Shape", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.INTERFACE)
+        val enumIcon = iconOfSnapshot("Color", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.ENUM)
+        val aliasIcon = iconOfSnapshot("Name", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.TYPE_ALIAS)
+        val functionIcon = iconOfSnapshot("compute", CompletionItemKind.TOP_LEVEL, CompletionSymbolKind.FUNCTION)
+
+        assertEquals(AllIcons.Nodes.Class, classIcon)
+        assertEquals(AllIcons.Nodes.Interface, interfaceIcon)
+        assertEquals(AllIcons.Nodes.Enum, enumIcon)
+        assertEquals(AllIcons.Nodes.Alias, aliasIcon)
+        assertEquals(AllIcons.Nodes.Function, functionIcon)
+        // 同一类别下的五种声明必须两两不同：这正是本用例要钉死的回归。
+        assertEquals(
+            5,
+            setOf(classIcon, interfaceIcon, enumIcon, aliasIcon, functionIcon).size,
+            "同一候选类别下的不同声明不得共用图标",
+        )
+    }
+
+    /**
+     * 成员的函数用成员图标，顶层的函数用顶层图标。
+     */
+    @Test
+    fun memberFunctionUsesMemberIcon() {
+        assertEquals(
+            AllIcons.Nodes.Method,
+            iconOfSnapshot("run", CompletionItemKind.MEMBER, CompletionSymbolKind.FUNCTION),
+            "成员函数与顶层函数在平台上本来就是两种图标",
+        )
+    }
+
+    /**
+     * 形态未定时图标退回按类别的粗粒度映射（引入声明形态之前的行为）。
+     */
+    @Test
+    fun unknownSymbolKindKeepsCategoryIcon() {
+        val snapshot = completionSnapshot(
+            lookupString = "Widget",
+            kind = CompletionItemKind.TOP_LEVEL,
+            origin = CompletionOrigin.TOP_LEVEL,
+        ).build()
+        assertEquals(
+            CompletionSymbolKind.OTHER,
+            snapshot.symbolKind,
+            "说不出形态时必须落 OTHER，而不是猜一个：猜错会把函数显示成类型",
+        )
+        assertEquals(
+            iconOfKind(CompletionItemKind.TOP_LEVEL),
+            presentationOf(LookupElementFactory.create(snapshot)).icon,
+            "形态未定时图标必须与引入本字段之前逐字一致",
+        )
     }
 
     /**
@@ -335,6 +399,20 @@ class LookupElementFactoryTest : CjParsingTestCase(
             element.renderElement(presentation)
         }
         return presentation
+    }
+
+    /**
+     * 按声明形态渲染一个候选的图标。
+     */
+    private fun iconOfSnapshot(
+        name: String,
+        kind: CompletionItemKind,
+        symbolKind: CompletionSymbolKind,
+    ): Icon? {
+        val snapshot = completionSnapshot(lookupString = name, kind = kind, origin = CompletionOrigin.TOP_LEVEL)
+            .apply { this.symbolKind = symbolKind }
+            .build()
+        return presentationOf(LookupElementFactory.create(snapshot)).icon
     }
 
     /**

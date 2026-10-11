@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentity
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionInsertion
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortData
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.psi.CjElement
 
@@ -103,6 +104,15 @@ interface CompletionSnapshot {
 
     /** 候选所属种类，用于图标与排序。 */
     val kind: CompletionItemKind
+
+    /**
+     * 候选所对应声明的具体形态，用于图标。
+     *
+     * 缺省按 [kind] 兜底：说不出具体形态时图标退回粗粒度映射（引入本字段之前的行为），
+     * 而不是猜一个形态——把函数显示成类型比不显示形态更容易误导。
+     */
+    val symbolKind: CompletionSymbolKind
+        get() = CompletionSymbolKind.fallbackFor(kind)
 
     /** 分析期权重；值越大越靠前。 */
     val weight: Int

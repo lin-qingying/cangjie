@@ -7,6 +7,18 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
+import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -23,6 +35,7 @@ import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSortDataImpl
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionSymbolKind
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportCost
 import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.shared.completionSnapshot
@@ -77,6 +90,7 @@ internal fun CaSession.callableSnapshot(
         documentStamp = documentStamp,
         insertParenthesis = true,
     ).apply {
+        this.symbolKind = symbol.completionSymbolKind()
         // 身份句柄 = 稳定调用标识 + 渲染签名。
         //
         // 只用短名无法重新解析到具体声明；只用 callableId 又对同名重载给出同一个值，
@@ -141,7 +155,11 @@ internal fun CaSession.classifierSnapshot(
         typeText = name,
         documentStamp = documentStamp,
         insertParenthesis = constructor != null,
+        // 尾文本里的类型参数同时是**插入文本**：补 `Box` 时空有尾文本
+        // 用户仍要自己回忆它有几个类型参数，插入 `Box<T>` 才是可直接改写的形态。
+        typeParameterList = typeParameterPrefix,
     ).apply {
+        this.symbolKind = classifier.completionSymbolKind()
         this.identity = CompletionIdentityData(
             kind = CompletionIdentityKind.TYPE,
             handle = handle,
@@ -178,6 +196,43 @@ internal fun classifierIdentityKey(classifier: CaClassifierSymbol): String =
     (classifier as? CaClassLikeSymbol)?.classId?.toString()
         ?: (classifier as? CaNamedSymbol)?.name?.asString()
         ?: classifier.toString()
+
+/**
+ * 符号对应的**声明形态**。
+ *
+ * 判定从具体到一般：认不出来时返回 [CompletionSymbolKind.OTHER]，图标退回按候选类别的粗粒度映射，
+ * 因此漏标只会少一次精细化，不会让候选失去图标。
+ *
+ * 为什么不由候选类别推断：`TOP_LEVEL` 一类里同时有 class、interface、struct、enum、typealias 与函数，
+ * 只按类别取图标会让它们共用一个 class 图标（实测在真机上就是「全是 class 图标」）。
+ */
+@OptIn(CaExperimentalApi::class)
+internal fun CaSymbol.completionSymbolKind(): CompletionSymbolKind = when (this) {
+    is CaClassSymbol -> when (classKind) {
+        CaClassKind.CLASS -> CompletionSymbolKind.CLASS
+        CaClassKind.INTERFACE -> CompletionSymbolKind.INTERFACE
+        CaClassKind.STRUCT -> CompletionSymbolKind.STRUCT
+        CaClassKind.ENUM -> CompletionSymbolKind.ENUM
+    }
+
+    is CaTypeAliasSymbol -> CompletionSymbolKind.TYPE_ALIAS
+    // 枚举构造器先于普通构造器判定：前者不是 `init`，展示形态也不同。
+    is CaEnumConstructorSymbol -> CompletionSymbolKind.ENUM_CONSTRUCTOR
+    is CaConstructorSymbol -> CompletionSymbolKind.CONSTRUCTOR
+    // 访问器（prop 的 get/set）按属性展示：它们不是用户直接调用的函数。
+    is CaPropertyAccessorSymbol -> CompletionSymbolKind.PROPERTY
+    is CaPropertySymbol -> CompletionSymbolKind.PROPERTY
+    is CaFieldSymbol -> CompletionSymbolKind.FIELD
+    is CaLocalVariableSymbol -> CompletionSymbolKind.VARIABLE
+    is CaVariableSymbol -> CompletionSymbolKind.VARIABLE
+    is CaValueParameterSymbol -> CompletionSymbolKind.PARAMETER
+    is CaParameterSymbol -> CompletionSymbolKind.PARAMETER
+    is CaTypeParameterSymbol -> CompletionSymbolKind.TYPE_PARAMETER
+    is CaNamedFunctionSymbol -> CompletionSymbolKind.FUNCTION
+    is CaFunctionSymbol -> CompletionSymbolKind.FUNCTION
+    is CaMacroSymbol -> CompletionSymbolKind.FUNCTION
+    else -> CompletionSymbolKind.OTHER
+}
 
 /**
  * 渲染构造器的实参组合。

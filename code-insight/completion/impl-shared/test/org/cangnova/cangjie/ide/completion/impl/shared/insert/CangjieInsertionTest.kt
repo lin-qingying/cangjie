@@ -254,6 +254,123 @@ class CangjieInsertionTest {
     }
 
     /**
+     * 泛型类型候选插入声明自己的类型参数列表，caret 落在尖括号里。
+     *
+     * 只写 `Box` 会让用户面对一个他必须凭记忆补类型实参的候选；
+     * `Box<T>` 才是可直接改写的形态，且 caret 必须在 `<>` 之间——
+     * 落在 `>` 之后用户就得先按一次左箭头。
+     */
+    @Test
+    fun genericTypeInsertsTypeParameterListWithCaretInside() {
+        text("use Box")
+        var caret = 7
+        val result = performCangjieInsertion(
+            snapshot = genericTypeSnapshot(typeParameterList = "<T>"),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 7,
+        ) { caret = it }
+        assertTrue(result.wroteText, "泛型类型候选必须写入类型参数列表")
+        assertEquals("use Box<T>", target.text(), "必须写入声明自己的类型参数名当占位")
+        assertEquals(8, caret, "caret 必须落在 `<` 与 `>` 之间")
+    }
+
+    /**
+     * 用户已经写下 `<...>` 时不得重复插。
+     *
+     * 重复插会写出 `Box<T><T>`——一段用户的增量输入无法自然恢复的文本。
+     */
+    @Test
+    fun existingTypeArgumentsAreNotDoubled() {
+        text("use Box<>")
+        var caret = 7
+        val result = performCangjieInsertion(
+            snapshot = genericTypeSnapshot(typeParameterList = "<T>"),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 7,
+        ) { caret = it }
+        assertFalse(result.wroteText, "已有尖括号时不得再写类型参数列表")
+        assertEquals("use Box<>", target.text(), "文档不得被改动")
+        assertEquals(8, caret, "caret 必须落进已有的尖括号内")
+    }
+
+    /**
+     * 只写了 `<` 时既不补类型参数也不补括号。
+     *
+     * 列表边界未知，此时补 `()` 会写出 `Box<T()` 这种错位文本。
+     */
+    @Test
+    fun unclosedTypeArgumentsAreNotDoubled() {
+        text("use Box<")
+        var caret = 7
+        val result = performCangjieInsertion(
+            snapshot = genericTypeSnapshot(typeParameterList = "<T>", insertParenthesis = true),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 7,
+        ) { caret = it }
+        assertFalse(result.wroteText, "未闭合尖括号时不得写任何字符")
+        assertEquals("use Box<", target.text(), "不得写入 `()` 造成错位")
+        assertEquals(8, caret, "caret 落在已写下的 `<` 之后")
+    }
+
+    /**
+     * 构造位置先插类型参数列表、再复用已存在的调用括号，caret 仍落在尖括号内。
+     *
+     * 类型实参在语法上先于调用实参，用户必须先写它，所以 caret 不能被 `()` 抢走。
+     */
+    @Test
+    fun constructorCandidateReusesParenthesisAfterTypeArguments() {
+        text("use Box()")
+        var caret = 7
+        val result = performCangjieInsertion(
+            snapshot = genericTypeSnapshot(typeParameterList = "<T>", insertParenthesis = true),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 7,
+        ) { caret = it }
+        assertTrue(result.wroteText, "必须写入类型参数列表")
+        assertEquals("use Box<T>()", target.text(), "已存在的括号必须复用，不得再补一对")
+        assertEquals(8, caret, "caret 落在尖括号内，而不是被括号抢走")
+    }
+
+    /**
+     * 没有类型参数的候选照旧不写尖括号。
+     *
+     * 回归：类型参数列表是**可选**数据，空串必须与引入本特性之前逐字一致。
+     */
+    @Test
+    fun nonGenericCandidateKeepsPreviousBehaviour() {
+        text("use Alpha")
+        var caret = 9
+        val result = performCangjieInsertion(
+            snapshot = typeSnapshot(),
+            sink = target,
+            validity = InsertionValidity.Valid,
+            caretOffset = 9,
+        ) { caret = it }
+        assertFalse(result.wroteText, "无类型参数的候选不得写任何字符")
+        assertEquals("use Alpha", target.text(), "文档不得被改动")
+        assertEquals(9, caret, "caret 停在插入文本之后")
+    }
+
+    /**
+     * 构造一个带类型参数列表的泛型类型候选。
+     */
+    private fun genericTypeSnapshot(
+        typeParameterList: String,
+        insertParenthesis: Boolean = false,
+    ): CompletionSnapshot = completionSnapshot(
+        lookupString = "Box",
+        kind = CompletionItemKind.TOP_LEVEL,
+        origin = CompletionOrigin.TOP_LEVEL,
+        identityKind = CompletionIdentityKind.TYPE,
+        insertParenthesis = insertParenthesis,
+        typeParameterList = typeParameterList,
+    ).build()
+
+    /**
      * 构造一个需要括号的调用候选。
      */
     private fun callableSnapshot(

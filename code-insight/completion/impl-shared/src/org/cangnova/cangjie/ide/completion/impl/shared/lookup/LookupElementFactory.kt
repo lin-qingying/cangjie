@@ -39,7 +39,7 @@ object LookupElementFactory {
             // 实例当键会让「同一候选被两个区段各产一次」的情况在弹窗里出现两行。
             .create(snapshot.identity.deduplicationKey, snapshot.lookupString)
             .withPresentableText(snapshot.presentableText)
-            .withIcon(iconOf(snapshot.kind))
+            .withIcon(iconOf(snapshot.kind, snapshot.symbolKind))
             .withInsertHandler(CompletionInsertHandlers.forSnapshot(snapshot))
         // with* 方法返回**新的** builder（本平台版本的 builder 不可变），返回值必须接住：
         // 把结果丢掉会让尾文本、类型文本静默丢失，弹窗里两个同名重载长得一模一样。
