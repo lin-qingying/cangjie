@@ -127,7 +127,10 @@ class LspCompletionCancellationTest : AbstractLspIntegrationTest() {
     fun cancellingTheRequestFutureFlipsTheCancellationState() {
         withReadyServer(USE_SOURCE) { serverContext, _, _ ->
             val cancellation = org.cangnova.cangjie.lsp.server.CancellableRequest()
-            val future = serverContext.requestExecutor.compute {
+            // 合并 main 后 `compute` 需要请求标签（main 侧新增的统计接缝）；这里模拟的是补全请求。
+            val future = serverContext.requestExecutor.compute(
+                org.cangnova.cangjie.lsp.server.CangjieLspRequest.COMPLETION,
+            ) {
                 // 模拟一次仍在跑的请求：等的不是时间，而是取消到达。
                 while (!cancellation.isCancelled()) Thread.onSpinWait()
                 "未取消"
