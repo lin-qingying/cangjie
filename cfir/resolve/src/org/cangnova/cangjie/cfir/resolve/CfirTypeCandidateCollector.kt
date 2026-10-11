@@ -176,6 +176,25 @@ internal class CfirTypeCandidateCollector(
         isAccessible(candidate.symbol, candidate.lookupOrigin)
     }
 
+    /**
+     * 收集已经由 package namespace 选出的 class-like 候选并执行统一可访问性检查。
+     *
+     * 与 [collectClassIdCandidates] 不同，这里不得按 ClassId 再次查询 declaration availability：
+     * namespace provider 已决定当前组织及 public reexport 可见的完整候选集合。
+     */
+    fun collectPackageNamespaceCandidates(
+        symbols: Iterable<CfirClassLikeSymbol<*>>,
+        lookupOrigin: CfirLookupOrigin,
+    ): List<TypeCandidate> = symbols.map { symbol ->
+        TypeCandidate(
+            symbol = symbol,
+            substitutor = null,
+            lookupOrigin = lookupOrigin,
+        )
+    }.distinctBy(TypeCandidate::symbol).filter { candidate ->
+        isAccessible(candidate.symbol, candidate.lookupOrigin)
+    }
+
     /** classifier 以其真实查找来源进入唯一可访问性服务。 */
     private fun isAccessible(
         symbol: CfirClassifierSymbol<*>,

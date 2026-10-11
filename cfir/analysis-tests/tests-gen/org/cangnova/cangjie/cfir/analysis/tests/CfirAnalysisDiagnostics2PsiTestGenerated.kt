@@ -1189,6 +1189,12 @@ class CfirAnalysisDiagnostics2PsiTestGenerated : AbstractCfirPsiDiagnosticTest()
         fun testImportTargetNotFound() {
             runTest("cfir/analysis-tests/testData/diagnostics2/imports/importTargetNotFound.cj")
         }
+
+        @TestMetadata("rawQualifiedType.cj")
+        @Test
+        fun testRawQualifiedType() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/imports/rawQualifiedType.cj")
+        }
     }
 
     @TestMetadata("inference")

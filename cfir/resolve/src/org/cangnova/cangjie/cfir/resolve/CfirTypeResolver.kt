@@ -28,6 +28,7 @@ import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConePackageNameConflictError
@@ -36,11 +37,13 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.resolve.body.hasExplicitSimpleImportBinding
 import org.cangnova.cangjie.cfir.resolve.body.resolveImportedPackageQualifier
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
+import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
@@ -99,7 +102,7 @@ data class CfirTypeResolutionResult(
      */
     val type: ConeCangJieType,
     /**
-     * 类型解析产生的诊断；成功解析时为空。
+     * 类型解析产生的诊断。特定诊断可以与成功解析出的真实类型同时存在。
      */
     val diagnostic: ConeDiagnostic?,
 )
@@ -161,7 +164,10 @@ class CfirTypeResolverImpl(
         expandTypeAliases: Boolean,
     ): CfirTypeResolutionResult {
         return when (typeRef) {
-            is CfirErrorTypeRef -> result(ConeErrorType(typeRef.diagnostic))
+            is CfirErrorTypeRef -> CfirTypeResolutionResult(
+                type = typeRef.coneType,
+                diagnostic = typeRef.diagnostic,
+            )
 
             is CfirResolvedTypeRef -> result(typeRef.coneType)
             is CfirImplicitTypeRef -> result(ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage")))
@@ -320,7 +326,10 @@ class CfirTypeResolverImpl(
         )
         // 分类器已经成功解析时必须保留外层名义类型。错误类型实参由其自身 type ref 负责报告，
         // 不能提升为顶层 ConeErrorType，否则会丢失成员作用域与 owner substitution 所需的 classId。
-        return result(resolvedType)
+        return CfirTypeResolutionResult(
+            type = resolvedType,
+            diagnostic = resolvedQualifier.diagnostic,
+        )
     }
 
     /**
@@ -514,16 +523,20 @@ class CfirTypeResolverImpl(
                 )
             }
 
-            val importedPackage = checkNotNull(importedPackageQualifier.packageFqName) {
+            val importedPackage = checkNotNull(importedPackageQualifier.packages.singleOrNull()) {
                 "Resolved imported package qualifier `$firstName` has no unique package binding"
             }
             val packageSegments =
-                importedPackage.pathSegments() + qualifierNames.drop(1).dropLast(1)
-            return resolveQualifiedClassLikeInPackage(
-                packageFqName = packageSegments.toFqName(),
+                importedPackage.fqName.pathSegments() + qualifierNames.drop(1).dropLast(1)
+            return resolveQualifiedClassLikeInNamespace(
+                namespaceContext = CfirImportNamespaceContext(
+                    packageFqName = packageSegments.toFqName(),
+                    organizationName = importedPackage.organizationName,
+                ),
                 lastQualifier = lastQualifier,
                 typeRef = typeRef,
                 configuration = configuration,
+                reportCannotRefToPackageName = false,
             )
         }
 
@@ -538,10 +551,99 @@ class CfirTypeResolverImpl(
             )
         }
 
+        val useSiteFile = configuration.useSiteFile
+        if (useSiteFile != null && !useSiteFile.hasExplicitSimpleImportBinding(firstName, session)) {
+            return resolveQualifiedClassLikeInNamespace(
+                namespaceContext = CfirImportNamespaceContext(
+                    packageFqName = qualifierNames.dropLast(1).toFqName(),
+                    organizationName = null,
+                ),
+                lastQualifier = lastQualifier,
+                typeRef = typeRef,
+                configuration = configuration,
+                reportCannotRefToPackageName = true,
+            )
+        }
+
         return QualifiedClassLikeResolution(
             classId = null,
             declaration = null,
             diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier.take(1)),
+        )
+    }
+
+    /**
+     * 在 provider 给出的 package namespace 中解析限定 classifier。
+     *
+     * 源码裸 FQN 与显式包导入都通过同一 namespace 协议查询；裸 FQN 不附加组织约束，
+     * 显式导入则保留绑定目标的组织身份。候选只来自该 namespace，再由统一 collector
+     * 负责可访问性，避免按 ClassId 重新聚合出 namespace 之外的声明。
+     */
+    private fun resolveQualifiedClassLikeInNamespace(
+        namespaceContext: CfirImportNamespaceContext,
+        lastQualifier: CfirQualifierPart,
+        typeRef: CfirUserTypeRef,
+        configuration: TypeResolutionConfiguration,
+        reportCannotRefToPackageName: Boolean,
+    ): QualifiedClassLikeResolution {
+        val namespace = session.symbolProvider.getImportNamespace(namespaceContext)
+        if (!namespace.hasPackage(includeSubpackages = false)) {
+            return QualifiedClassLikeResolution(
+                classId = null,
+                declaration = null,
+                diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
+            )
+        }
+
+        val candidates = CfirTypeCandidateCollector(
+            session = session,
+            context = configuration.accessContext(CfirAccessKind.TYPE),
+        ).collectPackageNamespaceCandidates(
+            symbols = namespace.classifiers(lastQualifier.name),
+            lookupOrigin = CfirLookupOrigin.QUALIFIED_PACKAGE,
+        )
+        val classLikeCandidates = candidates.mapNotNull { it.symbol as? CfirClassLikeSymbol<*> }
+        classifierRedeclarationAmbiguity(typeRef, classLikeCandidates)?.let { diagnostic ->
+            return QualifiedClassLikeResolution(
+                classId = classLikeCandidates.firstOrNull()?.classId,
+                declaration = null,
+                diagnostic = diagnostic,
+            )
+        }
+        candidates.singleOrNull()?.let { candidate ->
+            val symbol = candidate.symbol as CfirClassLikeSymbol<*>
+            return QualifiedClassLikeResolution(
+                classId = symbol.classId,
+                declaration = symbol.cfir,
+                diagnostic = if (reportCannotRefToPackageName) {
+                    ConeCannotRefToPackageNameError(namespaceContext.packageFqName)
+                } else {
+                    null
+                },
+            )
+        }
+
+        val callables = namespace.callables(lastQualifier.name)
+        if (callables.isNotEmpty()) {
+            // 宏注解继续交由宏名解析路径处理；普通 callable 在类型位置报告 not-a-type。
+            if (callables.all { it is CfirMacroDeclarationSymbol }) {
+                return QualifiedClassLikeResolution(
+                    classId = null,
+                    declaration = null,
+                    diagnostic = null,
+                )
+            }
+            return QualifiedClassLikeResolution(
+                classId = null,
+                declaration = null,
+                diagnostic = ConeNotATypeError(lastQualifier.name),
+            )
+        }
+
+        return QualifiedClassLikeResolution(
+            classId = null,
+            declaration = null,
+            diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
         )
     }
 
@@ -773,7 +875,7 @@ class CfirTypeResolverImpl(
          */
         val declaration: CfirClassLikeDeclaration?,
         /**
-         * 解析失败时携带的诊断。
+         * 解析失败诊断，或与成功解析类型并存的限定名诊断。
          */
         val diagnostic: ConeDiagnostic?,
     )

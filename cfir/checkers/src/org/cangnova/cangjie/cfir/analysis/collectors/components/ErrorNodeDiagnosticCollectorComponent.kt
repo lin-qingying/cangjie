@@ -168,9 +168,8 @@ class ErrorNodeDiagnosticCollectorComponent(
     /**
      * 访问错误类型引用（[CfirErrorTypeRef]）。
      *
-     * [CfirErrorTypeRef] 表示类型解析完全失败（连 [ConeErrorType] 都未能生成），
-     * 此处直接跳过——其错误由上层 visitResolvedTypeRef 或专项 checker 处理，
-     * 在本组件中无需额外报告。
+     * [CfirErrorTypeRef] 保存需要在此处报告的诊断；其 [CfirErrorTypeRef.coneType] 可以
+     * 是错误类型，也可以是在保留真实解析类型时附带诊断的类型。
      */
 
     override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: CheckerContext) {

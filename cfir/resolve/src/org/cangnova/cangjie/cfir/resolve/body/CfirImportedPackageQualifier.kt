@@ -76,6 +76,19 @@ internal fun CfirFile.resolveImportedPackageQualifier(
 }
 
 /**
+ * 判断源码首段是否已经被非 all-under 的显式导入绑定。
+ *
+ * 裸 FQN 解析只在没有任何此类绑定时启用；包、classifier、callable 和未解析 binding
+ * 都会占用该首段，避免 FQN 回退越过现有导入语义。
+ */
+internal fun CfirFile.hasExplicitSimpleImportBinding(
+    name: Name,
+    session: CfirSession,
+): Boolean = session.importBindingStore.requireBindings(this).imports.any { binding ->
+    binding.effectiveName == name && !binding.importDirective.isAllUnder
+}
+
+/**
  * 从表达式的可解析引用中提取可能的导入包限定符短名。
  */
 internal fun CfirExpression.importedPackageQualifierNameOrNull(): Name? =
