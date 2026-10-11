@@ -1,0 +1,11 @@
+FILE: constExpressions.cj
+    internal? let A: R|Int64|
+    internal? let B: R|Int64|
+    internal? let C: R|String|
+    internal? let D: R|Bool|
+    internal? let E: R|Float64|
+    internal? let F: R|Int64|
+    internal? let G: R|Int64|
+    internal? func constExpressions(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

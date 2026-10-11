@@ -1,0 +1,4 @@
+FILE: missingTypeInVar.cj
+    internal? func missingTypeInVar(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

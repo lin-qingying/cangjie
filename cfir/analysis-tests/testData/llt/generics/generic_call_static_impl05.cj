@@ -11,7 +11,7 @@ interface I2 <: I1 {}
 
 abstract class I3 {}
 
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend I3 <: I2 {}
+<!NEED_MEMBER_IMPLEMENTATION!>extend I3 <: I2 {}<!>
 
 func f<T>(): Unit where T <: I2 {
     T.a = 1

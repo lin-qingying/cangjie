@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.phaser
 
-import kotlin.system.measureTimeMillis
+import kotlin.time.TimeSource
 
 /**
  * 任意输入、输出和上下文类型的命名 phase 引用。
@@ -43,8 +43,12 @@ abstract class NamedCompilerPhase<in Context : LoggingContext, Input, Output>(
 
     /**
      * 按统一流水线协议执行 phase：检查启用状态、前置依赖、action、主体、条件和统计状态。
+     *
+     * 覆写留给组合阶段穿透一次：组合阶段要用同一套协议驱动子阶段，让子阶段同样获得
+     * 启用判断、prerequisite 校验、前后置 action 与耗时采集。普通阶段不应覆写它——绕过
+     * 本方法直接调 executePhase 会跳过上述全部步骤。
      */
-    final override fun invoke(phaseConfig: PhaseConfig, phaserState: PhaserState, context: Context, input: Input): Output {
+    override fun invoke(phaseConfig: PhaseConfig, phaserState: PhaserState, context: Context, input: Input): Output {
         if (!phaseConfig.isEnabled(this)) {
             return outputIfNotEnabled(phaseConfig, phaserState, context, input)
         }
@@ -56,7 +60,7 @@ abstract class NamedCompilerPhase<in Context : LoggingContext, Input, Output>(
         context.inVerbosePhase = phaseConfig.isVerbose(this)
 
         runBefore(phaseConfig, phaserState, context, input)
-        val output = if (phaseConfig.needProfiling) {
+        val output = if (phaseConfig.profiler != null) {
             runAndProfile(phaseConfig, phaserState, context, input)
         } else {
             phaserState.downlevel(nlevels) {
@@ -107,16 +111,28 @@ abstract class NamedCompilerPhase<in Context : LoggingContext, Input, Output>(
     }
 
     /**
-     * 在保留 phase 深度语义的前提下执行主体并输出耗时统计。
+     * 在保留 phase 深度语义的前提下执行主体，并把耗时交给采集器。
+     *
+     * 失败时也记录：主体抛异常时采集的是已消耗的那部分耗时，编译最终失败的位置由此可见。
+     *
+     * 主体耗时含其内部嵌套 phase 的耗时（与报告里"父 phase 是子 phase 之和"的合计口径一致）。
      */
     private fun runAndProfile(phaseConfig: PhaseConfig, phaserState: PhaserState, context: Context, source: Input): Output {
-        val result: Output
-        val msec = measureTimeMillis {
-            result = phaserState.downlevel(nlevels) {
+        val profiler = checkNotNull(phaseConfig.profiler)
+        // 本 phase 的嵌套层数 = 进入时的深度加上自身声明的层数。必须在 downlevel 之前取：
+        // downlevel 退出后 depth 已恢复，读到的会是调用方的层数。
+        val depth = phaserState.depth + nlevels
+        val sequence = profiler.nextSequence()
+        val startedAt = TimeSource.Monotonic.markNow()
+        val result = try {
+            phaserState.downlevel(nlevels) {
                 phaseBody(context, source)
             }
+        } catch (throwable: Throwable) {
+            profiler.record(PhaserPhaseTiming(name, depth, sequence, startedAt.elapsedNow().inWholeNanoseconds, completed = false))
+            throw throwable
         }
-        println("${"\t".repeat(phaserState.depth)}$name: $msec msec")
+        profiler.record(PhaserPhaseTiming(name, depth, sequence, startedAt.elapsedNow().inWholeNanoseconds, completed = true))
         return result
     }
 

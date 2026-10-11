@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.projectStructure.copyOrigin
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.findExtendDeclarationIn
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
@@ -62,8 +63,8 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
                     val containingTypeStatement = declaration.containingTypeStatement
                     val declarations = when (containingTypeStatement) {
                         is CjExtend -> {
-                            val containerExtendCfir = CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirExtend
-                            containerExtendCfir?.declarations
+                            // extend 容器没有 ClassId，只能按 PSI 身份在文件结构中定位
+                            declaration.findExtendDeclarationIn(cfirFile)?.declarations
                         }
                         is CjClassLikeDeclaration -> {
                             val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration

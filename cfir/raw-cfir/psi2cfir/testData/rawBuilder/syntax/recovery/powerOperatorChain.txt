@@ -1,0 +1,50 @@
+FILE: powerOperatorChain.cj
+    internal? func powerOperatorChain(a: R|Int64|, b: R|UInt64|, c: R|UInt64|): R|Int64| {
+        local? let x: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        FUNCTION_CALL(*operator_exponentiation) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                            arguments:
+                                NAMED_ACCESS(c)
+                        }
+                }
+        local? let y: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        FUNCTION_CALL(*operator_exponentiation) {
+                            receiver:
+                                NAMED_ACCESS(b)
+                            arguments:
+                                NAMED_ACCESS(c)
+                        }
+                }
+        local? let z: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_exponentiation) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(c)
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(x)
+                        arguments:
+                            NAMED_ACCESS(y)
+                    }
+                arguments:
+                    NAMED_ACCESS(z)
+            }
+        }
+    }

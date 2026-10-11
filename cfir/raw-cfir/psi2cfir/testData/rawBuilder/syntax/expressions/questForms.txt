@@ -1,0 +1,143 @@
+FILE: questForms.cj
+    internal? class Node {
+        init()
+        internal? var value: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? var next: R|Option<R|Node|>| = ...
+            initializer:
+                NAMED_ACCESS(None)
+        internal? func get(): R|Int64| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }
+    internal? struct Holder {
+        init()
+        internal? var items: R|Array<R|Int64|>| = ...
+            initializer:
+                ARRAY_LITERAL {
+                    INT(1)
+                    INT(2)
+                }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            RETURN {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(items)
+                    indices:
+                        NAMED_ACCESS(i)
+                }
+            }
+        }
+    }
+    internal? func questForms(n: R|Option<R|Node|>|, h: R|Option<R|Holder|>|, o: R|Option<R|Int64|>|): R|Unit| {
+        local? let member: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(n)
+                            }
+                    }
+                }
+        local? let call: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    FUNCTION_CALL(get) {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(n)
+                            }
+                    }
+                }
+        local? let chain: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    NAMED_ACCESS(value) {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(next) {
+                                    receiver:
+                                        OPTIONAL_EXPRESSION {
+                                            NAMED_ACCESS(n)
+                                        }
+                                }
+                            }
+                    }
+                }
+        local? let subscript: <implicit> = ...
+            initializer:
+                OPTIONAL_CHAIN_EXPRESSION {
+                    SUBSCRIPT {
+                        receiver:
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(h)
+                            }
+                        indices:
+                            INT(0)
+                    }
+                }
+        local? let coalesce: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    NAMED_ACCESS(o)
+                    INT(0)
+                }
+        local? let coalesceNested: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    OPTIONAL_CHAIN_EXPRESSION {
+                        NAMED_ACCESS(value) {
+                            receiver:
+                                OPTIONAL_EXPRESSION {
+                                    NAMED_ACCESS(n)
+                                }
+                        }
+                    }
+                    INT(-1)
+                }
+        local? let nested: <implicit> = ...
+            initializer:
+                BINARY_OP(COALESCING) {
+                    OPTIONAL_CHAIN_EXPRESSION {
+                        NAMED_ACCESS(value) {
+                            receiver:
+                                OPTIONAL_EXPRESSION {
+                                    NAMED_ACCESS(next) {
+                                        receiver:
+                                            OPTIONAL_EXPRESSION {
+                                                NAMED_ACCESS(next) {
+                                                    receiver:
+                                                        OPTIONAL_EXPRESSION {
+                                                            NAMED_ACCESS(n)
+                                                        }
+                                                }
+                                            }
+                                    }
+                                }
+                        }
+                    }
+                    INT(0)
+                }
+        local? let unwrap: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(getOrThrow) {
+                    receiver:
+                        NAMED_ACCESS(o)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(member)
+                    NAMED_ACCESS(call)
+                    NAMED_ACCESS(chain)
+                    NAMED_ACCESS(subscript)
+                    NAMED_ACCESS(coalesce)
+                    NAMED_ACCESS(coalesceNested)
+                    NAMED_ACCESS(nested)
+                    NAMED_ACCESS(unwrap)
+                }
+    }

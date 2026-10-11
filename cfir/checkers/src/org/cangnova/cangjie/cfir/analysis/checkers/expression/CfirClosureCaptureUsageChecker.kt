@@ -14,7 +14,9 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
@@ -287,45 +289,50 @@ private fun CfirQualifiedAccessExpression.resolvedVariableOrNull(): CfirVariable
 /** 表达式值使用位置。 */
 private enum class ClosureValueUsage { ASSIGN, RETURN, PARAMETER, EXPRESSION }
 
-/** 根据 checker 上下文恢复闭包值所处的赋值、返回、参数或普通表达式位置。 */
+/**
+ * 根据 checker 上下文恢复闭包值所处的赋值、返回、参数或普通表达式位置。
+ *
+ * 官方 `CheckLegalUseOfClosure(Node&)` 按**直接子节点**分派：`VarDecl.initializer`、
+ * `ReturnExpr.expr`、`CallExpr.args[i].expr`，其余节点位置落到 `_cannot_expr`。
+ * 因此这里全部用 identity 判断父子关系；不能用"祖先容器包含本表达式"的近似，
+ * 否则 `return f({…})` 里作为实参的闭包会被外层 return 抢先。
+ */
 private fun CfirExpression.valueUsage(context: CheckerContext): ClosureValueUsage {
     if (context.containingDeclarations.asReversed()
             .filterIsInstance<CfirVariableSymbol<*>>()
-            .map { it.cfir }
-            .any { variable -> variable.initializer.containsElement(this) }
+            .any { symbol -> symbol.cfir.initializer === this }
     ) {
         return ClosureValueUsage.ASSIGN
     }
     // 官方仅把源码 ReturnExpr 分类为返回使用；lambda 尾表达式的隐式 return 是 CFIR 包装。
     if (context.containingElements.asReversed().any {
-            it is CfirReturnExpression && it.source?.kind !is CjFakeSourceElementKind.ImplicitReturn
+            it is CfirReturnExpression && it.result === this &&
+                it.source?.kind !is CjFakeSourceElementKind.ImplicitReturn
         }
     ) {
         return ClosureValueUsage.RETURN
     }
-    if (context.callsOrAssignments.asReversed()
-            .filterIsInstance<CfirFunctionCall>()
-            .any { call -> call.argumentList.arguments.any { argument -> argument.containsElement(this) } }
+    val enclosingCall = context.callsOrAssignments.asReversed()
+        .filterIsInstance<CfirFunctionCall>()
+        .firstOrNull()
+    if (enclosingCall != null && enclosingCall.argumentList.arguments.any { argument ->
+            argument.isDirectArgumentValueOf(this)
+        }
     ) {
         return ClosureValueUsage.PARAMETER
     }
     return ClosureValueUsage.EXPRESSION
 }
 
-/** 以 identity 判断表达式树是否包含目标节点，不进入其他匿名函数体。 */
-private fun CfirExpression?.containsElement(target: CfirElement): Boolean {
-    if (this == null) return false
-    if (this === target) return true
-    var found = false
-    accept(object : CfirVisitorVoid() {
-        override fun visitElement(element: CfirElement) {
-            if (found) return
-            if (element === target) {
-                found = true
-                return
-            }
-            element.acceptChildren(this, null)
-        }
-    }, null)
-    return found
-}
+/**
+ * 实参位上的表达式是否就是目标闭包本身。
+ *
+ * 具名 / inout 实参的包装层只承载参数名与修饰符，官方 `arg->expr` 取的是其中的值表达式，
+ * 因此这里要穿透这两个包装；其它包装（括号等）不算直达实参，由闭包自身节点落 `_cannot_expr`。
+ */
+private fun CfirExpression.isDirectArgumentValueOf(target: CfirExpression): Boolean =
+    when (this) {
+        is CfirNamedArgumentExpression -> expression === target
+        is CfirInoutArgumentExpression -> expression === target
+        else -> this === target
+    }

@@ -1,0 +1,37 @@
+FILE: unsafeAndForeignCall.cj
+    internal? foreign func nativeAbs(x: R|Int64|): R|Int64|
+    internal? foreign func nativeSum(p: R|CPointer<R|Int64|>|, n: R|Int64|): R|Int64|
+    internal? class UsesNative {
+        init()
+        internal? var v: R|Int64| = ...
+            initializer:
+                INT(0)
+        internal? func abs(): R|Int64| {
+            UNSAFE {
+                RETURN {
+                    FUNCTION_CALL(nativeAbs) {
+                        NAMED_ACCESS(v)
+                    }
+                }
+            }
+        }
+        internal? func nested(): R|Int64| {
+            UNSAFE {
+                local? let inner: <implicit> = ...
+                    initializer:
+                        FUNCTION_CALL(nativeAbs) {
+                            NAMED_ACCESS(v)
+                        }
+                RETURN {
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(inner)
+                        arguments:
+                            INT(1)
+                    }
+                }
+            }
+        }
+    }
+    internal? func cfuncSignature(p: R|CPointer<R|Int64|>|, s: R|CString|): R|Unit| {
+    }

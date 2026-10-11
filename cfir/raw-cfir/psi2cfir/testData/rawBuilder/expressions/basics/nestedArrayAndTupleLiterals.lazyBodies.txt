@@ -1,0 +1,4 @@
+FILE: nestedArrayAndTupleLiterals.cj
+    internal? func useLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

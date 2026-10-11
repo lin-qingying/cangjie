@@ -1,0 +1,24 @@
+FILE: subscriptOperatorForms.cj
+    internal? class M {
+        private var values: R|Array<R|Int64|>|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_set(i: R|Int64|, value: R|Int64|): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class R {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func subscriptOperatorForms(m: R|M|, r: R|R|, a: R|Array<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

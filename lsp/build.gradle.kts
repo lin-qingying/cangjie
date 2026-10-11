@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":analysis:analysis-api-cfir"))
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-api-standalone"))
+    implementation(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":analysis:cj-references"))
     /*
      * 补全三模块：LSP 与 IDE **共用同一份候选生成实现**（规格 L1）。
@@ -24,6 +25,8 @@ dependencies {
     implementation(project(":code-insight:completion:contracts"))
     implementation(project(":code-insight:completion:impl-shared"))
     implementation(project(":code-insight:completion:impl-cfir"))
+    // 请求级统计与 analysis 侧共用同一个 OpenTelemetry 后端实例，因此只需要 API。
+    implementation(libs.opentelemetry.api)
     implementation(project(":code-insight:formatting"))
     implementation(project(":code-insight:folding"))
     implementation(project(":code-insight:highlighting"))
@@ -61,6 +64,10 @@ dependencies {
     testImplementation(project(":compiler:config"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    // 请求级接缝用例需要真实 SDK 才能读到指标：InMemoryMetricReader 断言采样确实进了后端。
+    testImplementation(libs.opentelemetry.sdk)
+    testImplementation(libs.opentelemetry.sdk.metrics)
+    testImplementation(libs.opentelemetry.sdk.testing)
 
     testFixturesApi(project(":analysis:analysis-api"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))

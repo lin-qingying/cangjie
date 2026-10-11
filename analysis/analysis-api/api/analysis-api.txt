@@ -242,22 +242,9 @@ public interface CaResolver : CaLifetimeOwner
 CaResolver.public fun CjReferenceExpression.resolveToSymbols(): Collection<CaSymbol>
 CaResolver.public fun CjReferenceExpression.resolveToSymbol(): CaSymbol?
 CaResolver.public fun CjElement.resolveToCall(): CaCallInfo?
-## org/cangnova/cangjie/analysis/api/components/CaScopeContext.kt
-package org.cangnova.cangjie.analysis.api.components
-public enum class CaScopeKind( val indexInTower: Int, )
-CaScopeKind.public val isImporting: Boolean
-CaScopeKind.public val isExplicitImporting: Boolean
-public interface CaScopeWithKind : CaLifetimeOwner
-CaScopeWithKind.public val scope: CaScope
-CaScopeWithKind.public val kind: CaScopeKind
-CaScopeWithKind.public val ownerSymbol: CaSymbol?
-public interface CaImplicitReceiver : CaLifetimeOwner
-CaImplicitReceiver.public val type: CaType
-CaImplicitReceiver.public val ownerSymbol: CaSymbol
-CaImplicitReceiver.public val scopeIndexInTower: Int
-public interface CaScopeContext : CaLifetimeOwner
-CaScopeContext.public val scopes: List<CaScopeWithKind>
-CaScopeContext.public val implicitReceivers: List<CaImplicitReceiver>
+CaResolver.public fun CjElement.tryResolveSymbols(): CaSymbolResolutionAttempt?
+CaResolver.public fun CjElement.resolveSymbols(): Collection<CaSymbol>
+CaResolver.public fun CjElement.resolveSymbol(): CaSymbol?
 ## org/cangnova/cangjie/analysis/api/components/CaScopeProvider.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaScopeProvider : CaLifetimeOwner
@@ -1137,7 +1124,6 @@ CaCallResolutionError.public val candidateCalls: List<CaCall>
 public interface CaCallResolutionSuccess : CaCallResolutionAttempt
 CaCallResolutionSuccess.public val call: CaCall
 public val CaCallResolutionAttempt.calls: List<CaCall>
-public sealed interface CaSymbolResolutionAttempt : CaLifetimeOwner
 ## org/cangnova/cangjie/analysis/api/resolution/CaPartiallyAppliedSymbol.kt
 package org.cangnova.cangjie.analysis.api.resolution
 public interface CaPartiallyAppliedSymbol<out S : CaCallableSymbol, out C : CaCallableSignature<S>> : CaLifetimeOwner
@@ -1145,6 +1131,15 @@ CaPartiallyAppliedSymbol.public val signature: C
 CaPartiallyAppliedSymbol.public val dispatchReceiver: CaReceiverValue?
 public typealias CaPartiallyAppliedFunctionSymbol<S>
 public typealias CaPartiallyAppliedVariableSymbol<S>
+## org/cangnova/cangjie/analysis/api/resolution/CaSymbolResolutionAttempt.kt
+package org.cangnova.cangjie.analysis.api.resolution
+public sealed interface CaSymbolResolutionAttempt : CaLifetimeOwner
+public interface CaSymbolResolutionSuccess : CaSymbolResolutionAttempt
+CaSymbolResolutionSuccess.public val symbols: List<CaSymbol>
+public interface CaSymbolResolutionError : CaSymbolResolutionAttempt
+CaSymbolResolutionError.public val diagnostic: CaDiagnostic
+CaSymbolResolutionError.public val candidateSymbols: List<CaSymbol>
+public val CaSymbolResolutionAttempt.symbols: List<CaSymbol>
 ## org/cangnova/cangjie/analysis/api/scopes/CaScope.kt
 package org.cangnova.cangjie.analysis.api.scopes
 public interface CaScope : CaScopeLike

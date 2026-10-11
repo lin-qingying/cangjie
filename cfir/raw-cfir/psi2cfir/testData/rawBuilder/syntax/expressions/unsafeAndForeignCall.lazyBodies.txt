@@ -1,0 +1,16 @@
+FILE: unsafeAndForeignCall.cj
+    internal? foreign func nativeAbs(x: R|Int64|): R|Int64|
+    internal? foreign func nativeSum(p: R|CPointer<R|Int64|>|, n: R|Int64|): R|Int64|
+    internal? class UsesNative {
+        init()
+        internal? var v: R|Int64|
+        internal? func abs(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? func nested(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func cfuncSignature(p: R|CPointer<R|Int64|>|, s: R|CString|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

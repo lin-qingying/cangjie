@@ -8,6 +8,10 @@ import java.nio.file.Path
 import org.cangnova.cangjie.CjIoFileSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildSource
+import org.cangnova.cangjie.cfir.builder.CfirRawBuildStage
+import org.cangnova.cangjie.cfir.builder.measureRawBuild
+import org.cangnova.cangjie.cfir.builder.rawBuildTimingObserverOrNull
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -105,7 +109,10 @@ class LightTree2Cfir(
         )
         // 解析模式随文件种类：`.cj.d` 走声明模式，体可以缺失。
         // 这里必须显式传入——LightTree 入口不会自己看文件名。
-        val lightTree = CangJieLightParser.parse(builder, sourceKind = sourceFile.sourceKind)
+        val observer = session.rawBuildTimingObserverOrNull
+        val lightTree = observer.measureRawBuild(CfirRawBuildSource.LIGHT_TREE, CfirRawBuildStage.PARSE) {
+            CangJieLightParser.parse(builder, sourceKind = sourceFile.sourceKind)
+        }
         return buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping)
     }
 }

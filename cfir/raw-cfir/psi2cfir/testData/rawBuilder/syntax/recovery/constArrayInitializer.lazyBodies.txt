@@ -1,0 +1,2 @@
+FILE: constArrayInitializer.cj
+    internal? let A: R|Array<R|Int64|>|

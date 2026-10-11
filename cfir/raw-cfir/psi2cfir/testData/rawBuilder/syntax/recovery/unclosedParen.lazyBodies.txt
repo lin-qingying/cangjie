@@ -1,0 +1,4 @@
+FILE: unclosedParen.cj
+    internal? func unclosedParen(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

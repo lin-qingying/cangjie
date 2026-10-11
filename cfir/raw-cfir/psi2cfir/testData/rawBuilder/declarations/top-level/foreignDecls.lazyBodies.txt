@@ -1,0 +1,6 @@
+FILE: foreignDecls.cj
+    internal? foreign func puts(s: R|CString|): R|Int32|
+    internal? foreign func getpid(): R|Int32|
+    internal? func callForeign(): R|Int32| {
+        <element: CfirLazyBlock>
+    }

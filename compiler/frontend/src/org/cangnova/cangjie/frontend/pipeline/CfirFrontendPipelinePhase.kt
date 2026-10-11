@@ -12,9 +12,6 @@ import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFact
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.pipeline.*
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
-import org.cangnova.cangjie.cfir.serialization.cjo.CfirCjoPackageMetadataProducer
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
-import org.cangnova.cangjie.cfir.serialization.CjoConstants
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cjmpLoadDiagnostics
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
@@ -38,14 +35,15 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * CFIR 前端管线阶段。
  *
  * 该阶段负责创建 VFS 环境、收集源码、构建 CFIR session、执行宏构造前 raw CFIR 构建，
  * 再完成宏构造、resolve 与 check，并产出所有模块的前端输出。
+ *
+ * 写出 CJO 是独立的 CjoWritePipelinePhase：它是核心管线的 SAVE_CJO 阶段，拥有自己的耗时与
+ * 失败报告；嵌在本阶段里时这两者都看不到。
  */
 object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, DefaultCfirFrontendPipelineArtifact>(
     name = "CfirFrontendPipelinePhase",
@@ -145,7 +143,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             CjmpDeserializedCommonSideReporter.report(output.session, output.fir, configuration.messageCollector) || hasErrors
         }
         if (cjmpCommonSideErrors) return null
-        if (!writeLiveCjoOutputs(configuration, outputs)) return null
 
         return DefaultCfirFrontendPipelineArtifact(
             frontendOutput = AllModulesFrontendOutput(outputs),
@@ -190,42 +187,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             val psiFile = (source as? CjPsiSourceFile)?.psiFile as? CjFile ?: continue
             val directive = psiFile.featuresDirective ?: continue
             addAll(directive.featureIds)
-        }
-    }
-
-    /**
-     * Kotlin FIR writes library metadata after frontend analysis.  CFIR keeps
-     * the same phase boundary: this producer consumes resolved CFIR and writes
-     * one package artifact per package when an explicit output directory is set.
-     */
-    private fun writeLiveCjoOutputs(
-        configuration: CompilerConfiguration,
-        outputs: List<SingleModuleFrontendOutput>,
-    ): Boolean {
-        val outputDirectory = configuration.cjoOutputDirectory?.let(Path::of)
-            ?: configuration.cjoOutputFile?.let { product ->
-                val productPath = Path.of(product)
-                if (Files.isDirectory(productPath)) productPath else productPath.parent ?: Path.of(".")
-            }
-        if (outputDirectory == null) return true
-        return try {
-            Files.createDirectories(outputDirectory)
-            val packages = outputs
-                .flatMap { it.fir }
-                .groupBy { it.packageDirective.packageFqName.asString() }
-            packages.forEach { (packageName, files) ->
-                val metadata = CfirCjoPackageMetadataProducer.produce(files)
-                val target = outputDirectory.resolve(CjoConstants.packageNameToPath(packageName))
-                    Files.createDirectories(target.parent)
-                    CjoPackageWriter.write(target, metadata)
-                }
-            true
-        } catch (failure: Throwable) {
-            configuration.messageCollector.report(
-                CompilerMessageSeverity.ERROR,
-                "Cannot produce live CJO metadata: ${failure.message ?: failure::class.simpleName}",
-            )
-            false
         }
     }
 

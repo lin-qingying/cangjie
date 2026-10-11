@@ -15,6 +15,7 @@ Module-specific implementation notes belong to the linked subsystem document. In
 | `:analysis:analysis-api-platform-interface` | Analysis | Platform contract for analysis | [owner](../analysis/README.md) |
 | `:analysis:analysis-api-standalone` | Analysis | Standalone analysis runtime | [owner](../analysis/README.md) |
 | `:analysis:analysis-internal-utils` | Analysis | Analysis-internal utilities | [owner](../analysis/README.md) |
+| `:analysis:analysis-performance-test` | Analysis | Analysis API performance and statistics test entry point | [owner](../analysis/README.md) |
 | `:analysis:analysis-test-framework` | Analysis | Analysis test fixtures | [owner](../analysis/README.md) |
 | `:analysis:analysis-tools` | Analysis | Analysis command-line tools | [owner](../analysis/README.md) |
 | `:analysis:cj-references` | Analysis | References and navigation support | [owner](../analysis/README.md) |

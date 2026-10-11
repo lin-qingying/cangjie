@@ -769,7 +769,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/sort/Array, extendId=std.sort:Array<:SortByExtension, fqName=std.sort.Array, name=Array, receiverTypeName=Array, superNames=[SortByExtension]]
+  CangJieStub$EXTEND[extendId=std.sort:Array<:SortByExtension, fqName=std.sort.Array, name=Array, receiverTypeName=Array, superNames=[SortByExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -865,7 +865,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.sort, facadeFqName=std.sort
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/sort/Array, extendId=std.sort:Array<:SortExtension, fqName=std.sort.Array, name=Array, receiverTypeName=Array, superNames=[SortExtension]]
+  CangJieStub$EXTEND[extendId=std.sort:Array<:SortExtension, fqName=std.sort.Array, name=Array, receiverTypeName=Array, superNames=[SortExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

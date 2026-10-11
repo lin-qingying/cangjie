@@ -1,0 +1,6 @@
+FILE: unterminatedString.cj
+    internal? func unterminatedString(): R|String| {
+        RETURN {
+            STRING("unterminated")
+        }
+    }

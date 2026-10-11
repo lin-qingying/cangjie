@@ -560,11 +560,24 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertSlice(node: LighterASTNode): CfirRangeExpression {
         var startNode: LighterASTNode? = null
         var endNode: LighterASTNode? = null
-        var rangeOperatorSeen = false
+        var inclusive = false
 
+        // `..` / `..=` 在 `SLICE_EXPRESSION` 里是裸 token（`RANGE` / `RANGEEQ`），`1..2` 才包在 `OPERATION_REFERENCE` 里。
+        // 操作符前的表达式是起点、操作符后的是终点；`x..` 只有起点、`..x` 只有终点，与 PSI 的 `CjSliceExpression` 同形。
+        var rangeOperatorSeen = false
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
-                CjNodeTypes.OPERATION_REFERENCE -> rangeOperatorSeen = true
+                CjNodeTypes.OPERATION_REFERENCE -> {
+                    rangeOperatorSeen = true
+                    tree.forEachChildren(child) { opChild ->
+                        if (opChild.tokenType == CjTokens.RANGEEQ) inclusive = true
+                    }
+                }
+                CjTokens.RANGE -> rangeOperatorSeen = true
+                CjTokens.RANGEEQ -> {
+                    rangeOperatorSeen = true
+                    inclusive = true
+                }
                 else -> if (isExpressionToken(child.tokenType)) {
                     if (!rangeOperatorSeen && startNode == null) {
                         startNode = child
@@ -585,7 +598,7 @@ class LightTreeRawCfirExpressionBuilder(
             this.start = start
             this.end = end
             step = null
-            isInclusive = false
+            isInclusive = inclusive
         }
     }
 
@@ -1016,6 +1029,11 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION -> {
                 null to buildNamedReference(referenceNameFromText(calleeNode.asText()), calleeNode.toSource())
             }
+            // `this(...)` / `super(...)` 是构造器 delegation，callee 不是可调用名：
+            // 与 PSI 路径 resolveCalleeReference 保持同一形状（具名引用 this/super，无 receiver），
+            // 否则会退化成 `*operator_invoke` + receiver 形状，PSI/LightTree 输出分叉。
+            CjNodeTypes.THIS_EXPRESSION -> null to buildNamedReference(Name.identifier("this"), calleeNode.toSource())
+            CjNodeTypes.SUPER_EXPRESSION -> null to buildNamedReference(Name.identifier("super"), calleeNode.toSource())
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
                 var receiverNode: LighterASTNode? = null
                 var selectorNode: LighterASTNode? = null

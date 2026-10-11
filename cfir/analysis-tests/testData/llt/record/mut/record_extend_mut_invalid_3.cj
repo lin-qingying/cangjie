@@ -7,10 +7,10 @@ struct R1 {
 
 extend R1 {
     public mut func foo1() {
-        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>}
 
         func goo() {
-            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>
         }
         return 0
     }
@@ -43,11 +43,11 @@ extend R1 {
     }
 
     public mut func foo5() {
-        return <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        return <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
     }
 
     public mut func foo6() {
-        var a = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        var a = <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
         return a
     }
 }

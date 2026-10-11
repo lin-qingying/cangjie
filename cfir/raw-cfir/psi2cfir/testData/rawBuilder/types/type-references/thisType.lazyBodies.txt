@@ -1,0 +1,7 @@
+FILE: thisType.cj
+    internal? class Node {
+        init()
+        internal? func clone(): R|This| {
+            <element: CfirLazyBlock>
+        }
+    }

@@ -159,7 +159,7 @@ class CangjieTextDocumentService(
          * 让 `ProgressManager.checkCanceled()` 真正能抛出。
          */
         val cancellation = CancellableRequest()
-        val future = serverContext.requestExecutor.compute {
+        val future = serverContext.requestExecutor.compute(CangjieLspRequest.COMPLETION) {
             serverContext.analysisFacade.completion(
                 serverContext.requestContext(cancellation),
                 document,
@@ -173,18 +173,6 @@ class CangjieTextDocumentService(
     }
 
     /**
-     * 处理 `completionItem/resolve` 请求。
-     *
-     * 补文档要重进分析，因此走同一条请求队列；**失败不改变候选**（门面里各步拿不到结果就原样返回）。
-     */
-    override fun resolveCompletionItem(item: CompletionItem): CompletableFuture<CompletionItem> {
-        logger.info("====> resolveCompletionItem: ${item.label}")
-        return serverContext.requestExecutor.compute {
-            serverContext.analysisFacade.resolveCompletionItem(serverContext.requestContext(), item)
-        }.also { it.thenAccept { logger.info("<==== resolveCompletionItem") } }
-    }
-
-    /**
      * 处理悬停请求。
      *
      * 文档缺失或能力关闭时返回空 hover；启用时转发到分析 facade。
@@ -194,7 +182,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Hover(emptyList()))
         if (!serverContext.enabledFeatures.hover) return completed(Hover(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.HOVER) {
             serverContext.analysisFacade.hover(serverContext.requestContext(), document, params) ?: Hover(emptyList())
         }.also { it.thenAccept { logger.info("<==== hover") } }
     }
@@ -207,7 +195,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SignatureHelp(emptyList(), null, null))
         if (!serverContext.enabledFeatures.signatureHelp) return completed(SignatureHelp(emptyList(), null, null))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SIGNATURE_HELP) {
             serverContext.analysisFacade.signatureHelp(serverContext.requestContext(), document, params)
                 ?: SignatureHelp(emptyList(), null, null)
         }.also { it.thenAccept { logger.info("<==== signatureHelp") } }
@@ -221,7 +209,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.declaration) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DECLARATION) {
             serverContext.analysisFacade.declaration(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== declaration") } }
     }
@@ -234,7 +222,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.definition) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DEFINITION) {
             serverContext.analysisFacade.definition(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== definition") } }
     }
@@ -247,7 +235,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.typeDefinition) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.TYPE_DEFINITION) {
             serverContext.analysisFacade.typeDefinition(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== typeDefinition") } }
     }
@@ -260,7 +248,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(Either.forLeft(emptyList()))
         if (!serverContext.enabledFeatures.implementation) return completed(Either.forLeft(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.IMPLEMENTATION) {
             serverContext.analysisFacade.implementation(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== implementation") } }
     }
@@ -273,7 +261,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.references) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.REFERENCES) {
             serverContext.analysisFacade.references(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== references") } }
     }
@@ -286,7 +274,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.documentHighlight) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DOCUMENT_HIGHLIGHT) {
             serverContext.analysisFacade.documentHighlight(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== documentHighlight") } }
     }
@@ -299,7 +287,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.documentSymbol) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DOCUMENT_SYMBOL) {
             serverContext.analysisFacade.documentSymbols(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== documentSymbol") } }
     }
@@ -312,7 +300,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.codeAction) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.CODE_ACTION) {
             serverContext.analysisFacade.codeActions(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== codeAction") } }
     }
@@ -325,7 +313,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.formatting) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.FORMATTING) {
             serverContext.analysisFacade.formatting(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== formatting") } }
     }
@@ -348,7 +336,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(WorkspaceEdit())
         if (!serverContext.enabledFeatures.rename) return completed(WorkspaceEdit())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.RENAME) {
             serverContext.analysisFacade.rename(serverContext.requestContext(), document, params) ?: WorkspaceEdit()
         }.also { it.thenAccept { logger.info("<==== rename") } }
     }
@@ -363,7 +351,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyPrepareRenameResult())
         if (!serverContext.enabledFeatures.rename) return completed(emptyPrepareRenameResult())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.PREPARE_RENAME) {
             serverContext.analysisFacade.prepareRename(
                 serverContext.requestContext(),
                 document,
@@ -380,7 +368,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.foldingRange) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.FOLDING_RANGE) {
             serverContext.analysisFacade.foldingRanges(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== foldingRange") } }
     }
@@ -393,7 +381,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.selectionRange) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SELECTION_RANGE) {
             serverContext.analysisFacade.selectionRanges(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== selectionRange") } }
     }
@@ -406,7 +394,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SemanticTokens(emptyList()))
         if (!serverContext.enabledFeatures.semanticTokens) return completed(SemanticTokens(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SEMANTIC_TOKENS_FULL) {
             serverContext.analysisFacade.semanticTokensFull(serverContext.requestContext(), document, params)
                 ?: SemanticTokens(emptyList())
         }.also { it.thenAccept { logger.info("<==== semanticTokensFull") } }
@@ -420,7 +408,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(SemanticTokens(emptyList()))
         if (!serverContext.enabledFeatures.semanticTokens) return completed(SemanticTokens(emptyList()))
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.SEMANTIC_TOKENS_RANGE) {
             serverContext.analysisFacade.semanticTokensRange(serverContext.requestContext(), document, params)
                 ?: SemanticTokens(emptyList())
         }.also { it.thenAccept { logger.info("<==== semanticTokensRange") } }
@@ -434,7 +422,7 @@ class CangjieTextDocumentService(
         val document = serverContext.documentStore.get(params.textDocument.uri)
             ?: return completed(emptyList())
         if (!serverContext.enabledFeatures.inlayHints) return completed(emptyList())
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.INLAY_HINT) {
             serverContext.analysisFacade.inlayHints(serverContext.requestContext(), document, params)
         }.also { it.thenAccept { logger.info("<==== inlayHint") } }
     }
@@ -449,7 +437,7 @@ class CangjieTextDocumentService(
         if (!serverContext.enabledFeatures.diagnostics) {
             return completed(DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(emptyList())))
         }
-        return serverContext.requestExecutor.compute {
+        return serverContext.requestExecutor.compute(CangjieLspRequest.DIAGNOSTIC) {
             val diagnostics = serverContext.collectDiagnostics(document)
             DocumentDiagnosticReport(RelatedFullDocumentDiagnosticReport(diagnostics))
         }.also { it.thenAccept { logger.info("<==== diagnostic") } }

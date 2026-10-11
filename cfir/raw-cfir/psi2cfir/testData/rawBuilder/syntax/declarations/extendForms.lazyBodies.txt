@@ -1,0 +1,77 @@
+FILE: extendForms.cj
+    internal? interface Show {
+        public? func show(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Hash {
+        public? func hash(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Vec {
+        init()
+        internal? var x: R|Int64|
+        internal? var y: R|Int64|
+    }
+    extend R|Vec| {
+        public func len(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public prop sum: R|Int64|
+        public operator func *operator_plus(other: R|Vec|): R|Vec| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_times(k: R|Int64|): R|Vec| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|Vec| {
+        public func scale(k: R|Int64|): R|Vec| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Holder<T> {
+        internal? var value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|Holder<R|T|>| {
+        public func render(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|Holder<R|T|>| <: R|Hash| {
+        public func hashCode(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend<T> R|Holder<R|T|>| {
+        public func unwrap(): R|T| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Flag {
+        On
+        Off
+        init()
+    }
+    extend R|Flag| {
+        public func flipped(): R|Flag| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Node {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    extend R|Node| {
+        public func tag(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }

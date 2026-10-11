@@ -64,6 +64,24 @@ private object LambdaInsideFailedArgumentMappingKey : CfirDeclarationDataKey()
 var CfirAnonymousFunction.isInsideFailedArgumentMapping: Boolean? by
     CfirDeclarationDataRegistry.data(LambdaInsideFailedArgumentMappingKey)
 
+/**
+ * lambda 定义点（官方 `SynLamExpr` / `SolveLamExprParamTys`）的形参推断结果。
+ *
+ * 官方在 lambda 自身合成结束时决定省略类型形参是否能解出，之后出现的约束不改结论；
+ * CFIR 的解析会被后续语句（例如 `g(i)` 反解 placeholder）改写形参类型，因此必须把
+ * 定义点结论固化成事实，不能让 checker 从最终类型反推。
+ *
+ * 取值语义：`true` / `false` 表示定义点已完成过一次推断判定（只写一次，后续重分析不回退）；
+ * `null` 表示该 lambda 未走过合成外层调用路径（如调用实参 lambda），checker 回退到实时判定。
+ */
+private object LambdaParameterInferenceFailedAtDefinitionKey : CfirDeclarationDataKey()
+
+/**
+ * 源码省略类型的形参在 lambda 定义点是否推断失败。
+ */
+var CfirAnonymousFunction.lambdaParameterInferenceFailedAtDefinition: Boolean? by
+    CfirDeclarationDataRegistry.data(LambdaParameterInferenceFailedAtDefinitionKey)
+
 /** IfAvailable 分支方向，用于在 checker 阶段恢复结构化可用性上下文。 */
 enum class CfirIfAvailableBranchKind {
     THEN,

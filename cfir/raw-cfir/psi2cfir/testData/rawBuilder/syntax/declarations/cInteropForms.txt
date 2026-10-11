@@ -1,0 +1,42 @@
+FILE: cInteropForms.cj
+    internal? foreign func nativeAbs(x: R|Int64|): R|Int64|
+    internal? foreign func nativeUnit(): R|Unit|
+    @R|C|() internal? foreign func nativeC(x: R|Int64|): R|Int64|
+    internal? func cInteropForms(): R|Int64| {
+        UNSAFE {
+            local? let a: <implicit> = ...
+                initializer:
+                    FUNCTION_CALL(nativeAbs) {
+                        INT(1)
+                    }
+            FUNCTION_CALL(nativeUnit) {
+            }
+            local? let b: <implicit> = ...
+                initializer:
+                    FUNCTION_CALL(nativeC) {
+                        INT(2)
+                    }
+            RETURN {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                    arguments:
+                        NAMED_ACCESS(b)
+                }
+            }
+        }
+    }
+    internal? func cFuncTypes(g: R|CFunc<R|(R|Int64|) -> R|Unit||>|, h: R|(R|CPointer<R|Int64|>|) -> R|Unit||, i: R|(R|CString|) -> R|Unit||, j: R|(R|CType|) -> R|Unit||, k: R|() -> R|CString||, l: R|() -> R|(R|Int64|, R|Int64|)||, m: R|(R|Int64|) -> R|Unit||, n: R|(R|Int64|) -> R|CString||): R|Unit| {
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(g)
+                    NAMED_ACCESS(h)
+                    NAMED_ACCESS(i)
+                    NAMED_ACCESS(j)
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(l)
+                    NAMED_ACCESS(m)
+                    NAMED_ACCESS(n)
+                }
+    }

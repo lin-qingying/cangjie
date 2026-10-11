@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.shouldSkipSamePackageDeprecation
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
@@ -53,6 +54,7 @@ object CfirDeprecatedCallChecker : CfirFunctionCallChecker() {
         }
 
         val isError = deprecation.deprecationLevel == DeprecationLevelValue.ERROR
+        if (context.shouldSkipSamePackageDeprecation(symbol.callableId.classId?.packageFqName, isError)) return
         val factory = if (isError) CfirErrors.DEPRECATED_ERROR else CfirErrors.DEPRECATED_WARNING
         reporter.reportOn(
             source = source,

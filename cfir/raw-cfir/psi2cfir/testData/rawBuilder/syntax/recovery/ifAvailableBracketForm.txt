@@ -1,0 +1,6 @@
+FILE: ifAvailableBracketForm.cj
+    @R|IfAvailable|(<expr>, <expr>, <expr>) internal? func ifAvailableBracketForm(): R|Int64| {
+        RETURN {
+            INT(1)
+        }
+    }

@@ -1,0 +1,15 @@
+FILE: rangeChainedOperators.cj
+    internal? func rangeChained(): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                RANGE(..) {
+                    INT(1)
+                    RANGE(..) {
+                        INT(10)
+                        INT(2)
+                    }
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(a)
+    }

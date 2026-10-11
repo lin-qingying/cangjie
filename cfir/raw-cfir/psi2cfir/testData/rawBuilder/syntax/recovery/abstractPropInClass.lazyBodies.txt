@@ -1,0 +1,7 @@
+FILE: abstractPropInClass.cj
+    internal? abstract class AbstractProps {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public abstract prop abstractProp: R|Int64|
+    }

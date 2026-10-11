@@ -40,6 +40,7 @@
             <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
             <option value="$PROJECT_DIR$/analysis/analysis-internal-utils" />
+            <option value="$PROJECT_DIR$/analysis/analysis-performance-test" />
             <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
             <option value="$PROJECT_DIR$/analysis/analysis-tools" />
             <option value="$PROJECT_DIR$/analysis/cj-references" />
@@ -203,6 +204,7 @@
                   <project path="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-standalone" />
                   <project path="$PROJECT_DIR$/analysis/analysis-internal-utils" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-performance-test" />
                   <project path="$PROJECT_DIR$/analysis/analysis-test-framework" />
                   <project path="$PROJECT_DIR$/analysis/analysis-tools" />
                   <project path="$PROJECT_DIR$/analysis/cj-references" />
@@ -339,6 +341,7 @@
             <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
             <option value="$PROJECT_DIR$/analysis/analysis-internal-utils" />
+            <option value="$PROJECT_DIR$/analysis/analysis-performance-test" />
             <option value="$PROJECT_DIR$/analysis/analysis-test-framework" />
             <option value="$PROJECT_DIR$/analysis/analysis-tools" />
             <option value="$PROJECT_DIR$/analysis/cj-references" />

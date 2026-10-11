@@ -1,0 +1,4 @@
+FILE: literalForms.cj
+    internal? func useLiterals(): R|Float64| {
+        <element: CfirLazyBlock>
+    }

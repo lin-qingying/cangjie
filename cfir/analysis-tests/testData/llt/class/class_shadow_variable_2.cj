@@ -6,11 +6,11 @@ open class A {
 }
 
 open class B <: A {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 10
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public var a = 10<!>
 }
 
 class C <: B {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 20
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public var a = 20<!>
 }
 
 main() {

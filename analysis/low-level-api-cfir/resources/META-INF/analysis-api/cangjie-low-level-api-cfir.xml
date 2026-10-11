@@ -36,6 +36,14 @@
     <projectService
         serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService"
     />
+    <!--
+      PSI 解析发生在 CFIR session 创建之前，拿不到 CfirSessionComponent；解析入口经工程级服务
+      上报。接口在 psi，实现在 low-level，与 CangJieReferenceProvidersService 同一形状。
+    -->
+    <projectService
+        serviceInterface="org.cangnova.cangjie.parsing.CangjiePsiParseTimingService"
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLParserTimingService"
+    />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.low.level.api.cfir.api.services.LLCfirElementByPsiElementChooser"
         serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.services.LLRealCfirElementByPsiElementChooser"

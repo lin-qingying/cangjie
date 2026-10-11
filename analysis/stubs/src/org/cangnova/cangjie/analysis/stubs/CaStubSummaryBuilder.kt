@@ -8,6 +8,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.CangJieBindingPatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieCallableStubBase
+import org.cangnova.cangjie.psi.stubs.CangJieClassLikeTypeStatementStub
 import org.cangnova.cangjie.psi.stubs.CangJieClassStub
 import org.cangnova.cangjie.psi.stubs.CangJieEnumConstructorStub
 import org.cangnova.cangjie.psi.stubs.CangJieEnumPatternStub
@@ -22,7 +23,6 @@ import org.cangnova.cangjie.psi.stubs.CangJieStubWithFqName
 import org.cangnova.cangjie.psi.stubs.CangJieTuplePatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieTypeAliasStub
 import org.cangnova.cangjie.psi.stubs.CangJieTypePatternStub
-import org.cangnova.cangjie.psi.stubs.CangJieTypeStatementStub
 import org.cangnova.cangjie.psi.stubs.CangJieVarOrEnumPatternStub
 import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
 import org.cangnova.cangjie.psi.stubs.CangJieWildcardPatternStub
@@ -104,8 +104,10 @@ class CaStubTreeSummaryExtractor {
 
         fileStub.childrenStubs.forEach { child ->
             when (child) {
-                is CangJieTypeStatementStub<*> -> {
-                    if (child is CangJieExtendStub) return@forEach
+                // extend 没有 `ClassId`，不进入公开类型索引（`CangJieExtendStub` 不再是 class-like type statement stub）
+                is CangJieExtendStub -> return@forEach
+
+                is CangJieClassLikeTypeStatementStub<*> -> {
                     child.name?.let { topLevelClassifiers += Name.identifier(it) }
                     collectClassMemberNames(child, classMemberNames)
                 }
@@ -144,7 +146,7 @@ class CaStubTreeSummaryExtractor {
      * 这里只消费 PSI stub 层已经确认过的声明节点，不再在 analysis 层自行推导语法。
      */
     private fun collectClassMemberNames(
-        classStub: CangJieTypeStatementStub<*>,
+        classStub: CangJieClassLikeTypeStatementStub<*>,
         destination: MutableMap<ClassId, MutableSet<Name>>,
     ) {
         val classId = classStub.getClassId() ?: return
@@ -180,7 +182,7 @@ class CaStubTreeSummaryExtractor {
                 is CangJieInterfaceStub,
                 is CangJieEnumStub -> {
                     (child as? CangJieStubWithFqName<*>)?.name?.let { memberNames += Name.identifier(it) }
-                    collectClassMemberNames(child as CangJieTypeStatementStub<*>, destination)
+                    collectClassMemberNames(child as CangJieClassLikeTypeStatementStub<*>, destination)
                 }
             }
         }

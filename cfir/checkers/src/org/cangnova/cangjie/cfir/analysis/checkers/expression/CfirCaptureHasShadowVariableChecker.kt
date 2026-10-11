@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -51,8 +50,8 @@ object CfirCaptureHasShadowVariableChecker : CfirQualifiedAccessChecker() {
             if (!function.hasShadowVariableDeclaration(variableName, target)) continue
 
             reporter.reportOn(
-                source = expression.calleeReference.source?.firstCharacterDiagnosticSource()
-                    ?: expression.source?.firstCharacterDiagnosticSource(),
+                source = expression.calleeReference.source
+                    ?: expression.source ,
                 factory = CfirErrors.CAPTURE_HAS_SHADOW_VARIABLE,
                 a = variableName,
             )

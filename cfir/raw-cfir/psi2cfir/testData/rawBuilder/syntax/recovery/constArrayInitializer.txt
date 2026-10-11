@@ -1,0 +1,7 @@
+FILE: constArrayInitializer.cj
+    internal? let A: R|Array<R|Int64|>| = ...
+        initializer:
+            ARRAY_LITERAL {
+                INT(1)
+                INT(2)
+            }

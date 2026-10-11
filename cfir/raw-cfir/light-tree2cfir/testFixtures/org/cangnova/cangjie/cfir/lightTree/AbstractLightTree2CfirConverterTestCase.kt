@@ -73,16 +73,18 @@ abstract class AbstractLightTree2CfirConverterTestCase : AbstractRawCfirBuilderT
      * 验证渲染结果一致。
      */
     protected fun doCompareTest(sourceText: String, fileName: String = "test") {
-        val session = createTestSession()
+        // 两条路径各用一个 session：PSI 路径会走宏 identity service 并冻结
+        // annotation 元数据注册表，共享 session 会让 LightTree 路径在带注解的源码上抛 "registry is frozen"。
+        val psiSession = createTestSession()
 
         // PSI 路径
         val cjFile = createCjFile(fileName, sourceText)
-        val cfirFromPsi = cjFile.toCfirFile(session)
+        val cfirFromPsi = cjFile.toCfirFile(psiSession)
         val psiDump = dumpCfirFile(cfirFromPsi)
 
         // LightTree 路径
         val cfirFromLightTree = buildCfirFileFromLightTree(
-            sourceText, session, fileName = "$fileName.cj",
+            sourceText, createTestSession(), fileName = "$fileName.cj",
         )
         val lightTreeDump = dumpCfirFile(cfirFromLightTree)
 

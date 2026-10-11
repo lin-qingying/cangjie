@@ -1,0 +1,652 @@
+FILE: varrayBraceInit.cj
+    internal? let VArrayBraceStep: R|Int64| = ...
+        initializer:
+            INT(3)
+    internal? func VArrayBraceLetInit(): R|Int64| {
+        local? let v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(v)
+                                indices:
+                                    INT(0)
+                            }
+                        arguments:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(v)
+                                indices:
+                                    INT(1)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceReturn(): R|VArray<R|Int64|, 3>| {
+        RETURN {
+            FUNCTION_CALL(VArray<R|Int64|>) {
+                LAMBDA(i: <implicit>) {
+                    FUNCTION_CALL(*operator_times) {
+                        receiver:
+                            NAMED_ACCESS(i)
+                        arguments:
+                            INT(2)
+                    }
+                }
+            }
+        }
+    }
+    internal? func VArrayBraceReturnDirect(): R|VArray<R|Int64|, 2>| {
+        FUNCTION_CALL(VArray<R|Int64|>) {
+            LAMBDA(i: <implicit>) {
+                NAMED_ACCESS(i)
+            }
+        }
+    }
+    internal? func VArrayBraceIndex(): R|Int64| {
+        local? var v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(i)
+                            arguments:
+                                INT(10)
+                        }
+                    }
+                }
+        ASSIGNMENT {
+            lValue:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(v)
+                    indices:
+                        INT(1)
+                }
+            rValue:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(v)
+                            indices:
+                                INT(0)
+                        }
+                    arguments:
+                        SUBSCRIPT {
+                            receiver:
+                                NAMED_ACCESS(v)
+                            indices:
+                                INT(2)
+                        }
+                }
+        }
+        local? var k: R|Int64| = ...
+            initializer:
+                INT(0)
+        local? var sum: R|Int64| = ...
+            initializer:
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(v)
+                    indices:
+                        INT(1)
+                }
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(v)
+                    }
+                }
+            body:
+                <element: CfirAugmentedAssignment>
+                <element: CfirIncrementDecrementExpression>
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(sum)
+                        arguments:
+                            FUNCTION_CALL(VArrayBraceCount) {
+                                NAMED_ACCESS(v)
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            FUNCTION_CALL(VArray<R|Int64|>) {
+                                LAMBDA(i: <implicit>) {
+                                    NAMED_ACCESS(i)
+                                }
+                            }
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceCount(a: R|VArray<R|Int64|, 3>|): R|Int64| {
+        local? var k: R|Int64| = ...
+            initializer:
+                INT(0)
+        WHILE {
+            condition:
+                COMPARISON(LT) {
+                    NAMED_ACCESS(k)
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(a)
+                    }
+                }
+            body:
+                <element: CfirIncrementDecrementExpression>
+        }
+        RETURN {
+            NAMED_ACCESS(k)
+        }
+    }
+    internal? func VArrayBraceAnnotated(): R|Int64| {
+        local? let v: R|VArray<R|Int64|, 2>| = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        RETURN {
+            SUBSCRIPT {
+                receiver:
+                    NAMED_ACCESS(v)
+                indices:
+                    INT(1)
+            }
+        }
+    }
+    internal? func VArrayBraceAdd(a: R|Int64|, b: R|Int64|): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(a)
+                arguments:
+                    NAMED_ACCESS(b)
+            }
+        }
+    }
+    internal? func VArrayBraceOperands(): R|Int64| {
+        local? let x: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArrayBraceAdd) {
+                    SUBSCRIPT {
+                        receiver:
+                            FUNCTION_CALL(VArray<R|Int64|>) {
+                                LAMBDA(i: <implicit>) {
+                                    NAMED_ACCESS(i)
+                                }
+                            }
+                        indices:
+                            INT(0)
+                    }
+                    SUBSCRIPT {
+                        receiver:
+                            FUNCTION_CALL(VArray<R|Int64|>) {
+                                LAMBDA(i: <implicit>) {
+                                    NAMED_ACCESS(i)
+                                }
+                            }
+                        indices:
+                            INT(1)
+                    }
+                }
+        local? let y: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(size) {
+                    receiver:
+                        FUNCTION_CALL(VArray<R|Int64|>) {
+                            LAMBDA(i: <implicit>) {
+                                NAMED_ACCESS(i)
+                            }
+                        }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(x)
+                arguments:
+                    NAMED_ACCESS(y)
+            }
+        }
+    }
+    internal? func VArrayBraceBodies(): R|Int64| {
+        local? let plain: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        local? let typed: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: R|Int64|) {
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(i)
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                }
+        local? let ignored: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(<no name provided>: <implicit>) {
+                        INT(0)
+                    }
+                }
+        local? let block: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        local? let x: <implicit> = ...
+                            initializer:
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(i)
+                                    arguments:
+                                        INT(1)
+                                }
+                        FUNCTION_CALL(*operator_times) {
+                            receiver:
+                                NAMED_ACCESS(x)
+                            arguments:
+                                INT(2)
+                        }
+                    }
+                }
+        local? let branch: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        IF {
+                            condition:
+                                COMPARISON(EQ) {
+                                    NAMED_ACCESS(i)
+                                    INT(0)
+                                }
+                            then:
+                                NAMED_ACCESS(VArrayBraceStep)
+                            else:
+                                NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let matched: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        MATCH {
+                            subject:
+                                NAMED_ACCESS(i)
+                            BRANCH(const(0)) {
+                                INT(10)
+                            }
+                            BRANCH(_) {
+                                INT(20)
+                            }
+                        }
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(*operator_plus) {
+                                                receiver:
+                                                    SUBSCRIPT {
+                                                        receiver:
+                                                            NAMED_ACCESS(plain)
+                                                        indices:
+                                                            INT(1)
+                                                    }
+                                                arguments:
+                                                    SUBSCRIPT {
+                                                        receiver:
+                                                            NAMED_ACCESS(typed)
+                                                        indices:
+                                                            INT(1)
+                                                    }
+                                            }
+                                        arguments:
+                                            SUBSCRIPT {
+                                                receiver:
+                                                    NAMED_ACCESS(ignored)
+                                                indices:
+                                                    INT(1)
+                                            }
+                                    }
+                                arguments:
+                                    SUBSCRIPT {
+                                        receiver:
+                                            NAMED_ACCESS(block)
+                                        indices:
+                                            INT(1)
+                                    }
+                            }
+                        arguments:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(branch)
+                                indices:
+                                    INT(1)
+                            }
+                    }
+                arguments:
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(matched)
+                        indices:
+                            INT(1)
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceLayout(): R|Int64| {
+        local? let multiline: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        local? let commented: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        FUNCTION_CALL(*operator_plus) {
+                            receiver:
+                                NAMED_ACCESS(i)
+                            arguments:
+                                NAMED_ACCESS(VArrayBraceStep)
+                        }
+                    }
+                }
+        local? let spaced: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(multiline)
+                                indices:
+                                    INT(0)
+                            }
+                        arguments:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(commented)
+                                indices:
+                                    INT(0)
+                            }
+                    }
+                arguments:
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(spaced)
+                        indices:
+                            INT(0)
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceElemTypes(): R|Int64| {
+        local? let i32v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int32|>) {
+                    LAMBDA(i: <implicit>) {
+                        TYPE_CONVERSION(R|Int32|) {
+                            NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let f64v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Float64|>) {
+                    LAMBDA(i: <implicit>) {
+                        TYPE_CONVERSION(R|Float64|) {
+                            NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let f32v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Float32|>) {
+                    LAMBDA(i: <implicit>) {
+                        TYPE_CONVERSION(R|Float32|) {
+                            NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let i8v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int8|>) {
+                    LAMBDA(i: <implicit>) {
+                        TYPE_CONVERSION(R|Int8|) {
+                            NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let u64v: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|UInt64|>) {
+                    LAMBDA(i: <implicit>) {
+                        TYPE_CONVERSION(R|UInt64|) {
+                            NAMED_ACCESS(i)
+                        }
+                    }
+                }
+        local? let zero: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Int64|>) {
+                    LAMBDA(i: <implicit>) {
+                        NAMED_ACCESS(i)
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    FUNCTION_CALL(*operator_plus) {
+                                        receiver:
+                                            FUNCTION_CALL(*operator_plus) {
+                                                receiver:
+                                                    TYPE_CONVERSION(R|Int64|) {
+                                                        SUBSCRIPT {
+                                                            receiver:
+                                                                NAMED_ACCESS(i32v)
+                                                            indices:
+                                                                INT(1)
+                                                        }
+                                                    }
+                                                arguments:
+                                                    TYPE_CONVERSION(R|Int64|) {
+                                                        SUBSCRIPT {
+                                                            receiver:
+                                                                NAMED_ACCESS(f64v)
+                                                            indices:
+                                                                INT(1)
+                                                        }
+                                                    }
+                                            }
+                                        arguments:
+                                            TYPE_CONVERSION(R|Int64|) {
+                                                SUBSCRIPT {
+                                                    receiver:
+                                                        NAMED_ACCESS(f32v)
+                                                    indices:
+                                                        INT(1)
+                                                }
+                                            }
+                                    }
+                                arguments:
+                                    TYPE_CONVERSION(R|Int64|) {
+                                        SUBSCRIPT {
+                                            receiver:
+                                                NAMED_ACCESS(i8v)
+                                            indices:
+                                                INT(1)
+                                        }
+                                    }
+                            }
+                        arguments:
+                            TYPE_CONVERSION(R|Int64|) {
+                                SUBSCRIPT {
+                                    receiver:
+                                        NAMED_ACCESS(u64v)
+                                    indices:
+                                        INT(1)
+                                }
+                            }
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            NAMED_ACCESS(zero)
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceElemBoolAndRune(): R|Bool| {
+        local? let boolv: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Bool|>) {
+                    LAMBDA(i: <implicit>) {
+                        COMPARISON(EQ) {
+                            NAMED_ACCESS(i)
+                            INT(0)
+                        }
+                    }
+                }
+        local? let runeV: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|Rune|>) {
+                    LAMBDA(<no name provided>: <implicit>) {
+                        RUNE('r'a'')
+                    }
+                }
+        RETURN {
+            BINARY_OP(AND) {
+                SUBSCRIPT {
+                    receiver:
+                        NAMED_ACCESS(boolv)
+                    indices:
+                        INT(0)
+                }
+                COMPARISON(EQ) {
+                    SUBSCRIPT {
+                        receiver:
+                            NAMED_ACCESS(runeV)
+                        indices:
+                            INT(1)
+                    }
+                    RUNE('r'b'')
+                }
+            }
+        }
+    }
+    internal? func VArrayBraceNested(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(VArray<R|VArray<R|Int64|, 2>|>) {
+                    LAMBDA(i: <implicit>) {
+                        FUNCTION_CALL(VArray<R|Int64|>) {
+                            LAMBDA(j: <implicit>) {
+                                FUNCTION_CALL(*operator_plus) {
+                                    receiver:
+                                        NAMED_ACCESS(j)
+                                    arguments:
+                                        NAMED_ACCESS(i)
+                                }
+                            }
+                        }
+                    }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    SUBSCRIPT {
+                        receiver:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                                indices:
+                                    INT(1)
+                            }
+                        indices:
+                            INT(0)
+                    }
+                arguments:
+                    NAMED_ACCESS(size) {
+                        receiver:
+                            SUBSCRIPT {
+                                receiver:
+                                    NAMED_ACCESS(a)
+                                indices:
+                                    INT(0)
+                            }
+                    }
+            }
+        }
+    }
+    internal? func VArrayBraceNestedReturn(): R|VArray<R|VArray<R|Int64|, 2>|, 2>| {
+        RETURN {
+            FUNCTION_CALL(VArray<R|VArray<R|Int64|, 2>|>) {
+                LAMBDA(i: <implicit>) {
+                    FUNCTION_CALL(VArray<R|Int64|>) {
+                        LAMBDA(j: <implicit>) {
+                            FUNCTION_CALL(*operator_plus) {
+                                receiver:
+                                    NAMED_ACCESS(j)
+                                arguments:
+                                    NAMED_ACCESS(i)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }

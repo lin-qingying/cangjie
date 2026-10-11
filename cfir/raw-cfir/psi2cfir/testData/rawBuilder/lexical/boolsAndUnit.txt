@@ -1,0 +1,41 @@
+FILE: boolsAndUnit.cj
+    internal? func boolAndUnit(): R|Unit| {
+        local? let t: <implicit> = ...
+            initializer:
+                BOOLEAN(true)
+        local? let f: <implicit> = ...
+            initializer:
+                BOOLEAN(false)
+        local? let notT: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_not) {
+                    receiver:
+                        NAMED_ACCESS(t)
+                }
+        local? let and: <implicit> = ...
+            initializer:
+                BINARY_OP(AND) {
+                    NAMED_ACCESS(t)
+                    NAMED_ACCESS(f)
+                }
+        local? let or: <implicit> = ...
+            initializer:
+                BINARY_OP(OR) {
+                    NAMED_ACCESS(t)
+                    NAMED_ACCESS(f)
+                }
+        local? let unit: R|Unit| = ...
+            initializer:
+                UNIT(())
+        local? let unitCall: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(unit)
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(notT)
+                    NAMED_ACCESS(and)
+                    NAMED_ACCESS(or)
+                    NAMED_ACCESS(unitCall)
+                }
+    }

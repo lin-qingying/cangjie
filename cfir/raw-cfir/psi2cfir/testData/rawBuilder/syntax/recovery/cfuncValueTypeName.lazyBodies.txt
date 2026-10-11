@@ -1,0 +1,4 @@
+FILE: cfuncValueTypeName.cj
+    internal? func cfuncValueTypeName(g: R|CValue|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -5971,7 +5971,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
-  CangJieStub$EXTEND[classId=std/net/SocketCommon, extendId=std.net:SocketCommon<:, fqName=std.net.SocketCommon, name=SocketCommon, receiverTypeName=SocketCommon, superNames=[]]
+  CangJieStub$EXTEND[extendId=std.net:SocketCommon<:, fqName=std.net.SocketCommon, name=SocketCommon, receiverTypeName=SocketCommon, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -7001,7 +7001,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                   CangJieStub$REFERENCE_EXPRESSION[referencedName=sync]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=AtomicInt64]
-  CangJieStub$EXTEND[classId=std/net/Result, extendId=std.net:Result<:ToString, fqName=std.net.Result, name=Result, receiverTypeName=Result, superNames=[ToString]]
+  CangJieStub$EXTEND[extendId=std.net:Result<:ToString, fqName=std.net.Result, name=Result, receiverTypeName=Result, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

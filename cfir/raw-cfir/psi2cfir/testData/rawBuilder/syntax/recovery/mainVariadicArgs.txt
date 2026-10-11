@@ -1,0 +1,2 @@
+FILE: mainVariadicArgs.cj
+    <element: CfirMainFunction>

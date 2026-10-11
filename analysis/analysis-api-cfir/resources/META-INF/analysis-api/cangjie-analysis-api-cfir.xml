@@ -17,6 +17,20 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationService"
         serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.modification.CaCfirSourceModificationService"
     />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.statistics.CaStatisticsService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.statistics.CaFirStatisticsService"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.cfir.utils.CaCfirCacheCleaner"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.utils.CaCfirStopWorldCacheCleaner"
+    />
+    <registryKey
+        defaultValue="true"
+        description="Perform cache clean-up when running out of RAM"
+        key="cangjie.analysis.lowMemoryCacheCleanup"
+        restartRequired="true"
+    />
   </extensions>
 
   <projectListeners>

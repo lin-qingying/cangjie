@@ -1,0 +1,86 @@
+FILE: memberAccessForms.cj
+    internal? class B {
+        internal? var c: R|Int64| = ...
+            initializer:
+                INT(1)
+        init() {
+        }
+    }
+    internal? class A {
+        internal? var b: R|B| = ...
+            initializer:
+                FUNCTION_CALL(B) {
+                }
+        init() {
+        }
+    }
+    internal? class C {
+        internal? static var v: R|Int64| = ...
+            initializer:
+                INT(1)
+        internal? static prop p: R|Int64|
+        init() {
+        }
+    }
+    internal? enum E {
+        A
+        B
+        init()
+        public static func make(): R|E| {
+            RETURN {
+                NAMED_ACCESS(A)
+            }
+        }
+        public func n(): R|Int64| {
+            RETURN {
+                INT(1)
+            }
+        }
+    }
+    internal? func memberAccessForms(a: R|A|): R|Int64| {
+        local? let chain: <implicit> = ...
+            initializer:
+                NAMED_ACCESS(c) {
+                    receiver:
+                        NAMED_ACCESS(b) {
+                            receiver:
+                                NAMED_ACCESS(a)
+                        }
+                }
+        local? let stat: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(v) {
+                            receiver:
+                                NAMED_ACCESS(C)
+                        }
+                    arguments:
+                        NAMED_ACCESS(p) {
+                            receiver:
+                                NAMED_ACCESS(C)
+                        }
+                }
+        local? let en: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(n) {
+                    receiver:
+                        FUNCTION_CALL(make) {
+                            receiver:
+                                NAMED_ACCESS(E)
+                        }
+                }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    FUNCTION_CALL(*operator_plus) {
+                        receiver:
+                            NAMED_ACCESS(chain)
+                        arguments:
+                            NAMED_ACCESS(stat)
+                    }
+                arguments:
+                    NAMED_ACCESS(en)
+            }
+        }
+    }

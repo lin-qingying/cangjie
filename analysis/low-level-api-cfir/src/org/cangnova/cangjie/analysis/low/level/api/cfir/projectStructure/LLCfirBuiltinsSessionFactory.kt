@@ -15,10 +15,13 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirBuiltinsSessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirBuiltinsSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.CaModuleKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
+import kotlin.time.TimeSource
 import org.cangnova.cangjie.cfir.PrivateSessionConstructor
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
@@ -46,6 +49,16 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * 工厂诊断日志。
      */
     private val log = logger<LLCfirBuiltinsSessionFactory>()
+
+    /**
+     * session 创建统计域；统计未启用时为 `null`。
+     *
+     * builtins session 不经 [LLCfirSessionCache] 创建，因此单独解析一次；
+     * 延迟解析以免在工程级统计服务注册完成前取值。
+     */
+    private val sessionStatistics by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        LLCfirGlobalResolveComponents.getInstance(project).sessionStatistics
+    }
 
     /**
      * 所有 builtins session 共享的 CFIR 内建类型集合。
@@ -113,7 +126,7 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
 
         return builtinsSessions.getOrPut(targetPlatform) {
             CachedValuesManager.getManager(project).createCachedValue {
-                val session = createBuiltinsSession(targetPlatform)
+                val session = createBuiltinsSessionTimed(targetPlatform)
                 CachedValueProvider.Result(session, session.createValidityTracker())
             }
         }.value
@@ -145,6 +158,24 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      *
      * 整个注册过程登记在 [creationGuard] 里：同线程重入时能拿到半成品 session 而不是递归炸缓存。
      */
+    /**
+     * 在计时包装内创建 builtins session。
+     *
+     * 只在缓存未命中时执行：命中意味着 session 早已建好，把它算进本次请求会虚增创建成本。
+     */
+    private fun createBuiltinsSessionTimed(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
+        val statistics = sessionStatistics
+        if (statistics == null) return createBuiltinsSession(targetPlatform)
+
+        statistics.onSessionStarted(CaModuleKind.BUILTINS)
+        val startedAt = TimeSource.Monotonic.markNow()
+        try {
+            return createBuiltinsSession(targetPlatform)
+        } finally {
+            statistics.onSessionCreated(CaModuleKind.BUILTINS, startedAt.elapsedNow().inWholeNanoseconds)
+        }
+    }
+
     private fun createBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
         val builtinsModule = getBuiltinsModule(targetPlatform)
         val session = LLCfirBuiltinsSession(builtinsModule, builtInTypes)

@@ -1432,7 +1432,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Number, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Number, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1450,7 +1450,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Number]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Integer, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Integer]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Integer, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1474,7 +1474,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Parsable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Parsable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Parsable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1543,7 +1543,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=BigInt]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:RadixConvertible, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:RadixConvertible, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -1632,7 +1632,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/math/numeric/BigInt, extendId=std.math.numeric:BigInt<:Formattable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Formattable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:BigInt<:Formattable, fqName=std.math.numeric.BigInt, name=BigInt, receiverTypeName=BigInt, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2745,7 +2745,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
             CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Number, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Number]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Number, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2763,7 +2763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Number]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Parsable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Parsable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Parsable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
@@ -2832,7 +2832,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=numeric]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Decimal]
-  CangJieStub$EXTEND[classId=std/math/numeric/Decimal, extendId=std.math.numeric:Decimal<:Formattable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Formattable]]
+  CangJieStub$EXTEND[extendId=std.math.numeric:Decimal<:Formattable, fqName=std.math.numeric.Decimal, name=Decimal, receiverTypeName=Decimal, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE

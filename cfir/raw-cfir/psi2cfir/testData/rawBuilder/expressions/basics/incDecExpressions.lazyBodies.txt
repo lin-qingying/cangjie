@@ -1,0 +1,4 @@
+FILE: incDecExpressions.cj
+    internal? func bump(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

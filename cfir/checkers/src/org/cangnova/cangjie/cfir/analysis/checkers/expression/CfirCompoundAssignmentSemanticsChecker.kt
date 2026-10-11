@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -84,7 +83,7 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
     private fun reportCompoundAssignmentTypeIncompatible(expression: CfirAssignment) {
         val source = expression.source as? AbstractCjSourceElement ?: return
         reporter.reportOn(
-            source.firstCharacterDiagnosticSource(),
+            source,
             CfirErrors.TYPE_INCOMPATIBLE,
             "compound assignment expression",
         )

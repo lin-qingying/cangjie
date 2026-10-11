@@ -58,7 +58,7 @@ object CfirValueTypeRecursiveChecker : CfirClassLikeChecker() {
         if (firstDeclarationInCycle.valueTypeClassId() != declaration.valueTypeClassId()) return
 
         reporter.reportOn(
-            source = declaration.source?.firstCharacterDiagnosticSource(),
+            source = declaration.source ,
             factory = CfirErrors.VALUE_TYPE_RECURSIVE,
         )
     }

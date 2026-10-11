@@ -365,8 +365,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                         if (reportedPropertyMutabilityConflicts.add(key)) {
                             reporter.reportOn(
                                 source = candidate.declarationSource
-                                    ?.firstCharacterDiagnosticSource()
-                                    ?: candidate.diagnosticSource,
+                                  ,
                                 factory = when (propertyMutabilityConflict) {
                                     PropertyMutabilityConflict.MutExpected ->
                                         CfirErrors.PROPERTY_HAVE_SAME_DECLARATION_IN_INHERIT_MUT
@@ -413,9 +412,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             ?.realSourceModifiers()
                             ?.modifierByToken(CjTokens.PUBLIC_KEYWORD)
                             ?.source
-                            ?.firstCharacterDiagnosticSource()
-                            ?: ownMemberSource?.firstCharacterDiagnosticSource()
-                            ?: extend.source?.firstCharacterDiagnosticSource()
+
+                            ?: ownMemberSource
+                            ?: extend.source
                             ?: superTypeRef.source
                         reporter.reportOn(
                             source = source,
@@ -489,7 +488,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
         if (hasUnimplementedMember) {
             reporter.reportOn(
-                source = extend.source?.firstCharacterDiagnosticSource() ?: extend.extendedTypeRef.source,
+                source = extend.source  ?: extend.extendedTypeRef.source,
                 factory = CfirErrors.NEED_MEMBER_IMPLEMENTATION,
                 a = extend.targetDisplayName(),
             )
@@ -1352,8 +1351,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedMutConflicts.add(key)) {
                                 reporter.reportOn(
-                                    source = ownInfo.source?.firstCharacterDiagnosticSource()
-                                        ?: ownInfo.nameSource
+                                    source = ownInfo.source  ?: ownInfo.nameSource
                                         ?: subject.source,
                                     factory = CfirErrors.INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE,
                                 )
@@ -1428,7 +1426,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
                         if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
                             reporter.reportOn(
-                                source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
+                                source = ownInfo.source  ?: subject.source,
                                 factory = CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
                                 a = ownInfo.name,
                             )
@@ -1448,8 +1446,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                             val key = ownInfo.overrideDiagnosticKey(superInfo)
                             if (reportedInvalidAbstractOverrides.add(key)) {
                                 reporter.reportOn(
-                                    source = ownInfo.source?.firstCharacterDiagnosticSource()
-                                        ?: ownInfo.nameSource
+                                    source = ownInfo.source  ?: ownInfo.nameSource
                                         ?: subject.source,
                                     factory = CfirErrors.INVALID_OVERRIDE_MEMBER_IN_CLASS,
                                     a = ownInfo.kind,

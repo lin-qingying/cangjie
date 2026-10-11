@@ -1,0 +1,22 @@
+FILE: arraySingleArgConstruction.cj
+    internal? func singleArg(xs: R|Array<R|String|>|): R|Unit| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Array<R|Int64|>) {
+                    ARRAY_LITERAL {
+                        INT(1)
+                        INT(2)
+                    }
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(Array<R|Int64|>) {
+                    NAMED_ACCESS(xs)
+                }
+        local? let _: <implicit> = ...
+            initializer:
+                TUPLE_LITERAL {
+                    NAMED_ACCESS(a)
+                    NAMED_ACCESS(b)
+                }
+    }

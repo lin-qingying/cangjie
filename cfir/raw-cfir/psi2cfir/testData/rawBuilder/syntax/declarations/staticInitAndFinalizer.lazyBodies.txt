@@ -1,0 +1,19 @@
+FILE: staticInitAndFinalizer.cj
+    internal? class WithStaticInit {
+        internal? static var counter: R|Int64|
+        internal? static let LIMIT: R|Int64|
+        internal? var instance: R|Int64|
+        internal? static prop current: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init() {
+            <element: CfirLazyBlock>
+        }
+        <element: CfirFinalizer>
+    }
+    internal? class OnlyFinalizer {
+        init()
+        internal? var v: R|Int64|
+        <element: CfirFinalizer>
+    }

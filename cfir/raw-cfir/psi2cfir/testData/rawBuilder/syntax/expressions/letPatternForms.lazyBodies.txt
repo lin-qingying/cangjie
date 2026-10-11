@@ -1,0 +1,4 @@
+FILE: letPatternForms.cj
+    internal? func letPatternForms(o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

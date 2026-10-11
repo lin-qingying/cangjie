@@ -1,0 +1,14 @@
+FILE: doWhileWithoutBrace.cj
+    internal? func doWhileWithoutBrace(): R|Int64| {
+        local? var i: <implicit> = ...
+            initializer:
+                INT(0)
+        DO_WHILE {
+            condition:
+                ERROR_EXPR(Missing do-while condition)
+            body:
+        }
+        RETURN {
+            NAMED_ACCESS(i)
+        }
+    }

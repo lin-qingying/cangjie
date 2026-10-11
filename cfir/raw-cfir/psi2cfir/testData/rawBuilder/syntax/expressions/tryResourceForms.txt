@@ -1,0 +1,54 @@
+FILE: tryResourceForms.cj
+    internal? class Res <: R|Resource| {
+        init() {
+        }
+        public func isClosed(): R|Bool| {
+            RETURN {
+                BOOLEAN(false)
+            }
+        }
+        public func close(): R|Unit| {
+        }
+    }
+    internal? class MyError <: R|Exception| {
+        init() {
+            FUNCTION_CALL(super) {
+            }
+        }
+    }
+    internal? func tryResourceForms(): R|Unit| {
+        TRY {
+            try:
+                local? let x: <implicit> = ...
+                    initializer:
+                        INT(1)
+                local? let _: <implicit> = ...
+                    initializer:
+                        NAMED_ACCESS(x)
+        }
+        TRY {
+            try:
+        }
+        TRY {
+            try:
+        }
+        TRY {
+            try:
+            catch(err: R|MyError|):
+        }
+        TRY {
+            try:
+            finally:
+        }
+    }
+    internal? func tryResourceWithReturn(): R|Int64| {
+        TRY {
+            try:
+                RETURN {
+                    INT(1)
+                }
+        }
+        RETURN {
+            INT(0)
+        }
+    }

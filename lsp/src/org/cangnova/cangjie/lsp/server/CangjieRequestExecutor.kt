@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.time.TimeSource
 
 /**
  * 串行执行 LSP 请求的工作线程执行器。
@@ -14,9 +15,11 @@ import java.util.logging.Logger
  * 该执行器把服务端能力计算统一收敛到单线程队列，避免 PSI、文档状态和 Analysis API 快照被并发请求交叉修改。
  *
  * @param threadNamePrefix 工作线程名称前缀，便于日志和线程 dump 识别 LSP 请求线程。
+ * @param statistics 请求耗时统计域；统计未启用时为 `null`，此时不取单调时钟。
  */
 class CangjieRequestExecutor(
     threadNamePrefix: String = "cangjie-lsp-worker",
+    private val statistics: CangjieRequestStatistics? = null,
 ) : AutoCloseable {
     /**
      * 请求执行器日志记录器。
@@ -42,18 +45,36 @@ class CangjieRequestExecutor(
     )
 
     /**
-     * 在 LSP 工作线程上异步执行请求动作。
+     * 在 LSP 工作线程上异步执行 [request] 对应的动作。
      *
-     * 该方法将异常记录到日志后继续让 `CompletableFuture` 以失败状态完成，保持 JSON-RPC 错误传播链。
+     * 该方法将异常记录到日志后继续让 `CompletableFuture` 以失败状态完成，保持 JSON-RPC 错误传播链；
+     * 失败同时计入请求统计的失败计数，并让请求链路 span 以 ERROR 状态结束。耗时不包含排队等待——
+     * 排队时长属于服务器背压，与请求本身的成本是两件事，混在一起会让补全变慢时误以为是分析变慢。
      */
-    fun <T> compute(action: () -> T): CompletableFuture<T> {
+    fun <T> compute(request: CangjieLspRequest, action: () -> T): CompletableFuture<T> {
         return CompletableFuture.supplyAsync(
             {
+                val requestSpan = statistics?.startRequestSpan(request)
+                val startedAt = if (statistics != null) TimeSource.Monotonic.markNow() else null
+                var failed = false
+                var error: Throwable? = null
                 try {
                     action()
                 } catch (throwable: Throwable) {
-                    logger.log(Level.SEVERE, "LSP request executor action failed", throwable)
+                    failed = true
+                    error = throwable
+                    logger.log(Level.SEVERE, "LSP request ${request.lspMethod} failed", throwable)
                     throw throwable
+                } finally {
+                    if (startedAt != null) {
+                        statistics!!.onRequestFinished(
+                            request,
+                            startedAt.elapsedNow().inWholeNanoseconds,
+                            failed,
+                            error,
+                            requestSpan,
+                        )
+                    }
                 }
             },
             executor,

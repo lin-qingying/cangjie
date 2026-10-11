@@ -1,0 +1,4 @@
+FILE: prefixMissingOperand.cj
+    internal? func negate(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

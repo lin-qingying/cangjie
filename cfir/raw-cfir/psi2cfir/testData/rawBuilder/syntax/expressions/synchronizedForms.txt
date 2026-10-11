@@ -1,0 +1,63 @@
+FILE: synchronizedForms.cj
+    import std.sync.*
+    internal? func synchronizedForms(): R|Int64| {
+        local? let a: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ReentrantMutex) {
+                }
+        local? let b: <implicit> = ...
+            initializer:
+                FUNCTION_CALL(ReentrantMutex) {
+                }
+        local? let c: <implicit> = ...
+            initializer:
+                SYNCHRONIZED {
+                    monitor:
+                        NAMED_ACCESS(a)
+                    body:
+                        INT(1)
+                }
+        local? let d: <implicit> = ...
+            initializer:
+                SYNCHRONIZED {
+                    monitor:
+                        NAMED_ACCESS(a)
+                    body:
+                        SYNCHRONIZED {
+                            monitor:
+                                NAMED_ACCESS(b)
+                            body:
+                                INT(2)
+                        }
+                }
+        SYNCHRONIZED {
+            monitor:
+                NAMED_ACCESS(a)
+            body:
+                NAMED_ACCESS(c)
+        }
+        FUNCTION_CALL(lock) {
+            receiver:
+                NAMED_ACCESS(a)
+        }
+        TRY {
+            try:
+                FUNCTION_CALL(unlock) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+            finally:
+                FUNCTION_CALL(unlock) {
+                    receiver:
+                        NAMED_ACCESS(a)
+                }
+        }
+        RETURN {
+            FUNCTION_CALL(*operator_plus) {
+                receiver:
+                    NAMED_ACCESS(c)
+                arguments:
+                    NAMED_ACCESS(d)
+            }
+        }
+    }

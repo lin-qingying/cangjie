@@ -1,0 +1,7 @@
+FILE: ifWhileForms.cj
+    internal? func cond(x: R|Int64|): R|Bool| {
+        <element: CfirLazyBlock>
+    }
+    internal? func ifWhileForms(xs: R|Array<R|Int64|>|, o: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

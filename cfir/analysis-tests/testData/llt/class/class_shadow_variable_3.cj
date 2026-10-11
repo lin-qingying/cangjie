@@ -10,7 +10,7 @@ open class B <: A {
 }
 
 class C <: B {
-    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 20
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>public var a = 20<!>
 }
 
 main() {

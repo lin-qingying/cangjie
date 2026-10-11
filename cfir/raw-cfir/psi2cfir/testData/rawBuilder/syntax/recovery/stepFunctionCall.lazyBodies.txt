@@ -1,0 +1,4 @@
+FILE: stepFunctionCall.cj
+    internal? func stepFunctionCall(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

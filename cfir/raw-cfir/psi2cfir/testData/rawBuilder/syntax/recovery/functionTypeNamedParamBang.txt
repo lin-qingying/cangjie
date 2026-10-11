@@ -1,0 +1,9 @@
+FILE: functionTypeNamedParamBang.cj
+    internal? func namedParamBang(g: R|(R|Int64|, R|String|) -> R|Bool||): R|Bool| {
+        RETURN {
+            FUNCTION_CALL(g) {
+                INT(1)
+                STRING("x")
+            }
+        }
+    }

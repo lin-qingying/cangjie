@@ -33,6 +33,8 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     }
 
     is CjPropertyAccessor -> elementCanBeLazilyResolved(element.property)
+    // extend 不是 class-like，没有 ClassId；它仍然是合法的非局部容器（成员 owner 就是 extend 声明本身）
+    is CjExtend -> true
     is CjTypeStatement -> element.getClassId() != null
     is CjTypeAlias -> element.getClassId() != null
     !is CjNamedDeclaration -> false

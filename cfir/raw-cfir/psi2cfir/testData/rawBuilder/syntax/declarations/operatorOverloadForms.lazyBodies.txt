@@ -1,0 +1,107 @@
+FILE: operatorOverloadForms.cj
+    internal? class Num {
+        internal? var v: R|Int64|
+        init(v: R|Int64|) {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_plus(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_minus(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_times(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_div(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_rem(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_exponentiation(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_left_shift(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_right_shift(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_and(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_xor(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_or(o: R|Num|): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_compare_lt(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_compare_lteq(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_compare_gt(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_compare_gteq(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_equals(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_not_equals(o: R|Num|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_unaryMinus(): R|Num| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_not(): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_invoke(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class IndexSet {
+        init()
+        internal? var values: R|Array<R|Int64|>|
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_set(i: R|Int64|, value: R|Int64|): R|Unit| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Pt {
+        init()
+        internal? var x: R|Int64|
+    }
+    extend R|Pt| {
+        public operator func *operator_plus(o: R|Pt|): R|Pt| {
+            <element: CfirLazyBlock>
+        }
+        public operator func *operator_equals(o: R|Pt|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Eq {
+        public operator func *operator_not_equals(o: R|Eq|): R|Bool| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Op {
+        A
+        init()
+        public operator func *operator_plus(o: R|Op|): R|Op| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func operatorOverloadUses(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

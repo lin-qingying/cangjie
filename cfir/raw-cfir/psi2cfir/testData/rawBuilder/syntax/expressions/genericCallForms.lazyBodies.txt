@@ -1,0 +1,16 @@
+FILE: genericCallForms.cj
+    internal? func <T>id(x: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T>empty(): R|T| {
+        <element: CfirLazyBlock>
+    }
+    internal? class Box<T> {
+        internal? var v: R|T|
+        init(v: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func genericCallForms(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

@@ -109,6 +109,17 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
     }
 
     /**
+     * 本 designation 覆盖的声明数：路径上的上下文声明、主目标，以及子类展开的子图。
+     *
+     * 这与 [visit] 交给阶段解析器的元素集合完全一致，即该阶段实际会推进的声明数。
+     */
+    fun declarationCount(): Int {
+        var count = 0
+        forEachTarget { count++ }
+        return count
+    }
+
+    /**
      * 输出 target 的路径和附加后缀，用于 lazy resolve 日志与断言信息。
      */
     override fun toString(): String = buildString {

@@ -1,0 +1,4 @@
+FILE: nothingReturn.cj
+    internal? func fail(): R|Nothing| {
+        <element: CfirLazyBlock>
+    }

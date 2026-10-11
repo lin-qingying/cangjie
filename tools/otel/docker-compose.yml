@@ -1,0 +1,56 @@
+# Analysis API 性能统计的本地采集栈。
+#
+# 双信号：metrics 走 Prometheus，traces 走 Jaeger；collector 负责接收与分流。
+#
+# 启动：
+#   docker compose -f tools/otel/docker-compose.yml up -d
+#
+# 跑测试并推送两个信号：
+#   ./gradlew :analysis:analysis-performance-test:test \
+#       -Dcangjie.performance.otlp.endpoint=http://localhost:4317
+#
+# 看板：Prometheus http://localhost:9090（指标）、Jaeger http://localhost:16686（链路）。
+# 累计型（cumulative）指标不会自己变小，Prometheus 里一律用 rate()/increase() 看变化。
+
+services:
+  # Jaeger all-in-one：自带存储与链路 UI，不接指标。
+  #
+  # 钉在 1.62.0 而不是 latest：latest 的 OTLP receiver 只到 StatusStarting 从未 ready，
+  # collector 推过去会失败。1.62.0 的 OTLP gRPC/HTTP 两个 server 都正常启动。
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment:
+      # all-in-one 默认不接 OTLP，要显式打开才能当 collector 的下游。
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      # 只暴露 UI。4317 绝不能映射到宿主机：collector 的 OTLP 接收端口也是 4317，
+      # 两者冲突会让 collector 起不来（Bind for 0.0.0.0:4317 failed: port is already allocated）。
+      # Jaeger 作为下游只需在 compose 网络内可达，由 collector 通过 otlp_grpc/jaeger 连。
+      - "16686:16686"
+
+  collector:
+    # 钉 0.161.0：配置按该版本的 exporter 选项写（debug 取代 logging、otlp_grpc 取代 otlp 别名）。
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+      # 落盘目录。file exporter 只能写 /tmp（distroless 建不出 /var/lib/otel），
+      # 所以挂在 /tmp/otel 上，落盘文件才能从宿主机取回。
+      - ./otel-data:/tmp/otel
+    ports:
+      - "4317:4317" # 测试进程的 OTLP 导出器打到这里（指标与链路共用）
+      - "4318:4318" # OTLP HTTP，供临时排查
+      - "9464:9464" # Prometheus 格式的指标，由 prometheus 服务抓取
+      - "8889:8889" # collector 自身指标（service.telemetry.metrics）
+    depends_on:
+      - jaeger
+
+  # Prometheus：按同目录 prometheus.yml 抓取 collector 的 :9464/metrics。
+  prometheus:
+    image: prom/prometheus:v3.15.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - collector

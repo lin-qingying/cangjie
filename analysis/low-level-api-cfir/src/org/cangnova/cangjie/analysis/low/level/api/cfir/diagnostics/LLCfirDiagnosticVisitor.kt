@@ -52,7 +52,7 @@ internal open class LLCfirDiagnosticVisitor(
      */
     override fun checkElement(element: CfirElement) {
         beforeElementDiagnosticCollectionHandler?.beforeCollectingForElement(element, components.phase)
-        components.regularComponents.forEach { diagnosticVisitor ->
+        forEachTimedCheckerComponent { diagnosticVisitor ->
             checkCanceled()
             suppressAndLogExceptions {
                 element.accept(diagnosticVisitor, context)

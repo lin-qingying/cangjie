@@ -1,0 +1,1032 @@
+FILE: manyDeclarations.cj
+    internal? class Node01 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node01|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node01| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node02 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node02|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node02| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node03 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node03|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node03| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node04 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node04|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node04| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node05 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node05|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node05| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node06 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node06|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node06| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node07 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node07|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node07| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node08 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node08|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node08| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node09 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node09|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node09| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node10 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node10|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node10| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node11 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node11|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node11| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node12 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node12|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node12| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node13 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node13|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node13| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node14 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node14|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node14| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node15 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node15|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node15| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node16 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node16|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node16| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node17 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node17|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node17| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node18 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node18|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node18| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node19 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node19|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node19| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node20 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node20|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node20| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node21 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node21|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node21| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node22 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node22|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node22| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node23 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node23|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node23| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node24 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node24|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node24| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node25 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node25|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node25| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node26 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node26|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node26| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node27 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node27|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node27| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node28 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node28|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node28| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node29 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node29|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node29| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Node30 {
+        internal? var id: R|Int64|
+        internal? var name: R|String|
+        internal? let tag: R|Int64|
+        init(id: R|Int64|, name: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        init(other: R|Node30|) {
+            <element: CfirLazyBlock>
+        }
+        public func describe(): R|String| {
+            <element: CfirLazyBlock>
+        }
+        public mut prop doubled: R|Int64|
+        public static func make(id: R|Int64|): R|Node30| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec01 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec02 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec03 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec04 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec05 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec06 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec07 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec08 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec09 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec10 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec11 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec12 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec13 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec14 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Rec15 {
+        internal? var a: R|Int64|
+        internal? var b: R|String|
+        init() {
+            <element: CfirLazyBlock>
+        }
+        init(a: R|Int64|, b: R|String|) {
+            <element: CfirLazyBlock>
+        }
+        public func weight(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind01 {
+        A01
+        B01(R|Int64|)
+        C01(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind02 {
+        A02
+        B02(R|Int64|)
+        C02(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind03 {
+        A03
+        B03(R|Int64|)
+        C03(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind04 {
+        A04
+        B04(R|Int64|)
+        C04(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind05 {
+        A05
+        B05(R|Int64|)
+        C05(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind06 {
+        A06
+        B06(R|Int64|)
+        C06(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind07 {
+        A07
+        B07(R|Int64|)
+        C07(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind08 {
+        A08
+        B08(R|Int64|)
+        C08(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind09 {
+        A09
+        B09(R|Int64|)
+        C09(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? enum Kind10 {
+        A10
+        B10(R|Int64|)
+        C10(R|Int64|, R|String|)
+        init()
+        public func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape01 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape02 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape03 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape04 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape05 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape06 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? interface Shape07 {
+        public? abstract? func area(): R|Int64|
+        public? func name(): R|String| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base01 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived01 <: R|Base01| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base02 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived02 <: R|Base02| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base03 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived03 <: R|Base03| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base04 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived04 <: R|Base04| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base05 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived05 <: R|Base05| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base06 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived06 <: R|Base06| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base07 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived07 <: R|Base07| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? open class Base08 {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public open func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? class Derived08 <: R|Base08| {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public override func run(x: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func top01(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top02(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top03(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top04(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top05(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top06(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top07(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top08(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top09(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top10(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top11(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func top12(x: R|Int64|, s: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }

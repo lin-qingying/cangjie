@@ -1,0 +1,9 @@
+FILE: staticInitAssign.cj
+    internal? class C {
+        init()
+        internal? static var x: R|Int64|
+        internal? static let y: R|Int64|
+        init() {
+            <element: CfirLazyBlock>
+        }
+    }

@@ -1,0 +1,9 @@
+FILE: thisTypeAsParameter.cj
+    internal? class Param {
+        init() {
+            <element: CfirLazyBlock>
+        }
+        public func f(o: R|This|): R|This| {
+            <element: CfirLazyBlock>
+        }
+    }

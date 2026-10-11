@@ -1,0 +1,5 @@
+FILE: quoteDollarIdentifier.cj
+    package mp
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+    <element: CfirMacroDeclaration>

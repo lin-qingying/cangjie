@@ -194,6 +194,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirValueTypeRecursiveChecker,
             CfirConstDeclarationChecker,
             CfirInheritanceDeepChecker,
+            CfirDeprecatedClassLikeChecker,
             CfirCommonSpecificChecker,
             CfirMockSemanticsChecker,
             CfirGenericJavaInteropChecker,

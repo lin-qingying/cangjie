@@ -1,0 +1,7 @@
+FILE: tryNestedFinally.cj
+    internal? class E <: R|Exception| {
+        init()
+    }
+    internal? func f(b: R|Bool|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

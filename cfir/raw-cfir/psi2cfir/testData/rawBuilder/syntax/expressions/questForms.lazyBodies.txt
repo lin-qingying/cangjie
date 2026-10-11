@@ -1,0 +1,19 @@
+FILE: questForms.cj
+    internal? class Node {
+        init()
+        internal? var value: R|Int64|
+        internal? var next: R|Option<R|Node|>|
+        internal? func get(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? struct Holder {
+        init()
+        internal? var items: R|Array<R|Int64|>|
+        public operator func *operator_get(i: R|Int64|): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func questForms(n: R|Option<R|Node|>|, h: R|Option<R|Holder|>|, o: R|Option<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

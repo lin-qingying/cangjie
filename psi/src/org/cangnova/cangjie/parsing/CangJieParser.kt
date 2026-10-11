@@ -79,73 +79,80 @@ class CangJieParser(project: Project) : PsiParser {
 
         @JvmStatic
         @JvmOverloads
-        fun parseLambdaExpression(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode {
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                    languageModuleName,
-                )
+        fun parseLambdaExpression(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project)
+                .measure(CangjiePsiParseKind.LAMBDA_EXPRESSION) {
+                    val cjParsing: CangJieParsing =
+                        createForTopLevel(
+                            SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
+                            languageModuleName,
+                        )
 
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseLambdaExpression()
-            }
+                    with(ParsingContext.DEFAULT) {
+                        cjParsing.parseLambdaExpression()
+                    }
 
-            return psiBuilder.treeBuilt
-        }
-
-        @JvmStatic
-        @JvmOverloads
-        fun parseBlockCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode {
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                    languageModuleName,
-                )
-
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseBlockCodeFragment()
-            }
-
-            return psiBuilder.treeBuilt
-        }
+                    psiBuilder.treeBuilt
+                }
 
         @JvmStatic
         @JvmOverloads
-        fun parseExpressionCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode {
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                    languageModuleName,
-                )
+        fun parseBlockCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project)
+                .measure(CangjiePsiParseKind.BLOCK_CODE_FRAGMENT) {
+                    val cjParsing: CangJieParsing =
+                        createForTopLevel(
+                            SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
+                            languageModuleName,
+                        )
 
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseExpressionCodeFragment()
+                    with(ParsingContext.DEFAULT) {
+                        cjParsing.parseBlockCodeFragment()
+                    }
 
-            }
-
-
-            return psiBuilder.treeBuilt
-        }
+                    psiBuilder.treeBuilt
+                }
 
         @JvmStatic
         @JvmOverloads
-        fun parseTypeCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode {
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                    languageModuleName,
-                )
+        fun parseExpressionCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project)
+                .measure(CangjiePsiParseKind.EXPRESSION_CODE_FRAGMENT) {
+                    val cjParsing: CangJieParsing =
+                        createForTopLevel(
+                            SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
+                            languageModuleName,
+                        )
 
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseTypeCodeFragment()
-            }
+                    with(ParsingContext.DEFAULT) {
+                        cjParsing.parseExpressionCodeFragment()
+                    }
 
-            return psiBuilder.treeBuilt
-        }
+                    psiBuilder.treeBuilt
+                }
+
+        @JvmStatic
+        @JvmOverloads
+        fun parseTypeCodeFragment(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project)
+                .measure(CangjiePsiParseKind.TYPE_CODE_FRAGMENT) {
+                    val cjParsing: CangJieParsing =
+                        createForTopLevel(
+                            SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
+                            languageModuleName,
+                        )
+
+                    with(ParsingContext.DEFAULT) {
+                        cjParsing.parseTypeCodeFragment()
+                    }
+
+                    psiBuilder.treeBuilt
+                }
 
         @NotNull
         @JvmStatic
-        fun parse(psiBuilder: PsiBuilder, psiFile: PsiFile): ASTNode {
+        fun parse(psiBuilder: PsiBuilder, psiFile: PsiFile): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project).measure(CangjiePsiParseKind.FILE) {
             psiBuilder.setDebugMode(true)
 
             // 当前文件的 AST 尚未建立，不能在这里读取它自己的 packageFqName。
@@ -183,24 +190,26 @@ class CangJieParser(project: Project) : PsiParser {
 
             // 记录的是本次 parser 的真实来源；普通宏新 token 的空模块不得从词法宿主重新推导。
             if (psiFile is CjFile) psiFile.parsedLanguageModuleName = cjParsing.languageModuleName
-            return psiBuilder.treeBuilt
+            psiBuilder.treeBuilt
         }
 
         @JvmStatic
         @JvmOverloads
-        fun parseBlockExpression(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode {
-            psiBuilder.setDebugMode(true)
-            val cjParsing: CangJieParsing =
-                createForTopLevel(
-                    SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
-                    languageModuleName,
-                )
+        fun parseBlockExpression(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
+            CangjiePsiParseTimingService.getInstance(psiBuilder.project)
+                .measure(CangjiePsiParseKind.BLOCK_EXPRESSION) {
+                    psiBuilder.setDebugMode(true)
+                    val cjParsing: CangJieParsing =
+                        createForTopLevel(
+                            SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),
+                            languageModuleName,
+                        )
 
-            with(ParsingContext.DEFAULT) {
-                cjParsing.parseBlockExpression()
-            }
+                    with(ParsingContext.DEFAULT) {
+                        cjParsing.parseBlockExpression()
+                    }
 
-            return psiBuilder.treeBuilt
-        }
+                    psiBuilder.treeBuilt
+                }
     }
 }
