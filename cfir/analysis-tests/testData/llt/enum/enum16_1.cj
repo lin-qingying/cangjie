@@ -17,7 +17,7 @@ let A3 = 1
 
 main(): Int64 {
     var a = A1
-    var A2 = <!REF_NOT_BE_TYPE!>A<!>2
+    var A2 = <!REF_NOT_BE_TYPE!>A2<!>
     var b = match (A2) {
         case <!PATTERN_NOT_MATCH!>A1(x)<!> => 0
         case _ => -1

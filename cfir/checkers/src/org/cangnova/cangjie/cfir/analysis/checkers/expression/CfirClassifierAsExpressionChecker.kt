@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.renderInvalidBinaryOperato
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
@@ -17,7 +18,6 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.name.OperatorNameConventions
 
 /**
@@ -31,8 +31,8 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
     /**
      * 检查 qualified access 是否把类型名当作表达式值使用。
      *
-     * 函数调用和作为外层接收者的 qualifier 不在这里报告。类型参数使用完整引用范围；
-     * class-like symbol 保持现有首字符范围行为，由其独立诊断范围簇继续处理。
+     * 函数调用和作为外层接收者的 qualifier 不在这里报告。类型参数与 class-like symbol
+     * 均使用引用名定位策略，锚定完整标识符 token。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
@@ -51,11 +51,13 @@ object CfirClassifierAsExpressionChecker : CfirQualifiedAccessChecker() {
             is CfirTypeParameterSymbol -> reporter.reportOn(
                 source = source,
                 factory = CfirErrors.REF_NOT_BE_TYPE,
+                positioningStrategy = SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED,
             )
 
             is CfirClassLikeSymbol<*> -> reporter.reportOn(
-                source = CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1),
+                source = source,
                 factory = CfirErrors.REF_NOT_BE_TYPE,
+                positioningStrategy = SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED,
             )
 
             else -> Unit

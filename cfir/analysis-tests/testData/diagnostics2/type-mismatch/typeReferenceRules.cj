@@ -114,9 +114,9 @@ func trEnumCtorAsType(): Unit {
 
 // FILE: typeNameAsValue.cj
 // 形态：把类型名（class / struct / interface）当值单独引用。官方 TypeCheckReference.cpp:626
-// CheckAccessLegalityOfRefExpr（`re.isAlone && decl->IsTypeDecl()` → 锚 RefExpr 首字符，附注 "found candidate"）。
-// kind：sema_ref_not_be_type "expected member name or constructor call after 'X' type name"，三处各 1 个字符。
-// 1.0.5 / 1.1.3 一致。构造器调用 `trValueClass()` 合法（见 typeReferenceOk.cj 段）。
+// CheckAccessLegalityOfRefExpr（`re.isAlone && decl->IsTypeDecl()`，附注 "found candidate"）。
+// 项目高亮约定：sema_ref_not_be_type 锚定完整类型名 token，不包含后续类型实参。
+// 构造器调用 `trValueClass()` 合法（见 typeReferenceOk.cj 段）。
 class trValueClass {
 }
 
@@ -127,45 +127,45 @@ interface trValueIface {
 }
 
 func trTypeNameAsValue(): Unit {
-    let a = <!REF_NOT_BE_TYPE!>t<!>rValueClass
-    let b = <!REF_NOT_BE_TYPE!>t<!>rValueStruct
-    let c = <!REF_NOT_BE_TYPE!>t<!>rValueIface
+    let a = <!REF_NOT_BE_TYPE!>trValueClass<!>
+    let b = <!REF_NOT_BE_TYPE!>trValueStruct<!>
+    let c = <!REF_NOT_BE_TYPE!>trValueIface<!>
     let _ = a
     let _ = b
     let _ = c
 }
 
 // FILE: typeAliasAsValue.cj
-// 形态：把指向 class 的 typealias 当值单独引用，与 typeNameAsValue 同一条官方检查（RefExpr 首字符）。
-// kind：sema_ref_not_be_type，锚 `t`（1 个字符）。1.0.5 / 1.1.3 一致。
+// 形态：把指向 class 的 typealias 当值单独引用，与 typeNameAsValue 同一条检查。
+// 项目高亮约定：锚定完整别名 token。
 class trAliasTargetClass {
 }
 
 type trClassAlias = trAliasTargetClass
 
 func trAliasAsValue(): Unit {
-    let a = <!REF_NOT_BE_TYPE!>t<!>rClassAlias
+    let a = <!REF_NOT_BE_TYPE!>trClassAlias<!>
     let _ = a
 }
 
 // FILE: typeParamAsValue.cj
-// 形态：把泛型函数的类型参数当值单独引用（TypeParam 也算 IsTypeDecl）。锚 RefExpr 首字符 `T`。
-// kind：sema_ref_not_be_type "… after 'T' type name"，锚 `T`（1 个字符）。1.0.5 / 1.1.3 一致。
-func trTypeParamAsValue<T>(x: T): Unit {
-    let y = <!REF_NOT_BE_TYPE!>T<!>
+// 形态：把泛型函数的类型参数当值单独引用（TypeParam 也算 IsTypeDecl）。
+// 项目高亮约定：锚定完整类型参数 token。
+func trTypeParamAsValue<ValueTypeParameter>(x: ValueTypeParameter): Unit {
+    let y = <!REF_NOT_BE_TYPE!>ValueTypeParameter<!>
     let z = x
     let _ = y
     let _ = z
 }
 
 // FILE: genericTypeAsValue.cj
-// 形态：把带显式类型实参的泛型类型名当值单独引用（不带 `()`）。锚 RefExpr 首字符。
-// kind：sema_ref_not_be_type，锚 `t`（1 个字符）。1.0.5 / 1.1.3 一致。
+// 形态：把带显式类型实参的泛型类型名当值单独引用（不带 `()`）。
+// 项目高亮约定：只锚定类型名 token，不包含 `<Int64>`。
 class trGenericValueClass<T> {
 }
 
 func trGenericTypeAsValue(): Unit {
-    let a = <!REF_NOT_BE_TYPE!>t<!>rGenericValueClass<Int64>
+    let a = <!REF_NOT_BE_TYPE!>trGenericValueClass<!><Int64>
     let _ = a
 }
 

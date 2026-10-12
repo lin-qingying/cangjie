@@ -488,6 +488,8 @@ cjc 1.0.5 / 1.1.3 实测决定；内联标记用本项目 CFIR 名；CFIR 与官
 | `type-mismatch/typeReferenceRules` | `TYPE_INCOMPATIBLE` 锚复合赋值左值首字母（`p` / `u`）、catch 模式变量 `e` | 复合赋值改报 `INVALID_BINARY_OPERATOR` 锚运算符（2 处）；catch 改成锚整条 `catch (e: …)` 子句；LightTree 路径三条都不报 |
 | `type-mismatch/typeReferenceRules` | `INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS` 锚 owner 首字母 `t` | PSI 锚 owner 整名 `trYearEnum`；LightTree 一致 |
 
+注：上表记录的是 2026-10-02 的历史对照结果。自 2026-10-12 起，项目对 `REF_NOT_BE_TYPE` 采用完整引用名 token 的高亮范围（不含类型实参）；CFIR 的 PSI 与 LightTree 路径共用 `REFERENCED_NAME_BY_QUALIFIED` 定位策略。
+
 PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testData 两个入口），`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated`
 的三个新用例均通过（本次聚焦跑被跳过）。
 
