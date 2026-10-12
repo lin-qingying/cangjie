@@ -15,6 +15,9 @@ sealed interface InsertionValidity {
     /** 文档版本已变：快照的括号/实参判断不再可信。 */
     data class StaleDocument(val expectedStamp: Long, val actualStamp: Long) : InsertionValidity
 
+    /** IntelliJ 选中候选前未提供文档版本，无法安全地区分平台替换与用户编辑。 */
+    data object SelectionContextUnavailable : InsertionValidity
+
     /** 替换区间越界或已不落在预期的位置元素上。 */
     data class OutOfRange(val startOffset: Int, val endOffset: Int, val documentLength: Int) : InsertionValidity
 

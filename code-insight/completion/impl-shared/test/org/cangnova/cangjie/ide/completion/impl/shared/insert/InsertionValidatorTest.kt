@@ -61,6 +61,45 @@ class InsertionValidatorTest : CjParsingTestCase(
     }
 
     /**
+     * 平台在选中回调后替换查找串：校验仍使用替换前捕获的版本戳。
+     */
+    @Test
+    fun validWhenSelectionStampPrecedesPlatformReplacement() {
+        val completionDocument = DocumentImpl("alp beta")
+        val selectionStamp = completionDocument.modificationStamp
+        val snapshot = symbolSnapshot(selectionStamp)
+        java.awt.EventQueue.invokeAndWait {
+            WriteCommandAction.runWriteCommandAction(project) {
+                completionDocument.replaceString(0, 3, snapshot.lookupString)
+            }
+        }
+
+        assertEquals(
+            InsertionValidity.Valid,
+            InsertionValidator.validate(
+                snapshot,
+                0,
+                snapshot.lookupString.length,
+                completionDocument,
+                selectionStamp,
+            ),
+            "平台替换后的文档戳变化不得被当作补全前的用户编辑",
+        )
+    }
+
+    /**
+     * 带版本依赖的候选没有选中上下文时必须明确拒绝写入。
+     */
+    @Test
+    fun missingSelectionContextIsRejected() {
+        val stamp = document.modificationStamp
+        assertEquals(
+            InsertionValidity.SelectionContextUnavailable,
+            InsertionValidator.validate(symbolSnapshot(stamp), 0, 5, document, null),
+        )
+    }
+
+    /**
      * 文档在分析后被改动：必须报告过期而不是硬插。
      */
     @Test

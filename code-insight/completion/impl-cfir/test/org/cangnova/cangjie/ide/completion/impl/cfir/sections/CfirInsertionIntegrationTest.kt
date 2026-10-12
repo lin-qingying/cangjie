@@ -12,10 +12,13 @@ import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionIdentityKind
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
 import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
+import org.cangnova.cangjie.ide.completion.impl.shared.insert.COMPLETION_SELECTION_DOCUMENT_STAMP
+import org.cangnova.cangjie.ide.completion.impl.shared.insert.CompletionSelectionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.insert.DocumentTextSink
 import org.cangnova.cangjie.ide.completion.impl.shared.insert.InsertionResult
 import org.cangnova.cangjie.ide.completion.impl.shared.insert.InsertionValidator
 import org.cangnova.cangjie.ide.completion.impl.shared.insert.performCangjieInsertion
+import org.cangnova.cangjie.ide.completion.impl.shared.lookup.LookupElementFactory
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -56,8 +59,7 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
         assertEquals("target", snapshot.identity.name)
 
         val outcome = onEdt(mainFile.project) {
-            val caret = simulatePlatformPrefixReplacement(document, snapshot)
-            insert(snapshot, document, caret)
+            selectAndInsert(snapshot, document)
         }
 
         assertTrue(outcome.result.wroteText, "callable 候选必须补出括号")
@@ -76,8 +78,7 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
         assertFalse(snapshot.insertion.insertParenthesis, "关键字候选不得要求括号")
 
         val outcome = onEdt(mainFile.project) {
-            val caret = simulatePlatformPrefixReplacement(document, snapshot)
-            insert(snapshot, document, caret)
+            selectAndInsert(snapshot, document)
         }
 
         assertTrue(document.text.contains("return"), "关键字必须被写入")
@@ -96,32 +97,69 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
         val document = DocumentImpl(mainFile.text)
         val snapshot = callableSnapshot(mainFile, "target", document)
 
-        val (validity, before, result) = onEdt(mainFile.project) {
-            val caret = simulatePlatformPrefixReplacement(document, snapshot)
-            // 模拟用户在弹窗打开期间继续编辑。
+        val outcome = onEdt(mainFile.project) {
+            // 模拟用户在候选生成后、选中前继续编辑。
             document.insertString(0, "// edited\n")
+            val item = LookupElementFactory.create(snapshot)
+            val mayInsert = CompletionSelectionContext.beforeItemSelected(item, document)
+            val selectionStamp = item.getUserData(COMPLETION_SELECTION_DOCUMENT_STAMP)
+            val caret = document.text.indexOf(PLACEHOLDER)
             val current = InsertionValidator.validate(
-                snapshot, caret, caret, document, document.modificationStamp,
+                snapshot, caret, caret + PLACEHOLDER.length, document, selectionStamp,
             )
+            val before = document.text
             val written = performCangjieInsertion(
                 snapshot = snapshot,
                 sink = DocumentTextSink(document),
                 validity = current,
                 caretOffset = caret,
             ) { }
-            Triple(current, document.text, written)
+            StaleInsertionOutcome(mayInsert, current, before, written)
         }
 
-        assertTrue(validity is InsertionValidity.StaleDocument, "文档被编辑后必须报告过期，实际 $validity")
-        assertFalse(result.wroteText, "过期候选不得写文档")
-        assertEquals(before, document.text, "过期候选必须一个字符都不写")
+        assertFalse(outcome.platformMayInsert, "过期候选必须阻止 IntelliJ 替换查找串")
+        assertTrue(
+            outcome.validity is InsertionValidity.StaleDocument,
+            "文档被编辑后必须报告过期，实际 ${outcome.validity}",
+        )
+        assertFalse(outcome.result.wroteText, "过期候选不得写入类型参数或括号")
+        assertEquals(outcome.documentBeforeInsertion, document.text, "过期候选必须一个字符都不写")
     }
 
     /**
-     * 未导入候选：插入计划里必须带上这一步要写的 import。
-     *
-     * 这是「导入」这一维在端到端路径上的位置——候选能插出去，但表达式引用的名字
-     * 在当前文件里根本不可解析，除非同时写 import。
+     * 泛型构造器候选在一次真实快照插入中同时保留 `<T>` 和构造括号。
+     */
+    @Test
+    fun insertsGenericConstructorWithTypeArgumentsAndParenthesis(mainFile: CjFile) {
+        val document = DocumentImpl(mainFile.text)
+        val snapshot = CfirTopLevelCompletionSection()
+            .collectCandidates(requestWith(mainFile, document.modificationStamp))
+            .single { it.lookupString == "Box" }
+
+        assertEquals("<T>", snapshot.insertion.typeParameterList)
+        assertTrue(snapshot.insertion.insertParenthesis, "构造器候选应要求调用括号")
+
+        val outcome = onEdt(mainFile.project) { selectAndInsert(snapshot, document) }
+
+        assertTrue(outcome.result.wroteText, "泛型构造器必须写入类型参数和括号")
+        assertTrue(document.text.contains("Box<T>()"), "插入结果必须是 Box<T>()，实际：${document.text}")
+        assertEquals(outcome.caret + 2, outcome.result.caretOffset, "caret 必须落在 T 之后、闭合 `>` 之前")
+    }
+
+    /**
+     * 非仓颉 lookup 元素不参与仓颉文档戳捕获。
+     */
+    @Test
+    fun selectionContextLeavesForeignLookupElementUntouched() {
+        val document = DocumentImpl("foreign")
+        val item = com.intellij.codeInsight.lookup.LookupElementBuilder.create("foreign")
+
+        assertTrue(CompletionSelectionContext.beforeItemSelected(item, document))
+        assertEquals(null, item.getUserData(COMPLETION_SELECTION_DOCUMENT_STAMP))
+    }
+
+    /**
+     * 未导入候选：版本上下文修复不应改变已有导入计划与 callable 括号插入。
      */
     @Test
     fun insertsUnimportedCandidateAndReportsImport(mainFile: CjFile) {
@@ -130,25 +168,15 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
             .collectCandidates(requestWith(mainFile, document.modificationStamp))
             .single { it.lookupString == UNIMPORTED_TARGET }
 
-        assertTrue(
-            snapshot.importPlan.requiresImportWrite,
-            "未导入候选必须带追加 import 的计划，实际 ${snapshot.importPlan}",
-        )
+        assertTrue(snapshot.importPlan.requiresImportWrite, "未导入候选必须带追加 import 的计划")
         val plan = snapshot.importPlan.plan
-        assertTrue(
-            plan is CompletionImportPlan.AddImport,
-            "计划必须是 AddImport，实际 $plan",
-        )
+        assertTrue(plan is CompletionImportPlan.AddImport, "计划必须是 AddImport，实际 $plan")
         assertEquals(
             "insertion.dependency",
             (plan as CompletionImportPlan.AddImport).target.importPath.pathStr,
-            "要写的 import 是候选所属的包路径",
         )
 
-        val outcome = onEdt(mainFile.project) {
-            val caret = simulatePlatformPrefixReplacement(document, snapshot)
-            insert(snapshot, document, caret)
-        }
+        val outcome = onEdt(mainFile.project) { selectAndInsert(snapshot, document) }
         assertTrue(document.text.contains("insertionTarget()"), "候选文本必须被写入，实际：${document.text}")
         assertEquals(outcome.caret + 1, outcome.result.caretOffset, "caret 落在括号内")
     }
@@ -162,7 +190,7 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
             .single { it.lookupString == name }
 
     /**
-     * 按当前文档版本戳构造请求，再经关键字区段取得指定关键字。
+     * 按当前文档版本戳构造请求，再经关键字区段取得指定关键字的真实快照。
      */
     private fun keywordSnapshot(mainFile: CjFile, name: String, document: DocumentImpl): CompletionSnapshot =
         CfirKeywordCompletionSection()
@@ -171,9 +199,6 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
 
     /**
      * 构造带文档版本戳的补全请求。
-     *
-     * 版本戳取自**当前**文档：用例随后在同一份文档上做替换与插入，
-     * 戳不对就只能验证「过期」这一条路径。
      */
     private fun requestWith(mainFile: CjFile, stamp: Long): CompletionRequest {
         val base = mainFile.requestAtReference(PLACEHOLDER)
@@ -188,24 +213,30 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
     }
 
     /**
-     * 模拟平台的「前缀替换」：把占位符替换成候选的查找串，返回插入点。
-     *
-     * 平台在调用插入处理器之前已经完成了这一步，因此插入处理器看到的文档里
-     * 占位符已经不在了。
+     * 选中前捕获版本，再模拟 IntelliJ 替换查找串，最后走产品校验和插入策略。
      */
-    private fun simulatePlatformPrefixReplacement(document: DocumentImpl, snapshot: CompletionSnapshot): Int {
-        val start = document.text.indexOf(PLACEHOLDER)
-        require(start >= 0) { "夹具必须含待补全的占位符" }
-        document.replaceString(start, start + PLACEHOLDER.length, snapshot.lookupString)
-        return start + snapshot.lookupString.length
+    private fun selectAndInsert(snapshot: CompletionSnapshot, document: DocumentImpl): InsertionOutcome {
+        val item = LookupElementFactory.create(snapshot)
+        require(CompletionSelectionContext.beforeItemSelected(item, document)) {
+            "测试候选在选中前不得已过期"
+        }
+        val selectionStamp = item.getUserData(COMPLETION_SELECTION_DOCUMENT_STAMP)
+            ?: error("仓颉候选必须记录选中前文档戳")
+        val caret = simulatePlatformPrefixReplacement(document, snapshot)
+        return insert(snapshot, document, caret, selectionStamp)
     }
 
     /**
      * 走产品的校验 + 插入路径，返回 caret 最终落点。
      */
-    private fun insert(snapshot: CompletionSnapshot, document: DocumentImpl, caret: Int): InsertionOutcome {
+    private fun insert(
+        snapshot: CompletionSnapshot,
+        document: DocumentImpl,
+        caret: Int,
+        selectionStamp: Long,
+    ): InsertionOutcome {
         val validity = InsertionValidator.validate(
-            snapshot, caret, caret, document, snapshot.insertion.documentStamp,
+            snapshot, caret, caret, document, selectionStamp,
         )
         var finalCaret = caret
         val result = performCangjieInsertion(
@@ -215,6 +246,16 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
             caretOffset = caret,
         ) { finalCaret = it }
         return InsertionOutcome(caret, finalCaret, result)
+    }
+
+    /**
+     * 模拟 IntelliJ 在 `beforeItemSelected` 之后替换查找串。
+     */
+    private fun simulatePlatformPrefixReplacement(document: DocumentImpl, snapshot: CompletionSnapshot): Int {
+        val start = document.text.indexOf(PLACEHOLDER)
+        require(start >= 0) { "夹具必须含待补全的占位符" }
+        document.replaceString(start, start + PLACEHOLDER.length, snapshot.lookupString)
+        return start + snapshot.lookupString.length
     }
 
     /**
@@ -235,6 +276,16 @@ class CfirInsertionIntegrationTest : AbstractAnalysisApiExecutionTest(
     private data class InsertionOutcome(
         val caret: Int,
         val finalCaret: Int,
+        val result: InsertionResult,
+    )
+
+    /**
+     * 过期选择的观测结果。
+     */
+    private data class StaleInsertionOutcome(
+        val platformMayInsert: Boolean,
+        val validity: InsertionValidity,
+        val documentBeforeInsertion: String,
         val result: InsertionResult,
     )
 

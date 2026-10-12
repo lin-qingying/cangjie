@@ -5,8 +5,11 @@ import com.intellij.codeInsight.completion.InsertionContext
 import com.intellij.codeInsight.lookup.LookupElement
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
 import org.cangnova.cangjie.ide.completion.api.lookup.CaretPolicy
+import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
 import org.cangnova.cangjie.ide.completion.api.lookup.InsertionValidity
+import org.cangnova.cangjie.ide.completion.impl.shared.imports.PsiImportPlanApplier
 import org.cangnova.cangjie.ide.completion.impl.shared.lookup.COMPLETION_SNAPSHOT
+import org.cangnova.cangjie.psi.CjFile
 
 /**
  * 仓颉候选的插入处理器。
@@ -37,7 +40,7 @@ object CompletionInsertHandlers {
 }
 
 /**
- * 平台插入入口：校验 → 提交 → 写入 → 落 caret → 提交。
+ * 平台插入入口：校验 → 同一写命令中应用导入计划并写入候选 → 落 caret → 提交。
  */
 private object DefaultHandler : InsertHandler<LookupElement> {
     override fun handleInsert(context: InsertionContext, item: LookupElement) {
@@ -48,12 +51,13 @@ private object DefaultHandler : InsertHandler<LookupElement> {
             context.startOffset,
             context.tailOffset,
             document,
-            document.modificationStamp,
+            CompletionSelectionContext.selectionStampOf(item),
             item.getUserData(COMPLETION_REVALIDATION) ?: RevalidationVerdict.NotPerformed,
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel
-        performCangjieInsertion(snapshot, DocumentTextSink(document), validity, caretModel.offset) {
+        val insertionCaret = applyImportPlan(context, item, snapshot, validity) ?: caretModel.offset
+        performCangjieInsertion(snapshot, DocumentTextSink(document), validity, insertionCaret) {
             caretModel.moveToOffset(it)
         }
         context.commitDocument()
@@ -75,15 +79,67 @@ private object NamedArgumentHandler : InsertHandler<LookupElement> {
             context.startOffset,
             context.tailOffset,
             document,
-            document.modificationStamp,
+            CompletionSelectionContext.selectionStampOf(item),
             item.getUserData(COMPLETION_REVALIDATION) ?: RevalidationVerdict.NotPerformed,
         )
         context.commitDocument()
         val caretModel = context.editor.caretModel
-        performNamedArgumentInsertion(snapshot, DocumentTextSink(document), validity, caretModel.offset) {
+        val insertionCaret = applyImportPlan(context, item, snapshot, validity) ?: caretModel.offset
+        performNamedArgumentInsertion(snapshot, DocumentTextSink(document), validity, insertionCaret) {
             caretModel.moveToOffset(it)
         }
         context.commitDocument()
+    }
+}
+
+/**
+ * 在候选插入所在的 IntelliJ 写命令中应用快照携带的导入方案。
+ *
+ * Analysis 复查若成功，以复查时的导入结论为准；宿主未安装复查监听器时，
+ * 使用候选生成时冻结的计划。导入先于括号/类型实参写入，导入器提交 PSI 后，
+ * 编辑器 caret 会随文档前移；冲突需要限定名时则用范围标记更新候选文本与 caret。
+ */
+private fun applyImportPlan(
+    context: InsertionContext,
+    item: LookupElement,
+    snapshot: CompletionSnapshot,
+    validity: InsertionValidity,
+): Int? {
+    if (!validity.writable) return null
+
+    val revalidation = item.getUserData(COMPLETION_REVALIDATION) ?: RevalidationVerdict.NotPerformed
+    val recoveredTarget = (revalidation as? RevalidationVerdict.Recovered)?.target
+    val plan = when (revalidation) {
+        is RevalidationVerdict.Recovered -> revalidation.target.importPlan
+        RevalidationVerdict.Invalid -> return null
+        RevalidationVerdict.NotPerformed -> snapshot.importPlan.plan
+    }
+    if (plan == CompletionImportPlan.NoImport) return null
+
+    val file = context.file as? CjFile
+        ?: error("仓颉补全候选只能插入 CjFile，实际文件为 ${context.file.javaClass.name}")
+    val key = snapshot.identity.deduplicationKey
+    val document = context.document
+    val candidateRange = document.createRangeMarker(context.startOffset, context.tailOffset)
+    try {
+        val report = PsiImportPlanApplier(file.project).apply(file, mapOf(key to plan))
+        val plannedExpression = report.qualifiedExpressionText[key] ?: return null
+        val expression = when (plan) {
+            is CompletionImportPlan.AddImport ->
+                (recoveredTarget?.qualifiedName ?: snapshot.identity.qualifiedName)
+                    .takeIf { '.' in it }
+                    ?: plannedExpression.takeIf { '.' in it }
+                    ?: error("存在 import 冲突但候选没有可用的限定名：${snapshot.identity}")
+
+            is CompletionImportPlan.QualifyThenShorten -> plannedExpression
+            CompletionImportPlan.NoImport -> error("NoImport 不会产生限定表达式")
+        }
+        document.replaceString(candidateRange.startOffset, candidateRange.endOffset, expression)
+        val caretOffset = candidateRange.startOffset + expression.length
+        context.editor.caretModel.moveToOffset(caretOffset)
+        return caretOffset
+    } finally {
+        candidateRange.dispose()
     }
 }
 
@@ -157,7 +213,7 @@ fun performCangjieInsertion(
     if (!validity.writable) return InsertionResult(wroteText = false, caretOffset = caretOffset)
 
     var wrote = false
-    // 期望的 caret 落点（尖括号内），仅在策略允许且确实处理了类型实参列表时生效。
+    // 期望的 caret 落点（类型占位符之后、闭合尖括号之前），仅在策略允许且确实处理了类型实参列表时生效。
     var caretInsideTypeArguments: Int? = null
     // 括号探测的起点；为 null 表示「无法判断位置，不处理括号」。
     var probeFrom: Int? = caretOffset
@@ -168,14 +224,14 @@ fun performCangjieInsertion(
             // 用户还没写尖括号：补上声明自己的类型参数名当占位。
             ExistingTypeArguments.Absent -> {
                 sink.insert(caretOffset, typeArguments)
-                caretInsideTypeArguments = caretOffset + 1
+                caretInsideTypeArguments = caretOffset + typeArguments.length - 1
                 probeFrom = caretOffset + typeArguments.length
                 wrote = true
             }
 
-            // 已经写了完整的 `<...>`：绝不重复插，caret 交给括号内，括号探测从列表之后开始。
+            // 已经写了完整的 `<...>`：绝不重复插，caret 放在列表内容之后，括号探测从列表之后开始。
             is ExistingTypeArguments.Closed -> {
-                caretInsideTypeArguments = existing.open + 1
+                caretInsideTypeArguments = existing.close
                 probeFrom = existing.close + 1
             }
 

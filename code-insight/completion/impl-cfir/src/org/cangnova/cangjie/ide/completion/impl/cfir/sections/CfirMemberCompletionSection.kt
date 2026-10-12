@@ -3,6 +3,7 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.completion.CaExtensionApplicabilityResult
 import org.cangnova.cangjie.analysis.api.components.CaTypeAccessKind
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
@@ -16,7 +17,6 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
-import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportPlan
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionImportTargetData
 import org.cangnova.cangjie.ide.completion.api.lookup.CompletionOrigin
@@ -219,15 +219,27 @@ class CfirMemberCompletionSection : CfirCompletionSection(
             .filter { it.name?.asString() == name }
             .singleOrNull()
             ?: return null
-        val packageFqName = classifier.classId?.packageFqName ?: return null
-        if (packageFqName == receiver.containingCjFile?.packageFqName) return null
+        val decision = classifier.checkCompletionCandidate(receiver)
+        val importResolution = when (decision.status) {
+            CaCompletionCandidateStatus.DIRECT -> ImportResolution.NoImport
+            CaCompletionCandidateStatus.REQUIRES_IMPORT -> ImportResolution(
+                CompletionImportPlan.AddImport(
+                    CompletionImportTargetData(
+                        importPath = checkNotNull(decision.requiredImport) {
+                            "REQUIRES_IMPORT 候选必须提供 requiredImport: ${decision.symbol}"
+                        },
+                        expressionText = name,
+                    ),
+                ),
+            )
+            CaCompletionCandidateStatus.HIDDEN,
+            CaCompletionCandidateStatus.NOT_APPLICABLE,
+            CaCompletionCandidateStatus.UNKNOWN,
+            -> return null
+        }
         return RecoveredReceiver(
             AccessTarget(classifier.defaultType, CaTypeAccessKind.STATIC_THROUGH_TYPE_NAME),
-            ImportResolution(
-                CompletionImportPlan.AddImport(
-                    CompletionImportTargetData(ImportPath(packageFqName, false), name),
-                ),
-            ),
+            importResolution,
         )
     }
 

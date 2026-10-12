@@ -22,14 +22,14 @@ object InsertionValidator {
      * @param startOffset 替换区间起点（平台给出，是本次插入的真实起点）。
      * @param tailOffset 替换区间终点。
      * @param document 当前文档。
-     * @param currentStamp 插入时刻的文档修改戳。
+     * @param selectionStamp IntelliJ 替换查找串前捕获的文档修改戳；缺失时拒绝写入。
      */
     fun validate(
         snapshot: CompletionSnapshot,
         startOffset: Int,
         tailOffset: Int,
         document: Document,
-        currentStamp: Long,
+        selectionStamp: Long?,
         revalidation: RevalidationVerdict = RevalidationVerdict.NotPerformed,
     ): InsertionValidity {
         // 语义目标已失效时**先于**文档版本判定：候选指向的声明都不在了，
@@ -37,21 +37,29 @@ object InsertionValidator {
         if (revalidation == RevalidationVerdict.Invalid) {
             return InsertionValidity.DanglingCandidate(snapshot.identity)
         }
-        if (!snapshot.requiresDocumentStamp()) {
-            return if (isRangeSane(startOffset, tailOffset, document.textLength)) {
-                InsertionValidity.Valid
-            } else {
-                InsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
-            }
-        }
-        val expected = snapshot.insertion.documentStamp
-        if (expected != currentStamp) {
-            return InsertionValidity.StaleDocument(expected, currentStamp)
-        }
+        val versionValidity = validateDocumentStamp(snapshot, selectionStamp)
+        if (!versionValidity.writable) return versionValidity
         return if (isRangeSane(startOffset, tailOffset, document.textLength)) {
             InsertionValidity.Valid
         } else {
             InsertionValidity.OutOfRange(startOffset, tailOffset, document.textLength)
+        }
+    }
+
+    /**
+     * 校验选中候选前捕获的文档版本。
+     *
+     * 平台会在 `beforeItemSelected` 之后、仓颉插入处理器之前替换查找串；该次平台写入
+     * 不代表用户编辑。这里必须使用替换前捕获的戳，不能回退到插入处理器读取的当前戳。
+     */
+    fun validateDocumentStamp(snapshot: CompletionSnapshot, selectionStamp: Long?): InsertionValidity {
+        if (!snapshot.requiresDocumentStamp()) return InsertionValidity.Valid
+        val actual = selectionStamp ?: return InsertionValidity.SelectionContextUnavailable
+        val expected = snapshot.insertion.documentStamp
+        return if (expected == actual) {
+            InsertionValidity.Valid
+        } else {
+            InsertionValidity.StaleDocument(expected, actual)
         }
     }
 

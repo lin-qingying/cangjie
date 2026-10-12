@@ -4,14 +4,11 @@ package org.cangnova.cangjie.ide.completion.impl.cfir.sections
 
 import com.intellij.openapi.progress.ProgressManager
 import org.cangnova.cangjie.analysis.api.analyze
+import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
-import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
-import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.ide.completion.api.CompletionItemKind
 import org.cangnova.cangjie.ide.completion.api.CompletionRequest
 import org.cangnova.cangjie.ide.completion.api.CompletionSnapshot
@@ -25,8 +22,6 @@ import org.cangnova.cangjie.ide.completion.api.lookup.ImportResolution
 import org.cangnova.cangjie.ide.completion.impl.cfir.CfirCompletionSection
 import org.cangnova.cangjie.ide.completion.impl.shared.context.positionContext
 import org.cangnova.cangjie.ide.completion.impl.shared.context.CompletionPositionKind
-import org.cangnova.cangjie.ImportPath
-import org.cangnova.cangjie.name.FqName
 
 /**
  * 索引召回区段：补全未导入 / 跨模块的声明。
@@ -63,39 +58,44 @@ class CfirIndexCompletionSection : CfirCompletionSection(
         val startedNanos = System.nanoTime()
 
         return analyze(file) {
-            val visibility = createUseSiteVisibilityChecker(file.symbol, position = position)
-            // 更内层作用域已经绑定的短名会遮蔽索引候选：用户写出那个名字时会解析到内层声明，
-            // 此时把跨包同名声明也列出来，选中即得到一个指向别处的名字。
-            // 作用域次序由 Analysis 的位置上下文给出，不在这里按 PSI 祖先自行推断。
-            val claimed = file.scopeContext(position).scopes
-                .flatMap { scopeEntry -> scopeEntry.scope.claimableNames() }
-                .toSet()
             buildList {
                 for (symbol in getDeclarationsByNamePrefix(request.prefix, repeated)) {
                     ProgressManager.checkCanceled()
                     // 类型位置只收类型：把函数名放进类型槽位，用户选中即编译失败。
                     if (kind == CompletionPositionKind.TYPE && symbol !is CaClassifierSymbol) continue
-                    // 可见性按使用点判定：索引范围不是访问权限。
-                    if (!visibility.isVisible(symbol)) continue
                     val name = symbol.name?.asString() ?: continue
-                    // 同一身份已由内层作用域提供时由去重器合并，这里只挡**同名不同身份**的遮蔽。
-                    if (name in claimed) continue
-                    val packageFqName = symbol.enclosingPackageFqName() ?: continue
-                    // 索引候选按定义就不在导入作用域里——在的话顶层区段已经给过、
-                    // 会由身份去重合并掉。因此这里一律给「追加 import」计划，
-                    // 已可达的重复候选由 `distinctByIdentity` 保留顶层区段那一份。
-                    val importResolution = ImportResolution(
-                        CompletionImportPlan.AddImport(
-                            CompletionImportTargetData(ImportPath(packageFqName, false), name),
-                        ),
-                    )
+                    // 统一判定器负责访问权限、位置遮蔽、默认导入和精确导入路径；
+                    // 索引只负责找出名字，不能在这里另造一套可达性与 import 规则。
+                    val decision = symbol.checkCompletionCandidate(position)
+                    val importResolution = when (decision.status) {
+                        CaCompletionCandidateStatus.DIRECT -> ImportResolution.NoImport
+                        CaCompletionCandidateStatus.REQUIRES_IMPORT -> ImportResolution(
+                            CompletionImportPlan.AddImport(
+                                CompletionImportTargetData(
+                                    importPath = checkNotNull(decision.requiredImport) {
+                                        "REQUIRES_IMPORT 候选必须提供 requiredImport: ${decision.symbol}"
+                                    },
+                                    expressionText = name,
+                                ),
+                            ),
+                        )
+                        CaCompletionCandidateStatus.HIDDEN,
+                        CaCompletionCandidateStatus.NOT_APPLICABLE,
+                        CaCompletionCandidateStatus.UNKNOWN,
+                        -> continue
+                    }
+                    val importCost = if (decision.status == CaCompletionCandidateStatus.DIRECT) {
+                        ImportCost.DIRECT
+                    } else {
+                        ImportCost.ADD_IMPORT
+                    }
                     add(
                         when (symbol) {
                             is CaClassifierSymbol -> classifierSnapshot(
                                 symbol,
                                 CompletionItemKind.TOP_LEVEL,
                                 CompletionOrigin.TOP_LEVEL,
-                                ImportCost.ADD_IMPORT,
+                                importCost,
                                 request.documentStamp,
                                 importResolution,
                             )
@@ -105,7 +105,7 @@ class CfirIndexCompletionSection : CfirCompletionSection(
                                 if (symbol is CaEnumConstructorSymbol) CompletionItemKind.ENUM_ENTRY
                                 else CompletionItemKind.TOP_LEVEL,
                                 CompletionOrigin.TOP_LEVEL,
-                                ImportCost.ADD_IMPORT,
+                                importCost,
                                 request.documentStamp,
                                 importResolution,
                             )
@@ -118,33 +118,6 @@ class CfirIndexCompletionSection : CfirCompletionSection(
         }.also {
             statistics.recordStage(CompletionStage.INDEX_QUERY, System.nanoTime() - startedNanos)
         }
-    }
-
-    /**
-     * 枚举作用域已绑定的短名。
-     *
-     * 只取名字不取符号：遮蔽判定只需要「这个名字在本层已被占用」，
-     * 而是否同一身份由去重器按身份键判断。
-     */
-    private fun CaScope.claimableNames(): Sequence<String> = sequence {
-        classifiers { true }.forEach { classifier ->
-            (classifier as? CaNamedSymbol)?.name?.asString()?.let { yield(it) }
-        }
-        callables { true }.forEach { callable ->
-            (callable as? CaNamedSymbol)?.name?.asString()?.let { yield(it) }
-        }
-    }
-
-    /**
-     * 取得声明所属的包名。
-     *
-     * 索引候选一律是**顶层**声明（或枚举构造器这类顶层类型体内声明），
-     * 因此包身份足以写出 import；取不到包名的候选（局部、合成）不是索引召回的目标。
-     */
-    private fun CaDeclarationSymbol.enclosingPackageFqName(): FqName? = when (this) {
-        is CaClassLikeSymbol -> classId?.packageFqName
-        is CaCallableSymbol -> callableId?.packageName?.takeIf { !it.isRoot }
-        else -> null
     }
 
     companion object {
