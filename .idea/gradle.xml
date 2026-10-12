@@ -76,6 +76,10 @@
             <option value="$PROJECT_DIR$/chir/chir-tree" />
             <option value="$PROJECT_DIR$/code-insight" />
             <option value="$PROJECT_DIR$/code-insight/api" />
+            <option value="$PROJECT_DIR$/code-insight/completion" />
+            <option value="$PROJECT_DIR$/code-insight/completion/contracts" />
+            <option value="$PROJECT_DIR$/code-insight/completion/impl-cfir" />
+            <option value="$PROJECT_DIR$/code-insight/completion/impl-shared" />
             <option value="$PROJECT_DIR$/code-insight/fixes" />
             <option value="$PROJECT_DIR$/code-insight/folding" />
             <option value="$PROJECT_DIR$/code-insight/formatting" />
@@ -118,6 +122,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-standalone-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-cfir-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-completion-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-folding-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
@@ -129,6 +134,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-completion-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-folding-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
@@ -240,6 +246,10 @@
                   <project path="$PROJECT_DIR$/chir/chir-tree" />
                   <project path="$PROJECT_DIR$/code-insight" />
                   <project path="$PROJECT_DIR$/code-insight/api" />
+                  <project path="$PROJECT_DIR$/code-insight/completion" />
+                  <project path="$PROJECT_DIR$/code-insight/completion/contracts" />
+                  <project path="$PROJECT_DIR$/code-insight/completion/impl-cfir" />
+                  <project path="$PROJECT_DIR$/code-insight/completion/impl-shared" />
                   <project path="$PROJECT_DIR$/code-insight/fixes" />
                   <project path="$PROJECT_DIR$/code-insight/folding" />
                   <project path="$PROJECT_DIR$/code-insight/formatting" />
@@ -282,6 +292,7 @@
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-standalone-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-cfir-for-ide-module" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-completion-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-folding-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
@@ -293,6 +304,7 @@
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+                  <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-completion-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-folding-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
                   <project path="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
@@ -377,6 +389,10 @@
             <option value="$PROJECT_DIR$/chir/chir-tree" />
             <option value="$PROJECT_DIR$/code-insight" />
             <option value="$PROJECT_DIR$/code-insight/api" />
+            <option value="$PROJECT_DIR$/code-insight/completion" />
+            <option value="$PROJECT_DIR$/code-insight/completion/contracts" />
+            <option value="$PROJECT_DIR$/code-insight/completion/impl-cfir" />
+            <option value="$PROJECT_DIR$/code-insight/completion/impl-shared" />
             <option value="$PROJECT_DIR$/code-insight/fixes" />
             <option value="$PROJECT_DIR$/code-insight/folding" />
             <option value="$PROJECT_DIR$/code-insight/formatting" />
@@ -441,6 +457,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-analysis-api-standalone-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-cfir-for-ide-module" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-completion-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-folding-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-for-ide-module" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies-module/cangjie-frontend-code-insight-formatting-for-ide-module" />
@@ -452,6 +469,7 @@
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-analysis-api-standalone-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-cfir-for-ide" />
+            <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-completion-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-folding-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-for-ide" />
             <option value="$PROJECT_DIR$/prepare/ide-plugin-dependencies/cangjie-frontend-code-insight-formatting-for-ide" />
