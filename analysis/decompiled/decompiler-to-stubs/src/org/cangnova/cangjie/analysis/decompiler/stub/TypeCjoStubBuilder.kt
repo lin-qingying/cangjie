@@ -149,6 +149,16 @@ internal class TypeCjoStubBuilder {
                     typeArguments = coneType.typeArguments,
                 )
             }
+            is ConePointerType -> createQualifiedUserTypeReferenceStub(
+                parent = parent,
+                segments = buildList {
+                    StdlibClassIds.CPointer.packageFqName.pathSegments().forEach { packageSegment ->
+                        add(packageSegment to false)
+                    }
+                    add(StdlibClassIds.CPointer.shortClassName to true)
+                },
+                typeArguments = listOf(coneType.pointeeType),
+            )
             is ConeFunctionType -> createFunctionTypeReferenceStub(parent, coneType.parameterTypes, coneType.returnType)
             is ConeTupleType -> createTupleTypeReferenceStub(parent, coneType.elementTypes)
             is ConeVArrayType -> createVArrayTypeReferenceStub(parent, coneType.elementType, coneType.size.toString())
@@ -290,12 +300,17 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         segments: List<Name>,
         typeArguments: List<String>,
+        isTypeNameSegment: Boolean = true,
     ) {
         val userTypeStub = CangJieUserTypeStubImpl(parent)
         if (segments.size > 1) {
-            createRenderedUserTypeStub(userTypeStub, segments.dropLast(1), emptyList())
+            createRenderedUserTypeStub(userTypeStub, segments.dropLast(1), emptyList(), isTypeNameSegment = false)
         }
-        CangJieNameReferenceExpressionStubImpl(userTypeStub, StringRef.fromString(segments.last().asString()), true)
+        CangJieNameReferenceExpressionStubImpl(
+            userTypeStub,
+            StringRef.fromString(segments.last().asString()),
+            isTypeNameSegment,
+        )
         if (typeArguments.isNotEmpty()) {
             val typeArgumentListStub = CangJiePlaceHolderStubImpl<CjTypeArgumentList>(userTypeStub, CjStubElementTypes.TYPE_ARGUMENT_LIST)
             typeArguments.forEach { typeArgument ->
@@ -321,6 +336,18 @@ internal class TypeCjoStubBuilder {
         } else {
             createRenderedUserTypeReferenceStub(parent, normalizedType)
         }
+    }
+
+    /**
+     * 为其它 `.cjo` builder 生成的完整类型文本创建结构化引用。
+     *
+     * 共享该入口可确保限定名和嵌套类型实参遵循相同的包段/声明段约定。
+     */
+    internal fun createRenderedTypeReferenceStub(
+        parent: StubElement<*>,
+        renderedType: String,
+    ) {
+        createTypeReferenceStubFromRenderedText(parent, renderedType)
     }
 
     /**

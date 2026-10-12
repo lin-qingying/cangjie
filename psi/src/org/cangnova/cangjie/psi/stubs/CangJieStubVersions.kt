@@ -30,6 +30,11 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 217:
+     * - `.cjo` type stub 为 CPointer 保存结构化类型实参，并按包段/顶层声明段恢复限定名
+     */
+
+    /**
      * 212:
      * - extend stub 不再持久化 `ClassId`（extend 不属于公开类型标识体系，身份统一由 extendId 表达）
      *
@@ -76,7 +81,7 @@ object CangJieStubVersions {
     /**
      * 保存 `BUILTIN_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
      */
-    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 4
+    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 5
 
 
 }

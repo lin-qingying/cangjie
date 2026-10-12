@@ -4,6 +4,7 @@ import PackageFormat.Decl
 import PackageFormat.DeclKind
 import PackageFormat.Package
 import com.google.flatbuffers.FlatBufferBuilder
+import com.intellij.psi.stubs.StubElement
 import com.intellij.testFramework.LightVirtualFile
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
@@ -11,12 +12,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.serialization.cjd.CjdSidecarLocator
 import org.cangnova.cangjie.cfir.serialization.cjd.cjdAnnotationProvenance
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.types.ConePointerType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.lang.declarations.CangJieDeclarationFileType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -24,6 +29,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubKindImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -110,6 +119,77 @@ class CjdDeclarationLoaderIntegrationTest : CjParsingTestCase("", "cj.d", CangJi
             "CJO annotation stub must contain its argument subtree").arguments.single()
         assertEquals("message", argument.getArgumentName()?.asName?.asString())
         kotlin.test.assertNotNull(argument.getArgumentExpression(), "CJO annotation argument must retain its expression")
+    }
+
+    /**
+     * 指针类型必须保留为标准 CPointer 泛型 PSI，且包路径段不能被误写成类段。
+     */
+    @Test
+    fun pointerTypeStubPreservesPointeeAndQualifiedSegments() {
+        val fileStub = CangJieFileStubImpl(
+            file = null,
+            kind = CangJieFileStubKindImpl.File(FqName("sample")),
+        )
+        val pointeeType = ConeStructType(
+            ConeClassLikeLookupTagImpl(ClassId.topLevel(FqName("std.env.ProcessInfo"))),
+        )
+        TypeCjoStubBuilder().createTypeReferenceStub(
+            fileStub,
+            buildResolvedTypeRef { coneType = ConePointerType(pointeeType) },
+        )
+
+        val stubs = mutableListOf<StubElement<*>>()
+        fun collect(stub: StubElement<*>) {
+            stubs += stub
+            stub.childrenStubs.forEach(::collect)
+        }
+        collect(fileStub)
+
+        val references = stubs.filterIsInstance<CangJieNameReferenceExpressionStubImpl>()
+        assertEquals(
+            listOf(
+                "std" to false,
+                "core" to false,
+                "CPointer" to true,
+                "std" to false,
+                "env" to false,
+                "ProcessInfo" to true,
+            ),
+            references.map { it.getReferencedName() to it.isClassRef },
+        )
+        assertEquals(1, stubs.count { it.stubType == CjStubElementTypes.TYPE_ARGUMENT_LIST })
+    }
+
+    @Test
+    fun renderedQualifiedTypeStubSeparatesPackageAndDeclarationSegments() {
+        val fileStub = CangJieFileStubImpl(
+            file = null,
+            kind = CangJieFileStubKindImpl.File(FqName("sample")),
+        )
+        TypeCjoStubBuilder().createRenderedTypeReferenceStub(
+            fileStub,
+            "sample.pkg.Box<other.pkg.Item>",
+        )
+
+        val stubs = mutableListOf<StubElement<*>>()
+        fun collect(stub: StubElement<*>) {
+            stubs += stub
+            stub.childrenStubs.forEach(::collect)
+        }
+        collect(fileStub)
+
+        val references = stubs.filterIsInstance<CangJieNameReferenceExpressionStubImpl>()
+        assertEquals(
+            listOf(
+                "sample" to false,
+                "pkg" to false,
+                "Box" to true,
+                "other" to false,
+                "pkg" to false,
+                "Item" to true,
+            ),
+            references.map { it.getReferencedName() to it.isClassRef },
+        )
     }
 
     private class Module : CfirModuleData() {

@@ -28,11 +28,9 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieClassStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieEnumStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieExtendStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieInterfaceStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieStructStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieTypeAliasStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieUserTypeStubImpl
 
 /**
  * `.cjo` type statement stub 构建器。
@@ -316,9 +314,7 @@ private fun createSuperTypeListStub(parent: StubElement<*>, superTypeRefs: List<
  * 创建只包含单个名称引用的简单类型引用 stub。
  */
 private fun createSimpleTypeReferenceStub(parent: StubElement<*>, name: String) {
-    val typeReferenceStub = CangJiePlaceHolderStubImpl<CjTypeReference>(parent, CjStubElementTypes.TYPE_REFERENCE)
-    val userTypeStub = CangJieUserTypeStubImpl(typeReferenceStub)
-    CangJieNameReferenceExpressionStubImpl(userTypeStub, StringRef.fromString(name), true)
+    TypeCjoStubBuilder().createRenderedTypeReferenceStub(parent, name)
 }
 
 /**

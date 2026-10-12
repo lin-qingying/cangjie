@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.name
 
+
+
+
 /**
  * 仓颉 class-like 声明的稳定标识。
  *

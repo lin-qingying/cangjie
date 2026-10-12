@@ -263,6 +263,14 @@ internal class StubBasedCfirTypeDeserializer(
             }
         }
 
+        if (constructor.classId == StdlibClassIds.CPointer) {
+            val pointeeType = arguments.singleOrNull()?.type
+                ?: return ConeErrorType(
+                    ConeSimpleDiagnostic("Malformed CPointer type", DiagnosticKind.DeserializationError),
+                )
+            return ConePointerType(pointeeType, attributes)
+        }
+
         return ConeClassLikeType(constructor, arguments, attributes)
     }
 

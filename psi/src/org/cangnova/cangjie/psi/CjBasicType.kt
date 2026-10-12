@@ -72,7 +72,7 @@ class CjBasicType : CjElementImplStub<CangJieBasicTypeStub>, CjTypeElement {
      * @return 元素类型名称
      */
     override fun toString(): String {
-        return elementType.toString()
+        return iElementType.toString()
     }
 
     /**
