@@ -55,6 +55,15 @@ abstract class CfirSymbolProvider(val session: CfirSession) : CfirSessionCompone
         get() = CfirEmptySymbolNamesProvider
 
     /**
+     * 当前源码模块中已展开宏生成的源码声明名称视图。
+     *
+     * 这一路只包含宏 snapshot 中来源映射可确认的生成声明；物理源码名称继续由宿主索引发现，
+     * 库声明继续走 [libraryDeclarationsNamesProvider]。
+     */
+    open val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = CfirEmptySymbolNamesProvider
+
+    /**
      * 返回给定 [classId] 的 class-like symbol；若不存在则返回 `null`。
      */
     abstract fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>?

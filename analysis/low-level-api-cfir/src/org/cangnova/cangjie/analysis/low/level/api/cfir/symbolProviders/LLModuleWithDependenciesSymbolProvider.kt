@@ -97,6 +97,20 @@ internal class LLModuleWithDependenciesSymbolProvider(
     }
 
     /**
+     * 组合当前模块和依赖中的宏生成源码名称。
+     *
+     * 该视图只枚举已发布快照确认的生成声明，不把普通源码名称从源码 provider 拉回发现通道。
+     */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider by lazy {
+        CfirCompositeSymbolNamesProvider.create(
+            buildList {
+                providers.mapTo(this) { it.macroGeneratedSourceDeclarationsNamesProvider }
+                dependencyProvider.providers.mapTo(this) { it.macroGeneratedSourceDeclarationsNamesProvider }
+            },
+        )
+    }
+
+    /**
      * 先在当前模块自身内容中查找 [classId]，未命中时再查找依赖。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =

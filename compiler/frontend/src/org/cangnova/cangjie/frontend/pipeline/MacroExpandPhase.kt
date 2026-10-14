@@ -113,6 +113,22 @@ fun interface MacroFragmentParserFactory {
 }
 
 /**
+ * 为宏构造中必须读取 IntelliJ PSI 的短阶段提供调度边界。
+ *
+ * IDE 应把 PSI fragment reparse、stable splice 和读取 PSI source 的快照哈希分别放入读访问；
+ * 宏执行器与宏包编译不经过此接口，避免外部进程等待期间长期持有读锁。
+ */
+interface MacroConstructionReadAccess {
+    /** 在宿主定义的读访问中计算 [action]。 */
+    fun <T> compute(action: () -> T): T
+
+    /** 不要求 PSI 访问的编译器调用默认直接运行。 */
+    object Direct : MacroConstructionReadAccess {
+        override fun <T> compute(action: () -> T): T = action()
+    }
+}
+
+/**
  * 前端宏展开配置键。
  */
 object FrontendMacroConfigurationKeys {
@@ -134,6 +150,13 @@ object FrontendMacroConfigurationKeys {
      */
     val MACRO_FRAGMENT_PARSER_FACTORY =
         CompilerConfigurationKey.create<MacroFragmentParserFactory>("MACRO_FRAGMENT_PARSER_FACTORY")
+
+    @JvmField
+    /**
+     * 宏构造短 PSI 阶段的读访问调度器配置键。
+     */
+    val MACRO_CONSTRUCTION_READ_ACCESS =
+        CompilerConfigurationKey.create<MacroConstructionReadAccess>("MACRO_CONSTRUCTION_READ_ACCESS")
 
     @JvmField
     /**
@@ -231,6 +254,15 @@ var CompilerConfiguration.macroFragmentParserFactory: MacroFragmentParserFactory
     }
 
 /**
+ * 当前宏构造短 PSI 阶段的访问调度器；CLI 与非 IntelliJ 调用默认直接运行。
+ */
+var CompilerConfiguration.macroConstructionReadAccess: MacroConstructionReadAccess
+    get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_READ_ACCESS) ?: MacroConstructionReadAccess.Direct
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_READ_ACCESS, value)
+    }
+
+/**
  * 当前配置中显式提供的已编译宏 artifact 包。
  */
 var CompilerConfiguration.macroArtifactPackages: List<MacroArtifactPackage>
@@ -315,9 +347,10 @@ var CompilerConfiguration.macroSdkHome: String
     }
 
 /**
- * 默认宏 SDK 根目录。
+ * 未配置时不隐式选择机器级 SDK。调用方必须把当前项目实际使用的 SDK 根目录写入
+ * [CompilerConfiguration.macroSdkHome]，保证宏编译、标准库 artifact 定位和执行器使用同一 SDK。
  */
-const val DEFAULT_MACRO_SDK_HOME: String = "C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.5"
+const val DEFAULT_MACRO_SDK_HOME: String = ""
 
 /**
  * Compiler frontend 的 macro construction 实现。
@@ -500,16 +533,18 @@ class FrontendMacroConstructionService(
                         preFile = surfaceFiles[surface.surfaceId],
                     ) ?: return@evaluate null
 
-                    val fragment = parseAndDesugarFragment(
-                        surface = surface,
-                        decision = decision,
-                        annotationSnapshot = decision.annotationCarrier
-                            ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
-                        node = node,
-                        parser = parser,
-                        tokens = expandedTokens,
-                        registry = registry,
-                    ) ?: return@evaluate null
+                    val fragment = configuration.macroConstructionReadAccess.compute {
+                        parseAndDesugarFragment(
+                            surface = surface,
+                            decision = decision,
+                            annotationSnapshot = decision.annotationCarrier
+                                ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
+                            node = node,
+                            parser = parser,
+                            tokens = expandedTokens,
+                            registry = registry,
+                        )
+                    } ?: return@evaluate null
                     (fragment as? MacroFragmentResult.Success)
                         ?.payload
                         ?.let { it as? CfirElement }
@@ -552,13 +587,15 @@ class FrontendMacroConstructionService(
         }
 
         return runCatching {
-            stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also {
-                val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
-                if (metadataRegistry != null) {
-                    for (slot in slots) {
-                        val carrier = slot.handle.annotationCarrier ?: continue
-                        val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload ?: continue
-                        metadataRegistry.migrate(carrier, replacement)
+            configuration.macroConstructionReadAccess.compute {
+                stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also {
+                    val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
+                    if (metadataRegistry != null) {
+                        for (slot in slots) {
+                            val carrier = slot.handle.annotationCarrier ?: continue
+                            val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload ?: continue
+                            metadataRegistry.migrate(carrier, replacement)
+                        }
                     }
                 }
             }
@@ -1278,7 +1315,7 @@ class FrontendMacroConstructionService(
                 runtimeFingerprint = org.cangnova.cangjie.utils.StableHash.sha256Of(
                     "builtinRegistry=${MacroBuiltinRegistries.VERSION}",
                     "iterationLimit=$maxIterations",
-                    "result=${hashResultSnapshot(expanded)}",
+                    "result=${configuration.macroConstructionReadAccess.compute { hashResultSnapshot(expanded) }}",
                 ),
             )
             registry.registerCacheKey(identity, key)

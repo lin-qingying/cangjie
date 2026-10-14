@@ -225,11 +225,11 @@ public interface CjTokens {
     int MACRO_KEYWORD_Id = 186;
 
 
-    int ESCAPE_LPAR_Id = 187;
-    int ESCAPE_RPAR_Id = 187;
-    int ESCAPE_DOLLAR_Id = 187;
-    int ESCAPE_LBRACKET_Id = 188;
-    int ESCAPE_RBRACKET_Id = 189;
+    int ESCAPE_LPAR_Id = 223;
+    int ESCAPE_RPAR_Id = 224;
+    int ESCAPE_LBRACKET_Id = 225;
+    int ESCAPE_RBRACKET_Id = 226;
+    int ESCAPE_AT_Id = 227;
 
     int VARRAY_Id = 190;
 
@@ -354,9 +354,9 @@ public interface CjTokens {
     CjSingleValueToken RPAR = new CjSingleValueToken("RPAR", ")", RPAR_Id);
     CjSingleValueToken ESCAPE_LPAR = new CjSingleValueToken("ESCAPE_LPAR", "\\(", ESCAPE_LPAR_Id);
     CjSingleValueToken ESCAPE_RPAR = new CjSingleValueToken("ESCAPE_RPAR", "\\)", ESCAPE_RPAR_Id);
-    CjSingleValueToken ESCAPE_DOLLAR = new CjSingleValueToken("ESCAPE_DOLLAR", "\\$", ESCAPE_DOLLAR_Id);
-    CjSingleValueToken ESCAPE_LBRACKET = new CjSingleValueToken("ESCAPE_LBRACKET", "\\]", ESCAPE_LBRACKET_Id);
-    CjSingleValueToken ESCAPE_RBRACKET = new CjSingleValueToken("ESCAPE_RBRACKET", "\\[", ESCAPE_RBRACKET_Id);
+    CjSingleValueToken ESCAPE_LBRACKET = new CjSingleValueToken("ESCAPE_LBRACKET", "\\[", ESCAPE_LBRACKET_Id);
+    CjSingleValueToken ESCAPE_RBRACKET = new CjSingleValueToken("ESCAPE_RBRACKET", "\\]", ESCAPE_RBRACKET_Id);
+    CjSingleValueToken ESCAPE_AT = new CjSingleValueToken("ESCAPE_AT", "\\@", ESCAPE_AT_Id);
     CjSingleValueToken DOT = new CjSingleValueToken("DOT", ".", DOT_Id);
     CjSingleValueToken PLUSPLUS = new CjSingleValueToken("PLUSPLUS", "++", PLUSPLUS_Id);
     CjSingleValueToken MINUSMINUS = new CjSingleValueToken("MINUSMINUS", "--", MINUSMINUS_Id);

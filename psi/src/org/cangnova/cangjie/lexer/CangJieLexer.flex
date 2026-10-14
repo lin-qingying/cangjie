@@ -893,6 +893,11 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "?"          { return CjTokens.QUEST; }
 "..."        { return CjTokens.ELLIPSIS; }
 // 分隔符
+"\\("        { return CjTokens.ESCAPE_LPAR; }
+"\\)"        { return CjTokens.ESCAPE_RPAR; }
+"\\["        { return CjTokens.ESCAPE_LBRACKET; }
+"\\]"        { return CjTokens.ESCAPE_RBRACKET; }
+"\\@"        { return CjTokens.ESCAPE_AT; }
 "["          { return CjTokens.LBRACKET; }
 "]"          { return CjTokens.RBRACKET; }
 "{"          { return CjTokens.LBRACE; }

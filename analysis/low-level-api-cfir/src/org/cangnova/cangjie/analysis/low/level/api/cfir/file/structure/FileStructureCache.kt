@@ -44,4 +44,9 @@ internal class FileStructureCache(private val moduleResolveComponents: LLCfirMod
      * 返回已缓存的 file structure，不触发构建。
      */
     fun getCachedFileStructure(cjFile: CjFile): FileStructure? = cache[cjFile]
+
+    /** 清除基于旧物理 CFIR 构造的 PSI 到 CFIR 映射。 */
+    fun clear() {
+        cache.clear()
+    }
 }

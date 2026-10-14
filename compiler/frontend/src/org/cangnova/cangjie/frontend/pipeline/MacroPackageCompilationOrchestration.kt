@@ -712,8 +712,10 @@ object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver 
     ): Path {
         val executableName = if (isWindows()) "cjc.exe" else "cjc"
 
-        sdkHome.takeIf(String::isNotBlank)?.let { home ->
-            Path.of(home, "bin", executableName).takeIf(Path::exists)?.let { return it }
+        if (sdkHome.isNotBlank()) {
+            return Path.of(sdkHome, "bin", executableName)
+                .takeIf(Path::exists)
+                ?: error("Configured macro SDK `$sdkHome` does not contain `bin/$executableName`.")
         }
         cangjieHome?.takeIf(String::isNotBlank)?.let { home ->
             Path.of(home, "bin", executableName).takeIf(Path::exists)?.let { return it }
@@ -723,15 +725,24 @@ object DefaultMacroCompilerExecutableResolver : MacroCompilerExecutableResolver 
         }
         findOnPath(executableName, pathValue.orEmpty())?.let { return it }
 
-        userHome.resolve("sdk").toFile().listFiles()
-            ?.filter { it.name.startsWith("cangjie-sdk-") }
-            ?.sortedByDescending { it.name }
-            ?.firstOrNull()
-            ?.toPath()
-            ?.resolve("cangjie")
-            ?.resolve("bin")
-            ?.resolve(executableName)
-            ?.takeIf(Path::exists)
+        val installedSdkRoots = sequence {
+            for (sdkDirectory in listOf(
+                userHome.resolve(".cangjie").resolve("sdks"),
+                userHome.resolve("sdk"),
+            )) {
+                sdkDirectory.toFile().listFiles()
+                    ?.asSequence()
+                    ?.filter(File::isDirectory)
+                    ?.sortedByDescending { it.name }
+                    ?.forEach { installedSdk ->
+                        yield(installedSdk.toPath().resolve("cangjie"))
+                        yield(installedSdk.toPath())
+                    }
+            }
+        }
+        installedSdkRoots
+            .map { it.resolve("bin").resolve(executableName) }
+            .firstOrNull(Path::exists)
             ?.let { return it }
 
         error("Cannot find `$executableName`. Set CANGJIE_HOME or cjc.home, or place cjc on PATH.")

@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -75,12 +76,22 @@ internal class LLCangJieSourceSymbolProvider(
     /**
      * 绑定当前源码声明索引的缓存名称提供器。
      */
-    override val symbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
+    private val physicalSymbolNamesProvider: CfirSymbolNamesProvider = CfirCompositeCachedSymbolNamesProvider.create(
         session,
         listOfNotNull(
             LLCfirCangJieSymbolNamesProvider(declarationProvider),
         )
     )
+
+    /** 物理 PSI 名称与已发布快照名称的实时并集，避免发布前缓存的名称负结果过滤生成声明。 */
+    override val symbolNamesProvider: CfirSymbolNamesProvider = LLCfirMacroAwareSymbolNamesProvider(
+        delegate = physicalSymbolNamesProvider,
+        snapshotProvider = { moduleComponents.macroSemanticSnapshotStore.snapshot },
+    )
+
+    /** 只暴露最终宏快照中能由 registry 来源映射确认的生成声明名称。 */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider =
+        LLCfirMacroGeneratedSourceNamesProvider { moduleComponents.macroSemanticSnapshotStore.snapshot }
 
     /**
      * class-like 符号缓存，支持按 [ClassId] 与按 PSI 两种命中路径。
@@ -94,6 +105,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 根据 [classId] 查询当前源码模块中的 class-like 符号。
      */
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).firstOrNull()?.symbol
+        }
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
         return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration = null)
     }
@@ -102,8 +116,12 @@ internal class LLCangJieSourceSymbolProvider(
      * 根据已知 [classLikeDeclaration] 查询 [classId] 对应的 class-like 符号。
      */
     @LLModuleSpecificSymbolProviderAccess
-    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? =
-        getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
+    override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).firstOrNull { it.psi === classLikeDeclaration }?.symbol
+        }
+        return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
+    }
 
     /**
      * 统一按 [classId] 与可选 PSI 上下文查询 class-like 缓存。
@@ -125,6 +143,9 @@ internal class LLCangJieSourceSymbolProvider(
      */
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).firstOrNull { it.psi === declaration }?.symbol
+        }
         return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
             classId,
             declaration,
@@ -158,6 +179,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 多声明场景下直接使用 [declarationProvider] 提供的声明集合，确保结果只来自当前模块内容范围。
      */
     override fun getAllClassLikeSymbolsByClassId(classId: ClassId): List<CfirClassLikeSymbol<*>> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.classifiers(classId).map { it.symbol }
+        }
         val declarations = declarationProvider.getAllClassesByClassId(classId) + declarationProvider.getAllTypeAliasesByClassId(classId)
 
         // We're specifically taking the declarations from the declaration provider, so they're guaranteed to be in the symbol provider's
@@ -248,6 +272,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [callableCache] 获取 [callableId] 对应的顶层 callable 符号。
      */
     private fun getTopLevelCallableSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirCallableSymbol<*>> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).map { it.symbol }
+        }
         return callableCache.getValue(callableId, callableFiles)
     }
 
@@ -300,6 +327,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [functionCache] 获取 [callableId] 对应的顶层函数符号。
      */
     private fun getTopLevelFunctionSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirNamedFunctionSymbol> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).mapNotNull { it.symbol as? CfirNamedFunctionSymbol }
+        }
         return functionCache.getValue(callableId, callableFiles)
     }
 
@@ -344,6 +374,9 @@ internal class LLCangJieSourceSymbolProvider(
      * 通过 [propertyCache] 获取 [callableId] 对应的顶层属性符号。
      */
     private fun getTopLevelPropertySymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirPropertySymbol> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.callables(callableId).mapNotNull { it.symbol as? CfirPropertySymbol }
+        }
         return propertyCache.getValue(callableId, callableFiles)
     }
 
@@ -400,8 +433,109 @@ internal class LLCangJieSourceSymbolProvider(
      * 物化当前源码模块中的顶层扩展文件为 raw CFIR 文件。
      */
     internal override fun materializeTopLevelExtendFiles(): List<CfirFile> {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
+            return snapshot.files.flatMap { file -> file.declarations.filterIsInstance<CfirExtend>() }
+                .mapNotNull { declaration -> moduleComponents.cache.getContainerCfirFile(declaration) }
+                .distinct()
+        }
         return declarationProvider.getTopLevelExtendFiles()
             .distinctBy { file -> file.virtualFile ?: file }
             .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
     }
+}
+
+/**
+ * 在物理声明名称索引上叠加完整 expanded CFIR 中的顶层名称。
+ *
+ * 该 provider 不自行缓存快照，名称查询总是观察当前原子发布结果；物理索引无法枚举时继续返回 null，
+ * 由基类保守策略允许符号查询继续进行。
+ */
+private class LLCfirMacroAwareSymbolNamesProvider(
+    private val delegate: CfirSymbolNamesProvider,
+    private val snapshotProvider: () -> org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot?,
+) : CfirSymbolNamesProvider() {
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = delegate.hasSpecificClassifierPackageNamesComputation
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = delegate.hasSpecificCallablePackageNamesComputation
+
+    override val mayHaveSyntheticFunctionTypes: Boolean
+        get() = delegate.mayHaveSyntheticFunctionTypes
+
+    override fun getPackageNames(): Set<String>? =
+        merge(delegate.getPackageNames(), snapshotProvider()?.filesByPackage?.keys?.mapTo(linkedSetOf()) { it.asString() }.orEmpty())
+
+    override fun getPackageNamesWithTopLevelClassifiers(): Set<String>? =
+        merge(
+            delegate.getPackageNamesWithTopLevelClassifiers(),
+            snapshotProvider()?.filesByPackage?.keys
+                ?.filterTo(linkedSetOf()) { snapshotProvider()?.classifierNames(it)?.isNotEmpty() == true }
+                ?.mapTo(linkedSetOf()) { it.asString() }
+                .orEmpty(),
+        )
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
+        merge(delegate.getTopLevelClassifierNamesInPackage(packageFqName), snapshotProvider()?.classifierNames(packageFqName).orEmpty())
+
+    override fun getPackageNamesWithTopLevelCallables(): Set<String>? =
+        merge(
+            delegate.getPackageNamesWithTopLevelCallables(),
+            snapshotProvider()?.filesByPackage?.keys
+                ?.filterTo(linkedSetOf()) { snapshotProvider()?.callableNames(it)?.isNotEmpty() == true }
+                ?.mapTo(linkedSetOf()) { it.asString() }
+                .orEmpty(),
+        )
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
+        merge(delegate.getTopLevelCallableNamesInPackage(packageFqName), snapshotProvider()?.callableNames(packageFqName).orEmpty())
+
+    override fun mayHaveSyntheticFunctionType(classId: ClassId): Boolean = delegate.mayHaveSyntheticFunctionType(classId)
+
+    private fun <T> merge(base: Set<T>?, additional: Set<T>): Set<T>? = base?.plus(additional)
+}
+
+/** 为 Analysis API 名称发现单独枚举宏生成源码声明，不扫描物理源码名称。 */
+private class LLCfirMacroGeneratedSourceNamesProvider(
+    private val snapshotProvider: () -> org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot?,
+) : CfirSymbolNamesProvider() {
+    override fun getPackageNames(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedClassifierNames(packageFqName).isNotEmpty() ||
+                    snapshot.macroGeneratedCallableNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override val hasSpecificClassifierPackageNamesComputation: Boolean
+        get() = true
+
+    override fun getPackageNamesWithTopLevelClassifiers(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedClassifierNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? =
+        snapshotProvider()?.macroGeneratedClassifierNames(packageFqName).orEmpty()
+
+    override val hasSpecificCallablePackageNamesComputation: Boolean
+        get() = true
+
+    override fun getPackageNamesWithTopLevelCallables(): Set<String>? {
+        val snapshot = snapshotProvider() ?: return emptySet()
+        return snapshot.filesByPackage.keys
+            .filterTo(linkedSetOf()) { packageFqName ->
+                snapshot.macroGeneratedCallableNames(packageFqName).isNotEmpty()
+            }
+            .mapTo(linkedSetOf()) { it.asString() }
+    }
+
+    override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? =
+        snapshotProvider()?.macroGeneratedCallableNames(packageFqName).orEmpty()
 }

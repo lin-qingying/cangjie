@@ -84,6 +84,11 @@ object CangJieHighlightingColors {
         "CANGJIE_STRING_ESCAPE",
         DefaultLanguageHighlighterColors.VALID_STRING_ESCAPE,
     )
+    /** 只在宏 Tokens 输入中用于合法定界符转义的上下文高亮。 */
+    val MACRO_ESCAPE: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
+        "CANGJIE_MACRO_ESCAPE",
+        DefaultLanguageHighlighterColors.VALID_STRING_ESCAPE,
+    )
     /** 非法字符串转义序列高亮属性。 */
     val INVALID_STRING_ESCAPE: TextAttributesKey = TextAttributesKey.createTextAttributesKey(
         "CANGJIE_INVALID_STRING_ESCAPE",

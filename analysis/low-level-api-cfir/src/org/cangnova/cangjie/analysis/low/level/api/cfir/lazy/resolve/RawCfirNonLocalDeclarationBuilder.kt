@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.codeFragment
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -46,6 +47,7 @@ internal object RawCfirNonLocalDeclarationBuilder {
             session,
             scopeProvider,
             bodyBuildingMode = BodyBuildingMode.NORMAL,
+            macroSurfaceCollectionMode = MacroSurfaceCollectionMode.EXPRESSION_ONLY,
         )
         val sourceFile = rootNonLocalDeclaration.containingCjFile
         val rebuiltFile = builder.buildCfirFile(sourceFile)

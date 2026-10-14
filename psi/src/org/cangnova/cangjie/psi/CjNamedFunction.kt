@@ -72,15 +72,14 @@ open class CjNamedFunction : CjFunctionImpl<CangJieNamedFunctionStub, CjNamedFun
         return nameIdentifier.textOffset > typeParameterList.textOffset
     }
 
-    //    当前方法是否是operator set方法
-//    set方法规则，最后一个参数是命名参数，并且参数名称是value
+    // `[]` 的最后一个具名参数决定它进入赋值签名检查；参数是否叫 `value` 由 CFIR checker 诊断。
     /**
      * 保存 `isSetFunc`，供仓颉 PSI流程读取节点结构或语义信息。
      */
     val isSetFunc: Boolean
         get() {
             if (!isOperator) return false
-            return valueParameters.lastOrNull()?.isNamed == true && valueParameters.last().nameAsName?.asString() == "value"
+            return valueParameters.lastOrNull()?.isNamed == true
         }
 
     /**

@@ -9,8 +9,9 @@ package org.cangnova.cangjie.cfir.analysis.tests.services
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
-import org.cangnova.cangjie.frontend.pipeline.MacroSourcePackageCompilationRequest
+import org.cangnova.cangjie.frontend.pipeline.DefaultMacroCompilerExecutableResolver
 import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
+import org.cangnova.cangjie.frontend.pipeline.MacroSourcePackageCompilationRequest
 import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroBackgroundAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
@@ -42,9 +43,16 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
      * 配置宏构造端到端测试所需的编译器选项。
      *
      * 方法会收集测试文件中的 `macro package`，物化为临时 source root，
-     * 并在缺少 executor factory 时注册 LSPMacroServer executor。
+     * 并从当前选中的 cjc 可执行文件确定 SDK 根目录，再注册同一 SDK 的 LSPMacroServer。
      */
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
+        configuration.macroSdkHome = DefaultMacroCompilerExecutableResolver
+            .resolve(configuration.macroSdkHome)
+            .parent
+            .parent
+            .toAbsolutePath()
+            .normalize()
+            .toString()
         configuration.macroBackgroundAutoCompilationEnabled = false
         configuration.macroExpansionDemandAutoCompilationEnabled =
             MacroConstructionDirectives.DISABLE_EXPANSION_DEMAND_AUTO_COMPILE_MACRO_PACKAGES !in module.directives

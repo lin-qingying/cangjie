@@ -150,9 +150,10 @@ internal class LLCfirProvider(
      * 由需要完整签名的 checker 按自身阶段契约显式推进，避免 import/extend 查找递归进入 body resolve。
      */
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
-        symbolProvider.declarationProvider.findFilesForFacadeByPackage(fqName)
-            .distinct()
-            .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot -> snapshot.filesInPackage(fqName) }
+            ?: symbolProvider.declarationProvider.findFilesForFacadeByPackage(fqName)
+                .distinct()
+                .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
 
     /**
      * 返回 [fqName] 包内顶层 classifier 名称集合。

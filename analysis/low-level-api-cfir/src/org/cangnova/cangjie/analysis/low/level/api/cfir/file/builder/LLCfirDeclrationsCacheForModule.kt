@@ -69,17 +69,20 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
      * 返回缓存中的 CFIR 文件，缺失时原子创建并缓存。
      */
     override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
-        cjFileToCfirFile.computeIfAbsent(file) { createValue() }
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(file)
+            ?: cjFileToCfirFile.computeIfAbsent(file) { createValue() }
 
     /**
      * 从弱 key cache 中查询已构建 CFIR 文件。
      */
-    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
+    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? =
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(cjFile) ?: cjFileToCfirFile[cjFile]
 
     /**
      * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
      */
     override fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile? {
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.containerFile(declaration)?.let { return it }
         val cjFile = declaration.psi?.containingFile as? CjFile ?: return null
         return getCachedCfirFile(cjFile)
     }
@@ -88,5 +91,6 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     /**
      * 返回当前缓存中的全部 CFIR 文件。
      */
-    override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> = cjFileToCfirFile.values
+    override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> =
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.files ?: cjFileToCfirFile.values
 }

@@ -44,6 +44,10 @@ class LLDanglingFileDependenciesSymbolProvider(private val delegate: CfirSymbolP
     override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider
         get() = delegate.libraryDeclarationsNamesProvider
 
+    /** 悬空文件依赖中可见的宏生成源码名称与委托符号视图保持一致。 */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider
+        get() = delegate.macroGeneratedSourceDeclarationsNamesProvider
+
     /**
      * 从 [delegate] 查询 [classId] 对应的 class-like 符号。
      */

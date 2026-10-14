@@ -387,19 +387,24 @@ class MacroConstructionArchitectureTest {
         assertEquals(42L, registry.generatedSourceOriginById[generatedSource])
     }
 
-    /** 验证 Analysis API raw surface 使用事实按实际 CFIR 文件对象隔离。 */
+    /** 验证 Analysis API raw surface 使用事实覆盖表达式与声明宏，并按 CFIR/source identity 隔离。 */
     @Test
-    fun `raw expression macro surfaces are stored per cfir file identity`() {
+    fun `raw macro surfaces are stored per cfir file and source identity`() {
         val fixture = Fixture()
         val file = fixture.file("test.pkg")
         val unrelatedFile = fixture.file("unrelated.pkg")
-        val surface = expressionRoutingSurface(id = 901L, sourceName = "a11", packageName = "test.pkg")
+        val expressionSurface = expressionRoutingSurface(id = 901L, sourceName = "a11", packageName = "test.pkg")
+        val declarationSurface = declarationRoutingSurface(id = 902L, sourceName = "decl", packageName = "test.pkg")
+        val surfaces = listOf(expressionSurface, declarationSurface)
         val store = CfirRawMacroSurfaceUsageStore()
+        val sourceIdentity = Any()
 
-        store.recordExpressionSurfaces(file, listOf(surface))
+        store.recordSurfaces(file, sourceIdentity, surfaces)
 
-        assertEquals(listOf(surface), store.expressionSurfaces(file))
-        assertTrue(store.expressionSurfaces(unrelatedFile).isEmpty())
+        assertEquals(surfaces, store.surfaces(file))
+        assertEquals(surfaces, store.surfacesForSourceFile(sourceIdentity))
+        assertEquals(listOf(expressionSurface), store.expressionSurfaces(file))
+        assertTrue(store.surfaces(unrelatedFile).isEmpty())
     }
 
     /**

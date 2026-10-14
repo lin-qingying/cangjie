@@ -127,6 +127,8 @@ class PsiRawCfirBuilder(
     val baseScopeProvider: CfirScopeProvider = session.cangjieScopeProvider,
     /** body 构建策略，用于普通构建与 lazy body 构建分流。 */
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
+    /** 宏构造快照已建立后，分析期重建只保留 annotation CFIR，不再登记构造元数据。 */
+    private val macroSurfaceCollectionMode: MacroSurfaceCollectionMode = MacroSurfaceCollectionMode.CONSTRUCTION,
 ) : AbstractRawCfirBuilder<PsiElement>(session) {
     /** 只覆盖 body 构建模式的便捷构造函数。 */
     constructor(
@@ -638,25 +640,30 @@ class PsiRawCfirBuilder(
                 )
                 val annotationIndex = carrier.annotations.size
                 carrier.replaceAnnotations(carrier.annotations + annotationCall)
-                baseSession.ensureAnnotationMetadataRegistry().record(
-                    CfirAnnotationSlotSnapshot(
-                        owner = carrier,
-                        annotationIndex = annotationIndex,
-                        originalAnnotation = annotationCall,
-                        rawSyntax = rawAnnotationSyntax,
-                        forcedCustom = isCompileTimeVisible,
-                        isCompileTimeVisible = isCompileTimeVisible,
-                        annotationSource = annotationSource,
-                        qualifiedName = qualifiedName,
-                        argumentText = macroAttributeText,
-                        tokens = MacroPayloadTokenizer.tokenize(
-                            rawAnnotationSyntax,
-                            annotationSource.startOffset,
-                        ).toMacroSurfaceTokens(),
-                        callSite = MacroCallSite.DECLARATION,
+                if (macroSurfaceCollectionMode == MacroSurfaceCollectionMode.CONSTRUCTION) {
+                    baseSession.ensureAnnotationMetadataRegistry().record(
+                        CfirAnnotationSlotSnapshot(
+                            owner = carrier,
+                            annotationIndex = annotationIndex,
+                            originalAnnotation = annotationCall,
+                            rawSyntax = rawAnnotationSyntax,
+                            forcedCustom = isCompileTimeVisible,
+                            isCompileTimeVisible = isCompileTimeVisible,
+                            annotationSource = annotationSource,
+                            qualifiedName = qualifiedName,
+                            argumentText = macroAttributeText,
+                            tokens = MacroPayloadTokenizer.tokenize(
+                                rawAnnotationSyntax,
+                                annotationSource.startOffset,
+                            ).toMacroSurfaceTokens(),
+                            callSite = MacroCallSite.DECLARATION,
+                        )
                     )
-                )
+                } else {
+                    null
+                }
             }
+            if (macroSurfaceCollectionMode == MacroSurfaceCollectionMode.EXPRESSION_ONLY) return
             collectedMacroSurfaces += MacroSurfaceDecl(
                 surfaceId = surfaceId,
                 qualifiedName = qualifiedName,
@@ -763,24 +770,26 @@ class PsiRawCfirBuilder(
             )
             val annotationIndex = carrier.annotations.size
             carrier.replaceAnnotations(carrier.annotations + annotationCall)
-            baseSession.ensureAnnotationMetadataRegistry().record(
-                CfirAnnotationSlotSnapshot(
-                    owner = carrier,
-                    annotationIndex = annotationIndex,
-                    originalAnnotation = annotationCall,
-                    rawSyntax = annotation.text,
-                    forcedCustom = false,
-                    isCompileTimeVisible = false,
-                    annotationSource = annotationSource,
-                    qualifiedName = FqName.topLevel(psi.shortName!!),
-                    argumentText = macroAttributeText,
-                    tokens = MacroPayloadTokenizer.tokenize(
-                        annotation.text,
-                        psi.textRange.startOffset,
-                    ).toMacroSurfaceTokens(),
-                    callSite = MacroCallSite.DECLARATION,
+            if (macroSurfaceCollectionMode == MacroSurfaceCollectionMode.CONSTRUCTION) {
+                baseSession.ensureAnnotationMetadataRegistry().record(
+                    CfirAnnotationSlotSnapshot(
+                        owner = carrier,
+                        annotationIndex = annotationIndex,
+                        originalAnnotation = annotationCall,
+                        rawSyntax = annotation.text,
+                        forcedCustom = false,
+                        isCompileTimeVisible = false,
+                        annotationSource = annotationSource,
+                        qualifiedName = FqName.topLevel(psi.shortName!!),
+                        argumentText = macroAttributeText,
+                        tokens = MacroPayloadTokenizer.tokenize(
+                            annotation.text,
+                            psi.textRange.startOffset,
+                        ).toMacroSurfaceTokens(),
+                        callSite = MacroCallSite.DECLARATION,
+                    )
                 )
-            )
+            }
             return true
         }
 
@@ -1041,7 +1050,7 @@ class PsiRawCfirBuilder(
                     this.setter = setter
                 }
             }
-            if (propertyAnnotations.isNotEmpty()) {
+            if (propertyAnnotations.isNotEmpty() && macroSurfaceCollectionMode == MacroSurfaceCollectionMode.CONSTRUCTION) {
                 val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
                 propertyAnnotations.forEachIndexed { annotationIndex, derivedAnnotation ->
                     metadataRegistry.recordDerivedSlot(
@@ -1627,14 +1636,18 @@ class PsiRawCfirBuilder(
             carrier: CfirDeclaration,
         ) {
             if (entries.isEmpty()) return
-            val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
+            val collectSurfaces = macroSurfaceCollectionMode == MacroSurfaceCollectionMode.CONSTRUCTION
 
-            val modifiers = (annotated as? CjModifierListOwner)
-                ?.modifierList
-                ?.let(::collectModifierNames)
-                .orEmpty()
-            val carriedAnnotations = entries.map { it.text }
-            val containerContext = macroContainerContext(annotated, target)
+            val modifiers = if (collectSurfaces) {
+                (annotated as? CjModifierListOwner)
+                    ?.modifierList
+                    ?.let(::collectModifierNames)
+                    .orEmpty()
+            } else {
+                emptyList()
+            }
+            val carriedAnnotations = if (collectSurfaces) entries.map { it.text } else emptyList()
+            val containerContext = if (collectSurfaces) macroContainerContext(annotated, target) else null
 
             for (annotation in entries) {
                 val macroAttribute = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java)
@@ -1645,6 +1658,7 @@ class PsiRawCfirBuilder(
                 // property so whitespace/comments or a reparsed fragment
                 // cannot change the annotation identity.
                 val isCompileTimeVisible = annotation.isCompileTimeVisible
+                if (!collectSurfaces) continue
                 val snapshot = CfirAnnotationSlotSnapshot(
                     owner = carrier,
                     annotationIndex = annotationIndex,
@@ -1664,7 +1678,7 @@ class PsiRawCfirBuilder(
                         AnnotationSurfaceTarget.PARAMETER -> MacroCallSite.PARAMETER
                     },
                 )
-                val annotationCarrier = metadataRegistry.record(snapshot)
+                val annotationCarrier = baseSession.ensureAnnotationMetadataRegistry().record(snapshot)
                 collectedMacroSurfaces += buildMacroAnnotationSurface(
                     owner = annotated,
                     annotation = annotation,
@@ -1673,7 +1687,7 @@ class PsiRawCfirBuilder(
                     annotationCarrier = annotationCarrier,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
-                    containerContext = containerContext,
+                    containerContext = checkNotNull(containerContext),
                 )
             }
         }
@@ -4216,6 +4230,15 @@ class PsiRawCfirBuilder(
     }
 
 
+}
+
+/** raw CFIR 构建时 annotation surface 的采集职责。 */
+enum class MacroSurfaceCollectionMode {
+    /** 编译/宏构造输入阶段：采集 annotation 与 expression surfaces，并登记可替换槽位。 */
+    CONSTRUCTION,
+
+    /** 分析期重建：只采集 expression surfaces，annotation 仅作为普通 CFIR 节点重建。 */
+    EXPRESSION_ONLY,
 }
 
 /** 计算 reparse 后 PSI 与原始 source override 之间的偏移差。 */

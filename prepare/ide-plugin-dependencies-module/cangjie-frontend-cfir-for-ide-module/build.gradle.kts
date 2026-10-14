@@ -2,7 +2,7 @@ plugins {
     kotlin("jvm")
 }
 
-description = "IDE 插件依赖：打包 :cfir:* 全系列、:common:diagnostics。"
+description = "IDE 插件依赖：打包 :cfir:* 全系列、:compiler:frontend、:compiler:config、:common:diagnostics。"
 
 
 
@@ -22,6 +22,8 @@ dependencies {
     api(project(":cfir:raw-cfir:psi2cfir"))
     api(project(":cfir:raw-cfir:light-tree2cfir"))
     api(project(":cfir:entrypoint"))
+    // IDE Analysis 与主编译器共享 MacroConstructionService 的 fragment parse 与 stable splice 实现。
+    api(project(":compiler:frontend"))
     api(project(":common:diagnostics"))
 
     // 第三方库依赖（如果原 apiDependencies 中有内容，请在此处添加）

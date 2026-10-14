@@ -3357,7 +3357,7 @@ open class CangJieExpressionParsing(
                 parseQuoteIdentifierInterpolate()
             } else if (at(AT) && lookahead(1) == IDENTIFIER) {
                 parseMacroExpressionByQuoteParameters()
-            } else if (atSet(QUOTE_TOKENS)) {
+            } else if (atSet(QUOTE_TOKENS) || atSet(QUOTE_TOKEN_ESCAPES)) {
                 if (at(LPAR)) {
                     lparCount++
                 } else if (at(RPAR)) {
@@ -3372,7 +3372,7 @@ open class CangJieExpressionParsing(
                 }
                 advance()
             }
-        } while (atSet(QUOTE_TOKENS))
+        } while (atSet(QUOTE_TOKENS) || atSet(QUOTE_TOKEN_ESCAPES))
         quoteParameters.done(QUOTE_PARAMETERS)
     }
 
@@ -3669,25 +3669,31 @@ open class CangJieExpressionParsing(
 
         var lparCount = 0
         val tokens = mark()
-        while (atSet(QUOTE_TOKENS)) {
-            if (at(AT) && lookahead(1) == IDENTIFIER) {
-
-                parseMacroExpression()
-
-            } else {
-                if (at(LPAR)) {
+        while (atSet(QUOTE_TOKENS) || atSet(MACRO_TOKEN_ESCAPES) || at(TokenType.BAD_CHARACTER)) {
+            when {
+                at(ESCAPE_LPAR) || at(ESCAPE_RPAR) || at(ESCAPE_AT) -> advance()
+                at(ESCAPE_LBRACKET) || at(ESCAPE_RBRACKET) -> errorAndAdvance("Illegal macro token escape")
+                at(AT) -> {
+                    if (lookahead(1) == IDENTIFIER) {
+                        parseMacroExpression()
+                    } else {
+                        errorAndAdvance("Illegal macro token")
+                    }
+                }
+                at(LPAR) -> {
                     lparCount++
-                } else if (at(RPAR)) {
+                    advance()
+                }
+                at(RPAR) -> {
                     lparCount--
                     if (lparCount < 0) {
                         break
                     }
-                } else if (at(DOLLAR)) {
-                    errorAndAdvance(CangJieParsingBundle.message("parsing.error.expected.identifier.after.dollar"))
-                } else if (at(ESCAPE_LBRACKET) || at(ESCAPE_RBRACKET)) {
-                    errorAndAdvance("Illegal Token")
+                    advance()
                 }
-                advance()
+                at(TokenType.BAD_CHARACTER) || at(HASH) || at(BACKSLASH) || at(QUOTESYMBOL) ->
+                    errorAndAdvance("Illegal macro token")
+                else -> advance()
             }
         }
         tokens.done(CjNodeTypes.QUOTE_TOKENS)
@@ -3712,23 +3718,27 @@ open class CangJieExpressionParsing(
             advance()
             val tokens = mark()
             var lparCount = 0
-            while (atSet(QUOTE_TOKENS)) {
-                if (at(LBRACKET)) {
-                    lparCount++
-                } else if (at(RBRACKET)) {
-                    lparCount--
-                    if (lparCount < 0) {
-                        break
+            while (atSet(QUOTE_TOKENS) || atSet(MACRO_TOKEN_ESCAPES) || at(TokenType.BAD_CHARACTER)) {
+                when {
+                    at(ESCAPE_LBRACKET) || at(ESCAPE_RBRACKET) || at(ESCAPE_AT) -> advance()
+                    at(ESCAPE_LPAR) || at(ESCAPE_RPAR) -> errorAndAdvance("Illegal macro token escape")
+                    at(AT) -> errorAndAdvance("Illegal macro token")
+                    at(LBRACKET) -> {
+                        lparCount++
+                        advance()
                     }
-                } else if (at(OPEN_QUOTE)) {
-                    parseStringTemplate()
-                    continue
-                } else if (at(DOLLAR)) {
-                    errorAndAdvance(CangJieParsingBundle.message("parsing.error.expected.identifier.after.dollar"))
-                } else if (at(ESCAPE_LPAR) || at(ESCAPE_RPAR)) {
-                    errorAndAdvance("Illegal Token")
+                    at(RBRACKET) -> {
+                        lparCount--
+                        if (lparCount < 0) {
+                            break
+                        }
+                        advance()
+                    }
+                    at(OPEN_QUOTE) -> parseStringTemplate()
+                    at(TokenType.BAD_CHARACTER) || at(HASH) || at(BACKSLASH) || at(QUOTESYMBOL) ->
+                        errorAndAdvance("Illegal macro token")
+                    else -> advance()
                 }
-                advance()
             }
             tokens.done(CjNodeTypes.QUOTE_TOKENS)
             expect(RBRACKET, CangJieParsingBundle.message("parsing.error.expecting.symbol", "]"))
@@ -4029,19 +4039,29 @@ open class CangJieExpressionParsing(
                 USER_TYPE,
                 IDENTIFIER,
                 FIELD_IDENTIFIER,
-                ESCAPE_LPAR,
-                ESCAPE_RPAR,
-                ESCAPE_DOLLAR,
-                ESCAPE_LBRACKET,
-                ESCAPE_RBRACKET,
                 INTEGER_LITERAL,
                 FLOAT_LITERAL,
                 RUNE_LITERAL,
                 LONG_TEMPLATE_ENTRY_START,
-                LONG_TEMPLATE_ENTRY_END
+                LONG_TEMPLATE_ENTRY_END,
             ),
             CjTokens.KEYWORDALL,
             LITERAL_CONSTANT,
+        )
+
+        /** quote 语法保留括号转义；宏调用的转义规则由独立 token 集校验。 */
+        private val QUOTE_TOKEN_ESCAPES = TokenSet.create(
+            ESCAPE_LPAR,
+            ESCAPE_RPAR,
+        )
+
+        /** 仅宏调用 Tokens 输入识别的保留字符转义，不污染普通 quote token 集。 */
+        private val MACRO_TOKEN_ESCAPES = TokenSet.create(
+            ESCAPE_LPAR,
+            ESCAPE_RPAR,
+            ESCAPE_LBRACKET,
+            ESCAPE_RBRACKET,
+            ESCAPE_AT,
         )
 
         val EXPRESSION_FIRST = TokenSet.orSet(

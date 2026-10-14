@@ -20,7 +20,8 @@ class CjMacroCallFile(
     private val provider: FileViewProvider,
 ) : CjFile(
     provider,
-    isCompiled = true
+    // 宏调用文件承载无 VirtualFile 的生成源码；它不是需要按 VirtualFile 恢复的库 PSI。
+    isCompiled = false,
 ) {
     /**
      * 实现 `toString` 的宏文件 PSI协议回调，保持与 IntelliJ PSI 访问契约一致。

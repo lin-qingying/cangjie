@@ -31,6 +31,8 @@ class PreMacroCfirFile internal constructor(
     val cfirFile: CfirFile,
     /** 当前文件中采集到的 construction-only macro surface 列表。 */
     val surfaces: List<MacroSurface> = emptyList(),
+    /** 该 CFIR 文件对应的宿主文件身份；编译器输入可以不提供，IDE 输入使用原始 PSI 文件。 */
+    val sourceFileIdentity: Any? = null,
 ) {
     /** 当前文件是否声明为 `macro package`。 */
     val isMacroPackage: Boolean
@@ -54,6 +56,8 @@ class PreMacroRawBuildResult internal constructor(
     val session: CfirSession,
     /** 尚未注册进 source provider 的 pre-macro 文件集合。 */
     val files: List<PreMacroCfirFile>,
+    /** 标识同一批 pre-macro 输入，避免把其它构造请求的输出发布进当前模块。 */
+    val constructionIdentity: Any = Any(),
 ) {
     /** 是否没有任何 pre-macro 文件。 */
     val isEmpty: Boolean get() = files.isEmpty()
@@ -70,16 +74,16 @@ class PreMacroRawBuildResult internal constructor(
      * 被裁剪结果。条件编译、增量过滤等 raw owner 使用该入口发布新的 pre 状态。
      */
     public fun mapFiles(transform: (PreMacroCfirFile) -> PreMacroCfirFile): PreMacroRawBuildResult =
-        PreMacroRawBuildResult(session, files.map(transform))
+        PreMacroRawBuildResult(session, files.map(transform), constructionIdentity)
 }
 
 /** 替换单文件 raw CFIR，同时保留该文件尚未消费的 macro surfaces。 */
 public fun PreMacroCfirFile.withCfirFile(cfirFile: CfirFile): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces)
+    PreMacroCfirFile(cfirFile, surfaces, sourceFileIdentity)
 
 /** 在 raw 裁剪 owner 中同步移除已删除声明对应的 macro surfaces。 */
 public fun PreMacroCfirFile.withSurfaces(predicate: (MacroSurface) -> Boolean): PreMacroCfirFile =
-    PreMacroCfirFile(cfirFile, surfaces.filter(predicate))
+    PreMacroCfirFile(cfirFile, surfaces.filter(predicate), sourceFileIdentity)
 
 /**
  * 构造 [PreMacroRawBuildResult]。
@@ -97,14 +101,22 @@ fun buildPreMacroRawFiles(
     session: CfirSession,
     rawCfirFiles: List<CfirFile>,
     fileSurfaces: List<List<MacroSurface>> = List(rawCfirFiles.size) { emptyList() },
+    sourceFileIdentities: List<Any?> = List(rawCfirFiles.size) { null },
 ): PreMacroRawBuildResult {
     require(fileSurfaces.size == rawCfirFiles.size) {
         "fileSurfaces size (${fileSurfaces.size}) must match rawCfirFiles size (${rawCfirFiles.size})"
     }
+    require(sourceFileIdentities.size == rawCfirFiles.size) {
+        "sourceFileIdentities size (${sourceFileIdentities.size}) must match rawCfirFiles size (${rawCfirFiles.size})"
+    }
     return PreMacroRawBuildResult(
         session = session,
         files = rawCfirFiles.mapIndexed { index, cfirFile ->
-            PreMacroCfirFile(cfirFile = cfirFile, surfaces = fileSurfaces[index])
+            PreMacroCfirFile(
+                cfirFile = cfirFile,
+                surfaces = fileSurfaces[index],
+                sourceFileIdentity = sourceFileIdentities[index],
+            )
         },
     )
 }
@@ -124,6 +136,10 @@ class RecordableRawCfirFiles internal constructor(
     val session: CfirSession,
     /** 已经过 macro construction 处理、允许进入 source provider 的文件列表。 */
     val files: List<CfirFile>,
+    /** 与 [files] 顺序对应的原始 source identity。 */
+    val sourceFileIdentities: List<Any?>,
+    /** 供宿主确认发布结果来自预期 pre-macro 输入批次。 */
+    val constructionIdentity: Any,
 ) {
     /** 可注册文件数量。 */
     val size: Int get() = files.size
@@ -842,7 +858,12 @@ interface MacroConstructionService {
             files: List<CfirFile>,
             registry: MacroExpansionRegistry,
         ): MacroConstructionResult.Success = MacroConstructionResult.Success(
-            recordableFiles = RecordableRawCfirFiles(pre.session, files),
+            recordableFiles = RecordableRawCfirFiles(
+                session = pre.session,
+                files = files,
+                sourceFileIdentities = pre.files.map(PreMacroCfirFile::sourceFileIdentity),
+                constructionIdentity = pre.constructionIdentity,
+            ),
             registry = registry,
         )
 
@@ -859,7 +880,12 @@ interface MacroConstructionService {
             files: List<CfirFile>,
             registry: MacroExpansionRegistry,
         ): MacroConstructionResult.Degraded = MacroConstructionResult.Degraded(
-            recordableFiles = RecordableRawCfirFiles(pre.session, files),
+            recordableFiles = RecordableRawCfirFiles(
+                session = pre.session,
+                files = files,
+                sourceFileIdentities = pre.files.map(PreMacroCfirFile::sourceFileIdentity),
+                constructionIdentity = pre.constructionIdentity,
+            ),
             registry = registry,
         )
     }

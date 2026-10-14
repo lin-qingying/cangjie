@@ -12,10 +12,13 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor
+import org.cangnova.cangjie.idea.search.CjGeneratedReference
+import org.cangnova.cangjie.idea.search.CjGeneratedReferenceSearchProvider
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportAlias
+import org.cangnova.cangjie.psi.CjMacroExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.test.services.TestServices
@@ -57,6 +60,33 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             references.all { it.element.containingFile == mainFile },
             "Top-level 函数回归夹具中的 usages 应全部落在主文件内",
         )
+    }
+
+    /**
+     * 验证生成引用按真实目标参与 Find Usages，展示位置映射回宏调用 PSI。
+     */
+    @Test
+    fun generatedReferenceMapsToMacroCall(mainFile: CjFile) {
+        val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
+            .single { it.name == "greet" }
+        val macroCall = PsiTreeUtil.findChildrenOfType(mainFile, CjMacroExpression::class.java).single()
+        val physicalReference = collectReferences(mainFile).single { it.isReferenceTo(declaration) }
+
+        CjGeneratedReferenceSearchProvider.registerExtension(
+            mainFile.project,
+            object : CjGeneratedReferenceSearchProvider {
+                override fun processGeneratedReferences(
+                    project: com.intellij.openapi.project.Project,
+                    scope: com.intellij.psi.search.SearchScope,
+                    consumer: Processor<in CjGeneratedReference>,
+                ): Boolean = consumer.process(CjGeneratedReference(physicalReference, macroCall))
+            },
+        )
+
+        val mappedUsages = findUsages(declaration).filter { it.element === macroCall }
+        assertEquals(1, mappedUsages.size, "生成引用结果应定位到宏调用 PSI")
+        assertEquals("greet", mappedUsages.single().canonicalText)
+        assertTrue(mappedUsages.single().isReferenceTo(declaration))
     }
 
     /**
@@ -133,6 +163,16 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             },
         )
         return references
+    }
+
+    /** 收集文件 PSI 树上暴露的所有 PSI references。 */
+    private fun collectReferences(file: CjFile): List<PsiReference> = buildList {
+        file.accept(object : com.intellij.psi.PsiRecursiveElementWalkingVisitor() {
+            override fun visitElement(element: PsiElement) {
+                addAll(element.references)
+                super.visitElement(element)
+            }
+        })
     }
 
     /**

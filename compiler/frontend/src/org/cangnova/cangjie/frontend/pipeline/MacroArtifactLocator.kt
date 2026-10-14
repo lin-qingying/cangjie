@@ -73,6 +73,7 @@ class MacroArtifactLocator(
      * 在 SDK stdlib 目录中定位官方宏包 artifact。
      */
     private fun locateFromSdk(packageFqName: FqName): MacroArtifactPackage? {
+        if (sdkHome.isBlank()) return null
         if (toLibCangjieBaseName(packageFqName) == null) return null
         val modulesRoot = File(sdkHome, "modules/$host")
         val runtimeRoot = File(sdkHome, "runtime/lib/$host")

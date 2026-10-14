@@ -96,6 +96,20 @@ class CangJieHighlightingLexicalKeysTest {
         assertEquals(null, CangJieHighlightingLexicalKeys.primaryKeyOf(CjTokens.IDENTIFIER))
     }
 
+    /** 宏保留字符转义由解析上下文校验，不在全局词法层显示为有效转义。 */
+    @Test
+    fun testMacroEscapesHaveNoGlobalHighlightingKey() {
+        listOf(
+            CjTokens.ESCAPE_LPAR,
+            CjTokens.ESCAPE_RPAR,
+            CjTokens.ESCAPE_LBRACKET,
+            CjTokens.ESCAPE_RBRACKET,
+            CjTokens.ESCAPE_AT,
+        ).forEach { tokenType ->
+            assertTrue(CangJieHighlightingLexicalKeys.keysOf(tokenType).isEmpty())
+        }
+    }
+
     /**
      * 断言指定 token 的高亮 key 数组和主 key。
      */

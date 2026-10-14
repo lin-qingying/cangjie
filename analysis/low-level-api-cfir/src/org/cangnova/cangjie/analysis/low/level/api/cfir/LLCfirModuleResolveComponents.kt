@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.ModuleFileC
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.ModuleFileCacheImpl
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStructureCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirModuleLazyDeclarationResolver
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshotStore
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLCfirScopeSessionProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -47,6 +48,11 @@ internal class LLCfirModuleResolveComponents(
     val cfirFileBuilder: LLCfirFileBuilder = LLCfirFileBuilder(this)
 
     /**
+     * 源码模块最终宏语义视图的原子发布点。
+     */
+    val macroSemanticSnapshotStore = LLCfirMacroSemanticSnapshotStore()
+
+    /**
      * 当前模块的 lazy declaration resolver。
      */
     val cfirModuleLazyDeclarationResolver = LLCfirModuleLazyDeclarationResolver(this)
@@ -59,6 +65,7 @@ internal class LLCfirModuleResolveComponents(
         invalidationTrackers = listOf(
             PsiModificationTracker.MODIFICATION_COUNT,
             ProjectRootModificationTracker.getInstance(globalResolveComponents.project),
+            macroSemanticSnapshotStore,
         )
     )
 

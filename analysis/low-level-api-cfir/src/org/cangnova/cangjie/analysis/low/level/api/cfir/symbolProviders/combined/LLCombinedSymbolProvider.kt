@@ -4,6 +4,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combine
 
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace
@@ -34,6 +35,13 @@ internal abstract class LLCombinedSymbolProvider<P : CfirSymbolProvider>(session
         CfirCompositeCachedSymbolNamesProvider.create(
             session,
             providers.map { it.libraryDeclarationsNamesProvider },
+        )
+    }
+
+    /** 汇总子源码模块的宏生成声明名称，并保留 snapshot 发布后的实时可见性。 */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider by lazy {
+        CfirCompositeSymbolNamesProvider.create(
+            providers.map { it.macroGeneratedSourceDeclarationsNamesProvider },
         )
     }
 

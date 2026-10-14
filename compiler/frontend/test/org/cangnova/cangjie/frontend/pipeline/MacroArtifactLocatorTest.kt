@@ -128,8 +128,9 @@ class MacroArtifactLocatorTest {
      */
     @Test
     fun locatesAndResolvesFixedSdkStdMacroArtifact() {
+        val sdkHome = DefaultMacroCompilerExecutableResolver.resolve().parent.parent.toString()
         val artifact = MacroArtifactLocator(
-            sdkHome = DEFAULT_MACRO_SDK_HOME,
+            sdkHome = sdkHome,
             host = "windows_x86_64_cjnative",
         ).locate(
             packageDemands = setOf(FqName("std.unittest.mock.mockmacro")),

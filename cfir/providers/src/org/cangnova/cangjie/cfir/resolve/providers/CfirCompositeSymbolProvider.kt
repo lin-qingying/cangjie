@@ -49,6 +49,10 @@ class CfirCompositeSymbolProvider(
     override val libraryDeclarationsNamesProvider: CfirSymbolNamesProvider =
         CfirCompositeSymbolNamesProvider.create(providers.map { it.libraryDeclarationsNamesProvider })
 
+    /** 聚合各源码模块经宏展开生成的声明名称，不把普通源码名称重新带入名称发现通道。 */
+    override val macroGeneratedSourceDeclarationsNamesProvider: CfirSymbolNamesProvider =
+        CfirCompositeSymbolNamesProvider.create(providers.map { it.macroGeneratedSourceDeclarationsNamesProvider })
+
     /**
      * 按 provider 顺序返回第一个 class-like symbol 命中项。
      */

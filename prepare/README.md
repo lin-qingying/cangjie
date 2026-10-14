@@ -19,7 +19,7 @@
 
 - `cangjie-frontend-common-for-ide`
 - `cangjie-frontend-psi-for-ide`
-- `cangjie-frontend-cfir-for-ide`
+- `cangjie-frontend-cfir-for-ide`（包含 `:cfir:*`、`:compiler:config`、`:compiler:frontend` 与 `:common:diagnostics`）
 - `cangjie-frontend-analysis-api-for-ide`
 - `cangjie-frontend-analysis-api-cfir-for-ide`
 - `cangjie-frontend-analysis-api-standalone-for-ide`

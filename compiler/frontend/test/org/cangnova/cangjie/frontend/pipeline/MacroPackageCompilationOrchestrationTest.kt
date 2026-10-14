@@ -570,15 +570,15 @@ class MacroPackageCompilationOrchestrationTest {
     }
 
     /**
-     * 验证配置 SDK 缺失时 resolver 使用 CANGJIE_HOME。
+     * 验证没有配置 SDK 时 resolver 使用 CANGJIE_HOME。
      */
     @Test
-    fun defaultCjcResolverUsesCangjieHomeWhenConfiguredSdkIsMissing() {
+    fun defaultCjcResolverUsesCangjieHomeWhenNoSdkIsConfigured() {
         val cangjieHome = Files.createDirectories(tempDir.resolve("cangjie-home"))
         val cjc = writeCjcExecutable(cangjieHome)
 
         val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = tempDir.resolve("missing-sdk").toString(),
+            sdkHome = "",
             cangjieHome = cangjieHome.toString(),
             cjcHome = null,
             pathValue = null,
@@ -597,7 +597,7 @@ class MacroPackageCompilationOrchestrationTest {
         val cjc = writeCjcExecutable(cjcHome)
 
         val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = tempDir.resolve("missing-sdk").toString(),
+            sdkHome = "",
             cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
             cjcHome = cjcHome.toString(),
             pathValue = null,
@@ -616,7 +616,7 @@ class MacroPackageCompilationOrchestrationTest {
         val cjc = writeCjcExecutable(pathDirectory, alreadyBinDirectory = true)
 
         val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = tempDir.resolve("missing-sdk").toString(),
+            sdkHome = "",
             cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
             cjcHome = tempDir.resolve("missing-cjc-home").toString(),
             pathValue = pathDirectory.toString(),
@@ -638,7 +638,7 @@ class MacroPackageCompilationOrchestrationTest {
         val cjc = writeCjcExecutable(newerSdk)
 
         val resolved = DefaultMacroCompilerExecutableResolver.resolve(
-            sdkHome = tempDir.resolve("missing-sdk").toString(),
+            sdkHome = "",
             cangjieHome = null,
             cjcHome = null,
             pathValue = null,
@@ -655,7 +655,7 @@ class MacroPackageCompilationOrchestrationTest {
     fun defaultCjcResolverReportsMissingExecutableWhenNoSourceMatches() {
         val error = kotlin.runCatching {
             DefaultMacroCompilerExecutableResolver.resolve(
-                sdkHome = tempDir.resolve("missing-sdk").toString(),
+                sdkHome = "",
                 cangjieHome = tempDir.resolve("missing-cangjie-home").toString(),
                 cjcHome = tempDir.resolve("missing-cjc-home").toString(),
                 pathValue = tempDir.resolve("missing-path").toString(),
@@ -664,6 +664,28 @@ class MacroPackageCompilationOrchestrationTest {
         }.exceptionOrNull()
 
         assertTrue(requireNotNull(error).message.orEmpty().contains("Cannot find"))
+    }
+
+    /**
+     * 验证显式宏 SDK 是唯一可用的 SDK，不能被进程级环境变量替换。
+     */
+    @Test
+    fun defaultCjcResolverDoesNotReplaceConfiguredSdkWithEnvironmentSdk() {
+        val configuredSdk = tempDir.resolve("configured-sdk-without-cjc")
+        val cangjieHome = Files.createDirectories(tempDir.resolve("environment-sdk"))
+        writeCjcExecutable(cangjieHome)
+
+        val error = kotlin.runCatching {
+            DefaultMacroCompilerExecutableResolver.resolve(
+                sdkHome = configuredSdk.toString(),
+                cangjieHome = cangjieHome.toString(),
+                cjcHome = null,
+                pathValue = null,
+                userHome = tempDir.resolve("home"),
+            )
+        }.exceptionOrNull()
+
+        assertTrue(requireNotNull(error).message.orEmpty().contains(configuredSdk.toString()))
     }
 
     /**

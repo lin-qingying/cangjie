@@ -5017,7 +5017,7 @@ class CangJieParsing private constructor(
      * Grammar:
      * ```
      * tupleType
-     *   : "(" typeReference ("," typeReference)* ")"
+     *   : "(" (identifier ":")? typeReference ("," (identifier ":")? typeReference)* ")"
      *   ;
      * ```
      *
@@ -5032,6 +5032,12 @@ class CangJieParsing private constructor(
 
         if (!at(RPAR)) {
             while (true) {
+                // Cangjie tuple fields may carry labels; the label is syntax metadata,
+                // while the following type reference remains the tuple element type.
+                if (at(IDENTIFIER) && lookahead(1) == COLON) {
+                    advance() // field label
+                    advance() // colon
+                }
                 parseTypeRef()
                 count++
                 if (!at(COMMA)) break

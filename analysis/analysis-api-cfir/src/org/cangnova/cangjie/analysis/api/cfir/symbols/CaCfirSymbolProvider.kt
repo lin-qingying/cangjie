@@ -33,6 +33,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
+import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -313,29 +314,34 @@ internal class CaCfirSymbolProvider(
             ?.createSymbolIndexQuery(analysisSession.analysisScope)
             ?.findDeclarations(filter)
             ?.mapTo(entries) { DiscoveryEntry(it.packageFqName, it.name, it.kind, it.ownerClassId) }
-        collectLibraryDeclarationNames(filter, entries)
+        collectAdditionalDeclarationNames(
+            filter,
+            entries,
+            analysisSession.cfirSession.symbolProvider.libraryDeclarationsNamesProvider,
+        )
+        collectAdditionalDeclarationNames(
+            filter,
+            entries,
+            analysisSession.cfirSession.symbolProvider.macroGeneratedSourceDeclarationsNamesProvider,
+        )
         entries.flatMap(::resolveDiscoveryEntry)
     }
 
     /**
-     * 把**库侧**（`.cjo` 反序列化库与 stub 库）的顶层名字并入名称集合。
+     * 把没有对应宿主物理源码索引的名称视图并入候选集合。
      *
-     * 库没有 PSI 也没有源码索引，它的顶层名字只能问 CFIR 会话的库侧名字视图——
-     * 该视图内部走 `CjoExportedTopLevelNamesResolver`，因此 public import 的 re-export
-     * 与 alias 都在名字集合里。
+     * 库侧视图提供 `.cjo`/stub 声明；宏生成源码视图只包含最终 semantic snapshot 中由
+     * registry 来源映射确认的声明。普通物理源码仍只由宿主索引发现。
      *
      * 这里**刻意不走** `symbolNamesProvider`：那一路含源码符号源，枚举它等于遍历源码文件，
-     * 而源码声明的名字由上面的宿主索引给出（见 `CfirSymbolProvider.libraryDeclarationsNamesProvider`）。
-     * 走错这一路的表现是索引形同虚设——候选仍然正确，代价却随项目规模线性增长。
-     *
-     * 名字视图报告「无法有效计算」时什么都不并入：那表示该宿主没有可用的库侧视图，
-     * 不是「没有候选」。
+     * 而宏生成声明没有物理源码索引记录，因此通过独立的 snapshot 名称视图补齐，不把全量
+     * 源码扫描带回名称发现路径。
      */
-    private fun collectLibraryDeclarationNames(
+    private fun collectAdditionalDeclarationNames(
         filter: CaSymbolIndexNameFilter,
         destination: MutableSet<DiscoveryEntry>,
+        names: CfirSymbolNamesProvider,
     ) {
-        val names = analysisSession.cfirSession.symbolProvider.libraryDeclarationsNamesProvider
         val packages = names.getPackageNames() ?: return
         for (packageName in packages) {
             ProgressManager.checkCanceled()

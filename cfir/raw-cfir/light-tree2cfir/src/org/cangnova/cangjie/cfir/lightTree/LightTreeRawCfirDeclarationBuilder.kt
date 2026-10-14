@@ -2904,8 +2904,7 @@ class LightTreeRawCfirDeclarationBuilder(
     /**
      * 判断 `[]` 操作符函数是否为索引赋值（SET）形式。
      *
-     * 根据仓颉语言规范，索引赋值形式的特征是：
-     * 最后一个参数为命名参数 `value!`（含 EXCL 标记且名称为 "value"）。
+     * 最后一个具名参数用于识别赋值签名；无效名称保留为赋值形式，交给共享 CFIR checker 诊断。
      *
      * - 索引取值：`operator func [](index1: T1, index2: T2, ...): R`
      * - 索引赋值：`operator func [](index1: T1, ..., value!: TN): R`
@@ -2916,8 +2915,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val lastParam = params.lastOrNull() ?: return false
         val hasExcl = tree.findChildByType(lastParam, CjTokens.EXCL) != null
         if (!hasExcl) return false
-        val nameNode = tree.findChildByType(lastParam, CjTokens.IDENTIFIER) ?: return false
-        return nameNode.asText() == "value"
+        return true
     }
 
     /** 提取类型参数列表 */
