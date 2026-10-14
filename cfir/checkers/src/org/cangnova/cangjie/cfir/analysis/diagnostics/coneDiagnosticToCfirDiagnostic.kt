@@ -113,8 +113,12 @@ fun ConeDiagnostic.toCfirDiagnostics(
             session,
         )
         is ConeNoMatchingFunctionReferenceError -> listOfNotNull(
+            argumentMappingCandidate?.parametersAndArgumentsMismatchDiagnostic(
+                session,
+                hasFunctionReferenceNoMatch = true,
+            ),
             CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
-                (callOrAssignmentSource ?: source)?.firstCharacterDiagnosticSource() ?: return emptyList(),
+                source ?: return emptyList(),
                 session,
             )
         )
@@ -734,10 +738,13 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
-            is BuiltinCFuncConstructorTooManyArguments -> CfirErrors.CFUNC_TOO_MANY_ARGUMENTS.on(
-                rootCause.source,
-                session,
-            )
+            is BuiltinCFuncConstructorTooManyArguments -> {
+                val diagnosticSource = rootCause.source ?: return@mapNotNull null
+                CfirErrors.CFUNC_TOO_MANY_ARGUMENTS.on(
+                    diagnosticSource.completeReferencedNameDiagnosticSource(),
+                    session,
+                )
+            }
 
             is BuiltinCFuncConstructorArgumentType -> CfirErrors.CFUNC_CTOR_MUST_BE_CPOINTER.on(
                 rootCause.argument.source ?: source ?: return@mapNotNull null,
@@ -851,7 +858,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     ?: candidate.callInfo.callSite.source
                     ?: return@mapNotNull null
                 CfirErrors.AMBIGUOUS_ARG_TYPE.on(
-                    diagnosticSource.firstCharacterDiagnosticSource(),
+                    diagnosticSource,
                     candidate.callInfo.name,
                     session,
                 )
@@ -891,7 +898,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 session,
             )
 
-            is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+            is NamedParameterNotFound -> CfirErrors.UNKNOWN_NAMED_ARGUMENT.on(
                 rootCause.source,
                 rootCause.name,
                 session,
@@ -974,6 +981,42 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
 }
 
+/** CFunc 构造器诊断标记被引用的完整名称 token，不扩展到泛型实参或调用括号。 */
+private fun AbstractCjSourceElement.completeReferencedNameDiagnosticSource(): AbstractCjSourceElement {
+    val sourcePsi = psi
+    if (sourcePsi == null) {
+        return (this as? CjLightSourceElement)?.lightTreeReferencedNameDiagnosticSource() ?: this
+    }
+    val nameElement = when (sourcePsi) {
+        is CjSimpleNameExpression -> sourcePsi.referencedNameElement
+        is CjCallExpression -> sourcePsi.referenceExpression?.referencedNameElement
+        else -> PsiTreeUtil.getParentOfType(sourcePsi, CjCallExpression::class.java, false)
+            ?.referenceExpression
+            ?.referencedNameElement
+    }
+    return nameElement?.toCjPsiSourceElement() ?: this
+}
+
+/** 从 LightTree 引用节点取得完整名称 token，与 PSI 的 referencedNameElement 使用同一范围。 */
+private fun CjLightSourceElement.lightTreeReferencedNameDiagnosticSource(): AbstractCjSourceElement? {
+    fun findReferenceExpression(node: LighterASTNode): LighterASTNode? {
+        if (node.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) return node
+        for (child in lightTreeChildren(node)) {
+            findReferenceExpression(child)?.let { return it }
+        }
+        return null
+    }
+
+    val referenceExpression = findReferenceExpression(lighterASTNode) ?: return null
+    val nameToken = lightTreeChildren(referenceExpression)
+        .firstOrNull { it.tokenType == CjTokens.IDENTIFIER }
+        ?: return null
+    return CjOffsetsOnlySourceElement(
+        startOffset = treeStructure.getStartOffset(nameToken),
+        endOffset = treeStructure.getEndOffset(nameToken),
+    )
+}
+
 /** 错误返回类型使整个 overload 集合失效时，在 callable 名称上报告调用级 no-match。 */
 private fun AbstractCallCandidate<*>.invalidReturnTypeOverloadNoMatchDiagnostic(session: CfirSession): CjDiagnostic? {
     if (callInfo.semanticCallKind != AbstractCallKind.Function) return null
@@ -1048,7 +1091,7 @@ private fun AbstractCallCandidate<*>.unsuccessfulCallableReferenceArgumentDiagno
     val diagnosticSource = diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: callInfo.callSite.source ?: return null
     return listOfNotNull(
         CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_REF.on(
-            diagnosticSource.firstCharacterDiagnosticSource(),
+            diagnosticSource,
             session,
         )
     )
@@ -1095,7 +1138,7 @@ private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
             session,
         )
 
-        is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+        is NamedParameterNotFound -> CfirErrors.UNKNOWN_NAMED_ARGUMENT.on(
             diagnostic.source,
             diagnostic.name,
             session,
@@ -1394,6 +1437,7 @@ private fun CfirExpression.isBareFunctionReferenceValue(): Boolean {
  */
 private fun AbstractCallCandidate<*>.parametersAndArgumentsMismatchDiagnostic(
     session: CfirSession,
+    hasFunctionReferenceNoMatch: Boolean = false,
 ): CjDiagnostic? {
     // 下标读脱糖调用（a[i] → a.get(i)）的索引实参为字面量且不能转换时，官方除实参级
     // cannot_convert_literal 外还报一次调用级 parameters and arguments mismatch，锚在
@@ -1407,23 +1451,39 @@ private fun AbstractCallCandidate<*>.parametersAndArgumentsMismatchDiagnostic(
         val receiverSource = callInfo.explicitReceiver?.source ?: return null
         return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(receiverSource, session)
     }
-    if (symbol.cfir !is CfirConstructor || !hasExplicitTypeArgumentsInCall()) return null
-    val hasFunctionReferenceMappingFailure = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
+    if (!hasGenericArgumentMapping(session)) return null
+    val hasFunctionReferenceTypeMismatch = diagnostics.filterIsInstance<ArgumentTypeMismatch>().any { diagnostic ->
         diagnostic.argument.isBareFunctionReferenceValue() &&
             diagnostic.actualType.isFunctionTypeLike() &&
             !diagnostic.expectedType.isFunctionTypeLike()
     }
-    if (!hasFunctionReferenceMappingFailure) return null
+    val hasUnsuccessfulFunctionReference = hasFunctionReferenceNoMatch ||
+            diagnostics.filterIsInstance<UnsuccessfulCallableReferenceArgument>().any {
+        it.failureKind == CallableReferenceFailureKind.NO_MATCH
+    }
+    if (!hasFunctionReferenceTypeMismatch && !hasUnsuccessfulFunctionReference) return null
 
-    val calleeSource = (callInfo.callSite as? CfirQualifiedAccessExpression)
-        ?.calleeReference
-        ?.source
-        ?: return null
-    val source = CjOffsetsOnlySourceElement(
-        startOffset = calleeSource.startOffset,
-        endOffset = (calleeSource.startOffset + callInfo.name.asString().length).coerceAtMost(calleeSource.endOffset),
+    val callSource = callInfo.callSite.source ?: return null
+    return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(
+        callSource,
+        session,
     )
-    return CfirErrors.PARAMETERS_AND_ARGUMENTS_MISMATCH.on(source, session)
+}
+
+/**
+ * 判断调用是否进入了泛型映射阶段且映射可以完整形成。
+ *
+ * 官方仅在已有映射被实参检查全部淘汰后报告调用级参数不匹配；类型参数仍缺少信息时，
+ * 调用尚未进入该兼容性诊断阶段。
+ */
+private fun AbstractCallCandidate<*>.hasGenericArgumentMapping(session: CfirSession): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    val hasGenericDeclaration = genericInferenceDeclaredTypeParameters(session).isNotEmpty() ||
+            callableSymbol.getContainingClass()?.cfir?.typeParameters?.isNotEmpty() == true ||
+            callableSymbol.getContainingExtend()?.typeParameters?.isNotEmpty() == true
+    if (!hasGenericDeclaration) return false
+    if (!hasExplicitTypeArgumentsInCall() && errors.any { it is NotEnoughInformationForTypeParameter<*> }) return false
+    return true
 }
 
 /**

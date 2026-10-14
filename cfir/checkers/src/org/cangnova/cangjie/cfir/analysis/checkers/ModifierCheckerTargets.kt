@@ -311,6 +311,12 @@ private fun cjmpModifierTargetPredicate(): ModifierTargetPredicate =
 internal val redundantTargetMap: Map<CjKeywordToken, ModifierTargetPredicate> = mapOf(
     // interface 头本就隐含 open，显式 open 冗余；仅 interface，不含 class/struct/enum。
     OPEN_KEYWORD to ModifierTargetPredicate.headOf(DeclarationKind.INTERFACE),
+    // interface 成员默认 public；仅接口函数和属性需要此提示，不扩展到 extend 成员。
+    PUBLIC_KEYWORD to ModifierTargetPredicate.memberOfIn(
+        setOf(DeclarationKind.INTERFACE),
+        DeclarationKind.FUNCTION,
+        DeclarationKind.PROPERTY,
+    ),
 )
 
 /**

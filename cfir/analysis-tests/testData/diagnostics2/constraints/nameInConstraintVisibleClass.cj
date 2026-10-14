@@ -6,4 +6,4 @@
 // 本项目：官方 kind 在 CfirDiagnosticsList 里没有同名诊断，语义上对应 NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER。
 interface Named {}
 
-class Box<T> where <!NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER!>S<!>tring <: Named {}
+class Box<T> where <!NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER!>String<!> <: Named {}

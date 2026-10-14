@@ -4,7 +4,7 @@
 package a
 
 private interface I0 {
-    public func f0(): Unit
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func f0(): Unit
 }
 
 public class Foo<T> {}

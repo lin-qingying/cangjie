@@ -250,6 +250,7 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
         val recursiveStaticFunctionReads = mutableListOf<StaticGlobalUseEdge>()
+        val staticInitThrowTerminatedOwners = linkedSetOf<ClassId>()
         var state = InitializationState.empty().declareAll(trackedInfos, emptySet())
         var nextVisitOrder = 0
 
@@ -281,14 +282,17 @@ private class CfirInitializationFlowAnalyzer(
                         nextVisitOrder = nextVisitOrder,
                         recursiveStaticFunctionReads = recursiveStaticFunctionReads,
                     )
-                    state = result.state
+                    if (result.state.terminationKind == InitializationTerminationKind.THROW) {
+                        declaration.nominalOwnerClassId?.let(staticInitThrowTerminatedOwners::add)
+                    }
+                    state = result.state.withoutTermination()
                     nextVisitOrder = result.nextVisitOrder
                 }
             }
         }
 
         reportRecursiveStaticFunctionReadsBeforeInitialization(recursiveStaticFunctionReads)
-        reportUninitializedStaticFields(trackedBySymbol.values)
+        reportUninitializedStaticFields(trackedBySymbol.values, staticInitThrowTerminatedOwners)
     }
 
     /**
@@ -727,19 +731,20 @@ private class CfirInitializationFlowAnalyzer(
         }
         if (normalExitStates.isEmpty()) return
 
-        owner.instanceFieldInfos(context)
-            .filter { fieldInfo ->
+        val firstUninitializedField = owner.instanceFieldInfos(context, includeInherited = true)
+            .firstOrNull { fieldInfo ->
                 normalExitStates.any { exitState -> !exitState.isInitialized(fieldInfo.symbol) }
-            }
-            .forEach { fieldInfo ->
-                with(context) {
-                    reporter.reportOn(
-                        source = constructor.constructorNameDiagnosticSource(),
-                        factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
-                        a = fieldInfo.diagnosticName,
-                    )
-                }
-            }
+            } ?: return
+
+        // 官方逐字段调用 Diagnose，但全部锚在同一个构造器名；DiagnosticEngine 按该 source 去重，
+        // 保留声明顺序中第一个未初始化字段的消息。CFIR 在 checker 侧复现这一可见结果。
+        with(context) {
+            reporter.reportOn(
+                source = constructor.constructorNameDiagnosticSource(),
+                factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
+                a = firstUninitializedField.diagnosticName,
+            )
+        }
     }
 
     /**
@@ -956,7 +961,8 @@ private class CfirInitializationFlowAnalyzer(
         }
         is CfirContinueExpression -> analyzeLoopJump(expression, state, isContinue = true)
         is CfirBreakExpression -> analyzeLoopJump(expression, state, isContinue = false)
-        is CfirThrowExpression -> analyzeExpression(expression.exception, state).terminate()
+        is CfirThrowExpression -> analyzeExpression(expression.exception, state)
+            .terminate(InitializationTerminationKind.THROW)
         is CfirThisReceiverExpression -> analyzeThisReceiver(expression, state)
         is CfirFunctionCall -> analyzeFunctionCall(expression, state)
         is CfirAnonymousFunctionExpression -> analyzeAnonymousFunctionExpression(expression, state)
@@ -1842,7 +1848,7 @@ private class CfirInitializationFlowAnalyzer(
         left: InitializationState,
         right: InitializationState,
     ): InitializationState {
-        if (left.terminated && right.terminated) return left.intersect(right).terminate()
+        if (left.terminated && right.terminated) return left.intersect(right)
         if (left.terminated) return right
         if (right.terminated) return left
         return left.intersect(right)
@@ -2311,10 +2317,14 @@ private class CfirInitializationFlowAnalyzer(
     /**
      * 报告最终仍未初始化的 static 字段。
      */
-    private fun reportUninitializedStaticFields(variables: Collection<StaticGlobalInitializerVariable>) {
+    private fun reportUninitializedStaticFields(
+        variables: Collection<StaticGlobalInitializerVariable>,
+        staticInitThrowTerminatedOwners: Set<ClassId>,
+    ) {
         for (variable in variables) {
             val field = variable.field ?: continue
             if (!field.status.isStatic) continue
+            if (variable.nominalOwnerClassId in staticInitThrowTerminatedOwners) continue
             if (variable.initialized) continue
             with(context) {
                 reporter.reportOn(
@@ -2802,6 +2812,9 @@ private data class InitializationState(
      */
     val terminated: Boolean,
 
+    /** 当前终止路径的原因；分支终止原因不同时置空。 */
+    val terminationKind: InitializationTerminationKind?,
+
     /**
      * 当前是否处于成员初始化器求值上下文。
      */
@@ -2844,6 +2857,7 @@ private data class InitializationState(
             possiblyInitialized = emptySet(),
             expectedReceiver = expectedReceiver,
             terminated = false,
+            terminationKind = null,
             inMemberInitializer = false,
             memberInitializerOwner = null,
             inNestedFunction = false,
@@ -3086,6 +3100,7 @@ private data class InitializationState(
             },
             expectedReceiver = commonExpectedReceiver(other),
             terminated = terminated && other.terminated,
+            terminationKind = terminationKind.takeIf { it == other.terminationKind },
             inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
             memberInitializerOwner = commonMemberInitializerOwner(other),
             inNestedFunction = inNestedFunction && other.inNestedFunction,
@@ -3130,12 +3145,21 @@ private data class InitializationState(
     /**
      * 标记当前控制流已终止。
      */
-    fun terminate(): InitializationState = if (terminated) this else copy(terminated = true)
+    fun terminate(
+        kind: InitializationTerminationKind = InitializationTerminationKind.OTHER,
+    ): InitializationState = if (terminated) this else copy(terminated = true, terminationKind = kind)
 
     /**
      * 清除当前控制流终止标记。
      */
-    fun withoutTermination(): InitializationState = if (!terminated) this else copy(terminated = false)
+    fun withoutTermination(): InitializationState =
+        if (!terminated && terminationKind == null) this else copy(terminated = false, terminationKind = null)
+}
+
+/** 初始化流分析需要保留的终止原因。 */
+private enum class InitializationTerminationKind {
+    OTHER,
+    THROW,
 }
 
 /**

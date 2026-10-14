@@ -2,13 +2,13 @@
 
 
 class Data {
-    public Data(let a!: Bool = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>d<!>u, var du!: Bool = a) {}
+    public Data(let a!: Bool = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>du<!>, var du!: Bool = a) {}
 }
 
 class A {
     public let a: Bool
     public var du: Bool
-    public init(a!: Bool = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>d<!>u, du!: Bool = a) {
+    public init(a!: Bool = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>du<!>, du!: Bool = a) {
         this.a = a
         this.du = du
     }
@@ -44,16 +44,16 @@ open class Date2 {
 }
 
 class Date3 <: Date2 {
-    public Date3(let width!: Int32 = 1, <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>l<!>et length!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>v<!>,
-        <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>l<!>et perimeter!: () -> Int32 = {
+    public Date3(let width!: Int32 = 1, <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>let length!: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>v<!><!>,
+        <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>let perimeter!: () -> Int32 = {
             =>
             var res: Int32 = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>v<!>;
             return res
-        }) {}
+        }<!>) {}
 }
 
 class B {
-    public B(let ai!: Bool = true && <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>x<!>a, var xa!: Bool = ai) {}
+    public B(let ai!: Bool = true && <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>xa<!>, var xa!: Bool = ai) {}
 }
 
 class C {

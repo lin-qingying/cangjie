@@ -233,6 +233,12 @@ class ConeAmbiguousFunctionReferenceError(
 class ConeNoMatchingFunctionReferenceError(
     /** 被引用的函数名。 */
     val name: Name,
+    /**
+     * 若该引用作为调用实参解析失败，保存拥有该实参的候选调用。
+     *
+     * 映射层据此判断是否应同时报告泛型调用的参数映射失败；独立函数引用不携带候选。
+     */
+    val argumentMappingCandidate: AbstractCallCandidate<*>? = null,
 ) : ConeDiagnostic {
     /** 面向普通诊断渲染的失败原因。 */
     override val reason: String get() = "No matching function declaration for reference: $name"

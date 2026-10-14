@@ -43,7 +43,10 @@ class AbstractCjmpMatcherTest {
 
         override fun returnType(declaration: Declaration): String? = declaration.returnType
 
-        override fun hasInferredReturnType(declaration: Declaration): Boolean = declaration.inferredReturnType
+        override fun canDeferReturnTypeCompatibility(specific: Declaration, common: Declaration): Boolean {
+            val commonReturnType = common.returnType ?: return false
+            return specific.inferredReturnType && !commonReturnType.containsErrorType()
+        }
 
         override fun areTypesEquivalent(
             specific: String?,
@@ -152,8 +155,59 @@ class AbstractCjmpMatcherTest {
     }
 
     @Test
+    fun `body inferred return unresolved before body check keeps first fit candidate`() {
+        val specific = Declaration("specific", returnType = null, inferredReturnType = true)
+        val common = Declaration("common", returnType = "Int64")
+        val context = Context()
+
+        val result = AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(
+            specific = specific,
+            commonCandidates = listOf(common),
+            context = context,
+        )
+
+        assertSame(common, result)
+        assertEquals(listOf(specific to common), context.bindings)
+        assertEquals(emptyList<Triple<Declaration, CjmpMismatchKind, Declaration>>(), context.mismatches)
+    }
+
+    @Test
+    fun `body inferred return error keeps first fit candidate for post check`() {
+        val specific = Declaration("specific", returnType = "Box<Error>", inferredReturnType = true)
+        val common = Declaration("common", returnType = "Int64")
+        val context = Context()
+
+        val result = AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(
+            specific = specific,
+            commonCandidates = listOf(common),
+            context = context,
+        )
+
+        assertSame(common, result)
+        assertEquals(listOf(specific to common), context.bindings)
+        assertEquals(emptyList<Triple<Declaration, CjmpMismatchKind, Declaration>>(), context.mismatches)
+    }
+
+    @Test
     fun `unresolved return type is recorded and never bound`() {
         val specific = Declaration("specific", returnType = null)
+        val common = Declaration("common", returnType = "Int64")
+        val context = Context()
+
+        val result = AbstractCjmpMatcher.matchSpecificAgainstPotentialCommon(
+            specific = specific,
+            commonCandidates = listOf(common),
+            context = context,
+        )
+
+        assertEquals(null, result)
+        assertEquals(emptyList<Pair<Declaration, Declaration>>(), context.bindings)
+        assertEquals(listOf(Triple(specific, CjmpMismatchKind.TYPE_NOT_RESOLVED, common)), context.mismatches)
+    }
+
+    @Test
+    fun `explicit erroneous return type is not deferred`() {
+        val specific = Declaration("specific", returnType = "Error")
         val common = Declaration("common", returnType = "Int64")
         val context = Context()
 
@@ -203,7 +257,7 @@ class AbstractCjmpMatcherTest {
     }
 
     @Test
-    fun `inferred return containing nested errors is unresolved and never bound`() {
+    fun `inferred return containing nested body errors keeps the first fit candidate`() {
         val specific = Declaration("specific", returnType = "Box<Error>", inferredReturnType = true)
         val common = Declaration("common", returnType = "Box<String>")
         val context = Context()
@@ -214,8 +268,8 @@ class AbstractCjmpMatcherTest {
             context = context,
         )
 
-        assertEquals(null, result)
-        assertEquals(emptyList<Pair<Declaration, Declaration>>(), context.bindings)
-        assertEquals(listOf(Triple(specific, CjmpMismatchKind.TYPE_NOT_RESOLVED, common)), context.mismatches)
+        assertSame(common, result)
+        assertEquals(listOf(specific to common), context.bindings)
+        assertEquals(emptyList<Triple<Declaration, CjmpMismatchKind, Declaration>>(), context.mismatches)
     }
 }

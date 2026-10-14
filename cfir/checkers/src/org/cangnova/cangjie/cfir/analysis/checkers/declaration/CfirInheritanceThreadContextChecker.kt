@@ -17,7 +17,7 @@ import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
  * ThreadContext 继承约束检查器。
@@ -38,7 +38,7 @@ object CfirInheritanceThreadContextChecker : CfirClassLikeChecker() {
         // struct 不能继承类；只有普通 class 与 interface 可能 `<: ThreadContext`。
         if (declaration !is CfirClass && declaration !is CfirInterface) return
         if (!declaration.directlyInheritsThreadContext()) return
-        checkThreadContextInheritance(declaration, declaration.source, reporter)
+        checkThreadContextInheritance(declaration, declaration.classLikeWholeDeclarationDiagnosticSource(), reporter)
     }
 }
 
@@ -56,7 +56,7 @@ object CfirExtendThreadContextChecker : CfirExtendChecker() {
         }
         if (!hasThreadContextSuper) return
         val target = CfirExtendSemantics.targetDeclaration(context, declaration) ?: return
-        checkThreadContextInheritance(target, target.source, reporter)
+        checkThreadContextInheritance(target, target.classLikeWholeDeclarationDiagnosticSource(), reporter)
     }
 }
 
@@ -69,7 +69,7 @@ object CfirExtendThreadContextChecker : CfirExtendChecker() {
  context(diagnosticContext: DiagnosticContext)
 private fun checkThreadContextInheritance(
     declaration: CfirClassLikeDeclaration,
-    source: CjSourceElement?,
+    source: AbstractCjSourceElement?,
     reporter: DiagnosticReporter,
 ) {
     // 1) 继承 ThreadContext 的声明带 `open` → NOT_OPEN（官方先判 open 并直接返回）。

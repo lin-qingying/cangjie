@@ -134,7 +134,11 @@ object CfirTypeConstraintsChecker : CfirBasicDeclarationChecker() {
 
         val packageFqName = file?.packageDirective?.packageFqName
         val provider = context.session.symbolProvider
-        return listOfNotNull(packageFqName, StandardNames.BASIC_PACKAGE_FQ_NAME)
+        return listOfNotNull(
+            packageFqName,
+            StandardNames.BASIC_PACKAGE_FQ_NAME,
+            StandardNames.STD_CORE_PACKAGE_FQ_NAME,
+        )
             .distinct()
             .any { candidatePackage ->
                 provider.getClassLikeSymbolByClassId(ClassId(candidatePackage, this)) != null

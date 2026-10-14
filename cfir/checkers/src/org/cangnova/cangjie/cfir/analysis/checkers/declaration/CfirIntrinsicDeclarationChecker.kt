@@ -38,11 +38,11 @@ object CfirIntrinsicDeclarationChecker : CfirFunctionChecker() {
         val function = declaration as? CfirNamedFunction ?: return
 
         val packageName = context.containingFileSymbol?.cfir?.packageDirective?.packageFqName?.asString()
-        if (function.name.asString() != headlessIntrinsicName &&
+        if (function.body == null && function.name.asString() != headlessIntrinsicName &&
             packageName != null && packageName !in allowedIntrinsicPackages
         ) {
             reporter.reportOn(
-                source = function.source,
+                source = function.wholeFunctionDeclarationDiagnosticSource(),
                 factory = CfirErrors.INVALID_INTRINSIC_DECL,
                 a = function.name.asString(),
                 b = packageName,
@@ -55,7 +55,7 @@ object CfirIntrinsicDeclarationChecker : CfirFunctionChecker() {
             function.containingExtend == null
         if (!isTopLevel) {
             reporter.reportOn(
-                source = function.source,
+                source = function.wholeFunctionDeclarationDiagnosticSource(),
                 factory = CfirErrors.INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL,
             )
         }
@@ -86,7 +86,7 @@ object CfirIntrinsicDuplicateChecker : CfirFileChecker() {
                 val previous = firstByName.putIfAbsent(current.name, current)
                 if (previous != null) {
                     reporter.reportOn(
-                        source = current.source,
+                        source = current.wholeFunctionDeclarationDiagnosticSource(),
                         factory = CfirErrors.INTRINSIC_FUNCTION_DUPLICATED,
                         a = current.name.asString(),
                     )

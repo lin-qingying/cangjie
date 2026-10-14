@@ -11,7 +11,7 @@
 
 // FILE: conflictModifier.cj
 class StaticOpen {
-    public static <!INCOMPATIBLE_MODIFIERS!>open<!> func f(): Int64 {
+    public <!INCOMPATIBLE_MODIFIERS!>static<!> <!INCOMPATIBLE_MODIFIERS!>open<!> func f(): Int64 {
         return 1
     }
 }

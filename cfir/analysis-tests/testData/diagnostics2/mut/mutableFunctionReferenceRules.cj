@@ -35,13 +35,10 @@
 //     :133（sema_instance_func_cannot_be_used_in_finalizer）、:181（sema_inout_modify_heap_variable）。
 // CFIR 侧对应名（CfirErrors.kt:162-163、:322、:389、:1629；生产者 CfirFunctionReferenceLegalityChecker.kt:32-77 /
 // CfirMutabilityCheckers.kt:177-225 / CfirInheritanceDeepChecker.kt:398-424）：
-//   USE_MUTABLE_FUNC_ALONE 锚被引用的成员名（与官方 ma.field 一致）；
-//   ILLEGAL_CAPTURE_THIS / CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC 锚 `this`（隐式接收者时回落到字段名，与官方 nre 一致）；
-//   INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE 锚实现成员声明（extend 内优先锚 `public` 修饰符，其首字符即声明首字符）。
-// 范围规则（1.0.5 / 1.1.3 实测两版完全一致）：除 sema_use_mutable_func_alone 用 `MakeRange(ma.field)` 报成员名整段
-// （`inc`，3 个字符）外，本文件涉及的官方 kind 都经 `diag.Diagnose(pos)` / `diag.Diagnose(node, kind)` 报在单个字符上
-//（NameReferenceExpr 首字母、成员声明首字母、成员名首字母）；1.1.3 的 `Diagnose(node, kind)` 在含带参构造器的枚举等
-// 形态上覆盖整条声明，本文件的 kind 未触发该差异。
+//   USE_MUTABLE_FUNC_ALONE 锚被引用的完整成员名；
+//   ILLEGAL_CAPTURE_THIS / CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC 锚完整 `this` token（隐式接收者时回落到字段名）；
+//   INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE 使用 CFIR 对应来源节点：struct 实现为完整函数声明，
+//   extend 实现为完整 `public` token。官方命令行的窄锚不决定 IDE 内联标记范围。
 
 // FILE: structConstructorLambdaCaptureThis.cj
 // 形态：struct 构造器 `init()` 里定义 lambda 并引用实例成员。
@@ -146,7 +143,7 @@ struct MutLambdaThisStruct {
     var value: Int64 = 0
 
     mut func maker(): () -> Int64 {
-        return { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.value }
+        return { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.value }
     }
 }
 
@@ -187,7 +184,7 @@ struct MutNestedFuncThisStruct {
 
     mut func inc(): Unit {
         func inner(): Int64 {
-            return <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.value
+            return <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.value
         }
         let _ = inner()
     }
@@ -228,9 +225,7 @@ class FinalizerFieldOkClass {
 // 形态：class 析构函数里 lambda 捕获实例成员函数。
 // kind：sema_capture_this_or_instance_field_in_func "'read' cannot be captured in the finalizer"
 //      + sema_instance_func_cannot_be_used_in_finalizer "instance function cannot be used in the finalizer"
-// 锚点（两版一致，各 1 个字符）：CAPTURE… 来自 CanTargetOfRefBeCaptured 收到的 NameReferenceExpr（`this` 首字母）；
-//      INSTANCE_FUNC… 来自 CheckForbiddenFuncReferenceAccess（src/Sema/TypeCheckExpr.cpp:210-232，调用点
-//      src/Sema/TypeCheckExpr/NameReferenceExpr.cpp:1080 传 ma.field.Begin()），落在成员名首字母 `r`。
+// CFIR 范围：捕获诊断覆盖 `this` 完整 token，实例函数诊断覆盖 `read` 完整名称 token。
 class FinalizerMemberFuncClass {
     var value: Int64 = 0
 
@@ -239,7 +234,7 @@ class FinalizerMemberFuncClass {
     }
 
     ~init() {
-        let k = { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.<!INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER!>r<!>ead }
+        let k = { => <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.<!INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER!>read<!> }
     }
 }
 
@@ -247,17 +242,17 @@ class FinalizerMemberFuncClass {
 // 形态：class 析构函数里把 `this` 当作独立表达式使用（不是 `this(...)` 调用、也不是 `this.x` 的基表达式）。
 // kind：sema_use_this_as_an_expression_in_func "'this' cannot be used as an expression in the finalizer"
 //       （include/cangjie/Basic/DiagnosticSema.def:289；报告点 src/Sema/TypeCheckReference.cpp:176-188 CheckUsageOfThis）
-// 锚点：`this` 首字符，1 个字符。1.0.5 / 1.1.3 一致。
+// 官方范围为 `this` 首字符；CFIR 内联标记覆盖完整 `this` token。
 // 本项目对应诊断名是 THIS_AS_EXPRESSION_IN_FUNC（CfirDiagnosticsList.kt:511，CfirErrorsDefaultMessages.kt:350；
 // 生产者 CfirExpressionSemanticsChecker.kt:388 open/abstract class 构造器分支、:459 struct/extend 的 mut 成员函数分支，
-// 锚点同样是 `this` 首字母）。官方同一检查还有析构器分支（消息 "…in the finalizer"），本项目目前没有对应生产者，
-// 因此本段按官方期望写标记，CFIR 侧红是缺口。mut 函数与可继承类构造器两个分支由 constructor/superThisCallRules.cj 覆盖。
+// 锚点按本项目诊断范围策略覆盖完整 token。析构器分支由 CFIR 对应实现承接；mut 函数与可继承类构造器两个分支由
+// constructor/superThisCallRules.cj 覆盖。
 class FinalizerThisAloneClass {
     var value: Int64 = 0
     var sink: Int64 = 0
 
     ~init() {
-        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
         this.sink = 1
         let _ = t
     }
@@ -328,9 +323,9 @@ interface StructMutMismatchIMut {
 struct StructMutMismatchStruct <: StructMutMismatchIMut {
     var value: Int64 = 0
 
-    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic func f(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>public func f(): Unit {
         let _ = value
-    }
+    }<!>
 }
 
 // FILE: structInterfaceMutModifierMismatchOtherDirection.cj
@@ -344,9 +339,9 @@ interface StructMutOtherIImm {
 struct T <: StructMutOtherIImm {
     var value: Int64 = 0
 
-    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic mut func g(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>public mut func g(): Unit {
         this.value = 1
-    }
+    }<!>
 }
 
 // FILE: structInterfaceMutModifierConsistentOk.cj
@@ -389,7 +384,7 @@ struct ExtendMutMismatchStruct {
 }
 
 extend ExtendMutMismatchStruct <: ExtendMutMismatchIMut {
-    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic func f(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>public<!> func f(): Unit {
         let _ = value
     }
 }
@@ -410,7 +405,7 @@ struct ExtendMutOtherStruct {
 }
 
 extend ExtendMutOtherStruct <: ExtendMutOtherIImm {
-    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>p<!>ublic mut func g(): Unit {
+    <!INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE!>public<!> mut func g(): Unit {
         this.value = 1
     }
 }

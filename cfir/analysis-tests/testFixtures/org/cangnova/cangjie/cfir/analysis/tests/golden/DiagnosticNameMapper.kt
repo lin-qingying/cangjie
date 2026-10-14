@@ -151,6 +151,7 @@ object DiagnosticNameMapper {
         "ARGUMENT_PASSED_TWICE" to "sema_argument_passed_twice",
         "NAMED_ARGUMENTS_NOT_ALLOWED" to "sema_named_arguments_not_allowed",
         "NAMED_PARAMETER_NOT_FOUND" to "sema_named_parameter_not_found",
+        "UNKNOWN_NAMED_ARGUMENT" to "sema_unknown_named_argument",
         "MIXING_NAMED_AND_POSITIONAL_ARGUMENTS" to "sema_mixing_named_and_positional_arguments",
         "NEED_NAMED_ARGUMENT" to "sema_need_named_argument",
 

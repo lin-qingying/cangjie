@@ -381,11 +381,8 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
      *   （`==`/`!=`/`<`/`>` 等）在 std.core 中经 `extend <类型> <: Equatable/Comparable`
      *   显式声明，是真正的 extend 成员，参与 shadow 检查。
      *
-     * 命中内建签名后对 Library 成员按返回类型分派（对齐官方 `IsBuiltInOperatorFuncInExtend`）：
-     * - 返回类型与内建一致：该路径合成内建实现（无诊断），extend 成员仍作为普通成员参与
-     *   shadow 检查（官方 p1/f5 Bool `==`、g5 Int64 `==` 探针：返回类型正确时报告 shadow）；
-     * - 返回类型与内建不一致：该路径报告 `RETURN_TYPE_INCOMPATIBLE` 取代 shadow
-     *   （官方 p2/f5 Int64 `==`、g6 探针：返回类型错误时不报告 shadow）。
+     * 对显式 extend 成员，只有返回类型与内建结果冲突时才由内建 operator 兼容性规则替代
+     * shadow 诊断；返回类型兼容的比较运算符仍是 std.core 的真实 extend 成员，参与 shadow 检查。
      */
     private fun org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>.isSyntheticPrimitiveBuiltinOperatorExcludedFromShadow(
         currentMember: CfirDeclaration,
@@ -409,18 +406,12 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
             receiverType = receiverType,
             argumentTypes = argumentTypes,
         ) ?: return false
-        // 语言内建（synthetic）成员不构成 shadow parent：官方 f5/g2 探针中
-        // extend Int64 的 `+`/`-`/`<<`（返回类型正确）均无 shadow 诊断。
         if (function.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) return true
-        // std.core extend 成员按返回类型与内建是否一致分派（见上方 KDoc）。
         val currentReturnType = currentFunction.resolvedReturnTypeOrNull(context) ?: return false
         return !AbstractTypeChecker.equalTypes(context.session.typeContext, match.returnType, currentReturnType)
     }
 
-    /**
-     * 读取函数声明的语义返回类型：优先使用已解析 type ref，否则经 checker context
-     * 的 return type calculator 计算，与其他 CFIR 检查器保持一致。
-     */
+    /** 以解析后的或推导的函数返回类型参与内建 operator 兼容性判断。 */
     private fun CfirNamedFunction.resolvedReturnTypeOrNull(context: CheckerContext): ConeCangJieType? {
         (returnTypeRef as? CfirResolvedTypeRef)?.coneType?.let { return it }
         return context.returnTypeCalculator.tryCalculateReturnType(this).coneType

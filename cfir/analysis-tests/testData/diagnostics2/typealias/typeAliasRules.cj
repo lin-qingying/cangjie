@@ -337,12 +337,12 @@ func tarMainCycleTwoWay() {}
 
 func tarMainCycleThreeWay() {}
 
-// ===== 形态 3：环上别名**带形参且形参被使用** → 1.0.5 与 1.1.3 都**不**报未用形参（1.1.3 实测为两条 CYCLE + 两条
-// UNUSED，见形态 8 的版本分歧说明；本段不加 UNUSED 标记，1.0.5 零附加诊断）。既有 typealias7.cj 的形参**未被使用**。
+// ===== 形态 3：环上别名带形参且形参出现在 RHS 的别名实参中。cjc 1.0.0 只报循环；1.1.3 还报告两条未用形参 warning。
+// 默认版本按 1.1 语义检查，故两种诊断都覆盖整个别名声明头部。
 // FILE: typeAliasCycleWithUsedTypeParam.cj
-<!TYPEALIAS_CYCLE!>type TARB4<T><!> = TARB5<T>
+<!TYPEALIAS_CYCLE, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB4<T><!> = TARB5<T>
 
-<!TYPEALIAS_CYCLE!>type TARB5<U><!> = TARB4<U>
+<!TYPEALIAS_CYCLE, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type TARB5<U><!> = TARB4<U>
 
 func tarMainCycleUsedParam() {}
 
@@ -501,9 +501,8 @@ public type TARBg<T> = Array<T>
 func tarMainAccessTypeParamSkipped() {}
 
 // ===== 形态 22：public 别名引用**非泛型** private 别名（`public type TARCd = TARBh`，`private type TARBh = TARBi`）→
-// C 报语法位置上的**别名** `TARBh`（`'public' type 'TARCd' refers to 'private' type 'TARBh'`），**没有 D**
-// （`sema_accessibility` 对非泛型别名目标两版都不产出，探针 p2 a10 实测）；与形态 29 的**泛型**别名目标
-// （`TARBv<Int64>`，D 会穿透到展开后的类）对照。
+// C 报语法位置上的**别名** `TARBh`（`'public' type 'TARCd' refers to 'private' type 'TARBh'`）；D 检查其展开后的 private 类。
+// 独立 cjc 1.0.0 / 1.1.3 探针均确认 C + D，不能因目标是非泛型别名而省略 D。
 // FILE: typeAliasAccessAliasTargetFirst.cj
 private class TARBi {}
 
@@ -541,7 +540,7 @@ func tarMainAccessAndUnused() {}
 // FILE: typeAliasAccessibilityAliasTarget.cj
 private class TARBwS30 {}
 
-type TARBvV23<T> = TARBwS30
+<!TYPEALIAS_EXTERNAL_REFER_INTERNAL, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type <!ACCESSIBILITY_ERROR!>TARBvV23<!><T><!> = TARBwS30
 
 public <!TYPEALIAS_EXTERNAL_REFER_INTERNAL!>type <!ACCESSIBILITY_ERROR!>TARBxV23<!><!> = TARBvV23<Int64>
 

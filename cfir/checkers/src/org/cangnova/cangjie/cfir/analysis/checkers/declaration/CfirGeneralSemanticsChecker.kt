@@ -37,6 +37,7 @@ import org.cangnova.cangjie.name.ClassId
 import java.util.Collections
 import java.util.IdentityHashMap
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -52,6 +53,7 @@ import org.cangnova.cangjie.cfir.session.interopSettings
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.hasPackageOrSubpackages
+import org.cangnova.cangjie.cfir.resolve.directExpansionType
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -238,6 +240,7 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
             reporter.reportOn(
                 source = declaration.source,
                 factory = CfirErrors.OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
+                positioningStrategy = SourceElementPositioningStrategies.SOURCE_NODE,
             )
         }
     }
@@ -755,7 +758,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                         // 违规点在于把 `this` 当值传出，由表达式检查器单独报告。
                         if (targetFunction != null && targetFunction.dispatchReceiverType != null && !targetFunction.status.isStatic) {
                             reporter.reportOn(
-                                source = element.source,
+                                source = element.calleeReference.source ?: element.source,
                                 factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
                                 a = "function",
                             )
@@ -1041,9 +1044,23 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
         if (property.source?.kind == CjFakeSourceElementKind.PropertyFromParameter) return
-        if (context.containingDeclarations.lastOrNull() is CfirInterfaceSymbol) return
         if (property.status.isAbstract || property.symbol.isAbstractLike(context)) return
-        if (property.getter == null && property.setter == null) {
+
+        val getterMissing = property.getter == null
+        val setterMissing = property.setter == null
+        val mutablePropertyRequiresBothAccessors = property.status.isMut && (
+            (!property.status.isStatic && !property.status.isOverride) ||
+                (property.status.isStatic && !property.status.isRedef)
+            )
+        val accessorsMissing = if (mutablePropertyRequiresBothAccessors) {
+            getterMissing || setterMissing
+        } else if (property.status.isMut) {
+            getterMissing && setterMissing
+        } else {
+            getterMissing
+        }
+
+        if (accessorsMissing) {
             reporter.reportOn(
                 source = property.source,
                 factory = CfirErrors.PROPERTY_MUST_HAVE_ACCESSORS,
@@ -1280,16 +1297,19 @@ private fun ConeCangJieType.findFirstExposure(
         else -> {}
     }
 
-    classIdOrNull()?.let { classId ->
-        val referencedDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
-        val referencedVisibility = referencedDeclaration?.accessLevelVisibility()
-        if (referencedVisibility != null && !declarationVisibility.canExpose(referencedVisibility)) {
-            return referencedVisibility
+    if (this !is ConeTypeAliasType) {
+        classIdOrNull()?.let { classId ->
+            val referencedDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
+            val referencedVisibility = referencedDeclaration?.accessLevelVisibility()
+            if (referencedVisibility != null && !declarationVisibility.canExpose(referencedVisibility)) {
+                return referencedVisibility
+            }
         }
     }
 
     if (this is ConeTypeAliasType) {
-        expandedType?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        val resolvedExpandedType = directExpansionType(context.session) ?: expandedType
+        resolvedExpandedType?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
     }
 
     return null

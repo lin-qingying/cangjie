@@ -12,10 +12,10 @@ interface A {
 }
 
 interface B <: A {
-    mut static prop v: Int64 {
+    <!PROPERTY_MUST_HAVE_ACCESSORS!>mut static prop v: Int64 {
         set(v) {
         }
-    }
+    }<!>
 }
 
 main(): Int64 {

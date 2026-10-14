@@ -84,14 +84,24 @@ fun markSingleElement(
 /**
  * 返回第一个非空白/注释子节点；没有时返回自身。
  */
-private fun LighterASTNode.nonFillerFirstChildOrSelf(tree: FlyweightCapableTreeStructure<LighterASTNode>): LighterASTNode =
-    tree.getChildrenArray(this).firstOrNull { it != null && !it.isFiller() } ?: this
+private fun LighterASTNode.nonFillerFirstChildOrSelf(tree: FlyweightCapableTreeStructure<LighterASTNode>): LighterASTNode {
+    var current = this
+    while (true) {
+        val child = tree.getChildrenArray(current).firstOrNull { it != null && !it.isFiller() } ?: return current
+        current = child
+    }
+}
 
 /**
  * 返回最后一个非空白/注释子节点；没有时返回自身。
  */
-private fun LighterASTNode.nonFillerLastChildOrSelf(tree: FlyweightCapableTreeStructure<LighterASTNode>): LighterASTNode =
-    tree.getChildrenArray(this).lastOrNull { it != null && !it.isFiller() } ?: this
+private fun LighterASTNode.nonFillerLastChildOrSelf(tree: FlyweightCapableTreeStructure<LighterASTNode>): LighterASTNode {
+    var current = this
+    while (true) {
+        val child = tree.getChildrenArray(current).lastOrNull { it != null && !it.isFiller() } ?: return current
+        current = child
+    }
+}
 
 /**
  * 判断轻量树节点是否为空白或注释填充节点。

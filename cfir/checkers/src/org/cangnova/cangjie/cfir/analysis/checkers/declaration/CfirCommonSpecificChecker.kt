@@ -48,6 +48,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.cjoDeclarationPosition
+import org.cangnova.cangjie.cfir.hasImplicitOrInferredReturnType
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -818,7 +819,9 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
             return
         }
         reporter.reportOn(
-            source = declaration.source,
+            source = checkNotNull(declaration.wholeDeclarationDiagnosticSource()) {
+                "An unmatched specific declaration must have a syntax-backed declaration range"
+            },
             factory = CfirErrors.NOT_MATCHED,
             a = "specific",
             b = cjmpDeclInfo(declaration),
@@ -869,19 +872,29 @@ object CfirCjmpMatchingChecker : CfirBasicDeclarationChecker() {
             val specificReturnType = specific.returnTypeRef.coneTypeOrNull
             val commonReturnType = common.returnTypeRef.coneTypeOrNull
             if (specificReturnType != null && commonReturnType != null &&
-                !specificReturnType.containsErrorType() && !commonReturnType.containsErrorType()
+                !commonReturnType.containsErrorType()
             ) {
-                val mappedCommonReturnType = CfirTypeSubstitutorByMap.fromTypeParameterMapping(
-                    storage.typeParameterMappingFor(specific),
-                ).substituteOrSelf(commonReturnType)
-                if (!AbstractTypeChecker.isSubtypeOf(
+                val inferredBodyFailed = specificReturnType.containsErrorType() &&
+                        specific.hasImplicitOrInferredReturnType()
+                val incompatible = if (inferredBodyFailed) {
+                    true
+                } else if (specificReturnType.containsErrorType()) {
+                    false
+                } else {
+                    val mappedCommonReturnType = CfirTypeSubstitutorByMap.fromTypeParameterMapping(
+                        storage.typeParameterMappingFor(specific),
+                    ).substituteOrSelf(commonReturnType)
+                    !AbstractTypeChecker.isSubtypeOf(
                         context.session.typeContext,
                         specificReturnType,
                         mappedCommonReturnType,
                     )
-                ) {
+                }
+                if (incompatible) {
                     reporter.reportOn(
-                        source = specific.source,
+                        source = checkNotNull(specific.wholeDeclarationDiagnosticSource()) {
+                            "A matched specific declaration must have a syntax-backed declaration range"
+                        },
                         factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
                         a = specific.symbol.name,
                     )

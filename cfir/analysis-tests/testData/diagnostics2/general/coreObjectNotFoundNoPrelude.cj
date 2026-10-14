@@ -1,4 +1,4 @@
-// RUN_PIPELINE_TILL: FRONTEND
+<!CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE!>// RUN_PIPELINE_TILL: FRONTEND
 // NO_PRELUDE
 // 证据：官方 cjc 1.0.5 / 1.1.3 实测（`--no-prelude` 编译在类成员类型位置引用 `Object`，并在构造器里给它赋值）→ 三条诊断：
 //   sema_undeclared_type_name "undeclared type name 'Object'"（锚 `Object` 首字母 1 个字符）—— 本用例唯一能以内联标记表达的
@@ -18,4 +18,4 @@ class C {
     init() {
         o = 0
     }
-}
+}<!>

@@ -77,8 +77,13 @@ interface CjmpMatchingContext<D : CjmpDeclarationSymbolMarker, T : CjmpTypeParam
 
     fun returnType(declaration: D): Type?
 
-    /** specific 函数体已成功推断出返回类型；其返回兼容性需在 first-fit 配对后检查。 */
-    fun hasInferredReturnType(declaration: D): Boolean
+    /**
+     * 返回类型兼容性尚不可判定时，判断能否保留本候选并延后到配对后的函数体检查。
+     *
+     * CFIR 适配器只允许 specific 的源码隐式返回类型参与延后，并要求 common 返回类型已解析且无错误；
+     * 显式错误返回标注和 common 侧未解析/错误类型仍须拒绝候选。
+     */
+    fun canDeferReturnTypeCompatibility(specific: D, common: D): Boolean
 
     fun areTypesEquivalent(specific: Type?, common: Type?, typeParameterMapping: Map<T, T>): CjmpTypeCompatibility
 

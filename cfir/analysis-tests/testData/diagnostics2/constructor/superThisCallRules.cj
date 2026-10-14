@@ -142,7 +142,7 @@ class NotFirstSuperSub <: NotFirstSuperBase {
 
     init(a: Int64) {
         this.a = a
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper(a)
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>(a)
     }
 }
 
@@ -155,7 +155,7 @@ class NotFirstThisClass {
 
     init() {
         this.a = 1
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>t<!>his(1)
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>this<!>(1)
     }
 
     init(a: Int64) {
@@ -179,9 +179,9 @@ class BranchSuperSub <: BranchSuperBase {
 
     init(a: Int64) {
         if (a > 0) {
-            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper(a)
+            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>(a)
         } else {
-            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper(a + 1)
+            <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>(a + 1)
         }
         this.a = a
     }
@@ -204,7 +204,7 @@ class LambdaSuperSub <: LambdaSuperBase {
     let a: Int64
 
     <!NO_NON_PARAM_CONSTRUCTOR_IN_SUPER_CLASS!>init<!>(a: Int64) {
-        let f = { => <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper(a) }
+        let f = { => <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>(a) }
         this.a = a
         let _ = f
     }
@@ -270,7 +270,7 @@ class PrimaryThisClass <: PrimaryThisBase {
     var a: Int64 = 0
 
     public PrimaryThisClass(z: Int64) {
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>t<!>his()
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>this<!>()
     }
 
     public init() {
@@ -283,7 +283,7 @@ class PrimaryThisClass <: PrimaryThisBase {
 // FILE: multiplePrimaryConstructors.cj
 class MultiPrimaryClass {
     public MultiPrimaryClass(var z!: Int64 = 3) {}
-    <!MULTIPLE_PRIMARY_CONSTRUCTORS!>p<!>ublic MultiPrimaryClass(var x!: String = "3") {}
+    <!MULTIPLE_PRIMARY_CONSTRUCTORS!>public MultiPrimaryClass(var x!: String = "3") {}<!>
 }
 
 // ── 形态 8：open class 构造器里把 `this` 当作独立表达式（`let t = this`）
@@ -295,7 +295,7 @@ open class BareThisOpenCtorClass {
     var a: Int64 = 0
 
     init() {
-        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
         this.a = 1
         let _ = t
     }
@@ -308,7 +308,7 @@ abstract class BareThisAbstractCtorClass {
     var a: Int64 = 0
 
     public init() {
-        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his
+        let t = <!THIS_AS_EXPRESSION_IN_FUNC!>this<!>
         this.a = 1
         let _ = t
     }
@@ -323,7 +323,7 @@ open class ThisArgOpenCtorClass {
     var a: Int64 = 0
 
     init() {
-        this.<!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>s<!>ink(<!THIS_AS_EXPRESSION_IN_FUNC!>t<!>his)
+        this.<!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>sink<!>(<!THIS_AS_EXPRESSION_IN_FUNC!>this<!>)
         this.a = 1
     }
 
@@ -339,47 +339,31 @@ open class ThisArgOpenCtorClass {
 // FILE: thisInStructFieldInitializer.cj
 struct StructFieldInitThis {
     let a: Int64 = 0
-    let b: Int64 = <!ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR!>t<!>his.a
+    let b: Int64 = <!ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR!>this<!>.a
 
     init() {}
 }
 
-// ── 形态 12：interface 成员函数体里用 super（官方无对应 CFIR 名，整段按 SUGGESTED 处理）
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_use_super_in_interface）
-SUGGESTED_MESSAGE: 'super' cannot be used in interface
-SOURCE: src/Sema/TypeCheckReference.cpp:220（CheckUsageOfSuper，interface 分支，`Diagnose(re, …)` 锚 1 个字符）；include/cangjie/Basic/DiagnosticSema.def:207
-锚点：`super` 首字母 1 个字符，Range (3,16)..(3,17)。1.0.5 / 1.1.3 一致。探针 b10。
-*/
+// ── 形态 12：interface 成员函数体里用 super
+// 官方 sema_use_super_in_interface；CFIR 使用 INTERFACE_SUPER_NOT_ALLOWED，完整锚 `super` token。
 // FILE: superInInterface.cj
 interface SuperInInterface {
     func f(): Int64 {
-        return super.f()
+        return <!INTERFACE_SUPER_NOT_ALLOWED!>super<!>.f()
     }
 }
 
-// ── 形态 13：struct 成员函数体里用 super（官方无对应 CFIR 名，整段按 SUGGESTED 处理）
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_super_use_error_inside_non_class）
-SUGGESTED_MESSAGE: 'super' can only be used in class
-SOURCE: src/Sema/TypeCheckReference.cpp:224（CheckUsageOfSuper，outerDecl 不是 CLASS_DECL 分支）；include/cangjie/Basic/DiagnosticSema.def:208
-锚点：`super` 首字母 1 个字符，Range (3,16)..(3,17)。1.0.5 / 1.1.3 一致。探针 b11。继承/访问 open 父类成员的写法
-（struct 继承 class）在本仓库两版 cjc 都不可表达，见"已删除的形态 10"。
-*/
+// ── 形态 13：struct 成员函数体里用 super
+// 官方 sema_super_use_error_inside_non_class；CFIR 使用 STRUCT_SUPER_NOT_ALLOWED，完整锚 `super` token。
 // FILE: superInStruct.cj
 struct SuperInStructClass {
     func f(): Int64 {
-        return super.g()
+        return <!STRUCT_SUPER_NOT_ALLOWED!>super<!>.g()
     }
 }
 
-// ── 形态 14：extend 块里用 super（refactor kind，锚 `super` 整段 5 个字符；官方无对应 CFIR 名）
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_extend_use_super）
-SUGGESTED_MESSAGE: 'super' is not allowed inside an extend declaration
-SOURCE: src/Sema/TypeCheckReference.cpp:225（`DiagnoseRefactor(sema_extend_use_super, re)`，Refactor kind 走 MakeRealRange(re)，锚 re 整段）；include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:148
-锚点：`super` 整段 5 个字符，Range (9,16)..(9,21)。1.0.5 / 1.1.3 一致。探针 c04。
-*/
+// ── 形态 14：extend 块里用 super
+// 官方 sema_extend_use_super；CFIR 使用 EXTEND_SUPER_NOT_ALLOWED，完整锚 `super` token。
 // FILE: superInExtend.cj
 open class ExtendSuperBase {
     func g(): Int64 {
@@ -389,7 +373,7 @@ open class ExtendSuperBase {
 
 extend ExtendSuperBase {
     func f(): Int64 {
-        return super.g()
+        return <!EXTEND_SUPER_NOT_ALLOWED!>super<!>.g()
     }
 }
 
@@ -401,7 +385,7 @@ class ThisCallInMemberClass {
     init() {}
 
     func f(): Unit {
-        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>t<!>his()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>this<!>()
     }
 }
 
@@ -425,7 +409,7 @@ class MemberSuperSub <: MemberSuperBase {
     }
 
     func f(): Unit {
-        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper(1)
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>super<!>(1)
     }
 }
 

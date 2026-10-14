@@ -16,19 +16,19 @@ extend R1 {
     }
 
     public mut func foo2() {
-        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i = 2}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.i = 2}
 
         func goo() {
-            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i = 2
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.i = 2
         }
         return 0
     }
 
     public mut func foo3() {
-        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.i}
 
         func goo() {
-            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>this<!>.i
         }
         return 0
     }

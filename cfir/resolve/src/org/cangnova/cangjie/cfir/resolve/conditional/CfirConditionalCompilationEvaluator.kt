@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationError
 import org.cangnova.cangjie.cfir.session.CfirConditionalCompilationOperator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.source.CjSourceElement
 
 /** 条件表达式求值结果；非法条件不能静默降级为 false。 */
 public sealed interface CfirConditionalCompilationResult {
@@ -31,6 +33,8 @@ public sealed interface CfirConditionalCompilationResult {
         public val conditionName: String? = null,
         public val rightValue: String? = null,
         public val operator: CfirConditionalCompilationOperator? = null,
+        /** 失败表达式的完整 PSI / LightTree source，不裁剪其 token 范围。 */
+        public val source: CjSourceElement? = null,
     ) : CfirConditionalCompilationResult
 }
 
@@ -61,7 +65,7 @@ public class CfirConditionalCompilationEvaluator(
         is CfirBinaryOp -> when (expression.kind) {
             CfirBinaryOpKind.AND -> combine(expression.left, expression.right, and = true)
             CfirBinaryOpKind.OR -> combine(expression.left, expression.right, and = false)
-            else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+            else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = expression.source)
         }
         is CfirComparisonExpression -> compare(
             expression.operation,
@@ -70,7 +74,7 @@ public class CfirConditionalCompilationEvaluator(
         )
         is CfirFunctionCall -> evaluateFunctionCall(expression)
         is CfirQualifiedAccessExpression -> evaluateBareCondition(expression)
-        else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+        else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = expression.source)
     }
 
     private fun combine(
@@ -99,16 +103,14 @@ public class CfirConditionalCompilationEvaluator(
     }
 
     private fun evaluateFunctionCall(call: CfirFunctionCall): CfirConditionalCompilationResult {
-        val operator = (call.calleeReference as? CfirNamedReference)?.name ?: return invalid()
+        val operator = (call.calleeReference as? CfirNamedReference)?.name
+            ?: return invalid(source = call.source)
         if (operator == OperatorNameConventions.NOT) {
             val operand = call.explicitReceiver ?: call.argumentList.arguments.singleOrNull()
-                ?: return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
-            val operandName = (operand.unwrapNamedArgument() as? CfirQualifiedAccessExpression)
-                ?.let { it.calleeReference as? CfirNamedReference }
-                ?.name
-                ?.asString()
+                ?: return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = call.source)
+            val operandName = (operand.unwrapNamedArgument() as? CfirQualifiedAccessExpression)?.conditionName()
             if (operandName !in setOf("debug", "test")) {
-                return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+                return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = operand.source)
             }
             return when (val result = evaluateBoolean(operand)) {
                 CfirConditionalCompilationResult.Enabled -> CfirConditionalCompilationResult.Disabled
@@ -118,7 +120,9 @@ public class CfirConditionalCompilationEvaluator(
         }
 
         val operands = listOfNotNull(call.explicitReceiver) + call.argumentList.arguments
-        if (operands.size != 2) return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+        if (operands.size != 2) {
+            return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = call.source)
+        }
         val comparison = when (operator) {
             OperatorNameConventions.EQUALS -> CfirComparisonOp.EQ
             OperatorNameConventions.NOT_EQUALS -> CfirComparisonOp.NE
@@ -126,18 +130,26 @@ public class CfirConditionalCompilationEvaluator(
             OperatorNameConventions.COMPARE_GT -> CfirComparisonOp.GT
             OperatorNameConventions.COMPARE_LTEQ -> CfirComparisonOp.LE
             OperatorNameConventions.COMPARE_GTEQ -> CfirComparisonOp.GE
-            else -> return invalid(CfirConditionalCompilationError.UNSUPPORTED_OPERATOR)
+            else -> {
+                val left = operands[0].unwrapNamedArgument()
+                val condition = left as? CfirQualifiedAccessExpression
+                return invalid(
+                    reason = CfirConditionalCompilationError.UNSUPPORTED_OPERATOR,
+                    conditionName = condition?.conditionName(),
+                    source = condition?.source ?: left.source,
+                )
+            }
         }
         return compare(comparison, operands[0], operands[1])
     }
 
     private fun evaluateBareCondition(expression: CfirQualifiedAccessExpression): CfirConditionalCompilationResult {
-        val name = (expression.calleeReference as? CfirNamedReference)?.name?.asString()
-            ?: return invalid()
+        val name = expression.conditionName()
+            ?: return invalid(source = expression.source)
         return when (name) {
             "debug" -> result(settings.debug)
             "test" -> result(settings.test)
-            else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+            else -> invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = expression.source)
         }
     }
 
@@ -146,22 +158,32 @@ public class CfirConditionalCompilationEvaluator(
         left: CfirExpression,
         right: CfirExpression,
     ): CfirConditionalCompilationResult {
-        val conditionName = (left.unwrapNamedArgument() as? CfirQualifiedAccessExpression)
-            ?.let { it.calleeReference as? CfirNamedReference }
-            ?.name
-            ?.asString()
-            ?: return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION)
+        val condition = left.unwrapNamedArgument() as? CfirQualifiedAccessExpression
+            ?: return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = left.source)
+        val conditionName = condition.conditionName()
+            ?: return invalid(CfirConditionalCompilationError.INVALID_EXPRESSION, source = condition.source)
         if (conditionName == "debug" || conditionName == "test") {
-            return invalid(CfirConditionalCompilationError.UNSUPPORTED_OPERATOR)
+            return invalid(CfirConditionalCompilationError.UNSUPPORTED_OPERATOR, source = condition.source)
         }
 
         val actual = conditionValue(conditionName)
-            ?: return invalid(CfirConditionalCompilationError.UNKNOWN_CONDITION)
-        val expected = (right.unwrapNamedArgument() as? CfirLiteralExpression)?.value as? String
-            ?: return invalid(CfirConditionalCompilationError.INVALID_VALUE)
+            ?: return invalid(
+                reason = CfirConditionalCompilationError.UNKNOWN_CONDITION,
+                conditionName = conditionName,
+                source = condition.source,
+            )
+        val rightExpression = right.unwrapNamedArgument()
+        // 字面量 value 也保存数字 token 的原文，因此这里必须检查 raw 语法 kind。
+        // 字符串插值是独立表达式节点，不属于 STRING literal。
+        val expected = (rightExpression as? CfirLiteralExpression)
+            ?.takeIf { it.kind == CfirLiteralKind.STRING }
+            ?.value as? String
+            ?: return invalid(CfirConditionalCompilationError.INVALID_VALUE, source = rightExpression.source)
         if (conditionName == "cjc_version") {
-            val actualVersion = parseVersion(actual) ?: return invalid(CfirConditionalCompilationError.INVALID_VERSION)
-            val expectedVersion = parseVersion(expected) ?: return invalid(CfirConditionalCompilationError.INVALID_VERSION)
+            val actualVersion = parseVersion(actual)
+                ?: return invalid(CfirConditionalCompilationError.INVALID_VERSION, source = condition.source)
+            val expectedVersion = parseVersion(expected)
+                ?: return invalid(CfirConditionalCompilationError.INVALID_VERSION, source = condition.source)
             return result(compareVersions(actualVersion, expectedVersion, operation))
         }
         val builtin = CfirConditionalCompilationCatalog.builtin(conditionName)
@@ -171,6 +193,7 @@ public class CfirConditionalCompilationEvaluator(
                 reason = CfirConditionalCompilationError.UNSUPPORTED_OPERATOR,
                 conditionName = conditionName,
                 operator = catalogOperator,
+                source = condition.source,
             )
         }
         val supportedValues = builtin?.supportedValues
@@ -179,6 +202,7 @@ public class CfirConditionalCompilationEvaluator(
                 reason = CfirConditionalCompilationError.UNSUPPORTED_VALUE,
                 conditionName = conditionName,
                 rightValue = expected,
+                source = condition.source,
             )
         }
         return result(compareStrings(actual, expected, operation))
@@ -232,11 +256,13 @@ public class CfirConditionalCompilationEvaluator(
         conditionName: String? = null,
         rightValue: String? = null,
         operator: CfirConditionalCompilationOperator? = null,
+        source: CjSourceElement? = null,
     ): CfirConditionalCompilationResult = CfirConditionalCompilationResult.Invalid(
         reason = reason,
         conditionName = conditionName,
         rightValue = rightValue,
         operator = operator,
+        source = source,
     )
 
     private fun CfirComparisonOp.toCatalogOperator(): CfirConditionalCompilationOperator = when (this) {
@@ -250,4 +276,7 @@ public class CfirConditionalCompilationEvaluator(
 
     private fun CfirExpression.unwrapNamedArgument(): CfirExpression =
         (this as? CfirNamedArgumentExpression)?.expression ?: this
+
+    private fun CfirQualifiedAccessExpression.conditionName(): String? =
+        (calleeReference as? CfirNamedReference)?.name?.asString()
 }

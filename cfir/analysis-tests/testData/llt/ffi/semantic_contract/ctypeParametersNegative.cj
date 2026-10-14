@@ -6,7 +6,7 @@ foreign func rejectOption(value: <!INVALID_CFUNC_PARAMETER_TYPE!>?Int64<!>): Uni
 foreign func rejectInterface(value: <!INVALID_CFUNC_PARAMETER_TYPE!>CType<!>): <!INVALID_CFUNC_RETURN_TYPE!>CType<!>
 foreign func rejectFunction(value: <!INVALID_CFUNC_PARAMETER_TYPE!>(Int64) -> Unit<!>): Unit
 foreign func rejectUnit(<!CFUNC_CANNOT_HAVE_UNIT_ARGS!>value: Unit<!>): Unit
-foreign func rejectNamed(<!CFUNC_CANNOT_HAVE_NAMED_ARGS!>value!: Int64<!>): Unit
+foreign func rejectNamed(<!CFUNC_CANNOT_HAVE_NAMED_ARGS!>value<!>!: Int64): Unit
 foreign func returnArray(): <!VARRAY_IN_CFUNC!>VArray<Int64, $2><!>
 
 main() { 0 }

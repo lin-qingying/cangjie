@@ -4,10 +4,8 @@
 // （官方整包编译时一处 parse 错误会屏蔽其余段的语义诊断，且 HasPrevDiag 会吞掉同起点同文案的重复诊断）。
 // 1.1.3 本机在 CHIR/codegen 阶段偶有 LLVM 崩溃，崩在语义检查之后，语义诊断 JSON 仍完整产出，本文件按语义诊断写期望。
 // 除特别注明外，两版 kind、消息、MainHint.Range 完全一致；本文件所有形态都不触发版本差异，无需按 LANGUAGE_VERSION 拆分。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围；
-// 官方非 refactor kind 的 `Diagnose(node, kind)` 退化为 `node.GetBegin()` 一个字符
-// （include/cangjie/Basic/DiagnosticEngine.h:844-857），refactor kind 走 `DiagnoseRefactor(kind, node)` =
-// `MakeRange(node.GetBegin(), node.GetEnd())`（同文件 :908-911）。本文件除 sema_mismatched_types_because 外全是单字符锚点。
+// 范围口径：上面的 CJC 位置只用于记录官方诊断语义，不复制其单字符 CLI 锚点。
+// CFIR 标记必须覆盖完整相关 token；多 token 语法错误覆盖最小完整语法单元，空函数体覆盖整个 block。
 //
 // 官方实现（external/cangjie_compiler，checkout 在 tag v1.0.0）：
 //   - NOT_A_TYPE：三个报告点，全部是 `Diagnose(node 或 position, kind)` 的单字符锚点
@@ -69,8 +67,8 @@
 
 // FILE: funcNameAsParamType.cj
 // 形态：把顶层函数名写在形参类型位置。官方 PreCheck.cpp:404（RefType 分支）。
-// kind：sema_not_a_type "'trAliasTargetFunc' is not a type"，锚 RefType 首字符（1 个字符）。
-// 1.0.5 / 1.1.3 一致，Range 为 `t` 单字符。
+// kind：sema_not_a_type "'trAliasTargetFunc' is not a type"；CFIR 标记覆盖完整类型名称 token。
+// 1.0.5 / 1.1.3 语义一致。
 func trAliasTargetFunc(): Int64 {
     return 0
 }
@@ -81,7 +79,7 @@ func trFuncAsParamType(x: <!NOT_A_TYPE!>trAliasTargetFunc<!>): Unit {
 
 // FILE: localNameAsType.cj
 // 形态：把同作用域的局部 `let` 变量名写在类型位置。官方 PreCheck.cpp:404（RefType 分支）。
-// kind：sema_not_a_type "'loc' is not a type"，锚 `l`（1 个字符）。1.0.5 / 1.1.3 一致。
+// kind：sema_not_a_type "'loc' is not a type"；CFIR 标记覆盖完整类型名称 token。1.0.5 / 1.1.3 语义一致。
 func trLocalNameAsType(): Unit {
     let loc = 1
     var a: <!NOT_A_TYPE!>loc<!> = 0
@@ -90,8 +88,8 @@ func trLocalNameAsType(): Unit {
 
 // FILE: typeAliasRhsIsFunc.cj
 // 形态：typealias 的右侧是函数名。官方 PreCheck.cpp:724 SetTypeAliasDeclTy
-//（RHS 类型树 Ty 不正确时在 `*tad.type` 上补报，锚 RHS 根类型首字符）。
-// kind：sema_not_a_type "'trFuncAliasTarget' is not a type"，锚 `t`（1 个字符）。1.0.5 / 1.1.3 一致。
+//（RHS 类型树 Ty 不正确时在 `*tad.type` 上补报）；CFIR 标记覆盖 RHS 根类型的完整名称 token。
+// kind：sema_not_a_type "'trFuncAliasTarget' is not a type"。1.0.5 / 1.1.3 语义一致。
 func trFuncAliasTarget(): Int64 {
     return 0
 }
@@ -100,8 +98,8 @@ type trFuncAlias = <!NOT_A_TYPE!>trFuncAliasTarget<!>
 
 // FILE: enumConstructorAsType.cj
 // 形态：把枚举构造器写在类型位置（`EnumType.Ctor`）。官方 PreCheck.cpp:497（QualifiedType 分支，
-// baseType 解析成枚举类型、field 是构造器而非类型声明 → 锚 qt.field 首字符）。
-// kind：sema_not_a_type "'A' is not a type"，锚 `A`（1 个字符）。1.0.5 / 1.1.3 一致。
+// baseType 解析成枚举类型、field 是构造器而非类型声明）。
+// kind：sema_not_a_type "'A' is not a type"；CFIR 标记覆盖完整构造器名称 token。1.0.5 / 1.1.3 语义一致。
 enum trEnumForCtorType {
     | A
     | B
@@ -172,7 +170,7 @@ func trGenericTypeAsValue(): Unit {
 // FILE: enumTypeCalledAsConstructor.cj
 // 形态：把枚举类型名当构造器调用 `EnumName(args)`。
 // kind：sema_no_match_operator_function_call "no matching function for operator '()' function call"
-//      （DiagnosticSema.def:98），锚被调表达式的首字符 `t`（1 个字符）。1.0.5 / 1.1.3 一致。
+//      （DiagnosticSema.def:98）。CFIR 标记覆盖被调用的完整 enum 名称 token。1.0.5 / 1.1.3 语义一致。
 // 本段不写 CFIR 的 ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR：官方 v1.0.0 没有同名 kind（见文件头），
 // 官方实测量化到 NO_MATCH_OPERATOR_FUNCTION_CALL（DiagnosticNameMapper.kt:69 有该映射）。
 enum trCalledEnum {
@@ -181,7 +179,7 @@ enum trCalledEnum {
 }
 
 func trEnumCalledAsCtor(): Unit {
-    let x = <!NO_MATCH_OPERATOR_FUNCTION_CALL!>t<!>rCalledEnum(1)
+    let x = <!NO_MATCH_OPERATOR_FUNCTION_CALL!>trCalledEnum<!>(1)
     let _ = x
 }
 
@@ -206,39 +204,38 @@ func trEmptyBodyClass(): trEmptyBodyTarget <!MISMATCHED_TYPES_BECAUSE!>{
 // 形态：复合赋值左值是 class 实例（类型不在 COMPOUND_ASSIGN_TYPE_MAP 内）。
 // 官方 AssignExpr.cpp:431 PreCheckCompoundAssign → `diag.Diagnose(ae, kind, "compound assignment expression")`，
 // 锚赋值表达式首字符（`ae` 首字符 = 左值首字符，1 个字符）。
-// kind：sema_type_incompatible "type incompatible in this compound assignment expression"，锚 `p`（1 个字符）。
-// 1.0.5 / 1.1.3 一致。
+// kind：sema_type_incompatible "type incompatible in this compound assignment expression"。
+// CFIR 标记覆盖最小完整复合赋值单元。1.0.5 / 1.1.3 语义一致。
 class trCompoundTarget {
 }
 
 func trCompoundOnClass(): Unit {
     var p = trCompoundTarget()
-    <!TYPE_INCOMPATIBLE!>p<!> += 1
+    <!TYPE_INCOMPATIBLE!>p += 1<!>
     let _ = p
 }
 
 // FILE: exponentAssignWrongRhs.cj
 // 形态：`**=` 右值不是 Int64 / Float64。官方 AssignExpr.cpp:378（`diag.Diagnose(ae, kind, "assignment")`，
 // 锚赋值表达式首字符）。右值是字面量但 CheckExponentByBaseTy 先失败，所以本段没有 CANNOT_CONVERT_LITERAL。
-// kind：sema_type_incompatible "type incompatible in this assignment"，锚 `u`（1 个字符）。1.0.5 / 1.1.3 一致。
+// kind：sema_type_incompatible "type incompatible in this assignment"；CFIR 标记覆盖整个幂赋值单元。1.0.5 / 1.1.3 语义一致。
 func trExponentAssign(): Unit {
     var u = 2
-    <!TYPE_INCOMPATIBLE!>u<!> **= true
+    <!TYPE_INCOMPATIBLE!>u **= true<!>
     let _ = u
 }
 
 // FILE: catchUnionNoCommonSupertype.cj
 // 形态：catch 的联合异常类型没有最小公共父类型（trCaughtExc 直接继承 Exception，与 Error 分支无公共父类型）。
 // 官方 TypeCheckPattern.cpp:613 ChkExceptTypePattern（每个类型各自合法，JoinAndMeet 失败后
-// `diag.Diagnose(etp, kind, "pattern")`，锚 ExceptTypePattern 首字符 = 模式变量的首字母）。
-// kind：sema_type_incompatible "type incompatible in this pattern"，锚 `e`（1 个字符）。1.0.5 / 1.1.3 一致。
+// `diag.Diagnose(etp, kind, "pattern")`）。CFIR 标记覆盖整个最小 catch pattern 语法单元。1.0.5 / 1.1.3 语义一致。
 class trCaughtExc <: Exception {
 }
 
 func trCatchUnion(): Int64 {
     try {
         throw trCaughtExc()
-    } catch (<!TYPE_INCOMPATIBLE!>e<!>: trCaughtExc | Error) {
+    } catch <!TYPE_INCOMPATIBLE!>(e: trCaughtExc | Error)<!> {
         return 1
     }
 }

@@ -23,7 +23,7 @@ extend<T> UnrelatedExtendOwners<T> {
 }
 
 interface DefaultContract<T> {
-    public func inherited(value: T): Unit { }
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> func inherited(value: T): Unit { }
 }
 
 interface Bound { }

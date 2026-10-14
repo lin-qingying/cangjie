@@ -57,6 +57,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         val result = expression.result ?: return
         val source = result.source as? AbstractCjSourceElement ?: return
         val containingFunction = expression.target.labeledElement
+        if (containingFunction is CfirConstructor && containingFunction.status.isStatic) return
         if (
             containingFunction is CfirNamedFunction &&
             containingFunction.hasImplicitOrInferredReturnType()

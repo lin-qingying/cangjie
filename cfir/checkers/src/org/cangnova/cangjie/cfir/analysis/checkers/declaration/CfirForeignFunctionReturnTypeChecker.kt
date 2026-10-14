@@ -13,7 +13,7 @@ import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
-        if (!declaration.status.isC) return
+        if (!declaration.status.isC || declaration.hasPositionalParameterAfterNamed()) return
         val ref = declaration.returnTypeRef
         val type = ref.coneTypeOrNull?.fullyExpandedType(context.session) ?: return
         if (type is ConeErrorType) return
@@ -27,12 +27,17 @@ object CfirForeignFunctionReturnTypeChecker : CfirFunctionChecker() {
 object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFunction) {
-        if (!declaration.status.isC) return
+        if (!declaration.status.isC || declaration.hasPositionalParameterAfterNamed()) return
         for (parameter in declaration.valueParameters) {
             val ref = parameter.returnTypeRef
             val type = ref.coneTypeOrNull?.fullyExpandedType(context.session) ?: continue
             if (type is ConeErrorType) continue
-            if (parameter.isNamed) reporter.reportOn(parameter.source, CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS)
+            if (parameter.isNamed) {
+                reporter.reportOn(
+                    parameter.valueParameterNameDiagnosticSource(),
+                    CfirErrors.CFUNC_CANNOT_HAVE_NAMED_ARGS,
+                )
+            }
             if (type.isUnit) {
                 val nameSource = parameter.valueParameterNameDiagnosticSource()
                 val typeSource = ref.source
@@ -41,10 +46,24 @@ object CfirForeignFunctionParameterTypeChecker : CfirFunctionChecker() {
                 } else parameter.source
                 reporter.reportOn(source, CfirErrors.CFUNC_CANNOT_HAVE_UNIT_ARGS)
             } else if (!CfirCTypeSemantics.isMetCType(context.session, type)) {
+                // 该诊断工厂的 source 类型是 CjTypeReference，锚完整类型引用，不扩展到形参名。
                 reporter.reportOn(ref.source, CfirErrors.INVALID_CFUNC_PARAMETER_TYPE, type)
             }
         }
     }
+}
+
+/** 语法已拒绝具名参数后再次出现无名参数的 CFunc 声明，不再级联签名语义诊断。 */
+private fun CfirFunction.hasPositionalParameterAfterNamed(): Boolean {
+    var encounteredNamedParameter = false
+    for (parameter in valueParameters) {
+        if (parameter.isNamed) {
+            encounteredNamedParameter = true
+        } else if (encounteredNamedParameter) {
+            return true
+        }
+    }
+    return false
 }
 
 /** 从 CFIR 保留的类型语法定位 CFunc 内部类型；不重新解析 PSI 或短名查找 typealias。 */

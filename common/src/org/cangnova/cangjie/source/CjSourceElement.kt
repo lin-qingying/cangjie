@@ -1280,6 +1280,19 @@ val AbstractCjSourceElement?.psi: PsiElement?
     get() = (this as? CjPsiSourceElement)?.psi
 
 /**
+ * 尽可能将源码元素还原为承载它的 PSI。
+ *
+ * LightTree source 只保存树节点与精确区间；当该树包装自 PSI 时，可以还原对应 PSI 节点，
+ * 供 IDE 导航与引用搜索使用。纯 LightTree 和二进制 source 没有 PSI 时返回 null。
+ */
+val AbstractCjSourceElement?.psiOrNull: PsiElement?
+    get() = when (this) {
+        is CjPsiSourceElement -> psi
+        is CjLightSourceElement -> unwrapToCjPsiSourceElement()?.psi
+        else -> null
+    }
+
+/**
  * 返回源元素可直接取得的文本内容。
  */
 val CjSourceElement?.text: CharSequence?

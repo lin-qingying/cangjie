@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import java.math.BigInteger
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
@@ -13,6 +15,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
@@ -45,48 +48,26 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
         val call = expression.compoundAssignmentCall() ?: return
         val operatorName = expression.augmentedOperation ?: return
         if (expression.lValue.isBuiltinArrayRangeSubscript(context)) return
-        val leftType = expression.lValue.coneTypeOrNull
-        if (leftType !is ConePrimitiveType) {
-            // 重载解析失败时，operator call 自己拥有 INVALID_BINARY_OPERATOR 等语义诊断；
-            // AssignExpr 只能在调用成功、但返回值不能写回左值时报告 TYPE_INCOMPATIBLE。
-            if (call.coneTypeOrNull is ConeErrorType) return
-            if (!expression.hasApplicableNonPrimitiveCompoundOperation(context)) {
-                reportCompoundAssignmentTypeIncompatible(expression)
-            }
+
+        expression.invalidCompoundAssignmentReason(context)?.let { reason ->
+            val source = expression.source as? AbstractCjSourceElement ?: return
+            reporter.reportOn(source, CfirErrors.TYPE_INCOMPATIBLE, reason)
             return
         }
+
+        val leftType = expression.lValue.coneTypeOrNull
+        if (leftType !is ConePrimitiveType) return
         val leftKind = leftType.kind
 
         val allowedKinds = allowedCompoundAssignmentKinds(operatorName) ?: return
-        if (leftKind !in allowedKinds) {
-            val source = expression.lValue.source as? AbstractCjSourceElement ?: return
-            reporter.reportOn(
-                source,
-                CfirErrors.TYPE_INCOMPATIBLE,
-                "compound assignment expression",
-            )
-            return
-        }
+        if (leftKind !in allowedKinds) return
 
         val rightExpression = call.argumentList.arguments.singleOrNull()
+        if (operatorName == OperatorNameConventions.EXPONENTIATION) return
         if (checkRightLiteralRange(rightExpression, leftType)) return
         if (operatorName == OperatorNameConventions.LEFT_SHIFT || operatorName == OperatorNameConventions.RIGHT_SHIFT) {
             checkShiftCount(rightExpression, leftKind)
         }
-    }
-
-    /**
-     * 复合赋值必须在其专有 precheck 层报告类型不兼容，而不能把解糖后 operator 的结果
-     * 当作普通赋值 RHS 产生 `TYPE_MISMATCH`。官方定位在赋值左侧的首字符。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun reportCompoundAssignmentTypeIncompatible(expression: CfirAssignment) {
-        val source = expression.source as? AbstractCjSourceElement ?: return
-        reporter.reportOn(
-            source,
-            CfirErrors.TYPE_INCOMPATIBLE,
-            "compound assignment expression",
-        )
     }
 
     /**
@@ -178,6 +159,53 @@ private fun CfirAssignment.hasApplicableNonPrimitiveCompoundOperation(context: C
 }
 
 /**
+ * 返回复合赋值专属的类型不兼容原因。
+ *
+ * 赋值节点是复合语法的语义 owner：已知名义类型左值的未解析 operator 由赋值检查报告；
+ * 类型形参仍保留二元 operator 的根诊断。`**=` 则由官方独立的指数约束检查负责，不能泄漏为
+ * 解糖调用上的通用 operator 诊断。
+ */
+private fun CfirAssignment.invalidCompoundAssignmentReason(context: CheckerContext): String? {
+    val operatorName = augmentedOperation ?: return null
+    val call = compoundAssignmentCall() ?: return null
+    if (lValue.isBuiltinArrayRangeSubscript(context)) return null
+
+    val leftType = lValue.coneTypeOrNull ?: return null
+    if (leftType is ConeErrorType) return null
+
+    if (leftType is ConePrimitiveType) {
+        val allowedKinds = allowedCompoundAssignmentKinds(operatorName) ?: return null
+        if (leftType.kind !in allowedKinds) return "compound assignment expression"
+        return if (operatorName == OperatorNameConventions.EXPONENTIATION &&
+            call.isUnresolvedWithValidOperands()
+        ) {
+            "assignment"
+        } else {
+            null
+        }
+    }
+
+    val resultType = call.coneTypeOrNull ?: return null
+    if (resultType is ConeErrorType) {
+        if (leftType.fullyExpandedType(context.session) is ConeTypeParameterType) return null
+        return "compound assignment expression".takeIf { call.isUnresolvedWithValidOperands() }
+    }
+
+    return "compound assignment expression".takeUnless { hasApplicableNonPrimitiveCompoundOperation(context) }
+}
+
+/** 仅在操作数均有效、且 operator 名称查找失败时由复合赋值节点接管诊断。 */
+private fun CfirFunctionCall.isUnresolvedWithValidOperands(): Boolean {
+    if ((calleeReference as? CfirDiagnosticHolder)?.diagnostic !is ConeUnresolvedNameError) return false
+    val receiverType = explicitReceiver?.coneTypeOrNull ?: return false
+    if (receiverType is ConeErrorType) return false
+    return argumentList.arguments.all { argument ->
+        val argumentType = argument.coneTypeOrNull
+        argumentType != null && argumentType !is ConeErrorType
+    }
+}
+
+/**
  * 判断函数调用是否是非法 primitive 复合赋值调用。
  *
  * 该函数供函数调用检查器跳过重复类型诊断时使用：若所属赋值左值的 primitive kind 不在
@@ -200,20 +228,7 @@ internal fun CfirFunctionCall.isInvalidPrimitiveCompoundAssignmentCall(context: 
  */
 internal fun CfirFunctionCall.isInvalidCompoundAssignmentCall(context: CheckerContext): Boolean {
     val assignment = compoundAssignment(context) ?: return false
-    val leftType = assignment.lValue.coneTypeOrNull
-    return when (leftType) {
-        is ConePrimitiveType -> {
-            val operatorName = operatorName() ?: return false
-            operatorName in COMPOUND_ASSIGNMENT_OPERATOR_NAMES &&
-                leftType.kind !in (allowedCompoundAssignmentKinds(operatorName) ?: return false)
-        }
-
-        null -> false
-        else -> {
-            val resultType = assignment.compoundAssignmentCall()?.coneTypeOrNull ?: return false
-            resultType !is ConeErrorType && !assignment.hasApplicableNonPrimitiveCompoundOperation(context)
-        }
-    }
+    return assignment.invalidCompoundAssignmentReason(context) != null
 }
 
 /**
@@ -280,8 +295,12 @@ private fun allowedCompoundAssignmentKinds(operatorName: Name): Set<PrimitiveTyp
     OperatorNameConventions.MINUS,
     OperatorNameConventions.TIMES,
     OperatorNameConventions.DIV,
-    OperatorNameConventions.EXPONENTIATION,
     -> NUMERIC_COMPOUND_ASSIGNMENT_KINDS
+
+    OperatorNameConventions.EXPONENTIATION -> setOf(
+        PrimitiveTypeKind.INT64,
+        PrimitiveTypeKind.FLOAT64,
+    )
 
     OperatorNameConventions.REM,
     OperatorNameConventions.AND,

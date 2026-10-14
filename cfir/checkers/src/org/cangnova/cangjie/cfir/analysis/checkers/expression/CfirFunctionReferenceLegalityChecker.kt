@@ -1,8 +1,10 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -64,6 +66,16 @@ object CfirFunctionReferenceLegalityChecker : CfirQualifiedAccessChecker() {
 
         val targetFunction = targetDeclaration as? CfirNamedFunction ?: return
         val explicitReceiver = expression.explicitReceiver
+
+        if (context.findClosestDeclaration<CfirFinalizer>() != null &&
+            targetFunction.dispatchReceiverType != null && !targetFunction.status.isStatic
+        ) {
+            reporter.reportOn(
+                source = diagnosticSource,
+                factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
+                a = "function",
+            )
+        }
 
         // 仅显式 struct 接收者触发 USE_MUTABLE_FUNC_ALONE；bare 名字（隐式 this）由
         // IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION 管辖，interface 接收者整体跳过。

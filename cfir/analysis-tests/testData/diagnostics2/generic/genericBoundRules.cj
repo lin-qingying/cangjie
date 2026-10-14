@@ -4,7 +4,8 @@
 // `HasPrevDiag` 还会吞掉同起点同文案的重复诊断）。本文件所有形态两版 kind、消息、Range 完全一致，不需要
 // LANGUAGE_VERSION 拆分。1.1.3 在 CHIR/codegen 阶段可能 LLVM 崩，语义诊断 JSON 仍完整；1.0.5 在无 error 的
 // 含 finalizer / const init 单元上 codegen 可能崩（本文件合法对照段不含这两者）。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），用于确认官方位置；
+// CFIR 内联标记遵守项目诊断范围策略，使用完整相关 token 或完整语法单元，不照搬官方单字符范围。
 //
 // 官方实现（external/cangjie_compiler，checkout 在 tag v1.0.0）：
 //   - src/Sema/PreCheck.cpp:913-940 ValidRecursiveConstraintCheck（AssumptionSanityCheck 的 rule 1，:1022-1035；
@@ -36,15 +37,15 @@
 //     文案 :1049
 //   GENERIC_IN_OPERATOR_OVERLOAD :1674 / :418，生成者 CfirOperatorDeclarationChecker.kt:70，文案 :1055
 //   VALUE_TYPE_RECURSIVE :443 / :125，生成者 CfirValueTypeRecursiveChecker.kt:62，文案 :287
-// 按源码可预判的锚点 / 文案差异（只写源码能直接看出的，未跑 CFIR）：
+// CFIR 与官方的锚点 / 文案口径：
 //   - 两条递归上界诊断 CFIR 都用 declaration.source（类型形参的 PSI source 节点），官方用 identifier 首字符；
 //     本文件形参名都是单字符 `T` / `K`，两者重合；多字符形参名时 CFIR 会覆盖整名、官方只覆盖首字符。
 //   - FORBID_GENERIC_CONSTRUCTOR：CFIR 用 constructorNameDiagnosticSource(includeConstKeyword = false)，即 `init` 标识符，
 //     与官方 FuncDecl GetBegin 一致。
 //   - FORBID_GENERIC_FINALIZER：CFIR 用 finalizer.tildeSource()（`~`），官方 FuncDecl GetBegin 同样落在 `~` 上。
 //   - GENERIC_IN_OPERATOR_OVERLOAD：CFIR 用 functionNameDiagnosticSource()，官方 GetBegin，两者都落在声明首字符。
-//   - VALUE_TYPE_RECURSIVE：CFIR 取环内 source.startOffset 最小的声明再 firstCharacterDiagnosticSource()，官方取 DFS
-//     入口 struct 的 GetBegin；两条链在本文件的写法下都是源码序最靠前的 struct 首字符。
+//   - VALUE_TYPE_RECURSIVE：CFIR 取环内源码序最靠前的 struct 作为 root，标记其从首个语法 token 到闭合大括号的
+//     完整声明单元（去除边界注释和空白）；官方同样报告 DFS root 声明，但其 GetBegin 单字符不决定 CFIR 高亮范围。
 //   - 文案：FORBID_GENERIC_FINALIZER 的 CFIR 默认文案是 "generic finalizer '{0}' is not allowed"，官方是
 //     "generic finalizer '%s' is not supported"；锚点一致但默认文案不同（Golden 套件的 DiagnosticNameMapper.kt:179
 //     映射 CFIR FORBID_GENERIC_FINALIZER → sema_forbid_generic_finalizer）。
@@ -211,8 +212,9 @@ interface GenericOperatorInInterface {
 
 // ── 形态 16：struct 字段自引用（值类型递归，环内全是 struct）
 // kind：sema_value_type_recursive "value type recursive detected: 'ValueTypeRecursiveSelfField->ValueTypeRecursiveSelfField'"
-// 锚点：DFS 入口 struct 声明首字符 `s`（`diag.Diagnose(*root, ...)` → GetBegin()，Utils.cpp:447）。
-// 1.0.5 / 1.1.3 一致。附带一条 sema_class_uninitialized_field（锚 `let` 的首字母 `l`，1 字符）—— struct 的 let 字段；该伴随诊断已按官方写 CLASS_UNINITIALIZED_FIELD 标记（锚字段声明首字符 `let` 的首字母，官方 Diagnose 取 VarDecl 的 GetBegin）
+// CFIR 锚点：DFS root struct 的完整声明单元（从首个语法 token 到闭合大括号）；官方 GetBegin 只确认 root 位置。
+// 1.0.5 / 1.1.3 一致。附带的官方 sema_class_uninitialized_field 锚 VarDecl::GetBegin（`let` 的首字符）；CFIR 的
+// CLASS_UNINITIALIZED_FIELD 使用 ACTUAL_DECLARATION_NAME，标记完整字段名 token（此处为 `self`）。
 // 不带初始化时官方必然报未初始化；改成 `= X()` 又会触发 sema_recursive_constructor_call，见文件末"已删除的形态 7"。
 // FILE: valueTypeRecursiveSelfField.cj
 <!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveSelfField {
@@ -222,7 +224,7 @@ interface GenericOperatorInInterface {
 // ── 形态 17：两个 struct 的非 static 字段互相引用
 // kind：sema_value_type_recursive，上界串
 //      'ValueTypeRecursiveMutualFieldA->ValueTypeRecursiveMutualFieldB->ValueTypeRecursiveMutualFieldA'；
-// 锚源码序最靠前的 struct 声明首字符。1.0.5 / 1.1.3 一致。两条 sema_class_uninitialized_field 同形态 16，两条均已按官方写 CLASS_UNINITIALIZED_FIELD 标记（锚字段声明首字符 `let` 的首字母，官方 Diagnose 取 VarDecl 的 GetBegin）
+// CFIR 锚源码序最靠前的 struct 完整声明。1.0.5 / 1.1.3 的官方诊断均落在同一 root struct。两条 sema_class_uninitialized_field 同形态 16。
 // FILE: valueTypeRecursiveMutualFields.cj
 <!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveMutualFieldA {
     let <!CLASS_UNINITIALIZED_FIELD!>other<!>: ValueTypeRecursiveMutualFieldB
@@ -234,7 +236,7 @@ struct ValueTypeRecursiveMutualFieldB {
 
 // ── 形态 18：值类型递归经元组字段（CheckValueTypeRecursiveDFSSwitch 对 tuple / VArray 按元素类型展开）
 // kind：sema_value_type_recursive，上界串
-//      'ValueTypeRecursiveTupleFieldA->ValueTypeRecursiveTupleFieldB->ValueTypeRecursiveTupleFieldA'；锚 A 的声明首字符。
+//      'ValueTypeRecursiveTupleFieldA->ValueTypeRecursiveTupleFieldB->ValueTypeRecursiveTupleFieldA'；CFIR 锚 A 的完整声明单元。
 // 1.0.5 / 1.1.3 一致。
 // FILE: valueTypeRecursiveThroughTupleField.cj
 <!VALUE_TYPE_RECURSIVE!>struct ValueTypeRecursiveTupleFieldA {
@@ -347,9 +349,10 @@ class NonGenericOperatorMemberOk {
 //      合法对照 5 是 enum 自引用的同类形态；CFIR CfirValueTypeRecursiveChecker.kt:60 有同样的 hasOnlyStructDeclarations 判断。
 //   8. class 字段互相引用 `class A { var b: B } class B { var a: A }` → 没有 VALUE_TYPE_RECURSIVE（引用语义），
 //      只有两条 sema_class_uninitialized_field（锚字段名，1 字符）；class 是引用类型，字段互引用合法。
-//   9. 本文件三段 VALUE_TYPE_RECURSIVE 各附带 sema_class_uninitialized_field（锚字段名，1 字符）：
+//   9. 本文件三段 VALUE_TYPE_RECURSIVE 各附带 sema_class_uninitialized_field：官方锚 `let` 首字符，CFIR 锚完整字段名 token
+//      （`self` / `other` / `back` / `pair`，共 5 处）：
 //      struct 的 `let` 字段不带初始化时官方必然报未初始化（无字段初值的 struct `var b: Int64` 同样报），
 //      而给字段写 `= X()` 初值又触发 sema_recursive_constructor_call（探针：两个 class 互相 `= X()` →
 //      sema_recursive_constructor_call @ `X()` 4 字符），所以在官方 v1.0.0 找不到"保留 VALUE_TYPE_RECURSIVE 且没有伴随诊断"的写法；
-//      伴随的 sema_class_uninitialized_field 按官方锚字段声明首字符（`let` 首字母）写进本文件三段（CLASS_UNINITIALIZED_FIELD；initialization 域更完整的形态见 diagnostics/initialization/classUninitializedFieldRich.cj）。
+//      夹具按 CFIR 锚点写入这些 CLASS_UNINITIALIZED_FIELD 标记；initialization 域的完整形态见 diagnostics/initialization/classUninitializedFieldRich.cj。
 // 附：1.0.5 的 chir_dce_unused_variable 警告在 1.1.3 不再出现（合法对照 3 的 `init(value: V)`），本文件只比较语义诊断 error，不受影响。

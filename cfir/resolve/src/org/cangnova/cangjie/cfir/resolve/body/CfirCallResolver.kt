@@ -1232,7 +1232,7 @@ class CfirCallResolver(
                     return CallableReferenceResolutionResult.TYPE_MISMATCH
                 }
                 if (atom.failureKind == null) {
-                    atom.markNoMatchingFunctionReference()
+                    atom.markNoMatchingFunctionReference(containingCallCandidate)
                 }
                 return CallableReferenceResolutionResult.FAILURE
             }
@@ -1327,7 +1327,9 @@ class CfirCallResolver(
      * 的源码归属属于函数引用自身。必须在 postponed atom 上写回错误引用，completion
      * 和 checker 才能保留该锚点，而不会把它降级为外层 synthetic invoke 的失败。
      */
-    private fun ConeResolvedCallableReferenceAtom.markNoMatchingFunctionReference() {
+    private fun ConeResolvedCallableReferenceAtom.markNoMatchingFunctionReference(
+        containingCallCandidate: Candidate,
+    ) {
         val expression = expression as? CfirNamedAccessExpression
         val reference = expression?.calleeReference as? CfirNamedReference
         if (expression == null || reference == null) {
@@ -1336,7 +1338,7 @@ class CfirCallResolver(
             return
         }
 
-        val diagnostic = ConeNoMatchingFunctionReferenceError(reference.name)
+        val diagnostic = ConeNoMatchingFunctionReferenceError(reference.name, containingCallCandidate)
         resultingReference = buildErrorNamedReference {
             source = reference.source
             name = reference.name
@@ -3035,10 +3037,7 @@ class CfirCallResolver(
                                 ConeFunctionExpectedError(name.asString(), typeAliasExpandedType)
 
                             actualDeclaration is CfirEnum ->
-                                ConeNoMatchingInvokeOperatorError(
-                                    actualClassifier.name,
-                                    actualClassifier.constructType()
-                                )
+                                ConeNoMatchOperatorFunctionCallError
 
                             else -> ConeNoConstructorError
                         }

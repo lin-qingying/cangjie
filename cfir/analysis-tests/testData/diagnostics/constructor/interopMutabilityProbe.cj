@@ -24,7 +24,7 @@ func probeCoalescing(i: Int64, o: ?Int64): Unit {
 }
 
 func probeTupleCTypeField(): Unit {
-    let bad: <!INVALID_TUPLE_FIELD_CTYPE!>(CPoint, Int64)<!> = (CPoint(), 1)
+    let bad: (<!INVALID_TUPLE_FIELD_CTYPE!>CPoint<!>, Int64) = (CPoint(), 1)
     let ok: (Int64, Int64) = (1, 2)
     println(<!ARGUMENT_TYPE_MISMATCH!>bad<!>)
     println(<!ARGUMENT_TYPE_MISMATCH!>ok<!>)

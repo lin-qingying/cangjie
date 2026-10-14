@@ -64,6 +64,8 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeArgumentNotMatchConstraintError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprError
+import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprWithTargetError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingFunctionCallError
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -1152,7 +1154,7 @@ private fun ConeDiagnostic.isLambdaParameterInferenceCoveredByShapeDiagnostic(
     return lambda.valueParameters.size != expectedFunctionType.parameterTypes.size
 }
 
-/** 判断该诊断是否属于 lambda 体级联类别（歧义、约束矛盾、候选不适用等派生错误）。 */
+/** 判断该诊断是否属于 lambda 体级联类别（包括由未推断参数触发的运算符解析错误）。 */
 private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
     when (unwrapUnreportedDuplicateDiagnosticForLambdaCascade()) {
         is ConeAmbiguityError,
@@ -1160,6 +1162,8 @@ private fun ConeDiagnostic.isLambdaBodyCascadeDiagnostic(): Boolean =
         is ConeInapplicableCandidateError,
         is ConeNoMatchingInvokeOperatorError,
         is ConeTypeMismatchError,
+        is ConeInvalidUnaryExprError,
+        is ConeInvalidUnaryExprWithTargetError,
         is ConeUnresolvedNameError,
         is ConeUnresolvedReferenceError,
         is ConeUnresolvedSymbolError -> true

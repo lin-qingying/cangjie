@@ -7,7 +7,8 @@
 // `cjc <段>.cj -o out.a --output-type=staticlib --diagnostic-format json`；每个 `// FILE:` 段单独编译
 // （官方整包编译时一处 parse 错误会吞掉其余段的语义诊断，见 DiagnosticEngine.cpp 的 CanBeEmitted）。
 // **两版对本文件全部段的 kind、文案、MainHint.Range 完全一致**（逐段比对），因此不拆 LANGUAGE_VERSION 夹具。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**，官方报告点在本族使用单字符起点；本文件内联标记按 CFIR
+// 定位策略标记最小完整名称 token，不能把官方单字符范围裁剪后直接用作 CFIR 期望。
 // 内联标记写法：由"小于感叹号 + 诊断名 + 大于感叹号 + 锚点文本 + 结束标记"五段构成；全文只在 `// FILE:` 段内出现，
 // 头部注释一律用文字描述，不出现该序列的字面量。
 //
@@ -65,73 +66,46 @@
 //      但它的两个报告点 src/Sema/TypeCheckDecl.cpp:369（getter）与 src/Sema/TypeChecker.cpp:1675（finalizer）
 //      都是**声明级**检查，与本文件的调用实参映射族正交，本文件不收。
 //
-// 本项目 CFIR 名（cfir/checkers/checkers-component-generator/src/org/cangnova/cangjie/cfir/checkers/generator/
-// diagnostics/CfirDiagnosticsList.kt，生成物 cfir/checkers/gen/.../diagnostics/CfirErrors.kt）：
-//   :398 PARAMETERS_AND_ARGUMENTS_MISMATCH（`by error<PsiElement>()`，无 PositioningStrategy ⇒ 由调用点显式给 source）
-//        ← 官方 sema_parameters_and_arguments_mismatch
-//   :432 AMBIGUOUS_ARG_TYPE（`PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED`，带一个 `RENDER_NAME` 渲染参数
-//        `{0}`= 被调用者名字）← 官方 sema_ambiguous_arg_type
-//   :1106 NO_MATCH_FUNCTION_DECLARATION_FOR_REF ← 官方 sema_no_match_function_declaration_for_ref（伴随诊断）
-//   TYPE_CHECK 组 :889 TYPE_MISMATCH（带 expectedType / actualType / isMismatchDueToNullability 三个参数）
-//        ← 官方 sema_mismatched_types（伴随诊断）
-// 文案表 cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/CfirErrorsDefaultMessages.kt：
-//   :237 PARAMETERS_AND_ARGUMENTS_MISMATCH "parameters and arguments mismatch"（与官方逐字一致）；
-//   :274 AMBIGUOUS_ARG_TYPE "Ambiguous arguments type in call expression."（官方 :89 首字母小写、无句点，CFIR
-//        首字母大写并加句点）；
-//   :721 NO_MATCH_FUNCTION_DECLARATION_FOR_REF（与官方逐字一致）；
-//   :764 TYPE_MISMATCH "Type mismatch: inferred type is ''{1}'', but ''{0}'' was expected."（官方是通用的
-//        "mismatched types"）。
-// 生产者（**都是 cone 层诊断映射过来的**，不是 CFIR 自己算的）：
-//   AMBIGUOUS_ARG_TYPE → cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/diagnostics/
-//     coneDiagnosticToCfirDiagnostic.kt:846-857 的 `is AmbiguousArgumentType ->` 分支。取值链
-//     `rootCause.callSite.source ?: qualifiedAccessSource ?: source ?: candidate.callInfo.callSite.source`
-//     （:847-850）后调 `.firstCharacterDiagnosticSource()`（:853-855）⇒ **锚点恒为调用点 source 的首字符**。
-//     也就是说 CFIR 侧能否复现本文件的形态，完全取决于 cone 层有没有为该候选产出 `AmbiguousArgumentType`
-//     （:861 起的 `is InferenceConstraintError ->` 分支有 `hasErrorTypeInArguments` 等一堆提前 return，
-//     可能先于它吞掉候选）。
-//   PARAMETERS_AND_ARGUMENTS_MISMATCH → 同文件 `parametersAndArgumentsMismatchDiagnostic`（:1395-1427），
-//     只有**两条**路径：
-//     (a) :1400-1408 `callInfo.origin == CfirFunctionCallOrigin.Operator && callInfo.name == GET` 且存在
-//         实参级字面量失配 ⇒ 报在**下标接收者** `callInfo.explicitReceiver.source` 上（脱糖 `b[i]` → `b.get(i)`），
-//         由 llt/desugar_error_report/subscribe_in_binary.cj 覆盖，本文件**不走**这条；
-//     (b) :1409-1426 `symbol.cfir is CfirConstructor && hasExplicitTypeArgumentsInCall()`，且存在
-//         `ArgumentTypeMismatch` 满足"实参是**裸函数引用**、expectedType 是函数类型、actualType 不是函数类型"
-//         ⇒ 报在 `(callSite as CfirQualifiedAccessExpression).calleeReference.source` 上，并人为截断成
-//         `startOffset .. startOffset + callInfo.name.length`（:1421-1425）。
-//   本文件 4 段 `sema_parameters_and_arguments_mismatch`（形态 13–16）**全部**对应 CFIR 的 (b) 路径。
+// 本项目 CFIR 名及文案定义见 `CfirDiagnosticsList.kt` 与 `CfirErrorsDefaultMessages.kt`：
+//   PARAMETERS_AND_ARGUMENTS_MISMATCH ← 官方 sema_parameters_and_arguments_mismatch；
+//   AMBIGUOUS_ARG_TYPE ← 官方 sema_ambiguous_arg_type；
+//   NO_MATCH_FUNCTION_DECLARATION_FOR_REF ← 官方 sema_no_match_function_declaration_for_ref；
+//   TYPE_MISMATCH ← 官方 sema_mismatched_types。
 //
-// 按源码可预判的锚点差异（**未跑 CFIR**，只写源码能直接看出的；CFIR 与官方不一致的缺口由主会话记入 README）：
-//   (1) AMBIGUOUS_ARG_TYPE：官方锚 CallExpr 首字符；CFIR 用 `firstCharacterDiagnosticSource()`，源码上同为
-//        "调用点首字符"。形态 1–12 预期**同锚**（`recv.method(...)` 收据、`Type.method(...)` 收据都成立）——
-//        真正的风险是**能不能产出**（cone 层 `AmbiguousArgumentType` 是否被 :861 分支的提前 return 抢走）。
-//   (2) PARAMETERS_AND_ARGUMENTS_MISMATCH / 形态 13（`GAMBox13<Int64>(gamS13Height)`，构造器 + 显式类型实参 +
-//        裸函数引用实参）：CFIR 路径 (b) 的门槛要求 `expectedType.isFunctionTypeLike()`，本段 expectedType 是
-//        `Int64`（**非**函数类型）⇒ 守卫 `hasFunctionReferenceMappingFailure` 不成立 ⇒ CFIR **预期不报**。
-//   (3) PARAMETERS_AND_ARGUMENTS_MISMATCH / 形态 14（`GAMBox14<(Int32) -> Int32>(gamS14Height)`）：expectedType
-//        是函数类型、actualType 不是 ⇒ 守卫成立；CFIR 报在 `calleeReference.source` 并截断成"被调用者名字长度"
-//        （构造器名 `GAMBox14` = 9 字符）⇒ **预期同锚**（构造器调用的 calleeReference 就是 `GAMBox14`）。
-//   (4) PARAMETERS_AND_ARGUMENTS_MISMATCH / 形态 15、16（`GAMHolder15<Int64>.build<Int64>(...)` 静态泛型方法、
-//        `holder.build<Int64>(...)` 实例泛型方法）：CFIR 路径 (b) 要求 `symbol.cfir is CfirConstructor`，
-//        两者都是**普通函数**不是构造器 ⇒ CFIR **预期两条都漏报**。官方这两条是 (B) 的 :317 分支，与官方对
-//        "映射被实参检查全部淘汰"的一般处理一致，形态上有独立价值（静态 vs 实例两种宿主）。
-//   (5) 伴随诊断：官方形态 13 / 15 / 16 的 `sema_mismatched_types` 锚**整个函数引用实参**
-//        （`gamS13Height` 10 字符等），形态 14 的 `sema_no_match_function_declaration_for_ref` 锚实参**首字符**
-//        1 个字符。CFIR 侧分别由 cone 层 `ArgumentTypeMismatch` / 函数引用匹配失败映射，锚点是否一致未跑 CFIR。
-//   (6) 报告次数：官方对一次调用**只报一条**本族诊断（三分支互斥），本文件每段都遵守。
-//   (7) 形态 12（enum 构造器 `GAMTime12.Day(...)`）与 LLT llt/enum/enum11_3.cj 的
-//        `Time.Day(getTime<Int32>)` 是同一构造族（枚举构造器泛型 + 显式类型实参的泛型函数引用实参 → 多份映射）；
-//        本段是为了把 CFIR 名的锚点（`Enum` 首字母而非实参）在 diagnostics2 下钉住，形态不重复。
+// CFIR 生产者与锚点：
+//   AMBIGUOUS_ARG_TYPE 由 `coneDiagnosticToCfirDiagnostic.kt` 的 `AmbiguousArgumentType` 分支映射。该诊断工厂使用
+//   `REFERENCED_NAME_BY_QUALIFIED`；映射层把完整调用 source 交给 PSI / LightTree 策略，范围落在被调用的名称 token 上。
+//   构造器 callee 也通过该策略取其引用名，不取包含类型实参的整个类型引用。
+//   PARAMETERS_AND_ARGUMENTS_MISMATCH 由同一映射器的 `parametersAndArgumentsMismatchDiagnostic` 统一产生：
+//     (a) GET 下标脱糖调用存在字面量类型错误时，source 是接收者，策略标记接收者的完整名称 token；
+//     (b) 泛型映射中函数引用实参使候选失效时，source 是完整调用，策略标记被调用的完整名称 token。该路径覆盖
+//         `ArgumentTypeMismatch`（函数类型实参与非函数形参不兼容）及结构化 callable-reference no-match；后者把
+//         外层候选随 `ConeNoMatchingFunctionReferenceError` 传到映射器，以保留调用映射语义。
+//   NO_MATCH_FUNCTION_DECLARATION_FOR_REF 使用相同的完整名称定位策略，锚函数引用实参的完整名称 token。
+//   不通过 offset-only source 构造或截短 token。上述策略在 PSI 与 LightTree 下共用同一名称 token 语义。
 //
-// 已有覆盖、本文件不重复（testData 下已 grep 确认）：
-//   - PARAMETERS_AND_ARGUMENTS_MISMATCH：全 testData 只有两处，都是 LLT 形态且都不是 (B) 的 :317 分支——
+// CFIR 定向输出（LightTree、PSI、WithoutAliasExpansion 三个入口的目标用例均已实际运行）：
+//   (1) 形态 1–12 的 AMBIGUOUS_ARG_TYPE 均报告在完整被调用名上：顶层函数名、构造器名、静态/实例方法名、
+//       enum 构造器名分别由引用策略从完整调用 source 中选出；不再按官方 CallExpr 首字符放置。
+//   (2) 形态 13 的 expected type 是 `Int64`、actual type 是函数类型，CFIR 同时报告实参 TYPE_MISMATCH 和
+//       调用级 PARAMETERS_AND_ARGUMENTS_MISMATCH，后者锚在完整 `GAMBox13` token。
+//   (3) 形态 14 的函数引用 no-match 与外层泛型构造调用级 mismatch 并存；两者分别锚在完整 `gamS14Height` 与
+//       `GAMBox14` token。它不产生 TYPE_MISMATCH。
+//   (4) 形态 15 / 16 覆盖静态 / 实例泛型方法；两者的调用级 mismatch 都锚在完整 `build` token。
+//   (5) 形态 13–16 的实参级诊断均锚在完整实参标识符上。
+//   官方 CJC 仍在这些调用诊断的起点给出单字符 MainHint；该信息用于语义取证，不决定 CFIR 标记范围。
+//
+// 已有覆盖（testData 下已 grep 确认）：
+//   - PARAMETERS_AND_ARGUMENTS_MISMATCH：既有 LLT 覆盖下标脱糖与函数类型构造器；本文件新增泛型构造器、静态方法
+//     与实例方法三类映射失效情形。既有两处分别是：
 //     llt/desugar_error_report/subscribe_in_binary.cj（`b[1.01]`，脱糖下标 → CFIR 路径 (a)）与
 //     llt/generics/class5_test.cj（`Data<(Int64) -> Int64>(getHeight)`，构造器 + 函数类型实参 + 实参级 TYPE_MISMATCH
-//     干扰）；diagnostics2 下**零覆盖**。形态 13–16 补静态方法 / 实例方法 / 非函数类型 expectedType 三个新宿主。
-//   - AMBIGUOUS_ARG_TYPE：全 testData 只有 llt/enum/enum11_3.cj:17 一处（enum 构造器形态，且同段还有
-//     GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT 干扰）；diagnostics2 下**零覆盖**。形态 1–12 补齐
-//     顶层函数 / 多类型形参 / `Option<T>` 形参 / `Nothing` 形参 / 推导类型实参 / 静态方法 / 类型别名宿主 /
-//     嵌套泛型宿主 / `extend` 成员 / 类方法内 五类调用点。
-//   - `WRONG_NUMBER_OF_ARGUMENTS` ×2（arityMismatch.cj）、`NEED_NAMED_ARGUMENT` / `NAMED_PARAMETER_NOT_FOUND` /
+//     干扰）。形态 13–16 另覆盖函数类型不匹配、函数引用 no-match、静态方法与实例方法。
+//   - AMBIGUOUS_ARG_TYPE：既有 LLT 只有 llt/enum/enum11_3.cj:17 一处（enum 构造器形态，且同段还有
+//     GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT 干扰）；本文件新增 diagnostics2 覆盖。形态 1–12 覆盖
+//     顶层函数、多类型形参、`Option<T>` / `Nothing` 形参、类型实参推导、构造器、静态方法、类型别名与嵌套宿主、
+//     `extend` 成员及类方法内的调用。
+//   - `WRONG_NUMBER_OF_ARGUMENTS` ×2（arityMismatch.cj）、`NEED_NAMED_ARGUMENT` / `UNKNOWN_NAMED_ARGUMENT` /
 //     `NAMED_ARGUMENTS_NOT_ALLOWED` / `MIXING_NAMED_AND_POSITIONAL_ARGUMENTS` / `ARGUMENT_PASSED_TWICE`
 //     （call/namedArgumentsAndArity.cj 与 calls/namedArgumentsAndArity.cj）、`AMBIGUOUS_FUNCTION_CALL`
 //     （calls/ambiguousFunctionCall.cj）、`ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED` /
@@ -143,7 +117,8 @@
 //
 // 本文件的 SUGGESTED 段共 1 个：形态 C（`sema_generic_ambiguous_method_match_in_upper_bounds`，见 (C)）。
 // 该 kind 没有 CFIR 名（`CfirDiagnosticsList.kt` 里不存在 `GENERIC_AMBIGUOUS_METHOD_MATCH_IN_UPPER_BOUNDS`），
-// 且本轮两版 cjc 都构造不出可达输入，所以不写段、不写标记，只在此登记。其余 18 段的官方诊断已全部逐字符锚定。
+// 且本轮两版 cjc 都构造不出可达输入，所以不写段、不写标记，只在此登记。其余 18 段的 kind 与伴随诊断均经两版 cjc 核实；
+// CFIR 期望标记按完整名称 token 定位，不照搬官方的单字符 MainHint。
 
 // ── 形态 1：顶层泛型函数，形参是裸类型形参 `T`，实参是"显式类型实参后仍对应两个重载"的泛型函数引用
 // kind：sema_ambiguous_arg_type "ambiguous arguments type in call expression"（普通 kind，
@@ -166,11 +141,11 @@ func gamS1Take<T>(f: T): Int32 {
 }
 
 func gamMainS1(): Int64 {
-    let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS1Take(gamS1Overload<Int32>)
+    let r = <!AMBIGUOUS_ARG_TYPE!>gamS1Take<!>(gamS1Overload<Int32>)
     return r
 }
 // ── 形态 2：两个类型形参 `<A, B>`，只有 `A` 被歧义实参约束、`B` 由第二个普通实参确定 —— 仍是两份存活映射
-// kind：sema_ambiguous_arg_type；锚 `gamS2Pair` 的首字母。Range (14,13)..(14,14)。探针 p41。
+// 官方 CJC MainHint：`gamS2Pair` 起点单字符，Range (14,13)..(14,14)。CFIR 标记完整方法名 token。探针 p41。
 // FILE: genericAmbiguousArgTypeTwoTypeParameters.cj
 func gamS2Overload<V>(x: V, z: V): V {
     return x
@@ -185,11 +160,11 @@ func gamS2Pair<A, B>(a: A, b: B): A {
 }
 
 func gamMainS2(): Int64 {
-    let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS2Pair(gamS2Overload<Int32>, 1)
+    let r = <!AMBIGUOUS_ARG_TYPE!>gamS2Pair<!>(gamS2Overload<Int32>, 1)
     return r
 }
 // ── 形态 3：同一个类型形参 `T` 出现在**两个**形参上，两个实参都是同一份歧义引用（映射候选数相同，仍不唯一）
-// kind：sema_ambiguous_arg_type；锚 `gamS3Take` 的首字母。Range (14,13)..(14,14)。探针 p50。
+// 官方 CJC MainHint：`gamS3Take` 起点单字符，Range (14,13)..(14,14)。CFIR 标记完整函数名 token。探针 p50。
 // FILE: genericAmbiguousArgTypeSharedTypeParameter.cj
 func gamS3Overload<V>(x: V, z: V): V {
     return x
@@ -204,11 +179,11 @@ func gamS3Take<T>(f: T, g: T): Int32 {
 }
 
 func gamMainS3(): Int64 {
-    let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS3Take(gamS3Overload<Int32>, gamS3Overload<Int32>)
+    let r = <!AMBIGUOUS_ARG_TYPE!>gamS3Take<!>(gamS3Overload<Int32>, gamS3Overload<Int32>)
     return r
 }
 // ── 形态 4：形参类型是 `Option<T>`（`T` 藏在脱糖后的枚举里），实参是歧义泛型函数引用
-// kind：sema_ambiguous_arg_type；锚 `gamS4Opt` 的首字母。Range (17,13)..(17,14)。探针 p46。
+// 官方 CJC MainHint：`gamS4Opt` 起点单字符，Range (17,13)..(17,14)。CFIR 标记完整函数名 token。探针 p46。
 // 与 LLT enum11_3 的差别：那边歧义来自**枚举构造器**的 `T`，本段歧义来自**普通函数形参**的 `T`，
 // 调用宿主与 `ce` 的起点都不同。`Option` 由 `?T` 脱糖 / 显式 `Option<T>` 给出，不改锚点。
 // FILE: genericAmbiguousArgTypeOptionParameter.cj
@@ -228,12 +203,12 @@ func gamS4Opt<T>(o: Option<T>): Int32 {
 }
 
 func gamMainS4(): Int64 {
-    let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS4Opt(gamS4Overload<Int32>)
+    let r = <!AMBIGUOUS_ARG_TYPE!>gamS4Opt<!>(gamS4Overload<Int32>)
     return r
 }
 // ── 形态 5：形参表里有一个 `Nothing` 形参（`b: Nothing`）——`Nothing` 是**底类型**、不贡献类型映射，
 // 歧义仍然只由 `a: T` 决定；实参第二项是 `throw` 表达式
-// kind：sema_ambiguous_arg_type；锚 `gamS5Nothing` 的首字母。Range (14,13)..(14,14)。探针 p26 / p82。
+// 官方 CJC MainHint：`gamS5Nothing` 起点单字符，Range (14,13)..(14,14)。CFIR 标记完整函数名 token。探针 p26 / p82。
 // 对照探针 p09（实参换成普通值 `1`）零诊断，证明歧义源与 `Nothing` 形参本身无关。
 // FILE: genericAmbiguousArgTypeNothingParameter.cj
 func gamS5Overload<V>(x: V, z: V): V {
@@ -249,11 +224,11 @@ func gamS5Nothing<T>(a: T, b: Nothing): T {
 }
 
 func gamMainS5(): Int64 {
-    let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS5Nothing(gamS5Overload<Int32>, throw Exception())
+    let r = <!AMBIGUOUS_ARG_TYPE!>gamS5Nothing<!>(gamS5Overload<Int32>, throw Exception())
     return r
 }
 // ── 形态 6：**类型实参由实参推导**（没有显式 `<…>`）的泛型类构造器 —— 推导出的 `T` 有两份候选
-// kind：sema_ambiguous_arg_type；锚 `G`（构造器名首字母）。Range (17,13)..(17,14)。探针 p57。
+// 官方 CJC MainHint：构造器名起点单字符，Range (17,13)..(17,14)。CFIR 标记完整构造器名 token。探针 p57。
 // 与形态 13（显式类型实参 + 映射全被淘汰 ⇒ PARAMETERS_AND_ARGUMENTS_MISMATCH）构成"有无显式类型实参"的对照。
 // FILE: genericAmbiguousArgTypeInferredTypeArgument.cj
 class GAMBox6<T> {
@@ -272,10 +247,10 @@ func gamS6Overload<V>(x: V): V {
 }
 
 func gamMainS6(): Int64 {
-    let b = <!AMBIGUOUS_ARG_TYPE!>G<!>AMBox6(gamS6Overload<Int32>)
+    let b = <!AMBIGUOUS_ARG_TYPE!>GAMBox6<!>(gamS6Overload<Int32>)
     return b.value(1)
 }
-// ── 形态 7：`Type.method(...)` 形态 —— 泛型类的**静态**泛型方法，实参歧义；锚 `G`（类型名首字母，不是方法名）
+// ── 形态 7：`Type.method(...)` 形态 —— 泛型类的**静态**泛型方法，实参歧义；官方 MainHint 起于类型名，CFIR 标记 `build`
 // kind：sema_ambiguous_arg_type；Range (17,13)..(17,14)。探针 p03。
 // FILE: genericAmbiguousArgTypeStaticMethod.cj
 class GAMHolder7<T> {
@@ -294,10 +269,10 @@ func gamS7Overload<V>(x: V): V {
 }
 
 func gamMainS7(): Int64 {
-    let h = <!AMBIGUOUS_ARG_TYPE!>G<!>AMHolder7<Int64>.build(gamS7Overload<Int32>)
+    let h = GAMHolder7<Int64>.<!AMBIGUOUS_ARG_TYPE!>build<!>(gamS7Overload<Int32>)
     return 0
 }
-// ── 形态 8：**类型别名**作为泛型宿主（`GAMAlias8` = 泛型类实例化），再走静态方法调用；锚别名名首字母
+// ── 形态 8：**类型别名**作为泛型宿主（`GAMAlias8` = 泛型类实例化），再走静态方法调用；官方 MainHint 起于别名，CFIR 标记 `build`
 // kind：sema_ambiguous_arg_type；Range (19,13)..(19,14)。探针 p43。
 // 别名先在官方 `CheckTypeAlias`（src/Sema/TypeCheckType.cpp）合成，`ce` 的起点是别名引用而非类名。
 // FILE: genericAmbiguousArgTypeAliasHost.cj
@@ -319,10 +294,10 @@ func gamS8Overload<V>(x: V): V {
 }
 
 func gamMainS8(): Int64 {
-    let h = <!AMBIGUOUS_ARG_TYPE!>G<!>AMAlias8.build(gamS8Overload<Int32>)
+    let h = GAMAlias8.<!AMBIGUOUS_ARG_TYPE!>build<!>(gamS8Overload<Int32>)
     return 0
 }
-// ── 形态 9：**嵌套泛型**宿主（类型实参本身是泛型类实例化）+ 静态方法；锚外层 `G`
+// ── 形态 9：**嵌套泛型**宿主（类型实参本身是泛型类实例化）+ 静态方法；官方 MainHint 起于类型名，CFIR 标记 `build`
 // kind：sema_ambiguous_arg_type；Range (17,13)..(17,14)。探针 p60。
 // 对照探针 p49 / p31（嵌套宿主但构造器调用、实参不歧义）零本族诊断。
 // FILE: genericAmbiguousArgTypeNestedGenericHost.cj
@@ -342,10 +317,10 @@ func gamS9Overload<V>(x: V): V {
 }
 
 func gamMainS9(): Int64 {
-    let b = <!AMBIGUOUS_ARG_TYPE!>G<!>AMBox9<GAMBox9<Int64>>.build(gamS9Overload<Int32>)
+    let b = GAMBox9<GAMBox9<Int64>>.<!AMBIGUOUS_ARG_TYPE!>build<!>(gamS9Overload<Int32>)
     return 0
 }
-// ── 形态 10：`extend` 块里定义的泛型方法，调用点是**实例接收者** ⇒ 锚**接收者**首字母（不是方法名 `pick`）
+// ── 形态 10：`extend` 块里定义的泛型方法，调用点是**实例接收者**；官方 MainHint 起于接收者，CFIR 标记 `pick`
 // kind：sema_ambiguous_arg_type；Range (19,13)..(19,14)。探针 p42。
 // 对照探针 p06（`b.pick(1)` 实参不歧义）零诊断；探针 p71（`extend` 在调用点之后声明）同样只报本条。
 // FILE: genericAmbiguousArgTypeExtendMember.cj
@@ -367,10 +342,10 @@ func gamS10Overload<V>(x: V): V {
 
 func gamMainS10(): Int64 {
     let b = GAMBase10<Int64>()
-    let r = <!AMBIGUOUS_ARG_TYPE!>b<!>.pick(gamS10Overload<Int32>)
+    let r = b.<!AMBIGUOUS_ARG_TYPE!>pick<!>(gamS10Overload<Int32>)
     return r
 }
-// ── 形态 11：调用点**在另一个类的成员函数体内**（不是顶层函数），形参类型形参 `T`、实参歧义；锚调用首字母
+// ── 形态 11：调用点**在另一个类的成员函数体内**（不是顶层函数），形参类型形参 `T`、实参歧义；CFIR 标记完整函数名
 // kind：sema_ambiguous_arg_type；Range (15,17)..(15,18)（缩进 8 空格 + `let r = `，故列号 17 而非 13）。
 // 探针 p51。目的是钉住"锚点跟着调用表达式的词法起点走、与所在函数无关"这一点。
 // FILE: genericAmbiguousArgTypeInsideClassMember.cj
@@ -388,7 +363,7 @@ func gamS11Take<T>(f: T): Int32 {
 
 class GAMUser11 {
     func use(): Int32 {
-        let r = <!AMBIGUOUS_ARG_TYPE!>g<!>amS11Take(gamS11Overload<Int32>)
+        let r = <!AMBIGUOUS_ARG_TYPE!>gamS11Take<!>(gamS11Overload<Int32>)
         return r
     }
 }
@@ -397,7 +372,7 @@ func gamMainS11(): Int32 {
     let u = GAMUser11()
     return u.use()
 }
-// ── 形态 12：`Enum.Ctor(...)` 形态 —— 泛型枚举的构造器，实参是歧义泛型函数引用；锚枚举类型名首字母 `G`
+// ── 形态 12：`Enum.Ctor(...)` 形态 —— 泛型枚举的构造器，实参是歧义泛型函数引用；官方 MainHint 起于枚举类型名，CFIR 标记 `Day`
 // kind：sema_ambiguous_arg_type；Range (15,13)..(15,14)。探针 p23。
 // 本段与 LLT llt/enum/enum11_3.cj:17 属同一构造族，但那边枚举只有一个构造器、没有显式类型实参，
 // 且同段被 GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT 干扰；本段在 diagnostics2 下单独钉住锚点。
@@ -416,7 +391,7 @@ func gamS12Overload<V>(x: V): V {
 }
 
 func gamMainS12(): Int64 {
-    let t = <!AMBIGUOUS_ARG_TYPE!>G<!>AMTime12.Day(gamS12Overload<Int32>)
+    let t = GAMTime12.<!AMBIGUOUS_ARG_TYPE!>Day<!>(gamS12Overload<Int32>)
     match (t) {
         case Day(x) => return 0
         case _ => return 1
@@ -424,9 +399,9 @@ func gamMainS12(): Int64 {
 }
 // ── 形态 13：泛型类构造器 + **显式类型实参**，但实参（裸函数引用）与该类型实参不符
 // ⇒ 唯一一份映射被 `CheckWithCache` 淘汰 ⇒ `resMappings` 变空 ⇒ `DiagnoseForMultiMapping` 的 :317 分支。
-// 两条官方诊断：sema_parameters_and_arguments_mismatch 锚 `G` 1 字符 (13,13)..(13,14)；
+// 两条官方诊断：sema_parameters_and_arguments_mismatch 的 MainHint 是调用起点单字符 (13,13)..(13,14)；
 //   sema_mismatched_types 锚**整个函数引用实参** `gamS13Height` (13,29)..(13,41)，由 :1030 的 `ds.ReportDiag()` 在淘汰
-//   最后一份映射时放行。CFIR 锚点差异见头部 (2) / (5)。探针 p30 / p15。
+//   最后一份映射时放行。CFIR 分别锚完整 `GAMBox13` 与完整实参名。探针 p30 / p15。
 // CFIR 名：PARAMETERS_AND_ARGUMENTS_MISMATCH + TYPE_MISMATCH。
 // FILE: genericParametersMismatchConstructorExplicitTypeArgument.cj
 class GAMBox13<T> {
@@ -445,10 +420,10 @@ func gamMainS13(): Int64 {
     return b.value
 }
 // ── 形态 14：同上，但**显式类型实参是函数类型** `(Int32) -> Int32`，与实参 `gamS14Height: (Int64) -> Int64` 不符
-// 两条官方诊断：sema_parameters_and_arguments_mismatch 锚 `G` 1 字符 (13,13)..(13,14)；
-//   sema_no_match_function_declaration_for_ref 锚**实参首字符** 1 个字符 (13,40)..(13,41)——
+// 两条官方诊断：sema_parameters_and_arguments_mismatch 的 MainHint 是调用起点单字符 (13,13)..(13,14)；
+//   sema_no_match_function_declaration_for_ref 的 MainHint 是实参起点单字符 (13,40)..(13,41)——
 //   这里**没有** sema_mismatched_types：函数引用本身先在 `Check` 里匹配不到声明，诊断由函数引用路径给出。
-// 探针 p75（同时验证了 CFIR 路径 (b) 的守卫在本形态成立，见头部 (3)）。
+// CFIR 锚完整 `GAMBox14` 与 `gamS14Height` 名称 token。探针 p75。
 // FILE: genericParametersMismatchConstructorFunctionTypeArgument.cj
 class GAMBox14<T> {
     let value: T
@@ -462,13 +437,13 @@ func gamS14Height(h: Int64): Int64 {
 }
 
 func gamMainS14(): Int64 {
-    let b = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>G<!>AMBox14<(Int32) -> Int32>(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>g<!>amS14Height)
+    let b = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>GAMBox14<!><(Int32) -> Int32>(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>gamS14Height<!>)
     return 0
 }
 // ── 形态 15：泛型类的**静态**泛型方法 + 显式类型实参 `<Int64>`，实参函数引用类型不符 ⇒ 映射全被淘汰
-// 两条官方诊断：sema_parameters_and_arguments_mismatch 锚 `G` 1 字符 (13,13)..(13,14)；
+// 两条官方诊断：sema_parameters_and_arguments_mismatch 的 MainHint 是调用起点单字符 (13,13)..(13,14)；
 //   sema_mismatched_types 锚**整个函数引用实参** `gamS15Height` (13,45)..(13,57)。
-// 与形态 13 的差别是宿主：静态方法（`Type.method<T>(...)`）而不是构造器。CFIR 预期漏报，见头部 (4)。探针 p77。
+// 与形态 13 的差别是宿主：静态方法（`Type.method<T>(...)`）而不是构造器；CFIR 调用级诊断锚完整 `build`。探针 p77。
 // FILE: genericParametersMismatchStaticMethodExplicitTypeArgument.cj
 class GAMHolder15<T> {
     static func build<U>(u: U): GAMHolder15<T> {
@@ -482,13 +457,13 @@ func gamS15Height(h: Int64): Int64 {
 }
 
 func gamMainS15(): Int64 {
-    let h = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>G<!>AMHolder15<Int64>.build<Int64>(<!TYPE_MISMATCH!>gamS15Height<!>)
+    let h = GAMHolder15<Int64>.<!PARAMETERS_AND_ARGUMENTS_MISMATCH!>build<!><Int64>(<!TYPE_MISMATCH!>gamS15Height<!>)
     return 0
 }
 // ── 形态 16：泛型类的**实例**泛型方法 + 显式类型实参 `<Int64>`，实参函数引用类型不符 ⇒ 映射全被淘汰
-// 两条官方诊断：sema_parameters_and_arguments_mismatch 锚**接收者**首字母 `h` 1 字符 (14,13)..(14,14)；
+// 两条官方诊断：sema_parameters_and_arguments_mismatch 的 MainHint 是接收者起点单字符 `h` (14,13)..(14,14)；
 //   sema_mismatched_types 锚整个实参 `gamS16Height` (14,28)..(14,40)。
-// 与形态 10（同一宿主 + `extend` 成员 + 映射存活）成对照。探针 p78。
+// CFIR 对本调用通过引用策略锚完整方法名 `build`；与形态 10（`extend` 成员且映射存活）成对照。探针 p78。
 // FILE: genericParametersMismatchInstanceMethodExplicitTypeArgument.cj
 class GAMHolder16<T> {
     func build<U>(u: U): U {
@@ -503,7 +478,7 @@ func gamS16Height(h: Int64): Int64 {
 
 func gamMainS16(): Int64 {
     let h = GAMHolder16<Int64>()
-    let r = <!PARAMETERS_AND_ARGUMENTS_MISMATCH!>h<!>.build<Int64>(<!TYPE_MISMATCH!>gamS16Height<!>)
+    let r = h.<!PARAMETERS_AND_ARGUMENTS_MISMATCH!>build<!><Int64>(<!TYPE_MISMATCH!>gamS16Height<!>)
     return r
 }
 // ── 形态 17：合法对照 L1 —— 泛型类构造器三种类型实参写法（显式标量 / 由实参推导 / 显式函数类型）全部零诊断

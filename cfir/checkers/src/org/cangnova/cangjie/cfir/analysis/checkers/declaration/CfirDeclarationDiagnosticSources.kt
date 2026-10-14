@@ -138,6 +138,41 @@ internal fun CfirClassLikeDeclaration.classLikeDeclarationHeaderDiagnosticSource
 }
 
 /**
+ * class-like 声明级诊断范围：覆盖首末语法 token，去掉声明边界上附着的注释和空白。
+ *
+ * PSI 与 LightTree 的声明节点都可能把前置注释纳入节点偏移；默认 offset 定位策略不会像 Kotlin
+ * PSI 定位策略那样跳过边界 filler，因此诊断位置需要从共享语法树中取首末完整 token。
+ */
+internal fun CfirClassLikeDeclaration.classLikeWholeDeclarationDiagnosticSource(): AbstractCjSourceElement? {
+    return wholeDeclarationDiagnosticSource()
+}
+
+/**
+ * 返回任意 CFIR 声明的完整语法 token 范围。
+ *
+ * 仅从声明自身的语法树节点取首末非注释 token；无法获得语法树或有效 token 时返回 null，
+ * 不以文件 source 或整个 declaration.source 作为静默兜底。PSI 与 LightTree 共用同一套 token 偏移。
+ */
+internal fun CfirDeclaration.wholeDeclarationDiagnosticSource(): AbstractCjSourceElement? {
+    val treeSource = source as? CjSourceElement ?: return null
+    val tokens = treeSource.collectLeafTokens()
+    val firstToken = tokens.firstOrNull { !it.isCommentOrWhitespace() } ?: return null
+    val lastToken = tokens.lastOrNull { !it.isCommentOrWhitespace() } ?: return null
+    val startOffset = treeSource.treeStructure.getStartOffset(firstToken)
+    val endOffset = treeSource.treeStructure.getEndOffset(lastToken)
+    if (startOffset >= endOffset) return null
+
+    return CjOffsetsOnlySourceElement(
+        startOffset = startOffset,
+        endOffset = endOffset,
+    )
+}
+
+/** 返回函数声明的完整 token 范围并剔除前后注释和空白，供 declaration 级诊断复用。 */
+internal fun CfirFunction.wholeFunctionDeclarationDiagnosticSource(): AbstractCjSourceElement? =
+    wholeDeclarationDiagnosticSource()
+
+/**
  * 继承环是声明级错误，IDE 侧按项目范围策略标到声明头：
  * class/interface/struct/enum 从关键字到名称，extend 从关键字到接收者类型。
  */
@@ -268,6 +303,17 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
     }
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
         ?: source
+
+/**
+ * 函数名的 offsets-only 诊断位置。
+ *
+ * 声明类诊断工厂不能绑定到 `CjOperationName` 等名称 PSI；转换为纯范围 source 后，
+ * PSI 与 LightTree 都能保留完整函数名 token 的锚点。
+ */
+internal fun CfirNamedFunction.functionNameOffsetsDiagnosticSource(): AbstractCjSourceElement? =
+    functionNameDiagnosticSource()?.let { nameSource ->
+        CjOffsetsOnlySourceElement(nameSource.startOffset, nameSource.endOffset)
+    }
 
 /**
  * 宏声明名称诊断位置：官方 `redefinition of macro 'm'` 锚定宏名 token（cjc 1.0.5/1.1.3
@@ -424,6 +470,16 @@ internal fun CfirValueParameter.valueParameterNameDiagnosticSource(): AbstractCj
     }
         ?: (source as? CjSourceElement)?.findValueParameterNameSource(name)
         ?: source
+
+/**
+ * 值参数名称的 offsets-only 诊断位置。
+ *
+ * 声明类诊断工厂需要把名称 token 范围与参数 PSI 类型解耦，不能直接绑定名称叶子 PSI。
+ */
+internal fun CfirValueParameter.valueParameterNameOffsetsDiagnosticSource(): AbstractCjSourceElement? =
+    valueParameterNameDiagnosticSource()?.let { nameSource ->
+        CjOffsetsOnlySourceElement(nameSource.startOffset, nameSource.endOffset)
+    }
 
 /**
  * 取得 finalizer 名称区域的诊断 source。
@@ -839,6 +895,10 @@ private fun CjSourceElement.collectLeafTokens(): List<LighterASTNode> {
     collectLeaves(lighterASTNode)
     return tokens
 }
+
+/** 用于声明范围定位的边界 filler；声明内部的注释仍处于首末语法 token 之间。 */
+private fun LighterASTNode.isCommentOrWhitespace(): Boolean =
+    tokenType == CjTokens.WHITE_SPACE || CjTokens.COMMENTS.contains(tokenType)
 
 /**
  * class-like 声明关键字 token 集合。

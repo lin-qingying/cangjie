@@ -15,11 +15,11 @@ extend A {
 
 open class B <: A {
     public init() {
-        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>oo()
-        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>g<!>oo()
-        let f1 = <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>f<!>oo
-        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>g<!>oo
-        this.<!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>c<!>oo
+        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>foo<!>()
+        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>goo<!>()
+        let f1 = <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>foo<!>
+        <!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>goo<!>
+        this.<!ILLEGAL_MEMBER_USED_IN_OPEN_CONSTRUCTOR!>coo<!>
     }
 }
 

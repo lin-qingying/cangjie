@@ -80,14 +80,14 @@ This batch directly covers or keeps direct regression files for:
 - constructor delegation arity is resolved against the actually selected candidate set: `this(1)` inside a class that already has `init()` is an extra-argument error against the zero-arg constructor, while `super(1)` can still be a missing-argument error for a two-parameter superclass constructor.
 - default parameter declarations in current Cangjie syntax require named-parameter form such as `a!: Int64 = 0`; `a: Int64 = 0` is not valid syntax.
 - unnamed parameters must appear before named parameters in a declaration; a signature like `f(top!: Int64, plain: Int64)` is itself illegal before any call-site diagnostics are considered.
-- to test `NAMED_PARAMETER_NOT_FOUND` or `ARGUMENT_PASSED_TWICE`, do not append an extra valid named argument after the offending one, or the official compiler will short-circuit to an extra-argument error first.
+- to test `UNKNOWN_NAMED_ARGUMENT` or `ARGUMENT_PASSED_TWICE`, do not append an extra valid named argument after the offending one, or the official compiler will short-circuit to an extra-argument error first.
 - `CATCH_TYPE_MUST_EXTEND_EXCEPTION`: official `cjc` marks the illegal catch type itself. The project now defines this diagnostic name and default message, but checker wiring is still pending, so `try/` fixtures keep it as `SUGGESTED_DIAGNOSTIC`.
 - repeated or shadowed `catch` types are an official `USELESS_EXCEPTION_TYPE` warning on the later catch type token. The project now defines this diagnostic name and default message, but checker wiring is still pending, so those `try/` fixtures keep `SUGGESTED_DIAGNOSTIC` blocks and `IGNORE_ERRORS`.
 - `finally { false }` in a typed `try` is not a branch-type error in current official `cjc`; it only produces the `unused expression` warning on `false`, and the current project still has no matching diagnostics2 warning surface for it.
 - `RANGE_STEP_CANNOT_BE_ZERO`: official `cjc` marks the zero step expression itself. The project now defines this diagnostic name and default message, but checker wiring is still pending, so `range/` fixtures keep it as `SUGGESTED_DIAGNOSTIC`.
 - range direction itself is not an error: descending ranges with positive step and ascending ranges with negative step remain legal in the current official `cjc`.
 - current official `cjc` rejects the one-sided range forms that look like `0..`, `..10`, `0.. : 1`, or `..10 : 1` at parse stage; do not invent semantic range-step diagnostics for those spellings in `diagnostics2`.
-- `INVALID_CFUNC_PARAMETER_TYPE`: official CFFI checking diagnoses the parameter type span. The project now defines this diagnostic name and default message, but checker wiring is still pending, so `interop/` fixtures keep it as `SUGGESTED_DIAGNOSTIC`.
+- `INVALID_CFUNC_PARAMETER_TYPE`: CFIR's diagnostic factory is declared on `CjTypeReference`, so `foreign func` and nested `CFunc` cases mark the complete parameter type reference, without the parameter name. Official `cjc` may span from the parameter name through the type; CFIR fixtures follow the CFIR source owner.
 - legal CFFI return types: `CType` and aliases expanded to `CType` stay positive; only non-`CType` returns use `INVALID_CFUNC_RETURN_TYPE`.
 - invalid `CFunc<...>` return types also mark the concrete return type node itself, for example the `String` in `CFunc<() -> String>`.
 - `@CallingConv` misuse: official CFFI checking splits this into scope misuse and non-foreign-target misuse; the project now defines both diagnostic names and default messages, but checker wiring is still pending, so `interop/` fixtures keep them as `SUGGESTED_DIAGNOSTIC`.
@@ -187,8 +187,9 @@ SOURCE: <manual doc id or path>; <official C++ file>
 2. **内联标记写本项目的诊断名**：`<!NAME!>` 里的 `NAME` 是 `CfirDiagnosticsList.kt` 声明的 CFIR 诊断名；官方 kind
    （`sema_xxx` / `parse_xxx` / `conditional_compilation_xxx`）只作为取证依据写在用例头部注释里。官方有 kind 而
    `CfirDiagnosticsList` 没有同名诊断时记为缺口，不用别的名字凑。
-3. **锚点按官方范围**：官方常锚 1 个字符（关键字首字母、条件名、右值），不是整条声明或整个标识符；嵌套标记按框架的
-   栈语义使用（`AbstractCfirAnalysisDiagnosticsTest.parseInlineDiagnostics`）。
+3. **官方范围用于语义归属，CFIR 标记覆盖完整单位**：官方单字符范围可确认诊断落在哪个语法对象，不能据此裁剪 CFIR
+   标记中的单个 token；CFIR 范围必须覆盖完整 token 或最小完整语法单元。嵌套标记按框架的栈语义使用
+   （`AbstractCfirAnalysisDiagnosticsTest.parseInlineDiagnostics`）。
 4. **多版本**：1.0.5 与 1.1.3 逐点对照（两版对本文涉及的 fixture 结论一致）；差异用 `LANGUAGE_VERSION` 语言版本门禁表达，
    不以单一版本为基线。
 5. **指令写法**：指令行必须以 `//` 开头（框架 `RegisteredDirectivesParser.DIRECTIVE_PATTERN` 用 `matchEntire`），
@@ -217,18 +218,18 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | 用例 | 批次 4/5 的写法 | 按官方改正为 |
 | --- | --- | --- |
 | `assign/mismatchedTypesMultipleAssign.cj`、`inference/arrayLiteralAndMultipleAssign.cj` | `TYPE_MISMATCH` | `MISMATCHED_TYPES_MULTIPLE_ASSIGN`（官方 `sema_mismatched_types_multiple_assign`，锚右值元组整段） |
-| `constraints/nameInConstraintVisibleClass.cj` | `UNDECLARED_TYPE_NAME` | `NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER`（官方 `sema_generics_type_variable_not_defined`，约束名首字母；标准库类名与本文件类名两种形态官方 kind 与锚点相同） |
+| `constraints/nameInConstraintVisibleClass.cj` | `UNDECLARED_TYPE_NAME`（checker 漏查 `std.core`） | `NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER`，标记完整 `String` token；PSI / LightTree 已通过 |
 | `call/arityMismatch.cj` | 锚整个调用 | 锚实参列表 `(1)` / `(1, 2)` |
-| `entry/mainSignature.cj`、`entry/mainParameterType.cj` | 锚 `main` | 锚 `main` 首字母 |
-| `entry/missingProgramEntry.cj` | 标记在指令行上、指令位置非法 | 首行普通注释带标记（官方 1:1），指令移到首个 `FILE:` 段之前 |
+| `entry/mainSignature.cj`、`entry/mainParameterType.cj` | 锚完整 `main` | CFIR 标记完整 `main` token；官方单字符位置只作语义归属证据 |
+| `entry/missingProgramEntry.cj` | 标记在指令行上、指令位置非法 | `CfirProgramEntryChecker` 标记完整 `CfirFile.source`；指令移到首个 `FILE:` 段之前 |
 | `inheritance/*`（superAlone、superclassMustBePlacedFirst、thisAndSuperOutsideClass、cannotInheritSealedClass、thisOrSuperInStaticInit） | 锚整词 / 父类型引用 | 锚关键字首字母 1 字符 / 子类名 `Sub` 整段 |
 | `inout/*` | 锚实参 `s` / `v` | 锚 `inout s` / `inout v` 整段；`inoutNonCType` 用嵌套标记（外层非 CType、内层 mismatched types 各锚自己的范围） |
 | `operator/subscriptAssignNoPositional.cj` | 锚 `operator` | 锚 `[]`；另补 `subscriptAssignNamedParameter.cj`（`sema_invalid_subscript_assign_parameter` 锚具名参数 `v!`） |
 | `unary/invalidUnaryWithTarget.cj` | `INVALID_UNARY_EXPR` | `INVALID_UNARY_EXPR_WITH_TARGET`（官方 `sema_invalid_unary_expr_with_target`） |
 | `inference/builderInferenceMultiLambda.cj` | 三个 `UNABLE_TO_INFER_GENERIC_FUNC` 标记锚 lambda | 改为 `pair(1, "x")` 形态，锚被调用者（官方 `sema_unable_to_infer_generic_func`，`TypeArgumentInference.cpp` 诊断建在 `ce.baseFunc` 上）；多 lambda 冲突在官方是内部断言失败 `sema_invalid_node_after_check`（零宽位置、note "please report this to Cangjie team"），不可表达 |
-| `static-init/returnInStaticInit.cj`、`property/propertyAccessorRules.cj`、`intrinsic/*`、`extend/*`、`conditional-compilation/*`、`deprecation/*` | 锚整条声明 / 缺 `open` 基类 / 混在一段 | 按官方 kind 与范围改正；`classInheritance` / `overrideAndWeakening` 的父类补 `open`（否则官方先报 `sema_non_inheritable_super_class`）；`intrinsic` 的 `INVALID_INTRINSIC_DECL` 用无函数体形态；`conditional-compilation` 每个条件独立成段（`@When[1]` 是 parser 错误，会掩盖其它段），`arch == 1` 归 `CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE`、新增 `arch == "arm"` 归 `_NOT_SUPPORT_BUILTIN_VALUE`，条件名锚 1 字符、右值锚右值；`@When[]`、`@When[1]` 官方只有 parser 诊断，本项目无对应名字，用例不写标记 |
-| `deprecation/callAndTypeRef.cj`、`classInheritance.cj`、`overrideAndWeakening.cj` | 同文件混放、类名重复、weakening 标记含注解行 | 拆段（cjc 1.0.5 对有父类且声明 `init()` 的顶层类有 parse 限制）、改名、weakening 标记只覆盖成员声明（官方不含 `@Deprecated` 行） |
-| `general/coreObjectNotFoundNoPrelude.cj` | 整文件包 `CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE` + 构造调用 `UNRESOLVED_REFERENCE` | 只标类成员类型位置 `Object` 首字母（官方 `sema_undeclared_type_name`）；另两条官方诊断（`sema_no_core_object` 锚 `class`、无位置的 `sema_core_object_not_found_when_no_prelude`）无可用名字 / 无位置，头部注明 |
+| `static-init/returnInStaticInit.cj`、`property/propertyAccessorRules.cj`、`intrinsic/*`、`extend/*`、`conditional-compilation/*`、`deprecation/*` | 锚整条声明 / 缺 `open` 基类 / 混在一段 | 按官方 kind 与范围改正；`classInheritance` / `overrideAndWeakening` 的父类补 `open`（否则官方先报 `sema_non_inheritable_super_class`）；`intrinsic` 的 `INVALID_INTRINSIC_DECL` 用无函数体形态；`conditional-compilation` 每个条件独立成段以隔离 parser 错误，`arch == 1` 用 `CONDITIONAL_COMPILATION_INVALID_CONDITION_VALUE`、`arch == "arm"` 用 `_NOT_SUPPORT_BUILTIN_VALUE`，CFIR 锚完整条件名 / RHS 表达式；`@When[1]` 复用 `CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR` 并锚完整 `1`，`@When[]` 仍由 parser 阶段处理 |
+| `deprecation/callAndTypeRef.cj`、`classInheritance.cj`、`overrideAndWeakening.cj` | 同文件混放、类名重复、weakening 标记含注解行 | 拆段、改名；类型名标完整 token，weakening 标记按完整声明 source（含注解行） |
+| `general/coreObjectNotFoundNoPrelude.cj` | 只标 `Object`，遗漏 CFIR 文件级诊断 | `Object` 标完整 identifier；`CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE` 标完整 `CfirFile.source`；官方 `sema_core_object_not_found_when_no_prelude` 无位置，不能作 CFIR 锚点 |
 | `extend/extendMutInterfaceOnPrimitive.cj` | — | 两条同锚诊断合并为一个标记；补 `needMemberOnly.cj` 对照（只报 `sema_need_member_implementation`） |
 | `general/conflictWithSubPackage.cj` | 注释称 `--no-sub-pkg` 双包 | 注释改为包目录 + `cjc -p`；消息补 `possible sub-package` |
 
@@ -260,15 +261,18 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | 用例 | 官方（本用例期望） | CFIR 当前输出 |
 | --- | --- | --- |
 | `call/arityMismatch`、`constructor/curriedConstructor`、`generic/upperBounds`、`imports/cannotRefToPackageName`、`inference/builderInferenceMultiLambda`、`inheritance/thisAndSuperOutsideClass`(super 部分)、`extend/extendMutMemberOnImmutable`、`extend/extendIllegalMember`、`property/propertyAccessorRules`、`general/conflictWithSubPackage`、`conditional-compilation/whenNoCondition`、`deprecation/deprecatedConstructor`、`deprecation/propertyAndInterfaceMember`、`thread-context/threadContextOpen` | 与 CFIR 一致 | 绿 |
-| `declaration-status/staticOpenAndOverload` | `INCOMPATIBLE_MODIFIERS` 锚 `open` | 额外把 `static` 也标一条 |
-| `constraints/nameInConstraintVisibleClassifier` | 锚 `Local` 首字母 | 锚整个 `Local` |
-| `deprecation/classInheritance`、`deprecation/overrideAndWeakening` | 父 strict + 子放宽 → `DEPRECATION_WEAKENING` | 报 `DEPRECATION_OVERRIDE_ERROR` |
-| `deprecation/callAndTypeRef` | 锚 `ReturnRef` / `CtorRef` | 把 Option 前缀 `?` 一并标入 |
-| `entry/mainSignature`、`entry/mainParameterType` | 锚 `main` 首字母 | 锚整个 `main` |
+| `declaration-status/staticOpenAndOverload` | parser 报冲突主锚 `open`，`static` / `func` 是 OtherHint | CFIR 为两个冲突修饰符分别报告 `INCOMPATIBLE_MODIFIERS`，fixture 标完整 `static` 与 `open` token |
+| `constraints/nameInConstraintVisibleClass`、`nameInConstraintVisibleClassifier` | 官方只锚名字首字符 | CFIR 覆盖完整名字 token；`std.core` classifier 漏查已修复，PSI / LightTree 通过 |
+| `deprecation/classInheritance`、`deprecation/overrideAndWeakening` | 父 strict + 子侧 `@Deprecated["old"]` 放宽 → `DEPRECATION_WEAKENING` | 已补齐真实子侧注解；weakening 按完整声明 source 标记，PSI / LightTree 与全量回归通过 |
+| `deprecation/callAndTypeRef` | 锚完整 `ReturnRef` / `CtorRef` 类型名 token | 保留 `CfirTypeRef.source` 的 `CjTypeReference` 合约；弃用 checker 从 delegated `CfirUserTypeRef` 的最终 qualifier part 取完整名称 token，PSI / LightTree 与全量回归通过 |
+| `entry/mainSignature`、`entry/mainParameterType` | 锚 `main` 首字符 | 锚完整 `main` token，PSI / LightTree Entry 用例通过 |
+| `entry/missingProgramEntry` | 官方 cjc 锚文件首字符 | CFIR `CfirProgramEntryChecker` 锚 `CfirFile.source`，标记完整文件 source；PSI / LightTree Entry 用例通过 |
 | `extend/extendImmutableIndexAssignment` | 锚 `[]` | 锚整条 operator 声明 |
 | `extend/extendMutInterfaceOnPrimitive` | `extend` 首字母；无 `REDUNDANT_MODIFIER`；`mut` 上另有 `PROPERTY_MUST_HAVE_ACCESSORS` | `extend` 整词；接口成员 `public` 不报 redundant；无 `PROPERTY_MUST_HAVE_ACCESSORS` |
 | `extend/extendImportedInterfaceOrphan` | 接口成员 `public` 各一条 `REDUNDANT_MODIFIER` | 不产出 |
-| `general/coreObjectNotFoundNoPrelude` | 锚 `Object` 首字母；文件首字符无标记 | 锚整个 `Object`；文件首字符多一条 `CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE` |
+| `general/coreObjectNotFoundNoPrelude` | 官方锚 `Object` 首字符；无位置的 core.Object 错误不可内联表达 | CFIR 标完整 `Object` token，并按 `checkCoreObjectAvailable` 的 `file.source` 标记完整文件 source |
+| `enum/errorSimpleEnum` | 错写 `NO_MATCHING_OPERATOR_INVOKE` | CFIR 的 `ConeNoMatchOperatorFunctionCallError` 对应官方 `sema_no_match_operator_function_call`，使用 `NO_MATCH_OPERATOR_FUNCTION_CALL` |
+| `range/rangeEndpointTypeMismatch` | `"a"..false` 错写 `TYPE_MISMATCH` | 布尔字面量转成推导出的 `String` 元素类型失败，使用 `CANNOT_CONVERT_LITERAL` |
 | `inference/arrayLiteralAndMultipleAssign`、`assign/mismatchedTypesMultipleAssign` | `MISMATCHED_TYPES_MULTIPLE_ASSIGN` | `TYPE_MISMATCH`（2026-10-06 已修复：`CfirAssignmentTypeMismatchChecker` 专用分支改报 `MISMATCHED_TYPES_MULTIPLE_ASSIGN`，实参取整个 RHS 类型；LLT `multipleAssignExpr` 族与 `InitializationCheck/variable_use_before_init_03/04` 的旧 `TYPE_MISMATCH` 标记同步迁移） |
 | `inheritance/cannotInheritSealedClass` | 锚子类名 `Sub` | 锚父类型引用 `Sealed` |
 | `inheritance/superAlone`、`inheritance/superclassMustBePlacedFirst`、`static-init/thisOrSuperInStaticInit` | 关键字首字母 1 字符 | 整个关键字 |
@@ -279,15 +283,15 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | `operator/subscriptAssignNoPositional` | 锚 `[]` | 前端解析该签名失败（`ABSTRACT_MEMBER_NOT_IMPLEMENTED` / `MISSING_FUNC_BODY` / `UNRESOLVED_REFERENCE`），已用 `DISABLE_WITH_PARSER: Psi` 关闭 PSI 变体 |
 | `static-init/returnInStaticInit` | 只报 static init 内 return | 额外报 `RETURN_TYPE_MISMATCH` |
 | `unary/invalidUnaryWithTarget` | `INVALID_UNARY_EXPR_WITH_TARGET` | `INVALID_UNARY_EXPR` |
-| `conditional-compilation/whenConditionErrors`、`whenConditionValueAndDebugOp` | 条件名 / 右值 1 字符 | 无条件编译诊断产出 |
+| `conditional-compilation/whenConditionErrors`、`whenConditionValueAndDebugOp` | 官方条件编译 kind；官方字符范围只作语义归属证据 | 原夹具缺 `WHEN_ENV`，pruner 因 explicit settings 为空提前返回；现补齐环境并按完整 identifier / RHS expression 标记 CFIR 诊断。非法 `@When` 记录诊断但保留目标声明，并消费条件以避免后续重复处理 |
 
 ### 官方无法用内联标记表达的诊断（记录备查）
 
 - 无位置：`sema_core_object_not_found_when_no_prelude`（JSON `Line = -1`）。
-- parser 阶段 kind，本项目无对应诊断名：`parse_expected_expression`（`@When[]`）、`parse_unrecognized_expression_in_when`
-  （`@When[1]`）、`parse_conflict_modifier`、`parse_intrinsic_function_*`、extend 内的 `parse_unexpected_declaration_in_scope`
+- parser 阶段 kind，本项目无对应诊断名：`parse_expected_expression`（`@When[]`）、`parse_conflict_modifier`、`parse_intrinsic_function_*`、extend 内的 `parse_unexpected_declaration_in_scope`
   （→ 本项目用 `EXTEND_ILLEGAL_MEMBER` 表达）、`sema_invalid_node_after_check`（多 lambda 泛型推导冲突的内部断言失败，
-  零宽位置）。
+  零宽位置）。官方 `parse_unrecognized_expression_in_when`（`@When[1]`）由 CFIR 复用
+  `CONDITIONAL_COMPILATION_INVALID_CONDITION_EXPR` 表达，锚完整表达式 token。
 - 官方有 kind 但 `CfirDiagnosticsList` 无同名诊断：`sema_no_core_object`、`sema_generics_type_variable_not_defined`
   （→ `NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER`）、`sema_invalid_mut_modifier_extend_of_struct`（→ `MUT_ONLY_ON_FUNCTION`
   与 `EXTEND_IMMUTABLE_MUT_PROPERTY`）、`sema_immutable_type_extend_assignment_index_operator`（→ `EXTEND_IMMUTABLE_INDEX_ASSIGNMENT`）、
@@ -342,7 +346,7 @@ SOURCE: <manual doc id or path>; <official C++ file>
 | --- | --- | --- |
 | `property/propertyInheritanceRules` | `PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF` 锚声明首字符 `p`（cjc 1.0.5 / 1.1.3 一致） | 锚属性名 `v`（`CfirOverrideChecker.kt:350` 用 `propertyNameDiagnosticSource()`；`CfirInheritanceDeepChecker.kt:350` 用 `nameSource ?: diagnosticSource`）。其余 8 个标记（继承类三种 + 访问器）整条声明锚点一致 |
 | `property/propertyInheritanceRulesLangVer100` | 1.0.0 语言版本下四种继承类诊断锚声明首字符 | 锚整条 prop 声明：CFIR 的诊断锚点没有按 `LANGUAGE_VERSION` 门禁 |
-| `pattern/patternDeclarationRules` | 模式类诊断锚模式 `GetBegin()` 一个字符（`PATTERN_CAN_NOT_BE_ASSIGNED` 锚 `(`、`PATTERN_NOT_MATCH` 锚 `C` / `F`、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 的 `f`、`TUPLE_*` 锚 `(`、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 锚 in 表达式的首字符）；`let Payload.D = v` 是 `ENUM_PATTERN_PARAM_SIZE_ERROR` | 模式类诊断锚整个模式（`declaration.pattern.source` / `pattern.source`）、`FORIN_PATTERN_MUST_BE_IRREFUTABLE` 锚 `for` 三字符、`EXPR_IN_FORIN_MUST_HAS_ITERATOR` 对 `1 + 2` 锚整个表达式；`let Payload.D = v` 报 `PATTERN_CAN_NOT_BE_ASSIGNED`（语义分歧：无参构造器限定名模式未被识别为 `EnumPattern` 不可解析形态，CFIR 缺 `ENUM_PATTERN_PARAM_SIZE_ERROR` 这条路径） |
+| `pattern/patternDeclarationRules` | 官方分别验证 enum 参数数量、tuple 形状、for-in 可迭代性与 guard Bool 类型；CJC 的 `GetBegin()` 位置只作官方证据 | `let Payload.D = v` 报 `ENUM_PATTERN_PARAM_SIZE_ERROR`；CFIR 标记覆盖整个模式单元、完整 `for` 关键字、完整 `1 + 2` 表达式与完整 guard 表达式；不裁剪 token；定向套件通过 |
 | `mut/mutableFunctionReferenceRules` | `ILLEGAL_CAPTURE_THIS` / `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 锚 `NameReferenceExpr` 首字符 1 个字符（`this` / 字段名首字母）；`classFinalizerCaptureMemberFunc` 里 `this.read` 的成员函数引用另报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（锚 `read` 首字母） | `ILLEGAL_CAPTURE_THIS` 锚 `this` 整词；字段捕获（`value`）锚整个字段名；`this.read`（非调用形态）不报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`（`CfirGeneralSemanticsChecker` 只遍历 `CfirFunctionCall`）；`let t = this`（finalizer 里把 `this` 当值）报 `INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER`，官方该形态是 `sema_use_this_as_an_expression_in_func`（本项目对应名是 `THIS_AS_EXPRESSION_IN_FUNC`，但只有 open/abstract 构造器与 struct/extend mut 成员函数两个生产者，析构器分支没有）。`INCOMPATIBLE_MUT_MODIFIER_BETWEEN_STRUCT_AND_INTERFACE`（`public` 首字符）锚点一致；`USE_MUTABLE_FUNC_ALONE` 的 struct 接收者形态（`s.inc`，`useMutableFuncAloneOnVarReceiver.cj`）锚点一致，但 `let f = this.inc` 形态（`useMutableFuncAloneOnThis.cj`）CFIR 2026-10-02 17:5x 实跑不产出该诊断（当时记为锚点一致，以批次 10 的实跑为准） |
 
 `CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的三个新用例均通过；`property/propertyAccessorRules`、`pattern/patternLegality`、`mut/immutableFunctionRestrictions` 等既有夹具不受本批次影响。
@@ -546,9 +550,9 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `inheritance/abstractMemberAccessRules` | `super.p` 访问父类抽象成员 → `ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY` 锚 `super` 的 `s` | 不产出 |
 | `inheritance/abstractMemberAccessRules` 形态 4 | 接口实例化：官方 `sema_interface_can_not_be_instantiated`（本项目无对应名，SUGGESTED 段） | 多报 `NO_CONSTRUCTOR` 锚类型名整段 |
 | `inheritance/abstractMemberAccessRules` 其余 9 个标记 | 与 CFIR 一致 | 绿 |
-| `constructor/superThisCallRules` | `ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER` / `_PRIMARY_CONSTRUCTOR` / `INVALID_THIS_CALL_OUTSIDE_CTOR` / `ILLEGAL_THIS_OUTSIDE_STRUCT_CONSTRUCTOR` 锚关键字首字母 1 字符 | 锚整个 `this` / `super` 关键字（4–5 字符），14 处 |
-| `constructor/superThisCallRules` | 主构造器形态：`sema_no_non_param_constructor_in_super_class` 锚宿主类名整段（4 字符） | 不产出 |
-| `constructor/superThisCallRules` | lambda 体里的 `super(a)`：官方只报位置 | 多报 `INVALID_THIS_CALL_OUTSIDE_CTOR` |
+| `constructor/superThisCallRules` | 官方 cjc 对关键字只锚首字符 | CFIR 按其完整 `this` / `super` source token 锚定，不裁剪 token；PSI / LightTree 定向用例通过 |
+| `constructor/superThisCallRules` | 主构造器形态：`sema_no_non_param_constructor_in_super_class` 锚宿主类名整段（4 字符） | 隐式父构造候选通过共享规则检查；Const / Constructor PSI 与 LightTree 切片通过 |
+| `constructor/superThisCallRules` | lambda 体里的 `super(a)`：保留位置诊断，并仍检查构造器隐式父委托 | deferred lambda 调用不再充当显式父委托；由构造器级 checker 报位置诊断，表达式 checker 不重复报 `INVALID_THIS_CALL_OUTSIDE_CTOR` |
 | `constructor/superThisCallRules` 合法段 L* | 接口 / struct / extend 成员里 `super.f()` 合法（0 error） | 多报 `INTERFACE_SUPER_NOT_ALLOWED` / `STRUCT_SUPER_NOT_ALLOWED` / `EXTEND_SUPER_NOT_ALLOWED`，3 处误报 |
 | `constructor/superThisCallRules` 其余标记（`MULTIPLE_PRIMARY_CONSTRUCTORS`、`THIS_AS_EXPRESSION_IN_FUNC` ×3、`INVALID_THIS_CALL_OUTSIDE_CTOR` ×2） | 与 CFIR 一致 | 绿 |
 | `generic/genericInstantiationRules` | 17 个标记 | 全部一致，绿 |
@@ -570,8 +574,8 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
 | --- | --- | --- | --- | --- |
 | `operator/coalescingRules.cj` | `INVALID_COALESCING` ×31、`TYPE_MISMATCH` ×4、`CANNOT_CONVERT_LITERAL` ×3 | 13 段 / 38 标记 | 各 38 OK / 0 DIFF / 0 未标记 | 子代理在"同名枚举也命中 Option 条件"的对照段里自定义 `enum Option<T>`，与 `pattern/patternLegality.cj`、`mock/createMockOptionBoundaryPlaceholder.cj` 的顶层 `Option` 重名（同包两文件同名触发 `sema_redefinition`），已改名 `CoalSameNameOption`（改名后仍命中 `IsCoalescingLeftTyValid` 的 identifier 条件，见官方 `:1102`） |
-| `static-init/staticFieldInitializationRules.cj` | `TYPE_UNINITIALIZED_STATIC_FIELD` ×21；另 2 段官方伴随诊断 `sema_class_uninitialized_field`（父类 static 字段被子类隐式构造器算作未初始化实例字段；类同时有未初始化 static 与实例字段）按 SUGGESTED 处理 | 24 段 / 21 标记 | 1.1.3：21 OK / 0 DIFF / 2 未标记（全部 SUGGESTED 段）；1.0.5：20 OK / 1 DIFF / 2 未标记（形态 8"未被调用的 lambda 里赋值"1.0.5 不报，已在头部记为语言版本分歧） | 无 |
-| `pattern/constPatternInterpolation.cj` | `INTERPOLATION_IN_CONST_PATTERN` ×10（全 testData 首次有内联标记；1 段官方 kind `sema_pattern_literal_expected` 在 v1.0.0 是死条目，按 SUGGESTED 记录） | 18 段 / 10 标记 | 各 10 OK / 0 DIFF / 0 未标记 | 子代理初稿的 L4"合法对照"段写了 `s.size()` / `"${x}".size()`，官方两版都报 `sema_no_match_operator_function_call`（`.size` 是 prop 不是方法，锚接收者 1 字符），已改成 prop 形态 `"v${x}${y}".size` 并补 L4b（常量模式分支体里的插值）；L2 / L2b / L3 的 warning 描述按实测改正（`chir_dce_unused_variable` 两版都有，`sema_unreachable_pattern` 锚 `_`） |
+| `static-init/staticFieldInitializationRules.cj` | `TYPE_UNINITIALIZED_STATIC_FIELD` ×21、`CLASS_UNINITIALIZED_FIELD` ×1；另形态 23 有官方伴随 `sema_class_uninitialized_field`（父类 static 字段被子类隐式构造器算作未初始化实例字段）按 SUGGESTED 处理 | 24 段 / 22 标记 | 1.1.3：21 static-field diagnostics OK；1.0.5：20 OK / 1 DIFF（形态 8 未被调用的 lambda 赋值），版本差异见夹具头部 | 形态 24 的官方伴随诊断标记在完整 `init` token 上 |
+| `pattern/constPatternInterpolation.cj` | `INTERPOLATION_IN_CONST_PATTERN` ×10、`UNREACHABLE_PATTERN` ×1（变量模式后的兜底 `_`） | 18 段 / 11 标记 | 两版 cjc：10 个插值错误一致；`UNREACHABLE_PATTERN` warning 锚完整 `_` token | LLT 原始样例同步补完整字符串 token 标记；插值模式错误会跳过后续覆盖分析，不再触发 Maranget 矩阵异常 |
 
 ### 取证结论
 
@@ -608,11 +612,8 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `operator/coalescingRules` | `let _: Int8 = o ?? 0` → `TYPE_MISMATCH` 锚左操作数 `o` | 锚整个 `o ?? 0`（coalescing 无专用生产者，由通用类型不匹配路径承载） |
 | `operator/coalescingRules` | 其余 19 个标记（4 个裸标识符 + 3 个右操作数 `TYPE_MISMATCH` 等） | 与 CFIR 一致，绿 |
 | `operator/coalescingRules`（`CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated`） | 同上 | 该路径只产出形态 1 的 4 个裸标识符标记，形态 2 起全部不产出 |
-| `static-init/staticFieldInitializationRules` | `TYPE_UNINITIALIZED_STATIC_FIELD` 锚整条 static 字段声明（含修饰符，如 `public static var x: Int64` 19 字符） | 锚字段名 1 字符（`x` / `y` / `a` / `b`），21 处；PSI 与 LightTree 两条路径相同 |
-| `static-init/staticFieldInitializationRules` 合法对照 D（`classStaticInitThrowSkipsCheck.cj`：`static init` 体以 `throw` 终止，官方整段跳过、零诊断） | 零诊断 | 多报 `CLASS_UNINITIALIZED_FIELD` 锚 `a` / `b`，2 处 |
-| `static-init/staticFieldInitializationRules` 形态 24（类同时有未初始化 static 与实例字段，官方伴随 `sema_class_uninitialized_field` 锚实例构造器 `init` 首字符，不写标记） | — | CFIR 的 `CLASS_UNINITIALIZED_FIELD` 锚 `init`（构造器名），与官方伴随诊断锚点相同、仅因未写标记而显示为多出 |
-| `pattern/constPatternInterpolation` | `INTERPOLATION_IN_CONST_PATTERN` 锚字面量文本（10 个标记） | 不产出（`CfirConstPatternInterpolationChecker`，`CfirPatternExpressionChecker.kt:352-385`，整块被注释、无注册） |
-| `pattern/constPatternInterpolation` 形态 6（or 模式 `case "a${y}" \| "b" => 0`） | 报一条插值诊断，锚 `"a${y}"` | CFIR 在 `runCheckers` 阶段抛 `FileAnalysisException`：`CfirMatchUnreachablePatternChecker.isCoveredBy`（`:81`）→ `MarangetChecker.isUseful` → `MatrixUtils.getFirstColumnType` 抛 `MarangetException: matrix first-column types are inconsistent`（`MatrixUtils.kt:25`），该 `match` 整段没有诊断；PSI 与 LightTree 两条路径相同 |
+| `static-init/staticFieldInitializationRules` | 官方 static 字段未初始化语义 | CFIR 在字段名 token 上报告；throw 终止的 static init 不再误报静态字段；`CLASS_UNINITIALIZED_FIELD` 锚完整 `init` token |
+| `pattern/constPatternInterpolation` | `INTERPOLATION_IN_CONST_PATTERN` 锚完整字符串字面量（10 个错误标记）；变量模式后的 `_` 另有 `UNREACHABLE_PATTERN` warning | CFIR 在 pattern legality 阶段识别插值常量模式，并在无效 pattern 存在时跳过 Maranget 覆盖分析；or 模式不再触发矩阵异常；定向套件通过 |
 
 `CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated` 的两个新用例（Pattern / StaticInit）本次聚焦跑均被跳过。
 
@@ -634,7 +635,7 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | 夹具 | 覆盖的 CFIR 诊断名 | 段数 / 标记数 | 1.0.5 / 1.1.3 exact_check | 主会话修正 |
 | --- | --- | --- | --- | --- |
 | `interop/tupleFieldCTypeRules.cj` | `INVALID_TUPLE_FIELD_CTYPE` ×22；另有 4 段按 SUGGESTED 处理（官方同段必带的 `sema_illegal_member_of_cstruct`、`sema_invalid_cfunc_arg_type` / `sema_invalid_cfunc_return_type`、`sema_unsafe_function_invoke_failed`、`sema_upper_bound_must_be_class_or_interface`，本项目都有名但已在别的夹具覆盖） | 28 段 / 22 标记 | 各 22 OK / 0 DIFF / 12 未标记（全部落在 4 个 SUGGESTED 段） | ① 子代理把 `@C struct TFCCPoint` 在 20 多段重复声明——diagnostics2 的 `// FILE:` 段是**同一包**里的不同文件，顶层名必须在整个夹具文件内唯一，PSI 路径因此满屏 `CLASSIFIER_REDECLARATION` + `AMBIGUOUS_USE`；按段改名为 `TFCCPointS1`…`TFCCPointS28`。② 改名时**被内联标记切断的名字**（`<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPoint`）不会被普通词边界替换命中，第一版改名脚本漏了它们，导致 4 段里出现 `TTFCCPointS<n>` 之类的未声明类型（连带 `sema_not_a_type` / `sema_generic_type_without_type_argument` 等 4 条噪声诊断）；修正后 22/22 全中。 |
-| `initialization/instanceFieldInitializationRules.cj` | `CLASS_UNINITIALIZED_FIELD` ×17（全 testData 此前只在 diagnostics/ 与 LLT 有覆盖，diagnostics2 下只有泛型夹具里的 5 条伴随标记）；形态 10 / 11 / 12 的官方伴随诊断 `sema_used_before_initialization`、`sema_illegal_usage_of_member`、`sema_recursive_constructor_call`（本项目都有名、已在别处覆盖）按官方 Range 记录、不写标记 | 27 段 / 17 标记 | 各 17 OK / 0 DIFF / 3 未标记（全部是上面三条伴随诊断） | 子代理三次网关失败后由主会话按 70 余个探针自己写；头部把 `DiagnosticSema.def` 行号从 :206 改正为 :191；形态 7（父类 `private` 字段）的锚点从 `var` 改到 `private` 修饰符首字母 |
+| `initialization/instanceFieldInitializationRules.cj` | `CLASS_UNINITIALIZED_FIELD` ×17（所有显式构造器锚点） | 27 段 / 21 标记（含四条完整 token 伴随诊断） | PSI / LightTree 定向全绿；补入 inherited-field 检查与同 source 多字段去重 |
 | `static-members/staticContextAccessRules.cj` | `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`、`STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER`、`STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC`、`STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER`、`OBJECT_CANNOT_ACCESS_STATIC_MEMBER`、`ILLEGAL_ACCESS_NON_STATIC_MEMBER`（这六个名字在 diagnostics2 下此前零内联标记，只有 LLT 有覆盖） | 24 段 / 41 标记 | 各 41 OK / 0 DIFF / 2 未标记（形态 10 的 `sema_used_before_initialization` 伴随，按 static-init 夹具的先例只登记不写标记） | 无（头部引用的 `TypeCheckExpr.cpp:52/83/85`、`TypeCheckReference.cpp:150-159/211-219/449-462/500/525/618/764`、`TypeCheckDecl.cpp:89/107/256`、`Utils.cpp:325`、`ScopeManager.h:32`、`DeclAttributeChecker.cpp:117` 已逐条与源码核对；`ILLEGAL_ACCESS_NON_STATIC_MEMBER` 的 4 处标记由整个类型名收窄为 1 字符是子代理自己按实测改的） |
 
 ### 取证结论
@@ -671,17 +672,16 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `interop/tupleFieldCTypeRules` | `INVALID_TUPLE_FIELD_CTYPE` 锚**元组内出问题字段类型**的首字符 1 字符 | PSI 与 LightTree 两条路径相同：锚**整个元组类型引用**（`CfirTupleCFieldTypeChecker` 用 `typeRef.source`，如 `(TFCCPoint, Int64)`），22 个标记全部红在元组起始左括号 |
 | `interop/tupleFieldCTypeRules` | 同上（SUGGESTED 段 6 / 13 / 14 / 15 的伴随诊断） | LightTree 路径额外多报 `ILLEGAL_MEMBER_OF_CSTRUCT`（形态 6）、别名使用点的第二条 `INVALID_TUPLE_FIELD_CTYPE`（形态 10）、`INVALID_CFUNC_PARAMETER_TYPE` / `INVALID_CFUNC_RETURN_TYPE` / `UNSAFE_FUNCTION_INVOKE_FAILED`（形态 13 / 14）、`UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`（形态 15）、warning `UNUSED_IMPORT`（形态 17）；PSI 路径在具名元组字段形态多报 `UNDECLARED_TYPE_NAME`（把字段名 `first` 当类型名） |
 | `interop/tupleFieldCTypeRules`（WithoutAliasExpansion 路径） | 同上 | 只产出形态 1 一条（锚整个元组），形态 2 起全部不产出 |
-| `initialization/instanceFieldInitializationRules` | `CLASS_UNINITIALIZED_FIELD` 锚 `init` 首字母 1 字符（显式构造器） | 锚整个 `init` 关键字（4 字符，`constructorNameDiagnosticSource` 取 `initKeyword` 整段），13 处 |
+| `initialization/instanceFieldInitializationRules` | `CLASS_UNINITIALIZED_FIELD` 锚 `init` 首字母 1 字符（显式构造器） | 锚整个 `init` identifier token；父类未初始化字段也纳入子类构造器检查 |
 | `initialization/instanceFieldInitializationRules` | 无构造器形态锚**字段声明首字符**（`var` / `let` / `private`） | 锚字段名（`a` / `x`），4 处 |
-| `initialization/instanceFieldInitializationRules` 形态 6（父类未初始化字段传递给子类） | 父类字段声明一条 + 子类 `init` 一条 | 父类那条一致，子类那条改报成同一 `init` 上的重复条目 `<!CLASS_UNINITIALIZED_FIELD, CLASS_UNINITIALIZED_FIELD!>init<!>()`（`instanceFieldInfos(context)` 不带 `includeInherited`） |
-| `initialization/instanceFieldInitializationRules` 形态 9（lambda 内赋值） | 字段仍算未初始化，锚 `init` | `init` 那条一致（但锚点宽度不同），另多报 `CAPTURE_BEFORE_INITIALIZATION` |
-| `initialization/instanceFieldInitializationRules` 形态 10 / 11 / 12 的伴随诊断 | `USED_BEFORE_INITIALIZATION`、`ILLEGAL_USAGE_OF_MEMBER`、`RECURSIVE_CONSTRUCTOR_CALL` | 三条都产出且锚点与官方一致（官方也有，只是本文件未写标记） |
-| `static-members/staticContextAccessRules` | `STATIC_MEMBERS_CANNOT_CALL_MEMBERS` / `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 锚 `this` / `super` 首字母 1 字符 | 锚整个 `this` / `super`（4–5 字符），多处；形态 5 / 14 的 `this.<静态成员>` 还**同时**多报一条 `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`（官方只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER`） |
+| `initialization/instanceFieldInitializationRules` 形态 6 / 8 | 父类字段声明一条 + 子类 `init` 一条；一个构造器漏多个字段只报告一次 | 子类检查纳入可见父字段；同一个完整 `init` source 只输出首个未初始化字段诊断 |
+| `initialization/instanceFieldInitializationRules` 形态 9–12 的伴随诊断 | CFIR / 官方同时产生完整标记范围内的伴随诊断 | 标注完整字段名、成员名和构造器名 token；PSI / LightTree 通过 |
+| `static-members/staticContextAccessRules` | `STATIC_MEMBERS_CANNOT_CALL_MEMBERS` / `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` | CFIR 锚完整 `this` / `super` token；静态成员接收者只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER`，不重复报 static-this |
 | `static-members/staticContextAccessRules` | `STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER`、`STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER` 锚裸名标识符 / `static` 首字母 | 一致，绿 |
-| `static-members/staticContextAccessRules` | `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 锚 lambda 里裸名首字母 | 静态属性访问器里的 lambda 一致（绿）；static func 体内 lambda 里的 `this.a` 官方报 `STATIC_MEMBERS_CANNOT_CALL_MEMBERS`，CFIR 不产出 |
+| `static-members/staticContextAccessRules` | `STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC` 锚 lambda 里裸名首字母；static lambda 内显式 `this` 访问实例成员报 `STATIC_MEMBERS_CANNOT_CALL_MEMBERS` | 静态属性访问器与 static func lambda 均按官方规则产出；静态外层语境沿嵌套 lambda 保留 |
 | `static-members/staticContextAccessRules` | `ILLEGAL_ACCESS_NON_STATIC_MEMBER` 锚**类型名首字符** | 锚整个类型名（`SCATopLevelHost`、泛型 `SCAGenericStatic<Int64, String>`），4 处 |
-| `static-members/staticContextAccessRules` 形态 12（struct 实例函数里 `this.b = 1`，`b` 是 static var） | 官方只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` | 另多报 `CANNOT_MODIFY_VAR` |
-| `static-members/staticContextAccessRules` 形态 16（interface 里 `this.<静态 prop>`） | 官方报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 锚 `this` | 改报 `UNRESOLVED_REFERENCE`（`this.sp` 未解析） |
+| `static-members/staticContextAccessRules` 形态 12（struct 实例函数里 `this.b = 1`，`b` 是 static var） | 官方只报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` | 只报对象访问静态成员；不再附加 `CANNOT_MODIFY_VAR` |
+| `static-members/staticContextAccessRules` 形态 16（interface 里 `this.<静态 prop>`） | 官方报 `OBJECT_CANNOT_ACCESS_STATIC_MEMBER` 锚 `this` | CFIR 已解析 `this.sp` 并报告对象访问静态成员 |
 | `static-members/staticContextAccessRules` 形态 10 的 `USED_BEFORE_INITIALIZATION` 伴随 | 官方有（未写标记） | CFIR 产出且锚点一致 |
 | `initialization` / `static-members`（WithoutAliasExpansion 路径） | — | 两个新用例本次聚焦跑均被跳过 |
 
@@ -757,10 +757,10 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `operator/operatorOverloadDeclarationRules` | `INVALID_SUBSCRIPT_ASSIGN_PARAMETER` 锚非法具名形参标识符、`_PARAM_NUM` 与 `_RETURN` 锚 `[]` 或返回类型整段 | `[]` setter 的三条**全部不产出** |
 | `operator/operatorOverloadDeclarationRules` | 官方只在返回类型与内建不一致时才有别的诊断（本文件按官方只写 built_in 一条） | 形态 7 多报 `RETURN_TYPE_INCOMPATIBLE`（CFIR 侧补充规则 `CfirOperatorDeclarationChecker.kt:140-148`）；`-` / `!` / `/` 的内建重载段还多报 `EXTEND_MEMBER_CANNOT_SHADOW` |
 | `operator/operatorOverloadDeclarationRules` | 0 形参 + 非一元运算符（`+` / `==`）→ 个数诊断 | `+` 被 CFIR 归一成 `unaryPlus`，不报个数诊断；`==` 一致 |
-| `varray/varrayConstructorRules` | 18 个标记 | PSI 与 LightTree 两条路径全部一致（绿）；额外：`VArray<Int64, $3>(item: 1)` 段官方 `sema_unknown_named_argument`（本项目无同名 CFIR 名）被改报 `NAMED_PARAMETER_NOT_FOUND`（映射到另一个官方 kind）；泛型上界段多报 `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`（官方也有，未写标记） |
+| `varray/varrayConstructorRules` | `UNKNOWN_NAMED_ARGUMENT` 锚完整 `item` token；泛型上界段补齐官方的 `UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE`，其余 VArray 标记保持原范围 |
 | `varray/varrayConstructorRules`（WithoutAliasExpansion 路径） | 同上 | 18 个标记一个都不产出 |
-| `interop/cfuncSignatureRules` | `CFUNC_CANNOT_HAVE_NAMED_ARGS` 锚形参首字符 1 字符 | 锚整个 `value!: Int64` / `bad!: String`，形态 1 一处、形态 2 / 5 / 8 / 9 与官方第二条同起点的段被合并成同一个范围上的两个名字（`<!CFUNC_CANNOT_HAVE_NAMED_ARGS, CFUNC_CANNOT_HAVE_UNIT_ARGS!>bad!: Unit<!>`） |
-| `interop/cfuncSignatureRules` | `INVALID_CFUNC_PARAMETER_TYPE` / `CFUNC_CANNOT_HAVE_UNIT_ARGS` 锚"形参名 → 类型终点"整段 | `foreign func` 路径只锚类型（`Rune`、`CSRSpecText`、`(Int64) -> Unit`），`CFunc<…>` 类型位置一致 |
+| `interop/cfuncSignatureRules` | `CFUNC_CANNOT_HAVE_NAMED_ARGS` 锚形参首字符 1 字符 | CFIR 锚完整参数名 token；Unit 错误使用完整 `name!: Unit` 参数 source。两条 source 按各自 owner 独立标记 |
+| `interop/cfuncSignatureRules` | `CFUNC_CANNOT_HAVE_UNIT_ARGS` 锚"形参名 → 类型终点"整段；`INVALID_CFUNC_PARAMETER_TYPE` 按 factory 的 `CjTypeReference` source 标记完整类型引用 | `INVALID_CFUNC_PARAMETER_TYPE` 的 foreign 与 nested `CFunc` fixtures 均按完整类型引用更新 |
 | `interop/cfuncSignatureRules` | 形态 3（具名形参后跟无名形参）官方只有 `parse_named_parameter_after_unnamed`，本族零诊断 | 误报 `CFUNC_CANNOT_HAVE_NAMED_ARGS`（`b!: Int64`）与 `CFUNC_CANNOT_HAVE_UNIT_ARGS`（`c: Unit`）两条 |
 | `interop/cfuncSignatureRules` | `CFUNC_TOO_MANY_ARGUMENTS` 锚 `C` 首字符 1 字符 | 锚整个 `CFunc<…>` 类型引用，2 处 |
 | `interop/cfuncSignatureRules` | `CFUNC_TYPE`（锚类型实参整段）、`VARRAY_IN_CFUNC`、`INVALID_CFUNC_RETURN_TYPE`（`?Int64`）、`CFunc<(Unit) -> Unit>` 的 Unit 形参类型 | PSI 与 LightTree 一致（绿）；嵌套标记处 CFIR 的渲染多出一个收尾 `<!>`（`…String<!><!>`），属测试框架渲染嵌套标记的已知表现 |
@@ -791,7 +791,7 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `typealias/typeAliasRulesV105.cj` | 同上（1.0.5-only 段） | 7 段 / 11 标记 | 1.0.5：11 OK / 0 DIFF；1.1.3：10 OK / 1 DIFF（形态 7 段，**属预期**：`exact_check.py` 不看 `LANGUAGE_VERSION` 指令，仍会用 1.1.3 编这段，1.1.3 本就不报） | 见下"版本门禁段必须单独成文件" |
 | `typealias/typeAliasRulesV110.cj` | 同上（1.1.0-only 段） | 2 段 / 4 标记 | 各 4 OK / 0 DIFF | 同上 |
 | `inheritance/inheritanceGraphRules.cj` | `INHERITANCE_CYCLE`、`CLASS_INHERIT_NON_CLASS_NOR_INTERFACE`、`INTERFACE_MEMBER_MUST_BE_IMPLEMENTED`、`NEED_MEMBER_IMPLEMENTATION`、`CANNOT_OVERRIDE`；1 段官方 `sema_class_need_abstract_modifier_or_func_need_impl` 无 CFIR 名按 SUGGESTED 记录 | 32 段 / 28 标记 | 各 28 OK / 0 DIFF / 6 未标记（伴随诊断：`sema_recursive_constructor_call`、`sema_non_inheritable_super_class`、`sema_illegal_extended_type`、`sema_inheritance_non_ref_type` ×2、形态 26 的 `sema_class_need_abstract_modifier_or_func_need_impl`） | ① 官方 `Diagnose(node, kind)` 对非 refactor kind 退化成 `GetBegin()` 1 字符，锚**声明的首 token**（`open` / `class` / `struct` / `enum` / `interface` / `extend` 关键字的首字母），第一版把标记写成整词被 exact_check 判 27 处 DIFF，已收窄；② `CANNOT_OVERRIDE` 是 refactor kind，锚**成员名整段**（`foo` 3 字符 / `a` 1 字符），第一版只标了首字母，已改正 |
-| `call/genericCallArgumentMappingRules.cj` | `AMBIGUOUS_ARG_TYPE`、`PARAMETERS_AND_ARGUMENTS_MISMATCH`；伴随 `TYPE_MISMATCH`、`NO_MATCH_FUNCTION_DECLARATION_FOR_REF` | 18 段 / 20 标记 | 各 20 OK / 0 DIFF / 0 未标记 | 无（头部对 `sema_generic_ambiguous_method_match_in_upper_bounds` 死分支与三个 v1.0.0 尚未引入的 kind（`sema_too_many_arguments` / `sema_no_value_for_parameter` / `sema_cannot_infer_parameter_type`，全树 grep 无命中）的判断经主会话复核成立） |
+| `call/genericCallArgumentMappingRules.cj` | `AMBIGUOUS_ARG_TYPE`、`PARAMETERS_AND_ARGUMENTS_MISMATCH`；伴随 `TYPE_MISMATCH`、`NO_MATCH_FUNCTION_DECLARATION_FOR_REF` | 18 段 / 20 标记 | CJC kind / 文案与两版本实测一致；CFIR 锚点按完整名称 token，不与官方单字符 MainHint 做 exact range 对比 | `sema_generic_ambiguous_method_match_in_upper_bounds` 的死分支与 v1.0.0 不存在的三个 kind 已复核；2026-10-12 修复调用级映射诊断与名称定位 |
 
 ### 取证结论
 
@@ -817,6 +817,8 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 
 ### CFIR 缺口（按官方写期望后仍红的用例；`:cfir:analysis-tests:test` 2026-10-03 11:5x–12:0x 聚焦跑 Typealias / Inheritance / Call 三组）
 
+`call/genericCallArgumentMappingRules.cj` 的泛型调用映射诊断及其完整名称 token 锚点已于 2026-10-12 修复，不再列为缺口。
+
 | 用例 | 官方（本用例期望） | CFIR 当前输出 |
 | --- | --- | --- |
 | `typealias/typeAliasRules` | `TYPEALIAS_CYCLE` 锚别名声明首字符 1 个（`public type A` 锚 `p`） | 锚 `type A` 整段（`public` 修饰符被排除在外，泛型实参列表被包含在内），如 `type TARB4<T>`；PSI 与 LightTree 相同 |
@@ -829,9 +831,6 @@ PSI 与 LightTree 两条路径的差异在每一行都相同（同一份 testDat
 | `inheritance/inheritanceGraphRules` | `NEED_MEMBER_IMPLEMENTATION` 锚宿主声明首 token | 改报 `ABSTRACT_MEMBER_NOT_IMPLEMENTED` 并锚宿主类型名，enum / extend 宿主不产出 |
 | `inheritance/inheritanceGraphRules` | `CANNOT_OVERRIDE` 锚成员名整段 | 一致（PSI 与 LightTree 绿）；WithoutAliasExpansion 路径全部 28 个标记不产出 |
 | `inheritance/inheritanceGraphRules`（WithoutAliasExpansion 路径） | 同上 | 只有 1 条 `INHERITANCE_CYCLE` 产出（形态 1，锚 `interface IgIpA`），其余全缺 |
-| `call/genericCallArgumentMappingRules` | `PARAMETERS_AND_ARGUMENTS_MISMATCH` 锚调用表达式首字符 1 字符 | 锚被调者整名（`GAMBox13` / `GAMBox14<…>` / `GAMHolder15`），4 处；`extend` 成员与类内成员两段一致 |
-| `call/genericCallArgumentMappingRules` | 伴随 `NO_MATCH_FUNCTION_DECLARATION_FOR_REF` 锚函数名首字母 | 锚整名（`gamS14Height`），1 处 |
-| `call/genericCallArgumentMappingRules`（WithoutAliasExpansion 路径） | 12 条 `AMBIGUOUS_ARG_TYPE` + 4 条 `PARAMETERS_AND_ARGUMENTS_MISMATCH` | 全部不产出 |
 
 ### 版本门禁段必须单独成文件
 

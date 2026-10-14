@@ -148,6 +148,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirCFuncCaptureNamedAccessChecker,
             CfirCFuncVariadicReferenceChecker,
             CfirClassifierAsExpressionChecker,
+            CfirDeprecatedValueAccessChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
             CfirAbstractSuperMemberAccessChecker,

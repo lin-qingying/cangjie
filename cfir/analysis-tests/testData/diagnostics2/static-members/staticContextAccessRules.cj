@@ -9,8 +9,8 @@
 //   LANGUAGE_VERSION 门禁段。合法对照段（含静态成员的类型）在 1.1.3 上语义层通过后于 CHIR/codegen 阶段
 //   LLVM ERROR（Reflection format: modifier type is invalid / EnumReflection format: operand numbers error），
 //   JSON 不产出；cjc 在语义有错时不会进入 codegen，故该崩溃本身证明这些段前端零语义错误，1.0.5 侧实测为
-//   JSON 零诊断。范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），
-//   本文件标记逐字符对齐官方范围；正文里的 (行,列) 均为段内行号（`// FILE:` 行被剥离后的干净文本坐标）。
+//   JSON 零诊断。cjc JSON 的 MainHint.Range 只作为官方 kind 与语义位置的证据；CFIR inline 标记完整 token，
+//   或覆盖该诊断的最小完整语法单元，不按 CLI 的单字符范围裁剪。正文里的 (行,列) 均为段内行号。
 //
 // 官方实现（external/cangjie_compiler，工作树 checkout 在 tag v1.0.0）：
 //   1) this / super 出现在静态上下文 → src/Sema/TypeCheckReference.cpp:150 CheckUsageOfThis，:159
@@ -203,7 +203,7 @@ class SCAStaticInitThis {
 class SCAStaticInitThisStatic {
     static var b: Int64 = 1
     static init() {
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.b = 2
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.b = 2
     }
 }
 
@@ -258,7 +258,7 @@ class SCAClassStaticPropLambda {
 class SCALambdaThis {
     var a: Int64 = 0
     static func f(): Int64 {
-        let g = { => <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a }
+        let g = { => <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a }
         return 1
     }
 }
@@ -273,8 +273,8 @@ class SCALambdaThis {
 class SCAVarInitInstance {
     var a: Int64 = 1
     let l: Int64 = 2
-    <!STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER!>s<!>tatic var x: Int64 = a
-    <!STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER!>s<!>tatic let y: Int64 = l
+    <!STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER!>static var x: Int64 = <!USED_BEFORE_INITIALIZATION!>a<!><!>
+    <!STATIC_VARIABLE_CANNOT_ACCESS_NON_STATIC_MEMBER!>static let y: Int64 = <!USED_BEFORE_INITIALIZATION!>l<!><!>
 }
 
 // ── 形态 11：struct 的 static func 里裸名读实例字段 / `this.<实例字段>`
@@ -290,7 +290,7 @@ struct SCAStructStatic {
     static func f() {
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!>
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>l<!>
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a
         return 1
     }
 }
@@ -307,8 +307,8 @@ struct SCAStructObjectAccess {
         }
     }
     func f() {
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.b = 1
-        return <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.sp
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.b = 1
+        return <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.sp
     }
 }
 
@@ -318,7 +318,7 @@ struct SCAStructObjectAccess {
 struct SCAStructInitThis {
     var a: Int64 = 0
     static init() {
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a = 1
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a = 1
     }
 }
 
@@ -346,10 +346,10 @@ enum SCAEnumStatic {
     }
     static func g() {
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>p<!>
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.p
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.p
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>()
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.f()
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.sp
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.f()
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.sp
         return 1
     }
 }
@@ -396,8 +396,8 @@ interface SCAInterfaceStatic {
     }
     static func s() {
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>p<!>
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.p
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>this.sp
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.p
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.sp
         return 1
     }
 }
@@ -431,12 +431,12 @@ class SCAGenericStatic<T, U> {
     static var b: Int64 = 1
     static func f() {
         <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> = 1
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.a = 2
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.a = 2
         return b
     }
 }
 func SCAGenericTypeName() {
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>S<!>CAGenericStatic<Int64, String>.a
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>SCAGenericStatic<Int64, String><!>.a
     let v = SCAGenericStatic<Int64, String>.b
     let _ = v
 }
@@ -459,15 +459,15 @@ class SCAInheritSub <: SCAInheritSuper {
     static var is_: Int64 = 2
     func ig() {}
     static func h() {
-        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>s<!>a = 1
-        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>s<!>f()
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.sa = 2
-        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.sf()
-        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>i<!>a
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>sa<!> = 1
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>sf<!>()
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.sa = 2
+        <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>this<!>.sf()
+        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>ia<!>
     }
     func inst() {
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.ss = 1
-        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.is_ = 2
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.ss = 1
+        <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>this<!>.is_ = 2
         return this.ia
     }
 }
@@ -495,13 +495,13 @@ func SCATopLevelObject(x: SCATopLevelHost) {
     x.g()
 }
 func SCATopLevelTypeNameVar() {
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>S<!>CATopLevelHost.a = 1
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>SCATopLevelHost<!>.a = 1
 }
 func SCATopLevelTypeNameFunc() {
-    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>S<!>CATopLevelHost.g()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>SCATopLevelHost<!>.g()
 }
 func SCATopLevelTypeNameFuncRef() {
-    let h = <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>S<!>CATopLevelHost.g
+    let h = <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>SCATopLevelHost<!>.g
     let _ = h
 }
 

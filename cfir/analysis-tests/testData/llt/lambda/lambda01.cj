@@ -15,6 +15,6 @@ class A {
         func foo3(): Int32 {
             return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> + b
         }
-        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> + b + <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>oo1()
+        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> + b + <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>foo1<!>()
     }
 }

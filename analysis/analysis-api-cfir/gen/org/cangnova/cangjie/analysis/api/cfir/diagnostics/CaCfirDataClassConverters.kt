@@ -1787,6 +1787,13 @@ private fun CaDiagnosticConverterBuilder.addConversions67() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions68() {
+    add(CfirErrors.UNKNOWN_NAMED_ARGUMENT) { cfirDiagnostic ->
+        UnknownNamedArgumentImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED) { cfirDiagnostic ->
         ExplicitSuperCallRequiredImpl(
             cfirDiagnostic as CjPsiDiagnostic,

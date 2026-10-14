@@ -83,8 +83,25 @@ object CfirConstFunctionBodyChecker : CfirFunctionChecker() {
     override fun check(declaration: CfirFunction) {
         if (context.isConstSafeDeclaration(declaration)) return
         if (!declaration.status.isConst) return
+        if (declaration is CfirConstructor) {
+            declaration.checkImplicitSuperConstructorConstness()
+        }
         context.constEvaluator(thisIsConst = true, inConstInit = declaration is CfirConstructor)
             .checkFunctionBody(declaration, requireConstDeclaration = false)
+    }
+
+    /** 对隐式父构造器调用应用与显式调用相同的 weak-const 检查。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirConstructor.checkImplicitSuperConstructorConstness() {
+        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return
+        val implicitSuperConstructors = implicitSuperConstructorsOrNull(owner) ?: return
+        if (implicitSuperConstructors.isEmpty() || implicitSuperConstructors.any { it.status.isConst }) return
+
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.EXPECT_CONST,
+            a = "expression",
+        )
     }
 }
 
@@ -923,8 +940,8 @@ private class CfirConstExpressionEvaluator(
             reporter = reporter,
             owner = owner,
             thisIsConst = true,
-            inConstInit = false,
-            weakSymbols = linkedSetOf(),
+            inConstInit = this.inConstInit,
+            weakSymbols = weakSymbols.toMutableSet(),
         )
 
     /**

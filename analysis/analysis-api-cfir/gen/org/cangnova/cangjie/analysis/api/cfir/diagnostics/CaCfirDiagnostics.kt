@@ -362,6 +362,11 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val parameterName: Name
     }
 
+    interface UnknownNamedArgument : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = UnknownNamedArgument::class
+        val argumentName: Name
+    }
+
     interface ArgumentPassedTwice : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ArgumentPassedTwice::class
     }

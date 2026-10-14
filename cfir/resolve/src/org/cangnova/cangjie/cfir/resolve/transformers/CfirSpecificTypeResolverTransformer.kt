@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.diagnostic.ConeNotATypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
@@ -148,7 +149,7 @@ class CfirSpecificTypeResolverTransformer(
         data: TypeResolutionConfiguration,
     ): CfirErrorTypeRef {
         return buildErrorTypeRef {
-            source = typeRef.source
+            source = typeRef.diagnosticSource(diagnostic)
             if (errorTypeAsResolved || resolvedType !is ConeErrorType) {
                 coneType = resolvedType
             }
@@ -164,6 +165,17 @@ class CfirSpecificTypeResolverTransformer(
             }
         }
     }
+
+    /**
+     * Qualified type lookup reports a non-type final member, so its diagnostic belongs to that complete name token.
+     * Simple references retain the original source, which already spans their complete identifier.
+     */
+    private fun CfirTypeRef.diagnosticSource(diagnostic: ConeDiagnostic) =
+        if (diagnostic is ConeNotATypeError && this is CfirUserTypeRef) {
+            qualifier.lastOrNull()?.source ?: source
+        } else {
+            source
+        }
 
     /**
      * 返回给定限定名中最小的不可解析前缀。

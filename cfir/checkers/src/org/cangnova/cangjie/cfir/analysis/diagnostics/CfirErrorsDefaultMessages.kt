@@ -243,6 +243,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(
+            CfirErrors.UNKNOWN_NAMED_ARGUMENT,
+            "Unknown named argument prefix ''{0}:''.",
+            RENDER_NAME,
+        )
+        map.put(
             CfirErrors.ARGUMENT_PASSED_TWICE,
             "Argument already passed for this parameter.",
         )

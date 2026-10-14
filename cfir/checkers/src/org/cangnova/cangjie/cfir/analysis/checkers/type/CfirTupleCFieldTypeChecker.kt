@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTupleTypeRef
 import org.cangnova.cangjie.cfir.types.CfirCTypeSemantics
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 
@@ -44,17 +45,17 @@ object CfirTupleCFieldTypeChecker : CfirResolvedTypeRefChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(typeRef: CfirResolvedTypeRef) {
         val tupleType = typeRef.coneType as? ConeTupleType ?: return
-        if (tupleType.elementTypes.none { elementType ->
-                CfirCTypeSemantics.isCStruct(context.session, elementType)
-            }
-        ) {
+        // 别名展开和 lambda 参数推断也可能得到 ConeTupleType，但它们没有当前 tuple 的字段语法，
+        // 不能在别名使用点或推断变量上重复报告。只让显式 tuple 引用进入字段级检查。
+        val tupleSyntax = typeRef.delegatedTypeRef as? CfirTupleTypeRef ?: return
+        for ((index, elementType) in tupleType.elementTypes.withIndex()) {
+            if (!CfirCTypeSemantics.isCStruct(context.session, elementType)) continue
+            val fieldTypeSource = tupleSyntax.elementTypeRefs.getOrNull(index)?.source ?: continue
+            reporter.reportOn(
+                source = fieldTypeSource,
+                factory = CfirErrors.INVALID_TUPLE_FIELD_CTYPE,
+            )
             return
         }
-
-        val source = typeRef.source ?: typeRef.delegatedTypeRef?.source ?: return
-        reporter.reportOn(
-            source = source,
-            factory = CfirErrors.INVALID_TUPLE_FIELD_CTYPE,
-        )
     }
 }

@@ -384,7 +384,7 @@ object CfirExtendImmutableMutInterfaceChecker : CfirExtendChecker() {
 /**
  * extend 体内 `mut` 函数修饰符合法性检查器。
  *
- * 官方 `sema_invalid_mut_modifier_extend_of_struct`：extend 体内不允许 `mut` 函数，
+ * 官方 `sema_invalid_mut_modifier_extend_of_struct` 的函数路径：extend 体内不允许 `mut` 函数，
  * **除非被扩展目标是 struct 值类型**（`extend R { mut func f() {} }`，R 为 struct，
  * cjc 1.0.5 实测无诊断）。该判定的唯一前提「被扩展目标是不是 struct」只有 extend 声明
  * 自身掌握，因此规则归 extend 层，而不是函数声明层：函数声明层看不到 extend 目标类型，
@@ -398,37 +398,27 @@ object CfirExtendMutFunctionModifierChecker : CfirExtendChecker() {
     override fun check(declaration: CfirExtend) {
         val targetConeType = declaration.extendedTypeRef.semanticExtendType(context.session) ?: return
 
-        // 官方 DeclAttributeChecker::CheckExtendAttribute（DeclAttributeChecker.cpp:231-252）：
-        // 命中条件是「成员带 MUT 语义属性 **且** 成员源码上存在 `mut` 修饰符 token」，
-        // 诊断锚定在该 `mut` token 上；随后
-        //  - 扩展目标声明不是 struct 且成员不是属性（PROP_DECL）→ 非法；
-        //  - 或扩展目标是 primitive 类型 → 非法。
-        // struct 目标上的 `mut` 成员合法（cjc 1.0.5 实测 `extend R1 { public mut func foo() }` 无诊断）。
-        // 源码 `mut` 修饰符就是官方 `mutDecl` 这一事实本身（属性 setter 的隐式 mut 没有
-        // 源码 token，天然被排除），因此这里以修饰符 token 为唯一入口，与官方判据一致。
+        // 官方 DeclAttributeChecker::CheckExtendAttribute（DeclAttributeChecker.cpp:231-252）
+        // 对函数的判据是：函数源码带 `mut`，且扩展目标不是 struct 或目标是 primitive 时非法。
+        // 属性由 CfirExtendImmutableMemberChecker 以 EXTEND_IMMUTABLE_MUT_PROPERTY 单独诊断，
+        // 不能在这里再报函数专属的 MUT_ONLY_ON_FUNCTION。
+        // struct 目标上的 `mut` 函数合法（cjc 1.0.5 实测 `extend R1 { public mut func foo() }` 无诊断）。
         val targetIsStruct = targetConeType is ConeStructType
         val targetIsPrimitive = targetConeType is ConePrimitiveType
 
         for (member in declaration.declarations) {
-            val memberName = when (member) {
-                is CfirNamedFunction -> member.name
-                is CfirProperty -> member.name
-                else -> null
-            } ?: continue
-            val mutSource = member.source
+            val function = member as? CfirNamedFunction ?: continue
+            val mutSource = function.source
                 ?.realSourceModifiers()
                 ?.modifierByToken(CjTokens.MUT_KEYWORD)
                 ?.source ?: continue
-            val illegal = when (member) {
-                is CfirProperty -> targetIsPrimitive
-                else -> !targetIsStruct || targetIsPrimitive
-            }
+            val illegal = !targetIsStruct || targetIsPrimitive
             if (!illegal) continue
 
             reporter.reportOn(
                 source = mutSource,
                 factory = CfirErrors.MUT_ONLY_ON_FUNCTION,
-                a = memberName,
+                a = function.name,
             )
         }
     }
@@ -461,7 +451,7 @@ object CfirExtendImmutableMemberChecker : CfirExtendChecker() {
                     declaration.status.isOperator &&
                     declaration.name == OperatorNameConventions.SET -> {
                     reporter.reportOn(
-                        source = declaration.source,
+                        source = declaration.functionNameOffsetsDiagnosticSource(),
                         factory = CfirErrors.EXTEND_IMMUTABLE_INDEX_ASSIGNMENT,
                         a = declaration.name,
                     )

@@ -234,21 +234,13 @@ func VCRTrailingLambda(): Int64 {
 
 func vcrMainS3() { 0 }
 
-// ── 形态 4（SUGGESTED，无内联标记）：VArray 构造器实参写成 `item:`（错的具名实参名）
+// ── 形态 4：VArray 构造器实参写成 `item:`（错的具名实参名）
 // kind：sema_unknown_named_argument（DiagnosticSema.def:100 "unknown named argument prefix '%s:'"）+ Note
 //   "expect the name of the named parameter is 'item'"。src/Sema/TypeCheckBuiltinExpr.cpp:383-389。
-// 锚点：实测 Range (2,31)..(2,32)，**只有 `item` 一个字符**。注意这是 `diag.Diagnose(*ve.args[0], kind, ...)`
-//   走 include/cangjie/Basic/DiagnosticEngine.h:843-857 的 node overload，末尾 `return Diagnose(node.GetBegin(), kind)`
-//   退化成 GetBegin 一字符（**不是** refactor kind 的整段锚点；本族四个 kind 全在 DiagRefactor 里，故它们的锚点
-//   都是整段）。
-// 本项目 CFIR 名：CfirDiagnosticsList.kt 里**没有** `sema_unknown_named_argument` 的条目（最接近的
-//   :401 NAMED_PARAMETER_NOT_FOUND 在 DiagnosticNameMapper.kt:153 对应的是官方 `sema_named_parameter_not_found`，
-//   另一个 kind），故按规则记为 SUGGESTED 段：段内不写内联标记。
-// 探针：形态 4。llt/varray/varray06.cj:13 已有 `VArray<Int64,$3>(itxx: 0)` 的 NAMED_PARAMETER_NOT_FOUND 单点形态，
-//   但那是 CFIR 侧名字、锚点策略是 NAME_OF_NAMED_ARGUMENT，与本段官方 kind 不同，故本段作为边界取证单独保留。
+// CFIR 按完整名称 token 锚定；官方 CLI 的单字符起点不用于 IDE 高亮范围。
 // FILE: varrayCtorWrongNamedArg.cj
 func VCRWrongNamedArg(): Int64 {
-    let a = VArray<Int64, $3>(item: 1)
+    let a = VArray<Int64, $3>(<!UNKNOWN_NAMED_ARGUMENT!>item<!>: 1)
     a[0]
 }
 
@@ -384,7 +376,7 @@ func vcrMainS13() { 0 }
 // FILE: varrayElemUpperBound.cj
 class VCRClassS14 {}
 
-func VCRBound<T>(value: T): Int64 where T <: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>VCRClassS14<!>, $2> {
+func VCRBound<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(value: T): Int64 where T <: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>VCRClassS14<!>, $2> {
     let _ = value
     0
 }

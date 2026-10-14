@@ -110,7 +110,7 @@ struct TFCCPointS1 {
 }
 
 func tfcLetAnnotation(): Int64 {
-    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS1, Int64) = (TFCCPointS1(), 1)
+    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS1<!>, Int64) = (TFCCPointS1(), 1)
     return t[1]
 }
 
@@ -124,7 +124,7 @@ struct TFCCPointS2 {
 }
 
 func tfcSecondSlot(): Int64 {
-    let t: (Int64, <!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS2) = (1, TFCCPointS2())
+    let t: (Int64, <!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS2<!>) = (1, TFCCPointS2())
     return t[0]
 }
 
@@ -144,7 +144,7 @@ struct TFCCOther {
 }
 
 func tfcTwoCStructs(): Int64 {
-    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS3, TFCCOther) = (TFCCPointS3(), TFCCOther())
+    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS3<!>, TFCCOther) = (TFCCPointS3(), TFCCOther())
     return 0
 }
 
@@ -160,7 +160,7 @@ struct TFCCPointS4 {
 }
 
 func tfcNestedTuple(): Int64 {
-    let t: (Int64, (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS4, Int64)) = (1, (TFCCPointS4(), 1))
+    let t: (Int64, (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS4<!>, Int64)) = (1, (TFCCPointS4(), 1))
     return t[0]
 }
 
@@ -174,27 +174,11 @@ struct TFCCPointS5 {
 }
 
 func tfcParenType(): Int64 {
-    let t: ((<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS5, Int64)) = (TFCCPointS5(), 1)
+    let t: ((<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS5<!>, Int64)) = (TFCCPointS5(), 1)
     return t[1]
 }
 
-// ── 形态 6：`@C` struct 的成员变量是含 `@C` struct 的元组（本族两条 + `@C` struct 成员族一条，整段按 SUGGESTED 处理）
-// 官方本族两条：锚属性类型里字段类型的首字母 `T` Range (8,13)..(8,14)；锚 `init` 形参类型里字段类型的首字母 `T`
-// Range (10,14)..(10,15)。struct 的属性类型与 init 形参类型是两个独立的元组类型节点，各走一次 `CheckTupleType`，
-// 所以各报一条。1.0.5 / 1.1.3 一致。探针 t08。
-// 同段还叠加 sema_illegal_member_of_cstruct（"member variable 't' of struct 'TFCCHolder' with @C must be
-// instantiated with CType"，refactor kind 锚整条字段变量声明 Range (8,9)..(8,30)），因为元组整体永远不是 CType
-// （Types.cpp:877 要求 kind == TYPE_STRUCT）。该伴随名在本项目是 ILLEGAL_MEMBER_OF_CSTRUCT
-// （CfirDiagnosticsList.kt:664、文案表 CfirErrorsDefaultMessages.kt:461、生产者 CfirCAnnotationChecker.kt:114），
-// 已由 llt/ffi/semantic_contract/cstructFieldsNegative.cj 覆盖，本文件不重复写它的标记，故整段按 SUGGESTED 处理。
-/*
-SUGGESTED_DIAGNOSTIC: INVALID_TUPLE_FIELD_CTYPE（名字与文案都可用，但同段还有 @C struct 成员族的
-    ILLEGAL_MEMBER_OF_CSTRUCT 需要一起断言，整段不写内联标记）
-SUGGESTED_MESSAGE: tuple member mustn't be struct with @C
-SOURCE: src/Sema/TypeCheckType.cpp:300-309 CheckTupleType；include/cangjie/Basic/DiagnosticSema.def:179；
-    伴随项 DiagnosticSema.def:183（sema_illegal_member_of_cstruct，判定入口 src/Sema/TypeCheckDecl.cpp:553
-    `IsCStructType(*sd.ty)`）
-*/
+// ── 形态 6：@C struct 字段与 init 参数的显式元组分别检查；字段还触发 @C struct 成员诊断。
 // FILE: tupleFieldInCStructMember.cj
 @C
 struct TFCCPointS6 {
@@ -203,9 +187,9 @@ struct TFCCPointS6 {
 
 @C
 struct TFCCHolder {
-    let t: (TFCCPointS6, Int64)
+    let <!ILLEGAL_MEMBER_OF_CSTRUCT!>t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS6<!>, Int64)<!>
 
-    init(t: (TFCCPointS6, Int64)) {
+    init(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS6<!>, Int64)) {
         this.t = t
     }
 }
@@ -218,7 +202,7 @@ struct TFCCPointS7 {
     var x: Int32 = 0
 }
 
-func tfcParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS7, Int64)): Int64 {
+func tfcParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS7<!>, Int64)): Int64 {
     return t[1]
 }
 
@@ -230,7 +214,7 @@ struct TFCCPointS8 {
     var x: Int32 = 0
 }
 
-func tfcReturn(): (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS8, Int64) {
+func tfcReturn(): (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS8<!>, Int64) {
     return (TFCCPointS8(), 1)
 }
 
@@ -245,9 +229,9 @@ struct TFCCPointS9 {
 }
 
 class TFCClassHolder {
-    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS9, Int64)
+    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS9<!>, Int64)
 
-    init(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS9, Int64)) {
+    init(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS9<!>, Int64)) {
         this.t = t
     }
 }
@@ -261,7 +245,7 @@ struct TFCCPointS10 {
     var x: Int32 = 0
 }
 
-type TFCTupleAlias = (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS10, Int64)
+type TFCTupleAlias = (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS10<!>, Int64)
 
 func tfcAliasToTuple(): Int64 {
     let t: TFCTupleAlias = (TFCCPointS10(), 1)
@@ -280,7 +264,7 @@ struct TFCCPointS11 {
 type TFCCPointAlias = TFCCPointS11
 
 func tfcAliasToCStruct(): Int64 {
-    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointAlias, Int64) = (TFCCPointS11(), 1)
+    let t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointAlias<!>, Int64) = (TFCCPointS11(), 1)
     return t[1]
 }
 
@@ -295,50 +279,27 @@ struct TFCCPointS12 {
 }
 
 func tfcFunctionType(): Int64 {
-    let f: ((<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS12, Int64)) -> Int64 = { t => t[1] }
+    let f: ((<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS12<!>, Int64)) -> Int64 = { t => t[1] }
     return f((TFCCPointS12(), 1))
 }
 
 func tfcFunctionTypeReturn(): Int64 {
-    let g: () -> (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS12, Int64) = { => (TFCCPointS12(), 1) }
+    let g: () -> (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS12<!>, Int64) = { => (TFCCPointS12(), 1) }
     return 1
 }
 
-// ── 形态 13：`foreign func` 形参 / 返回类型上的元组（本族 + CFFI 家族，整段按 SUGGESTED 处理）
-// 官方两条本族：形参元组字段类型首字母 `T` Range (6,34)..(6,35)、返回元组字段类型首字母 `T` Range (8,35)..(8,36)。
-// 1.0.5 / 1.1.3 一致。探针 t19 / t20。
-// 伴随 CFFI 家族：sema_invalid_cfunc_arg_type Range (6,30)..(6,51)、sema_invalid_cfunc_return_type
-// Range (8,34)..(8,52)（锚整个形参 / 返回类型节点，带 notes "return type is Tuple<Struct-TFCCPointS12, Int64>"）。
-// 这两个伴随名在 CFIR 里是 INVALID_CFUNC_PARAMETER_TYPE / INVALID_CFUNC_RETURN_TYPE，已由
-// interop/foreignFunctionParameterTypePlaceholder.cj、interop/foreignFunctionReturnType.cj 覆盖，本文件不重复。
-/*
-SUGGESTED_DIAGNOSTIC: INVALID_TUPLE_FIELD_CTYPE（名字与文案都可用，但官方锚点是"元组内字段类型首字符"、CFIR 锚整个
-    元组类型引用，且同段还有两条 CFFI 家族诊断需要一起断言，故整段不写内联标记）
-SUGGESTED_MESSAGE: tuple member mustn't be struct with @C
-SOURCE: src/Sema/TypeCheckType.cpp:300-309 CheckTupleType + :311-329 CheckFuncType 的 CFFI 分支；
-    include/cangjie/Basic/DiagnosticSema.def:179（本族）、:177（sema_invalid_cfunc_arg_type）；
-    include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:221（sema_invalid_cfunc_return_type）
-*/
+// ── 形态 13：foreign 参数与返回元组同时覆盖 tuple 字段检查和 CFFI 签名检查。
 // FILE: tupleFieldInForeignSignature.cj
 @C
 struct TFCCPointS13 {
     var x: Int32 = 0
 }
 
-foreign func tfcForeignParam(t: (TFCCPointS13, Int64)): Unit
+foreign func tfcForeignParam(t: <!INVALID_CFUNC_PARAMETER_TYPE!>(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS13<!>, Int64)<!>): Unit
 
-foreign func tfcForeignReturn(): (TFCCPointS13, Int64)
+foreign func tfcForeignReturn(): <!INVALID_CFUNC_RETURN_TYPE!>(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS13<!>, Int64)<!>
 
-// ── 形态 14：`CFunc<…>` 类型实参上的元组（本族 + CFFI 家族 + unsafe 调用，整段按 SUGGESTED 处理）
-// 官方三条：本族锚元组字段类型首字母 `T` Range (7,20)..(7,21)；sema_invalid_cfunc_arg_type Range (7,19)..(7,37)
-// （锚整个 `((TFCCPointS13, Int64))` 形参类型节点）；sema_unsafe_function_invoke_failed Range (8,12)..(8,13)
-// （在非 unsafe 上下文调用 CFunc 值）。1.0.5 / 1.1.3 一致。探针 t17。三个伴随诊断分属 CFFI / unsafe 家族。
-/*
-SUGGESTED_DIAGNOSTIC: INVALID_TUPLE_FIELD_CTYPE（同形态 13：名字可用，但锚点粒度与伴随诊断不适合写内联标记）
-SUGGESTED_MESSAGE: tuple member mustn't be struct with @C
-SOURCE: src/Sema/TypeCheckType.cpp:300-309 + :311-329（`ft.isC` 时 CheckCFuncParamType）；
-    include/cangjie/Basic/DiagnosticSema.def:177；sema_unsafe_function_invoke_failed 见 DiagnosticSema.def:171
-*/
+// ── 形态 14：CFunc tuple 参数同时触发字段类型、CFFI 参数和非 unsafe 调用诊断。
 // FILE: tupleFieldInCFuncArgument.cj
 @C
 struct TFCCPointS14 {
@@ -346,29 +307,18 @@ struct TFCCPointS14 {
 }
 
 func tfcCFuncArgument(): Int64 {
-    let f: CFunc<((TFCCPointS14, Int64)) -> Int64> = { t => t[1] }
-    return f((TFCCPointS14(), 1))
+    let f: CFunc<(<!INVALID_CFUNC_PARAMETER_TYPE!>(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS14<!>, Int64)<!>) -> Int64> = { t => t[1] }
+    return <!UNSAFE_FUNCTION_INVOKE_FAILED!>f((TFCCPointS14(), 1))<!>
 }
 
-// ── 形态 15：泛型上界 `where T <: (TFCCPointS14, Int64)`（`CheckUpperBound`，TypeCheckGeneric.cpp:28-35）
-// 本族 kind：sema_invalid_tuple_field_ctype；锚点：上界元组里字段类型的首字母 `T`，1 个字符，Range (6,48)..(6,49)。
-// 1.0.5 / 1.1.3 一致。探针 t21。
-// 伴随 sema_upper_bound_must_be_class_or_interface（锚类型形参名 `T`，Range (6,20)..(6,21)），属泛型上界族，已由
-// diagnostics2/constraints/repeatedBoundTypeParameter.cj 等覆盖；本段按 SUGGESTED 处理、整段不写内联标记。
-/*
-SUGGESTED_DIAGNOSTIC: UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE（已有名字与生产者
-    cfir/checkers/src/.../declaration/CfirTypeParameterBoundsChecker.kt:98，但同段还需断言本族另一条不同 kind 的
-    诊断，整段不写内联标记）
-SUGGESTED_MESSAGE: the upper bound '%s' of generic parameter '%s' must be class or interface
-SOURCE: src/Sema/TypeCheckGeneric.cpp:23-36 CheckUpperBound；include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:102
-*/
+// ── 形态 15：tuple 字段错误与不允许 tuple 作为 generic upper bound 的诊断同时覆盖。
 // FILE: tupleFieldInGenericUpperBound.cj
 @C
 struct TFCCPointS15 {
     var x: Int32 = 0
 }
 
-func tfcUpperBound<T>(t: T): Int64 where T <: (TFCCPointS15, Int64) {
+func tfcUpperBound<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(t: T): Int64 where T <: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS15<!>, Int64) {
     return 0
 }
 
@@ -383,7 +333,7 @@ struct TFCCPointS16 {
     var x: Int32 = 0
 }
 
-func tfcGenericArg(box: TFCBox<(<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS16, Int64)>): Int64 {
+func tfcGenericArg(box: TFCBox<(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS16<!>, Int64)>): Int64 {
     return 0
 }
 
@@ -403,15 +353,13 @@ func tfcBoxDefault<T>(): T {
 // kind：sema_invalid_tuple_field_ctype；锚点：`Option` 实参元组里字段类型的首字母 `T`，Range (9,20)..(9,21)。
 // 1.0.5 / 1.1.3 一致。探针 r01。同段的 sema_unused_import 是 warning、不是 error，不参与错误标记比对。
 // FILE: tupleFieldUnderOption.cj
-import std.collection.*
-
 @C
 struct TFCCPointS17 {
     var x: Int32 = 0
 }
 
 func tfcUnderOption(): Int64 {
-    let t: Option<(<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS17, Int64)> = None
+    let t: Option<(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS17<!>, Int64)> = None
     return 0
 }
 
@@ -428,7 +376,7 @@ struct TFCCPointS18 {
 }
 
 func tfcVArrayArg(): Int64 {
-    let a = VArray<(<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS18, Int64), $2>(repeat: (TFCCPointS18(), 1))
+    let a = VArray<(<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS18<!>, Int64), $2>(repeat: (TFCCPointS18(), 1))
     return 0
 }
 
@@ -441,11 +389,11 @@ struct TFCCPointS19 {
 }
 
 class TFCStaticHolder {
-    static func tfcStaticParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS19, Int64)): Int64 {
+    static func tfcStaticParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS19<!>, Int64)): Int64 {
         return t[1]
     }
 
-    static var tfcStaticField: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS19, Int64) = (TFCCPointS19(), 1)
+    static var tfcStaticField: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS19<!>, Int64) = (TFCCPointS19(), 1)
 
     init() {}
 }
@@ -467,7 +415,7 @@ struct TFCPlain {
 }
 
 extend TFCPlain {
-    func tfcExtendParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS20, Int64)): Int64 {
+    func tfcExtendParam(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS20<!>, Int64)): Int64 {
         return t[1]
     }
 }
@@ -481,7 +429,7 @@ struct TFCCPointS21 {
 }
 
 interface TFCIface {
-    func tfcIface(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS21, Int64)): Unit
+    func tfcIface(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS21<!>, Int64)): Unit
 }
 
 // ── 形态 22：形参类型 + 元组模式匹配（match 侧的 selector 只是表达式、不是类型位置，不产生第二条诊断）
@@ -492,7 +440,7 @@ struct TFCCPointS22 {
     var x: Int32 = 0
 }
 
-func tfcPatternMatch(t: (<!INVALID_TUPLE_FIELD_CTYPE!>T<!>FCCPointS22, Int64)): Int64 {
+func tfcPatternMatch(t: (<!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS22<!>, Int64)): Int64 {
     match (t) {
         case (_, b) => return b
     }
@@ -508,7 +456,7 @@ struct TFCCPointS23 {
     var x: Int32 = 0
 }
 
-func tfcNamedTuple(t: (<!INVALID_TUPLE_FIELD_CTYPE!>f<!>irst: TFCCPointS23, second: Int64)): Int64 {
+func tfcNamedTuple(t: (first: <!INVALID_TUPLE_FIELD_CTYPE!>TFCCPointS23<!>, second: Int64)): Int64 {
     return t[1]
 }
 
@@ -560,8 +508,6 @@ func tfcLegalPrimitive(): Int64 {
 //     直接返回假；VArray 虽递归成功但 `IsCTypeConstraint` 的 kind == TYPE_STRUCT 判定过不去。
 //     探针 r22 / r23 / r24 / r33 / r34。
 // FILE: legalContainerOfCStructTupleField.cj
-import std.collection.*
-
 @C
 struct TFCCPointS27 {
     var x: Int32 = 0

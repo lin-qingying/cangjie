@@ -26,7 +26,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.declaredUpperBoundTypesInCurrentContext
-import org.cangnova.cangjie.cfir.analysis.checkers.firstCharacterDiagnosticSource
 import org.cangnova.cangjie.cfir.analysis.checkers.hasInvalidDeclaredUpperBoundsInCurrentContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
@@ -190,8 +189,7 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
         val captureContext = context.currentInstanceFieldCaptureContext(field) ?: return
         // `ILLEGAL_CAPTURE_THIS` 归属于被捕获的 this，而不是字段 selector；隐式
         // receiver 没有独立源码节点时才回到字段引用本身（struct mut 语义）。
-        // `CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC` 对 `this` 接收者同样锚定在 `this`
-        // 首字符（官方 `sema_capture_this_or_instance_field_in_func` 对 `this.i` 也命名 `'this'`）。
+        // 捕获诊断覆盖完整的 `this` token，和 IDE 诊断范围策略一致。
         val thisSource = (expression.explicitReceiver as? CfirThisReceiverExpression)?.source
         val fieldSource = expression.calleeReference.source ?: expression.source
 
@@ -213,7 +211,7 @@ object CfirInstanceFieldCaptureChecker : CfirQualifiedAccessChecker() {
 
             is CfirNamedFunction -> if (outerFunction.status.isMut) {
                 reporter.reportOn(
-                    source = thisSource?.firstCharacterDiagnosticSource() ?: fieldSource,
+                    source = thisSource ?: fieldSource,
                     factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
                     a = field.name,
                     b = "mutable function '${outerFunction.name.asString()}'",
@@ -482,6 +480,7 @@ context(context: CheckerContext)
 private fun CfirExpression.currentStructMutationRoot(owner: CfirStruct): StructMutationRoot? {
     val ownerFieldSymbols = owner.declarations
         .filterIsInstance<CfirFieldVariable>()
+        .filterNot { field -> field.status.isStatic }
         .mapTo(linkedSetOf()) { field -> field.symbol }
     var current: CfirExpression = this
 
@@ -489,7 +488,7 @@ private fun CfirExpression.currentStructMutationRoot(owner: CfirStruct): StructM
         val field = current.resolvedFieldSymbolOrNull()
             ?.takeIf { it.isBound }
             ?.cfir as? CfirFieldVariable
-        if (field != null && field.symbol in ownerFieldSymbols) {
+        if (field != null && !field.status.isStatic && field.symbol in ownerFieldSymbols) {
             return StructMutationRoot(field, current)
         }
 
@@ -618,7 +617,12 @@ private fun CfirExpression.isImmutableStructValueForMutableFunctionAccess(): Boo
  */
 context(context: CheckerContext)
 internal fun CfirExpression.isStructReceiverType(): Boolean {
-    if (this is CfirThisReceiverExpression || this is CfirSuperReceiverExpression) return false
+    if (this is CfirThisReceiverExpression) {
+        val memberFunction = context.findClosestDeclaration<CfirNamedFunction>() ?: return false
+        val dispatchReceiverType = memberFunction.dispatchReceiverType ?: return false
+        return dispatchReceiverType.isStructReceiverType()
+    }
+    if (this is CfirSuperReceiverExpression) return false
     if (isResolvedTypeQualifier(context.session)) return false
     val type = coneTypeOrNull ?: return false
     return type.isStructReceiverType()

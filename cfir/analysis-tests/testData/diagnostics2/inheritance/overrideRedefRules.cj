@@ -2,13 +2,14 @@
 // 证据：官方 cjc 1.0.5 与 1.1.3 两版实测，静态库模式 `cjc <段>.cj -o out.a --output-type=staticlib
 // --diagnostic-format json`；每个 `// FILE:` 段单独编译（官方整包编译时一处 parse 错误会屏蔽其余段的语义诊断，
 // 且官方 HasPrevDiag 会吞掉同起点同文案的重复诊断）。本文件全部形态两版 kind、消息、Range 完全一致，无 1.0.0 / 1.1.3 分歧段。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是开区间；这里只用它确认官方诊断位置。
+// 本文件内联锚点遵守 CFIR 规范：标识符/修饰符取完整 token，声明级诊断取最小完整成员声明，不裁剪 token。
 // 本族官方 kind 的锚点口径分两种：
 //   (1) `diag.Diagnose(node, kind)`（非 refactor kind，退化为 node.GetBegin() 一个字符，include/cangjie/Basic/
 //       DiagnosticEngine.h:844-858）落在**整条成员声明的第一个字符**（含 `public` 等修饰符），
-//       本文件把标记只包住该首字符（X 标记包住 `public` 的 p）；
+//       CFIR 内联标记不复制这个单字符范围，而覆盖完整相关 token 或声明单元；
 //   (2) `diag.DiagnoseRefactor(kind, member, MakeRange(member.identifier))`（DeclAttributeChecker）落在**成员名首字符**，
-//       本文件同样把标记只包住成员名首字符（X 标记包住 `func f()` 里的 f）。
+//       CFIR 内联标记覆盖完整成员名 token，不把 token 裁成首字符。
 // 官方实现（`external/cangjie_compiler`，当前 checkout 在 tag v1.0.0；主文件
 // src/Sema/InheritanceChecker/StructInheritanceChecker.cpp）：
 //   - :952-974 CheckSameNameInheritanceInfo → :961 `diag.Diagnose(child, sema_static_and_non_static_member_cannot_have_same_name,
@@ -49,17 +50,16 @@
 //     sema_redef_modify_static_func，锚 `redef` 修饰符，与官方一致）。
 //   testFixtures 的 golden 映射表 DiagnosticNameMapper.kt 只登记了其中 STATIC_AND_NON_STATIC（:73）与
 //   INVALID_MEMBER_VISIBILITY_IN_CLASS（:118）；INVALID_OVERRIDE_MEMBER_IN_CLASS / REDEF_INSTANCE_ERROR 未登记（全表 191 条）。
-// 按源码读取（未跑 CFIR）可预判的锚点差异（以源码为准，实际差异以 CFIR 实跑为准）：
+// 已核对的 CFIR source 与实跑锚点：
 //   STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME 的 source 是 `ownInfo.nameSource ?: ownInfo.source ?: subject.source`，
 //     优先取**成员名**，官方锚 child 声明首字符（`public` 的 `p`），二者不同；
 //   INVALID_MEMBER_VISIBILITY_IN_CLASS 的 source 是 `memberInfo.source ?: member.source ?: classDecl.source`，取**成员声明**，
 //     官方锚成员名，同一形态下声明首字符与成员名首字符不同（`func f` 的 `f` 与 `f`）；
-//   INVALID_OVERRIDE_MEMBER_IN_CLASS 用 `ownInfo.source?.firstCharacterDiagnosticSource() ?: ownInfo.nameSource`，与官方同为声明首字符；
+//   INVALID_OVERRIDE_MEMBER_IN_CLASS 用 `ownInfo.source ?: ownInfo.nameSource`，CFIR 标记完整成员声明单元；
 //   REDEF_INSTANCE_ERROR 用 `redefModifier.source`，与官方同为 `redef` 修饰符。
-//   另：官方对"实例成员带 redef 且签名命中父类非 static 成员"报 sema_func_no_override_or_redefine_modifier（无 CFIR 对应名），
-//   本项目 CfirModifierChecker.kt:186-190 在同一形态改报 NOTHING_TO_OVERRIDE（锚 override 修饰符），语义不同。
-// 官方有而本项目无对应诊断名（按 SUGGESTED_DIAGNOSTIC 处理，段内不写标记）：
-//   sema_func_no_override_or_redefine_modifier、sema_missing_redefined_func、sema_invalid_override_or_redefine_member_in_interface。
+//   sema_func_no_override_or_redefine_modifier 用 REDUNDANT_MODIFIER_FOR_TARGET 表达“该继承场景不需要 redef”；
+//   sema_missing_redefined_func 用 NOTHING_TO_OVERRIDE 表达 static redef 没有对应目标。两者都优先使用语义等价的 CFIR 诊断。
+//   sema_invalid_override_or_redefine_member_in_interface 在本项目没有语义等价的 CFIR 诊断，保留为 SUGGESTED 证据。
 // 已有覆盖不重复：CANNOT_OVERRIDE（官方 sema_cannot_override）在 inheritance/classNotOpenForInheritance.cj；
 //   NOTHING_TO_OVERRIDE（官方 sema_missing_overridden_func 的本项目对应名）在 inheritance/nothingToOverride.cj 与
 //   inheritance/overrideInvisibleMember.cj、overrideInvisibleAndNothingToOverride.cj；RETURN_TYPE_INCOMPATIBLE
@@ -87,9 +87,9 @@ open class OverrideRedefOpenFuncParent {
 }
 
 abstract class OverrideRedefOpenFuncChild <: OverrideRedefOpenFuncParent {
-    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic func f(): Int64
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>public func f(): Int64<!>
 
-    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic func g(x: Int64): Int64
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>public func g(x: Int64): Int64<!>
 }
 
 // ── 形态 2：同 kind 的 property 形态（PROP_DECL 走 :654 调用点，消息里的 kind 词是 property）
@@ -104,7 +104,7 @@ open class OverrideRedefOpenPropParent {
 }
 
 abstract class OverrideRedefOpenPropChild <: OverrideRedefOpenPropParent {
-    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic prop p: Int64
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>public prop p: Int64<!>
 }
 
 /*
@@ -166,9 +166,8 @@ SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:988（CheckInhe
 //   + sema_func_no_override_or_redefine_modifier（锚 child 声明首字符 `public` 的 `p`，Range (12,5)..(12,6)）；
 //   形参表不同的 `redef func g(x)`（父类是 `g()`）只报前一条：后者需先过 CheckImplementationRelation 的同签名判定，
 //   签名不同时到不了 :988。
-// 本项目 CfirModifierChecker.kt:182 在同一形态报 REDEF_INSTANCE_ERROR（锚 `redef`，与官方同），
-// 另在 :186-190 报 NOTHING_TO_OVERRIDE（锚 override 修饰符），与官方 sema_func_no_override_or_redefine_modifier 语义不同。
-// CfirDiagnosticsList 无 sema_func_no_override_or_redefine_modifier 对应名，本段不写内联断言。
+// 本项目 CfirModifierChecker.kt 在同一形态报告 REDEF_INSTANCE_ERROR，并在匹配继承实例成员时以
+// REDUNDANT_MODIFIER_FOR_TARGET 表达“不需要 redef”；诊断均锚在完整 `redef` token。
 // FILE: redefInstanceFuncMatchingParentFunc.cj
 open class OverrideRedefMatchingParent {
     public open func f(): Int64 {
@@ -181,13 +180,13 @@ open class OverrideRedefMatchingParent {
 }
 
 class OverrideRedefMatchingChildA <: OverrideRedefMatchingParent {
-    public redef func f(): Int64 {
+    public <!REDEF_INSTANCE_ERROR, REDUNDANT_MODIFIER_FOR_TARGET!>redef<!> func f(): Int64 {
         return 2
     }
 }
 
 class OverrideRedefMatchingChildB <: OverrideRedefMatchingParent {
-    public redef func g(x: Int64): Int64 {
+    public <!REDEF_INSTANCE_ERROR!>redef<!> func g(x: Int64): Int64 {
         return 3
     }
 }
@@ -212,11 +211,11 @@ open class OverrideRedefStaticConflictParent {
 }
 
 open class OverrideRedefStaticConflictChild <: OverrideRedefStaticConflictParent {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func g(): Int64 {
+    public static func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>g<!>(): Int64 {
         return 2
     }
 
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic open func f(): Int64 {
+    public open func <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>f<!>(): Int64 {
         return 3
     }
 }
@@ -230,7 +229,7 @@ open class OverrideRedefStaticVarParent {
 }
 
 open class OverrideRedefStaticVarChild <: OverrideRedefStaticVarParent {
-    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static var x: Int64 = 1
+    public static var <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>x<!>: Int64 = 1
 }
 
 // ── 形态 8：`redef` 修饰符用在实例成员上（无父类同名成员）——官方 kind 是 sema_redef_modify_static_func
@@ -240,7 +239,7 @@ open class OverrideRedefStaticVarChild <: OverrideRedefStaticVarParent {
 // function 形态由 declaration-status/staticCannotBeOpenAbstractOverride.cj 覆盖，本段只补 property 形态。
 // FILE: redefInstanceProp.cj
 class OverrideRedefInstancePropClass {
-    <!REDEF_INSTANCE_ERROR!>r<!>edef prop p: Int64 {
+    <!REDEF_INSTANCE_ERROR!>redef<!> prop p: Int64 {
         get() {
             return 1
         }
@@ -280,15 +279,11 @@ open class OverrideRedefOpenVisibilityPropClass {
     }
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_missing_redefined_func，锚 child 声明首字符）
-SUGGESTED_MESSAGE: 'redef' %s '%s' does not have a redefined 'static' %s in its supertype
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1052（DiagnoseForOverriddenMember）；include/cangjie/Basic/DiagnosticSema.def:235
-*/
 // ── 形态 11：`static redef` 但父类型没有对应 static 成员（两种写法：成员名不存在 / 存在但签名不同）
 // kind：sema_missing_redefined_func "'redef' function 'g' does not have a redefined 'static' function in its supertype"
 // 锚点：child 声明首字符。1.0.5 / 1.1.3 一致 Range (8,5)..(8,6)、(14,5)..(14,6)。
-// 签名不同（形参表不同）时 MergeInheritedMemberHelper 不置 replaceOther，官方同样报本条；CFIR 无同名诊断，本段不写内联断言。
+// 签名不同（形参表不同）时 MergeInheritedMemberHelper 不置 replaceOther，官方同样报本条；CFIR 用 NOTHING_TO_OVERRIDE，
+// 在完整 `redef` token 上标记。
 // FILE: staticRedefWithoutStaticParentMember.cj
 open class OverrideRedefMissingStaticParent {
     public static func f(): Int64 {
@@ -297,33 +292,28 @@ open class OverrideRedefMissingStaticParent {
 }
 
 class OverrideRedefMissingStaticChildA <: OverrideRedefMissingStaticParent {
-    public static redef func g(): Int64 {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func g(): Int64 {
         return 2
     }
 }
 
 class OverrideRedefMissingStaticChildB <: OverrideRedefMissingStaticParent {
-    public static redef func f(x: Int64): Int64 {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func f(x: Int64): Int64 {
         return 3
     }
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_missing_redefined_func，锚 child 声明首字符）
-SUGGESTED_MESSAGE: 'redef' %s '%s' does not have a redefined 'static' %s in its supertype
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1052（DiagnoseForOverriddenMember，父类型为空时同样走这一分支）；include/cangjie/Basic/DiagnosticSema.def:235
-*/
 // ── 形态 12：没有 supertype 的 class / struct 里的 `static redef` 成员（继承成员表为空，:1052 仍然触发）
 // kind：sema_missing_redefined_func。锚点：child 声明首字符。1.0.5 / 1.1.3 一致 Range (2,5)..(2,6)、(8,5)..(8,6)。
 // FILE: staticRedefWithoutSupertype.cj
 class OverrideRedefNoSupertypeClass {
-    public static redef func h(): Int64 {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func h(): Int64 {
         return 1
     }
 }
 
 struct OverrideRedefNoSupertypeStruct {
-    public static redef func g(): Int64 {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func g(): Int64 {
         return 2
     }
 }

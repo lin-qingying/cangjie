@@ -3,8 +3,8 @@
 // --diagnostic-format json`。每段单独编译，段内行号即 JSON 的 Line（1 起始），列号 1 起始。
 // 1.1.3 本机在 CHIR 阶段对本文件涉及的元组 / 枚举 / 数组模式形态会 LLVM ERROR 崩溃（崩在语义检查之后，
 //    因此两版的语义诊断一致）；1.1.3 只取语义诊断，1.0.5 为准。文案见 include/cangjie/Basic/DiagnosticSema.def。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// cjc JSON 的 MainHint.Range 用于确认官方诊断 kind 与语义锚点；本文件的 inline 范围遵守 CFIR 规则，
+// 标记完整 token，或能表达该诊断位置的最小完整语法单元，不裁剪 token。
 // 官方实现：
 //   - src/Sema/TypeCheckDecl.cpp:259-281 CheckVarWithPatternDecl
 //     （:271-274 initializer 类型错或无模式 → 直接 return；:275-277 ChkPattern 失败 → sema_mismatched_type_for_pattern_in_vardecl；
@@ -37,24 +37,24 @@
 enum CanNotBeAssignedMulti { A | B | C }
 
 // 形态 1：元组模式里任一分量带类型注解即成为 TYPE_PATTERN → 不可反驳。
-// 两版各 1 error：sema_pattern_can_not_be_assigned（锚模式首字符 `(`，6:9..6:10）。
+// 两版各 1 error：sema_pattern_can_not_be_assigned（锚整个不可反驳元组模式）。
 func tuplePatternWithTypeAnnotation(v: (Int64, String)): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(<!>a: Int64, b: String) = (1, "s")
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(a: Int64, b: String)<!> = (1, "s")
 }
 
 // 形态 2：只给第二个分量加类型注解，同样不可反驳。
 func tuplePatternWithOneAnnotation(v: (Int64, String)): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(<!>a, b: String) = (1, "s")
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(a, b: String)<!> = (1, "s")
 }
 
 // 形态 3：类型注解与初值分量类型不一致时，官方仍只报不可反驳，不报分量类型不匹配（实测见第 3 段）。
 func tuplePatternAnnotationMismatch(v: (Int64, String)): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(<!>a: Int64, b: String) = (1, 2)
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(a: Int64, b: String)<!> = (1, 2)
 }
 
 // 形态 4：类型注解与初值一致的元组模式仍不可反驳（与 inference/arrayLiteralAndMultipleAssign.cj 的无注解合法对照成对）。
 func tuplePatternAnnotationMatch(v: (Int64, String)): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(<!>a: Int64, b: String) = (1, "s")
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>(a: Int64, b: String)<!> = (1, "s")
 }
 
 // FILE: enumPatternWithoutSubPattern.cj
@@ -85,12 +85,12 @@ enum SubPatternPayload { C(Int64) | D(String) }
 // 形态 8：裸构造器名 + 子模式，多构造器枚举 → EnumPattern → 不可反驳。
 // 两版各 1 error：sema_pattern_can_not_be_assigned（1 个字符）。
 func bareConstructorWithSubPattern(v: SubPatternPayload): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>C<!>(y) = v
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>C(y)<!> = v
 }
 
 // 形态 9：限定名 `Enum.ctor` + 子模式，多构造器枚举 → 同一诊断、同一锚点。
 func qualifiedConstructorWithSubPattern(v: SubPatternPayload): Unit {
-    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>S<!>ubPatternPayload.C(y) = v
+    let <!PATTERN_CAN_NOT_BE_ASSIGNED!>SubPatternPayload.C(y)<!> = v
 }
 
 // 形态 10：裸写的无参数构造器 `let D = v` 不是枚举模式而是变量绑定（见 enumPatternWithoutSubPattern.cj 段）；
@@ -100,25 +100,25 @@ func qualifiedConstructorWithSubPattern(v: SubPatternPayload): Unit {
 // 对照：全为无参构造器的枚举里 `Multi.A` 的类型就是枚举类型自身，落到不可反驳检查，报 sema_pattern_can_not_be_assigned
 //（1.0.5 / 1.1.3 实测一致，见 enumPatternWithoutSubPattern.cj 段的 legalBareEnumName 之后的探针）。
 func qualifiedConstructorWithoutSubPattern(v: SubPatternPayload): Unit {
-    let <!ENUM_PATTERN_PARAM_SIZE_ERROR!>S<!>ubPatternPayload.D = v
+    let <!ENUM_PATTERN_PARAM_SIZE_ERROR!>SubPatternPayload.D<!> = v
 }
 
 // FILE: tuplePatternDeclarationShape.cj
 // 形态 11：初始化值不是元组（isPatternInMatch=false 分支）。
 // 两版各 1 error：sema_tuple_pattern_not_match "initializer isn't a tuple to match tuple pattern"（1 个字符）。
 func tuplePatternOnScalar(v: Int64): Unit {
-    let <!TUPLE_PATTERN_NOT_MATCH!>(<!>a, b) = v
+    let <!TUPLE_PATTERN_NOT_MATCH!>(a, b)<!> = v
 }
 
 // 形态 12：初值元组元数与模式不一致（比模式多）。
 // 两版各 1 error：sema_tuple_pattern_with_correct_size_expected（1 个字符）。
 func tuplePatternTooManyElements(): Unit {
-    let <!TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED!>(<!>a, b) = (1, 2, 3)
+    let <!TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED!>(a, b)<!> = (1, 2, 3)
 }
 
 // 形态 13：初值元组元数与模式不一致（比模式少），同一 kind、同一锚点。
 func tuplePatternTooFewElements(): Unit {
-    let <!TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED!>(<!>a, b, c) = (1, 2)
+    let <!TUPLE_PATTERN_WITH_CORRECT_SIZE_EXPECTED!>(a, b, c)<!> = (1, 2)
 }
 
 // 形态 14：元组模式里含常量模式、且模式与初值一致 —— 官方两版零诊断（1.0.5 只有 CHIR 的 unused variable 警告，
@@ -135,37 +135,37 @@ enum ForInIrrefutablePayload { C(Int64) | D(String) }
 
 // for-in 的变量模式必须不可反驳；官方锚点是 fie 的 GetBegin，即 `for` 关键字。
 // 形态 15：类型模式（分量带类型注解）。
-// 两版各 1 error：sema_forin_pattern_must_be_irrefutable（1 个字符，`for` 的 `f`）。
+// 两版各 1 error：sema_forin_pattern_must_be_irrefutable（定位完整 `for` 关键字）。
 func typePatternInForIn(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (i: Int64 in [1, 2]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (i: Int64 in [1, 2]) {
     }
 }
 
 // 形态 16：常量模式（ParsePattern :28 字面量 → ConstPattern）。
 func constPatternInForIn(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (1 in [1, 2]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (1 in [1, 2]) {
     }
 }
 
 // 形态 17：裸构造器名 + 子模式，多构造器枚举 → EnumPattern → 不可反驳；
 // 元素类型是 Int64 而模式目标是枚举 `ForInIrrefutablePayload` 的构造器 → ChkEnumPattern 另报
 // sema_pattern_not_match "enum"（锚模式首字符 `C`）。
-// 两版各 2 error：sema_forin_pattern_must_be_irrefutable（`for` 首字符）+ sema_pattern_not_match（`C` 首字符）。
+// 两版各 2 error：sema_forin_pattern_must_be_irrefutable（完整 `for`）+ sema_pattern_not_match（整个 enum 模式）。
 func bareEnumPatternInForIn(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (<!PATTERN_NOT_MATCH!>C<!>(y) in [1, 2]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (<!PATTERN_NOT_MATCH!>C(y)<!> in [1, 2]) {
     }
 }
 
 // 形态 18：限定名 + 子模式，多构造器枚举 → 同一诊断、同一锚点。
 func qualifiedEnumPatternInForIn(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (ForInIrrefutablePayload.C(y) in [ForInIrrefutablePayload.C(1), ForInIrrefutablePayload.D("s")]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (ForInIrrefutablePayload.C(y) in [ForInIrrefutablePayload.C(1), ForInIrrefutablePayload.D("s")]) {
     }
 }
 
 // 形态 19：裸构造器名、无子模式，在 for-in 里被解析为 EnumPattern（ParseIrrefutablePattern 不产生 VarPattern），
 // 且元素类型正确（ForInIrrefutableMulti）→ 只报不可反驳，不报 pattern_not_match。
 func bareEnumNameInForIn(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (ForInIrrefutableMulti.A in [ForInIrrefutableMulti.A, ForInIrrefutableMulti.B]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (ForInIrrefutableMulti.A in [ForInIrrefutableMulti.A, ForInIrrefutableMulti.B]) {
     }
 }
 
@@ -173,16 +173,16 @@ func bareEnumNameInForIn(): Unit {
 enum ForInTypeMulti { A | B | C }
 
 // 形态 20：枚举模式与元素类型不匹配（Int64 数组上匹配 ForInTypeMulti）→ 官方 ChkEnumPattern :449。
-// 两版各 2 error：sema_pattern_not_match "enum pattern is not matched"（1 个字符，模式首字符）
-// + sema_forin_pattern_must_be_irrefutable（1 个字符）。
+// 两版各 2 error：sema_pattern_not_match "enum pattern is not matched"（整个 enum 模式）
+// + sema_forin_pattern_must_be_irrefutable（完整 `for` 关键字）。
 func enumPatternTypeNotMatch(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (<!PATTERN_NOT_MATCH!>F<!>orInTypeMulti.A in [1, 2, 3]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (<!PATTERN_NOT_MATCH!>ForInTypeMulti.A<!> in [1, 2, 3]) {
     }
 }
 
 // 形态 21：裸枚举构造器名 + 子模式，元素类型 Int64 → 同一组诊断、同一组锚点。
 func bareEnumPatternTypeNotMatch(): Unit {
-    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (<!PATTERN_NOT_MATCH!>C<!>(y) in [1, 2]) {
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>for<!> (<!PATTERN_NOT_MATCH!>C(y)<!> in [1, 2]) {
     }
 }
 
@@ -197,7 +197,7 @@ func forInOnScalar(): Unit {
 
 // 形态 23：in 表达式是二元运算，类型仍是 Int64 → 同一 kind、同一锚点族。
 func forInOnBinaryScalar(): Unit {
-    for (i in <!EXPR_IN_FORIN_MUST_HAS_ITERATOR!>1<!> + 2) {
+    for (i in <!EXPR_IN_FORIN_MUST_HAS_ITERATOR!>1 + 2<!>) {
     }
 }
 

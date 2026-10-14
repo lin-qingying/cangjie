@@ -58,7 +58,7 @@ func callFunc(myfunc: (Int32, Int32) -> Int32): Int32 {
 }
 
 func foo(): Int32 {
-    return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>un)
+    return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>fun<!>)
 }
 
 func bar() {

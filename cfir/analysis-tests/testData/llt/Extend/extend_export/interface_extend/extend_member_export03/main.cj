@@ -13,16 +13,16 @@ package b
 import a.*
 
 public interface I {
-    public prop f1: Int64 {
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> prop f1: Int64 {
         get() {
             1
         }
     }
-    public prop f4: Int64
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> prop f4: Int64
 }
 
 public interface I2 <: I {
-    public prop f3: Int64
+    <!REDUNDANT_MODIFIER_FOR_TARGET!>public<!> prop f3: Int64
 }
 
 extend A <: I2 {

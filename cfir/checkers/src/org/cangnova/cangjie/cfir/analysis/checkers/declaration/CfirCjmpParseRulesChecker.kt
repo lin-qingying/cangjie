@@ -112,7 +112,10 @@ object CfirCjmpParseRulesChecker : CfirBasicDeclarationChecker() {
         }
 
         // ① 版本门：1.0.x 只报版本门诊断并整族短路
-        if (!CjmpGate.requireVersionSupport(declaration.source)) return
+        val declarationSource = checkNotNull(declaration.wholeDeclarationDiagnosticSource()) {
+            "A CJMP declaration with source modifiers must have a syntax-backed declaration range"
+        }
+        if (!CjmpGate.requireVersionSupport(declarationSource)) return
         // ② 模式门（cjc 1.1.3 `MPParserImpl::CheckCJMPDecl`/`CheckCJMPModifiers`）：
         // - 既非 common 也非 specific 编译时整族规则不执行；
         // - 修饰符与编译模式错位（common 声明不在 common 编译、specific 声明不在 specific 编译）时

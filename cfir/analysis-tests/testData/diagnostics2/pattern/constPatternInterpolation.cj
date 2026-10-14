@@ -38,21 +38,13 @@
 // 本项目 CFIR 名（cfir/checkers/checkers-component-generator/.../diagnostics/CfirDiagnosticsList.kt:1391）：
 //   `INTERPOLATION_IN_CONST_PATTERN by error<PsiElement>()`，定位策略为 SourceElementPositioningStrategies.DEFAULT
 //   （OffsetsOnly，整节点 source 的 offset 区间）；默认文案 CfirErrorsDefaultMessages.kt:945 与官方一致。
-//   **生产者被注释掉、无注册**：cfir/checkers/src/.../checkers/expression/CfirPatternExpressionChecker.kt:352-385
-//   整个 `CfirConstPatternInterpolationChecker` 对象（:374 是 `factory = CfirErrors.INTERPOLATION_IN_CONST_PATTERN` 一行）
-//   处于注释状态，因此本文件各段预期红，属 CFIR 缺口；按官方写期望，不因 CFIR 输出调整输入或期望。
-//   按源码可预判的锚点差异（只写源码能直接看出的，未跑 CFIR）：
-//     官方锚点 = ConstPattern 节点（= 字面量文本）；被注释的 CFIR 报告点用 `pattern.source`，
-//     PSI 侧 CfirConstPattern 的 source 取 `CjConstantPattern` 节点（PsiRawCfirBuilder.kt:3673）、
-//     LightTree 侧取 CONSTANT_PATTERN 节点（LightTreeRawCfirExpressionBuilder.kt:1711），
-//     按节点定义应与官方同为字面量文本，**不是**含 `case` 的整条分支。
-//   另一处模型差异（源码可读出）：官方 `siExpr` 挂在 `LitConstExpr` 上，判定条件是"字面量是字符串 token 且 token 含插值"；
-//   CFIR 侧 psi2cfir / light-tree2cfir 的 convertStringTemplate（PsiRawCfirBuilder.kt:2258-2284、
-//   LightTreeRawCfirExpressionBuilder.kt:268-299）在**有插值时构造 CfirStringInterpolation**（不是 CfirLiteralExpression），
-//   被注释的检查器却写成 `expr is CfirLiteralExpression && kind == CfirLiteralKind.StringInterpolation`，
-//   两个条件都与实际模型对不上；CFIR 若按该形态接线还须确认常量模式下走的是 convertStringTemplate 而非常量字面量分支。
-//   已有覆盖不重复：llt/PatternMatching/ConstPattern/err_string_interpolation_00.cj（`case "${x.size}"`，无内联标记、
-//   只在 LLT 覆盖，不计入本矩阵）；const/constFunctionRules.cj 头部 :52 已注明"未纳入"本族；
+//   CFIR 在 `CfirMatchPatternLegalityChecker` 的常量模式分支识别 `CfirStringInterpolation`，
+//   并用插值表达式的 source 报告诊断；PSI 与 LightTree 都把这个 source 定义为完整字符串 token。
+//   无效 pattern 会阻止 `CfirMatchUnreachablePatternChecker` 对整组 match 运行覆盖算法，避免在错误 pattern 上崩溃。
+//   模型对应关系：官方在 `LitConstExpr` 上保存 `siExpr`；CFIR 的 PSI / LightTree builders 对插值字符串构造
+//   `CfirStringInterpolation`（不是 `CfirLiteralExpression`），共享 pattern legality checker 按该节点类型识别插值常量模式。
+//   LLT `PatternMatching/ConstPattern/err_string_interpolation_00.cj` 覆盖形态 1；本文件扩展其余插值结构；
+//   const/constFunctionRules.cj 头部 :52 已注明"未纳入"本族；
 //   pattern/patternLegality.cj 覆盖 TYPE_MISMATCH / CANNOT_CONVERT_LITERAL / ENUM_PATTERN_PARAM_SIZE_ERROR；
 //   pattern/patternDeclarationRules.cj 覆盖 let / for-in / irrefutable 侧规则；match/notOverloadInMatch.cj 覆盖第 4 步；
 //   条件编译 when 条件的"字符串字面量不得插值"在 conditional-compilation/whenConditionErrors.cj（不同规则，不重复）。
@@ -206,7 +198,7 @@ func constPatWithVarPattern(x: String, y: String): Int64 {
     return match (x) {
         case "abc" => 0
         case y => 1
-        case _ => 2
+        case <!UNREACHABLE_PATTERN!>_<!> => 2
     }
 }
 

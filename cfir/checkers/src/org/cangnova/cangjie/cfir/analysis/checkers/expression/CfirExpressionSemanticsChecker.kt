@@ -54,6 +54,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
@@ -342,17 +343,35 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         if (expression !is CfirThisReceiverExpression) return
+        val finalizer = context.findClosestDeclaration<CfirFinalizer>() ?: return
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
-        if (containingFunction !is CfirFinalizer) return
 
         val parent = context.callsOrAssignments
             .lastOrNull() as? CfirQualifiedAccessExpression
-        if (parent?.explicitReceiver === expression) return
+        if (parent?.explicitReceiver === expression) {
+            val memberFunction = when (val reference = parent.calleeReference) {
+                is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirNamedFunctionSymbol
+                is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirNamedFunctionSymbol
+                else -> null
+            }?.takeIf { it.isBound }?.cfir as? CfirNamedFunction
+            if (containingFunction !== finalizer &&
+                memberFunction?.dispatchReceiverType != null && !memberFunction.status.isStatic
+            ) {
+                val memberName = (parent.calleeReference as? CfirNamedReference)?.name ?: Name.identifier("this")
+                reporter.reportOn(
+                    source = expression.source ?: expression.calleeReference.source,
+                    factory = CfirErrors.CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC,
+                    a = memberName,
+                    b = "finalizer",
+                )
+            }
+            return
+        }
 
         reporter.reportOn(
             source = expression.source ?: expression.calleeReference.source,
-            factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
-            a = "function",
+            factory = CfirErrors.THIS_AS_EXPRESSION_IN_FUNC,
+            a = "finalizer",
         )
     }
 }
@@ -394,8 +413,8 @@ object CfirOpenConstructorThisUsageChecker : CfirBasicExpressionChecker() {
  * static 函数体中禁止引用实例 `this`。
  *
  * 官方 `TypeCheckReference.cpp::CheckUsageOfThis` 在当前函数体带 `static`
- * 属性时报告 `sema_static_members_cannot_call_members`。这里挂在 basic
- * expression checker 上，覆盖裸 `this` 与 `this.member` 接收者。
+ * 属性时，显式 `this` 访问实例成员会报告 `sema_static_members_cannot_call_members`。
+ * `this` 被用作静态成员的接收者时只由对象访问规则报告，不重复诊断。
  */
 object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
     /**
@@ -406,13 +425,30 @@ object CfirStaticContextThisUsageChecker : CfirBasicExpressionChecker() {
         if (expression !is CfirThisReceiverExpression) return
         if (expression.calleeReference.isImplicit) return
         val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
-        if (!containingFunction.status.isStatic) return
+        if (!containingFunction.status.isStatic && !context.hasStaticEnclosingDeclarationAfter(containingFunction)) return
 
-            reporter.reportOn(
-                source = expression.calleeReference.source ?: expression.source,
-                factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
-            )
+        val access = context.callsOrAssignments.asReversed()
+            .filterIsInstance<CfirQualifiedAccessExpression>()
+            .firstOrNull { it.explicitReceiver === expression || it.dispatchReceiver === expression }
+        val staticMemberReceiverAccess = access
+            ?.resolvedAccessSymbolOrNull()
+            ?.let { (it as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic } == true
+        if (staticMemberReceiverAccess) return
+
+        reporter.reportOn(
+            source = expression.calleeReference.source ?: expression.source,
+            factory = CfirErrors.STATIC_MEMBERS_CANNOT_CALL_MEMBERS,
+        )
     }
+}
+
+/** 静态成员所在的外层函数体也使其 lambda 与本地函数处于 static 语境。 */
+private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
+    val functionSymbol = function.symbol
+    return containingDeclarations.asReversed()
+        .dropWhile { symbol -> symbol !== functionSymbol }
+        .drop(1)
+        .any { symbol -> (symbol as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic == true }
 }
 
 /**
@@ -552,14 +588,6 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
     /**
      * lambda 和本地函数本身不带 static 状态；它们从外层 static 函数或 static 存储成员继承 static 语境。
      */
-    private fun CheckerContext.hasStaticEnclosingDeclarationAfter(function: CfirFunction): Boolean {
-        val functionSymbol = function.symbol
-        return containingDeclarations.asReversed()
-            .dropWhile { symbol -> symbol !== functionSymbol }
-            .drop(1)
-            .any { symbol -> (symbol as? CfirCallableSymbol<*>)?.cfir?.status?.isStatic == true }
-    }
-
     /**
      * 只把当前类型的非 static 成员作为 static 上下文非法访问目标。
      */
@@ -593,19 +621,17 @@ object CfirStaticContextNonStaticMemberAccessChecker : CfirQualifiedAccessChecke
         }
     }
 
-    /**
-     * 从 qualified access 中解析访问目标符号。
-     */
-    private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
-        return when (val reference = calleeReference) {
-            is CfirResolvedNamedReference -> reference.resolvedSymbol
-            is CfirResolvedErrorReference -> reference.resolvedSymbol
-            is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
-            is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
-            else -> null
-        }
-    }
 }
+
+/** 从 qualified access 中解析已解析或候选访问目标符号。 */
+private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? =
+    when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol
+        is CfirResolvedErrorReference -> reference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol
+        is CfirErrorNamedReference -> (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol
+        else -> null
+    }
 
 /**
  * static 上下文中实例成员访问的诊断类别。
@@ -717,19 +743,19 @@ object CfirOpenConstructorMemberAccessChecker : CfirQualifiedAccessChecker() {
 }
 
 /**
- * 禁止通过 `super` 直接访问抽象函数。
+ * 禁止通过 `super` 直接访问抽象函数或属性。
  *
- * 官方语义将 `super.abstractFunc()` 与 `super.abstractFunc` 都视为直接访问抽象成员。
- * 这里在解析后的 qualified access 上检查目标函数状态，并把诊断落在 `super` 关键字。
+ * 官方语义将 `super.abstractFunc()` 与 `super.abstractProp` 都视为直接访问抽象成员。
+ * 这里在解析后的 qualified access 上检查目标 callable 状态，并把诊断落在完整的 `super` token。
  */
 object CfirAbstractSuperMemberAccessChecker : CfirQualifiedAccessChecker() {
     /**
-     * 检查通过 `super` 直接访问抽象函数的场景。
+     * 检查通过 `super` 直接访问抽象函数或属性的场景。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirQualifiedAccessExpression) {
         val receiver = expression.explicitReceiver as? CfirSuperReceiverExpression ?: return
-        val target = expression.resolvedCallableTarget() as? CfirNamedFunction ?: return
+        val target = expression.resolvedCallableTarget() ?: return
         if (!target.status.isAbstract) return
 
         reporter.reportOn(

@@ -8,7 +8,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public <!NOTHING_TO_OVERRIDE, REDEF_INSTANCE_ERROR!>redef<!> func foo(): Int64 {
+    public <!REDEF_INSTANCE_ERROR, REDUNDANT_MODIFIER_FOR_TARGET!>redef<!> func foo(): Int64 {
         return 3
     }
 }

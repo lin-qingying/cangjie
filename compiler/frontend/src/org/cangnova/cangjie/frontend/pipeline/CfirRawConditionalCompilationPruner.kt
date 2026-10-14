@@ -16,8 +16,8 @@ import org.cangnova.cangjie.cfir.session.conditionalCompilationSettingsOrNull
  * Parse 后、宏分类前的 raw-CFIR `@When` 裁剪 owner。
  *
  * 当前 owner 先覆盖 file/import/top-level/member 声明；它只在 session 显式注入
- * 条件环境时运行，绝不从 JVM 或 target platform 合成条件值。非法条件不会被
- * 当作 false；失败事实写回 CfirFile，由 file checker 发布结构化诊断。
+ * 条件环境时运行，绝不从 JVM 或 target platform 合成条件值。非法条件会记录失败事实，
+ * 但不会据此剪除目标；失败事实写回 CfirFile，由 file checker 发布结构化诊断。
  */
 public fun PreMacroRawBuildResult.pruneConditionalCompilation(): PreMacroRawBuildResult {
     val settings = session.conditionalCompilationSettingsOrNull ?: return this
@@ -50,26 +50,31 @@ private class ConditionalPruningContext(
     /** 基于显式条件环境的 `@When` 求值器。 */
     val evaluator: CfirConditionalCompilationEvaluator,
 ) {
-    /** 本次裁剪收集的失败事实；非法条件不视为 false，而是记录后同样移除。 */
+    /** 本次裁剪收集的失败事实；非法条件只产生诊断，不决定目标是否保留。 */
     val failures: MutableList<CfirConditionalCompilationFailure> = mutableListOf()
 }
 
 /**
  * 判断一条 import 是否应保留。
  *
- * 无条件或条件求值为 Enabled 时保留；Disabled 时移除；
- * 非法条件记录失败事实后同样移除，诊断由 file checker 后续发布。
+ * 无条件、Enabled 与 Invalid 均保留；Disabled 时移除。已求值条件会从保留的 import
+ * 上清除，避免后续阶段重复消费同一个条件；Invalid 另记录事实供 file checker 发布诊断。
  */
 private fun keepImport(
     import: org.cangnova.cangjie.cfir.declarations.CfirImport,
     context: ConditionalPruningContext,
-): Boolean = when (val result = import.condition?.let(context.evaluator::evaluate)) {
-    null, CfirConditionalCompilationResult.Enabled -> true
-    CfirConditionalCompilationResult.Disabled -> false
-    is CfirConditionalCompilationResult.Invalid -> {
-        context.failures += result.failure(import.condition?.source ?: import.source)
-        false
+): Boolean {
+    val condition = import.condition ?: return true
+    val keep = when (val result = context.evaluator.evaluate(condition)) {
+        CfirConditionalCompilationResult.Enabled -> true
+        CfirConditionalCompilationResult.Disabled -> false
+        is CfirConditionalCompilationResult.Invalid -> {
+            context.failures += result.failure(condition.source ?: import.source)
+            true
+        }
     }
+    import.replaceCondition(null)
+    return keep
 }
 
 /**
@@ -87,7 +92,7 @@ private fun keepDeclaration(
         CfirConditionalCompilationResult.Disabled -> false
         is CfirConditionalCompilationResult.Invalid -> {
             context.failures += result.failure(condition.source ?: declaration.source)
-            false
+            true
         }
     }
     if (keep) declaration.removeWhenAnnotation()
@@ -181,12 +186,12 @@ private fun collectReachableDeclarations(file: CfirFile): Set<CfirDeclaration> {
     return result
 }
 
-/** 把 Invalid 求值结果转换为结构化失败事实，定位信息缺省时回退到声明 source。 */
+/** 把 Invalid 求值结果转换为结构化失败事实；只有 evaluator 无表达式 source 时才使用调用方 fallback。 */
 private fun CfirConditionalCompilationResult.Invalid.failure(
-    source: org.cangnova.cangjie.source.CjSourceElement?,
+    fallbackSource: org.cangnova.cangjie.source.CjSourceElement?,
 ): CfirConditionalCompilationFailure = CfirConditionalCompilationFailure(
     reason = reason,
-    source = source,
+    source = source ?: fallbackSource,
     conditionName = conditionName,
     rightValue = rightValue,
     operator = operator,

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -35,6 +36,11 @@ object CfirConstructorDelegationCallChecker : CfirFunctionCallChecker() {
 
         val closestFunction = context.closestFunctionLikeDeclaration()
         if (closestFunction is CfirConstructor) return
+        if (closestFunction is CfirAnonymousFunction &&
+            closestFunction.isLambda && context.lambdaDelegationIsCheckedByConstructor()
+        ) {
+            return
+        }
 
         reporter.reportOn(
             source = source,
@@ -56,4 +62,18 @@ private fun CfirFunctionCallOrigin.constructorDelegationKeyword(): String? {
 /** 查找当前上下文中最近的函数级声明。 */
 private fun CheckerContext.closestFunctionLikeDeclaration(): CfirFunction? {
     return findClosestDeclaration<CfirFunction>()
+}
+
+/**
+ * 构造器中的 lambda 委托调用由构造器级位置检查统一诊断。
+ *
+ * 不跨越局部具名函数：其函数体不属于外层构造器的委托语句，仍需保留函数级诊断。
+ */
+private fun CheckerContext.lambdaDelegationIsCheckedByConstructor(): Boolean {
+    val enclosingFunction = containingDeclarations
+        .asReversed()
+        .asSequence()
+        .mapNotNull { symbol -> symbol.cfir as? CfirFunction }
+        .firstOrNull { function -> function !is CfirAnonymousFunction }
+    return enclosingFunction is CfirConstructor
 }

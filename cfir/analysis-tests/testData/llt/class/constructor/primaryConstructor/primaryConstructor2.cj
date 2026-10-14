@@ -22,7 +22,7 @@ class G {
 
 class H {
     public H(var z!: Int64 = 3) {}
-    <!MULTIPLE_PRIMARY_CONSTRUCTORS!>p<!>ublic H(var x!: String = "3") {}
+    <!MULTIPLE_PRIMARY_CONSTRUCTORS!>public H(var x!: String = "3") {}<!>
 }
 
 class J {
@@ -38,18 +38,18 @@ open class D {
 }
 
 class E <: D {
-    public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
+    public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>var z!: Int64 = 3<!>) {
         var c: Int64 = 2
         <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>super<!>()
     }
 }
 
 class L <: D {
-    public L(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
+    public L(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>var z!: Int64 = 3<!>) {
         <!ILLEGAL_PLACE_OF_CALLING_THIS_PRIMARY_CONSTRUCTOR!>this<!>(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
     }
     public init(a!: String = "1") {
-        <!TYPE_INCOMPATIBLE!>t<!>his.z = <!TYPE_MISMATCH!>"a"<!>
+        <!TYPE_INCOMPATIBLE!>this.z = <!TYPE_MISMATCH!>"a"<!><!>
     }
 }
 

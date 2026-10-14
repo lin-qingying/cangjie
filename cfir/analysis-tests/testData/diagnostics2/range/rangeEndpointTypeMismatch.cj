@@ -5,6 +5,6 @@ func startStopMismatch(): Unit {
 }
 
 func stringBoolMismatch(): Unit {
-    let broken = "a"..<!TYPE_MISMATCH!>false<!>
+    let broken = "a"..<!CANNOT_CONVERT_LITERAL!>false<!>
     let _ = broken
 }

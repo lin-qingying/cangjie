@@ -25,14 +25,17 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.checkTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.resolve.isIterableForForIn
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
  * for-in 循环的模式语义检查。
@@ -61,6 +64,20 @@ object CfirForInPatternChecker : CfirBasicExpressionChecker() {
                 source = forIn.iterable.source,
                 factory = CfirErrors.EXPR_IN_FORIN_MUST_HAS_ITERATOR,
                 a = iterableType,
+            )
+        }
+
+        val patternGuard = forIn.patternGuard
+        val guardType = patternGuard?.coneTypeOrNull
+        val guardSource = patternGuard?.source as? AbstractCjSourceElement
+        if (patternGuard != null && guardType != null && guardType !is ConeErrorType && guardSource != null) {
+            checkTypeMismatch(
+                expectedType = context.session.builtinTypes.boolType,
+                actualType = guardType,
+                expression = patternGuard,
+                source = guardSource,
+                preferredSpecializedSource = guardSource,
+                diagnosticFactory = CfirErrors.TYPE_MISMATCH,
             )
         }
 

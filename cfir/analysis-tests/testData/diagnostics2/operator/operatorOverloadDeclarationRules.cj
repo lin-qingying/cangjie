@@ -1,13 +1,12 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// DISABLE_WITH_PARSER: Psi
 //
 // 【取证方式】官方 cjc 1.0.5 与本机 cjc 1.1.3 两版实测，静态库模式
 // `cjc <段>.cj -o out.a --output-type=staticlib --diagnostic-format json`；每个 `// FILE:` 段单独编译
 // （官方整包编译时一处 parse 错误会吞掉其余段的语义诊断）。1.1.3 在 CHIR / codegen 阶段可能 LLVM 崩
 // （崩在语义检查之后），语义诊断 JSON 仍完整产出；**合法对照段**在 1.1.3 下崩在 codegen、拿不到 JSON，
 // 它们的“合法”结论取自 1.0.5 的零诊断以及源码推导。除特别注明外两版 kind、消息、Range 完全一致。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记
-// 逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 用于确认诊断语义；本文件的 CFIR 标记覆盖完整 token 或最小完整语法单元，
+// 不把官方单字符起点直接作为 CFIR 高亮范围。
 //
 // 【官方实现】（external/cangjie_compiler，checkout 在 tag v1.0.0）
 //   入口 src/Sema/TypeCheckDecl.cpp:155-193 CheckOperatorOverloadFunc：
@@ -55,47 +54,30 @@
 //     :299 OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR（operator / receiverType）；
 //     :305 OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR（operator / receiverType / parameterType）；
 //     :1214 INVALID_SUBSCRIPT_ASSIGN_PARAMETER；:1217 INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM；:1220 INVALID_SUBSCRIPT_ASSIGN_RETURN。
-//   - 生产者 cfir/checkers/src/.../checkers/declaration/CfirOperatorDeclarationChecker.kt：
-//     :83-95 形参个数（expectedParameterCount :154-158 按名称取 0/1）；
-//     :106-149 内建命中（checkBuiltinPrimitiveOperatorOverload，:130 二元额外要求不在 std.core 包）；
-//     :140-148 返回类型与内建不一致时追加 RETURN_TYPE_INCOMPATIBLE；
-//     :167-195 `[]` 三条（:78-81 只在名称 == *operator_set 时进入）；
-//     锚点 helper :202-203 operatorDiagnosticSource（`operator` 修饰符整 token）、
-//     :209-211 builtinOperatorOverloadDiagnosticSource（有 `public` 时取 `public` 整 token）、
-//     CfirDeclarationDiagnosticSources.kt:267-279 functionNameDiagnosticSource（函数名 token）、
-//     :323-335 subscriptAssignmentReturnDiagnosticSource（返回类型 token，无显式返回类型时函数名 token）。
-//   - 形参个数规则用 expectedParameterCount（按运算符名称），官方用 paramTys.size() 分派；本文件按源码推导
-//     出两者一致的结论（见【可预判差异】），未跑 CFIR。
+//   - 生产者 cfir/checkers/.../CfirOperatorDeclarationChecker.kt：按 CFIR operator 名校验普通运算符参数数；
+//     匹配 primitive 内建签名后报告 built-in overload，不在此处检查返回类型；接口实现返回兼容性属于继承检查。
+//     `[]` setter 由 PSI / LightTree 根据末尾具名形参统一识别，再检查位置参数数、具名参数名称及返回类型。
+//     普通 arity 锚完整 `operator` token；内建重载有 `public` 时锚完整 `public` token；`[]` 的名称 / 返回类型
+//     锚到完整名称 token / 返回类型单元。声明类 `[]` 诊断使用 offsets-only source，避免把名称叶 PSI 传给
+//     要求 `CjDeclaration` 的诊断工厂；共享位置 helper 定义于 `CfirDeclarationDiagnosticSources.kt`。
+//   - 参数个数、SET 形态和锚点已通过 CFIR LightTree / PSI 生成测试核验。
 //
-// 【可预判的锚点与覆盖差异（未跑 CFIR）】
-//   1. 锚点长度：本项目 range policy 用完整 token，官方用 GetBegin 单字符。本文件**按官方**在 `operator`
-//      关键字首字母写 1 字符标记；本项目 CfirOperatorDeclarationChecker.kt:202-203 / :209-211 报的是
-//      `operator` 整 token（有 `public` 时是 `public` 整 token，llt/Extend/extend_overload_builtin_op1.cj 即如此），
-//      正式跑 CFIR 时这三类（个数诊断、内建一元、内建二元）的标记范围要按实测调整。
+// 【CFIR 核验结果】
+//   1. 锚点长度：官方 GetBegin 的单字符位置只用于确认诊断归属；CFIR 对声明级 operator 诊断使用完整 `operator`
+//      token，有 `public` 时按既有定位策略使用完整 `public` token，不能裁剪 token 字符区间。
 //      `[]` 返回类型锚点（CjOffsetsOnlySourceElement，OffsetsOnly）与官方一致；PARAM_NUM 的锚点差异见第 4 条。
-//   2. 一元正号 `+`：官方 0 形参 `+` 因不在 UNARY_EXPR_TYPE_MAP 报 INVALID_OPERATOR_PARAMETER_COUNT（b8 / b9 实测）；
-//      本项目 LightTreeRawCfirDeclarationBuilder.kt:2866-2867 / CjNamedFunction.kt:122-123 把 0 形参 `+`
-//      归一化为 `*operator_unaryPlus`，CfirOperatorDeclarationChecker.unaryOperatorNames :35-41 含
-//      UNARY_PLUS → 期望 0 形参、**不会**报个数诊断；且 BuiltinPrimitiveOperators.unaryNumericNames
-//      （:104-107）含 UNARY_PLUS、int/numeric 宿主都有候选 → 可能反而报 OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR。
-//      这是可预判缺口（形态 8 的第一条）。
-//   3. `[]` 具名形参规则：官方允许“一个位置下标 + 恰好一个名为 `value` 的具名形参”。本项目把 `[]` 命名为
-//      `*operator_set` 的前提就是“最后一个形参具名且名字为 value”（LightTreeRawCfirDeclarationBuilder.kt:2884-2892、
-//      CjNamedFunction.kt:80-84），所以 `v!` / `w!` 这类形态被折叠为 GET，:167-195 的三条里前两条对它们**不可达**
-//      （与 diagnostics2/operator/subscriptAssignNamedParameter.cj 头部记录一致）。只有返回类型检查可达。
-//   4. `[]` 只有具名形参（`operator func [](value!: Int64)`）：官方锚 `[]` 2 字符；本项目 :172-177 锚 `operator` 整 token
-//      （与 diagnostics2/operator/subscriptAssignNoPositional.cj 记录一致）。
-//   5. “只有一个具名形参且名为 v”形态：官方同一条声明上**同时**报 PARAM（锚 v）与 PARAM_NUM（锚 `[]`）；
-//      本项目折叠为 GET → 两条都不报（可预判缺口，形态 16）。
+//   2. 一元正号 `+`：官方 0 形参 `+` 不属于一元运算符；CFIR 在调用 built-in 检查前报告
+//      INVALID_OPERATOR_PARAMETER_COUNT，因此不会重复报告内建一元重载诊断。
+//   3. `[]` 具名形参规则：最后一个形参具名时，PSI 与 LightTree 都进入共享 SET 签名检查；
+//      无效名称由完整参数名 token 报告，缺少位置形参由完整 `[]` token 报告。
+//   4. `[]` 只有具名形参时，CFIR 的 PARAM_NUM 锚完整 `[]` token。
+//   5. “只有一个具名形参且名为 v”形态同时报 PARAM（锚完整 `v` token）与 PARAM_NUM（锚完整 `[]` token）。
 //   6. 无显式返回类型、函数体是赋值语句（类型 Unit）：官方 funcTy.retTy 是 Unit → 零诊断（e3 实测）；本项目按隐式
 //      返回类型计算，行为一致（形态 14 用表达式体 `{ this.data[index] }` 覆盖推导为 Int64 的情况）。
 //   7. 官方 `fd.fullPackageName != CORE_PACKAGE_NAME`（TypeCheckDecl.cpp:186）在本文件所有段都成立（用户包名），
 //      本项目 :130 用 `isStdCoreFile()` 判断，语义一致。
-//   8. 内建返回类型不一致：官方三个报告点都不看返回类型（r1 / r2 实测各只有一条 built_in_* 诊断；
-//      官方 sema_type_incompatible 只在赋值表达式 / MatchCase 语境产生：DiagnosticSema.def:107、
-//      AssignExpr.cpp:378/393/431、TypeCheckMatchExpr.cpp:136/208），operator 重载返回类型不匹配时官方零诊断。
-//      本项目 CfirOperatorDeclarationChecker.kt:140-148 **额外**报 RETURN_TYPE_INCOMPATIBLE（锚函数名 token），
-//      该诊断是 CFIR 侧补充规则 → 按规则不写内联标记（形态 7 只标官方诊断；跑 CFIR 时该段会多出这一条）。
+//   8. 内建签名的返回类型由 TypeCheckDecl::CheckOperatorOverloadFunc 不检查；继承检查中对接口抽象 operator
+//      的返回兼容性是独立规则，本文件不覆盖接口实现。
 //
 // 【已有覆盖不重复】
 //   - diagnostics/coverage/declaration-status/operatorParameterCountRich.cj：INVALID_OPERATOR_PARAMETER_COUNT ×3，
@@ -111,7 +93,8 @@
 //     llt/generics/operatorOverload/operatorOverload_indexSet2.cj（RETURN，class 宿主 `: Int64`）。
 //   - diagnostics2/generic/genericBoundRules.cj：GENERIC_IN_OPERATOR_OVERLOAD（operator 不得声明类型参数）。
 //   本文件只补它们没写的：0 形参的一元 / 非一元运算符、extend 宿主上的内建一元/二元多种 token、
-//   形参类型不同（位移、幂）的二元命中、一元表边界、内建返回类型不一致、`[]` 在 **extend 宿主**下的全部形态、
+//   形参类型不同（位移、幂）的二元命中、一元表边界、签名命中但返回类型不同（官方不报返回类型错误）、
+//   `[]` 在 **extend 宿主**下的全部形态、
 //   多个非法具名形参、`value!` + `w!`、最后一个形参为位置形参的 getter 门控、返回类型推导为非 Unit 的隐式返回类型。
 //
 // 【两版差异】全部形态 1.0.5 与 1.1.3 的 kind、消息、Range 完全一致，未拆 LANGUAGE_VERSION。
@@ -123,23 +106,23 @@
 // 1.0.5 / 1.1.3 一致：4 条 OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR，Range 均为 (行,5)..(行,6)。
 // FILE: oprBuiltinUnary.cj
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func -(): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func -(): Int64 {
         return 1
     }
 
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func !(): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func !(): Int64 {
         return 1
     }
 }
 
 extend Bool {
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func !(): Bool {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func !(): Bool {
         return true
     }
 }
 
 extend Float64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func -(): Float64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func -(): Float64 {
         return 1.0
     }
 }
@@ -164,12 +147,12 @@ extend Bool {
 // 形态 3：同一宿主上一元与二元 `-` 并存——形参个数决定走哪条分派（0 → 一元表，1 → 二元表）。
 // 1.0.5 / 1.1.3 一致：(2,5)..(2,6) 一元 + (6,5)..(6,6) 二元。
 // FILE: oprUnaryAndBinarySameToken.cj
-extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func -(): Int64 {
+extend Int32 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func -(): Int64 {
         return 1
     }
 
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func -(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func -(a: Int32): Int32 {
         return a
     }
 }
@@ -179,37 +162,37 @@ extend Int64 {
 // 1.0.5 / 1.1.3 一致：7 条 OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR，Range 均为 (行,5)..(行,6)。
 // FILE: oprBuiltinBinaryArith.cj
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func /(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func /(a: Int64): Int64 {
         return a
     }
 
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func %(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func %(a: Int64): Int64 {
         return a
     }
 }
 
 extend UInt8 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func %(a: UInt8): UInt8 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func %(a: UInt8): UInt8 {
         return a
     }
 }
 
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func *(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func *(a: Int64): Int64 {
         return a
     }
 
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func &(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func &(a: Int64): Int64 {
         return a
     }
 }
 
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func ^(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func ^(a: Int64): Int64 {
         return a
     }
 
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func |(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func |(a: Int64): Int64 {
         return a
     }
 }
@@ -219,25 +202,25 @@ extend Int64 {
 // 1.0.5 / 1.1.3 一致：4 条 OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR，Range 均为 (行,5)..(行,6)。
 // FILE: oprBuiltinBinaryShiftExp.cj
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func <<(a: Int32): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func <<(a: Int32): Int64 {
         return this
     }
 }
 
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func >>(a: Int64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func >>(a: Int64): Int64 {
         return this
     }
 }
 
 extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func **(a: UInt64): Int64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func **(a: UInt64): Int64 {
         return 1
     }
 }
 
 extend Float64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func **(a: Float64): Float64 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func **(a: Float64): Float64 {
         return a
     }
 }
@@ -251,20 +234,18 @@ extend Int64 {
     }
 }
 
-// 形态 7：内建命中但声明的返回类型与内建返回类型不一致（`/` on Int64 内建返回 Int64、`!` on Bool 内建返回 Bool）。
-//   官方三个报告点都不检查返回类型 → 只有 built_in_* 一条（r1 / r2 实测）；本项目额外报
-//   RETURN_TYPE_INCOMPATIBLE（官方无对应 kind，按规则不写标记，见头部第 8 条）。
+// 形态 7：签名命中内建 `/` 与 `!`；官方声明检查不额外检查这两个 operator 的返回类型。
 // 1.0.5 / 1.1.3 一致：(2,5)..(2,6) 二元 + (9,5)..(9,6) 一元。
 // FILE: oprBuiltinReturnTypeMismatch.cj
-extend Int64 {
-    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>o<!>perator func /(a: Int64): Bool {
+extend UInt8 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>operator<!> func /(a: UInt8): Bool {
         let _ = a
         return true
     }
 }
 
-extend Bool {
-    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>o<!>perator func !(): Int64 {
+extend UInt8 {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>operator<!> func !(): Int64 {
         return 1
     }
 }
@@ -276,7 +257,7 @@ extend Bool {
 // 1.0.5 / 1.1.3 一致：3 条 INVALID_OPERATOR_PARAMETER_COUNT，Range 均为 (行,5)..(行,6)。
 // FILE: oprZeroParamNotUnary.cj
 extend Int64 {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func +(): Int64 {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func +(): Int64 {
         return 1
     }
 }
@@ -285,7 +266,7 @@ struct OPRZeroParamEq {
 }
 
 extend OPRZeroParamEq {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func ==(): Bool {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func ==(): Bool {
         return true
     }
 }
@@ -294,7 +275,7 @@ struct OPRZeroParamIndex {
 }
 
 extend OPRZeroParamIndex {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func [](): Int64 {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func [](): Int64 {
         return 1
     }
 }
@@ -306,7 +287,7 @@ struct OPROneParamNot {
 }
 
 extend OPROneParamNot {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func !(a: Int64): Bool {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func !(a: Int64): Bool {
         return true
     }
 }
@@ -315,7 +296,7 @@ struct OPROneParamPlus {
 }
 
 extend OPROneParamPlus {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func +(a: Int64, b: Int64): Int64 {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func +(a: Int64, b: Int64): Int64 {
         return a
     }
 }
@@ -325,11 +306,11 @@ extend OPROneParamPlus {
 // 1.0.5 / 1.1.3 一致：2 条 INVALID_OPERATOR_PARAMETER_COUNT，(2,5) 与 (6,5) 各 1 字符。
 // FILE: oprClassHostArity.cj
 class OPRClassHostArity {
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func +(a: OPRClassHostArity, b: OPRClassHostArity): OPRClassHostArity {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func +(a: OPRClassHostArity, b: OPRClassHostArity): OPRClassHostArity {
         return a
     }
 
-    <!INVALID_OPERATOR_PARAMETER_COUNT!>o<!>perator func ==(): Bool {
+    <!INVALID_OPERATOR_PARAMETER_COUNT!>operator<!> func ==(): Bool {
         return true
     }
 }

@@ -7,4 +7,4 @@ interface I {
 
 struct C {}
 
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend C <: I {}
+<!NEED_MEMBER_IMPLEMENTATION!>extend C <: I {}<!>

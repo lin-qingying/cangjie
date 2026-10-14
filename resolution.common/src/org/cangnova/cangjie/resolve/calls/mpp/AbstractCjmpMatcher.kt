@@ -82,11 +82,12 @@ object AbstractCjmpMatcher {
                 typeParameterMapping,
             )
             when {
-                returnCompatibility == CjmpTypeCompatibility.UNRESOLVED ->
+                returnCompatibility == CjmpTypeCompatibility.UNRESOLVED &&
+                        !context.canDeferReturnTypeCompatibility(specific, common) ->
                     return CjmpMatchResult.TypeNotResolved
 
                 returnCompatibility == CjmpTypeCompatibility.INCOMPATIBLE &&
-                        !context.hasInferredReturnType(specific) ->
+                        !context.canDeferReturnTypeCompatibility(specific, common) ->
                     return CjmpMatchResult.Mismatched(CjmpMismatchKind.FUNCTION_TYPE)
             }
         }

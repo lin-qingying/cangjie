@@ -5,8 +5,8 @@
 // （官方整包编译时一处 parse 错误会吞掉其余段的语义诊断）。1.1.3 在 CHIR / codegen 阶段可能 LLVM 崩
 // （崩在语义检查之后），语义诊断 JSON 仍完整产出，本文件按语义诊断写期望。除特别注明外两版 kind、
 // 消息、Range 完全一致。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符
-// 对齐官方范围。
+// 范围口径：cjc JSON 用于确认诊断语义；内联标记按 CFIR 的 IDE 范围策略覆盖完整相关 token 或最小完整语法单元，
+// 不复制官方命令行的单字符锚点。
 //
 // 【官方实现】（external/cangjie_compiler，checkout 在 tag v1.0.0）
 //   - src/Sema/TypeCheckExpr/BinaryExpr.cpp:1085-1106 IsCoalescingLeftTyValid：左操作数类型必须同时满足
@@ -42,12 +42,8 @@
 //   - 生成物 cfir/checkers/gen/.../diagnostics/CfirErrors.kt:421 / :255 / :267；
 //     文案表 CfirErrorsDefaultMessages.kt:1058。官方 ↔ CFIR 名对照
 //     cfir/analysis-tests/testFixtures/.../golden/DiagnosticNameMapper.kt:247 / :38 / :40。
-//   【按源码可预判的锚点差异（未跑 CFIR）】左操作数锚点官方是 GetBegin 1 字符，CFIR 报在整个左操作数元素上：
-//     标识符 / 调用 / 下标 / 字面量 / 括号表达式的起点与官方一致；**成员访问**（`b.v`、`g.coalM()`）官方锚
-//     基表达式首字符 1 字符，CFIR 元素可能覆盖 `b.v` 整段。右操作数 TYPE_MISMATCH 官方是整段右操作数
-//     （`"x"` 3 字符），CFIR 报 expression.right.source，一致；CANNOT_CONVERT_LITERAL 官方 1 字符，
-//     CFIR 报在字面量元素上。`let _: Int8 = o ?? 0` 的 TYPE_MISMATCH 按官方锚左操作数 `o`，CFIR 侧没有
-//     coalescing 专用生产者（由通用类型不匹配路径承载），实际锚点以实跑为准。
+//   CFIR 的 INVALID_COALESCING 使用完整左操作数 source；TYPE_MISMATCH 使用完整错误表达式 source；
+//   CANNOT_CONVERT_LITERAL 使用完整字面量 token。诊断范围按 CFIR 节点而定，不按 cjc 的 GetBegin 单字符位置。
 //
 // 【已有覆盖不重复】testData/diagnostics/constructor/interopMutabilityProbe.cj（P3 互操作/可变性回归语料，
 //   已有 INVALID_COALESCING 标在 `i ?? 1` 的 `i` 上，本文件不再重复该最小形态）；
@@ -98,11 +94,11 @@ struct CoalPoint {
 
 func coalLeftClassStructCheck(b: CoalBox, p: CoalPoint): Unit {
     let _ = <!INVALID_COALESCING!>b<!> ?? 0
-    let _ = <!INVALID_COALESCING!>b<!>.v ?? 0
-    let _ = <!INVALID_COALESCING!>b<!>.coalM() ?? 0
+    let _ = <!INVALID_COALESCING!>b.v<!> ?? 0
+    let _ = <!INVALID_COALESCING!>b.coalM()<!> ?? 0
     let _ = <!INVALID_COALESCING!>p<!> ?? 0
-    let _ = <!INVALID_COALESCING!>C<!>oalPoint() ?? 0
-    let _ = <!INVALID_COALESCING!>p<!>.x ?? 0
+    let _ = <!INVALID_COALESCING!>CoalPoint()<!> ?? 0
+    let _ = <!INVALID_COALESCING!>p.x<!> ?? 0
 }
 
 // 形态 3：左操作数是本包 enum 值 / Array / 元组 / 字符串下标 / 数组下标（结果类型不是 Option）。
@@ -117,12 +113,12 @@ func coalLeftEnumArrayTupleCheck(oEnum: Option<CoalEnum>, oArr: Option<Array<Int
     let e = CoalEnum.C1
     let _ = <!INVALID_COALESCING!>e<!> ?? CoalEnum.C2
     let arr = [1, 2]
-    let _ = <!INVALID_COALESCING!>a<!>rr ?? arr
+    let _ = <!INVALID_COALESCING!>arr<!> ?? arr
     let tup = (1, 2)
-    let _ = <!INVALID_COALESCING!>t<!>up ?? (1, 2)
+    let _ = <!INVALID_COALESCING!>tup<!> ?? (1, 2)
     let s = "ab"
-    let _ = <!INVALID_COALESCING!>s<!>[0] ?? 0
-    let _ = <!INVALID_COALESCING!>a<!>rr[0] ?? 0
+    let _ = <!INVALID_COALESCING!>s[0]<!> ?? 0
+    let _ = <!INVALID_COALESCING!>arr[0]<!> ?? 0
     let _ = oEnum ?? CoalEnum.C1
     let _ = oArr ?? arr
 }
@@ -137,10 +133,10 @@ func coalG1(): Int64 {
 }
 
 func coalLeftFunctionValueCheck(): Unit {
-    let _ = <!INVALID_COALESCING!>c<!>oalG1 ?? coalG1
+    let _ = <!INVALID_COALESCING!>coalG1<!> ?? coalG1
     let f = { x: Int64 => x }
     let _ = <!INVALID_COALESCING!>f<!> ?? 0
-    let _ = <!INVALID_COALESCING!>f<!>(1) ?? 0
+    let _ = <!INVALID_COALESCING!>f(1)<!> ?? 0
 }
 
 // 形态 5：左操作数是括号表达式（GetBegin 含左括号）/ if 表达式的结果类型不是 Option / 括号包裹的 `??` 结果。
@@ -153,15 +149,15 @@ func coalLeftFunctionValueCheck(): Unit {
 // FILE: coalLeftParenAndIfExpr.cj
 func coalLeftParenAndIfExprCheck(): Unit {
     let i = 1
-    let _ = <!INVALID_COALESCING!>(<!>i) ?? 1
+    let _ = (<!INVALID_COALESCING!>i<!>) ?? 1
     let s = "a"
-    let _ = <!INVALID_COALESCING!>(<!>((s))) ?? ""
-    let _ = <!INVALID_COALESCING!>(<!>1 + 1) ?? 2
+    let _ = (((<!INVALID_COALESCING!>s<!>))) ?? ""
+    let _ = (<!INVALID_COALESCING!>1 + 1<!>) ?? 2
     let a = if (true) { 1 } else { 2 }
     let _ = <!INVALID_COALESCING!>a<!> ?? 0
     let _ = if (true) { 1 } else { <!INVALID_COALESCING!>2<!> ?? 3 }
     let x = Some(1)
-    let _ = <!INVALID_COALESCING!>(<!>x ?? 2) ?? 3
+    let _ = (<!INVALID_COALESCING!>x ?? 2<!>) ?? 3
     let c = if (true) { Some(1) } else { Some(2) }
     let _ = c ?? 0
 }
@@ -208,7 +204,7 @@ func coalLeftNonCoreOptionCheck(): Unit {
     let n: CoalSameNameOption<Int64> = OptNone
     let _ = <!INVALID_COALESCING!>n<!> ?? 0
     let oo: CoalOtherOption<Int64> = OSome(1)
-    let _ = <!INVALID_COALESCING!>o<!>o ?? 0
+    let _ = <!INVALID_COALESCING!>oo<!> ?? 0
 }
 
 // 形态 9：左操作数是合法 Option，右操作数与元素类型（realTgtTy）不符——Coalescing 检查器的第二个报告点。
@@ -225,7 +221,7 @@ func coalRightOperandMismatchCheck(oi: Option<Int64>, ob: Option<Bool>, os: Opti
     let _ = oi ?? <!TYPE_MISMATCH!>pOpt<!>
     let _ = ob ?? <!CANNOT_CONVERT_LITERAL!>1<!>
     let _ = os ?? <!CANNOT_CONVERT_LITERAL!>1<!>
-    let _ = oi ?? <!CANNOT_CONVERT_LITERAL!>1<!>.5
+    let _ = oi ?? <!CANNOT_CONVERT_LITERAL!>1.5<!>
 }
 
 // 形态 10：声明的目标类型比 Option 的元素类型窄（官方 BinaryExpr.cpp:1127-1133，锚**左操作数**）。
@@ -234,7 +230,7 @@ func coalRightOperandMismatchCheck(oi: Option<Int64>, ob: Option<Bool>, os: Opti
 // 1.0.5 / 1.1.3 一致：1 条 TYPE_MISMATCH，Range (3,19)..(3,20)（锚左操作数 `o` 1 字符）。
 // FILE: coalTargetTypeNarrower.cj
 func coalTargetTypeNarrowerCheck(o: Option<Int64>): Unit {
-    let _: Int8 = <!TYPE_MISMATCH!>o<!> ?? 0
+    let _: Int8 = <!TYPE_MISMATCH!>o ?? 0<!>
     let _: Int64 = o ?? 0
     let _: Any = o ?? 0
 }
@@ -250,7 +246,7 @@ func coalIdtNonOption<T>(x: T): T {
 }
 
 func coalGenericLeftNonOptionCheck(): Unit {
-    let _ = <!INVALID_COALESCING!>c<!>oalIdtNonOption(1) ?? 0
+    let _ = <!INVALID_COALESCING!>coalIdtNonOption(1)<!> ?? 0
     let _ = coalIdtNonOption(Some(1)) ?? 0
 }
 

@@ -25,7 +25,9 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirMatchPatternLegalityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.containsReportedErrorDiagnostic
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.hasPatternLegalityProblem
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.isIrrefutablePattern
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -55,6 +57,16 @@ object CfirPatternDeclarationIrrefutabilityChecker : CfirPatternVariableChecker(
 
         // 模式自身的匹配类型：元组声明由 returnTypeRef 承载（与形状检查同一来源）。
         val patternType = declaration.returnTypeRef.coneTypeOrNull
+        if (patternType != null && patternType !is ConeErrorType &&
+            declaration.pattern.hasPatternLegalityProblem(patternType, context)
+        ) {
+            CfirMatchPatternLegalityChecker.checkPattern(
+                declaration.pattern,
+                patternType,
+                reportTupleShapeDiagnostics = false,
+            )
+            return
+        }
         if (declaration.pattern.isIrrefutablePattern(patternType, context)) return
 
         reporter.reportOn(declaration.pattern.source, CfirErrors.PATTERN_CAN_NOT_BE_ASSIGNED)

@@ -1048,7 +1048,7 @@ open class CfirExpressionsResolveTransformer(
                 components.dataFlowAnalyzer.exitFunctionCall(result, data.forceFullCompletion)
             }
 
-            result.restoreInvalidSourceOperatorCall()
+            result.restoreInvalidSourceOperatorCall(data)
         }
 
     /**
@@ -1161,7 +1161,7 @@ open class CfirExpressionsResolveTransformer(
             skipEvenPartialCompletion = skipEvenPartialCompletion,
         )
         components.dataFlowAnalyzer.exitFunctionCall(result, data.forceFullCompletion)
-        return result.restoreInvalidSourceOperatorCall()
+        return result.restoreInvalidSourceOperatorCall(data)
     }
 
     /**
@@ -1173,7 +1173,7 @@ open class CfirExpressionsResolveTransformer(
      * 读取恢复后的引用。子表达式错误继续由其原始节点拥有，外层只传播不重复报告的错误；
      * receiver 与实参均有效时才在 operator 上创建新的根诊断。
      */
-    private fun CfirExpression.restoreInvalidSourceOperatorCall(): CfirExpression {
+    private fun CfirExpression.restoreInvalidSourceOperatorCall(data: ResolutionMode): CfirExpression {
         val functionCall = this as? CfirFunctionCall ?: return this
         if (functionCall.origin != CfirFunctionCallOrigin.Operator) return functionCall
         val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
@@ -1184,8 +1184,16 @@ open class CfirExpressionsResolveTransformer(
         val operatorToken = OperatorNameConventions.TOKENS_BY_OPERATOR_NAME[callee.name] ?: return functionCall
         val operandError = receiver.rootErrorDiagnosticOrNull()
             ?: functionCall.argumentList.arguments.firstNotNullOfOrNull { it.rootErrorDiagnosticOrNull() }
+        val expectedType = data.expectedTypeOrNull
         val diagnostic = if (operandError != null) {
             ConeUnreportedDuplicateDiagnostic(operandError.unwrapUnreportedDuplicate())
+        } else if (functionCall.argumentList.arguments.isEmpty() && expectedType != null) {
+            val receiverType = receiver.coneTypeOrNull ?: return functionCall
+            ConeInvalidUnaryExprWithTargetError(
+                operator = operatorToken,
+                type = receiver.invalidBinaryOperatorOperandType(receiverType),
+                returnType = expectedType,
+            )
         } else {
             val receiverType = receiver.coneTypeOrNull ?: return functionCall
             val argumentTypes = functionCall.argumentList.arguments.map { argument ->

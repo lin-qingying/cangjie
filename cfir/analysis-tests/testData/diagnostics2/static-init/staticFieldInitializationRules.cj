@@ -5,8 +5,9 @@
 // `-o out.a --output-type=staticlib --diagnostic-format json`；每个 `// FILE:` 段单独编译
 // （官方整包编译时一处 parse 错误会吞掉其余段的语义诊断，见 HasPrevDiag）。1.1.3 本机在 CHIR/codegen 阶段
 // 对某些单元会 LLVM 崩（崩在语义检查之后），语义诊断 JSON 仍完整产出，本文件按语义诊断写期望。除特别注明外，
-// 两版 kind、消息、MainHint.Range 完全一致；唯一的版本差异是形态 8（static init 里未被调用的 lambda 赋值）只在 1.1.3 报本族诊断、1.0.5 零诊断（详见形态 8 段注释与已删除的形态 4）。范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**
-// （单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 两版 kind 与消息一致；唯一的版本差异是形态 8（static init 里未被调用的 lambda 赋值）只在 1.1.3 报本族诊断、1.0.5 零诊断。
+// cjc JSON 的 MainHint.Range 用于确认官方语义来源；本文件遵守 CFIR 范围：字段诊断标记完整字段名 token，
+// 构造器诊断标记完整 `init` token，不因官方 CLI 的显示范围裁剪 token。
 //
 // 官方实现（external/cangjie_compiler，当前 checkout 在 tag v1.0.0）：
 //   - src/Sema/LegalityOfUsage/InitializationChecker.cpp:473-516 `CheckStaticInitForTypeDecl`
@@ -43,8 +44,8 @@
 // （`reportUninitializedStaticFields`，`factory = CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD`，
 // `source = field.fieldVariableNameDiagnosticSource()`）；消息表 CfirErrorsDefaultMessages.kt:1039；
 // CfirErrors.kt:407。按源码可预判的锚点差异（只写源码能直接看出的，不写 CFIR 实跑结果）：
-//   CFIR 用 `fieldVariableNameDiagnosticSource()`（锚字段变量名），而本族官方锚的是**整条 static 字段声明**
-//   （含 `static` 与修饰符）。因此 CFIR 侧红是预期的缺口，本文件按官方整条声明写标记。
+//   CFIR 用 `fieldVariableNameDiagnosticSource()`，锚在完整字段名 token；inline 标记应与该 CFIR source 对齐。
+//   官方 CLI 的 refactor range 覆盖整条声明，但不能用它改写 CFIR 的声明位置策略。
 //
 // 已有覆盖不重复清单：
 //   - CLASS_UNINITIALIZED_FIELD（实例成员未初始化，官方 sema_class_uninitialized_field，
@@ -311,9 +312,8 @@ class StaticFieldSubInherits <: StaticFieldSuperNoInit {
 }
 
 // ── 形态 24：class 同时有未初始化 static 字段与未初始化实例字段 —— 伴随 CLASS_UNINITIALIZED_FIELD（不写标记）
-// kind：sema_type_uninitialized_static_field，锚 static var 整条声明 Range (2,5)..(2,24)（两版一致）。
-// **伴随诊断不写标记**：实例字段 b 未初始化额外报 sema_class_uninitialized_field（锚实例构造器 `init`，
-// Range (8,5)..(8,6)），已在 diagnostics/initialization/classUninitializedFieldRich.cj 覆盖，本文件不重复。
+// kind：sema_type_uninitialized_static_field，CFIR 锚完整字段名 token。
+// 实例字段 b 未初始化额外报 sema_class_uninitialized_field；本文件同时标记完整构造器名 token。
 // FILE: classStaticAndInstanceFieldNoInit.cj
 class StaticFieldAndInstanceNoInit {
     static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>a<!>: Int64
@@ -322,7 +322,7 @@ class StaticFieldAndInstanceNoInit {
     static init() {
     }
 
-    init() {
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
     }
 }
 

@@ -395,11 +395,16 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val WRONG_NUMBER_OF_ARGUMENTS by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 泛型调用的类型映射无法使形参与实参兼容
-        val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>()
+        val PARAMETERS_AND_ARGUMENTS_MISMATCH by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 
         // 命名参数名在目标参数列表中不存在
         val NAMED_PARAMETER_NOT_FOUND by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
             parameter<Name>("parameterName")
+        }
+
+        // 命名实参名称不存在于目标参数列表中
+        val UNKNOWN_NAMED_ARGUMENT by error<PsiElement>(PositioningStrategy.NAME_OF_NAMED_ARGUMENT) {
+            parameter<Name>("argumentName")
         }
 
         // 同一个参数被多次传入
@@ -1103,7 +1108,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val NO_MATCH_FUNCTION_DECLARATION_FOR_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
 
         // 函数引用没有可访问的匹配声明，对齐官方 sema_no_match_function_declaration_for_ref。
-        val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.DEFAULT)
+        val NO_MATCH_FUNCTION_DECLARATION_FOR_REF by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
 
         // 目标函数类型下仍有多个匹配函数引用，对齐官方 sema_ambiguous_func_ref。
         val AMBIGUOUS_FUNCTION_REFERENCE by error<PsiElement>(PositioningStrategy.DEFAULT) {

@@ -17,6 +17,8 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.isBoolean
 import org.cangnova.cangjie.cfir.types.isFloatType
 import org.cangnova.cangjie.cfir.types.isIntegerType
@@ -129,7 +131,8 @@ internal fun literalConversionMismatch(
             expectedType,
         )
     }
-    if (target !is ConeTypeParameterType &&
+    val isStringTarget = target.classIdOrPrimitiveClassId == StdlibClassIds.String
+    if (target !is ConeTypeParameterType && !isStringTarget &&
         !target.isIntegerType && !target.isFloatType && !target.isBoolean && !target.isRune
     ) {
         // `@Annotation(target: [...])` 的目标类型是

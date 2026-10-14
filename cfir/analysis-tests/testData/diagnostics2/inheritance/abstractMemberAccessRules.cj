@@ -2,7 +2,8 @@
 // 证据：官方 cjc 1.0.5 与 1.1.3 两版实测，静态库模式 `cjc <段>.cj -o out.a --output-type=staticlib
 // --diagnostic-format json`；每个 `// FILE:` 段单独编译（官方整包编译时一处 parse 错误会屏蔽其余段的语义诊断，
 // 且官方 HasPrevDiag 会吞掉同起点同文案的重复诊断）。本文件全部形态两版 kind、消息、Range 完全一致，无 1.0.0 / 1.1.3 分歧段。
-// 范围口径：cjc JSON 的 MainHint.Range 结束列是**开区间**（单字符锚点报 Begin..Begin+1），本文件标记逐字符对齐官方范围。
+// 范围口径：cjc JSON 的 MainHint.Range 结束列是开区间；这里只用它确认官方诊断位置。
+// 本文件的内联锚点遵守 CFIR 规范：标识符/关键字取完整 token，声明级诊断取最小完整语法单元，不裁剪 token。
 // 本族官方 kind 的锚点口径分两种：
 //   (1) `diag.Diagnose(node, kind)`（非 refactor kind，退化为 node.GetBegin() 一个字符，include/cangjie/Basic/
 //       DiagnosticEngine.h:844-858）落在节点首字符；
@@ -36,20 +37,19 @@
 //   ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED（列表 :1677，工厂 :419，文案 :1056，生产者 .../expression/CfirAbstractClassInstantiationChecker.kt:61-65）；
 //   MISSING_FUNC_BODY（列表 :267，工厂 :88，文案 :163，生产者 .../declaration/CfirMemberBodyDeclarationChecker.kt:66-71）；
 //   INHERIT_NOT_RETURN_THIS（列表 :1588，工厂 :397，文案 :1023，生产者 .../declaration/CfirOverrideChecker.kt:323-329）；
-//   WEAK_VISIBILITY（列表 :366，工厂 :107，生产者 .../declaration/CfirInheritanceDeepChecker.kt:429-435 与 :1403-1409）。
+//   CANNOT_WEAKEN_ACCESS_PRIVILEGE（列表 :360，ACTUAL_DECLARATION_NAME）；WEAK_VISIBILITY（列表 :366）用于另一继承路径。
 //   golden 映射表 DiagnosticNameMapper.kt 登记了 ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY（:120）、MISSING_FUNC_BODY（:90）、
 //   WEAK_VISIBILITY（:121）；ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED 与 INHERIT_NOT_RETURN_THIS 未登记（全表 191 条）。
-// 按源码读取（未跑 CFIR）可预判的锚点差异（以源码为准，实际差异以 CFIR 实跑为准）：
-//   ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY 用 `receiver.calleeReference.source?.firstCharacterDiagnosticSource()`
-//     （回退 `receiver.source` / `expression.source`），主路径与官方同为 `super` 首字符；官方对 FUNC_DECL 与 PROP_DECL 成员一视同仁
-//     （:701 取 target 类型），CFIR 的 `resolvedCallableTarget()`（:747-751）只接 CfirCallableDeclaration，property 的 `super.p` 形态按源码看不到该诊断。
-//   ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED 用 `reference.source ?: expression.source`（被调引用 = 类型名），与官方同为类型名首字符；
+// CFIR 对应规则的锚点：
+//   ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY 使用完整 `super` 引用；函数与 property 都由通用 callable 目标状态检查。
+//   ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED 使用完整被调类型名 token；
 //     this(...)/super(...) 委托调用在 CFIR 是独立 origin 直接 return（:49-53），与官方 :2529-2530 的豁免一致。
-//   MISSING_FUNC_BODY 用 `declaration.source?.firstCharacterDiagnosticSource()`，与官方同为成员声明首字符；property 分支在 .cj.d
+//   NO_CONSTRUCTOR 是 CFIR 对接口不可实例化的等价诊断；MISSING_FUNC_BODY 锚完整成员声明单元，property 分支在 .cj.d
 //     文件被额外跳过（:64），本文件无 .cj.d 形态。
-//   INHERIT_NOT_RETURN_THIS 用 `declaration.source`（整条 override 声明），官方锚子函数名标识符，同一形态下二者不同；
+//   ABSTRACT_MEMBER_NOT_IMPLEMENTED 是 CFIR 对非 abstract class 留有未实现抽象成员的原生诊断，覆盖自身无体成员和继承义务。
+//   INHERIT_NOT_RETURN_THIS 用完整 declaration source，并由 ACTUAL_DECLARATION_NAME 定位到完整函数名 token；
 //     CFIR 只在被覆盖成员返回类型 isThisType 且子类返回类型非 isThisType 时报（:323），父函数返回 This 而子类不 override 时不报。
-//   WEAK_VISIBILITY 一处用 `candidate.diagnosticSource`、另一处用 `ownInfo.nameSource ?: ownInfo.source`（优先成员名），官方锚子成员名。
+//   CANNOT_WEAKEN_ACCESS_PRIVILEGE 是 CFIR 对降低覆盖成员可见性的原生诊断，锚完整成员名 token。
 // 本项目有而官方 v1.0.0 无同名 kind 的名字（本文件不为其写内联断言，只在此说明）：
 //   CANNOT_OVERRIDE_INVISIBLE_MEMBER（列表 :1014，工厂 :274，DiagnosticNameMapper.kt:71 映射到官方并不存在的
 //   `sema_cannot_override_invisible_member`；官方 include/ 与 src/ 全树 grep 不到该 kind）。官方对"override 一个 private 父成员"的
@@ -58,13 +58,8 @@
 //   EXPLICITLY_ABSTRACT_ONLY_FOR_CJMP_ABSTRACT_CLASS（列表 :2126）对应官方 1.1.3 才有的
 //   parse_explicitly_abstract_only_for_cjmp_abstract_class（官方 v1.0.0 无此 kind，且报的是 PARSE_ 前缀名，列表 :2216 已登记），
 //   见"已删除的形态 1"。
-// 官方有而本项目无对应诊断名（按 SUGGESTED_DIAGNOSTIC 处理，段内不写标记）：
-//   sema_interface_can_not_be_instantiated（形态 4）；sema_class_need_abstract_modifier_or_func_need_impl（形态 6、8）。后者的
-//   本项目相近名字里 ABSTRACT_MEMBER_NOT_IMPLEMENTED（列表 :1019）只覆盖"继承来的抽象成员未实现"
-//   （CfirNotImplementedOverrideChecker.kt:94-101 的 AbstractDeclaration 分支），NEED_MEMBER_IMPLEMENTATION（列表 :1530）对应官方
-//   sema_need_member_implementation（struct / extend 路径，:868-872），都不是"自己声明无体成员"的官方 kind，故按无对应名处理。
-//   sema_weak_visibility（形态 10）在本项目有同名 WEAK_VISIBILITY，但官方是 refactor kind 且带 3 个附注，按 SUGGESTED_DIAGNOSTIC 块
-//   记录 kind / 文案 / 报告点，段内仍写内联标记（WEAK_VISIBILITY 已登记在 DiagnosticNameMapper.kt:121）。
+// 官方 kind 名与 CFIR 名不同、但语义相同的形态使用现有 CFIR 诊断：接口实例化用 NO_CONSTRUCTOR，
+// class 缺少抽象成员实现用 ABSTRACT_MEMBER_NOT_IMPLEMENTED，可见性弱化用 CANNOT_WEAKEN_ACCESS_PRIVILEGE。
 // 已有覆盖不重复：NOTHING_TO_OVERRIDE（override 找不到可见父成员）在 inheritance/nothingToOverride.cj、overrideInvisibleMember.cj、
 //   overrideInvisibleAndNothingToOverride.cj；CANNOT_OVERRIDE 在 inheritance/classNotOpenForInheritance.cj；
 //   INVALID_MEMBER_VISIBILITY_IN_CLASS（abstract / open 成员未写 public 或 protected，含 private abstract 形态）在
@@ -75,11 +70,9 @@
 
 // ── 形态 1：子类用 `super.抽象函数` 直接访问父类的抽象函数（TypeCheckReference.cpp:713-724）
 // kind：sema_abstract_method_cannot_be_accessed_directly "abstract method 'f' cannot be accessed directly"
-// 锚点：MemberAccess 节点首字符，即 `super` 的 s（diag.Diagnose(ma, …) 退化为 ma.GetBegin 一字符）。
+// 官方 cjc 锚点是 MemberAccess 的首字符；CFIR 标记覆盖完整 `super` token。
 // 1.0.5 / 1.1.3 一致 Range (7,16)..(7,17)。探针 p1 / q1 / r6。
 // 抽象成员写成"无函数体的成员声明"（显式 `abstract` 修饰符被 parser 拦，见"已删除的形态 1"）；
-// 标记只包住 `super` 的首字符 s（官方锚点 1 字符），不能挪到 `f` 上：标记插在 `super` 与成员名之间会把
-// `super.f` 粘成一个标识符，官方 cjc 与 CFIR 都会报 sema_undeclared_identifier（探针 r1）。
 // FILE: superAccessAbstractFunc.cj
 abstract class AbsAccSuperFuncParent {
     public func f(): Int64
@@ -87,12 +80,12 @@ abstract class AbsAccSuperFuncParent {
 
 class AbsAccSuperFuncChild <: AbsAccSuperFuncParent {
     public override func f(): Int64 {
-        return <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.f()
+        return <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>super<!>.f()
     }
 }
 
 // ── 形态 2：property 形态（官方 :701 对 FUNC_DECL / PROP_DECL 一视同仁，消息里的 function / property 来自 target 类型）
-// 锚点：`super` 的 s。1.0.5 / 1.1.3 一致 Range (8,20)..(8,21)。探针 q1 / r2。
+// 官方 cjc 锚点为 `super` 首字符；CFIR 使用完整 `super` token。
 // FILE: superAccessAbstractProp.cj
 abstract class AbsAccSuperPropParent {
     public prop p: Int64
@@ -101,13 +94,13 @@ abstract class AbsAccSuperPropParent {
 class AbsAccSuperPropChild <: AbsAccSuperPropParent {
     public override prop p: Int64 {
         get() {
-            return <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.p
+            return <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>super<!>.p
         }
     }
 }
 
 // ── 形态 3：`super.抽象函数` 出现在调用实参里（锚点仍是 MemberAccess 首字符，不是整条表达式或实参列表）
-// 锚点：`super` 的 s。1.0.5 / 1.1.3 一致 Range (7,20)..(7,21)。探针 q2 / r3。
+// 官方 cjc 锚点为 `super` 首字符；CFIR 使用完整 `super` token。
 // FILE: superAccessInCallArgument.cj
 abstract class AbsAccSuperArgParent {
     public func f(): Int64
@@ -115,7 +108,7 @@ abstract class AbsAccSuperArgParent {
 
 class AbsAccSuperArgChild <: AbsAccSuperArgParent {
     public func g(): Int64 {
-        return 1 + <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>s<!>uper.f()
+        return 1 + <!ABSTRACT_METHOD_CANNOT_BE_ACCESSED_DIRECTLY!>super<!>.f()
     }
 
     public override func f(): Int64 {
@@ -126,14 +119,14 @@ class AbsAccSuperArgChild <: AbsAccSuperArgParent {
 // ── 形态 4：把接口当构造器调用（与形态 5 同属 CheckCallKind 的 switch，interface 分支排在 class 分支之前）
 // kind：sema_interface_can_not_be_instantiated "interface 'AbsAccInstantiateIface' can not be instantiated"
 // 锚点：CallExpr 首字符，即类型名 `AbsAccInstantiateIface` 的 A。1.0.5 / 1.1.3 一致 Range (6,13)..(6,14)。探针 p2 / q3。
-// 本项目 CfirAbstractClassInstantiationChecker.kt:58 只处理 CfirClass，CfirDiagnosticsList 无接口实例化诊断，本段不写内联断言。
+// CFIR 对应诊断为 NO_CONSTRUCTOR，锚完整接口类型名 token。
 // FILE: instantiateInterface.cj
 interface AbsAccInstantiateIface {
     func f(): Int64
 }
 
 func absAccInstantiateInterface(): Int64 {
-    let i = AbsAccInstantiateIface()
+    let i = <!NO_CONSTRUCTOR!>AbsAccInstantiateIface<!>()
     return 0
 }
 
@@ -157,67 +150,49 @@ abstract class AbsAccInstantiateWithArgs {
 }
 
 func absAccInstantiateNoArg(): Int64 {
-    let a = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>A<!>bsAccInstantiateParent()
+    let a = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>AbsAccInstantiateParent<!>()
     return 0
 }
 
 func absAccInstantiateWithArg(): Int64 {
-    let b = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>A<!>bsAccInstantiateWithArgs(1)
+    let b = <!ABSTRACT_CLASS_CAN_NOT_BE_INSTANTIATED!>AbsAccInstantiateWithArgs<!>(1)
     return 0
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_class_need_abstract_modifier_or_func_need_impl）
-SUGGESTED_MESSAGE: class '%s' missing abstract modifier or abstract %s '%s' should be implemented
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:862-867；include/cangjie/Basic/DiagnosticSema.def:198-199
-*/
 // ── 形态 6：非 abstract 的 class 里的无体成员（同一个 class 同时产生声明级与类型级官方诊断）
 //   sema_missing_func_body "function 'f' can not be abstract" / "property 'p' can not be abstract"，
 //     锚成员声明首字符：无修饰符时是标识符本身（`func f` 的 f），有修饰符时是修饰符首字符（`public` / `protected` 的 p）；
 //   sema_class_need_abstract_modifier_or_func_need_impl（每个 class 一条，锚类名首字符，附注锚未实现的成员声明）。
 // 1.0.5 / 1.1.3 一致 Range (2,5)..(2,6)、(4,5)..(4,6)、(8,5)..(8,6)、(1,1)..(1,2)、(7,1)..(7,2)。探针 q4b / r4。
-// CfirDiagnosticsList 无该 kind 的同名项：ABSTRACT_MEMBER_NOT_IMPLEMENTED（:1019）只覆盖"继承来的抽象成员未实现"
-// （CfirNotImplementedOverrideChecker.kt:94-101），NEED_MEMBER_IMPLEMENTATION（:1530）对应官方 sema_need_member_implementation
-// （struct / extend 路径），因此类型级那条按无对应 CFIR 名处理。
 // FILE: missingBodyInNonAbstractClass.cj
-class AbsAccMissingBodyNoModifier {
-    <!MISSING_FUNC_BODY!>f<!>unc f(): Int64
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>AbsAccMissingBodyNoModifier<!> {
+    <!MISSING_FUNC_BODY!>func f(): Int64<!>
 
-    <!MISSING_FUNC_BODY!>p<!>ublic prop p: Int64
+    <!MISSING_FUNC_BODY!>public prop p: Int64<!>
 }
 
-class AbsAccMissingBodyProtected {
-    <!MISSING_FUNC_BODY!>p<!>rotected func h(): Int64
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>AbsAccMissingBodyProtected<!> {
+    <!MISSING_FUNC_BODY!>protected func h(): Int64<!>
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_class_need_abstract_modifier_or_func_need_impl）
-SUGGESTED_MESSAGE: class '%s' missing abstract modifier or abstract %s '%s' should be implemented
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:862-867；include/cangjie/Basic/DiagnosticSema.def:198-199
-*/
 // ── 形态 7：abstract class 里的 static 无体成员（DeclAttributeChecker.cpp:297-299 的 static 条件成立；宿主是 abstract class，
 //     所以 :862 的类型级诊断与 :876-880 的 extend / 继承分支都不触发，整段只有声明级诊断）。
 // 锚点：成员声明首字符（`public` 的 p）。1.0.5 / 1.1.3 一致 Range (2,5)..(2,6)、(4,5)..(4,6)。探针 q4b。
 // FILE: missingBodyStaticInAbstractClass.cj
 abstract class AbsAccMissingStaticInAbstract {
-    <!MISSING_FUNC_BODY!>p<!>ublic static func f(): Int64
+    <!MISSING_FUNC_BODY!>public static func f(): Int64<!>
 
-    <!MISSING_FUNC_BODY!>p<!>ublic static prop q: Int64
+    <!MISSING_FUNC_BODY!>public static prop q: Int64<!>
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_class_need_abstract_modifier_or_func_need_impl）
-SUGGESTED_MESSAGE: class '%s' missing abstract modifier or abstract %s '%s' should be implemented
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:862-867；include/cangjie/Basic/DiagnosticSema.def:198-199
-*/
 // ── 形态 8：open class 里的 open 无体成员（非 abstract 条件成立，官方额外给类型级诊断；同 kind 同锚点，两版一致）
 // 锚点：成员声明首字符。1.0.5 / 1.1.3 一致 Range (2,5)..(2,6)、(4,5)..(4,6)、(7,1)..(7,2)。探针 q4b。
 // open 成员无体是否合法属声明状态族（官方同时会考虑 sema_ignore_open），本段只取"缺函数体"这一条。
 // FILE: missingBodyOpenInOpenClass.cj
-open class AbsAccMissingOpenInOpen {
-    <!MISSING_FUNC_BODY!>p<!>ublic open func h(): Int64
+open class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>AbsAccMissingOpenInOpen<!> {
+    <!MISSING_FUNC_BODY!>public open func h(): Int64<!>
 
-    <!MISSING_FUNC_BODY!>p<!>ublic open prop r: Int64
+    <!MISSING_FUNC_BODY!>public open prop r: Int64<!>
 }
 
 // ── 形态 9：override 返回 `This` 的 open 函数时，子类把返回类型改成父类名或子类自身名（StructInheritanceChecker.cpp:1218-1221）
@@ -244,13 +219,8 @@ class AbsAccThisReturnSelfType <: AbsAccThisReturnParent {
     }
 }
 
-/*
-SUGGESTED_DIAGNOSTIC: WEAK_VISIBILITY
-SUGGESTED_MESSAGE: a deriving member must be at least as visible as its base member
-SOURCE: src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:1056-1084（CheckAccessVisibility → :183-212 DiagWeakVisibility，:200 锚 MakeRangeForDeclIdentifier）；include/cangjie/Basic/DiagRefactor/DiagnosticSema.def:114
-*/
 // ── 形态 10：父类 public 成员在子类被覆盖成 protected（"case 1" 弱化组合；函数与 property 各一）
-// kind：sema_weak_visibility；锚点：子成员名首字符。1.0.5 / 1.1.3 一致 Range (14,29)..(14,30)、(20,29)..(20,30)。探针 q6 / u1。
+// kind：sema_weak_visibility；CFIR 使用语义等价的 CANNOT_WEAKEN_ACCESS_PRIVILEGE，锚完整子成员名 token。
 // 写 private 同理且只多这一条（探针 v2：`private override prop` 只有 weak_visibility，不触发属性继承族诊断），本段用 protected。
 // 父成员非 abstract / open / static 且宿主不是接口时 :1060-1063 直接返回，本段用 public open 成员。
 // FILE: overrideWeakerVisibility.cj
@@ -267,13 +237,13 @@ open class AbsAccWeakVisParent {
 }
 
 class AbsAccWeakVisChildProtected <: AbsAccWeakVisParent {
-    protected override func <!WEAK_VISIBILITY!>f<!>(): Int64 {
+    protected override func <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>f<!>(): Int64 {
         return 2
     }
 }
 
 class AbsAccWeakVisChildProtectedProp <: AbsAccWeakVisParent {
-    protected override prop <!WEAK_VISIBILITY!>p<!>: Int64 {
+    protected override prop <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>p<!>: Int64 {
         get() {
             return 2
         }

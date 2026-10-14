@@ -5,6 +5,7 @@ import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiErrorElement
 import com.intellij.psi.PsiWhiteSpace
+import org.cangnova.cangjie.lexer.CjTokens
 
 /**
  * PSI 诊断定位策略基类。
@@ -67,7 +68,7 @@ fun markRange(from: PsiElement, to: PsiElement): List<TextRange> {
 private fun getStartOffset(element: PsiElement): Int {
     var child = element.firstChild
     if (child != null) {
-        while (child is PsiComment || child is PsiWhiteSpace) {
+        while (child != null && child.isPositioningFiller()) {
             child = child.nextSibling
         }
         if (child != null) {
@@ -83,7 +84,7 @@ private fun getStartOffset(element: PsiElement): Int {
 private fun getEndOffset(element: PsiElement): Int {
     var child = element.lastChild
     if (child != null) {
-        while (child is PsiComment || child is PsiWhiteSpace) {
+        while (child != null && child.isPositioningFiller()) {
             child = child.prevSibling
         }
         if (child != null) {
@@ -91,6 +92,18 @@ private fun getEndOffset(element: PsiElement): Int {
         }
     }
     return element.textRange.endOffset
+}
+
+/**
+ * 判断 PSI 子树中的仓颉注释 token 是否属于诊断范围外的前后填充。
+ */
+private fun PsiElement.isPositioningFiller(): Boolean {
+    if (this is PsiComment || this is PsiWhiteSpace) return true
+    val elementType = node?.elementType
+    return elementType == CjTokens.EOL_COMMENT ||
+        elementType == CjTokens.BLOCK_COMMENT ||
+        elementType == CjTokens.SHEBANG_COMMENT ||
+        elementType == CjTokens.DOC_COMMENT
 }
 
 /**

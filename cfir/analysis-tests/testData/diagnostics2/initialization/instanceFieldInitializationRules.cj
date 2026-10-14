@@ -140,7 +140,7 @@ open class IFI06SuperNoCtor {
 class IFI06Sub <: IFI06SuperNoCtor {
     var y: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
         this.y = 1
     }
 }
@@ -171,7 +171,7 @@ class IFI08TwoMissing {
     var b: Int64
     var c: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
         this.a = 0
     }
 }
@@ -183,8 +183,8 @@ class IFI08TwoMissing {
 class IFI09LambdaAssign {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
-        let f = { => this.a = 0 }
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+        let f = { => this.<!CAPTURE_BEFORE_INITIALIZATION!>a<!> = 0 }
         f()
     }
 }
@@ -201,8 +201,8 @@ func ifi10Sink(v: Int64): Int64 {
 class IFI10ReadField {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
-        ifi10Sink(this.a)
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+        ifi10Sink(this.<!USED_BEFORE_INITIALIZATION!>a<!>)
     }
 }
 
@@ -214,8 +214,8 @@ class IFI10ReadField {
 class IFI11CallMember {
     var a: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>i<!>nit() {
-        this.reset()
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+        this.<!ILLEGAL_USAGE_OF_MEMBER!>reset<!>()
     }
 
     private func reset() {
@@ -227,12 +227,12 @@ class IFI11CallMember {
 // kind：sema_class_uninitialized_field；Range (8,5)..(8,6)，两版一致。
 // 伴随诊断 sema_recursive_constructor_call "recursive constructor calling detected"（官方 JSON Range (4,5)..(4,9)，
 // 锚第一个 `init` 整词，refactor kind，notes "depends on; depends on"），属构造器族（diagnostics2/constructor/superThisCallRules.cj），
-// 本文件只记录不写标记。
+// 构造器声明上的 RECURSIVE_CONSTRUCTOR_CALL 与 CLASS_UNINITIALIZED_FIELD 使用各自完整 init token 标记。
 // FILE: classRecursiveThisDelegate.cj
 class IFI12RecursiveDelegate {
     var a: Int64
 
-    init() {
+    <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>() {
         this()
     }
 

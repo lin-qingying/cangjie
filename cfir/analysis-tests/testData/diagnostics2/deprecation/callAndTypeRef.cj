@@ -1,9 +1,9 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// 证据：官方 cjc 1.0.5 / 1.1.3 实测（`@Deprecated` 合法参数集为 message / since / strict）：
+// 证据：官方 cjc 1.1.3 实测（本轮无法使用 1.0.5；`@Deprecated` 合法参数集为 message / since / strict）：
 //   调用 `strict: true` 的函数 → error: function 'legacy' is deprecated since 1.0.0. old.
 //     （kind sema_deprecated_error，锚被调用者 `legacy`）
-//   返回类型引用同级别名 → error: class 'ReturnRef' is deprecated since 1.0.0. old.（锚类型名 `ReturnRef`；用前置 Option 形式 `?ReturnRef`
-//     避免再报隐式构造调用的弃用诊断；postfix `T?` 在 cjc 1.0.5 / 1.1.3 上是 parse 错误）
+//   返回类型引用同级别名 → error: class 'ReturnRef' is deprecated since 1.0.0. old.（锚完整类型名 token `ReturnRef`；用前置 Option 形式 `?ReturnRef`
+//     避免再报隐式构造调用的弃用诊断；postfix `T?` 在已实测的 cjc 1.1.3 上是 parse 错误）
 //   构造调用同级别名 → 同上（锚 `CtorRef`，不含 `()`）
 // 三个使用点必须拆到不同文件（各自用不同的类名）：声明了 `init()` 的类在 cjc 1.0.5 上是 parse 错误
 //   （unexpected constructor in 'top-level' scope），放同一文件里取不到诊断；同名类放同一包也会 redefinition。

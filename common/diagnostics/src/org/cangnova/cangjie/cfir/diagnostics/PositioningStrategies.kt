@@ -9,6 +9,7 @@ import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
 import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFieldVariable
@@ -317,6 +318,9 @@ object PositioningStrategies {
 
             while (locateReferencedName && result is CjParenthesizedExpression) {
                 result = result.expression ?: break
+            }
+            if (locateReferencedName && result is CjConstructorCalleeExpression) {
+                result = result.constructorReferenceExpression?.referencedNameElement ?: result
             }
             if (locateReferencedName && result is CjSimpleNameExpression) {
                 result = result.referencedNameElement

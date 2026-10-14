@@ -427,6 +427,12 @@ internal class NamedParameterNotFoundImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NamedParameterNotFound
 
+internal class UnknownNamedArgumentImpl(
+    override val argumentName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnknownNamedArgument
+
 internal class ArgumentPassedTwiceImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,

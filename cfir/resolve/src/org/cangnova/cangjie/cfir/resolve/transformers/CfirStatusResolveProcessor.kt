@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.toAnnotationArgumentView
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
@@ -725,9 +726,16 @@ open class AbstractCfirStatusResolveTransformer(
         patternVariable: CfirPatternVariable,
         data: Nothing?,
     ): CfirPatternVariable {
-        return withResolvedStatusPhase(patternVariable) {
+        val resolvedPatternVariable = withResolvedStatusPhase(patternVariable) {
             transformVariableStatusWithoutPhaseGuard(patternVariable)
         }
+        // @Deprecated 修饰的是整个 pattern variable 声明；每个绑定名都作为独立 callable symbol
+        // 发布，因此需要让所有绑定声明消费同一组注解和按注解构建的弃用信息。
+        for (bindingVariable in resolvedPatternVariable.pattern.bindingVariables()) {
+            bindingVariable.replaceAnnotations(resolvedPatternVariable.annotations)
+            bindingVariable.replaceDeprecationsProvider(resolvedPatternVariable.deprecationsProvider)
+        }
+        return resolvedPatternVariable
     }
 
     /** value parameter 的通用遍历入口；参数状态由 callable 专用路径集中发布。 */

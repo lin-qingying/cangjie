@@ -12,8 +12,8 @@
 //   非 std 包的**带函数体**顶层 `@Intrinsic` → 官方只报 cannot_have_body（parse 阶段先失败，语义阶段不再跑），
 //     拿不到 sema_invalid_intrinsic_decl，故 INVALID_INTRINSIC_DECL 用例必须无函数体。
 // 本项目：官方 kind 分别对应 INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL、INTRINSIC_FUNCTION_CANNOT_HAVE_BODY、
-//   INTRINSIC_FUNCTION_DUPLICATED、INVALID_INTRINSIC_DECL；CFIR 的前三个锚在"注解 + 签名"整段、第四个锚整条声明，
-//   与官方锚点不同（实现缺口），标记按官方范围写。
+//   INTRINSIC_FUNCTION_DUPLICATED、INVALID_INTRINSIC_DECL。IDE 诊断按 CFIR 范围策略覆盖完整声明或完整函数体；
+//   名称级的官方单字符位置不用于内联范围。
 // 合法对照：同名的非 intrinsic 类成员函数零诊断；官方对 `extend` / 成员上的 `public` 另给 parse_redundant_modifier
 //   warning，合法对照里不写 `public`。顶层函数不能沿用同名：本包内 duplicatedIntrinsic.cj 的两个
 //   `@Intrinsic func getTypeForTypeParameter` 已是顶层函数，同包同签名顶层重名官方报
@@ -22,10 +22,10 @@
 
 // FILE: memberIntrinsic.cj
 class C {
-    @Intrinsic
-    <!INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL!>func getTypeForTypeParameter(): Int64 {
+    <!INTRINSIC_FUNCTION_MUST_BE_TOPLEVEL!>@Intrinsic
+    func getTypeForTypeParameter(): Int64 <!INTRINSIC_FUNCTION_CANNOT_HAVE_BODY!>{
         return 1
-    }<!>
+    }<!><!>
 }
 
 // FILE: bodyIntrinsic.cj
@@ -36,18 +36,18 @@ func withBody(): Int64 <!INTRINSIC_FUNCTION_CANNOT_HAVE_BODY!>{
 
 // FILE: duplicatedIntrinsic.cj
 @Intrinsic
-func getTypeForTypeParameter(): Int64 {
+func getTypeForTypeParameter(): Int64 <!INTRINSIC_FUNCTION_CANNOT_HAVE_BODY!>{
     return 1
-}
+}<!>
 
-@Intrinsic
-<!INTRINSIC_FUNCTION_DUPLICATED!>f<!>unc getTypeForTypeParameter(): Int64 {
+<!INTRINSIC_FUNCTION_DUPLICATED!>@Intrinsic
+func getTypeForTypeParameter(): Int64 <!INTRINSIC_FUNCTION_CANNOT_HAVE_BODY!>{
     return 2
-}
+}<!><!>
 
 // FILE: nonStdIntrinsic.cj
-@Intrinsic
-<!INVALID_INTRINSIC_DECL!>f<!>unc helper(): Int64
+<!INVALID_INTRINSIC_DECL!>@Intrinsic
+func helper(): Int64<!>
 
 // FILE: legalControl.cj
 class D {

@@ -56,6 +56,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -277,6 +278,10 @@ class CfirTypeResolverImpl(
             }
         }
 
+        enumConstructorUsedAsTypeDiagnostic(typeRef, configuration)?.let { diagnostic ->
+            return result(ConeErrorType(diagnostic))
+        }
+
         val resolvedQualifier = resolveQualifiedClassLike(typeRef, configuration)
         val finalQualifier = typeRef.qualifier.last()
         val resolvedArguments = resolveTypeArguments(
@@ -330,6 +335,30 @@ class CfirTypeResolverImpl(
             type = resolvedType,
             diagnostic = resolvedQualifier.diagnostic,
         )
+    }
+
+    /**
+     * enum constructor 名称可以出现在限定值访问中，但不是 classifier。
+     * 类型解析先按相同的作用域与 namespace 规则解析 owner，再由该 enum 声明判断最终成员名，
+     * 使 `Enum.Constructor` 在类型位置稳定地产生 NOT_A_TYPE，而不会误报未声明类型。
+     */
+    private fun enumConstructorUsedAsTypeDiagnostic(
+        typeRef: CfirUserTypeRef,
+        configuration: TypeResolutionConfiguration,
+    ): ConeNotATypeError? {
+        if (typeRef.qualifier.size < 2) return null
+
+        val ownerTypeRef = buildUserTypeRef {
+            source = typeRef.source
+            annotations += typeRef.annotations
+            qualifier += typeRef.qualifier.dropLast(1)
+        }
+        val owner = resolveQualifiedClassLike(ownerTypeRef, configuration).declaration as? CfirEnum ?: return null
+        val constructorName = typeRef.qualifier.last().name
+        return owner.declarations
+            .filterIsInstance<CfirEnumConstructor>()
+            .firstOrNull { it.name == constructorName }
+            ?.let { ConeNotATypeError(constructorName) }
     }
 
     /**

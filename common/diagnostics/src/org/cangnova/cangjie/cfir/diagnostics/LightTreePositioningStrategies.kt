@@ -7,6 +7,7 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * LightTree 前端使用的诊断定位策略集合。
@@ -447,6 +448,8 @@ private fun FlyweightCapableTreeStructure<LighterASTNode>.referenceExpression(
     locateReferencedName: Boolean,
 ): LighterASTNode? {
     var result = firstExpressionChild(node)
+        ?: findChildByType(node, CjStubElementTypes.CONSTRUCTOR_CALLEE)
+            ?.let { findDescendantByType(it, CjNodeTypes.REFERENCE_EXPRESSION) }
     while (locateReferencedName && result != null && result.tokenType == CjNodeTypes.PARENTHESIZED) {
         result = firstExpressionChild(result)
     }

@@ -12,10 +12,11 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.types.BuiltinPrimitiveOperators
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -35,7 +36,6 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
     private val unaryOperatorNames: Set<Name> = setOf(
         OperatorNameConventions.NOT,
         OperatorNameConventions.UNARY_MINUS,
-        OperatorNameConventions.UNARY_PLUS,
         OperatorNameConventions.INC,
         OperatorNameConventions.DEC,
     )
@@ -71,6 +71,16 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
             )
         }
 
+        if (declaration.name == OperatorNameConventions.UNARY_PLUS) {
+            reportInvalidParameterCount(declaration, expectedCount = 1, actualCount = 0)
+            return
+        }
+
+        if (declaration.name == OperatorNameConventions.GET && declaration.valueParameters.isEmpty()) {
+            reportInvalidParameterCount(declaration, expectedCount = 1, actualCount = 0)
+            return
+        }
+
         if (declaration.isSourceDeclaration) {
             checkBuiltinPrimitiveOperatorOverload(declaration)
         }
@@ -84,15 +94,7 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
         val actualParameterCount = declaration.valueParameters.size
         if (actualParameterCount == expectedParameterCount) return
 
-        val diagnosticSource = declaration.operatorDiagnosticSource() ?: return
-
-        reporter.reportOn(
-            source = diagnosticSource,
-            factory = CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT,
-            a = declaration.name.asOperatorString(),
-            b = expectedParameterCount.toString(),
-            c = actualParameterCount.toString(),
-        )
+        reportInvalidParameterCount(declaration, expectedParameterCount, actualParameterCount)
     }
 
     /**
@@ -100,7 +102,8 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
      *
      * 对齐官方 `TypeCheckerImpl::CheckOperatorOverloadFunc`：
      * - 命中内建一元/二元签名时报 built-in overload 诊断；
-     * - 若声明返回类型与内建返回类型不一致，再按函数名报告 `RETURN_TYPE_INCOMPATIBLE`。
+     * - public primitive operator 还可能实现目标类型继承的抽象 operator 契约；当当前
+     *   extend 没有显式 supertype 时，在声明级检查中按同一 builtin result contract 校验返回类型。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkBuiltinPrimitiveOperatorOverload(declaration: CfirNamedFunction) {
@@ -137,14 +140,31 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
             )
         }
 
+        if (containingExtend.superTypeRefs.isNotEmpty() || declaration.status.visibility != Visibilities.Public) return
         val actualReturnType = context.returnTypeCalculator.tryCalculateReturnType(declaration).coneType
         if (actualReturnType is ConeErrorType) return
         if (AbstractTypeChecker.equalTypes(context.session.typeContext, actualReturnType, builtinMatch.returnType)) return
 
         reporter.reportOn(
-            source = declaration.functionNameDiagnosticSource(),
+            source = declaration.functionNameOffsetsDiagnosticSource() ?: declaration.source,
             factory = CfirErrors.RETURN_TYPE_INCOMPATIBLE,
             a = declaration.name,
+        )
+    }
+
+    /** 对普通运算符 arity 与下标运算符空参数表使用同一完整 `operator` 锚点。 */
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun reportInvalidParameterCount(
+        declaration: CfirNamedFunction,
+        expectedCount: Int,
+        actualCount: Int,
+    ) {
+        reporter.reportOn(
+            source = declaration.operatorDiagnosticSource() ?: return,
+            factory = CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT,
+            a = declaration.name.asOperatorString(),
+            b = expectedCount.toString(),
+            c = actualCount.toString(),
         )
     }
 
@@ -160,7 +180,7 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
     /**
      * `operator set` 表达下标赋值协议：
      * - 至少一个位置参数作为索引；
-     * - 必须且只能有一个名为 `value` 的命名参数；
+     * - 每个具名参数都必须名为 `value`；
      * - 返回类型必须为 `Unit`。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -171,22 +191,28 @@ object CfirOperatorDeclarationChecker : CfirSimpleFunctionChecker() {
 
         if (positionalParameters.isEmpty()) {
             reporter.reportOn(
-                source = diagnosticSource,
+                source = declaration.functionNameOffsetsDiagnosticSource() ?: diagnosticSource,
                 factory = CfirErrors.INVALID_SUBSCRIPT_ASSIGN_PARAMETER_NUM,
             )
         }
 
-        val hasSingleValueParameter =
-            namedParameters.size == 1 && namedParameters.single().name.asString() == "value"
-        if (!hasSingleValueParameter) {
+        val invalidNamedParameter = namedParameters.firstOrNull { it.name.asString() != "value" }
+        if (invalidNamedParameter != null) {
             reporter.reportOn(
-                source = diagnosticSource,
+                source = invalidNamedParameter.valueParameterNameOffsetsDiagnosticSource()
+                    ?: invalidNamedParameter.source
+                    ?: diagnosticSource,
                 factory = CfirErrors.INVALID_SUBSCRIPT_ASSIGN_PARAMETER,
             )
         }
 
         val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-        if (returnType != null && !returnType.isUnit) {
+        if (
+            declaration.valueParameters.size > 1 &&
+            invalidNamedParameter == null &&
+            returnType != null &&
+            !returnType.isUnit
+        ) {
             reporter.reportOn(
                 source = declaration.subscriptAssignmentReturnDiagnosticSource() ?: diagnosticSource,
                 factory = CfirErrors.INVALID_SUBSCRIPT_ASSIGN_RETURN,

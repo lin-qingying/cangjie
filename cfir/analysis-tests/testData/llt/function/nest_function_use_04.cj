@@ -9,7 +9,7 @@ class A {
 }
 
 func bar<T>(a: T) {
-    let b = {a: Any => ()}(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>A<!>.foo<Int64>) // Use type func unknown as reference
+    let b = {a: Any => ()}(A.<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>foo<!><Int64>) // Use type func unknown as reference
     a
 }
 

@@ -184,8 +184,10 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             )
             if (callable.hasInheritedNonStaticSignatureIgnoringStatic()) {
                 reporter.reportOn(
-                    callable.source,
-                    CfirErrors.NOTHING_TO_OVERRIDE,
+                    redefModifier.source,
+                    CfirErrors.REDUNDANT_MODIFIER_FOR_TARGET,
+                    redefModifier.token,
+                    "inherited instance member",
                 )
             }
         }

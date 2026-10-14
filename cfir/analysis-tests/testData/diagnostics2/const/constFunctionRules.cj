@@ -59,7 +59,7 @@
 class ConstInitWithVarMemberClass {
     var x: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
         x = 1
     }
 }
@@ -75,7 +75,7 @@ open class ConstImplicitSuperBase {
 class ConstImplicitSuperSub <: ConstImplicitSuperBase {
     var x: Int64 = 0
 
-    const <!EXPECT_CONST!><!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!EXPECT_CONST!><!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
         this.x = 1
     }<!>
 }
@@ -142,7 +142,7 @@ class VarInConstFuncClass {
     }
 
     const func f(): Int64 {
-        var <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>a<!> = 1
+        <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>var a = 1<!>
         return a
     }
 }
@@ -154,7 +154,7 @@ class VarInConstInitClass {
     let x: Int64
 
     const init() {
-        var <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>a<!> = 1
+        <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>var a = 1<!>
         this.x = a
     }
 }
@@ -167,7 +167,7 @@ class VarInLambdaConstClass {
     }
 
     const func f(): Int64 {
-        let g = { => var <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>a<!> = 1
+        let g = { => <!CANNOT_DEFINE_VAR_IN_CONST_FUNCTION!>var a = 1<!>
             a }
         return g()
     }
@@ -259,7 +259,7 @@ class ConstCallsNonConstMemberClass {
 class ConstRefStaticVarClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(): Int64 {
@@ -273,7 +273,7 @@ class ConstRefStaticVarClass {
 class ConstLocalLetClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(): Int64 {
@@ -288,7 +288,7 @@ class ConstLocalLetClass {
 class ConstAssignStaticVarClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(): Unit {
@@ -302,7 +302,7 @@ class ConstAssignStaticVarClass {
 class ConstIncrStaticVarClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(): Unit {
@@ -316,7 +316,7 @@ class ConstIncrStaticVarClass {
 class ConstLambdaCaptureClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(): Int64 {
@@ -331,7 +331,7 @@ class ConstLambdaCaptureClass {
 class ConstDefaultParamClass {
     static var t: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
     }
 
     const func f(a!: Int64 = <!EXPECT_CONST!>t<!>): Int64 {
@@ -354,14 +354,14 @@ open class ConstExplicitSuperBase {
 class ConstExplicitSuperSub <: ConstExplicitSuperBase {
     var x: Int64 = 0
 
-    const <!CLASS_CONST_INIT_WITH_VAR!>init<!>() {
+    <!CLASS_CONST_INIT_WITH_VAR!>const init<!>() {
         <!EXPECT_CONST!>super<!>(1)
         this.x = 1
     }
 }
 
 // ── 形态 22：const 函数里对顶层 var 数组下标（ChkSubscriptExpr :786：基表达式类型非元组/VArray → 锚基表达式）
-// kind：weak expect_const，锚 `constSubscriptArr`（不含 `[0]`）。1.0.5 / 1.1.3 一致 Range (8,16)..(8,33)。探针 h08。
+// kind：weak expect_const；CFIR 的 CfirSubscriptExpression.source 覆盖完整 `constSubscriptArr[0]` 单元。
 // FILE: constFuncSubscriptStaticVar.cj
 var constSubscriptArr: Array<Int64> = [1, 2]
 
@@ -370,7 +370,7 @@ class ConstSubscriptClass {
     }
 
     const func f(): Int64 {
-        return <!EXPECT_CONST!>constSubscriptArr<!>[0]
+        return <!EXPECT_CONST!>constSubscriptArr[0]<!>
     }
 }
 

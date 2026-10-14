@@ -107,6 +107,30 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         }
         if (actualType is ConeErrorType) return
         if (tailExpression?.containsReportedErrorDiagnostic() == true) return
+
+        if (block.statements.isEmpty()) {
+            val source = block.source ?: return
+            // 官方将空 getter 的属性结果检查报告为普通类型不匹配；普通函数空体则带有返回类型原因。
+            if (containingFunction is CfirPropertyAccessor && containingFunction.isGetter) {
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.TYPE_MISMATCH,
+                    a = expectedType,
+                    b = actualType,
+                    c = false,
+                )
+            } else {
+                reporter.reportOn(
+                    source = source,
+                    factory = CfirErrors.MISMATCHED_TYPES_BECAUSE,
+                    a = expectedType,
+                    b = actualType,
+                    c = "return type",
+                )
+            }
+            return
+        }
+
         // 声明不是 block 的结果表达式，但官方仍把“声明导致 Unit 流出”的类型错误
         // 定位在该尾声明本身；只有真正的空 body 才定位到整个 block。
         val resultSource = tailStatement?.source ?: block.source ?: return

@@ -1,11 +1,15 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -29,13 +33,23 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
         val expandedTypeRef = declaration.expandedTypeRef as? CfirResolvedTypeRef ?: return
         if (expandedTypeRef is CfirErrorTypeRef && expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
 
-        val expandedType = expandedTypeRef.typeForUnusedParameterCheck() ?: return
-        if (expandedType.containsErrorType()) return
+        val resolvedType = expandedTypeRef.typeForUnusedParameterCheck() ?: return
+        val recursiveAliasExpansion = (expandedTypeRef as? CfirErrorTypeRef)
+            ?.diagnostic
+            ?.let { it is ConeSimpleDiagnostic && it.kind == DiagnosticKind.RecursiveTypealiasExpansion } == true
+        val expandedType = if (recursiveAliasExpansion) {
+            resolvedType
+        } else {
+            resolvedType.fullyExpandedTypeUsingAbbreviation(context.session)
+        }
+        if (expandedType.containsErrorType() && !recursiveAliasExpansion) return
 
         val usedTypeParameterSymbols = linkedSetOf<org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol>()
-        expandedType.forEachType { type ->
-            val typeParameterType = type as? ConeTypeParameterType ?: return@forEachType
-            usedTypeParameterSymbols += typeParameterType.lookupTag.typeParameterSymbol
+        if (!recursiveAliasExpansion || context.languageVersionSettings.languageVersion < LanguageVersion.CANGJIE_1_1_0) {
+            expandedType.forEachType { type ->
+                val typeParameterType = type as? ConeTypeParameterType ?: return@forEachType
+                usedTypeParameterSymbols += typeParameterType.lookupTag.typeParameterSymbol
+            }
         }
 
         val unusedTypeParameters = declaration.typeParameters.filter { it.symbol !in usedTypeParameterSymbols }

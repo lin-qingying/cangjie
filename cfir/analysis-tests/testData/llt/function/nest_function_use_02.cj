@@ -7,7 +7,7 @@ func <!UNABLE_TO_INFER_RETURN_TYPE!>foo<!><T>(a: T) {
 }
 
 func bar<T>(a: T) {
-    let b = {a: Any => ()}(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>oo<Int64>) // Use unknown as reference
+    let b = {a: Any => ()}(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>foo<!><Int64>) // Use unknown as reference
     a
 }
 

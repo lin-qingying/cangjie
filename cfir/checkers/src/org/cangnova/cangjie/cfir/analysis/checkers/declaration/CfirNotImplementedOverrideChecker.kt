@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.accessContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -60,7 +61,7 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
 /**
  * 未实现抽象成员检查器。
  *
- * 对齐 Kotlin FIR `FirNotImplementedOverrideChecker` 的核心行为：非 abstract class/struct
+ * 对齐 Kotlin FIR `FirNotImplementedOverrideChecker` 的核心行为：非 abstract class/struct/enum
  * 如果继承的抽象成员没有具体实现，则报告 `ABSTRACT_MEMBER_NOT_IMPLEMENTED`。
  *
  * 注意：extend 引入的接口不影响本体的抽象成员实现义务，因此这里使用仅基于本体继承关系的 scope。
@@ -69,11 +70,11 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
     override val requiresImplementation: Boolean get() = true
 
     /**
-     * 检查 class/struct 是否仍有未实现的 inherited abstract member。
+     * 检查 class/struct/enum 是否仍有未实现的 inherited abstract member。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (declaration !is CfirClass && declaration !is CfirStruct) return
+        if (declaration !is CfirClass && declaration !is CfirStruct && declaration !is CfirEnum) return
         if (declaration.status.isAbstract || declaration.status.isSealed) return
         if (declaration.resolvedInteropInfoOrNull()?.cjmp?.isObjCMapping == true &&
             declaration.superTypeRefs.isNotEmpty()

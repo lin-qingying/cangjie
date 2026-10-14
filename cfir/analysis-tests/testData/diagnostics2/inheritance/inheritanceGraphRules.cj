@@ -18,7 +18,8 @@
 //   `sema_cannot_override` 是 refactor kind（DiagRefactor/DiagnosticSema.def:112），锚**成员名整段**。
 // 内联标记写法：小于感叹号 + 诊断名 + 大于感叹号 + 锚点文本 + 结束标记；全文只在 `// FILE:` 段内出现，
 //   头部注释一律用文字描述，不出现该序列的字面量。
-// **未跑 CFIR**：本文件不依据本项目 CFIR 的实际输出编写，头部只按源码写出 CFIR 名、生产者位置与可预判的锚点差异。
+// 本文件的内联锚点按 CFIR 诊断 source 与项目范围规范核对：标识符取完整 token，声明级诊断取最小完整语法单元；
+// cjc 的单字符 MainHint 仅用于确认官方诊断语义和归属，不作为 CFIR 的高亮范围。
 //
 // 官方实现（external/cangjie_compiler，工作树 checkout 在 tag v1.0.0）：
 //   A. 继承环 → src/Sema/PreCheck.cpp:1315-1322 `CheckInheritanceCycleDFSHandleVisiting`：
@@ -40,8 +41,8 @@
 //      文案 DiagnosticSema.def:252 "class '%s' can only inherit a class or implement interfaces"。
 //   C. 接口成员未实现 / 需要实现 → src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:855-878：
 //      宿主是非 abstract 的 class-like（class / struct / enum）时
-//      :863-867 报 `sema_class_need_abstract_modifier_or_func_need_impl`（本项目无同名 CFIR 名 → SUGGESTED，
-//      见形态 26）；否则 `member.shouldBeImplemented`（接口成员**没有默认实现**；宿主 class-like / extend
+//      :863-867 报 `sema_class_need_abstract_modifier_or_func_need_impl`（CFIR 使用语义等价的
+//      `ABSTRACT_MEMBER_NOT_IMPLEMENTED`，见形态 26）；否则 `member.shouldBeImplemented`（接口成员**没有默认实现**；宿主 class-like / extend
 //      都算）为真时 :874-875 `diag.Diagnose(structDecl, DiagKind::sema_interface_member_must_be_implemented,
 //      type, identifier, structName)` → 锚 1 字符（宿主声明首 token）；:871-872
 //      `diag.Diagnose(structDecl, DiagKind::sema_need_member_implementation, …)` → 同锚点。
@@ -66,17 +67,16 @@
 //     cfir/checkers/src/.../diagnostics/coneDiagnosticToCfirDiagnostic.kt:2521)
 //   CLASS_INHERIT_NON_CLASS_NOR_INTERFACE(:143, `by error<CjTypeReference>`；CfirSupertypesChecker.kt:198，
 //     source = `superTypeRef.declaredSupertypeClassifierSource()`)
-//   INTERFACE_MEMBER_MUST_BE_IMPLEMENTED(:1535) / NEED_MEMBER_IMPLEMENTATION(:1530)（无定位策略 ⇒ 默认
-//     PsiElement 整段）；两者生产者都在 CfirInheritanceDeepChecker.kt（:193 与 :1001 文案表），
-//     source = `declaration.classLikeNameDiagnosticSource()`（**宿主类型名**）
-//   CANNOT_OVERRIDE(:1518, `by error<PsiElement>`)；生产者 CfirInheritanceDeepChecker.kt:186，触发条件是
-//     `superInfo.isDefaultInterfaceMember(context)`，source 同样是 `classLikeNameDiagnosticSource()`
+//   INTERFACE_MEMBER_MUST_BE_IMPLEMENTED(:1535) / NEED_MEMBER_IMPLEMENTATION(:1530) 的 class-like 生产者使用
+//     `declaration.classLikeNameDiagnosticSource()`；extend 路径以 extend source 报告。
+//   CANNOT_OVERRIDE(:1518, `by error<PsiElement>`) 有多个继承路径：本文件非 open 父类形态由
+//     CfirInheritanceDeepChecker.kt:1440 使用 `ownInfo.nameSource`，锚完整子成员名 token；默认接口成员路径(:186)
+//     则使用宿主类型名 source。
 //   文案表 cfir/checkers/src/.../diagnostics/CfirErrorsDefaultMessages.kt:95（INHERITANCE_CYCLE
 //     "inheritance cycle detected"，与官方同措辞但**不带链条实参**）、:156、:993、:1001、:1006。
-//   按源码可预判的锚点差异（**未跑 CFIR**）：`CANNOT_OVERRIDE` 与两条 must-impl 系官方锚"成员名整段 / 宿主声明首
-//   token"，CFIR 统一锚 `classLikeNameDiagnosticSource()`（宿主类型名），预计形态不同；
-//   `CLASS_INHERIT_NON_CLASS_NOR_INTERFACE` 两侧都锚超类型引用、首字母形态可能一致；
-//   `INHERITANCE_CYCLE` 走 cone 层且定位策略是 DEFAULT，实际锚点以实跑为准。
+//   已实跑 CFIR：`CANNOT_OVERRIDE` 与官方都覆盖完整子成员名 token；class-like must-impl 的 CFIR 标记覆盖完整宿主名
+//   token，extend must-impl 覆盖完整 extend 单元；`CLASS_INHERIT_NON_CLASS_NOR_INTERFACE` 覆盖完整超类型名 token；
+//   `INHERITANCE_CYCLE` 覆盖相应 class/interface 声明头或 extend 单元。官方 CJC 的单字符 MainHint 不作为这些标记的范围。
 //
 // 已有覆盖不重复（先读）：
 //   - `testData/diagnostics2/inheritance/` 21 个夹具已用：MISSING_FUNC_BODY(7)、NOTHING_TO_OVERRIDE(4)、
@@ -104,14 +104,14 @@
 //
 // 各段 Range 均按**逐段单独编译**的干净文本行号（`// FILE:` 行被剥离），故正文里的形如 (4,1) 是段内行号。
 
-// ── 形态 1：两个 interface 互相继承 —— 锚在**第一个** interface 的 `interface` 关键字首字母
+// ── 形态 1：两个 interface 互相继承 —— 官方锚第一个 interface 关键字首字符；CFIR 标记完整声明头
 // kind：sema_inheritance_cycle "inheritance cycle detected: 'IgIpA->IgIpB->IgIpA'"；Range (1,1)..(1,2)，两版一致。
 // 官方只在 DFS 里第一次回到 VISITING 的那个 decl 上报一条，所以环上另一个 interface 不再报（实测仅 1 条）。
 // FILE: inheritanceCycleInterfacePair.cj
 <!INHERITANCE_CYCLE!>interface IgIpA<!> <: IgIpB {}
 interface IgIpB <: IgIpA {}
 
-// ── 形态 2：class ↔ interface 成环（interface 在中间）—— 锚 interface 声明，两个 class 侧都不报
+// ── 形态 2：class ↔ interface 成环（interface 在中间）—— 官方锚 interface 关键字首字符；CFIR 标记完整声明头
 // kind：sema_inheritance_cycle "…'IgCiMid->IgCiRoot->IgCiMid'"；Range (2,1)..(2,2)，两版一致（仅 1 条）。
 // 与形态 1 的差别：环的根不是文件里第一个声明（`IgCiSub` 在环外）；DFS 从每个 class / interface 起点各走一遍。
 // FILE: inheritanceCycleClassViaInterface.cj
@@ -119,17 +119,18 @@ class IgCiSub <: IgCiMid {}
 <!INHERITANCE_CYCLE!>interface IgCiMid<!> <: IgCiRoot {}
 class IgCiRoot <: IgCiMid {}
 
-// ── 形态 3：经类型别名成环（别名指向 open class，class 父类写别名）—— 锚 class 声明的 `open` 修饰符首字母
+// ── 形态 3：经类型别名成环（别名指向 open class，class 父类写别名）—— 官方锚 `open` 首字符；CFIR 标记 class 声明头
 // kind：sema_inheritance_cycle "…'IgCaoSub->IgCaoSub'"（穿过别名后链条只剩一个名字，官方 :1260-1262 会递归进
 // 别名 RHS，所以这条路径可达）；Range (1,1)..(1,2)，两版一致。
 // 伴随诊断 sema_recursive_constructor_call "recursive constructor calling detected"（Range (1,12)..(1,20)，
 // 锚 `IgCaoSub` 整段，notes "depends on"）属构造器族（diagnostics2/constructor/superThisCallRules.cj 已覆盖），
-// 本文件只记录不写标记。对照 LLT class1.cj 的 class ↔ class 环（那边锚 `class` 关键字，本段锚点规则一致）。
+// CFIR 同时在完整 `IgCaoSub` 名称 token 上报告 RECURSIVE_CONSTRUCTOR_CALL；该构造器诊断在本段也使用完整 token。
+// 对照 LLT class1.cj 的 class ↔ class 环；官方 CJC 的单字符锚点不决定 CFIR 范围。
 // FILE: inheritanceCycleViaTypeAliasOpen.cj
-<!INHERITANCE_CYCLE!>o<!>pen class IgCaoSub <: IgCaoAlias {}
+<!INHERITANCE_CYCLE!>class <!RECURSIVE_CONSTRUCTOR_CALL!>IgCaoSub<!><!> <: IgCaoAlias {}
 type IgCaoAlias = IgCaoSub
 
-// ── 形态 4：extend 参与的环（interface 三元环，extend 挂在环上）—— 锚 **extend 块**的 `extend` 首字母
+// ── 形态 4：extend 参与的环（interface 三元环，extend 挂在环上）—— 官方锚 `extend` 首字符；CFIR 标记完整 extend 单元
 // kind：sema_inheritance_cycle "…'IgCeC->IgCeA->IgCeB->IgCeC'"；Range (5,1)..(5,2)，两版一致（仅 1 条）。
 // 官方 :1321 的 `extendDecl == nullptr ? decl : *extendDecl`：DFS 从 `IgCeTarget` 经 extend 走到环后，
 // 报告落在 extend 块而不是环上任何一个 interface。
@@ -140,46 +141,45 @@ interface IgCeB <: IgCeC {}
 interface IgCeC <: IgCeA {}
 <!INHERITANCE_CYCLE!>extend IgCeTarget<!> <: IgCeC {}
 
-// ── 形态 5：interface 环 + extend 挂在 **struct** 上 —— 锚环上第一个 interface
+// ── 形态 5：interface 环 + extend 挂在 **struct** 上 —— 官方锚环上第一个 interface；CFIR 标记完整 extend 单元
 // kind：sema_inheritance_cycle "…'IgCsxA->IgCsxB->IgCsxA'"；Range (2,1)..(2,2)，两版一致（仅 1 条）。
 // 与形态 4 的差别：struct 自身不查环（官方 :1226-1231 struct / enum 只查重复接口），extend 也不是环的一部分，
-// 所以锚回 interface。
+// 所以官方锚回 interface；CFIR 的该诊断 source 是参与继承图的 extend 单元。
 // FILE: inheritanceCycleExtendOnStruct.cj
 struct IgCsxS {}
-<!INHERITANCE_CYCLE!>i<!>nterface IgCsxA <: IgCsxB {}
+interface IgCsxA <: IgCsxB {}
 interface IgCsxB <: IgCsxA {}
-extend IgCsxS <: IgCsxA {}
+<!INHERITANCE_CYCLE!>extend IgCsxS<!> <: IgCsxA {}
 
-// ── 形态 6：同形态 5 但 extend 挂在 **enum** 上
+// ── 形态 6：同形态 5 但 extend 挂在 **enum** 上；官方锚环上第一个 interface，CFIR 标记完整 extend 单元
 // kind：sema_inheritance_cycle "…'IgCexA->IgCexB->IgCexA'"；Range (2,1)..(2,2)，两版一致。
 // FILE: inheritanceCycleExtendOnEnum.cj
 enum IgCexE { A }
-<!INHERITANCE_CYCLE!>i<!>nterface IgCexA <: IgCexB {}
+interface IgCexA <: IgCexB {}
 interface IgCexB <: IgCexA {}
-extend IgCexE <: IgCexB {}
+<!INHERITANCE_CYCLE!>extend IgCexE<!> <: IgCexB {}
 
 // ── 形态 7：interface 环 + extend 挂在 class 上 + class 继承该 extend 宿主 —— 锚 extend 块
 // kind：sema_inheritance_cycle "…'IgCveI2->IgCveI3->IgCveI1->IgCveI2'"；Range (5,1)..(5,2)，两版一致。
-// 伴随诊断 sema_non_inheritable_super_class "super class 'IgCveRoot' is not inheritable"（Range (6,20)..(6,21)，
-// 锚 `IgCveRoot` 首字母，CFIR 名 NON_INHERITABLE_SUPER_CLASS，已由 classAndInterfaceInheritanceBoundaries.cj
-// 覆盖）——`IgCveRoot` 不是 open，只记录不写标记。
+// 伴随诊断 sema_non_inheritable_super_class "super class 'IgCveRoot' is not inheritable"（官方 CJC 锚类型名首字符；
+// CFIR 名 NON_INHERITABLE_SUPER_CLASS，本段按完整 `IgCveRoot` 名称 token 标记）。
 // FILE: inheritanceCycleViaExtendInterface.cj
 class IgCveRoot {}
 interface IgCveI1 <: IgCveI2 {}
 interface IgCveI2 <: IgCveI3 {}
 interface IgCveI3 <: IgCveI1 {}
-<!INHERITANCE_CYCLE!>e<!>xtend IgCveRoot <: IgCveI2 {}
-class IgCveLeaf <: IgCveRoot {}
+<!INHERITANCE_CYCLE!>extend IgCveRoot<!> <: IgCveI2 {}
+class IgCveLeaf <: <!NON_INHERITABLE_SUPER_CLASS!>IgCveRoot<!> {}
 
 // ── 形态 8：interface 环 + extend 挂在 interface 上 —— 锚环上第一个 interface，extend 侧另有一条 refactor 诊断
 // kind：sema_inheritance_cycle "…'IgEoiA->IgEoiB->IgEoiA'"；Range (1,1)..(1,2)，两版一致。
 // 伴随诊断 sema_illegal_extended_type "extending type 'Interface-IgEoiA' is not allowed"（Range (3,8)..(3,14)，
-// 锚 `IgEoiA` 整段，refactor kind；CFIR 名 ILLEGAL_EXTENDED_TYPE，已由 extend/extendIllegalMember.cj 覆盖）
-// 只记录不写标记。官方 PreCheckExtend 先报这条、Sema 再查环，两条互不屏蔽。
+// 锚 `IgEoiA` 整段，refactor kind；CFIR 名 ILLEGAL_EXTENDED_TYPE，本段按完整 `IgEoiA` 名称 token 标记）。
+// 官方 PreCheckExtend 先报这条、Sema 再查环，两条互不屏蔽。
 // FILE: inheritanceCycleExtendOnInterface.cj
 <!INHERITANCE_CYCLE!>interface IgEoiA<!> <: IgEoiB {}
 interface IgEoiB <: IgEoiA {}
-extend IgEoiA <: IgEoiB {}
+extend <!ILLEGAL_EXTENDED_TYPE!>IgEoiA<!> <: IgEoiB {}
 
 // ── 形态 9：class 的父类是 `Array<T>` —— 锚 `Array` 的首字母
 // kind：sema_class_inherit_non_class_nor_interface "class 'IgNaqC' can only inherit a class or implement
@@ -202,11 +202,11 @@ type IgNaA1 = IgNaS
 type IgNaA2 = IgNaA1
 class IgNaC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>IgNaA2<!> {}
 
-// ── 形态 12：class 的父类是**指向原始类型的别名** —— 锚别名首字母，伴随一条无 CFIR 名的 non-ref 诊断
+// ── 形态 12：class 的父类是**指向原始类型的别名** —— CFIR 标记完整别名 token，官方另报 non-ref 诊断
 // kind：sema_class_inherit_non_class_nor_interface；Range (2,17)..(2,18)，两版一致。
-// 伴随诊断 sema_inheritance_non_ref_type "inheritance is not a ref type: 'IgNapC'"（Range (2,1)..(2,2)，
-// 锚 class 声明首 token；`DiagnosticSema.def:190`，官方 PreCheck.cpp:1268 在 DFS 里发现 `te` 展开后不是
-// REF_TYPE / QUALIFIED_TYPE 时报；本项目无同名 CFIR 名 → 按 SUGGESTED 记录，不写标记）。
+// 官方还会报告 sema_inheritance_non_ref_type（Range (2,1)..(2,2)，CJC 锚 class 关键字首字符；
+// `DiagnosticSema.def:190`，PreCheck.cpp:1268 在 DFS 中发现别名展开结果不是 REF_TYPE / QUALIFIED_TYPE 时报告）。
+// CFIR 将无效 class 超类型归入 CLASS_INHERIT_NON_CLASS_NOR_INTERFACE，本段以完整别名名称 token 标记该 CFIR 诊断。
 // 直接写 `class C <: Int64` 会被 parser 拦（见"已删除的形态 1"），别名是唯一可达路径。
 // FILE: classInheritsAliasToPrimitive.cj
 type IgNapT = Int64
@@ -214,7 +214,8 @@ class IgNapC <: <!CLASS_INHERIT_NON_CLASS_NOR_INTERFACE!>IgNapT<!> {}
 
 // ── 形态 13：class 的父类是**指向元组的别名**（别名再套一层）—— 锚别名首字母
 // kind：sema_class_inherit_non_class_nor_interface；Range (3,17)..(3,18)，两版一致。
-// 伴随诊断同形态 12 的 sema_inheritance_non_ref_type（Range (3,1)..(3,2)），同样只记录不写标记。
+// 官方还会报告同形态 12 的 sema_inheritance_non_ref_type；CFIR 以 CLASS_INHERIT_NON_CLASS_NOR_INTERFACE 表达无效超类型，
+// 并在本段完整别名名称 token 上标记。
 // FILE: classInheritsAliasToTuple.cj
 type IgNtnT1 = (Int64, Int64)
 type IgNtnT2 = IgNtnT1
@@ -270,7 +271,7 @@ interface IgMfI2 {
         return 2
     }
 }
-<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>e<!>num IgMfE <: IgMfI1 & IgMfI2 {
+enum <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgMfE<!> <: IgMfI1 & IgMfI2 {
     A
 }
 
@@ -334,7 +335,7 @@ struct <!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>IgM3S<!> <: IgM3I1 & IgM3I2 & IgM
 interface IgNfI {
     func foo(): Int64
 }
-<!NEED_MEMBER_IMPLEMENTATION!>s<!>truct IgNfS <: IgNfI {}
+struct <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNfS<!> <: IgNfI {}
 
 // ── 形态 21：struct 宿主 + 接口的无体 prop 成员
 // kind：sema_need_member_implementation；Range (4,1)..(4,2)，两版一致。
@@ -342,7 +343,7 @@ interface IgNfI {
 interface IgNp2I {
     prop a: Int64
 }
-<!NEED_MEMBER_IMPLEMENTATION!>s<!>truct IgNp2S <: IgNp2I {}
+struct <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNp2S<!> <: IgNp2I {}
 
 // ── 形态 22：extend 宿主 + 接口无体成员 —— 锚 extend 首字母
 // kind：sema_need_member_implementation "… is needed in 'extend IgNxS'"；Range (5,1)..(5,2)，两版一致。
@@ -351,7 +352,7 @@ interface IgNxI {
     func foo(): Int64
 }
 struct IgNxS {}
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>xtend IgNxS <: IgNxI {}
+<!NEED_MEMBER_IMPLEMENTATION!>extend IgNxS <: IgNxI {}<!>
 
 // ── 形态 23：enum 宿主 + 接口无体成员 —— 锚 enum 首字母
 // kind：sema_need_member_implementation "… is needed in 'IgNe2E'"；Range (4,1)..(4,2)，两版一致。
@@ -359,7 +360,7 @@ struct IgNxS {}
 interface IgNe2I {
     func foo(): Int64
 }
-<!NEED_MEMBER_IMPLEMENTATION!>e<!>num IgNe2E <: IgNe2I {
+enum <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNe2E<!> <: IgNe2I {
     A
 }
 
@@ -369,7 +370,7 @@ interface IgNe2I {
 interface IgNgsI<T> {
     func foo(x: T): T
 }
-<!NEED_MEMBER_IMPLEMENTATION!>s<!>truct IgNgsS <: IgNgsI<Int64> {}
+struct <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNgsS<!> <: IgNgsI<Int64> {}
 
 // ── 形态 25：struct 宿主 + 接口有两个无体成员（func + prop）—— 仍只报一条
 // kind：sema_need_member_implementation；Range (5,1)..(5,2)，两版一致（官方按宿主 decl 报一次，消息里带
@@ -379,25 +380,18 @@ interface IgNtmI {
     func foo(): Int64
     prop a: Int64
 }
-<!NEED_MEMBER_IMPLEMENTATION!>s<!>truct IgNtmS <: IgNtmI {}
+struct <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNtmS<!> <: IgNtmI {}
 
-// ── 形态 26（SUGGESTED 段，不写内联标记）：class 宿主 + 接口无体成员
+// ── 形态 26：class 宿主 + 接口无体成员；CFIR 用语义等价的 ABSTRACT_MEMBER_NOT_IMPLEMENTED
 // 官方改报 sema_class_need_abstract_modifier_or_func_need_impl "class 'IgNcC' missing abstract modifier,
 // otherwise abstract function or property must be implemented"（Range (4,1)..(4,2)，`DiagnosticSema.def:198`，
-// refactor kind，官方 StructInheritanceChecker.cpp:863-867），**本项目无同名 CFIR 名**，故整段按 SUGGESTED 记录。
-// 该形态的"host 缺 abstract 修饰符"诊断已由 inheritance/abstractMemberAccessRules.cj 的 MISSING_FUNC_BODY
-// 与 README 批次 10 的 SUGGESTED 段记录，本段只补 class 宿主的取证。
-/*
-SUGGESTED_DIAGNOSTIC: 无对应 CFIR 名（官方 sema_class_need_abstract_modifier_or_func_need_impl）
-SUGGESTED_MESSAGE: class 'IgNcC' missing abstract modifier, otherwise abstract function or property must be implemented
-SOURCE: include/cangjie/Basic/DiagnosticSema.def:198；src/Sema/InheritanceChecker/StructInheritanceChecker.cpp:863-867；
-        探针 igrNeedImplClassFunc（1.0.5 / 1.1.3 一致，Range (4,1)..(4,2)）
-*/
+// refactor kind，官方 StructInheritanceChecker.cpp:863-867）。CFIR 对同一未履行抽象成员义务使用
+// ABSTRACT_MEMBER_NOT_IMPLEMENTED；按 CFIR 规则标记完整宿主类型名 token。
 // FILE: interfaceMemberNeedsImplementationInClass.cj
 interface IgNcI {
     func foo(): Int64
 }
-open class IgNcC <: IgNcI {}
+open class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>IgNcC<!> <: IgNcI {}
 
 // ── 形态 27：子类重写**非 open** 父类的同名函数（没写 `override` 也算 override）—— 锚成员名整段
 // kind：sema_cannot_override "cannot override function 'foo'"（refactor kind，Diags.cpp:368-377 显式

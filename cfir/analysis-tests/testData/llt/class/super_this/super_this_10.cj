@@ -40,7 +40,7 @@ class Test <: Base<Int32> {
         super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>j<!>)
     }
     public <!CONFLICTING_OVERLOADS!>init<!>(a: Int32, b: Int32, c: Int32, d: Int32, e: Int32, f: Int32, g: Int32) {
-        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>f<!>oo())
+        super(<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>foo<!>())
     }
     public func f(): Int32 {
         return 0

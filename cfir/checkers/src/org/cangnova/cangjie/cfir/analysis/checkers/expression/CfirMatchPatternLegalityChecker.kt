@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.match.isMatchSubtypeOf
 import org.cangnova.cangjie.cfir.resolve.match.needsRuntimeTypeCheckAgainst
@@ -91,11 +92,13 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
      * 按 pattern 形态递归检查其与期望类型的合法性。
      *
      * tuple、enum、binding、type、const、expression 与 or pattern 各自对应不同的诊断规则。
+     * 声明模式场景可关闭 tuple 形状报告，让变量声明专属检查器保持该诊断的唯一生产者。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     internal fun checkPattern(
         pattern: CfirPattern,
         expectedType: ConeCangJieType,
+        reportTupleShapeDiagnostics: Boolean = true,
     ) {
         if (expectedType is ConeErrorType) return
 
@@ -106,7 +109,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             is CfirBindingPattern -> {
                 val declaredType = (pattern.typeRef as? CfirResolvedTypeRef)?.coneType
                 pattern.nestedPattern?.let { nested ->
-                    checkPattern(nested, declaredType ?: expectedType)
+                    checkPattern(nested, declaredType ?: expectedType, reportTupleShapeDiagnostics)
                 }
             }
 
@@ -114,6 +117,13 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
 
             is CfirTuplePattern -> {
                 val shape = pattern.resolveTupleShape(expectedType, context.session)
+                if (!reportTupleShapeDiagnostics) {
+                    val matchedShape = shape as? CfirTuplePatternShape.Matched ?: return
+                    pattern.elements.forEachIndexed { index, element ->
+                        checkPattern(element, matchedShape.tupleType.elementTypes[index], false)
+                    }
+                    return
+                }
                 if (shape is CfirTuplePatternShape.Unresolved) return
                 if (shape is CfirTuplePatternShape.NotTuple) {
                     reporter.reportOn(
@@ -134,7 +144,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 }
                 val tupleType = (shape as CfirTuplePatternShape.Matched).tupleType
                 pattern.elements.forEachIndexed { index, element ->
-                    checkPattern(element, tupleType.elementTypes[index])
+                    checkPattern(element, tupleType.elementTypes[index], reportTupleShapeDiagnostics)
                     if (element.hasPatternLegalityProblem(tupleType.elementTypes[index], context)) return
                 }
             }
@@ -160,12 +170,19 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
 
                 val argumentTypes = (resolution as EnumPatternConstructorResolution.Resolved).argumentTypes
                 pattern.arguments.forEachIndexed { index, argument ->
-                    checkPattern(argument, argumentTypes[index])
+                    checkPattern(argument, argumentTypes[index], reportTupleShapeDiagnostics)
                     if (argument.hasPatternLegalityProblem(argumentTypes[index], context)) return
                 }
             }
 
             is CfirConstPattern -> {
+                if (pattern.expression is CfirStringInterpolation) {
+                    reporter.reportOn(
+                        source = pattern.expression.source ?: pattern.source,
+                        factory = CfirErrors.INTERPOLATION_IN_CONST_PATTERN,
+                    )
+                    return
+                }
                 val resolution = pattern.resolveLiteralPatternType(expectedType, context.session)
                 when (val failure = resolution?.failure) {
                     is CfirPatternLiteralTypeResolution.Failure.CannotConvert -> reporter.reportOn(
@@ -202,7 +219,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             is CfirOrPattern -> {
                 if (pattern.hasVariableBindingInOrPattern() || pattern.hasDifferentOrPatternKinds()) return
                 pattern.alternatives.forEach { alternative ->
-                    checkPattern(alternative, expectedType)
+                    checkPattern(alternative, expectedType, reportTupleShapeDiagnostics)
                 }
             }
         }
@@ -231,7 +248,7 @@ internal fun CfirMatchExpression.hasPatternLegalityProblem(context: CheckerConte
 /**
  * 递归判断单个 pattern 是否与期望类型不兼容。
  */
-private fun CfirPattern.hasPatternLegalityProblem(
+internal fun CfirPattern.hasPatternLegalityProblem(
     expectedType: ConeCangJieType,
     context: CheckerContext,
 ): Boolean {
@@ -270,7 +287,8 @@ private fun CfirPattern.hasPatternLegalityProblem(
             }
         }
 
-        is CfirConstPattern -> resolveLiteralPatternType(expectedType, context.session)?.failure != null
+        is CfirConstPattern -> expression is CfirStringInterpolation ||
+                resolveLiteralPatternType(expectedType, context.session)?.failure != null
         is CfirExpressionPattern -> !isCompatibleWith(expectedType)
         is CfirOrPattern -> {
             hasVariableBindingInOrPattern() ||

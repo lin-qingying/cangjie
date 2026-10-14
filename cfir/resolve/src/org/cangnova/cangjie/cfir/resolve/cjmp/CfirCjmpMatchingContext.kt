@@ -84,11 +84,21 @@ internal class CfirCjmpMatchingContext(
     override fun returnType(declaration: CfirBasedSymbol<*>): ConeCangJieType? =
         (declaration.declaration() as? CfirFunction)?.let { CfirCjmpMatcher.typeOf(it.returnTypeRef) }
 
-    override fun hasInferredReturnType(declaration: CfirBasedSymbol<*>): Boolean {
-        val function = declaration.declaration() as? CfirFunction ?: return false
-        if (!function.hasImplicitOrInferredReturnType()) return false
-        val inferredType = CfirCjmpMatcher.typeOf(function.returnTypeRef) ?: return false
-        return !inferredType.containsErrorType()
+    override fun canDeferReturnTypeCompatibility(
+        specific: CfirBasedSymbol<*>,
+        common: CfirBasedSymbol<*>,
+    ): Boolean {
+        val specificFunction = specific.declaration() as? CfirFunction ?: return false
+        if (!specificFunction.hasImplicitOrInferredReturnType()) return false
+
+        val commonFunction = common.declaration() as? CfirFunction ?: return false
+        val commonReturnType = CfirCjmpMatcher.typeOf(commonFunction.returnTypeRef) ?: return false
+        if (commonReturnType.containsErrorType()) return false
+
+        // 官方 PreTypeCheck 先建立 CJMP 配对，PostTypeCheck 再由
+        // CheckMatchedFunctionReturnTypes 检查函数体推断的返回类型。specific 的隐式返回类型
+        // 此时可能尚未推断，或因函数体错误含 Error；这两种情形都保留首个候选供后置检查处理。
+        return true
     }
 
     override fun areTypesEquivalent(
