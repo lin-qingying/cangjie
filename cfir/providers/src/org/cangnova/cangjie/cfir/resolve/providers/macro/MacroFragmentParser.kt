@@ -156,12 +156,10 @@ interface BuiltinNonMacroDesugarer {
  * Baseline 第 7 节"replace slots" 与第 8 节"stable splice"：splice 必须
  * 通过 handle 完成，禁止退化为 source offset fallback。
  *
- * Batch 8 阶段 slot 仅保存 handle id 与待 splice 的 fragment；
- * Batch 10 接通 owner / source / scope / symbol 修复时会在此扩展。
- *
  * @property handle stable splice 必须使用的 replace handle。
  * @property origin 产生该替换槽位的原始 macro surface。
  * @property fragment 将要写入槽位的 fragment 结果。
+ * @property embeddedSurfaceIds 其展开 token 已被本 fragment 重新解析并包含在其中的后代 surface。
  */
 data class MacroReplaceSlot(
     /** stable splice 必须使用的 replace handle。 */
@@ -170,6 +168,8 @@ data class MacroReplaceSlot(
     val origin: MacroSurface,
     /** 将要写入槽位的 fragment 结果。 */
     val fragment: MacroFragmentResult,
+    /** 后代 surface 的展开结果已进入本 fragment，因而不再对应原始 final-CFIR 载体。 */
+    val embeddedSurfaceIds: Set<Long> = emptySet(),
 )
 
 /**

@@ -13,6 +13,8 @@ package org.cangnova.cangjie.macro.protocol
 import MacroMsgFormat.*
 import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroDiagnosticOrigin
+import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
 import org.cangnova.cangjie.macro.MacroDiagnosticInfo
 import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
@@ -246,17 +248,33 @@ object MacroMsgCodec {
             )
         }
 
+        // CJC 在子进程中执行 assertParentContext 时通过 assertParents 返回失败的上下文约束；
+        // 这不是普通 DiagReport，遗漏该字段会把可解释的上下文失败折叠成 status=4。
+        val callPosition = result.id?.pos?.toSourcePosition() ?: SourcePosition()
+        val parentContextDiagnostics = (0 until result.assertParentsLength).mapNotNull { i ->
+            val requiredParent = result.assertParents(i)?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+            MacroDiagnosticInfo(
+                severity = MacroDiagnosticSeverity.ERROR,
+                message = "未找到要求的父宏上下文 `$requiredParent`。",
+                hint = "assertParentContext(\"$requiredParent\")",
+                begin = callPosition,
+                end = callPosition,
+                origin = MacroDiagnosticOrigin.EXECUTOR,
+            )
+        }
+        val allDiagnostics = parentContextDiagnostics + diagnostics
+
         return if ((status == STATUS_SUCCESS || status == STATUS_FINISH || status == STATUS_EVAL) && !macroExpandFailed(tokens)) {
             MacroExpansionResult.Success(
                 tokens = tokens,
                 expandedText = rebuildExpandedText(tokens),
-                diagnostics = diagnostics,
+                diagnostics = allDiagnostics,
             )
         } else {
             MacroExpansionResult.Failure(
-                message = diagnostics.firstOrNull()?.message ?: "宏展开失败（status=$status）",
+                message = allDiagnostics.firstOrNull()?.message ?: "宏展开失败（status=$status）",
                 kind = MacroExpansionFailureKind.EXPAND_FAILED,
-                diagnostics = diagnostics,
+                diagnostics = allDiagnostics,
             )
         }
     }

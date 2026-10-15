@@ -31,6 +31,15 @@ enum class CjSourceKind {
         const val MACRO_CALL_SUFFIX: String = ".cj.macrocall"
 
         /**
+         * 判断文件名是否对应真正的仓颉实现源文件。
+         *
+         * [fromFileName] 有意把未知后缀归为 [SOURCE]，因为二进制索引也会把 `.cjo`
+         * 暴露为仓颉 PSI；需要枚举编译输入时必须再检查官方 `.cj` 后缀。
+         */
+        fun isSourceFileName(name: String): Boolean =
+            name.length > SOURCE_SUFFIX.length && name.endsWith(SOURCE_SUFFIX)
+
+        /**
          * 按文件名判定种类。
          *
          * 对齐官方 `HasCJDExtension`：字面后缀匹配，且后缀之前必须存在非空文件名。

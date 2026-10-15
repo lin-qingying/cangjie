@@ -181,17 +181,18 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
     override fun getModificationCount(): Long = state.get().modificationCount
 
     /** 原子发布同一宏构造结果对应的源码文件、expanded CFIR 与映射索引。 */
+    @Synchronized
     fun publish(
         sourceFiles: List<CjFile>,
         recordableFiles: RecordableRawCfirFiles,
         registry: MacroExpansionRegistry,
     ): Boolean {
+        val current = state.get()
+        if (current.snapshot != null) return false
         if (sourceFiles.size != recordableFiles.files.size) return false
+
         val nextSnapshot = LLCfirMacroSemanticSnapshot(sourceFiles, recordableFiles.files, registry)
-        while (true) {
-            val current = state.get()
-            if (current.snapshot != null) return false
-            if (state.compareAndSet(current, State(current.modificationCount + 1, nextSnapshot))) return true
-        }
+        state.set(State(current.modificationCount + 1, nextSnapshot))
+        return true
     }
 }

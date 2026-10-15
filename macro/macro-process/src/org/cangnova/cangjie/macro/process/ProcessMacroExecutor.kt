@@ -124,7 +124,15 @@ abstract class ProcessMacroExecutor : MacroExecutor {
                         kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
                     )
                 } else {
-                    MacroMsgCodec.parseMacroResult(response)
+                    MacroMsgCodec.parseMacroResult(response).also { result ->
+                        if (result is MacroExpansionResult.Failure) {
+                            logger.log(
+                                Level.WARNING,
+                                "宏调用失败: macro=${callInfo.idName}, parentNames=${callInfo.parentNames}: " +
+                                    result.message,
+                            )
+                        }
+                    }
                 }
             }
         } catch (e: IOException) {

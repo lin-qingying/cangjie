@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroBuiltinRegistries
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroPayloadChannel
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
@@ -82,6 +83,7 @@ import org.cangnova.cangjie.macro.MacroExecutor
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
+import org.cangnova.cangjie.macro.MacroTokenKind
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
@@ -215,6 +217,12 @@ object FrontendMacroConfigurationKeys {
      */
     val MACRO_SDK_HOME = CompilerConfigurationKey.create<String>("MACRO_SDK_HOME")
 
+    @JvmField
+    /**
+     * 编译宏源码包时传递给外部 cjc 进程的 SDK 环境变量。
+     */
+    val MACRO_COMPILER_ENVIRONMENT = CompilerConfigurationKey.create<Map<String, String>>("MACRO_COMPILER_ENVIRONMENT")
+
     /**
      * Macro construction 模式。CLI 生产路径恒为 `STRICT`；
      * IDE / analysis 路径以及部分 testdata 通过设置 `DEGRADED` 让构造期诊断
@@ -344,6 +352,15 @@ var CompilerConfiguration.macroSdkHome: String
     get() = get(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, DEFAULT_MACRO_SDK_HOME)
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, value)
+    }
+
+/**
+ * 当前配置中外部宏编译器使用的环境变量。
+ */
+var CompilerConfiguration.macroCompilerEnvironment: Map<String, String>
+    get() = get(FrontendMacroConfigurationKeys.MACRO_COMPILER_ENVIRONMENT, emptyMap())
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_COMPILER_ENVIRONMENT, value.toMap())
     }
 
 /**
@@ -563,6 +580,7 @@ class FrontendMacroConstructionService(
                         handle = surface.replaceHandle,
                         origin = surface,
                         fragment = fragment,
+                        embeddedSurfaceIds = node.descendantSurfaceIds(),
                     )
                     parentVisibleTokens
                 },
@@ -591,7 +609,9 @@ class FrontendMacroConstructionService(
                 stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also {
                     val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
                     if (metadataRegistry != null) {
+                        val embeddedSurfaceIds = slots.flatMapTo(hashSetOf()) { it.embeddedSurfaceIds }
                         for (slot in slots) {
+                            if (slot.origin.surfaceId in embeddedSurfaceIds) continue
                             val carrier = slot.handle.annotationCarrier ?: continue
                             val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload ?: continue
                             metadataRegistry.migrate(carrier, replacement)
@@ -757,7 +777,6 @@ class FrontendMacroConstructionService(
             }
         }
         val callInfo = surface.toMacroCallInfo(entry, node.parentNames, refreshedTokens, preFile)
-        System.err.println("PROBE-EXE: surface=${surface.surfaceId} qn=${surface.qualifiedName} kind=${surface::class.simpleName} id=${callInfo.idName} method=${callInfo.methodName} pkg=${callInfo.packageName} lib=${callInfo.libPath}")
         val result = executor.execute(listOf(callInfo)).singleOrNull()
             ?: MacroExpansionResult.Failure(
                 message = "Macro executor returned no result for `${entry.name.asString()}`.",
@@ -1542,13 +1561,15 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
      * 将一批宏替换槽稳定应用到 CFIR 文件树。
      */
     override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+        val embeddedSurfaceIds = slots.flatMapTo(hashSetOf()) { it.embeddedSurfaceIds }
+        val independentlySplicedSlots = slots.filterNot { it.origin.surfaceId in embeddedSurfaceIds }
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
         val parameterSlotsWithCarrier = IdentityHashMap<CfirValueParameter, MacroReplaceSlot>()
         val annotationSlotsWithCarrier = linkedMapOf<CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
         val unsupportedSlots = mutableListOf<MacroReplaceSlot>()
 
-        for (slot in slots) {
+        for (slot in independentlySplicedSlots) {
             val annotationCarrier = slot.handle.annotationCarrier
             if (annotationCarrier != null && slot.fragment is MacroFragmentResult.CustomAnnotation) {
                 require(annotationSlotsWithCarrier.put(annotationCarrier, slot) == null) {
@@ -1969,6 +1990,22 @@ private fun MacroCallNode.hasUnresolvedChildPayloadChannel(
 }
 
 /**
+ * 收集已被当前节点展开结果重新解析的所有后代 surface。
+ *
+ * Forest evaluator 只会在所有直接子节点都成功后调用父节点的 expand；因此父 fragment
+ * 中的 child-first token 结果完整覆盖整棵后代子树，原始后代 carrier 不再属于 final CFIR。
+ */
+private fun MacroCallNode.descendantSurfaceIds(): Set<Long> = buildSet {
+    fun collect(parent: MacroCallNode) {
+        for (child in parent.children) {
+            add(child.surface.surfaceId)
+            collect(child)
+        }
+    }
+    collect(this@descendantSurfaceIds)
+}
+
+/**
  * 使用子宏展开结果刷新当前宏节点的输入和属性 token。
  */
 private fun MacroCallNode.refreshTokensWithChildResults(
@@ -2044,13 +2081,23 @@ private fun List<MacroSurfaceToken>.toTokenInfo(
     defaultBegin: SourcePosition,
     defaultEnd: SourcePosition,
     linesMapping: CjSourceFileLinesMapping?,
-): List<TokenInfo> = map { token ->
-    TokenInfo(
-        kind = 0u.toUByte(),
-        value = token.text,
-        begin = token.startOffset.toSourcePosition(linesMapping).takeIf { token.startOffset >= 0 } ?: defaultBegin,
-        end = token.endOffset.toSourcePosition(linesMapping).takeIf { token.endOffset >= 0 } ?: defaultEnd,
-    )
+): List<TokenInfo> = flatMap { token ->
+    val lexerTokens = if (token.kindName != null) {
+        listOf(MacroPayloadToken(token.text, token.startOffset, token.endOffset, token.kindName))
+    } else {
+        MacroPayloadTokenizer.tokenize(token.text, token.startOffset)
+    }
+    lexerTokens.mapNotNull { lexerToken ->
+        val encoded = MacroTokenKind.fromLexerToken(lexerToken.kindName, lexerToken.text) ?: return@mapNotNull null
+        TokenInfo(
+            kind = encoded.kind,
+            value = encoded.value,
+            begin = lexerToken.startOffset.toSourcePosition(linesMapping)
+                .takeIf { lexerToken.startOffset >= 0 } ?: defaultBegin,
+            end = lexerToken.endOffset.toSourcePosition(linesMapping)
+                .takeIf { lexerToken.endOffset >= 0 } ?: defaultEnd,
+        )
+    }
 }
 
 /**

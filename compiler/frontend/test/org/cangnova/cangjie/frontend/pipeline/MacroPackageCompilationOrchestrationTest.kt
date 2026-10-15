@@ -40,11 +40,13 @@ import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(CompilerConfiguration.Internals::class)
 /**
@@ -294,22 +296,23 @@ class MacroPackageCompilationOrchestrationTest {
     @Test
     fun expansionDemandDiscoversSameProjectMacroSourcePackageRoot() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
-        val macroSource = sourceRoot.resolve("macros.cj")
+        val packageSourceRoot = Files.createDirectories(sourceRoot.resolve("macros"))
+        val macroSource = packageSourceRoot.resolve("macros.cj")
         Files.writeString(
             macroSource,
-            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+            "macro package app.macros\npublic macro Generated(input: Tokens): Tokens { input }\n"
         )
         val fixture = macroDemandFixture(
-            imports = listOf(macroImport("macros.pkg.Generated")),
+            imports = listOf(macroImport("app.macros.Generated")),
             surface = macroSurface("Generated"),
-            extraFiles = listOf(macroPackageFile("macros.pkg", macroSource.toFile())),
+            extraFiles = listOf(macroPackageFile("app.macros", macroSource.toFile())),
         )
         val configuration = CompilerConfiguration().apply {
             addCangJieSourceRoot(sourceRoot.toString())
             macroPackageCompilationOrchestrator = MacroPackageCompilationOrchestrator { requests, _ ->
                 val request = requests.single()
-                assertEquals(FqName("macros.pkg"), request.packageFqName)
-                assertEquals(listOf(sourceRoot.toFile().absoluteFile.normalize().path), request.sourceRoots)
+                assertEquals(FqName("app.macros"), request.packageFqName)
+                assertEquals(listOf(packageSourceRoot.toFile().absoluteFile.normalize().path), request.sourceRoots)
                 MacroPackageCompilationResult(
                     diagnostics = listOf(
                         MacroConstructionDiagnostic(
@@ -747,15 +750,105 @@ class MacroPackageCompilationOrchestrationTest {
     }
 
     /**
+     * 验证同一源码输入复用不可变输出目录，源码变化后使用新的宏库路径重新编译。
+     */
+    @Test
+    fun externalCjcOrchestratorReusesContentAddressedDefaultOutput() {
+        val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("macros"))
+        val sourceFile = sourceRoot.resolve("macros.cj")
+        Files.writeString(sourceFile, "macro package macros.pkg\n")
+        val commandCalls = AtomicInteger()
+        val orchestrator = ExternalCjcMacroPackageCompilationOrchestrator(
+            executableResolver = MacroCompilerExecutableResolver { Path.of("C:/sdk/bin/cjc.exe") },
+            commandRunner = MacroCompilerCommandRunner { command ->
+                commandCalls.incrementAndGet()
+                writeCompiledMacroArtifact(command.workingDirectory.toPath(), "macros.pkg")
+                MacroCompilerCommandResult(exitCode = 0, stdout = "ok", stderr = "")
+            },
+        )
+        val request = MacroSourcePackageCompilationRequest(
+            packageFqName = FqName("macros.pkg"),
+            sourceRoots = listOf(sourceRoot.toString()),
+        )
+        val context = MacroPackageCompilationContext(
+            configuration = CompilerConfiguration(),
+            executorAbiVersion = "executor-abi-v1",
+            cacheContext = MacroCompilationCacheContext(),
+        )
+
+        val first = orchestrator.compileMacroPackages(listOf(request), context)
+        val second = orchestrator.compileMacroPackages(listOf(request), context)
+
+        assertTrue(first.diagnostics.isEmpty(), "Unexpected diagnostics: ${first.diagnostics}")
+        assertTrue(second.diagnostics.isEmpty(), "Unexpected diagnostics: ${second.diagnostics}")
+        assertEquals(1, commandCalls.get())
+        assertEquals(first.artifactPackages.single().dynamicLibPath, second.artifactPackages.single().dynamicLibPath)
+
+        Files.writeString(sourceFile, "macro package macros.pkg\n// changed\n")
+        val changed = orchestrator.compileMacroPackages(listOf(request), context)
+
+        assertTrue(changed.diagnostics.isEmpty(), "Unexpected diagnostics: ${changed.diagnostics}")
+        assertEquals(2, commandCalls.get())
+        assertTrue(first.artifactPackages.single().dynamicLibPath != changed.artifactPackages.single().dynamicLibPath)
+    }
+
+    /**
+     * 验证 Windows 下项目输出路径过长时会使用短的内容寻址缓存根目录。
+     */
+    @Test
+    fun externalCjcOrchestratorUsesCompactCacheForLongWindowsProjectPath() {
+        assumeTrue(System.getProperty("os.name").startsWith("Windows", ignoreCase = true))
+
+        val sourceRoot = Files.createDirectories(
+            tempDir.resolve("macro-project-${"x".repeat(90)}")
+                .resolve("src")
+                .resolve("macros"),
+        )
+        Files.writeString(sourceRoot.resolve("macros.cj"), "macro package macros.pkg\n")
+        var capturedCommand: MacroCompilerCommand? = null
+        val orchestrator = ExternalCjcMacroPackageCompilationOrchestrator(
+            executableResolver = MacroCompilerExecutableResolver { Path.of("C:/sdk/bin/cjc.exe") },
+            commandRunner = MacroCompilerCommandRunner { command ->
+                capturedCommand = command
+                writeCompiledMacroArtifact(command.workingDirectory.toPath(), "macros.pkg")
+                MacroCompilerCommandResult(exitCode = 0, stdout = "ok", stderr = "")
+            },
+        )
+
+        val result = orchestrator.compileMacroPackages(
+            requests = listOf(
+                MacroSourcePackageCompilationRequest(
+                    packageFqName = FqName("macros.pkg"),
+                    sourceRoots = listOf(sourceRoot.toString()),
+                ),
+            ),
+            context = MacroPackageCompilationContext(
+                configuration = CompilerConfiguration(),
+                executorAbiVersion = "executor-abi-v1",
+                cacheContext = MacroCompilationCacheContext(),
+            ),
+        )
+
+        assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
+        val outputDirectory = requireNotNull(capturedCommand).workingDirectory.toPath().toAbsolutePath().normalize()
+        assertTrue(outputDirectory.startsWith(Path.of(System.getProperty("java.io.tmpdir")).toAbsolutePath().normalize()))
+        assertTrue(outputDirectory.toString().length <= 180, "cjc output directory is too long: $outputDirectory")
+    }
+
+    /**
      * 验证 orchestrator 会通过 CANGJIE_LIBRARY 环境变量传递 classpath。
      */
     @Test
-    fun externalCjcOrchestratorPassesClasspathViaCangjieLibraryEnvironment() {
+    fun externalCjcOrchestratorPassesSdkEnvironmentAndClasspath() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src").resolve("macros"))
         val outputDir = Files.createDirectories(tempDir.resolve("out"))
         val classpathA = Files.createDirectories(tempDir.resolve("classpath-a"))
         val classpathB = Files.createDirectories(tempDir.resolve("classpath-b"))
         writeCompiledMacroArtifact(outputDir, "macros.pkg")
+        val selectedSdkEnvironment = mapOf(
+            "CANGJIE_HOME" to tempDir.resolve("selected-sdk").toString(),
+            "PATH" to "${tempDir.resolve("selected-sdk").resolve("bin")}${File.pathSeparator}inherited-path",
+        )
 
         var capturedCommand: MacroCompilerCommand? = null
         val orchestrator = ExternalCjcMacroPackageCompilationOrchestrator(
@@ -776,7 +869,9 @@ class MacroPackageCompilationOrchestrationTest {
                 ),
             ),
             context = MacroPackageCompilationContext(
-                configuration = CompilerConfiguration(),
+                configuration = CompilerConfiguration().apply {
+                    macroCompilerEnvironment = selectedSdkEnvironment
+                },
                 executorAbiVersion = "executor-abi-v1",
                 cacheContext = MacroCompilationCacheContext(),
             ),
@@ -784,6 +879,13 @@ class MacroPackageCompilationOrchestrationTest {
 
         assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
         val command = requireNotNull(capturedCommand)
+        assertEquals(
+            listOf("-p", sourceRoot.toAbsolutePath().normalize().toString(), "--compile-macro"),
+            command.arguments.drop(1),
+        )
+        assertEquals(outputDir.toFile().absoluteFile, command.workingDirectory)
+        assertTrue("-o" !in command.arguments)
+        assertEquals(selectedSdkEnvironment, command.environment.filterKeys(selectedSdkEnvironment::containsKey))
         assertEquals(
             listOf(classpathA.toString(), classpathB.toString()).joinToString(File.pathSeparator),
             command.environment["CANGJIE_LIBRARY"],

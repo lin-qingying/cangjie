@@ -20,6 +20,7 @@ import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
+import org.cangnova.cangjie.macro.MacroTokenKind
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
@@ -58,7 +59,10 @@ class ProcessMacroExecutorTest {
      */
     @Test
     fun lspMacroServerExecutorAvailabilityFollowsExecutableFileState() {
-        val missing = LspMacroServerMacroExecutor(tempDir.resolve("missing-LSPMacroServer").toString())
+        val missing = LspMacroServerMacroExecutor(
+            macroServerPath = tempDir.resolve("missing-LSPMacroServer").toString(),
+            processEnvironment = emptyMap(),
+        )
         assertFalse(missing.isAvailable())
 
         val executableName = if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) {
@@ -70,8 +74,50 @@ class ProcessMacroExecutorTest {
         Files.write(executable, byteArrayOf(1, 2, 3))
         executable.toFile().setExecutable(true)
 
-        val available = LspMacroServerMacroExecutor(executable.toString())
+        val available = LspMacroServerMacroExecutor(
+            macroServerPath = executable.toString(),
+            processEnvironment = emptyMap(),
+        )
         assertEquals(executable.toFile().canExecute(), available.isAvailable())
+    }
+
+    /**
+     * 验证 Windows SDK 环境按大小写不敏感的规则覆盖父进程同名环境变量。
+     */
+    @Test
+    fun configuredSdkEnvironmentOverridesInheritedEnvironmentCaseInsensitively() {
+        val merged = mergeMacroProcessEnvironment(
+            inheritedEnvironment = mapOf(
+                "Path" to "system-path",
+                "CANGJIE_HOME" to "old-sdk",
+                "KEEP" to "inherited",
+            ),
+            configuredEnvironment = mapOf(
+                "PATH" to "sdk-path",
+                "cangjie_home" to "selected-sdk",
+            ),
+            caseInsensitiveKeys = true,
+        )
+
+        assertEquals(
+            mapOf("KEEP" to "inherited", "PATH" to "sdk-path", "cangjie_home" to "selected-sdk"),
+            merged,
+        )
+    }
+
+    /** 验证仓颉 lexer 的声明 token 被编码成 CJC 官方 TokenKind，而不是 IntelliJ lexer 编号。 */
+    @Test
+    fun cangjieLexerKindsUseCjcMacroProtocolNumbers() {
+        assertEquals(0u.toUByte(), MacroTokenKind.fromLexerToken("DOT", ".")?.kind)
+        assertEquals(85u.toUByte(), MacroTokenKind.fromLexerToken("CLASS_KEYWORD", "class")?.kind)
+        assertEquals(87u.toUByte(), MacroTokenKind.fromLexerToken("func", "func")?.kind)
+        assertEquals(92u.toUByte(), MacroTokenKind.fromLexerToken("VAR_KEYWORD", "var")?.kind)
+        assertEquals(65u.toUByte(), MacroTokenKind.fromLexerToken("INT64_KEYWORD", "Int64")?.kind)
+        assertEquals(137u.toUByte(), MacroTokenKind.fromLexerToken("IDENTIFIER", "field")?.kind)
+        assertEquals(139u.toUByte(), MacroTokenKind.fromLexerToken("INTEGER_LITERAL", "40")?.kind)
+        assertEquals(143u.toUByte(), MacroTokenKind.fromLexerToken("WHITE_SPACE", "\n    ")?.kind)
+        assertEquals(50u.toUByte(), MacroTokenKind.fromLexerToken("BAD_CHARACTER", "#")?.kind)
+        assertEquals(null, MacroTokenKind.fromLexerToken("WHITE_SPACE", "    "))
     }
 
     /**
@@ -114,6 +160,29 @@ class ProcessMacroExecutorTest {
             listOf(MacroMsgCodec.TYPE_DEF_LIB, MacroMsgCodec.TYPE_MULTI_CALLS),
             executor.transport.sent.map(MacroMsgCodec::getMsgType),
         )
+    }
+
+    /** 验证 CJC 的 assertParentContext 失败信息不会被协议解析器折叠成无上下文的 status=4。 */
+    @Test
+    fun failedParentContextAssertionPreservesRequiredMacroName() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(failedMacroResultPayload(listOf("ContextOuter")))),
+        )
+
+        val result = executor.execute(
+            listOf(
+                MacroCallInfo(
+                    idName = "ContextInner",
+                    methodName = "ContextInner",
+                    parentNames = listOf("ContextOuter"),
+                ),
+            ),
+        ).single()
+
+        assertTrue(result is MacroExpansionResult.Failure)
+        result as MacroExpansionResult.Failure
+        assertEquals("未找到要求的父宏上下文 `ContextOuter`。", result.message)
+        assertEquals("assertParentContext(\"ContextOuter\")", result.diagnostics.single().hint)
     }
 
     /**
@@ -354,6 +423,25 @@ class ProcessMacroExecutorTest {
             tokensVector,
             0,
             0,
+            0,
+        )
+        val message = MacroMsg.createMacroMsg(builder, MacroMsgCodec.TYPE_MACRO_RESULT, result)
+        builder.finish(message)
+        return builder.sizedByteArray()
+    }
+
+    /** 构造携带 CJC 父宏上下文断言失败的 MacroResult。 */
+    private fun failedMacroResultPayload(assertParents: List<String>): ByteArray {
+        val builder = FlatBufferBuilder(256)
+        val parentOffsets = assertParents.map(builder::createString).toIntArray()
+        val parentsVector = MacroResult.createAssertParentsVector(builder, parentOffsets)
+        val result = MacroResult.createMacroResult(
+            builder,
+            0,
+            MacroMsgCodec.STATUS_FAIL,
+            0,
+            0,
+            parentsVector,
             0,
         )
         val message = MacroMsg.createMacroMsg(builder, MacroMsgCodec.TYPE_MACRO_RESULT, result)

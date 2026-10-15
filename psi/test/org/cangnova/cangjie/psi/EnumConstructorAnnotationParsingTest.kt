@@ -103,6 +103,29 @@ class EnumConstructorAnnotationParsingTest : CjParsingTestCase(
         assertMacroChain(wrappers[3], listOf("MemberTag" to "[]"), property)
     }
 
+    /** 顶层类宏中的成员宏必须继续包裹成员，不能把外层 class 当作输入。 */
+    @Test
+    fun nestedClassMemberMacroKeepsItsDeclarationInput() {
+        val file = parse(
+            "nestedClassMemberMacro",
+            """
+            @ContextOuter
+            class ContextMacroProbe {
+                @ContextInner
+                var firstCount: Int64 = 40
+            }
+            """.trimIndent(),
+        )
+
+        val outer = file.children.filterIsInstance<CjMacroExpression>().single()
+        val clazz = outer.unwrappedDeclaration as CjClass
+        val memberMacro = clazz.body!!.children.filterIsInstance<CjMacroExpression>().single()
+        val member = checkNotNull(memberMacro.unwrappedDeclaration)
+
+        assertTrue(member is CjPatternVariable, "实际节点：${member.javaClass.name}，文本：${member.text}")
+        assertEquals("var firstCount: Int64 = 40", member.text)
+    }
+
     /** 可选的首个竖线不改变带参首项和无参后续项的节点类型。 */
     @Test
     fun optionalLeadingBarKeepsTheAnnotatedPayloadOnTheFirstConstructor() {

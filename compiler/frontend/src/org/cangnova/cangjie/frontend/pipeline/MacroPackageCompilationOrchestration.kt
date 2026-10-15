@@ -25,6 +25,11 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
+import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
@@ -352,81 +357,10 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         val diagnostics = mutableListOf<MacroConstructionDiagnostic>()
 
         for (request in requests) {
-            val sourceRoots = request.sourceRoots
-                .map(String::trim)
-                .filter(String::isNotEmpty)
-                .distinct()
-            if (sourceRoots.isEmpty()) {
-                diagnostics += request.compilationError("Macro package `${request.packageFqName.asString()}` has no source roots to compile.")
-                continue
-            }
-            if (sourceRoots.size != 1) {
-                diagnostics += request.compilationError(
-                    "Macro package `${request.packageFqName.asString()}` must map to exactly one package source root for `cjc -p <dir> --compile-macro`; actual roots: ${sourceRoots.joinToString()}",
-                )
-                continue
-            }
-
-            val sourceRoot = Path.of(sourceRoots.single())
-            val outputDirectory = request.outputDirectory
-                ?.takeIf(String::isNotBlank)
-                ?.let(Path::of)
-                ?: defaultOutputDirectoryFor(request, sourceRoot)
-            Files.createDirectories(outputDirectory)
-
-            val command = buildCommand(
-                cjcPath = cjcPath,
-                sourceRoot = sourceRoot,
-                request = request,
-                outputDirectory = outputDirectory,
-            )
-            val execution = runCatching { commandRunner.run(command) }.getOrElse { error ->
-                diagnostics += request.compilationError(
-                    message = "Macro package `${request.packageFqName.asString()}` invocation failed before completion: ${error.message.orEmpty()}",
-                    sourceDiagnosticsRef = persistDiagnosticsOutput(
-                        request,
-                        outputDirectory,
-                        "",
-                        error.stackTraceToString()
-                    ),
-                )
-                continue
-            }
-
-            val diagnosticsRef = request.sourceDiagnosticsRef
-                ?: persistDiagnosticsOutput(request, outputDirectory, execution.stdout, execution.stderr)
-
-            if (execution.exitCode != 0) {
-                diagnostics += request.compilationError(
-                    message = buildString {
-                        append("Macro package `${request.packageFqName.asString()}` compilation failed")
-                        append(" (exit code ${execution.exitCode})")
-                        execution.stderr.lineSequence().firstOrNull { it.isNotBlank() }?.let { firstError ->
-                            append(": ")
-                            append(firstError)
-                        }
-                    },
-                    sourceDiagnosticsRef = diagnosticsRef,
-                )
-                continue
-            }
-
-            val resolvedArtifact = resolveCompiledArtifact(
-                request = request,
-                outputDirectory = outputDirectory,
-                executorAbiVersion = context.executorAbiVersion,
-                sourceDiagnosticsRef = diagnosticsRef,
-            )
-            if (resolvedArtifact == null) {
-                diagnostics += request.compilationError(
-                    message = "Macro package `${request.packageFqName.asString()}` compilation succeeded but required artifact files were not found under `${outputDirectory.absolutePathString()}`.",
-                    sourceDiagnosticsRef = diagnosticsRef,
-                )
-                continue
-            }
-
-            artifacts += resolvedArtifact
-            artifactSearchPaths += outputDirectory.absolutePathString()
+            val result = compileMacroPackage(request, context, cjcPath)
+            artifacts += result.artifactPackages
+            artifactSearchPaths += result.artifactSearchPaths
+            diagnostics += result.diagnostics
         }
 
         return MacroPackageCompilationResult(
@@ -446,6 +380,134 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         return executableResolver.resolve()
     }
 
+    /** 在不可变输出目录中编译或复用单个宏包 artifact。 */
+    private fun compileMacroPackage(
+        request: MacroSourcePackageCompilationRequest,
+        context: MacroPackageCompilationContext,
+        cjcPath: Path,
+    ): MacroPackageCompilationResult {
+        val sourceRoots = request.sourceRoots
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
+        if (sourceRoots.isEmpty()) {
+            return failedPackage(request, "Macro package `${request.packageFqName.asString()}` has no source roots to compile.")
+        }
+        if (sourceRoots.size != 1) {
+            return failedPackage(
+                request,
+                "Macro package `${request.packageFqName.asString()}` must map to exactly one package source root for `cjc -p <dir> --compile-macro`; actual roots: ${sourceRoots.joinToString()}",
+            )
+        }
+
+        val sourceRoot = Path.of(sourceRoots.single())
+        val usesDefaultOutputDirectory = request.outputDirectory.isNullOrBlank()
+        val compilationFingerprint = if (usesDefaultOutputDirectory) {
+            runCatching { macroPackageCompilationFingerprint(request, sourceRoot, cjcPath, context) }
+                .getOrElse { failure ->
+                    return failedPackage(
+                        request,
+                        "Cannot fingerprint macro package `${request.packageFqName.asString()}` inputs: ${failure.message.orEmpty()}",
+                    )
+                }
+        } else {
+            null
+        }
+        val outputDirectory = request.outputDirectory
+            ?.takeIf(String::isNotBlank)
+            ?.let(Path::of)
+            ?: defaultOutputDirectoryFor(request, sourceRoot, requireNotNull(compilationFingerprint))
+        Files.createDirectories(outputDirectory)
+
+        val outputLock = outputDirectoryLocks.computeIfAbsent(outputDirectory.toAbsolutePath().normalize()) {
+            ReentrantLock()
+        }
+        return outputLock.withLock {
+            val successMarker = outputDirectory.resolve(CACHE_SUCCESS_MARKER)
+            if (compilationFingerprint != null &&
+                runCatching { Files.readString(successMarker, StandardCharsets.UTF_8) }.getOrNull() == compilationFingerprint
+            ) {
+                val cachedArtifact = resolveCompiledArtifact(
+                    request = request,
+                    outputDirectory = outputDirectory,
+                    executorAbiVersion = context.executorAbiVersion,
+                    sourceDiagnosticsRef = cachedDiagnosticsReference(request, outputDirectory),
+                )
+                if (cachedArtifact != null) {
+                    return@withLock MacroPackageCompilationResult(
+                        artifactPackages = listOf(cachedArtifact),
+                        artifactSearchPaths = listOf(outputDirectory.absolutePathString()),
+                    )
+                }
+            }
+
+            val command = buildCommand(
+                cjcPath = cjcPath,
+                sourceRoot = sourceRoot,
+                request = request,
+                outputDirectory = outputDirectory,
+                compilerEnvironment = context.configuration.macroCompilerEnvironment,
+            )
+            val execution = runCatching { commandRunner.run(command) }.getOrElse { failure ->
+                val diagnosticsRef = persistDiagnosticsOutput(
+                    request,
+                    outputDirectory,
+                    "",
+                    failure.stackTraceToString(),
+                )
+                return@withLock failedPackage(
+                    request,
+                    "Macro package `${request.packageFqName.asString()}` invocation failed before completion: ${failure.message.orEmpty()}",
+                    diagnosticsRef,
+                )
+            }
+
+            val diagnosticsRef = request.sourceDiagnosticsRef
+                ?: persistDiagnosticsOutput(request, outputDirectory, execution.stdout, execution.stderr)
+            if (execution.exitCode != 0) {
+                return@withLock failedPackage(
+                    request,
+                    buildString {
+                        append("Macro package `${request.packageFqName.asString()}` compilation failed")
+                        append(" (exit code ${execution.exitCode})")
+                        execution.stderr.lineSequence().firstOrNull { it.isNotBlank() }?.let { firstError ->
+                            append(": ")
+                            append(firstError)
+                        }
+                    },
+                    diagnosticsRef,
+                )
+            }
+
+            val resolvedArtifact = resolveCompiledArtifact(
+                request = request,
+                outputDirectory = outputDirectory,
+                executorAbiVersion = context.executorAbiVersion,
+                sourceDiagnosticsRef = diagnosticsRef,
+            ) ?: return@withLock failedPackage(
+                request,
+                "Macro package `${request.packageFqName.asString()}` compilation succeeded but required artifact files were not found under `${outputDirectory.absolutePathString()}`.",
+                diagnosticsRef,
+            )
+
+            if (compilationFingerprint != null) {
+                Files.writeString(successMarker, compilationFingerprint, StandardCharsets.UTF_8)
+            }
+            MacroPackageCompilationResult(
+                artifactPackages = listOf(resolvedArtifact),
+                artifactSearchPaths = listOf(outputDirectory.absolutePathString()),
+            )
+        }
+    }
+
+    private fun failedPackage(
+        request: MacroSourcePackageCompilationRequest,
+        message: String,
+        diagnosticsRef: String? = request.sourceDiagnosticsRef,
+    ): MacroPackageCompilationResult = MacroPackageCompilationResult(
+        diagnostics = listOf(request.compilationError(message, diagnosticsRef)),
+    )
+
     /**
      * 构造一次 `cjc -p <root> --compile-macro` 命令。
      */
@@ -454,14 +516,13 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         sourceRoot: Path,
         request: MacroSourcePackageCompilationRequest,
         outputDirectory: Path,
+        compilerEnvironment: Map<String, String>,
     ): MacroCompilerCommand {
         val arguments = buildList {
             add(cjcPath.absolutePathString())
             add("-p")
             add(sourceRoot.absolutePathString())
             add("--compile-macro")
-            add("-o")
-            add(outputDirectory.absolutePathString())
             request.importPaths
                 .map(String::trim)
                 .filter(String::isNotEmpty)
@@ -472,6 +533,7 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             addAll(request.compilerOptions)
         }
         val environment = buildMap {
+            putAll(compilerEnvironment)
             val classpath = request.classpath
                 .map(String::trim)
                 .filter(String::isNotEmpty)
@@ -597,10 +659,120 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
     private fun defaultOutputDirectoryFor(
         request: MacroSourcePackageCompilationRequest,
         sourceRoot: Path,
+        compilationFingerprint: String,
     ): Path {
         val packageSegment = request.packageFqName.asString().replace('.', '_')
-        return sourceRoot.parent?.resolve(".macro-build")?.resolve(packageSegment)
-            ?: Files.createTempDirectory("macro-build-$packageSegment")
+        val projectOutputDirectory = (sourceRoot.parent ?: sourceRoot)
+            .resolve(".macro-build")
+            .resolve(packageSegment)
+            .resolve(compilationFingerprint)
+            .toAbsolutePath()
+            .normalize()
+        if (!System.getProperty("os.name").startsWith("Windows", ignoreCase = true) ||
+            projectOutputDirectory.toString().length <= WINDOWS_CJC_OUTPUT_DIRECTORY_BUDGET
+        ) {
+            return projectOutputDirectory
+        }
+
+        // cjc 会在输出目录下追加包名和产物文件名；Windows 项目树过长时，把内容寻址产物放到短临时缓存根目录。
+        return Path.of(System.getProperty("java.io.tmpdir"))
+            .resolve(WINDOWS_COMPACT_MACRO_CACHE_DIRECTORY)
+            .resolve(compilationFingerprint)
+            .toAbsolutePath()
+            .normalize()
+    }
+
+    /** 构造宏源码、编译器和依赖输入的内容指纹，作为 IDE 按需编译产物的版本目录。 */
+    private fun macroPackageCompilationFingerprint(
+        request: MacroSourcePackageCompilationRequest,
+        sourceRoot: Path,
+        cjcPath: Path,
+        context: MacroPackageCompilationContext,
+    ): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+
+        fun update(value: String) {
+            val bytes = value.toByteArray(StandardCharsets.UTF_8)
+            digest.update(ByteBuffer.allocate(Int.SIZE_BYTES).putInt(bytes.size).array())
+            digest.update(bytes)
+        }
+
+        fun updateFile(path: Path, relativePath: String) {
+            update(relativePath)
+            val contents = Files.readAllBytes(path)
+            digest.update(ByteBuffer.allocate(Int.SIZE_BYTES).putInt(contents.size).array())
+            digest.update(contents)
+        }
+
+        fun updateFileTree(root: Path, extensions: Set<String>) {
+            val normalizedRoot = root.toAbsolutePath().normalize()
+            update(normalizedRoot.toString())
+            if (!Files.exists(normalizedRoot)) {
+                update("<missing>")
+                return
+            }
+            val files = if (Files.isRegularFile(normalizedRoot)) {
+                listOf(normalizedRoot)
+            } else {
+                Files.walk(normalizedRoot).use { paths ->
+                    paths.filter { Files.isRegularFile(it) }
+                        .filter { path -> path.fileName.toString().substringAfterLast('.', "").lowercase() in extensions }
+                        .sorted()
+                        .toList()
+                }
+            }
+            for (file in files) {
+                val relativePath = if (file == normalizedRoot) {
+                    file.fileName.toString()
+                } else {
+                    normalizedRoot.relativize(file).toString()
+                }
+                updateFile(file, relativePath.replace('\\', '/'))
+            }
+        }
+
+        update("macro-package-cache-v1")
+        update(request.packageFqName.asString())
+        update(context.executorAbiVersion)
+        update(context.cacheContext.compilerOptionsFingerprint)
+        update(context.cacheContext.debugFlagsFingerprint)
+        update(context.cacheContext.parallelFlagsFingerprint)
+        update(context.cacheContext.targetPlatform.toString())
+        update(context.cacheContext.runtimeLoaderEnvironmentFingerprint)
+        update(cjcPath.toAbsolutePath().normalize().toString())
+        if (Files.exists(cjcPath)) {
+            val attributes = Files.readAttributes(cjcPath, java.nio.file.attribute.BasicFileAttributes::class.java)
+            update("${attributes.size()}:${attributes.lastModifiedTime().toMillis()}")
+        }
+        update(context.configuration.macroSdkHome)
+        context.configuration.macroCompilerEnvironment.toSortedMap().forEach { (name, value) ->
+            update(name)
+            update(value)
+        }
+        request.compilerOptions.forEach { update(it) }
+        request.importPaths.forEach { update(it) }
+        request.classpath.forEach { update(it) }
+
+        updateFileTree(sourceRoot, setOf("cj"))
+        (request.importPaths + request.classpath)
+            .asSequence()
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinct()
+            .map(Path::of)
+            .forEach { dependencyRoot -> updateFileTree(dependencyRoot, setOf("bchir", "cjo")) }
+
+        // 保留完整 SHA-256 指纹，但用无填充 Base64URL 缩短目录名，避免 Windows 临时工程路径超长。
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest())
+    }
+
+    /** 复用已成功编译结果时保留原始 cjc 输出引用。 */
+    private fun cachedDiagnosticsReference(request: MacroSourcePackageCompilationRequest, outputDirectory: Path): String? {
+        if (request.sourceDiagnosticsRef != null) return request.sourceDiagnosticsRef
+        val path = outputDirectory.resolve(
+            ".macro-compile-${request.packageFqName.asString().replace('.', '_')}.log",
+        )
+        return path.takeIf { Files.exists(it) }?.absolutePathString()
     }
 
     /**
@@ -619,6 +791,13 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
         val bytes = Files.readAllBytes(path)
         val buffer = ByteBuffer.wrap(bytes)
         return CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer))
+    }
+
+    private companion object {
+        private const val CACHE_SUCCESS_MARKER = ".macro-compile-success"
+        private const val WINDOWS_CJC_OUTPUT_DIRECTORY_BUDGET = 180
+        private const val WINDOWS_COMPACT_MACRO_CACHE_DIRECTORY = "cangjie-macro-cache"
+        private val outputDirectoryLocks = ConcurrentHashMap<Path, ReentrantLock>()
     }
 }
 

@@ -6,9 +6,11 @@ import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -16,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildFileCopy
+import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
@@ -57,7 +60,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildMacroSymbolIndex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
@@ -74,6 +79,7 @@ import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
@@ -178,6 +184,74 @@ class FrontendMacroConstructionExecutionTest {
 
         assertTrue(result is MacroConstructionResult.Success)
         assertSame(replacement, file.declarations.single())
+    }
+
+    /**
+     * 父声明宏重新解析已展开的子宏 token 后，稳定 splice 不能再查找已脱离 final CFIR 的旧子载体。
+     */
+    @Test
+    fun parentDeclarationExpansionConsumesNestedMacroCarriers() {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val originalMember = namedFunction(moduleData, packageFqName, "originalMember")
+        val expandedMember = namedFunction(moduleData, packageFqName, "expandedMember")
+        val originalClass = namedClass(moduleData, packageFqName, "Outer", listOf(originalMember))
+        val expandedClass = namedClass(moduleData, packageFqName, "Outer", listOf(expandedMember))
+        val file = fileWithDeclarations(moduleData, packageFqName, originalClass)
+        val parentSurfaceId = 3108L
+        val childSurfaceId = 3109L
+        val parentSurface = declarationSurface(
+            surfaceId = parentSurfaceId,
+            qualifiedName = FqName("macros.ReplaceClass"),
+            packageFqName = packageFqName,
+            carrier = originalClass,
+        ).copy(
+            inputTokens = listOf(MacroSurfaceToken("@ReplaceMember", 20, 30)),
+            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 0, endOffset = 100),
+        )
+        val childSurface = declarationSurface(
+            surfaceId = childSurfaceId,
+            qualifiedName = FqName("macros.ReplaceMember"),
+            packageFqName = packageFqName,
+            carrier = originalMember,
+        ).copy(
+            sourceRange = MacroSurfaceSourceRange(source = null, startOffset = 20, endOffset = 30),
+        )
+        val pre = buildPreMacroRawFiles(
+            session = session,
+            rawCfirFiles = listOf(file),
+            fileSurfaces = listOf(listOf(parentSurface, childSurface)),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+                val payload = when (input.node.surface.surfaceId) {
+                    parentSurfaceId -> expandedClass
+                    childSurfaceId -> expandedMember
+                    else -> error("Unexpected macro surface ${input.node.surface.surfaceId}")
+                }
+                return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
+            }
+        }
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+            pre = pre,
+            context = contextWithArtifacts(pre, "ReplaceClass", "ReplaceMember"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        assertSame(expandedClass, file.declarations.single())
+        assertSame(expandedMember, (file.declarations.single() as CfirClass).declarations.single())
+        assertEquals(2, executor.calls.size)
     }
 
     /**
@@ -697,7 +771,7 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(result is MacroConstructionResult.Success)
         assertEquals(listOf("ChildOne", "ChildTwo", "Parent"), executor.calls.map { it.idName })
         assertEquals(
-            listOf("left", " ", "expandedOne", " ", "middle", " ", "expandedTwo", " ", "right"),
+            listOf("left", "expandedOne", "middle", "expandedTwo", "right"),
             executor.calls.single { it.idName == "Parent" }.argTokens.map { it.value },
         )
     }
@@ -753,7 +827,7 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(result is MacroConstructionResult.Success)
         assertEquals(listOf("Child", "Parent"), executor.calls.map { it.idName })
         assertEquals(
-            listOf("#[", "expandedChild", "]"),
+            listOf("#", "[", "expandedChild", "]"),
             executor.calls.single { it.idName == "Parent" }.attrTokens.map { it.value },
         )
         assertEquals(
@@ -1484,6 +1558,24 @@ class FrontendMacroConstructionExecutionTest {
         this.valueParameters += valueParameters
     }
 
+    /** 构造带可替换成员列表的测试 class 宏载体。 */
+    private fun namedClass(
+        moduleData: CfirModuleData,
+        packageFqName: FqName,
+        name: String,
+        declarations: List<CfirDeclaration>,
+    ): CfirClass = buildClass {
+        this.moduleData = moduleData
+        resolvePhase = CfirResolvePhase.RAW_CFIR
+        origin = CfirDeclarationOrigin.Synthetic.Error
+        attributes = CfirDeclarationAttributes.EMPTY
+        scopeProvider = CfirCangJieScopeProvider()
+        status = CfirDeclarationStatusImpl()
+        symbol = CfirClassSymbol(ClassId(packageFqName, Name.identifier(name)))
+        this.name = Name.identifier(name)
+        this.declarations += declarations
+    }
+
     /**
      * 构造测试用值参数声明。
      *
@@ -1582,7 +1674,7 @@ class FrontendMacroConstructionExecutionTest {
         surfaceId: Long,
         qualifiedName: FqName,
         packageFqName: FqName,
-        carrier: CfirNamedFunction,
+        carrier: CfirDeclaration,
     ): MacroSurfaceDecl = MacroSurfaceDecl(
         surfaceId = surfaceId,
         qualifiedName = qualifiedName,

@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
+import org.cangnova.cangjie.CjSourceKind
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJieSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
@@ -28,6 +29,9 @@ fun LLCfirSession.buildPreMacroRawBuildResultForModule(): PreMacroRawBuildResult
         .asSequence()
         .map(::FqName)
         .flatMap { packageFqName -> sourceSymbolProvider.declarationProvider.findFilesForFacadeByPackage(packageFqName).asSequence() }
+        .filter { file ->
+            file.sourceKind == CjSourceKind.SOURCE && CjSourceKind.isSourceFileName(file.name)
+        }
         .distinct()
         .toList()
     val cfirFiles = sourceFiles.map(resolvableSession.moduleComponents.cfirFileBuilder::buildRawCfirFileUncached)

@@ -14,12 +14,14 @@ import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.recordRawExpressionMacroSurfaces
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjPatternVariable
 
 /**
  * 对齐 Kotlin `RawFirNonLocalDeclarationBuilder` 的职责边界：
@@ -78,9 +80,23 @@ internal object RawCfirNonLocalDeclarationBuilder {
         designation: CfirDesignation,
         declaration: CjDeclaration,
     ): CfirDeclaration {
-        return CfirElementFinder.findDeclaration(rebuiltFile, declaration)
+        val rebuiltDeclaration = when (designation.target) {
+            is CfirPatternVariable -> {
+                val patternVariablePsi = declaration as? CjPatternVariable
+                    ?: errorWithCfirSpecificEntries(
+                        "CFIR pattern variable is not backed by CjPatternVariable PSI",
+                        psi = declaration,
+                        cfir = designation.target,
+                    )
+                CfirElementFinder.findPatternVariable(rebuiltFile, patternVariablePsi)
+            }
+
+            else -> CfirElementFinder.findDeclaration(rebuiltFile, declaration)
+        }
+
+        return rebuiltDeclaration
             ?: errorWithCfirSpecificEntries(
-                "No rebuilt CFIR declaration was found for non-local PSI",
+                "No rebuilt CFIR declaration was found for PSI",
                 psi = declaration,
                 cfir = designation.target,
             )

@@ -38,6 +38,20 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
 
+/**
+ * 返回 PSI 树中最近的所属类型。
+ *
+ * 宏调用包装和生成声明会在原始节点与类型之间增加 PSI 层级，因此不能假定类型固定在两级父节点处。
+ */
+internal fun PsiElement.containingCjTypeStatement(): CjTypeStatement {
+    var ancestor = parent
+    while (ancestor != null) {
+        if (ancestor is CjTypeStatement) return ancestor
+        ancestor = ancestor.parent
+    }
+    error("${javaClass.simpleName} must be nested in a CjTypeStatement")
+}
+
 
 /**
  * 表示 `CjTypeStatement`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。

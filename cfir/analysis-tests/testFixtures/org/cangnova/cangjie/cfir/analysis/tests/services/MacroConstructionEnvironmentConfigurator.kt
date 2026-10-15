@@ -16,6 +16,7 @@ import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroBackgroundAutoCompilationEnabled
 import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
 import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
+import org.cangnova.cangjie.frontend.pipeline.macroCompilerEnvironment
 import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.frontend.pipeline.macroSourcePackageCompilationRequests
 import org.cangnova.cangjie.macro.process.LspMacroServerMacroExecutor
@@ -36,7 +37,7 @@ import java.nio.charset.StandardCharsets
  * 本配置器不解析 `public macro` 生成假 `.cjo/.dll`，也不注入
  * `MacroDefinitionEntry` 或 stub executor。测试里的 `macro package` 文件只会
  * 被复制到临时源码根，后续由 production orchestrator 调用
- * `cjc -p <root> --compile-macro -o <dir>` 生成真实 artifact。
+ * `cjc -p <root> --compile-macro` 生成真实 artifact。
  */
 class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
     /**
@@ -53,6 +54,7 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
             .toAbsolutePath()
             .normalize()
             .toString()
+        configuration.macroCompilerEnvironment = System.getenv() + ("CANGJIE_HOME" to configuration.macroSdkHome)
         configuration.macroBackgroundAutoCompilationEnabled = false
         configuration.macroExpansionDemandAutoCompilationEnabled =
             MacroConstructionDirectives.DISABLE_EXPANSION_DEMAND_AUTO_COMPILE_MACRO_PACKAGES !in module.directives
@@ -86,7 +88,12 @@ class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : Env
                 configuration.macroSdkHome,
                 "tools/bin/${if (isWindows()) "LSPMacroServer.exe" else "LSPMacroServer"}",
             ).path
-            configuration.macroExecutorFactory = MacroExecutorFactory { LspMacroServerMacroExecutor(executable) }
+            configuration.macroExecutorFactory = MacroExecutorFactory {
+                LspMacroServerMacroExecutor(
+                    macroServerPath = executable,
+                    processEnvironment = configuration.macroCompilerEnvironment,
+                )
+            }
         }
 
         configuration.macroConstructionMode = MacroConstructionService.Mode.DEGRADED

@@ -69,6 +69,18 @@ internal class CfirElementFinder : CfirSessionComponent {
         )?.declarationTarget
 
         /**
+         * 遍历完整 CFIR 文件，按源码 PSI 等价关系查找模式变量。
+         *
+         * 文件级结构索引不能定位函数体中的模式变量，因此该类声明统一从重建后的 CFIR 子树中查找。
+         */
+        fun findPatternVariable(
+            cfirFile: CfirFile,
+            patternVariablePsi: CjPatternVariable,
+        ): CfirPatternVariable? = findElementIn<CfirPatternVariable>(cfirFile) { patternVariable ->
+            patternVariable.psi?.isEquivalentTo(patternVariablePsi) == true
+        }
+
+        /**
          * 返回 [nonLocalDeclaration] 的完整声明路径，包含目标本身。
          */
         fun findPathToDeclarationWithTarget(

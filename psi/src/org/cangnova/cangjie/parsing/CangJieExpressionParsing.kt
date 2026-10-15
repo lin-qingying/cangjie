@@ -421,16 +421,7 @@ open class CangJieExpressionParsing(
      */
     context(context: ParsingContext)
     fun parseExpression() {
-        if (at(AT)) {
-            if (rawTokenText(builder, 1).toString() == "IfAvailable") {
-                parseIfAvailableExpression()
-            } else if (isAnnotationLambdaStart()) {
-                parseAnnotatedLambdaExpression()
-            } else {
-                parseMacroExpression()
-            }
-            return
-        } else if (at(SYNCHRONIZED_KEYWORD)) {
+        if (at(SYNCHRONIZED_KEYWORD)) {
             cangJieParsing.parseSynchronizedExpression()
             return
         } else if (!atSet(context.expressionFirst)) {
@@ -899,6 +890,7 @@ open class CangJieExpressionParsing(
                 ok = false
             }
 
+            AT_Id -> parseAtExpression()
             IDENTIFIER_Id -> parseSimpleNameExpression()
             UNDERLINE_Id -> parseWildcardExpression()
             LBRACE_Id -> parseFunctionLiteral()
@@ -922,6 +914,16 @@ open class CangJieExpressionParsing(
             )
         }
         return ok
+    }
+
+    /** 在原子表达式位置区分宏调用与仓颉内置 `@` 表达式。 */
+    context(context: ParsingContext)
+    private fun parseAtExpression() {
+        when {
+            rawTokenText(builder, 1).toString() == "IfAvailable" -> parseIfAvailableExpression()
+            isAnnotationLambdaStart() -> parseAnnotatedLambdaExpression()
+            else -> parseMacroExpression()
+        }
     }
 
     /**
@@ -4066,6 +4068,7 @@ open class CangJieExpressionParsing(
 
         val EXPRESSION_FIRST = TokenSet.orSet(
             TokenSet.create(
+                AT,
                 MINUS,
                 PLUS,
                 MINUSMINUS,

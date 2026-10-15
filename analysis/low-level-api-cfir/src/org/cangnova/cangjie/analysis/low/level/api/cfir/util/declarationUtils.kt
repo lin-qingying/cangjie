@@ -58,7 +58,8 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
                 if (declaration is CjExtend) {
                     CfirElementFinder.findDeclaration(cfirFile, declaration)
                 } else if (declaration is CjClassLikeDeclaration) {
-                    declaration.findCfir(provider)
+                    CfirElementFinder.findDeclaration(cfirFile, declaration) as? CfirClassLikeDeclaration
+                        ?: declaration.findCfir(provider)
                 } else {
                     val containingTypeStatement = declaration.containingTypeStatement
                     val declarations = when (containingTypeStatement) {
@@ -67,7 +68,9 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
                             declaration.findExtendDeclarationIn(cfirFile)?.declarations
                         }
                         is CjClassLikeDeclaration -> {
-                            val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
+                            val containerClassLikeCfir =
+                                (CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirClassLikeDeclaration)
+                                    ?: containingTypeStatement.findCfir(provider)
                             containerClassLikeCfir?.declarations
                         }
                         null -> cfirFile.declarations

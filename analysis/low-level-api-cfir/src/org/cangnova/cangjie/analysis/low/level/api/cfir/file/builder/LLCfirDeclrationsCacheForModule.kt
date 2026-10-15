@@ -37,15 +37,14 @@ internal abstract class ModuleFileCache {
     abstract fun getContainerCfirFile(declaration: CfirDeclaration): CfirFile?
 
     /**
-     * 返回指定 PSI 文件已经构建过的 CFIR 文件。
+     * 返回指定 PSI 文件已经构建过的 raw CFIR 文件。
      */
     abstract fun getCachedCfirFile(cjFile: CjFile): CfirFile?
 
     /**
-     * 返回当前 low-level session 已构建的 CFIR 文件。
+     * 返回当前 low-level session 可参与 lazy resolve 的 CFIR 文件。
      *
-     * LL CFIR 没有主编译器 `CfirProviderImpl.getAllFiles()` 那样的全量文件入口；
-     * 已构建文件缓存就是 lazy resolve 阶段能安全推进的文件集合。
+     * 宏语义快照发布后，解析阶段使用快照中的 expanded 文件；未发布快照时使用已构建的 raw 文件。
      */
     abstract fun getAllCachedCfirFilesForResolution(): Collection<CfirFile>
 
@@ -61,22 +60,22 @@ internal abstract class ModuleFileCache {
  */
 internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
     /**
-     * PSI 文件到 CFIR 文件的弱 key 缓存。
+     * 物理 PSI 文件到 raw CFIR 文件的弱 key 缓存。
      */
     private val cjFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
 
     /**
-     * 返回缓存中的 CFIR 文件，缺失时原子创建并缓存。
+     * 返回物理 PSI 对应的 raw CFIR 文件，缺失时原子创建并缓存。
+     *
+     * 宏语义快照属于 provider 的 expanded 视图，不能替换这份按 PSI 身份映射的源树。
      */
     override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
-        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(file)
-            ?: cjFileToCfirFile.computeIfAbsent(file) { createValue() }
+        cjFileToCfirFile.computeIfAbsent(file) { createValue() }
 
     /**
-     * 从弱 key cache 中查询已构建 CFIR 文件。
+     * 从弱 key cache 中查询已构建 raw CFIR 文件。
      */
-    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? =
-        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(cjFile) ?: cjFileToCfirFile[cjFile]
+    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
 
     /**
      * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
@@ -89,7 +88,7 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
 
     @LLStatisticsOnlyApi
     /**
-     * 返回当前缓存中的全部 CFIR 文件。
+     * 返回当前语义解析要推进的全部 CFIR 文件。
      */
     override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> =
         moduleComponents.macroSemanticSnapshotStore.snapshot?.files ?: cjFileToCfirFile.values

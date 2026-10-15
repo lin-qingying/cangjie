@@ -54,6 +54,18 @@ class CjSourceKindTest {
         assertEquals(CjSourceKind.SOURCE, CjSourceKind.fromFileName("a.macrocall"))
     }
 
+    /** 编译输入只接受 `.cj` 实现文件，不能把 `.cjo` 二进制索引当作源代码。 */
+    @Test
+    fun sourceFileNamesRequireTheImplementationSuffix() {
+        assertTrue(CjSourceKind.isSourceFileName("main.cj"))
+        assertTrue(CjSourceKind.isSourceFileName("package.cj"))
+        assertFalse(CjSourceKind.isSourceFileName(".cj"))
+        assertFalse(CjSourceKind.isSourceFileName("macros.cjo"))
+        assertFalse(CjSourceKind.isSourceFileName("api.cj.d"))
+        assertFalse(CjSourceKind.isSourceFileName("main.cj.macrocall"))
+        assertFalse(CjSourceKind.isSourceFileName("main.CJ"))
+    }
+
     /** `isDeclaration` 只对声明文件为真。 */
     @Test
     fun isDeclarationOnlyMatchesDeclarationKind() {

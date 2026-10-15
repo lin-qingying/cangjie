@@ -43,7 +43,7 @@ data class MacroExpansionArtifactPreparationResult(
  *
  * 主链路固定为：
  * `pre-macro surfaces/imports -> production locator -> resolver`；
- * 缺失且配置允许时才调用独立 `cjc -p <root> --compile-macro -o <dir>`，
+ * 缺失且配置允许时才调用独立 `cjc -p <root> --compile-macro`（工作目录为输出目录），
  * 调用成功后仍必须重新经过 locator/resolver。
  */
 fun prepareMacroArtifactDefinitionsForExpansion(
@@ -203,11 +203,9 @@ private fun discoverSameProjectMacroSourcePackageCompilationRequests(
             if (!preFile.isMacroPackage) continue
             val sourcePath = preFile.cfirFile.sourceFile?.path ?: continue
             val sourceFile = File(sourcePath).absoluteFile.normalize()
-            val root = sourceRoots
-                .filter { sourceRoot -> sourceFile.isUnderOrEqual(sourceRoot) }
-                .maxByOrNull { it.path.length }
-                ?.let { sourceRoot -> if (sourceRoot.isFile) sourceRoot.parentFile else sourceRoot }
-                ?: continue
+            val isInSourceRoots = sourceRoots.any(sourceFile::isUnderOrEqual)
+            if (!isInSourceRoots) continue
+            val root = sourceFile.parentFile ?: continue
             packageRoots
                 .getOrPut(preFile.cfirFile.packageDirective.packageFqName) { linkedSetOf() }
                 .add(root)

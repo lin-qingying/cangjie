@@ -67,13 +67,15 @@ class MacroCallNode internal constructor(
         _childEdges += edge
     }
 
-    /** Baseline 第 7 节"parentNames"：从 root 到自身路径上各级 macro 名（去重）。 */
+    /** Baseline 第 7 节"parentNames"：按源码拼写从 root 到自身记录各级父宏名。 */
     val parentNames: List<String>
         get() {
             val acc = mutableListOf<String>()
             var current: MacroCallNode? = this.parent
             while (current != null) {
-                current.surface.qualifiedName?.asString()?.let(acc::add)
+                current.surface.qualifiedName?.let { name ->
+                    acc += if (current.surface.isQualifiedName) name.asString() else name.shortName().asString()
+                }
                 current = current.parent
             }
             return acc.reversed()

@@ -33,6 +33,7 @@ import java.util.logging.Logger
  * 的可执行文件校验、启动参数、进程生命周期和官方管道绑定。
  *
  * @param macroServerPath LSPMacroServer 可执行文件路径。
+ * @param processEnvironment 启动宏服务时由所选 Cangjie SDK 提供的环境变量。
  * @param enableParallel 是否启用服务端并行宏展开模式。
  */
 class LspMacroServerMacroExecutor(
@@ -40,6 +41,10 @@ class LspMacroServerMacroExecutor(
      * LSPMacroServer 可执行文件路径。
      */
     private val macroServerPath: String,
+    /**
+     * 启动宏服务时由所选 SDK 提供的环境变量。
+     */
+    private val processEnvironment: Map<String, String>,
     /**
      * 是否向服务端传入并行宏展开开关。
      */
@@ -70,9 +75,16 @@ class LspMacroServerMacroExecutor(
         }
 
         val command = buildCommand(executable)
-        val process = ProcessBuilder(command)
+        val processBuilder = ProcessBuilder(command)
             .redirectErrorStream(false)
-            .start()
+        processBuilder.environment().putAll(
+            mergeMacroProcessEnvironment(
+                inheritedEnvironment = processBuilder.environment().toMap(),
+                configuredEnvironment = processEnvironment,
+                caseInsensitiveKeys = false,
+            ),
+        )
+        val process = processBuilder.start()
 
         logger.info("LSPMacroServer 已启动: $macroServerPath")
         return ProcessMacroConnection(
@@ -106,6 +118,7 @@ class LspMacroServerMacroExecutor(
         val connection = WindowsLspMacroServerConnection.start(
             executable = executable,
             enableParallel = enableParallel,
+            processEnvironment = processEnvironment,
             logger = logger,
         )
         logger.info("LSPMacroServer 已启动: $macroServerPath")
@@ -181,6 +194,7 @@ private class WindowsLspMacroServerConnection(
         fun start(
             executable: File,
             enableParallel: Boolean,
+            processEnvironment: Map<String, String>,
             logger: Logger,
         ): WindowsLspMacroServerConnection {
             val pipeAttributes = WinBase.SECURITY_ATTRIBUTES().apply {
@@ -210,7 +224,7 @@ private class WindowsLspMacroServerConnection(
                 cb = DWORD(size().toLong())
             }
             val processInfo = WinBase.PROCESS_INFORMATION()
-            val environment = buildWindowsEnvironment(executable)
+            val environment = buildWindowsEnvironment(processEnvironment)
             val commandLine = buildCommandLine(
                 executable = executable,
                 childRead = childReadRef.value,
@@ -280,28 +294,12 @@ private class WindowsLspMacroServerConnection(
         /**
          * 构造 LSPMacroServer 运行所需的 Windows 环境变量块。
          */
-        private fun buildWindowsEnvironment(executable: File): Pointer {
-            val sdkHome = executable.parentFile?.parentFile?.parentFile
-            val pathEntries = buildList {
-                if (sdkHome != null) {
-                    add(File(sdkHome, "runtime/lib/windows_x86_64_cjnative").path)
-                    add(File(sdkHome, "third_party/llvm/bin").path)
-                    add(File(sdkHome, "tools/bin").path)
-                    add(File(sdkHome, "bin").path)
-                }
-            }
-            val environment = linkedMapOf<String, String>()
-            for ((key, value) in System.getenv()) {
-                environment[key] = value
-            }
-            if (sdkHome != null) {
-                environment["CANGJIE_HOME"] = sdkHome.path
-            }
-            val currentPathKey = environment.keys.firstOrNull { it.equals("PATH", ignoreCase = true) } ?: "PATH"
-            val currentPath = environment[currentPathKey].orEmpty()
-            environment[currentPathKey] = (pathEntries + currentPath)
-                .filter(String::isNotBlank)
-                .joinToString(separator = File.pathSeparator)
+        private fun buildWindowsEnvironment(processEnvironment: Map<String, String>): Pointer {
+            val environment = mergeMacroProcessEnvironment(
+                inheritedEnvironment = System.getenv(),
+                configuredEnvironment = processEnvironment,
+                caseInsensitiveKeys = true,
+            )
 
             val block = environment.entries
                 .sortedBy { it.key.uppercase() }
@@ -309,6 +307,28 @@ private class WindowsLspMacroServerConnection(
             return block.toWideCharMemory()
         }
     }
+}
+
+/**
+ * 合并父进程与 SDK 环境，确保 Windows 环境变量名按不区分大小写的规则覆盖。
+ */
+internal fun mergeMacroProcessEnvironment(
+    inheritedEnvironment: Map<String, String>,
+    configuredEnvironment: Map<String, String>,
+    caseInsensitiveKeys: Boolean,
+): Map<String, String> = buildMap {
+    fun putEnvironmentVariable(key: String, value: String) {
+        val previousKey = if (caseInsensitiveKeys) {
+            keys.firstOrNull { it.equals(key, ignoreCase = true) }
+        } else {
+            key.takeIf { it in this }
+        }
+        if (previousKey != null) remove(previousKey)
+        put(key, value)
+    }
+
+    inheritedEnvironment.forEach(::putEnvironmentVariable)
+    configuredEnvironment.forEach(::putEnvironmentVariable)
 }
 
 /**

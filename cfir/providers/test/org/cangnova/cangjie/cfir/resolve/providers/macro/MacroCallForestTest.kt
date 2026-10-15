@@ -31,6 +31,46 @@ class MacroCallForestTest {
     }
 
     /**
+     * 验证发给 CJC 的 parentNames 保留宏调用源码拼写，而不是解析用的补全限定名。
+     */
+    @Test
+    fun `parent names preserve source qualification for cjc macro context`() {
+        val unqualifiedOuter = surface(
+            id = 1,
+            name = "untitled89.ContextOuter",
+            start = 0,
+            end = 100,
+            inputTokens = listOf(token("@ContextInner", 20, 30)),
+        ).copy(isQualifiedName = false)
+        val unqualifiedInner = surface(
+            id = 2,
+            name = "untitled89.ContextInner",
+            start = 20,
+            end = 30,
+        ).copy(isQualifiedName = false)
+        val unqualifiedForest = MacroCallForestBuilder.build(listOf(unqualifiedOuter, unqualifiedInner))
+
+        assertEquals(listOf("ContextOuter"), unqualifiedForest.roots.single().children.single().parentNames)
+
+        val qualifiedOuter = surface(
+            id = 3,
+            name = "macros.ContextOuter",
+            start = 0,
+            end = 100,
+            inputTokens = listOf(token("@macros.ContextInner", 20, 30)),
+        )
+        val qualifiedInner = surface(
+            id = 4,
+            name = "macros.ContextInner",
+            start = 20,
+            end = 30,
+        )
+        val qualifiedForest = MacroCallForestBuilder.build(listOf(qualifiedOuter, qualifiedInner))
+
+        assertEquals(listOf("macros.ContextOuter"), qualifiedForest.roots.single().children.single().parentNames)
+    }
+
+    /**
      * 验证求值器先展开嵌套子节点，并把直接子节点结果传递给父节点。
      */
     @Test

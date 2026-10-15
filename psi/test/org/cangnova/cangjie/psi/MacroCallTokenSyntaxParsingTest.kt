@@ -197,6 +197,27 @@ class MacroCallTokenSyntaxParsingTest : CjParsingTestCase(
         assertNotNull(attributed.attr)
     }
 
+    /** 宏表达式在 return、二元运算和块级语句位置都使用普通原子表达式解析。 */
+    @Test
+    fun macroExpressionsAreAcceptedInReturnAndStatementPositions() {
+        val file = parseWithoutErrors(
+            "macroExpressionPositions",
+            """
+            func returnedMacro(): Int64 {
+                return @ReturnValue(42) + 1
+            }
+
+            func statementMacro(): Unit {
+                @StatementMacro()
+                let combined = 1 + @Operand(2)
+            }
+            """.trimIndent(),
+        )
+
+        val calls = macroCalls(file).associateBy { it.shortName?.asString() }
+        assertEquals(setOf("ReturnValue", "StatementMacro", "Operand"), calls.keys)
+    }
+
     private fun parseWithoutErrors(name: String, source: String): CjFile {
         val file = createPsiFile(name, source) as CjFile
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
