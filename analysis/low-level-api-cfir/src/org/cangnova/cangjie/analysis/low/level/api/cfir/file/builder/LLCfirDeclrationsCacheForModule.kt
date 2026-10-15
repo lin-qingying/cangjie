@@ -65,17 +65,21 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     private val cjFileToCfirFile: ConcurrentMap<CjFile, CfirFile> = MapMaker().weakKeys().makeMap()
 
     /**
-     * 返回物理 PSI 对应的 raw CFIR 文件，缺失时原子创建并缓存。
+     * 返回当前语义视图中的 PSI 文件，缺失时构建并缓存 raw CFIR。
      *
-     * 宏语义快照属于 provider 的 expanded 视图，不能替换这份按 PSI 身份映射的源树。
+     * 宏构造仍使用独立的未缓存树；完整快照发布后，普通 PSI 查询必须通过源文件身份映射到同一份 expanded CFIR。
+     * 否则文件 checker 会把缓存中的 pre-macro 声明与 package scope 中快照的同一声明比较成跨文件重载冲突。
      */
     override fun fileCached(file: CjFile, createValue: () -> CfirFile): CfirFile =
-        cjFileToCfirFile.computeIfAbsent(file) { createValue() }
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(file)
+            ?: cjFileToCfirFile.computeIfAbsent(file) { createValue() }
 
     /**
-     * 从弱 key cache 中查询已构建 raw CFIR 文件。
+     * 查询当前语义视图中已构建的文件；宏快照发布后优先返回对应 expanded 文件。
      */
-    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? = cjFileToCfirFile[cjFile]
+    override fun getCachedCfirFile(cjFile: CjFile): CfirFile? =
+        moduleComponents.macroSemanticSnapshotStore.snapshot?.fileForSource(cjFile)
+            ?: cjFileToCfirFile[cjFile]
 
     /**
      * 通过声明 PSI 所在文件定位包含它的已缓存 CFIR 文件。
