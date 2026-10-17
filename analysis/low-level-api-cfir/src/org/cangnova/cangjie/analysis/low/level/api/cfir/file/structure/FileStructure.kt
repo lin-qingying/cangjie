@@ -15,8 +15,10 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutono
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.*
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.session.bodyResolvePrerequisitePhase
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -25,6 +27,8 @@ import org.cangnova.cangjie.psi.CjVisitorUnit
 import org.cangnova.cangjie.psi.psiUtil.isAncestorOf
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import java.util.IdentityHashMap
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -81,9 +85,11 @@ internal class FileStructure private constructor(
     }
 
     /**
-     * 当前 CFIR 文件 session 中的 declaration provider。
+     * 当前 PSI 文件在统一语义视图中的 CFIR；快照发布后，文件级和声明级结构都必须使用同一棵展开树。
      */
-    private val cfirProvider = cfirFile.moduleData.session.cfirProvider
+    private fun semanticCfirFile(): CfirFile = moduleComponents.macroSemanticSnapshotStore.snapshot
+        ?.fileForSource(cjFile)
+        ?: cfirFile
 
     /**
      * PSI 容器到 structure element 的缓存。
@@ -119,16 +125,38 @@ internal class FileStructure private constructor(
      */
     private fun addStructureElementForTo(element: CjElement, result: MutableCollection<FileStructureElement>) {
         checkCanceled()
+        if (element is CjDeclaration && !hasSemanticStructure(element)) return
         LLCfirDiagnosticVisitor.suppressAndLogExceptions {
             result += getStructureElementFor(element)
         }
+    }
+
+    /** 声明只有在最终快照中有精确的一对一 PSI 身份映射时才拥有独立结构。 */
+    private fun hasSemanticStructure(declaration: CjDeclaration): Boolean {
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot ?: return true
+        return snapshot.declarationsForSource(declaration).size == 1
     }
 
     /**
      * 返回用于缓存 structure element 的 PSI 容器；无法定位时回退到文件。
      */
     private fun getContainerCjElement(element: CjElement, nonLocalContainer: CjElement?): CjElement {
-        return getStructureCjElement(element, nonLocalContainer) ?: element.containingCjFile
+        val container = getStructureCjElement(element, nonLocalContainer) ?: return element.containingCjFile
+        if (container !is CjDeclaration || hasSemanticStructure(container)) return container
+        return nearestSemanticStructureOwner(container)
+    }
+
+    /** 零/多输出 carrier 没有自己的 CFIR 声明结构，诊断归属沿 PSI 声明树提升到最近有效 owner。 */
+    private fun nearestSemanticStructureOwner(declaration: CjDeclaration): CjElement {
+        var parent = declaration.parent
+        while (parent != null) {
+            when (parent) {
+                is CjFile -> return parent
+                is CjDeclaration -> if (hasSemanticStructure(parent)) return parent
+            }
+            parent = parent.parent
+        }
+        return declaration.containingCjFile
     }
 
     /**
@@ -227,9 +255,23 @@ internal class FileStructure private constructor(
      * 创建根文件 structure element。
      */
     private fun createRootStructure(): RootStructureElement {
-        val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
-        cfirFile.lazyResolveToPhase(cfirFile.moduleData.session.bodyResolvePrerequisitePhase)
-        return RootStructureElement(cfirFile, moduleComponents)
+        val semanticCfirFile = semanticCfirFile()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        val declarationsWithPhysicalStructure = semanticCfirFile.declarations.filterTo(linkedSetOf()) { declaration ->
+            val physicalPsi = if (snapshot?.isDeclarationReplacementOutput(declaration, cjFile) == true) {
+                snapshot.physicalSourceForDeclaration(declaration, cjFile)
+            } else {
+                declaration.realPsi as? CjDeclaration
+            }
+            physicalPsi != null && physicalPsi.isPhysical && physicalPsi.containingFile === cjFile
+        }
+        semanticCfirFile.lazyResolveToPhase(semanticCfirFile.moduleData.session.bodyResolvePrerequisitePhase)
+        return RootStructureElement(
+            sourceCfirFile = cfirFile,
+            semanticCfirFile = semanticCfirFile,
+            declarationsWithPhysicalStructure = declarationsWithPhysicalStructure,
+            moduleComponents = moduleComponents,
+        )
     }
 
     /**
@@ -242,14 +284,32 @@ internal class FileStructure private constructor(
     }
 
     /**
-     * 创建普通 PSI 声明对应的 structure element。
+     * 在统一语义视图中定位 PSI 声明，并用该声明构造诊断与 PSI 映射结构。
      */
     private fun createDeclarationStructure(declaration: CjDeclaration): FileStructureElement {
-        val cfirDeclaration = declaration.findSourceNonLocalCfirDeclaration(cfirFile, cfirProvider)
+        val semanticCfirFile = semanticCfirFile()
+        val snapshot = moduleComponents.macroSemanticSnapshotStore.snapshot
+        val cfirDeclaration = if (snapshot != null) {
+            snapshot.declarationForSource(declaration)
+                ?: errorWithAttachment("No unique semantic declaration is mapped to physical PSI") {
+                    withPsiEntry("declaration", declaration)
+                    withCfirEntry("semanticCfirFile", semanticCfirFile)
+                }
+        } else {
+            val semanticCfirProvider = semanticCfirFile.moduleData.session.cfirProvider
+            declaration.findSourceNonLocalCfirDeclaration(semanticCfirFile, semanticCfirProvider)
+        }
+        val semanticMappings = IdentityHashMap<CjElement, CfirElement>().apply {
+            snapshot?.declarationForSource(declaration)?.let { put(declaration, it) }
+            snapshot?.expressionReplacementsForSource(cjFile).orEmpty().forEach { (macroPsi, replacement) ->
+                if (findNonLocalContainer(macroPsi) === declaration) put(macroPsi, replacement)
+            }
+        }
         return FileElementFactory.createFileStructureElement(
             cfirDeclaration = cfirDeclaration,
-            cfirFile = cfirFile,
-            moduleComponents = moduleComponents
+            cfirFile = semanticCfirFile,
+            moduleComponents = moduleComponents,
+            additionalMappings = semanticMappings,
         )
     }
 

@@ -9,6 +9,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.FileStruc
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CfirElementsRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.CjToCfirMapping
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.findSourceNonLocalCfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.requireTypeIntersectionWith
@@ -116,7 +117,12 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
         }
 
         val nonLocalContainer = element.getNonLocalContainingOrThisElement()
-        tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
+        val replacementCardinality = moduleComponents.macroSemanticSnapshotStore.snapshot
+            ?.declarationReplacementCardinality(element)
+        if (replacementCardinality != null && replacementCardinality != 1) return null
+        if (replacementCardinality == null) {
+            tryGetCfirWithoutBodyResolve(nonLocalContainer, element)?.let { return it }
+        }
 
         val psi = getPsiAsCfirElementSource(element) ?: return null
         val cjFile = element.containingCjFile
@@ -137,6 +143,13 @@ internal class CfirElementBuilder(private val moduleComponents: LLCfirModuleReso
 
         return cfirElement
     }
+
+    /** 查询元素所属的最近 replacement carrier 的语义输出基数，保留零输出与未注册 carrier 的区别。 */
+    private fun LLCfirMacroSemanticSnapshot.declarationReplacementCardinality(element: CjElement): Int? =
+        element.parentsWithSelf
+            .filterIsInstance<CjDeclaration>()
+            .firstOrNull(::isDeclarationReplacementCarrier)
+            ?.let { declarationsForSource(it).size }
 
     /**
      * Provides a fast path for well-known psi-to-fir mappings to avoid [CfirResolvePhase.BODY_RESOLVE] there it is possible.

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.partialBodyA
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.resolve
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResolveDesignationCollector
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElement
@@ -21,9 +22,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.parentsWithSelf
+import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.utils.exceptions.buildErrorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
@@ -37,10 +41,51 @@ import java.lang.Exception
 internal fun interface LLElementMapper : (CjElement) -> CfirElement?
 
 /**
+ * 将宏语义快照中的映射应用到本次解析得到的 PSI-to-CFIR 映射。
+ *
+ * 表达式宏调用 PSI 可能已经被 raw construction carrier 记录为 construction-only 错误节点；
+ * 快照别名必须以展开表达式在当前解析树中的节点覆盖该占位映射。
+ */
+internal fun applyMacroSemanticSnapshotMappings(
+    resolvedMappings: MutableMap<CjElement, CfirElement>,
+    additionalMappings: Map<CjElement, CfirElement>,
+    session: CfirSession,
+) {
+    additionalMappings.forEach { (psiElement, additionalCfir) ->
+        if (psiElement is CjMacroExpression) {
+            val resolvedReplacement = resolveMacroReplacement(additionalCfir, session, resolvedMappings)
+            if (resolvedReplacement != null) {
+                resolvedMappings[psiElement] = resolvedReplacement
+            } else {
+                // 快照已确认这是有效的语义别名；不能让 construction-only carrier 冒充最终语义结果。
+                resolvedMappings.remove(psiElement)
+            }
+        } else {
+            // 声明 carrier 的唯一语义映射有独立基数规则，应保留快照提供的声明身份。
+            resolvedMappings[psiElement] = additionalCfir
+        }
+    }
+}
+
+/** 将快照保存的 replacement 重绑定到当前解析映射中的最终表达式。 */
+private fun resolveMacroReplacement(
+    additionalCfir: CfirElement,
+    session: CfirSession,
+    resolvedMappings: Map<CjElement, CfirElement>,
+): CfirExpression? {
+    val replacementPsi = (additionalCfir as? CfirExpression)?.source?.psi as? CjElement ?: return null
+    return CjToCfirMapping.getCfir(replacementPsi, session, resolvedMappings) as? CfirExpression
+}
+
+/**
  * A provider that collects mapping for the [declaration] right on the provider creation.
  * The [declaration] must be fully analyzed up to the [CfirResolvePhase.BODY_RESOLVE].
  */
-internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMapper {
+internal class LLEagerElementMapper(
+    declaration: CfirDeclaration,
+    additionalMappings: Map<CjElement, CfirElement> = emptyMap(),
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+) : LLElementMapper {
     /**
      * [declaration] 所属的低阶 CFIR 会话，用于按 PSI 和记录结果恢复真实 CFIR 元素。
      */
@@ -53,8 +98,12 @@ internal class LLEagerElementMapper(declaration: CfirDeclaration) : LLElementMap
      */
     private val mapping = CfirElementsRecorder.recordElementsFrom(
         cfirElement = declaration,
-        recorder = FileStructureElement.recorderFor(declaration),
-    )
+        recorder = FileStructureElement.recorderFor(declaration, macroSemanticSnapshot),
+    ).let { resolvedMappings ->
+        resolvedMappings.toMutableMap().apply {
+            applyMacroSemanticSnapshotMappings(this, additionalMappings, session)
+        }
+    }
 
     /**
      * 查找 [element] 在完整解析声明中对应的 CFIR 元素。
@@ -100,7 +149,10 @@ internal class LLPartialBodyElementMapper(
     /**
      * 承载 [declaration] 的可解析模块会话，用于触发部分解析和恢复映射结果。
      */
-    private val session: LLCfirResolvableModuleSession
+    private val session: LLCfirResolvableModuleSession,
+
+    /** 物理表达式宏调用到最终 splice 表达式的精确映射。 */
+    private val additionalMappings: Map<CjElement, CfirElement>,
 ) : LLElementMapper {
     init {
         val phase = declaration.resolvePhase
@@ -268,13 +320,13 @@ internal class LLPartialBodyElementMapper(
 
         when (container) {
             ElementContainer.Unknown -> return null
-            ElementContainer.Signature -> return CjToCfirMapping.getCfir(psiElement, session, signatureMappings)
+            ElementContainer.Signature -> return mappedCfir(psiElement, signatureMappings)
             ElementContainer.SignatureBody -> {
                 // Fast track: the signature body is already analyzed.
                 // Synchronization is not needed here as 'cachedState'/'bodyMappings' are addition-only
                 if (cachedState.performedAnalysesCount > 0) {
                     // We performed at least one partial analysis, so we definitely analyzed the signature
-                    return CjToCfirMapping.getCfir(psiElement, session, bodyMappings)
+                    return mappedCfir(psiElement, bodyMappings)
                 }
 
                 // We do not need to analyze any statements.
@@ -289,7 +341,7 @@ internal class LLPartialBodyElementMapper(
                 val cachedState = this.cachedState
                 if (cachedState.performedAnalysesCount > 0 && cachedState.analyzedPsiStatementCount >= psiStatementLimit) {
                     // The statement is already analyzed and its children are registered
-                    return CjToCfirMapping.getCfir(psiElement, session, bodyMappings)
+                    return mappedCfir(psiElement, bodyMappings)
                 }
 
                 performBodyAnalysis(psiStatementLimit)
@@ -301,7 +353,18 @@ internal class LLPartialBodyElementMapper(
             processBodyAnalysisResult()
         }
 
-        return CjToCfirMapping.getCfir(psiElement, session, bodyMappings)
+        return mappedCfir(psiElement, bodyMappings)
+    }
+
+    /** 先取本次 body resolve 记录的节点，再把宏调用别名解析到 replacement 的当前 CFIR 节点。 */
+    private fun mappedCfir(psiElement: CjElement, mappings: Map<CjElement, CfirElement>): CfirElement? {
+        val additionalCfir = additionalMappings[psiElement]
+        if (psiElement is CjMacroExpression && additionalCfir != null) {
+            return resolveMacroReplacement(additionalCfir, session, mappings)
+        }
+
+        CjToCfirMapping.getCfir(psiElement, session, mappings)?.let { return it }
+        return additionalCfir
     }
 
     /**

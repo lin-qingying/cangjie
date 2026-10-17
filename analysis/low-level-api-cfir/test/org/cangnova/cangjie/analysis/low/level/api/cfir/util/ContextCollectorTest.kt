@@ -2,6 +2,8 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.util
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
+import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
+import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.CfirLazyBodiesCalculator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.configurators.analysisApiCfirSourceTestConfigurator
 import org.cangnova.cangjie.analysis.low.level.api.cfir.test.getResolutionFacadeForTest
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
@@ -56,6 +58,15 @@ class ContextCollectorTest : AbstractAnalysisApiExecutionTest(
         assertFalse(copiedFile.isPhysical)
 
         assertDistinctPatternBindings(copiedFile, copiedReferences)
+    }
+
+    /** 验证局部模式变量 initializer 的惰性重建能从完整文件 CFIR 中找回目标声明。 */
+    @Test
+    @OptIn(LLCfirInternals::class)
+    fun localPatternVariableInitializerRebuild(mainFile: CjFile) {
+        val cfirFile = mainFile.getOrBuildCfirFile(mainFile.getResolutionFacadeForTest())
+
+        CfirLazyBodiesCalculator.calculateAllLazyExpressionsInFile(cfirFile)
     }
 }
 

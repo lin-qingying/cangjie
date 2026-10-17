@@ -90,6 +90,15 @@ class LLCfirSessionCache(
         }
 
     /**
+     * 返回已经缓存的可解析 session，不创建 session，也不触发 session configurator。
+     *
+     * PSI 修改分类只需要判断已有语义状态是否需要模块级失效；在编辑路径中创建 session 会导致每次修改都启动
+     * 宏构造任务，因此这里仅检查源码 session 缓存。
+     */
+    internal fun getCachedResolvableSession(module: CaModule): LLCfirResolvableModuleSession? =
+        (storage.sourceCache[module] as? LLCfirResolvableModuleSession)?.takeIf { it.isValid }
+
+    /**
      * Returns the [LLCfirSession] for [module], to be used as a *dependency*, or `null` if it doesn't make sense to create such a session as
      * a dependency. This is an optimization for [CaModule]s of certain kinds, like empty modules.
      *

@@ -37,10 +37,12 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
      *
      * 宏 stable splicer 会原地更新 CFIR 节点；宏构造输入若复用普通 LL 查询缓存，
      * 则构造尚未发布时就会改变其他读者可见的语义。本入口保持相同 builder 与 surface 收集，
-     * 但每次都返回新建的文件树，供构造快照独占使用。
+     * 但每次都返回新建的文件树，供构造快照独占使用。构造树会完整解析函数体，
+     * 因为表达式宏 surface 和可供 stable splice 使用的 carrier 都存在于函数体内。
      */
     fun buildRawCfirFileUncached(cjFile: CjFile): CfirFile = buildRawCfirFile(
-        cjFile,
+        cjFile = cjFile,
+        bodyBuildingMode = BodyBuildingMode.NORMAL,
         macroSurfaceCollectionMode = MacroSurfaceCollectionMode.CONSTRUCTION,
     )
 
@@ -49,6 +51,7 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
      */
     private fun buildRawCfirFile(
         cjFile: CjFile,
+        bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.LAZY_BODIES,
         macroSurfaceCollectionMode: MacroSurfaceCollectionMode = currentMacroSurfaceCollectionMode(),
     ): CfirFile {
         val contextualModule = moduleComponents.module
@@ -67,7 +70,7 @@ internal class LLCfirFileBuilder(val moduleComponents: LLCfirModuleResolveCompon
         val builder = PsiRawCfirBuilder(
             moduleComponents.session,
             moduleComponents.scopeProvider,
-            bodyBuildingMode = BodyBuildingMode.LAZY_BODIES,
+            bodyBuildingMode = bodyBuildingMode,
             macroSurfaceCollectionMode = macroSurfaceCollectionMode,
         )
         val cfirFile = builder.buildCfirFile(cjFile)

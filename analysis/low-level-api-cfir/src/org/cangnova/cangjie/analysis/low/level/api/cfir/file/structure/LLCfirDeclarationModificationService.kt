@@ -29,6 +29,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirFile
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.codeFragment
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
@@ -169,6 +170,11 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
             // If there is no `CjElement` ancestor, we have a non-CangJie file. Whitespace changes in such files are invisible to CangJie.
             val affectedElement = element.parentOfType<CjElement>() ?: return LLModificationLocality.Invisible
 
+            if (affectedElement.hasPublishedMacroSemanticSnapshot()) {
+                // 快照包含整模块的 source range 和 CFIR PSI 映射；空白变化也会使这些来源位置过期。
+                return LLModificationLocality.OutOfBlock
+            }
+
             return LLModificationLocality.Whitespace(affectedElement, project)
         }
 
@@ -182,6 +188,11 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
         if (inBlockModificationOwner is CjCodeFragment) {
             // All code fragment content is local
             return LLModificationLocality.InBlock(inBlockModificationOwner, project)
+        }
+
+        if (inBlockModificationOwner is CjDeclaration && inBlockModificationOwner.hasPublishedMacroSemanticSnapshot()) {
+            // 已发布快照持有整模块 CFIR 文件树；任何函数体局部失效都会使该代文件体与诊断变旧。
+            return LLModificationLocality.OutOfBlock
         }
 
         val isOutOfBlockChange = inBlockModificationOwner is CjAnnotated && (
@@ -311,7 +322,10 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
     /**
      * @see org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationService.ancestorAffectedByInBlockModification
      */
-    fun ancestorAffectedByInBlockModification(changedElement: PsiElement): PsiElement? = nonLocalDeclarationForLocalChange(changedElement)
+    fun ancestorAffectedByInBlockModification(changedElement: PsiElement): PsiElement? {
+        if (changedElement.language is CangJieLanguage && changedElement.hasPublishedMacroSemanticSnapshot()) return null
+        return nonLocalDeclarationForLocalChange(changedElement)
+    }
 
     /**
      * 释放服务生命周期。
@@ -543,6 +557,14 @@ internal fun PsiElement.getNonLocalReanalyzableContainingDeclaration(): CjDeclar
 
         else -> null
     }
+}
+
+/** 读取现有源码 session 的快照状态；分类 PSI 修改时不得因此创建新 session 或启动宏构造。 */
+private fun PsiElement.hasPublishedMacroSemanticSnapshot(): Boolean {
+    val module = CangJieProjectStructureProvider.getModule(project, this, useSiteModule = null)
+    return LLCfirSessionCache.getInstance(project)
+        .getCachedResolvableSession(module)
+        ?.macroSemanticSnapshot != null
 }
 
 /**

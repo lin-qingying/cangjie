@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLazySymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
@@ -37,6 +38,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -188,6 +190,11 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
      * 顶层属性符号缓存。
      */
     private val propertyCache = session.cfirCachesFactory.createCache(::loadPropertiesByCallableId)
+
+    /**
+     * 已编译 enum constructor 的包级 callable 视图复用所属 enum CFIR 中的符号对象。
+     */
+    private val enumConstructorCache = session.cfirCachesFactory.createCache(::loadEnumConstructorsByCallableId)
 
     /**
      * 当前库搜索范围内的包索引；首次查询时才创建，原因同 [declarationProvider]。
@@ -384,6 +391,32 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
     }
 
     /**
+     * 将已编译 enum 的成员构造器投影到包级 callable 查询，同时保留其唯一的 enum-owned CFIR 符号。
+     */
+    @OptIn(LLModuleSpecificSymbolProviderAccess::class)
+    private fun loadEnumConstructorsByCallableId(
+        callableId: CallableId,
+        foundConstructors: Collection<CjEnumConstructor>?,
+    ): List<CfirEnumConstructorSymbol> {
+        val constructors = foundConstructors ?: declarationProvider.getTopLevelEnumConstructors(callableId)
+        return constructors.map { constructor ->
+            val enumDeclaration = requireNotNull(constructor.parentEnum) {
+                "Top-level enum constructor ${constructor.name} must have an owning enum"
+            }
+            val classId = requireNotNull(enumDeclaration.getClassId()) {
+                "Top-level enum ${enumDeclaration.name} must have a class id"
+            }
+            val enumSymbol = getClassLikeSymbolByPsi(classId, enumDeclaration) as? CfirEnumSymbol
+                ?: error("Top-level enum $classId must deserialize as a CfirEnumSymbol")
+            val cfirConstructor = enumSymbol.cfir.declarations
+                .filterIsInstance<CfirEnumConstructor>()
+                .singleOrNull { it.realPsi === constructor }
+                ?: error("Enum constructor ${constructor.name} must be present in its deserialized enum CFIR")
+            cfirConstructor.symbol
+        }
+    }
+
+    /**
      * 将指定包和名称下的顶层函数与属性符号追加到 [destination]。
      */
     @CfirSymbolProviderInternals
@@ -391,6 +424,7 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val callableId = CallableId(packageFqName, name)
         destination += functionCache.getCallablesWithoutContext(callableId)
         destination += propertyCache.getCallablesWithoutContext(callableId)
+        destination += enumConstructorCache.getCallablesWithoutContext(callableId)
     }
 
     /**

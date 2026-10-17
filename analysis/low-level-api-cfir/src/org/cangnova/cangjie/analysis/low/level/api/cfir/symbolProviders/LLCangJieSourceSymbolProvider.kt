@@ -118,7 +118,9 @@ internal class LLCangJieSourceSymbolProvider(
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByClassId(classId: ClassId, classLikeDeclaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {
         moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
-            return snapshot.classifiers(classId).firstOrNull { it.psi === classLikeDeclaration }?.symbol
+            val sourceClassifiers = snapshot.classifiersForSource(classLikeDeclaration)
+                .filter { it.symbol.classId == classId }
+            return sourceClassifiers.singleOrNull()?.symbol
         }
         return getClassLikeSymbolByClassIdAndDeclaration(classId, classLikeDeclaration)
     }
@@ -144,7 +146,10 @@ internal class LLCangJieSourceSymbolProvider(
     @LLModuleSpecificSymbolProviderAccess
     override fun getClassLikeSymbolByPsi(classId: ClassId, declaration: PsiElement): CfirClassLikeSymbol<*>? {
         moduleComponents.macroSemanticSnapshotStore.snapshot?.let { snapshot ->
-            return snapshot.classifiers(classId).firstOrNull { it.psi === declaration }?.symbol
+            val sourceDeclaration = declaration as? CjClassLikeDeclaration ?: return null
+            val sourceClassifiers = snapshot.classifiersForSource(sourceDeclaration)
+                .filter { it.symbol.classId == classId }
+            return sourceClassifiers.singleOrNull()?.symbol
         }
         return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
             classId,

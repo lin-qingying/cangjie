@@ -12,8 +12,10 @@ import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
+import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
+import org.cangnova.cangjie.source.withRange
 
 /**
  * low-level CFIR diagnostics 收集使用的 pending reporter。
@@ -84,14 +86,21 @@ internal class LLCfirDiagnosticReporter(
             is CjDiagnosticWithSource -> element
             else -> error("Unknown diagnostic type ${this::class.simpleName}")
         }
-        val mappedElement = sourceMapper(currentElement) as? CjPsiSourceElement
+        val mappedElement = sourceMapper(currentElement)
+        val mappedPsiElement = mappedElement?.toPsiSourceElementPreservingRange()
         if (mappedElement != null && mappedElement != currentElement) {
-            return toPsiDiagnosticAt(mappedElement)
+            return mappedPsiElement?.let { toPsiDiagnosticAt(it) }
+                ?: error("Macro diagnostic source ${mappedElement::class.simpleName} cannot be represented by PSI")
         }
         return when (this) {
             is CjPsiDiagnostic -> this
             is CjLightDiagnostic -> this.toPsiDiagnosticFromLight()
-            else -> error("Unknown diagnostic type ${this::class.simpleName}")
+            else -> currentElement.toPsiSourceElementPreservingRange()
+                ?.let { toPsiDiagnosticAt(it) }
+                ?: error(
+                    "Diagnostic ${this::class.simpleName} has no PSI-backed source " +
+                            "(${currentElement::class.simpleName}, ${currentElement.startOffset}..${currentElement.endOffset})",
+                )
         }
     }
 
@@ -136,9 +145,25 @@ private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
  * 将 light diagnostic 解包为 IDE 路径需要的 PSI diagnostic。
  */
 private fun CjLightDiagnostic.toPsiDiagnosticFromLight(): CjPsiDiagnostic {
-    val psiSourceElement = element.unwrapToCjPsiSourceElement()
+    val psiSourceElement = element.toPsiSourceElementPreservingRange()
         ?: error("Diagnostic should be created from PSI in IDE")
     return (this as CjDiagnostic).toPsiDiagnosticAt(psiSourceElement)
+}
+
+/** 将 PSI-backed LightTree source 转成 IDE source，并保留其自定义文本范围。 */
+private fun AbstractCjSourceElement.toPsiSourceElementPreservingRange(): CjPsiSourceElement? {
+    return when (this) {
+        is CjPsiSourceElement -> this
+        is CjLightSourceElement -> {
+            val unwrapped = unwrapToCjPsiSourceElement() ?: return null
+            if (unwrapped.kind == kind && unwrapped.startOffset == startOffset && unwrapped.endOffset == endOffset) {
+                unwrapped
+            } else {
+                unwrapped.withRange(startOffset, endOffset) as CjPsiSourceElement
+            }
+        }
+        else -> null
+    }
 }
 
 /**

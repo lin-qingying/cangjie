@@ -8,6 +8,7 @@ import com.intellij.psi.PsiErrorElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.*
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshot
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvableSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.body
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialAnalyzable
@@ -47,10 +48,13 @@ internal sealed class FileStructureElement(
     val mappings: CjToCfirMapping = CjToCfirMapping(elementMapper)
 
     companion object {
-        fun recorderFor(fir: CfirDeclaration): CfirElementsRecorder = when (fir) {
+        fun recorderFor(
+            fir: CfirDeclaration,
+            macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+        ): CfirElementsRecorder = when (fir) {
             is CfirFile -> RootStructureElement.Recorder(fir)
-            is CfirClassLikeDeclaration -> ClassDeclarationStructureElement.Recorder(fir)
-            is CfirExtend -> ExtendDeclarationStructureElement.Recorder(fir)
+            is CfirClassLikeDeclaration -> ClassDeclarationStructureElement.Recorder(fir, macroSemanticSnapshot)
+            is CfirExtend -> ExtendDeclarationStructureElement.Recorder(fir, macroSemanticSnapshot)
             else -> DeclarationStructureElement.Recorder
         }
     }
@@ -128,6 +132,12 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
                 } else {
                     null
                 }
+                // 范围表达式有自己的 CFIR 节点，运算符引用应定位到该节点；它不再继承 CjBinaryExpression。
+                is CjRangeExpression -> if (element is CjOperationReferenceExpression) {
+                    mapping[current]
+                } else {
+                    null
+                }
                 is CjBlockExpression -> null
                 is PsiErrorElement -> null
                 // Value argument names and corresponding references are not part of the CFIR tree
@@ -154,6 +164,7 @@ internal class ClassDeclarationStructureElement(
     file: CfirFile,
     clazz: CfirClassLikeDeclaration,
     moduleComponents: LLCfirModuleResolveComponents,
+    additionalMappings: Map<CjElement, CfirElement> = emptyMap(),
 ) : FileStructureElement(
     declaration = clazz,
     diagnostics = FileStructureElementDiagnostics(
@@ -163,13 +174,22 @@ internal class ClassDeclarationStructureElement(
             moduleComponents = moduleComponents,
         )
     ),
+        elementMapper = LLEagerElementMapper(
+            clazz,
+            additionalMappings,
+            moduleComponents.macroSemanticSnapshotStore.snapshot,
+        ),
 ) {
     /**
      * 只记录属于 class-like structure element 的 CFIR 子树。
      */
-    class Recorder(firClass: CfirClassLikeDeclaration) : CfirElementContainerRecorder(
+    class Recorder(
+        firClass: CfirClassLikeDeclaration,
+        macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+    ) : CfirElementContainerRecorder(
         container = firClass,
-        declarationsToIgnore = firClass.declarationsToIgnore,
+        declarationsToIgnore = firClass.declarationsToIgnore(macroSemanticSnapshot),
+        declarationsToSkipMapping = firClass.declarationsWithoutUniquePhysicalStructure(macroSemanticSnapshot),
     )
 }
 
@@ -180,6 +200,7 @@ internal class ExtendDeclarationStructureElement(
     file: CfirFile,
     extend: CfirExtend,
     moduleComponents: LLCfirModuleResolveComponents,
+    additionalMappings: Map<CjElement, CfirElement> = emptyMap(),
 ) : FileStructureElement(
     declaration = extend,
     diagnostics = FileStructureElementDiagnostics(
@@ -189,26 +210,82 @@ internal class ExtendDeclarationStructureElement(
             moduleComponents = moduleComponents,
         )
     ),
+        elementMapper = LLEagerElementMapper(
+            extend,
+            additionalMappings,
+            moduleComponents.macroSemanticSnapshotStore.snapshot,
+        ),
 ) {
     /**
      * 只记录属于 extend structure element 的 CFIR 子树。
      */
-    class Recorder(firExtend: CfirExtend) : CfirElementContainerRecorder(
+    class Recorder(
+        firExtend: CfirExtend,
+        macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+    ) : CfirElementContainerRecorder(
         container = firExtend,
-        declarationsToIgnore = firExtend.declarationsToIgnore,
+        declarationsToIgnore = firExtend.declarationsToIgnore(macroSemanticSnapshot),
+        declarationsToSkipMapping = firExtend.declarationsWithoutUniquePhysicalStructure(macroSemanticSnapshot),
     )
 }
 
 /** @see ClassDeclarationStructureElement */
-internal val CfirClassLikeDeclaration.declarationsToIgnore: Set<CfirDeclaration>
-    get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
+internal fun CfirClassLikeDeclaration.declarationsToIgnore(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+): Set<CfirDeclaration> {
+    val semanticFile = macroSemanticSnapshot?.containerFile(this)
+    return declarations.filter { declaration ->
+        !declaration.isPartOfClassStructureElement &&
+            declaration.hasIndependentPhysicalStructure(macroSemanticSnapshot, semanticFile)
+    }.toSet()
+}
 
 /**
  * extend 的成员声明各自拥有独立的 `DeclarationStructureElement`，与 class-like 成员一致，
  * 不归入 extend 自身的 structure element。
  */
-internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
-    get() = declarations.toSet()
+internal fun CfirExtend.declarationsToIgnore(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot? = null,
+): Set<CfirDeclaration> {
+    val semanticFile = macroSemanticSnapshot?.containerFile(this)
+    return declarations.filter { declaration ->
+        declaration.hasIndependentPhysicalStructure(macroSemanticSnapshot, semanticFile)
+    }.toSet()
+}
+
+/** 声明只有在存在唯一物理 carrier 时才交给自己的结构单元收集诊断。 */
+private fun CfirDeclaration.hasIndependentPhysicalStructure(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?,
+    semanticFile: CfirFile?,
+): Boolean {
+    if (macroSemanticSnapshot == null) return realPsi?.isPhysical == true
+    if (semanticFile != null && macroSemanticSnapshot.isDeclarationReplacementOutput(this, semanticFile)) {
+        return macroSemanticSnapshot.hasUniquePhysicalSourceForDeclaration(this, semanticFile)
+    }
+    return realPsi?.isPhysical == true
+}
+
+/** 一对多宏输出没有可供 PSI 唯一反查的独立 source mapping。 */
+private fun CfirDeclaration.hasAmbiguousPhysicalReplacement(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?,
+    semanticFile: CfirFile?,
+): Boolean = macroSemanticSnapshot != null && semanticFile != null &&
+    macroSemanticSnapshot.isDeclarationReplacementOutput(this, semanticFile) &&
+    !macroSemanticSnapshot.hasUniquePhysicalSourceForDeclaration(this, semanticFile)
+
+private fun CfirClassLikeDeclaration.declarationsWithoutUniquePhysicalStructure(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?,
+): Set<CfirDeclaration> {
+    val semanticFile = macroSemanticSnapshot?.containerFile(this)
+    return declarations.filter { it.hasAmbiguousPhysicalReplacement(macroSemanticSnapshot, semanticFile) }.toSet()
+}
+
+private fun CfirExtend.declarationsWithoutUniquePhysicalStructure(
+    macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?,
+): Set<CfirDeclaration> {
+    val semanticFile = macroSemanticSnapshot?.containerFile(this)
+    return declarations.filter { it.hasAmbiguousPhysicalReplacement(macroSemanticSnapshot, semanticFile) }.toSet()
+}
 
 /**
  * The recorder is supposed to visit only elements that belong to the [container].
@@ -224,6 +301,8 @@ internal abstract class CfirElementContainerRecorder(
      * 当前容器映射时需要跳过的嵌套声明集合。
      */
     private val declarationsToIgnore: Set<CfirDeclaration>,
+    /** 有歧义的 replacement 输出仍由父结构收集诊断，但不能生成任意的 PSI 到 CFIR 映射。 */
+    private val declarationsToSkipMapping: Set<CfirDeclaration> = emptySet(),
 ) : CfirElementsRecorder() {
     /**
      * 只记录属于容器的元素；嵌套声明交给声明结构 recorder 处理。
@@ -235,7 +314,7 @@ internal abstract class CfirElementContainerRecorder(
         }
 
         val recordElement = if (element is CfirDeclaration) {
-            element !in declarationsToIgnore
+            element !in declarationsToIgnore && element !in declarationsToSkipMapping
         } else {
             true
         }
@@ -275,6 +354,7 @@ internal class DeclarationStructureElement(
     file: CfirFile,
     declaration: CfirDeclaration,
     moduleComponents: LLCfirModuleResolveComponents,
+    additionalMappings: Map<CjElement, CfirElement> = emptyMap(),
 ) : FileStructureElement(
     declaration = declaration,
     diagnostics = FileStructureElementDiagnostics(
@@ -284,7 +364,7 @@ internal class DeclarationStructureElement(
             moduleComponents = moduleComponents,
         )
     ),
-    elementMapper = createMapper(declaration),
+    elementMapper = createMapper(declaration, additionalMappings),
 ) {
     private companion object {
         private val IS_PARTIAL_RESOLVE_ENABLED by lazy(LazyThreadSafetyMode.PUBLICATION) {
@@ -294,20 +374,26 @@ internal class DeclarationStructureElement(
         /**
          * 为声明创建 eager 或 partial body PSI->CFIR mapper。
          */
-        private fun createMapper(declaration: CfirDeclaration): LLElementMapper {
-            val partialBodyMapper = createPartialBodyMapperIfApplicable(declaration)
+        private fun createMapper(
+            declaration: CfirDeclaration,
+            additionalMappings: Map<CjElement, CfirElement>,
+        ): LLElementMapper {
+            val partialBodyMapper = createPartialBodyMapperIfApplicable(declaration, additionalMappings)
             if (partialBodyMapper != null) {
                 return partialBodyMapper
             }
 
             declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
-            return LLEagerElementMapper(declaration)
+            return LLEagerElementMapper(declaration, additionalMappings)
         }
 
         /**
          * 如果声明支持 partial body analysis，则创建 partial body mapper。
          */
-        private fun createPartialBodyMapperIfApplicable(declaration: CfirDeclaration): LLElementMapper? {
+        private fun createPartialBodyMapperIfApplicable(
+            declaration: CfirDeclaration,
+            additionalMappings: Map<CjElement, CfirElement>,
+        ): LLElementMapper? {
             if (!IS_PARTIAL_RESOLVE_ENABLED) {
                 return null
             }
@@ -340,7 +426,14 @@ internal class DeclarationStructureElement(
             // is only created if there are more than one body statement.
             LLCfirDeclarationModificationService.bodyResolved(declaration, phase = CfirResolvePhase.BODY_RESOLVE)
 
-            return LLPartialBodyElementMapper(declaration, psiDeclaration, psiBodyBlock, psiStatements, session)
+            return LLPartialBodyElementMapper(
+                declaration,
+                psiDeclaration,
+                psiBodyBlock,
+                psiStatements,
+                session,
+                additionalMappings,
+            )
         }
     }
 
@@ -442,23 +535,29 @@ internal class DeclarationStructureElement(
  * 整个文件根结构元素。
  */
 internal class RootStructureElement(
-    file: CfirFile,
+    /** 保持与物理 PSI 对应的 raw CFIR，专供根结构元素建立 PSI 映射。 */
+    sourceCfirFile: CfirFile,
+    /** 与符号 provider 处于同一快照的语义 CFIR，专供文件级 diagnostics。 */
+    semanticCfirFile: CfirFile,
+    /** 已有独立物理 PSI structure element 的最终顶层语义声明。 */
+    declarationsWithPhysicalStructure: Set<CfirDeclaration>,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElement(
-    declaration = file,
+    declaration = sourceCfirFile,
     diagnostics = FileStructureElementDiagnostics(
         FileDiagnosticRetriever(
-            file = file,
+            file = semanticCfirFile,
+            declarationsToIgnore = declarationsWithPhysicalStructure,
             moduleComponents = moduleComponents,
         )
     ),
 ) {
     /**
-     * 只记录属于文件根结构元素的 CFIR 子树。
+     * 只从物理 raw CFIR 记录 PSI 映射，避免 expanded snapshot 中的生成节点替代物理 PSI 节点。
      */
-    class Recorder(file: CfirFile) : CfirElementContainerRecorder(
-        container = file,
-        declarationsToIgnore = file.declarationsToIgnore,
+    class Recorder(sourceCfirFile: CfirFile) : CfirElementContainerRecorder(
+        container = sourceCfirFile,
+        declarationsToIgnore = sourceCfirFile.declarationsToIgnore,
     )
 }
 
