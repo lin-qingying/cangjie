@@ -38,16 +38,19 @@ import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSmartcastStability
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildAugmentedAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildComparisonExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfAvailableExpression
@@ -59,6 +62,7 @@ import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeConversion
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeOperator
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -66,6 +70,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
@@ -76,7 +81,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -93,8 +100,10 @@ import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDefinitionKind
+import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.model.ChirModule
+import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
@@ -252,6 +261,97 @@ class Cfir2ChirCoverageTest {
 
         assertThrows(Cfir2ChirConversionException::class.java) {
             convertSingleFunction(function)
+        }
+    }
+
+    /**
+     * 验证成员函数调用（隐式 this dispatch receiver）会降级为带 receiver 首实参的
+     * `ChirCallExpression`，而不是保留为 `cfir.call_with_receiver` 占位操作。
+     */
+    @Test
+    fun `lowers member function call with dispatch receiver into receiver-first call`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val answer = memberFunctionReturningInt(
+            name = "answer",
+            receiverType = boxType,
+            value = 42,
+        )
+        val caller = memberFunctionCallingMember(
+            callerName = "callAnswer",
+            callee = answer,
+            receiverType = boxType,
+        )
+
+        val module = convertModule(answer, caller)
+        val chirCaller = module.declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == "callAnswer" }
+
+        // 不再保留为 cfir.call_with_receiver 占位操作。
+        assertTrue(Cfir2ChirOperation.CFIR_CALL_WITH_RECEIVER.canonicalName !in chirCaller.otherOperations())
+
+        val call = chirCaller.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirCallExpression>()
+            .single()
+        val calleeType = (call.callee.type as ChirResolvedTypeRef).type as ChirFunctionType
+        assertTrue(calleeType.receiverType != null)
+        // receiver 是第一实参，其余实参为空（无参成员函数）。
+        assertEquals(1, call.arguments.size)
+        assertEquals(calleeType.receiverType, call.arguments.single().type)
+    }
+
+    /**
+     * 构造带 dispatch receiver 的成员函数，返回指定 Int32 常量。
+     */
+    private fun memberFunctionReturningInt(
+        name: String,
+        receiverType: ConeSimpleCangJieType,
+        value: Int,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(name)))
+        return buildNamedFunction {
+            commonNamedFunctionDeclaration(symbol)
+            this.name = Name.identifier(name)
+            dispatchReceiverType = receiverType
+            returnTypeRef = intTypeRef()
+            body = blockOf(ConePrimitiveType.INT32, intLiteral(value))
+        }
+    }
+
+    /**
+     * 构造通过隐式 this 调用指定成员函数的调用方成员函数。
+     */
+    private fun memberFunctionCallingMember(
+        callerName: String,
+        callee: CfirNamedFunction,
+        receiverType: ConeSimpleCangJieType,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(callerName)))
+        return buildNamedFunction {
+            commonNamedFunctionDeclaration(symbol)
+            this.name = Name.identifier(callerName)
+            dispatchReceiverType = receiverType
+            returnTypeRef = intTypeRef()
+            body = blockOf(
+                ConePrimitiveType.INT32,
+                buildFunctionCall {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    calleeReference = buildResolvedNamedReference {
+                        this.name = callee.name
+                        resolvedSymbol = callee.symbol
+                    }
+                    dispatchReceiver = buildThisReceiverExpression {
+                        coneTypeOrNull = receiverType
+                        calleeReference = buildThisReference {
+                            boundSymbol = CfirClassSymbol(classId("Box"))
+                            isImplicit = true
+                        }
+                    }
+                    argumentList = buildArgumentList()
+                    origin = CfirFunctionCallOrigin.Regular
+                },
+            )
         }
     }
 

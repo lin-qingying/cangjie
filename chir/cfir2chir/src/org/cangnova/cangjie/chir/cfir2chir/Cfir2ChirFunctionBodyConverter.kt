@@ -605,10 +605,15 @@ internal class Cfir2ChirFunctionBodyConverter(
         ) ?: throw Cfir2ChirConversionException("inaccessible receiver expression produced no value", expression)
 
     /**
-     * Lower 函数调用；普通直接调用生成 `ChirCallExpression`，带接收者或特殊 origin 的调用保留为 CFIR 操作。
+     * Lower 函数调用。
+     *
+     * - 无接收者的普通直接调用生成 `ChirCallExpression`；
+     * - 被调函数是本包已登记 header 的成员函数（header 携带 `receiverType`）时，
+     *   把 dispatch receiver 值作为第一个实参生成 `ChirCallExpression`，
+     *   后端按 `ChirFunctionType.receiverType` 走实例调用路径（JVM `invokevirtual` 族）；
+     * - 其余带接收者或特殊 origin 的调用保留为 CFIR 专有操作。
      */
     private fun lowerFunctionCall(functionCall: CfirFunctionCall): ChirValue? {
-        val receiverOperands = functionCall.receiverOperands()
         val arguments = functionCall.argumentList.arguments.mapValueOperands("function call argument")
         val resultType = functionCall.resultTypeOrNull()
             ?: (functionCall.calleeReference as? CfirResolvedNamedReference)
@@ -619,7 +624,12 @@ internal class Cfir2ChirFunctionBodyConverter(
 
         val resolvedReference = functionCall.calleeReference as? CfirResolvedNamedReference
         val callee = resolvedReference?.let { valueForCallableReference(it, functionCall, arguments, resultType) }
-        val useDirectCall = callee != null && receiverOperands.isEmpty() && functionCall.origin.name == "Regular"
+
+        val memberCall = calleeMemberReceiverCallOrNull(functionCall, callee, arguments, resultType)
+        if (memberCall != null) return memberCall
+
+        val useDirectCall = callee != null && functionCall.receiverOperands().isEmpty() &&
+                functionCall.origin.name == "Regular"
 
         val expressionId = builder.nextElementId("call", functionCall)
         if (useDirectCall) {
@@ -636,7 +646,7 @@ internal class Cfir2ChirFunctionBodyConverter(
 
         val operands = buildList {
             if (callee != null) add(callee)
-            addAll(receiverOperands)
+            addAll(functionCall.receiverOperands())
             addAll(arguments)
         }
         builder.emit(
@@ -650,6 +660,46 @@ internal class Cfir2ChirFunctionBodyConverter(
                     "cfir.call.trailingLambda" to functionCall.hasTrailingLambda.toString(),
                     "cfir.call.varraySize" to (functionCall.varraySizeLiteral ?: ""),
                 ),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 尝试把成员函数调用降级为带 receiver 实参的 `ChirCallExpression`。
+     *
+     * 仅当全部条件满足时降级：
+     * - 调用是普通 origin（`Regular`），且只携带 dispatch receiver（成员隐式 this）；
+     * - callee 已解析为 `ChirFunctionValue`，其类型是携带 `receiverType` 的 `ChirFunctionType`；
+     * - receiver 表达式产出 CHIR 值且类型与 header 的 receiverType 完全一致。
+     *
+     * 任一条件不满足时返回 null，由调用方保留为 `cfir.call_with_receiver` 占位操作。
+     * 该路径消费 JVM 后端 `emitLocalReceiverFunctionCall` 的既有契约：
+     * receiver 为第一实参，其余实参按函数类型参数发射。
+     */
+    private fun calleeMemberReceiverCallOrNull(
+        functionCall: CfirFunctionCall,
+        callee: ChirValue?,
+        arguments: List<ChirValue>,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        if (callee !is ChirFunctionValue) return null
+        if (functionCall.origin.name != "Regular") return null
+        val dispatchReceiver = functionCall.dispatchReceiver ?: return null
+        if (functionCall.explicitReceiver != null) return null
+
+        val functionType = (callee.type as? ChirResolvedTypeRef)?.type as? ChirFunctionType ?: return null
+        val receiverType = functionType.receiverType ?: return null
+        val expressionId = builder.nextElementId("call", functionCall)
+        val receiverValue = lowerExpression(dispatchReceiver) ?: return null
+        if (receiverValue.type != receiverType) return null
+
+        builder.emit(
+            ChirCallExpression(
+                semanticId = expressionId,
+                callee = callee,
+                arguments = listOf(receiverValue) + arguments,
+                resultType = resultType,
             ),
         )
         return resultType.valueOrNull(expressionId)
