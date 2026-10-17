@@ -582,14 +582,34 @@ internal class Cfir2ChirFunctionBodyConverter(
     /**
      * Lower this 接收者表达式。
      */
-    private fun lowerThisReceiverExpression(expression: CfirThisReceiverExpression): ChirValue =
-        emitOtherValue(
+    /**
+     * Lower this 接收者表达式。
+     *
+     * 成员函数体内 this 是隐式第 0 实参：当当前函数 header 携带 receiverType
+     * 且与 this 表达式的解析类型一致时，直接降级为名为 `this` 的局部值引用——
+     * JVM 后端在实例方法布局中已把 `this` 绑定到 local slot 0，按名称即可命中。
+     * 类型不一致（如静态上下文出现 this）时保留为 CFIR 专有操作，由后端诊断。
+     */
+    private fun lowerThisReceiverExpression(expression: CfirThisReceiverExpression): ChirValue {
+        val thisType = expression.requireResultType()
+        val receiverType = header.receiverType
+        if (receiverType != null && thisType == receiverType) {
+            return ChirLocalValue(
+                semanticId = builder.nextElementId("this", expression),
+                type = thisType,
+                name = "this",
+            )
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_THIS_RECEIVER,
             source = expression,
             operands = emptyList(),
-            resultType = expression.requireResultType(),
-            attributes = thisReferenceAttributes(expression.calleeReference),
+            resultType = thisType,
+            attributes = thisReferenceAttributes(expression.calleeReference) + attributes(
+                "cfir.this.fallbackReason" to if (receiverType == null) "no-receiver" else "receiver-type-mismatch",
+            ),
         ) ?: throw Cfir2ChirConversionException("this receiver expression produced no value", expression)
+    }
 
     /**
      * Lower 不可访问接收者表达式，并保留接收者种类。

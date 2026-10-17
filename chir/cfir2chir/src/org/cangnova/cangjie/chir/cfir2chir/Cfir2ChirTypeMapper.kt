@@ -73,15 +73,15 @@ class Cfir2ChirTypeMapper {
         return when (type) {
             is ConePrimitiveType -> mapPrimitiveType(type.kind)
             is ConeClassLikeType -> ChirClassType(
-                name = type.classId.asString(),
+                name = type.classId.asFqNameString(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeStructType -> ChirStructType(
-                name = type.classId.asString(),
+                name = type.classId.asFqNameString(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeEnumType -> ChirEnumType(
-                name = type.classId.asString(),
+                name = type.classId.asFqNameString(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
             )
             is ConeFunctionType -> {
@@ -198,10 +198,10 @@ class Cfir2ChirTypeMapper {
     private fun ConeCangJieType.renderNameForSyntheticType(): String =
         when (this) {
             is ConePrimitiveType -> mapPrimitiveType(kind).renderName
-            is ConeClassLikeType -> classId.asString()
-            is ConeStructType -> classId.asString()
-            is ConeEnumType -> classId.asString()
-            is ConeTypeAliasType -> classId.asString()
+            is ConeClassLikeType -> classId.asFqNameString()
+            is ConeStructType -> classId.asFqNameString()
+            is ConeEnumType -> classId.asFqNameString()
+            is ConeTypeAliasType -> classId.asFqNameString()
             ConeAnyType -> "Any"
             is ConeTypeParameterType -> lookupTag.typeParameterSymbol.name.asString()
             else -> this::class.simpleName ?: "anonymous"

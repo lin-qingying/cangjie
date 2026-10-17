@@ -6,18 +6,21 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildAssignment
@@ -27,17 +30,25 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.jvm.codegen.api.ChirJvmCodegenInput
 import org.cangnova.cangjie.jvm.codegen.api.JvmClassFileArtifact
 import org.cangnova.cangjie.jvm.codegen.pipeline.DefaultChirToJvmCodeGenerator
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
@@ -159,6 +170,94 @@ class Cfir2ChirJvmPipelineTest {
     }
 
     /**
+     * 验证成员函数链（this 调用成员函数）能端到端降级为可执行 JVM 实例方法。
+     *
+     * `Box.answer()` 返回 42；`Box.answerTwice()` 内部通过 this 调用 `answer()`。
+     * cfir2chir 把 this 降级为 `this` 局部值、成员调用降级为 receiver-first 调用，
+     * JVM 后端生成实例方法并用 `invokevirtual` 执行。
+     */
+    @Test
+    fun `lowers member function chain through this to executable JVM instance methods`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(BoxClassId))
+        val answer = memberFunction(
+            name = "answer",
+            receiverType = boxType,
+            body = intLiteral(42),
+        )
+        val answerTwice = memberFunction(
+            name = "answerTwice",
+            receiverType = boxType,
+            body = buildFunctionCall {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                calleeReference = buildResolvedNamedReference {
+                    name = answer.name
+                    resolvedSymbol = answer.symbol
+                }
+                dispatchReceiver = buildThisReceiverExpression {
+                    coneTypeOrNull = boxType
+                    calleeReference = buildThisReference {
+                        boundSymbol = CfirClassSymbol(BoxClassId)
+                        isImplicit = true
+                    }
+                }
+                argumentList = buildArgumentList()
+                origin = CfirFunctionCallOrigin.Regular
+            },
+        )
+        val box = buildClass {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            scopeProvider = UnusedScopeProvider
+            status = CfirDeclarationStatusImpl()
+            symbol = CfirClassSymbol(BoxClassId)
+            name = Name.identifier("Box")
+            declarations += answer
+            declarations += answerTwice
+        }
+        val file = fileWith(box)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+        val boxArtifact = requireNotNull(artifactsByName["sample/Box"])
+
+        val generatedClass = GeneratedClassLoader().define(boxArtifact)
+        val instance = generatedClass.getConstructor().newInstance()
+        assertEquals(42, generatedClass.getMethod("answer").invoke(instance))
+        assertEquals(42, generatedClass.getMethod("answerTwice").invoke(instance))
+    }
+
+    /**
+     * 构造带 dispatch receiver 的成员函数。
+     */
+    private fun memberFunction(
+        name: String,
+        receiverType: ConeSimpleCangJieType,
+        body: CfirExpression,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(name)))
+        return buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = receiverType
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = intTypeRef()
+            this.symbol = symbol
+            this.name = Name.identifier(name)
+            isMut = false
+            this.body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                statements += body
+            }
+        }
+    }
+
+    /**
      * 构造返回指定 Int32 常量的测试函数。
      */
     private fun functionReturningInt(name: String, value: Int): CfirNamedFunction {
@@ -252,7 +351,7 @@ class Cfir2ChirJvmPipelineTest {
     /**
      * 构造包含指定函数声明的测试 CFIR 文件。
      */
-    private fun fileWith(vararg declarations: CfirNamedFunction): CfirFile {
+    private fun fileWith(vararg declarations: CfirDeclaration): CfirFile {
         return buildFile {
             moduleData = TestModuleData
             resolvePhase = CfirResolvePhase.BODY_RESOLVE
@@ -373,6 +472,38 @@ class Cfir2ChirJvmPipelineTest {
     }
 
     /**
+     * JVM 管线测试使用的空 scope provider：cfir2chir 不查询成员作用域，任何调用都是编程错误。
+     */
+    private object UnusedScopeProvider : CfirScopeProvider() {
+        /**
+         * use-site 成员 scope 查询在测试 fixture 中被禁止。
+         */
+        override fun getUseSiteMemberScope(
+            klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): org.cangnova.cangjie.cfir.scopes.CfirTypeScope = error("scope provider must not be used by JVM pipeline tests")
+
+        /**
+         * typealias 构造器 scope 查询在测试 fixture 中被禁止。
+         */
+        override fun getTypealiasConstructorScope(
+            typeAlias: org.cangnova.cangjie.cfir.declarations.CfirTypeAlias,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): org.cangnova.cangjie.cfir.scopes.CfirScope = error("scope provider must not be used by JVM pipeline tests")
+
+        /**
+         * declaration-site 成员 scope 查询在测试 fixture 中被禁止。
+         */
+        override fun getDeclarationSiteMemberScope(
+            klass: org.cangnova.cangjie.cfir.declarations.CfirClass,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): org.cangnova.cangjie.cfir.scopes.CfirTypeScope = error("scope provider must not be used by JVM pipeline tests")
+    }
+
+    /**
      * 将生成的 JVM class bytes 直接定义到当前测试 class loader。
      */
     private class GeneratedClassLoader : ClassLoader(Cfir2ChirJvmPipelineTest::class.java.classLoader) {
@@ -386,5 +517,6 @@ class Cfir2ChirJvmPipelineTest {
 
     private companion object {
         val PackageName = FqName("sample")
+        val BoxClassId = ClassId(PackageName, Name.identifier("Box"))
     }
 }

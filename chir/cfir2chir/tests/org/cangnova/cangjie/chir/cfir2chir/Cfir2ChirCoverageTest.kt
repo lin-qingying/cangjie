@@ -103,6 +103,7 @@ import org.cangnova.cangjie.chir.core.declaration.ChirTypeDefinitionKind
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.model.ChirModule
+import org.cangnova.cangjie.chir.core.type.ChirClassType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
@@ -110,6 +111,7 @@ import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
+import org.cangnova.cangjie.chir.core.value.ChirLocalValue
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -299,6 +301,63 @@ class Cfir2ChirCoverageTest {
         // receiver 是第一实参，其余实参为空（无参成员函数）。
         assertEquals(1, call.arguments.size)
         assertEquals(calleeType.receiverType, call.arguments.single().type)
+    }
+
+    /**
+     * 验证成员函数体内的 this 表达式会降级为名为 `this` 的局部值引用，
+     * 与成员函数 header 的 receiverType 一致；而不是保留为 cfir.this_receiver 占位操作。
+     */
+    @Test
+    fun `lowers this receiver in member function into named this local value`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val answer = memberFunctionReturningInt(
+            name = "answer",
+            receiverType = boxType,
+            value = 42,
+        )
+        val caller = memberFunctionCallingMember(
+            callerName = "callAnswer",
+            callee = answer,
+            receiverType = boxType,
+        )
+
+        val module = convertModule(answer, caller)
+        val chirCaller = module.declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == "callAnswer" }
+
+        // this 已不再是占位操作。
+        assertTrue(Cfir2ChirOperation.CFIR_THIS_RECEIVER.canonicalName !in chirCaller.otherOperations())
+        // 成员调用的第一实参就是名为 this 的局部值。
+        val call = chirCaller.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirCallExpression>()
+            .single()
+        val receiver = call.arguments.single() as ChirLocalValue
+        assertEquals("this", receiver.name)
+        assertEquals(ChirResolvedTypeRef(ChirClassType("sample.Box")), receiver.type)
+    }
+
+    /**
+     * 验证无 receiverType 的函数体内出现 this 时保留为占位操作，由后端诊断。
+     */
+    @Test
+    fun `keeps this receiver as placeholder outside member function`() {
+        val function = functionReturningExpression(
+            name = "staticThis",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildThisReceiverExpression {
+                coneTypeOrNull = ConeStructType(ConeClassLikeLookupTagImpl(classId("Self")))
+                calleeReference = buildThisReference {
+                    boundSymbol = CfirStructSymbol(classId("Self"))
+                    isImplicit = false
+                }
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        assertTrue(Cfir2ChirOperation.CFIR_THIS_RECEIVER.canonicalName in chirFunction.otherOperations())
     }
 
     /**
@@ -550,8 +609,8 @@ class Cfir2ChirCoverageTest {
         assertTrue(ChirStringAttribute("cfir.kind", "interface") in iface.attributes)
         assertTrue(iface.memberDeclarations.isEmpty())
         assertTrue(iface.definitionKind == ChirTypeDefinitionKind.INTERFACE)
-        assertEquals("sample/Point", extend.targetType.renderName)
-        assertEquals(listOf("sample/Drawable"), extend.extendedTypes.map { it.renderName })
+        assertEquals("sample.Point", extend.targetType.renderName)
+        assertEquals(listOf("sample.Drawable"), extend.extendedTypes.map { it.renderName })
         assertEquals("Meters", typeAlias.name)
         assertTrue(typeAlias.attributes.any { it is ChirStringAttribute && it.key == "cfir.expandedType" && it.value == "int32" })
         assertTrue(primitive.attributes.any { it is ChirStringAttribute && it.key == "cfir.primitive.kind" && it.value == "INT32" })
