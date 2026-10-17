@@ -25,6 +25,12 @@ public class CfirSourceLazyDeclarationResolveTestGenerated extends AbstractCfirS
   }
 
   @Test
+  @TestMetadata("extendMember.cj")
+  public void testExtendMember() {
+    run("extendMember.cj");
+  }
+
+  @Test
   @TestMetadata("simpleClass.cj")
   public void testSimpleClass() {
     run("simpleClass.cj");

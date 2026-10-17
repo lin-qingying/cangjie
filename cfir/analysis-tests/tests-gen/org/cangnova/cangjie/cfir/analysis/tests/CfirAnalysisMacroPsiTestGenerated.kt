@@ -25,6 +25,18 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
         runTest("cfir/analysis-tests/testData/macro/missingMacroArtifactWithoutSourceRoot.cj")
     }
 
+    @TestMetadata("sameProjectMacroExpressionBodySemantics.cj")
+    @Test
+    fun testSameProjectMacroExpressionBodySemantics() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroExpressionBodySemantics.cj")
+    }
+
+    @TestMetadata("sameProjectMacroGeneratedReferenceDoesNotConflict.cj")
+    @Test
+    fun testSameProjectMacroGeneratedReferenceDoesNotConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedReferenceDoesNotConflict.cj")
+    }
+
     @TestMetadata("sameProjectMacroPackageDeclarationReference.cj")
     @Test
     fun testSameProjectMacroPackageDeclarationReference() {

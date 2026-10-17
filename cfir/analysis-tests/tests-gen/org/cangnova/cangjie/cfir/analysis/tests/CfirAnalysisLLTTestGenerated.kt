@@ -11194,6 +11194,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/enum/enum45_generic_extend_staticFunc.cj")
         }
 
+        @TestMetadata("enum46_stdlib_bare_constructor.cj")
+        @Test
+        fun testEnum46StdlibBareConstructor() {
+            runTest("cfir/analysis-tests/testData/llt/enum/enum46_stdlib_bare_constructor.cj")
+        }
+
         @TestMetadata("enum5_2_test.cj")
         @Test
         fun testEnum52Test() {
