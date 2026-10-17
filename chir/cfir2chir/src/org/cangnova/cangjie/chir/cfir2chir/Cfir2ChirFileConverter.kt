@@ -4,6 +4,7 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirPropertyDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirTypeDeclaration
@@ -222,11 +223,11 @@ internal class Cfir2ChirFileConverter(
                     ChirStringAttribute("cfir.primitive.kind", declaration.kind.name),
                 ),
             )
-            is CfirInterface -> DefaultChirClassDeclaration(
+            is CfirInterface -> DefaultChirInterfaceDeclaration(
                 semanticId = Cfir2ChirIds.declarationId(declaration.symbol),
                 name = declaration.name.asString(),
                 typeParameters = declaration.typeParameters.map { it.name.asString() },
-                implementedTypes = declaration.superTypeRefs.map(typeMapper::mapTypeRef),
+                superInterfaceTypes = declaration.superTypeRefs.map(typeMapper::mapTypeRef),
                 memberDeclarations = declaration.declarations.mapNotNull(::convertMemberDeclaration),
                 attributes = setOf(ChirStringAttribute("cfir.kind", "interface")),
             )

@@ -87,11 +87,12 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
-import org.cangnova.cangjie.chir.core.declaration.ChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirTypeDefinitionKind
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
@@ -354,7 +355,7 @@ class Cfir2ChirCoverageTest {
         )
 
         val struct = module.declarations.filterIsInstance<ChirStructDeclaration>().single()
-        val iface = module.declarations.filterIsInstance<ChirClassDeclaration>().single { it.name == "Drawable" }
+        val iface = module.declarations.filterIsInstance<ChirInterfaceDeclaration>().single { it.name == "Drawable" }
         val extend = module.declarations.filterIsInstance<ChirExtendDeclaration>().single()
         val typeAlias = module.declarations.filterIsInstance<ChirTypeDeclaration>().single { it.name == "Meters" }
         val primitive = module.declarations.filterIsInstance<ChirTypeDeclaration>().single { it.name == "BuiltinInt32" }
@@ -363,6 +364,8 @@ class Cfir2ChirCoverageTest {
         assertEquals("Point", struct.name)
         assertEquals(listOf("x"), struct.fieldDeclarations.map { it.name })
         assertTrue(ChirStringAttribute("cfir.kind", "interface") in iface.attributes)
+        assertTrue(iface.memberDeclarations.isEmpty())
+        assertTrue(iface.definitionKind == ChirTypeDefinitionKind.INTERFACE)
         assertEquals("sample/Point", extend.targetType.renderName)
         assertEquals(listOf("sample/Drawable"), extend.extendedTypes.map { it.renderName })
         assertEquals("Meters", typeAlias.name)

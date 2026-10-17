@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.chir.core.checker
+package org.cangnova.cangjie.chir.core.checker
 
 import org.cangnova.cangjie.chir.core.context.ChirReadOnlyContext
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
@@ -11,6 +11,7 @@ import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
@@ -497,6 +498,12 @@ class DefaultChirValidator : ChirValidator {
                 }
                 declaration.implementedTypes.forEachIndexed { index, typeRef ->
                     validateTypeRef(typeRef, declaration.semanticId, "class:${declaration.name}.implements#$index", issues)
+                }
+            }
+
+            is ChirInterfaceDeclaration -> {
+                declaration.superInterfaceTypes.forEachIndexed { index, typeRef ->
+                    validateTypeRef(typeRef, declaration.semanticId, "interface:${declaration.name}.super#$index", issues)
                 }
             }
 

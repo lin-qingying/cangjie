@@ -10,6 +10,7 @@ import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
@@ -189,6 +190,10 @@ private class LlvmTypeDeclarationCollector(
                 } else {
                     recordDefined(name, fieldTypes)
                 }
+                visitCustomTypeMembers(declaration)
+            }
+            is ChirInterfaceDeclaration -> {
+                declaration.superInterfaceTypes.forEach(::visitTypeRef)
                 visitCustomTypeMembers(declaration)
             }
             is ChirEnumDeclaration -> {

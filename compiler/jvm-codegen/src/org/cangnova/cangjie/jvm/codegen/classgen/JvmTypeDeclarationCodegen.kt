@@ -5,6 +5,7 @@ import org.cangnova.cangjie.chir.core.declaration.ChirCustomTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.model.ChirModule
@@ -50,11 +51,12 @@ class JvmTypeDeclarationCodegen(
     /**
      * 根据 CHIR 类型声明的具体种类分派到对应 classfile 生成路径。
      *
-     * 支持 class、struct、enum 与 extend；其他自定义类型会以结构化 JVM 后端异常失败。
+     * 支持 class、interface、struct、enum 与 extend；其他自定义类型会以结构化 JVM 后端异常失败。
      */
     fun generate(): JvmClassFileArtifact {
         return when (declaration) {
             is ChirClassDeclaration -> generateClassDeclaration(declaration)
+            is ChirInterfaceDeclaration -> generateInterfaceDeclaration(declaration)
             is ChirStructDeclaration -> generateStructDeclaration(declaration)
             is ChirEnumDeclaration -> generateEnumDeclaration(declaration)
             is ChirExtendDeclaration -> generateExtendDeclaration(declaration)
@@ -96,6 +98,81 @@ class JvmTypeDeclarationCodegen(
             interfaces = emptyArray(),
             fieldDeclarations = declaration.effectiveMemberDeclarations().filterIsInstance<ChirVariableDeclaration>(),
             memberFunctions = declaration.effectiveMemberDeclarations().filterIsInstance<ChirFunctionDeclaration>(),
+        )
+    }
+
+    /**
+     * 生成 interface 声明的 JVM classfile。
+     *
+     * JVM 接口要求：classfile 标记 `ACC_INTERFACE|ACC_ABSTRACT`，父类固定为 `java/lang/Object`，
+     * 父接口来自 superInterfaceTypes；成员方法全部生成为 `ACC_PUBLIC|ACC_ABSTRACT` 抽象方法，
+     * 不发射函数体。接口不允许实例字段状态，携带字段成员时报错而不是静默降级为具体类。
+     */
+    private fun generateInterfaceDeclaration(declaration: ChirInterfaceDeclaration): JvmClassFileArtifact {
+        val memberFunctions = declaration.memberDeclarations.filterIsInstance<ChirFunctionDeclaration>()
+        val fieldDeclarations = declaration.memberDeclarations.filterIsInstance<ChirVariableDeclaration>()
+        if (fieldDeclarations.isNotEmpty()) {
+            val offendingField = fieldDeclarations.first()
+            throw JvmCodegenException(
+                "JVM interface '${declaration.name}' cannot declare instance field '${offendingField.name}'",
+                offendingField.semanticId,
+            )
+        }
+        if (memberFunctions.any(::isJvmConstructor)) {
+            throw JvmCodegenException(
+                "JVM interface '${declaration.name}' cannot declare a constructor",
+                declaration.semanticId,
+            )
+        }
+        validateInterfaceMembers(memberFunctions)
+
+        val writer = ClassWriter(ClassWriter.COMPUTE_FRAMES or ClassWriter.COMPUTE_MAXS)
+        val superInterfaceInternalNames = declaration.superInterfaceTypes
+            .map { objectInternalName(it, "interface super interface") }
+            .toTypedArray()
+        writer.visit(
+            context.options.classFileVersion,
+            Opcodes.ACC_PUBLIC or Opcodes.ACC_INTERFACE or Opcodes.ACC_ABSTRACT,
+            internalName,
+            null,
+            "java/lang/Object",
+            superInterfaceInternalNames,
+        )
+        writer.visitSource("${declaration.name}.cj", null)
+        memberFunctions.forEach { function ->
+            generateInterfaceAbstractMethod(writer, function)
+        }
+        writer.visitEnd()
+        return JvmClassFileArtifact(internalName = internalName, bytes = writer.toByteArray())
+    }
+
+    /**
+     * 为接口成员方法写入 `ACC_PUBLIC|ACC_ABSTRACT` 的抽象方法头。
+     */
+    private fun generateInterfaceAbstractMethod(writer: ClassWriter, function: ChirFunctionDeclaration) {
+        val name = JvmAbiAttributes.optionalString(function.attributes, JvmAbiAttributes.NAME)
+            ?: context.namePolicy.functionJvmName(function)
+        val descriptor = JvmAbiAttributes.optionalString(function.attributes, JvmAbiAttributes.DESCRIPTOR)
+            ?: Type.getMethodDescriptor(
+                context.typeMapper.mapReturnType(function.returnType),
+                *function.parameters.map { context.typeMapper.mapValueType(it.type) }.toTypedArray(),
+            )
+        writer.visitMethod(
+            Opcodes.ACC_PUBLIC or Opcodes.ACC_ABSTRACT,
+            name,
+            descriptor,
+            null,
+            null,
+        ).visitEnd()
+    }
+
+    /**
+     * 校验接口最终生成的抽象方法签名是否冲突。
+     */
+    private fun validateInterfaceMembers(memberFunctions: List<ChirFunctionDeclaration>) {
+        checkDuplicateJvmMembers(
+            members = memberFunctions.map { function -> jvmMethodSignature(function) to function.semanticId },
+            kind = "method",
         )
     }
 

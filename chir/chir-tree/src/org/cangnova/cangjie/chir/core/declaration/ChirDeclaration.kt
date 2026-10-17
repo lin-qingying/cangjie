@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.chir.core.declaration
+package org.cangnova.cangjie.chir.core.declaration
 
 import org.cangnova.cangjie.chir.core.attribute.ChirAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
@@ -11,6 +11,7 @@ import org.cangnova.cangjie.chir.core.type.ChirTypeRef
  */
 enum class ChirTypeDefinitionKind {
     CLASS,
+    INTERFACE,
     STRUCT,
     ENUM,
     EXTEND,
@@ -118,6 +119,19 @@ interface ChirClassDeclaration : ChirCustomTypeDeclaration {
 }
 
 /**
+ * CHIR 接口声明接口。
+ *
+ * 接口是可被类实现的无状态抽象契约：成员只允许抽象方法声明，
+ * 不携带实例字段状态。这与仓颉语言中 interface 的语义一致。
+ */
+interface ChirInterfaceDeclaration : ChirCustomTypeDeclaration {
+    /**
+     * 接口继承的父接口类型列表。
+     */
+    val superInterfaceTypes: List<ChirTypeRef>
+}
+
+/**
  * CHIR 结构体声明接口。
  */
 interface ChirStructDeclaration : ChirCustomTypeDeclaration {
@@ -220,6 +234,46 @@ data class DefaultChirClassDeclaration(
      * 类声明的固定定义分类。
      */
     override val definitionKind: ChirTypeDefinitionKind = ChirTypeDefinitionKind.CLASS
+}
+
+/**
+ * 默认接口声明实现。
+ */
+data class DefaultChirInterfaceDeclaration(
+    /**
+     * 声明语义标识。
+     */
+    override val semanticId: ChirSemanticId,
+
+    /**
+     * 接口名称。
+     */
+    override val name: String,
+
+    /**
+     * 接口类型参数名称列表。
+     */
+    override val typeParameters: List<String> = emptyList(),
+
+    /**
+     * 接口继承的父接口类型列表。
+     */
+    override val superInterfaceTypes: List<ChirTypeRef> = emptyList(),
+
+    /**
+     * 接口成员声明列表。
+     */
+    override val memberDeclarations: List<ChirDeclaration> = emptyList(),
+
+    /**
+     * 接口声明属性集合。
+     */
+    override val attributes: Set<ChirAttribute> = emptySet(),
+) : ChirInterfaceDeclaration {
+    /**
+     * 接口声明的固定定义分类。
+     */
+    override val definitionKind: ChirTypeDefinitionKind = ChirTypeDefinitionKind.INTERFACE
 }
 
 /**

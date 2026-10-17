@@ -11,6 +11,7 @@ import org.cangnova.cangjie.chir.core.declaration.DefaultChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirEnumDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirInterfaceDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
@@ -3638,6 +3639,77 @@ class DefaultChirToJvmCodeGeneratorTest {
             assertEquals(output.mainClassInternalName!!.replace('/', '.'), jarFile.manifest.mainAttributes.getValue("Main-Class"))
             assertTrue(jarFile.getEntry(artifact.relativePath) != null)
         }
+    }
+
+    /**
+     * 验证 CHIR interface 声明会生成抽象 JVM 接口 classfile，而不是可实例化的具体类。
+     */
+    @Test
+    fun `generates CHIR interface declarations as JVM interfaces`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val drawableInterface = DefaultChirInterfaceDeclaration(
+            semanticId = ChirSemanticId("interface:Drawable"),
+            name = "Drawable",
+            memberDeclarations = listOf(
+                DefaultChirFunctionDeclaration(
+                    semanticId = ChirSemanticId("fn:Drawable.area"),
+                    name = "area",
+                    returnType = intType,
+                    parameters = emptyList(),
+                    blocks = listOf(
+                        ChirBlock(
+                            semanticId = ChirSemanticId("block:Drawable.area"),
+                            name = "entry",
+                            expressions = emptyList(),
+                            terminator = ChirReturnTerminator(
+                                semanticId = ChirSemanticId("term:Drawable.area:return"),
+                                returnValue = ChirConstantValue(ChirSemanticId("const:Drawable.area"), intType, "1"),
+                            ),
+                        ),
+                    ),
+                    entryBlockId = ChirSemanticId("block:Drawable.area"),
+                ),
+            ),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(drawableInterface))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+
+        assertTrue("demo/pkg/Drawable" in artifactsByName.keys)
+        output.classes.forEach(::verifyClass)
+        val loader = GeneratedClassLoader()
+        val interfaceClass = loader.define(requireNotNull(artifactsByName["demo/pkg/Drawable"]))
+
+        assertTrue(Modifier.isInterface(interfaceClass.modifiers))
+        assertTrue(Modifier.isAbstract(interfaceClass.modifiers))
+        val areaMethod = interfaceClass.getMethod("area")
+        assertTrue(Modifier.isAbstract(areaMethod.modifiers))
+        assertTrue(Modifier.isPublic(areaMethod.modifiers))
+    }
+
+    /**
+     * 验证接口声明实例字段会被拒绝，而不是静默降级为具体类字段。
+     */
+    @Test
+    fun `rejects CHIR interface instance fields instead of degrading to concrete class`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val interfaceWithField = DefaultChirInterfaceDeclaration(
+            semanticId = ChirSemanticId("interface:Stateful"),
+            name = "Stateful",
+            memberDeclarations = listOf(
+                DefaultChirVariableDeclaration(
+                    semanticId = ChirSemanticId("field:Stateful.cache"),
+                    name = "cache",
+                    type = intType,
+                    mutable = true,
+                ),
+            ),
+        )
+
+        val exception = assertThrows(JvmCodegenException::class.java) {
+            DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(interfaceWithField))
+        }
+        assertTrue(requireNotNull(exception.message).contains("JVM interface 'Stateful' cannot declare instance field 'cache'"))
     }
 
     /**
