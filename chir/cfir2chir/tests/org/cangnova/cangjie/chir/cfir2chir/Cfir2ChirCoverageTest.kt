@@ -100,6 +100,7 @@ import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
+import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -163,6 +164,89 @@ class Cfir2ChirCoverageTest {
                 this.condition = condition
                 thenBranch = blockOf(ConePrimitiveType.UNIT)
                 elseBranch = intLiteral(20)
+            },
+        )
+
+        assertThrows(Cfir2ChirConversionException::class.java) {
+            convertSingleFunction(function)
+        }
+    }
+
+    /**
+     * 验证 `&&` 短路二元操作会降级为"条件分支 + 显式布尔常量 + phi"控制流。
+     */
+    @Test
+    fun `lowers short-circuit AND into explicit control flow with phi`() {
+        val function = functionReturningExpression(
+            name = "andShortCircuit",
+            returnType = ConePrimitiveType.BOOLEAN,
+            expression = buildBinaryOp {
+                coneTypeOrNull = ConePrimitiveType.BOOLEAN
+                kind = CfirBinaryOpKind.AND
+                left = boolLiteral(false)
+                right = boolLiteral(true)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        // 不再保留为 cfir.binary_op 占位操作。
+        assertTrue(Cfir2ChirOperation.CFIR_BINARY_OP.canonicalName !in chirFunction.otherOperations())
+        // rhs 求值块与 merge 块存在，短路边携带显式 false 常量，merge 处为 phi。
+        assertTrue(chirFunction.blocks.any { it.name == "logical_rhs" })
+        val mergeBlock = chirFunction.blocks.single { it.name == "logical_cont" }
+        val phi = mergeBlock.expressions
+            .filterIsInstance<ChirOtherExpression>()
+            .single { it.operation == "phi" }
+        val shortCircuitIncoming = phi.operands.single { it is ChirConstantValue && it.literal == "false" }
+        assertTrue(
+            shortCircuitIncoming.attributes.any { it is ChirStringAttribute && it.key == "pred" },
+        )
+    }
+
+    /**
+     * 验证 `||` 短路二元操作会降级为"条件分支 + 显式布尔常量 + phi"控制流。
+     */
+    @Test
+    fun `lowers short-circuit OR into explicit control flow with phi`() {
+        val function = functionReturningExpression(
+            name = "orShortCircuit",
+            returnType = ConePrimitiveType.BOOLEAN,
+            expression = buildBinaryOp {
+                coneTypeOrNull = ConePrimitiveType.BOOLEAN
+                kind = CfirBinaryOpKind.OR
+                left = boolLiteral(true)
+                right = boolLiteral(false)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        assertTrue(Cfir2ChirOperation.CFIR_BINARY_OP.canonicalName !in chirFunction.otherOperations())
+        assertTrue(chirFunction.blocks.any { it.name == "logical_rhs" })
+        val mergeBlock = chirFunction.blocks.single { it.name == "logical_cont" }
+        val phi = mergeBlock.expressions
+            .filterIsInstance<ChirOtherExpression>()
+            .single { it.operation == "phi" }
+        val shortCircuitIncoming = phi.operands.single { it is ChirConstantValue && it.literal == "true" }
+        assertTrue(
+            shortCircuitIncoming.attributes.any { it is ChirStringAttribute && it.key == "pred" },
+        )
+    }
+
+    /**
+     * 验证非 bool 结果的短路二元操作会被拒绝而不是静默生成错误 CHIR。
+     */
+    @Test
+    fun `rejects short-circuit binary op with non-bool result type`() {
+        val function = functionReturningExpression(
+            name = "badShortCircuit",
+            returnType = ConePrimitiveType.BOOLEAN,
+            expression = buildBinaryOp {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                kind = CfirBinaryOpKind.AND
+                left = boolLiteral(true)
+                right = boolLiteral(false)
             },
         )
 
@@ -240,10 +324,10 @@ class Cfir2ChirCoverageTest {
                     typeRef = intTypeRef()
                 },
                 buildBinaryOp {
-                    coneTypeOrNull = ConePrimitiveType.BOOLEAN
-                    kind = CfirBinaryOpKind.AND
-                    left = boolLiteral(true)
-                    right = boolLiteral(false)
+                    coneTypeOrNull = ConePrimitiveType.INT64
+                    kind = CfirBinaryOpKind.COALESCING
+                    left = intLiteral(1)
+                    right = intLiteral(2)
                 },
                 buildThisReceiverExpression {
                     coneTypeOrNull = ConeStructType(ConeClassLikeLookupTagImpl(classId("Self")))

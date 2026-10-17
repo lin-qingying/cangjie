@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
@@ -1113,21 +1114,118 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower CFIR 二元操作为保留源级 kind 的 CHIR other 操作。
+     * Lower CFIR 二元操作。
+     *
+     * `&&` 与 `||` 具有短路语义：按 Cangjie 语言规范，右操作数只有在左操作数
+     * 无法确定结果时才求值。这里降级为"求值左操作数 → 条件分支 → 必要时求值右操作数 → phi 合并"
+     * 的显式控制流，结果类型固定为 bool。
+     * 短路边的结果是显式布尔常量（`&&` 短路为 false，`||` 短路为 true），不重用左操作数值。
+     * 其余 kind（??、|>、~> 等）暂无等价 CHIR 语义，保留为源级 `cfir.binary_op` 操作。
      */
-    private fun lowerBinaryOpExpression(expression: CfirBinaryOp): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_BINARY_OP,
-            source = expression,
-            operands = listOf(
-                lowerExpression(expression.left)
-                    ?: throw Cfir2ChirConversionException("binary op left operand does not produce a value", expression.left),
-                lowerExpression(expression.right)
-                    ?: throw Cfir2ChirConversionException("binary op right operand does not produce a value", expression.right),
-            ),
-            resultType = expression.requireResultType(),
-            attributes = attributes("cfir.binary.kind" to expression.kind.name),
+    private fun lowerBinaryOpExpression(expression: CfirBinaryOp): ChirValue? {
+        if (expression.kind != CfirBinaryOpKind.AND && expression.kind != CfirBinaryOpKind.OR) {
+            return emitOtherValue(
+                operation = Cfir2ChirOperation.CFIR_BINARY_OP,
+                source = expression,
+                operands = listOf(
+                    lowerExpression(expression.left)
+                        ?: throw Cfir2ChirConversionException("binary op left operand does not produce a value", expression.left),
+                    lowerExpression(expression.right)
+                        ?: throw Cfir2ChirConversionException("binary op right operand does not produce a value", expression.right),
+                ),
+                resultType = expression.requireResultType(),
+                attributes = attributes("cfir.binary.kind" to expression.kind.name),
+            )
+        }
+
+        val resultType = expression.requireResultType()
+        val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        if (resultType != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit binary op '${expression.kind.symbol}' must produce bool, actual ${resultType.renderName}",
+                expression,
+            )
+        }
+
+        val shortCircuitLiteral = when (expression.kind) {
+            CfirBinaryOpKind.AND -> "false"
+            CfirBinaryOpKind.OR -> "true"
+            else -> throw Cfir2ChirConversionException(
+                "unsupported short-circuit binary kind '${expression.kind}'",
+                expression,
+            )
+        }
+
+        val left = lowerExpression(expression.left)
+            ?: throw Cfir2ChirConversionException("short-circuit left operand does not produce a value", expression.left)
+        if (left.type != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit left operand must be bool, actual ${left.type.renderName}",
+                expression.left,
+            )
+        }
+
+        val lhsBlockId = builder.currentBlockId
+        val rhsBlockId = builder.nextId("logical_rhs")
+        val mergeBlockId = builder.nextId("logical_cont")
+        val terminator = when (expression.kind) {
+            CfirBinaryOpKind.AND -> ChirConditionalBranchTerminator(
+                semanticId = builder.nextId("logical_and"),
+                condition = left,
+                trueTargetBlockId = rhsBlockId,
+                falseTargetBlockId = mergeBlockId,
+            )
+            CfirBinaryOpKind.OR -> ChirConditionalBranchTerminator(
+                semanticId = builder.nextId("logical_or"),
+                condition = left,
+                trueTargetBlockId = mergeBlockId,
+                falseTargetBlockId = rhsBlockId,
+            )
+            else -> throw Cfir2ChirConversionException(
+                "unsupported short-circuit binary kind '${expression.kind}'",
+                expression,
+            )
+        }
+        builder.terminate(terminator)
+
+        builder.enterBlock(rhsBlockId, "logical_rhs")
+        val right = lowerExpression(expression.right)
+            ?: throw Cfir2ChirConversionException("short-circuit right operand does not produce a value", expression.right)
+        if (right.type != boolType) {
+            throw Cfir2ChirConversionException(
+                "short-circuit right operand must be bool, actual ${right.type.renderName}",
+                expression.right,
+            )
+        }
+        val rhsBlockAfterLowering = builder.currentBlockId
+        val rhsFallsThrough = builder.hasOpenCurrentBlock
+        if (rhsFallsThrough) {
+            builder.terminate(ChirBranchTerminator(builder.nextId("logical_rhs_exit"), mergeBlockId))
+        }
+
+        builder.enterBlock(mergeBlockId, "logical_cont")
+        // 短路边携带显式布尔常量：`&&` 的 false 边、`||` 的 true 边都来自 lhs 前驱块。
+        val shortCircuitValue = ChirConstantValue(
+            semanticId = builder.nextElementId("logical_short_circuit", expression),
+            type = boolType,
+            literal = shortCircuitLiteral,
+            attributes = setOf(ChirStringAttribute("pred", lhsBlockId.value)),
         )
+        val incoming = if (rhsFallsThrough) {
+            listOf(
+                shortCircuitValue,
+                right.withPredecessor(rhsBlockAfterLowering),
+            )
+        } else {
+            listOf(shortCircuitValue)
+        }
+        return emitOtherValue(
+            operation = ChirOtherOperation.PHI,
+            source = expression,
+            operands = incoming,
+            resultType = boolType,
+        )
+    }
 
     /**
      * Lower 类型转换表达式并记录目标类型。

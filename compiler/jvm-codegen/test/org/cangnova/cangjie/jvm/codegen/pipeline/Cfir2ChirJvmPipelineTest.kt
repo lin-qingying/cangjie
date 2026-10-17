@@ -17,10 +17,12 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
@@ -91,6 +93,69 @@ class Cfir2ChirJvmPipelineTest {
         val generatedClass = GeneratedClassLoader().define(output.classes.single())
 
         assertEquals(2, generatedClass.getMethod("localAssignment").invoke(null))
+    }
+
+    /**
+     * 验证 CFIR `&&`/`||` 短路二元操作会经 CHIR 控制流降级为可执行的 JVM 字节码。
+     */
+    @Test
+    fun `lowers CFIR short-circuit binary ops to executable JVM methods`() {
+        val andFunction = boolResultFunction("andResult", CfirBinaryOpKind.AND, left = false, right = true)
+        val orFunction = boolResultFunction("orResult", CfirBinaryOpKind.OR, left = true, right = false)
+        val file = fileWith(andFunction, orFunction)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+        val generatedClass = GeneratedClassLoader().define(output.classes.single())
+
+        // `false && true` 短路到 false；`true || false` 短路到 true。
+        assertEquals(false, generatedClass.getMethod("andResult").invoke(null))
+        assertEquals(true, generatedClass.getMethod("orResult").invoke(null))
+    }
+
+    /**
+     * 构造返回指定 `&&`/`||` 短路结果的测试函数。
+     */
+    private fun boolResultFunction(
+        name: String,
+        kind: CfirBinaryOpKind,
+        left: Boolean,
+        right: Boolean,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(name)))
+        return buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                coneType = ConePrimitiveType.BOOLEAN
+            }
+            this.symbol = symbol
+            this.name = Name.identifier(name)
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.BOOLEAN
+                statements += buildBinaryOp {
+                    coneTypeOrNull = ConePrimitiveType.BOOLEAN
+                    this.kind = kind
+                    this.left = boolLiteral(left)
+                    this.right = boolLiteral(right)
+                }
+            }
+        }
+    }
+
+    /**
+     * 构造 Bool 字面量表达式。
+     */
+    private fun boolLiteral(value: Boolean) = buildLiteralExpression {
+        kind = CfirLiteralKind.BOOLEAN
+        this.value = value
+        coneTypeOrNull = ConePrimitiveType.BOOLEAN
     }
 
     /**
