@@ -708,8 +708,12 @@ open class CangJieExpressionParsing(
             } else if (atSet(Precedence.POSTFIX.getOperations())) {
                 parseOperationReference()
                 expression.done(POSTFIX_EXPRESSION)
-            } else if (at(RANGE) && lookahead(1) === RBRACKET) {
+            } else if ((at(RANGE) || at(RANGEEQ)) && lookahead(1) === RBRACKET) {
+                val requiresEndExpression = at(RANGEEQ)
                 advance()
+                if (requiresEndExpression) {
+                    error(CangJieParsingBundle.message("parsing.error.expecting.expression"))
+                }
                 expression.done(SLICE_EXPRESSION)
             } else {
                 break
@@ -1203,7 +1207,7 @@ open class CangJieExpressionParsing(
                 break
             }
 
-            if (at(RANGE)) {
+            if (at(RANGE) || at(RANGEEQ)) {
                 parsePefixSliceExpression()
             } else {
 
@@ -1222,16 +1226,19 @@ open class CangJieExpressionParsing(
      * Grammar:
      * ```
      * prefixSliceExpression
-     *   : ".." expression?
+     *   : (".." | "..=") expression?
      *   ;
      * ```
      */
     context(context: ParsingContext)
     private fun parsePefixSliceExpression() {
         val mark = mark()
+        val requiresEndExpression = at(RANGEEQ)
         advance()
         if (!at(RBRACKET)) {
             parseExpression()
+        } else if (requiresEndExpression) {
+            error(CangJieParsingBundle.message("parsing.error.expecting.expression"))
         }
         mark.done(SLICE_EXPRESSION)
     }
@@ -3724,7 +3731,14 @@ open class CangJieExpressionParsing(
                 when {
                     at(ESCAPE_LBRACKET) || at(ESCAPE_RBRACKET) || at(ESCAPE_AT) -> advance()
                     at(ESCAPE_LPAR) || at(ESCAPE_RPAR) -> errorAndAdvance("Illegal macro token escape")
-                    at(AT) -> errorAndAdvance("Illegal macro token")
+                    at(AT) -> {
+                        if (lookahead(1) == IDENTIFIER) {
+                            // 合法的嵌套宏属于属性 token 流中的子语法，错误应留在子宏节点内。
+                            parseMacroExpression()
+                        } else {
+                            errorAndAdvance("Illegal macro token")
+                        }
+                    }
                     at(LBRACKET) -> {
                         lparCount++
                         advance()

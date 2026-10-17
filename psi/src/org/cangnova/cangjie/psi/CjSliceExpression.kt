@@ -25,8 +25,14 @@
 package org.cangnova.cangjie.psi
 
 import com.intellij.lang.ASTNode
+import org.cangnova.cangjie.lexer.CjTokens
 
 /**
  * 表示 `CjSliceExpression`，承载仓颉 PSI中的语法节点、索引桩或辅助模型。
  */
-class CjSliceExpression(node: ASTNode) : CjUnaryExpression(node)
+class CjSliceExpression(node: ASTNode) : CjRangeExpressionBase(node) {
+    override val rangeOperatorNode: ASTNode
+        get() = node.getChildren(null).firstOrNull {
+            it.elementType == CjTokens.RANGE || it.elementType == CjTokens.RANGEEQ
+        } ?: error("No range operator for slice expression")
+}
