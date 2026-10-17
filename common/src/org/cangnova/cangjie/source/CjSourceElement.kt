@@ -1073,6 +1073,37 @@ class CjFakePsiSourceElementWithCustomOffsetStrategy(
 }
 
 /**
+ * 保留 PSI 节点身份、但用独立文本范围表示诊断锚点的源码元素。
+ *
+ * 诊断范围投影不能退化成 offsets-only：宏来源映射、IDE 分析和增量失效都需要知道
+ * 该范围属于哪个 PSI 文件。Fake source 使用对应的 fake PSI source subtype 保留其语义。
+ */
+class CjPsiSourceElementWithRange(
+    psi: PsiElement,
+    override val startOffset: Int,
+    override val endOffset: Int,
+) : CjPsiSourceElement(psi) {
+    /** 范围型 PSI source 表示真实用户源码。 */
+    override val kind: CjSourceElementKind
+        get() = CjRealSourceElementKind
+
+    /** 按 PSI 身份和精确范围判断相等。 */
+    override fun equals(other: Any?): Boolean = this === other ||
+            other is CjPsiSourceElementWithRange &&
+            psi == other.psi &&
+            startOffset == other.startOffset &&
+            endOffset == other.endOffset
+
+    /** 返回 PSI 身份和精确范围组合后的哈希值。 */
+    override fun hashCode(): Int {
+        var result = psi.hashCode()
+        result = 31 * result + startOffset
+        result = 31 * result + endOffset
+        return result
+    }
+}
+
+/**
  * fake source 的 offset 计算策略。
  */
 sealed class CjSourceElementOffsetStrategy {
@@ -1174,6 +1205,30 @@ fun CjSourceElement.fakeElement(
     if (kind == newKind) return this
     return when (this) {
         is CjBinarySourceElement -> this
+        is CjFakePsiSourceElementWithCustomOffsetStrategy -> {
+            val (startOffset, endOffset) = if (offsetStrategy is CjSourceElementOffsetStrategy.Custom) {
+                offsetStrategy.startOffset to offsetStrategy.endOffset
+            } else {
+                startOffset to endOffset
+            }
+            CjFakePsiSourceElementWithCustomOffsetStrategy(
+                psi,
+                newKind,
+                CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
+            )
+        }
+        is CjPsiSourceElementWithRange -> {
+            val (startOffset, endOffset) = if (offsetStrategy is CjSourceElementOffsetStrategy.Custom) {
+                offsetStrategy.startOffset to offsetStrategy.endOffset
+            } else {
+                startOffset to endOffset
+            }
+            CjFakePsiSourceElementWithCustomOffsetStrategy(
+                psi,
+                newKind,
+                CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
+            )
+        }
         is CjLightSourceElement -> {
             val (startOffset, endOffset) = if (offsetStrategy is CjSourceElementOffsetStrategy.Custom) {
                 offsetStrategy.startOffset to offsetStrategy.endOffset
@@ -1195,9 +1250,58 @@ fun CjSourceElement.fakeElement(
  */
 fun CjSourceElement.realElement(): CjSourceElement = when (this) {
     is CjBinarySourceElement -> this
+    is CjFakePsiSourceElementWithCustomOffsetStrategy ->
+        CjPsiSourceElementWithRange(psi, startOffset, endOffset)
+    is CjPsiSourceElementWithRange -> CjPsiSourceElementWithRange(psi, startOffset, endOffset)
     is CjRealPsiSourceElement -> this
     is CjLightSourceElement -> CjLightSourceElement(lighterASTNode, startOffset, endOffset, treeStructure, CjRealSourceElementKind)
     is CjPsiSourceElement -> CjRealPsiSourceElement(psi)
+}
+
+/**
+ * 在保留 PSI/LightTree 文件身份的前提下，将源码锚点投影到精确文本范围。
+ */
+fun CjSourceElement.withRange(startOffset: Int, endOffset: Int): CjSourceElement {
+    require(startOffset <= endOffset) { "A source range cannot end before it starts." }
+    return when (this) {
+        is CjPsiSourceElement -> when (val sourceKind = kind) {
+            is CjFakeSourceElementKind -> CjFakePsiSourceElementWithCustomOffsetStrategy(
+                psi,
+                sourceKind,
+                CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
+            )
+            else -> CjPsiSourceElementWithRange(psi, startOffset, endOffset)
+        }
+        is CjLightSourceElement -> CjLightSourceElement(lighterASTNode, startOffset, endOffset, treeStructure, kind)
+        // Binary sources have no text buffer to which the requested range could belong.
+        // Keep their stable binary identity rather than degrading them to an offsets-only
+        // diagnostic that no longer satisfies the CjSourceElement contract.
+        is CjBinarySourceElement -> this
+    }
+}
+
+/**
+ * 判断两个 PSI/LightTree 源元素是否属于同一源文件或同一纯 LightTree。
+ *
+ * PSI 包装树每次创建时都有独立适配器，因此 PSI 路径比较底层文件身份；纯 LightTree
+ * 没有 PSI 文件身份，只能通过共享的 tree structure 建立来源关系。
+ */
+fun CjSourceElement.isInSameSourceTree(other: CjSourceElement): Boolean {
+    fun CjSourceElement.containingPsiFile(): PsiFile? = when (this) {
+        is CjPsiSourceElement -> psi.containingFile
+        is CjLightSourceElement -> (treeStructure as? CjPsiSourceElement.WrappedTreeStructure)
+            ?.unwrap(lighterASTNode)
+            ?.psi
+            ?.containingFile
+        is CjBinarySourceElement -> null
+    }
+
+    val thisFile = containingPsiFile()
+    val otherFile = other.containingPsiFile()
+    if (thisFile != null || otherFile != null) return thisFile != null && thisFile === otherFile
+    return this is CjLightSourceElement &&
+            other is CjLightSourceElement &&
+            treeStructure === other.treeStructure
 }
 
 /**

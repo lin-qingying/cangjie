@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElementWithCustomOffsetStrategy
+import org.cangnova.cangjie.source.CjPsiSourceElementWithRange
 import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 
@@ -34,6 +35,7 @@ class SourceElementPositioningStrategy(
         // 否则脱糖 operator、合成调用等诊断会把 synthetic source 的尾部一并标记。
         is CjFakePsiSourceElementWithCustomOffsetStrategy ->
             offsetsOnlyPositioningStrategy.markCjDiagnostic(element, diagnostic)
+        is CjPsiSourceElementWithRange -> offsetsOnlyPositioningStrategy.markCjDiagnostic(element, diagnostic)
         is CjPsiSourceElement -> psiStrategy.markDiagnostic(diagnostic)
         is CjLightSourceElement -> lightTreeStrategy.markCjDiagnostic(element, diagnostic)
         else -> offsetsOnlyPositioningStrategy.markCjDiagnostic(element, diagnostic)

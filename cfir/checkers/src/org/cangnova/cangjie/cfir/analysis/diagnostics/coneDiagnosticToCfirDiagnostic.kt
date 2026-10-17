@@ -163,7 +163,7 @@ private fun ConeNoMatchingFunctionCallError.mapNoMatchingFunctionCallError(
         ?.let { callEnd -> tokenEnd.coerceAtMost(callEnd) }
         ?: tokenEnd
     return CfirErrors.NO_MATCH_FUNCTION_DECLARATION_FOR_CALL.on(
-        CjOffsetsOnlySourceElement(anchor.startOffset, boundedEnd.coerceAtLeast(anchor.endOffset)),
+        anchor.withRange(anchor.startOffset, boundedEnd.coerceAtLeast(anchor.endOffset)),
         session,
     )
 }
@@ -1011,7 +1011,9 @@ private fun CjLightSourceElement.lightTreeReferencedNameDiagnosticSource(): Abst
     val nameToken = lightTreeChildren(referenceExpression)
         .firstOrNull { it.tokenType == CjTokens.IDENTIFIER }
         ?: return null
-    return CjOffsetsOnlySourceElement(
+    return nameToken.toCjLightSourceElement(
+        tree = treeStructure,
+        kind = kind,
         startOffset = treeStructure.getStartOffset(nameToken),
         endOffset = treeStructure.getEndOffset(nameToken),
     )
@@ -1030,7 +1032,7 @@ private fun AbstractCallCandidate<*>.ambiguousClassifierSignatureNoMatchDiagnost
     if (callInfo.semanticCallKind != AbstractCallKind.Function) return null
     val call = callInfo.callSite as? CfirFunctionCall ?: return null
     val calleeSource = call.calleeReference.source ?: return null
-    val source = CjOffsetsOnlySourceElement(
+    val source = calleeSource.withRange(
         startOffset = calleeSource.startOffset,
         endOffset = (calleeSource.startOffset + callInfo.name.asString().length)
             .coerceAtMost(call.source?.endOffset ?: calleeSource.endOffset),
@@ -1045,7 +1047,7 @@ private fun CfirAnonymousFunction.lambdaParameterListSource(): AbstractCjSourceE
     val parameterSources = valueParameters.mapNotNull { it.source }
     val first = parameterSources.firstOrNull() ?: return null
     val last = parameterSources.last()
-    return CjOffsetsOnlySourceElement(first.startOffset, last.endOffset)
+    return first.withRange(first.startOffset, last.endOffset)
 }
 
 /**
@@ -1891,7 +1893,7 @@ private fun CjSourceElement?.callableReferenceSelectorWithTypeArgumentsSource():
                 else -> null
             } ?: return null
             val typeArgumentList = selector.getTypeArgumentList() ?: return null
-            CjOffsetsOnlySourceElement(
+            selector.toCjPsiSourceElement().withRange(
                 startOffset = selector.textRange.startOffset,
                 endOffset = typeArgumentList.textRange.endOffset,
             )
@@ -1924,7 +1926,7 @@ private fun CjLightSourceElement.callableReferenceSelectorWithTypeArgumentsLight
         child.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST
     } ?: return null
 
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = treeStructure.getStartOffset(selector),
         endOffset = treeStructure.getEndOffset(typeArgumentList),
     )
@@ -1990,7 +1992,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseLightTreeSource(): AbstractCjSo
         node = parent
     }
     val qualifiedNode = selected ?: return null
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = treeStructure.getStartOffset(qualifiedNode),
         endOffset = treeStructure.getEndOffset(qualifiedNode),
     )
@@ -2010,7 +2012,7 @@ private fun CjSourceElement.qualifiedAmbiguousUseTextSource(): AbstractCjSourceE
     }
     val qualifiedStart = index + 1
     if (qualifiedStart >= startOffset) return null
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset = qualifiedStart,
         endOffset = endOffset,
     )
@@ -3838,8 +3840,8 @@ private fun CjSourceElement.toApproxTypeName(): Name {
 /**
  * 构造只覆盖 source 首字符的诊断 source。
  */
-private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourceElement {
-    return CjOffsetsOnlySourceElement(startOffset, (startOffset + 1).coerceAtMost(endOffset))
+private fun CjSourceElement.firstCharacterDiagnosticSource(): CjSourceElement {
+    return withRange(startOffset, (startOffset + 1).coerceAtMost(endOffset))
 }
 
 /**
@@ -3875,7 +3877,7 @@ private fun CjSourceElement.receiverTokenDiagnosticSource(): AbstractCjSourceEle
     val tokenStart = lexer.tokenStart
     val tokenEnd = lexer.tokenEnd
     if (tokenEnd <= tokenStart) return this
-    return CjOffsetsOnlySourceElement(
+    return withRange(
         startOffset + tokenStart,
         (startOffset + tokenEnd).coerceAtMost(endOffset),
     )
