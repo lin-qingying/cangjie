@@ -6,6 +6,8 @@ import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
 import org.cangnova.cangjie.cfir.copyWithNewSource
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyBodyResolveState
@@ -13,7 +15,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
+import org.cangnova.cangjie.cfir.declarations.enumConstructorPayloadParameterName
+import org.cangnova.cangjie.cfir.declarations.builder.buildEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
@@ -21,6 +27,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
 import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.builder.buildTypeAlias
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.builder.buildLazyExpression
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
@@ -30,7 +37,10 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
@@ -43,6 +53,7 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -51,8 +62,11 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
@@ -425,6 +439,114 @@ internal class StubBasedCfirMemberDeserializer(
             deprecationsProvider = EmptyDeprecationsProvider
         }.apply {
             replaceDeprecationsProvider(EmptyDeprecationsProvider)
+        }
+    }
+
+    /**
+     * 反序列化 CJO class-body 中的字段声明。
+     *
+     * 字段在 decompiler-to-stubs 阶段已从 CfirFieldVariable 投影为 CjFieldVariable；此处必须
+     * 恢复其成员符号、接收者、类型、状态与 initializer 存在性，才能进入类的统一 member scope。
+     */
+    fun loadFieldVariable(field: CjFieldVariable): CfirFieldVariable {
+        val callableName = field.nameAsSafeName
+        val callableId = CallableId(c.packageFqName, c.relativeClassName, callableName)
+        val symbol = CfirFieldVariableSymbol(callableId)
+        val returnTypeRef = field.typeReference?.toTypeRef(c)
+            ?: errorWithAttachment("Field variable doesn't have type reference") {
+                withPsiEntry("field", field)
+            }
+        val status = buildResolvedStatus(field.visibility, field.modality).apply {
+            isOverride = field.hasModifier(CjTokens.OVERRIDE_KEYWORD)
+            isConst = field.isConst
+            isStatic = field.isStatic
+            isMut = field.hasModifier(CjTokens.MUT_KEYWORD)
+            isUnsafe = field.hasModifier(CjTokens.UNSAFE_KEYWORD)
+            isForeign = field.hasModifier(CjTokens.FOREIGN_KEYWORD)
+            isRedef = field.hasModifier(CjTokens.REDEF_KEYWORD)
+        }
+
+        return buildFieldVariable {
+            source = CjRealPsiSourceElement(field)
+            moduleData = c.moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            deprecationsProvider = EmptyDeprecationsProvider
+            dispatchReceiverType = c.dispatchReceiver.takeUnless { status.isStatic }
+            this.status = status
+            initializer = field.initializer?.let { buildLazyExpression() }
+            isVar = field.isVar
+            isTypeImplicit = false
+            this.symbol = symbol
+            this.returnTypeRef = returnTypeRef
+            name = callableName
+            annotations += c.annotationDeserializer.loadAnnotations(field, symbol)
+        }.also { fieldVariable ->
+            fieldVariable.hasSerializedInitializer = field.hasInitializer()
+        }
+    }
+
+    /**
+     * 反序列化枚举构造项及其 payload 类型。
+     *
+     * CJO stub 以 CjEnumConstructor.typeReferences 保存 payload，不会伪造源码参数名；CFIR 使用
+     * 与 raw builder 相同的稳定合成名，并把返回类型绑定到所属泛型 enum。
+     */
+    fun loadEnumConstructor(
+        enumConstructor: CjEnumConstructor,
+        enumSymbol: CfirEnumSymbol,
+        typeParameters: List<CfirTypeParameter>,
+    ): CfirEnumConstructor {
+        val callableName = enumConstructor.name?.let(Name::identifier)
+            ?: errorWithAttachment("Enum constructor doesn't have a name") {
+                withPsiEntry("enumConstructor", enumConstructor)
+            }
+        val enumConstructorSymbol = CfirEnumConstructorSymbol(CallableId(enumSymbol.classId, callableName))
+        val valueParameters = enumConstructor.typeReferences.mapIndexed { index, typeReference ->
+            val name = enumConstructorPayloadParameterName(index)
+            val source = CjRealPsiSourceElement(typeReference)
+            val returnTypeRef = typeReference.toTypeRef(c)
+            buildValueParameter {
+                this.source = source
+                moduleData = c.moduleData
+                resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+                origin = initialOrigin
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = false
+                deprecationsProvider = EmptyDeprecationsProvider
+                isNamed = false
+                symbol = CfirValueParameterSymbol(CallableId(enumSymbol.classId, name))
+                containingDeclarationSymbol = enumConstructorSymbol
+                status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+                this.returnTypeRef = returnTypeRef
+                this.name = name
+                defaultValue = null
+            }
+        }
+        val source = CjRealPsiSourceElement(enumConstructor)
+        val returnTypeRef = ConeEnumType(
+            lookupTag = enumSymbol.classId.toLookupTag(),
+            typeArguments = typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag()) },
+            isRefEnum = enumSymbol.isRefEnum,
+        ).toCfirResolvedTypeRef(source)
+
+        return buildEnumConstructor {
+            this.source = source
+            moduleData = c.moduleData
+            resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
+            origin = initialOrigin
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            deprecationsProvider = EmptyDeprecationsProvider
+            dispatchReceiverType = null
+            this.symbol = enumConstructorSymbol
+            status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+            this.returnTypeRef = returnTypeRef
+            this.valueParameters += valueParameters
+            name = callableName
+            annotations += c.annotationDeserializer.loadAnnotations(enumConstructor, enumConstructorSymbol)
         }
     }
 

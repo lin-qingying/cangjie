@@ -529,8 +529,12 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitParameter(parameter: CjParameter) {
             withSuffix(" ") { parameter.modifierList?.accept(this) }
             append(parameter.name?.let(::renderIdentifier).orEmpty())
+            if (parameter.isNamed) append("!")
             append(": ")
             parameter.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append)
+            if (parameter.hasDefaultValue()) {
+                renderCompiledInitializer()
+            }
         }
 
         override fun visitTypeParameterList(list: CjTypeParameterList) {

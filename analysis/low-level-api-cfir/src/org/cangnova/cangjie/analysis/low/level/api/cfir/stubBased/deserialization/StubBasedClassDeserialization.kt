@@ -9,7 +9,8 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildClass
@@ -37,6 +38,8 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjEnum
 import org.cangnova.cangjie.psi.CjModifierListOwner
@@ -105,7 +108,8 @@ private fun <S, T> T.calculateStub(): Stub
  *
  * 仓颉边界在这里明确收紧：
  * 1. 不承载 local/nested class-like。
- * 2. 不承载 enum entry、published api、effective visibility、clone/synthetic members。
+ * 2. 不承载 published api、effective visibility、clone/synthetic members；enum entry 与字段按
+ *    class body 中的 compiled PSI stub 完整还原。
  * 3. 不额外引入 deserialization extension 或 comparator 子系统。
  */
 @Suppress("UNUSED_PARAMETER")
@@ -164,17 +168,23 @@ internal fun deserializeClassToSymbol(
 
     classOrObject.body?.declarations?.forEach { declaration ->
         when (declaration) {
+            is CjEnumConstructor -> {
+                val enumSymbol = symbol as? CfirEnumSymbol
+                    ?: errorWithAttachment("Enum constructor is nested in a non-enum class-like declaration") {
+                        withPsiEntry("classOrObject", classOrObject)
+                        withPsiEntry("enumConstructor", declaration)
+                    }
+                declarations += context.memberDeserializer.loadEnumConstructor(declaration, enumSymbol, typeParameters)
+            }
             is CjConstructor<*> -> declarations += context.memberDeserializer.loadConstructor(declaration, classOrObject, symbol, typeParameters)
+            is CjFieldVariable -> declarations += context.memberDeserializer.loadFieldVariable(declaration)
             is CjNamedFunction -> declarations += context.memberDeserializer.loadFunction(declaration, symbol, session)
             is CjProperty -> declarations += context.memberDeserializer.loadProperty(declaration, symbol)
         }
     }
 
     val sortedDeclarations = declarations.sortedWith(
-        compareBy<CfirDeclaration>(
-            { declarationOrderKey(it) },
-            { (it as? CfirMemberDeclaration)?.symbol?.debugName ?: "" },
-        )
+        compareBy<CfirDeclaration> { declarationOrderKey(it) }
     )
 
     when (symbol) {
@@ -272,9 +282,11 @@ private fun buildResolvedStatus(visibility: Visibility, modality: Modality): Cfi
  */
 private fun declarationOrderKey(declaration: CfirDeclaration): Int {
     return when (declaration) {
-        is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> 0
-        is org.cangnova.cangjie.cfir.declarations.CfirProperty -> 1
-        is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> 2
-        else -> 3
+        is CfirEnumConstructor -> 0
+        is org.cangnova.cangjie.cfir.declarations.CfirConstructor -> 1
+        is org.cangnova.cangjie.cfir.declarations.CfirProperty,
+        is CfirFieldVariable -> 2
+        is org.cangnova.cangjie.cfir.declarations.CfirNamedFunction -> 3
+        else -> 4
     }
 }

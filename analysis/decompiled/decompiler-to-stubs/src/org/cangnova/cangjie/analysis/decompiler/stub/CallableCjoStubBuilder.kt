@@ -28,6 +28,7 @@ import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.psi.CjEnumConstructorTypeEntry
@@ -268,14 +269,14 @@ internal fun createPropertyStub(
  * 为字段变量构建反编译 PSI stub。
  *
  * 顶层字段在仓颉 PSI 中投影为 variable/binding pattern；类型成员字段则投影为 field stub，
- * 两条路径都保留 const/mut、initializer 与类型引用信息。
+ * 两条路径都保留 const/mut、CJO 中存在有效 wire 引用的 initializer 与类型引用信息。
  */
 internal fun createFieldStub(
     parent: StubElement<*>,
     declaration: CfirFieldVariable,
     context: CjoStubBuilderContext,
 ) {
-    val hasInitializer = declaration.initializer != null
+    val hasInitializer = declaration.hasSerializedInitializer
     if (parent is CangJieFileStubImpl) {
         val variableStub = CangJieVariableStubImpl(
             parent = parent,
@@ -309,7 +310,11 @@ internal fun createFieldStub(
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
         origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
-    createEmptyDeclarationHeaderStubs(fieldStub, annotations = declaration.annotations)
+    createEmptyDeclarationHeaderStubs(
+        fieldStub,
+        createDeclarationModifierMask(declaration.status),
+        declaration.annotations,
+    )
     context.typeStubBuilder.createDeclaredTypeReferenceStub(fieldStub, declaration.returnTypeRef)
     if (hasInitializer) createCompiledInitializerReferenceStub(fieldStub)
 }
@@ -342,7 +347,7 @@ internal fun createPatternVariableStub(
 }
 
 /** 为 binary initializer placeholder 构建与反编译文本相同的引用表达式子树。 */
-private fun createCompiledInitializerReferenceStub(parent: StubElement<*>) {
+internal fun createCompiledInitializerReferenceStub(parent: StubElement<*>) {
     CangJieNameReferenceExpressionStubImpl(
         parent = parent,
         referencedName = StringRef.fromString(COMPILED_DEFAULT_INITIALIZER),

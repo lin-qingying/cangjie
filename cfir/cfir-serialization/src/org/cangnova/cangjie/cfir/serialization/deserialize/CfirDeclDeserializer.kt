@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.containingClassForStaticMemberAttr
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.utils.evaluatedInitializer
+import org.cangnova.cangjie.cfir.declarations.utils.hasSerializedInitializer
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyAccessor
@@ -1711,11 +1712,25 @@ class CfirDeclDeserializer private constructor(
         // the expression when it is representable by the current CFIR
         // expression reader; do not synthesize a value from the declaration
         // name or from raw source text.
-        val initializer = varInfo?.initializer
+        val initializerReference = varInfo?.initializer?.let { rawIndex ->
+            if (rawIndex == 0u || rawIndex == UInt.MAX_VALUE) {
+                null
+            } else {
+                val expressionIndex = checkNotNull(decodeExprRef(rawIndex)) {
+                    "CJO initializer reference $rawIndex for '${decl.identifier}' is outside the expression table"
+                }
+                checkNotNull(context.pkg.allExprs(expressionIndex)) {
+                    "CJO initializer reference $rawIndex for '${decl.identifier}' points to an absent expression"
+                }
+                rawIndex
+            }
+        }
+        val initializerInfo = varInfo?.takeIf { initializerReference != null }
+        val initializer = initializerInfo
             ?.takeIf { loadFieldVariableInitializers }
-            ?.takeIf { it != 0u && it != UInt.MAX_VALUE }
-            ?.let { raw ->
-                if (varInfo.isConst && varInfo.valueType != ConstValue.NONE) {
+            ?.let { info ->
+                val raw = info.initializer
+                if (info.isConst && info.valueType != ConstValue.NONE) {
                     deserializeRequiredExpression(raw, "const variable initializer")
                 } else {
                     // Non-const library initializers are not part of the public
@@ -1745,6 +1760,7 @@ class CfirDeclDeserializer private constructor(
             isVar = isVar,
             isTypeImplicit = false,
         )
+        cfirVar.hasSerializedInitializer = initializerInfo != null
         symbol.bind(cfirVar)
         restoreSerializedConstantValue(cfirVar, varInfo)
         cfirVar.markResolved()

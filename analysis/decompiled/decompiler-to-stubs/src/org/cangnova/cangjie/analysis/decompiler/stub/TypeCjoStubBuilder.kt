@@ -67,9 +67,14 @@ internal class TypeCjoStubBuilder {
             val parameterStub = createParameterStub(
                 parent = parameterListStub,
                 name = valueParameter.name.asString(),
+                hasDefaultValue = valueParameter.defaultValue != null,
+                isNamed = valueParameter.isNamed,
                 includeModifiers = includeParameterModifierList,
             )
             createDeclaredTypeReferenceStub(parameterStub, valueParameter.returnTypeRef)
+            if (valueParameter.defaultValue != null) {
+                createCompiledInitializerReferenceStub(parameterStub)
+            }
         }
     }
 
@@ -383,6 +388,8 @@ internal class TypeCjoStubBuilder {
     private fun createParameterStub(
         parent: StubElement<*>,
         name: String?,
+        hasDefaultValue: Boolean = false,
+        isNamed: Boolean = false,
         includeModifiers: Boolean = false,
     ): CangJieParameterStubImpl {
         val parameterStub = CangJieParameterStubImpl(
@@ -391,8 +398,8 @@ internal class TypeCjoStubBuilder {
             name = StringRef.fromString(name),
             isMutable = false,
             hasLetOrVar = false,
-            hasDefaultValue = false,
-            isNamed = false,
+            hasDefaultValue = hasDefaultValue,
+            isNamed = isNamed,
             functionTypeParameterName = null,
         )
         if (includeModifiers) {
