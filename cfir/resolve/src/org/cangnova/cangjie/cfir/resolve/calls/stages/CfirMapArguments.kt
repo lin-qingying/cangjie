@@ -46,8 +46,8 @@ import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.withRange
 
 /**
  * 参数映射阶段负责把“调用站点实参”绑定到“可调用声明形参”。
@@ -727,7 +727,8 @@ object CfirMapArguments : ResolutionStage() {
             actualArgumentCount = arguments.size,
             namedArgumentCount = arguments.count { it.name != null },
             trailingLambdaCount = arguments.count { it.isTrailingLambda },
-            arityDiagnosticSource = CjOffsetsOnlySourceElement(startOffset, endOffset),
+            // 范围投影必须保留调用文件的 PSI/LightTree 身份，才能继续参与宏来源映射。
+            arityDiagnosticSource = firstAvailableSource.withRange(startOffset, endOffset),
         )
     }
 }
@@ -850,12 +851,9 @@ private data class CallArgumentInfo(
         get() = (valueExpression as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
 
     /** 尾随 closure 左花括号 token 的 source。 */
-    fun trailingLambdaOpeningBraceSource(): AbstractCjSourceElement {
+    fun trailingLambdaOpeningBraceSource(): CjSourceElement {
         val source = valueExpression.source ?: error("Trailing lambda must have a source")
-        return CjOffsetsOnlySourceElement(
-            source.startOffset,
-            (source.startOffset + 1).coerceAtMost(source.endOffset),
-        )
+        return source.withRange(source.startOffset, (source.startOffset + 1).coerceAtMost(source.endOffset))
     }
 }
 
