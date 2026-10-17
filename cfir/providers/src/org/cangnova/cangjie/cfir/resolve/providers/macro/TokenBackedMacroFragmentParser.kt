@@ -67,6 +67,14 @@ class TokenBackedMacroFragmentParser(
             MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
         }
         if (source.isEmpty()) {
+            if (mode == MacroFragmentParser.Mode.DECLARATION) {
+                return MacroFragmentResult.Success(
+                    originNode = node,
+                    tokens = reEvaluatedTokens,
+                    mode = mode,
+                    payload = MacroDeclarationFragment(emptyList()),
+                )
+            }
             return MacroFragmentResult.Failure(
                 originNode = node,
                 reason = "Macro fragment text is empty after token re-evaluation",
@@ -139,7 +147,8 @@ class TokenBackedMacroFragmentParser(
  */
 object IdentityMacroStableSplicer : MacroStableSplicer {
     /** 占位 splice：返回原文件列表，不宣称完成节点级替换。 */
-    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> = files
+    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult =
+        MacroStableSpliceResult(files, emptyList())
 }
 
 /**

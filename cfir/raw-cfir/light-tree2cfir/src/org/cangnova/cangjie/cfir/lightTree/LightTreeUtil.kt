@@ -2,9 +2,12 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
+import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.CjMacroTokenPayload
 
 /**
  * LightTree 遍历工具（对齐 Kotlin K2 的 LightTreeUtil 模式）。
@@ -39,6 +42,30 @@ inline fun FlyweightCapableTreeStructure<LighterASTNode>.forEachChildren(
         if (child == null) break
         action(child)
     }
+}
+
+/** 返回直接 ERROR_ELEMENT 的源码边界，并保留错误节点后的连续空白与注释。 */
+fun FlyweightCapableTreeStructure<LighterASTNode>.firstDirectParserErrorOffset(
+    node: LighterASTNode?,
+    source: CharSequence,
+): Int? {
+    if (node == null) return null
+    val children = getChildrenArray(node).filterNotNull()
+    return children.indices.asSequence()
+        .filter { index -> children[index].tokenType == TokenType.ERROR_ELEMENT }
+        .map { index ->
+            val error = children[index]
+            val startOffset = getStartOffset(error)
+            val errorText = StringBuilder(source.subSequence(startOffset, getEndOffset(error)))
+            var nextIndex = index + 1
+            while (nextIndex < children.size && CjTokens.WHITE_SPACE_OR_COMMENT_BIT_SET.contains(children[nextIndex].tokenType)) {
+                val trivia = children[nextIndex]
+                errorText.append(source.subSequence(getStartOffset(trivia), getEndOffset(trivia)))
+                nextIndex++
+            }
+            CjMacroTokenPayload.firstNonTriviaOffset(errorText, startOffset)
+        }
+        .minOrNull()
 }
 
 /**

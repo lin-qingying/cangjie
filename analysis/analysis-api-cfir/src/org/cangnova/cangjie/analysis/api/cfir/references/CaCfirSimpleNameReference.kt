@@ -14,6 +14,8 @@ import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjLabelReferenceExpression
+import org.cangnova.cangjie.psi.CjMacroExpression
+import org.cangnova.cangjie.psi.CjNameReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUserType
@@ -129,17 +131,26 @@ internal class CaCfirSimpleNameReference(
          */
         override val referenceProvider: CangJiePsiReferenceProviderContributor.ReferenceProvider<CjSimpleNameExpression>
             get() = CangJiePsiReferenceProviderContributor.ReferenceProvider { nameReferenceExpression: CjSimpleNameExpression ->
-                when (nameReferenceExpression.readWriteAccess(useResolveForReadWrite = true)) {
-                    ReferenceAccess.READ -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = true))
-                    ReferenceAccess.WRITE -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = false))
-                    ReferenceAccess.READ_WRITE -> listOf(
-                        CaCfirSimpleNameReference(nameReferenceExpression, isRead = true),
-                        CaCfirSimpleNameReference(nameReferenceExpression, isRead = false),
-                    )
+                if (nameReferenceExpression.isMacroCallee()) {
+                    emptyList()
+                } else {
+                    when (nameReferenceExpression.readWriteAccess(useResolveForReadWrite = true)) {
+                        ReferenceAccess.READ -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = true))
+                        ReferenceAccess.WRITE -> listOf(CaCfirSimpleNameReference(nameReferenceExpression, isRead = false))
+                        ReferenceAccess.READ_WRITE -> listOf(
+                            CaCfirSimpleNameReference(nameReferenceExpression, isRead = true),
+                            CaCfirSimpleNameReference(nameReferenceExpression, isRead = false),
+                        )
+                    }
                 }
             }
     }
 }
+
+/** 宏 callee 使用宏命名空间，不应同时被解析为普通 CFIR 简单名。 */
+private fun CjSimpleNameExpression.isMacroCallee(): Boolean =
+    this is CjNameReferenceExpression &&
+        (parent as? CjMacroExpression)?.referenceExpression === this
 
 /**
  * 简单名引用的读写访问分类。

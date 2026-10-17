@@ -165,6 +165,7 @@ class MacroSurfaceLookupTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = false,
         attrTokens = attrTokens,
+        hasAttr = attrTokens.isNotEmpty(),
         inputTokens = inputTokens,
         sourceRange = if (start == null || end == null) {
             null

@@ -521,6 +521,7 @@ class MacroConstructionArchitectureTest {
                 kind = MacroSurface.Kind.PLAIN,
                 hasParenthesis = false,
                 attrTokens = emptyList(),
+                hasAttr = false,
                 inputTokens = emptyList(),
                 sourceRange = null,
                 scopeContext = MacroSurfaceScopeContext(
@@ -553,6 +554,7 @@ class MacroConstructionArchitectureTest {
                 kind = MacroSurface.Kind.PLAIN,
                 hasParenthesis = true,
                 attrTokens = emptyList(),
+                hasAttr = false,
                 inputTokens = emptyList(),
                 sourceRange = MacroSurfaceSourceRange(
                     source = null,

@@ -129,6 +129,7 @@ class FrontendMacroConstructionServiceTest {
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
+            hasAttr = false,
             inputTokens = emptyList(),
             sourceRange = null,
             scopeContext = MacroSurfaceScopeContext(

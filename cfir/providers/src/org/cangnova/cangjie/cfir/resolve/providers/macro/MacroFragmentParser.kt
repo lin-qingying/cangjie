@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+
 /**
  * Macro fragment parser 入口（baseline 第 12 节 Batch 8）。
  *
@@ -36,11 +38,21 @@ interface MacroFragmentParser {
          *
          * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
          */
-        // v3: declaration reparse now uses the official custom-annotation mode,
-        // and custom annotation fragments retain the `@!` provenance verbatim.
-        const val VERSION: Int = 3
+        // v4: declaration fragments carry the complete zero-to-many declaration sequence.
+        const val VERSION: Int = 4
     }
 }
+
+/**
+ * 声明宏重解析阶段的完整输出序列。
+ *
+ * 该对象只存在于 construction/splice 边界：声明宏可以合法地产生零个、一个或多个
+ * 声明，不能把 fragment 收窄成单个声明或额外塞入一个语义 CFIR 包装节点。
+ */
+data class MacroDeclarationFragment(
+    /** 按宏输出源码顺序排列的全部重解析声明。 */
+    val declarations: List<CfirDeclaration>,
+)
 
 /**
  * fragment parser 的完整输入。
@@ -173,6 +185,46 @@ data class MacroReplaceSlot(
 )
 
 /**
+ * 记录 stable splice 实际应用的一条声明替换关系。
+ *
+ * Cangjie 声明宏可以把一个 carrier 替换成零个、一个或多个声明；每个 replacement
+ * 都保留与原始 carrier 的对象身份关系，供 Analysis/IDE 构建源码结构和语义快照使用。
+ */
+data class MacroAppliedDeclarationReplacement(
+    /** 被宏替换的原始声明 carrier。 */
+    val carrier: org.cangnova.cangjie.cfir.declarations.CfirDeclaration,
+    /** 本次 splice 在 carrier 槽位中写入的全部声明；空列表表示该宏删除了 carrier。 */
+    val replacements: List<org.cangnova.cangjie.cfir.declarations.CfirDeclaration>,
+    /** 产生此次替换的原始宏 surface。 */
+    val surfaceId: Long,
+)
+
+/**
+ * 记录表达式宏 stable splice 实际写入的精确表达式身份关系。
+ *
+ * carrier 是 raw CFIR 中的 construction-only 表达式，replacement 是同一最终文件树中的语义表达式。
+ * Analysis/IDE 通过这条关系把物理宏调用 PSI 映射到展开后的表达式，而不根据文本或偏移猜测节点。
+ */
+data class MacroAppliedExpressionReplacement(
+    /** 被宏替换的 raw 表达式 carrier。 */
+    val carrier: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+    /** 本次 splice 在 carrier 槽位中写入的最终表达式。 */
+    val replacement: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+    /** 产生此次替换的原始宏 surface。 */
+    val surfaceId: Long,
+)
+
+/** stable splice 的最终 CFIR 与精确声明来源关系。 */
+data class MacroStableSpliceResult(
+    /** 执行完所有 stable replacements 的文件。 */
+    val files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
+    /** 仅包含实际应用的声明替换，不包含 embedded surface 或 annotation-only 替换。 */
+    val declarationReplacements: List<MacroAppliedDeclarationReplacement>,
+    /** 仅包含实际应用的表达式替换，不包含由父 surface 重新解析吸收的 embedded surface。 */
+    val expressionReplacements: List<MacroAppliedExpressionReplacement> = emptyList(),
+)
+
+/**
  * Construction-only splice 入口：把一组 [MacroReplaceSlot] 应用到 final CFIR。
  *
  * Batch 8 阶段仅承载接口；具体实现替换由 Batch 10 的 stable-splice
@@ -180,9 +232,14 @@ data class MacroReplaceSlot(
  */
 interface MacroStableSplicer {
     /**
-     * 应用 [slots] 到 [files]，返回替换后的 file 列表。
+     * 应用 [slots] 到 [files]，并同时返回替换后的文件与实际声明替换来源。
+     *
+     * 来源关系必须在按 replace-handle carrier 身份完成替换时产生；调用方不得从名称、文本或偏移反推。
      */
-    fun applySlices(files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>, slots: List<MacroReplaceSlot>): List<org.cangnova.cangjie.cfir.declarations.CfirFile>
+    fun applySlices(
+        files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
+        slots: List<MacroReplaceSlot>,
+    ): MacroStableSpliceResult
 }
 
 /**

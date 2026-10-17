@@ -275,14 +275,11 @@ class PsiRawCfirBuilder(
         }
     }
 
-    /**
-     * 声明片段沿文件声明收集入口转换，保留宏包装、前置注解及声明本身的唯一归属。
-     * 当前 replacement slot 接受一个声明；数量不符交由片段解析器报告失败。
-     */
-    fun buildDeclarationFragmentInPackage(file: CjFile, packageFqName: FqName): CfirDeclaration? =
+    /** 声明片段沿文件声明收集入口转换，保留完整的零到多个宏输出及其顺序。 */
+    fun buildDeclarationFragmentInPackage(file: CjFile, packageFqName: FqName): List<CfirDeclaration> =
         withSourceModuleContext(file) {
             withPackageContext(packageFqName) {
-                converter.convertFileDeclarations(file).singleOrNull()
+                converter.convertFileDeclarations(file)
             }
         }
 
@@ -613,6 +610,12 @@ class PsiRawCfirBuilder(
                 MacroExpressionTextRange(headSyntax.annotationStartOffset, text.length),
             )
             val input = psi.input
+            val hasCompleteParenthesizedInput = input?.let {
+                it.hasParenthesizedInput && it.parenthesizedPayload != null
+            } == true
+            val inputPayload = input?.let {
+                if (it.hasParenthesisDelimiters) it.parenthesizedPayload else it.declarationPayload
+            }
             val containingSymbol = when (carrier) {
                 is CfirValueParameter -> carrier.containingDeclarationSymbol
                 else -> carrier.symbol
@@ -669,14 +672,15 @@ class PsiRawCfirBuilder(
                 qualifiedName = qualifiedName,
                 isQualifiedName = headSyntax.rawName.contains('.'),
                 kind = if (macroAnnotation?.isCompileTimeVisible == true) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-                hasParenthesis = input?.text?.trimStart()?.startsWith("(") == true,
+                hasParenthesis = hasCompleteParenthesizedInput,
                 attrTokens = MacroPayloadTokenizer.tokenize(
-                    macroAttributeText,
-                    macroAttributeSource?.startOffset ?: 0,
+                    psi.attr?.payload?.text,
+                    psi.attr?.payload?.startOffset ?: 0,
                 ).toMacroSurfaceTokens(),
+                hasAttr = psi.attr != null,
                 inputTokens = MacroPayloadTokenizer.tokenize(
-                    input?.text,
-                    input?.textRange?.startOffset ?: 0,
+                    inputPayload?.text,
+                    inputPayload?.startOffset ?: 0,
                 ).toMacroSurfaceTokens(),
                 sourceRange = MacroSurfaceSourceRange(
                     source = source,
@@ -1954,6 +1958,7 @@ class PsiRawCfirBuilder(
             }
             val qualifiedName = annotationQualifiedName(annotation)
             val valueArgumentList = annotation.valueArgumentList
+            val macroAttr = PsiTreeUtil.findChildOfType(annotation, CjMacroAttr::class.java)
             val annotationSource = annotation.toCjPsiSourceElement()
             val ownerEndOffset = owner.textRange.endOffset
             val fileText = annotation.containingFile.text
@@ -1963,9 +1968,17 @@ class PsiRawCfirBuilder(
                 fileText.substring(annotationSource.endOffset, ownerEndOffset),
                 annotationSource.endOffset,
             ).toMacroSurfaceTokens()
+            val attributePayload = macroAttr?.payload ?: valueArgumentList?.let {
+                CjMacroTokenPayload.fromDelimitedElement(
+                    element = it,
+                    leftDelimiterType = CjTokens.LBRACKET,
+                    rightDelimiterType = CjTokens.RBRACKET,
+                    tokenContainer = it,
+                )
+            }
             val attrTokens = MacroPayloadTokenizer.tokenize(
-                valueArgumentList?.text,
-                valueArgumentList?.textRange?.startOffset ?: 0,
+                attributePayload?.text,
+                attributePayload?.startOffset ?: 0,
             ).toMacroSurfaceTokens()
             val source = CjLightSourceElement(
                 lighterASTNode = annotationSource.lighterASTNode,
@@ -1994,6 +2007,7 @@ class PsiRawCfirBuilder(
                     kind = kind,
                     hasParenthesis = false,
                     attrTokens = attrTokens,
+                    hasAttr = macroAttr != null || valueArgumentList != null,
                     inputTokens = inputTokens,
                     sourceRange = sourceRange,
                     scopeContext = scopeContext,
@@ -2010,6 +2024,7 @@ class PsiRawCfirBuilder(
                     kind = kind,
                     hasParenthesis = false,
                     attrTokens = attrTokens,
+                    hasAttr = macroAttr != null || valueArgumentList != null,
                     inputTokens = inputTokens,
                     sourceRange = sourceRange,
                     scopeContext = scopeContext,
@@ -2138,6 +2153,7 @@ class PsiRawCfirBuilder(
             is CjConstantExpression -> convertLiteral(psi)
             is CjStringTemplateExpression -> convertStringTemplate(psi)
             is CjBinaryExpressionWithTypeRHS -> convertTypeOperator(psi)
+            is CjRangeExpression -> convertRange(psi)
             is CjBinaryExpression -> convertBinary(psi)
             is CjSliceExpression -> convertSlice(psi)
             is CjPrefixExpression -> convertPrefix(psi)
@@ -2329,8 +2345,6 @@ class PsiRawCfirBuilder(
 
         /** 转换二元表达式、赋值表达式和可重载二元运算。 */
         private fun convertBinary(psi: CjBinaryExpression): CfirExpression {
-            if (psi is CjRangeExpression) return convertRange(psi)
-
             val left = psi.left?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing left operand")
             val right = psi.right?.let { convertExpression(it) }
@@ -2520,9 +2534,9 @@ class PsiRawCfirBuilder(
 
 
         private fun convertRange(psi: CjRangeExpression): CfirRangeExpression {
-            val start = psi.left?.let { convertExpression(it) }
+            val start = psi.startExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range start")
-            val end = psi.right?.let { convertExpression(it) }
+            val end = psi.stopExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range end")
             val step = psi.step?.let { convertExpression(it) }
             return buildRangeExpression {
@@ -2544,24 +2558,16 @@ class PsiRawCfirBuilder(
          * 包裹，所以不能读 `CjUnaryExpression.operationToken`）。
          */
         private fun convertSlice(psi: CjSliceExpression): CfirExpression {
-            val nodes = psi.node.getChildren(null).toList()
-            val opIndex = nodes.indexOfFirst {
-                it.elementType == CjTokens.RANGE || it.elementType == CjTokens.RANGEEQ
-            }
-            val start = nodes.take(if (opIndex >= 0) opIndex else nodes.size)
-                .firstNotNullOfOrNull { it.psi as? CjExpression }
-                ?.let { convertExpression(it) }
+            val start = psi.startExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range start")
-            val end = (if (opIndex >= 0) nodes.drop(opIndex + 1) else emptyList())
-                .firstNotNullOfOrNull { it.psi as? CjExpression }
-                ?.let { convertExpression(it) }
+            val end = psi.stopExpression?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range end")
             return buildRangeExpression {
                 source = psi.toCjPsiSourceElement()
                 this.start = start
                 this.end = end
                 step = null
-                isInclusive = opIndex >= 0 && nodes[opIndex].elementType == CjTokens.RANGEEQ
+                isInclusive = psi.isInclusive
             }
         }
 
@@ -3583,6 +3589,16 @@ class PsiRawCfirBuilder(
             }.isNotEmpty()
             val currentPackage = this@PsiRawCfirBuilder.context.packageFqName
             val source = psi.toCjPsiSourceElement()
+            val macroInput = psi.input
+            val hasCompleteParenthesizedInput = macroInput?.let {
+                it.hasParenthesizedInput && it.parenthesizedPayload != null
+            } == true
+            val inputPayload = when {
+                macroInput == null -> null
+                macroInput.hasParenthesisDelimiters -> macroInput.parenthesizedPayload
+                else -> macroInput.declarationPayload
+            }
+            val attributePayload = psi.attr?.payload
             val carrier = buildErrorExpressionNode {
                 this.source = source
                 diagnostic = ConeSimpleDiagnostic(
@@ -3595,14 +3611,15 @@ class PsiRawCfirBuilder(
                 qualifiedName = qualifiedName,
                 isQualifiedName = psi.macroReferenceText()?.contains('.') == true,
                 kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-                hasParenthesis = psi.input != null || text.hasMacroInputParentheses(),
+                hasParenthesis = hasCompleteParenthesizedInput,
                 attrTokens = MacroPayloadTokenizer.tokenize(
-                    psi.attr?.text,
-                    psi.attr?.textRange?.startOffset ?: 0,
+                    attributePayload?.text,
+                    attributePayload?.startOffset ?: 0,
                 ).toMacroSurfaceTokens(),
+                hasAttr = psi.attr != null,
                 inputTokens = MacroPayloadTokenizer.tokenize(
-                    psi.input?.text,
-                    psi.input?.textRange?.startOffset ?: 0,
+                    inputPayload?.text,
+                    inputPayload?.startOffset ?: 0,
                 ).toMacroSurfaceTokens(),
                 sourceRange = MacroSurfaceSourceRange(
                     source = source,
@@ -3627,12 +3644,6 @@ class PsiRawCfirBuilder(
                 replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
             )
             return carrier
-        }
-
-        /** 在 raw 文本中判断 macro input 是否显式包含括号。 */
-        private fun String.hasMacroInputParentheses(): Boolean {
-            val open = indexOf('(')
-            return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
         }
 
         /**

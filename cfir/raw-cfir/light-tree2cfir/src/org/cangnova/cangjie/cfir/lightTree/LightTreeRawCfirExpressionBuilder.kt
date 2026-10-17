@@ -86,6 +86,11 @@ class LightTreeRawCfirExpressionBuilder(
     private val declarationBuilder: LightTreeRawCfirDeclarationBuilder,
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
+    private data class MacroSurfacePayloadSource(
+        val text: String,
+        val startOffset: Int,
+    )
+
     // ===== 公共 API =====
 
     /** 从 LightTree 表达式节点构建 raw CFIR 表达式。 */
@@ -2378,6 +2383,33 @@ class LightTreeRawCfirExpressionBuilder(
         val nameNode = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT)
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
+        val inputLeftDelimiter = inputNode?.let { tree.findChildByType(it, CjTokens.LPAR) }
+        val inputRightDelimiter = inputNode?.let { tree.findChildByType(it, CjTokens.RPAR) }
+        val hasAnyParenthesisDelimiter = inputLeftDelimiter != null || inputRightDelimiter != null
+        val inputQuoteTokens = inputNode?.let { tree.findChildByType(it, CjNodeTypes.QUOTE_TOKENS) }
+        val inputParserErrorOffset = tree.firstDirectParserErrorOffset(inputQuoteTokens, source)
+        val hasCompleteParenthesizedInput =
+            inputLeftDelimiter != null && inputRightDelimiter != null && inputParserErrorOffset == null
+        val inputPayload = inputNode?.let { input ->
+            when {
+                inputLeftDelimiter != null && inputRightDelimiter != null ->
+                    input.macroDelimitedPayload(
+                        CjTokens.LPAR,
+                        CjTokens.RPAR,
+                        inputQuoteTokens,
+                        inputParserErrorOffset,
+                    )
+                hasAnyParenthesisDelimiter -> null
+                else -> input.macroSourcePayload()
+            }
+        }
+        val attrQuoteTokens = attrNode?.let { tree.findChildByType(it, CjNodeTypes.QUOTE_TOKENS) }
+        val attrPayload = attrNode?.macroDelimitedPayload(
+            CjTokens.LBRACKET,
+            CjTokens.RBRACKET,
+            attrQuoteTokens,
+            tree.firstDirectParserErrorOffset(attrQuoteTokens, source),
+        )
 
         val text = node.asText()
         val isForced = tree.findChildByType(node, CjTokens.ATEXCL) != null
@@ -2402,14 +2434,15 @@ class LightTreeRawCfirExpressionBuilder(
             qualifiedName = qualifiedName,
             isQualifiedName = nameStr?.contains('.') == true,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-            hasParenthesis = inputNode != null || text.hasMacroInputParentheses(),
+            hasParenthesis = hasCompleteParenthesizedInput,
             attrTokens = MacroPayloadTokenizer.tokenize(
-                attrNode?.asText(),
-                attrNode?.startOffset ?: 0,
+                attrPayload?.text,
+                attrPayload?.startOffset ?: 0,
             ).toMacroSurfaceTokens(),
+            hasAttr = attrNode != null,
             inputTokens = MacroPayloadTokenizer.tokenize(
-                inputNode?.asText(),
-                inputNode?.startOffset ?: 0,
+                inputPayload?.text,
+                inputPayload?.startOffset ?: 0,
             ).toMacroSurfaceTokens(),
             sourceRange = MacroSurfaceSourceRange(
                 source = node.toSource(),
@@ -2437,10 +2470,34 @@ class LightTreeRawCfirExpressionBuilder(
         return carrier
     }
 
-    /** 在 raw 文本中判断 macro input 是否显式包含括号。 */
-    private fun String.hasMacroInputParentheses(): Boolean {
-        val open = indexOf('(')
-        return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
+    /** 以宿主源码坐标提取两个直接 delimiter 之间的 macro payload。 */
+    private fun LighterASTNode.macroDelimitedPayload(
+        leftDelimiter: com.intellij.psi.tree.IElementType,
+        rightDelimiter: com.intellij.psi.tree.IElementType,
+        tokenContainer: LighterASTNode? = null,
+        parserErrorOffset: Int? = null,
+    ): MacroSurfacePayloadSource? {
+        val left = tree.findChildByType(this, leftDelimiter) ?: return null
+        val right = tree.findChildByType(this, rightDelimiter) ?: return null
+        val startOffset = tree.getEndOffset(left)
+        val delimiterEndOffset = tree.getStartOffset(right)
+        val errorOffset = parserErrorOffset ?: tree.firstDirectParserErrorOffset(tokenContainer, source)
+        val endOffset = minOf(delimiterEndOffset, errorOffset ?: Int.MAX_VALUE)
+        if (endOffset < startOffset) return null
+        return MacroSurfacePayloadSource(
+            text = source.subSequence(startOffset, endOffset).toString(),
+            startOffset = startOffset,
+        )
+    }
+
+    /** 无括号宏输入由声明节点的原始源码切片构成。 */
+    private fun LighterASTNode.macroSourcePayload(): MacroSurfacePayloadSource {
+        val startOffset = tree.getStartOffset(this)
+        val endOffset = tree.getEndOffset(this)
+        return MacroSurfacePayloadSource(
+            text = source.subSequence(startOffset, endOffset).toString(),
+            startOffset = startOffset,
+        )
     }
 
     // ===== 辅助方法 =====

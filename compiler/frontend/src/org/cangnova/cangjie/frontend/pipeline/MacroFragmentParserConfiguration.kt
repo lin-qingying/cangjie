@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDeclarationFragment
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser
@@ -129,7 +130,7 @@ private fun reparsePsiMacroFragment(
             // 官方 ReplaceEachMacro 在声明 token reparse 时开启 custom-annotation
             // 模式；否则 `@!Hide` 会被重新识别为另一个 declaration macro。
             val fragment = psiFactory.createAnnotationOnlyFile(text)
-            builder.buildDeclarationFragmentInPackage(fragment, packageFqName)
+            MacroDeclarationFragment(builder.buildDeclarationFragmentInPackage(fragment, packageFqName))
         }
     }
 }
@@ -190,7 +191,7 @@ private fun reparseLightTreeMacroFragment(
         }
         else -> {
             val parsed = parseLightTreeMacroExpansionFragment(session, text)
-            parsed.builder.buildDeclarationFragmentInPackage(parsed.tree.root, packageFqName)
+            MacroDeclarationFragment(parsed.builder.buildDeclarationFragmentInPackage(parsed.tree.root, packageFqName))
         }
     }
 }

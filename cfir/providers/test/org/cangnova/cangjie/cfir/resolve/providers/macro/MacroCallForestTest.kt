@@ -224,6 +224,7 @@ class MacroCallForestTest {
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
+            hasAttr = false,
             inputTokens = inputTokens,
             sourceRange = if (start != null && end != null) MacroSurfaceSourceRange(
                 source = null,
@@ -266,6 +267,7 @@ class MacroCallForestTest {
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = false,
             attrTokens = emptyList(),
+            hasAttr = false,
             inputTokens = emptyList(),
             sourceRange = MacroSurfaceSourceRange(
                 source = null,

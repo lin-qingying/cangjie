@@ -283,10 +283,10 @@ class LightTreeRawCfirDeclarationBuilder(
      * 宏返回的声明片段从根节点收集，不能通过递归寻找终端声明丢弃外层注解包装。
      * 片段的新 token 没有 parser 模块，符号名称仍使用宿主包。
      */
-    fun buildDeclarationFragmentInPackage(file: LighterASTNode, packageFqName: FqName): CfirDeclaration? =
+    fun buildDeclarationFragmentInPackage(file: LighterASTNode, packageFqName: FqName): List<CfirDeclaration> =
         context.withSourceModuleName("") {
             withPackageContext(packageFqName) {
-                buildFileDeclarations(file).singleOrNull()
+                buildFileDeclarations(file)
             }
         }
 
@@ -1654,7 +1654,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val qualifiedName = macroSurfaceQualifiedName(rawName)
         val surfaceId = MacroSurfaceIdGenerator.next()
         val attrNode = tree.findChildByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
-        val attrTokens = tokenizeSurfacePayload(attrNode)
+        val attrTokens = valueArgumentListAttributePayloadTokens(attrNode)
         val inputTokens = tokenizeSourceSlice(annotation.endOffset, ownerNode.endOffset)
         val annotationSource = annotation.toSource()
         val invocationSource = CjLightSourceElement(
@@ -1671,6 +1671,7 @@ class LightTreeRawCfirDeclarationBuilder(
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
             hasParenthesis = false,
             attrTokens = attrTokens,
+            hasAttr = attrNode != null,
             inputTokens = inputTokens,
             sourceRange = MacroSurfaceSourceRange(
                 source = invocationSource,
@@ -1697,6 +1698,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 kind = common.kind,
                 hasParenthesis = common.hasParenthesis,
                 attrTokens = common.attrTokens,
+                hasAttr = common.hasAttr,
                 inputTokens = common.inputTokens,
                 sourceRange = common.sourceRange,
                 scopeContext = common.scopeContext,
@@ -1713,6 +1715,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 kind = common.kind,
                 hasParenthesis = common.hasParenthesis,
                 attrTokens = common.attrTokens,
+                hasAttr = common.hasAttr,
                 inputTokens = common.inputTokens,
                 sourceRange = common.sourceRange,
                 scopeContext = common.scopeContext,
@@ -1747,6 +1750,8 @@ class LightTreeRawCfirDeclarationBuilder(
         val hasParenthesis: Boolean,
         /** attribute token 流。 */
         val attrTokens: List<MacroSurfaceToken>,
+        /** 属性方括号是否存在。 */
+        val hasAttr: Boolean,
         /** input payload token 流。 */
         val inputTokens: List<MacroSurfaceToken>,
         /** surface 源码范围。 */
@@ -2017,21 +2022,6 @@ class LightTreeRawCfirDeclarationBuilder(
         return scan.attrRange
             ?.let { range -> node.toSource().sliceMacroExpressionSource(range) }
             ?: attrNode?.toSource()
-    }
-
-    /**
-     * 判断 wrapper 头部是否显式写了 macro input 括号。
-     *
-     * LightTree 的 `MACRO_INPUT` 在无括号 declaration macro 上可能仍有空占位；
-     * 这里只信任 wrapper 原始文本中 attr 之后的下一个有效字符。
-     */
-    private fun macroExpressionHasParenthesizedInput(
-        rawText: String,
-        scan: MacroExpressionNameScan,
-    ): Boolean {
-        var index = scan.attrRange?.endOffset ?: scan.nameRange.endOffset
-        while (index < rawText.length && rawText[index].isWhitespace()) index++
-        return rawText.getOrNull(index) == '('
     }
 
     /** macro / annotation 名称首字符。 */
@@ -2645,7 +2635,13 @@ class LightTreeRawCfirDeclarationBuilder(
         val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, macroAttributeText)
         val annotationSource = macroExpressionAnnotationSource(node, annotationName, macroAttributeSource)
         val isCompileTimeVisible = tree.findChildByType(node, CjTokens.ATEXCL) != null
-        val hasParenthesizedInput = macroExpressionHasParenthesizedInput(rawWrapperText, headScan)
+        val inputLeftDelimiter = tree.findChildByType(inputNode, CjTokens.LPAR)
+        val inputRightDelimiter = tree.findChildByType(inputNode, CjTokens.RPAR)
+        val inputQuoteTokens = tree.findChildByType(inputNode, CjNodeTypes.QUOTE_TOKENS)
+        val inputParserErrorOffset = tree.firstDirectParserErrorOffset(inputQuoteTokens, source)
+        val hasParenthesizedInput =
+            inputLeftDelimiter != null && inputRightDelimiter != null && inputParserErrorOffset == null
+        val hasAnyParenthesisDelimiter = inputLeftDelimiter != null || inputRightDelimiter != null
         val containingSymbol = when (carrier) {
             is CfirValueParameter -> carrier.containingDeclarationSymbol
             else -> carrier.symbol
@@ -2685,15 +2681,15 @@ class LightTreeRawCfirDeclarationBuilder(
             isQualifiedName = rawName.contains('.'),
             kind = if (isCompileTimeVisible) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
             hasParenthesis = hasParenthesizedInput,
-            attrTokens = tokenizeSurfacePayload(
-                payload = macroAttributeText,
-                baseOffset = macroAttributeSource?.startOffset ?: 0,
-            ),
+            attrTokens = macroExpressionAttributePayloadTokens(attrNode),
+            hasAttr = attrNode != null,
             inputTokens = macroExpressionDeclarationInputTokens(
-                inputNode = inputNode,
                 annotationSource = annotationSource,
                 declarationNode = declarationNode,
-                hasParenthesizedInput = hasParenthesizedInput,
+                inputLeftDelimiter = inputLeftDelimiter,
+                inputRightDelimiter = inputRightDelimiter,
+                hasAnyParenthesisDelimiter = hasAnyParenthesisDelimiter,
+                parserErrorOffset = inputParserErrorOffset,
             ),
             sourceRange = MacroSurfaceSourceRange(
                 source = surfaceSource,
@@ -2721,13 +2717,50 @@ class LightTreeRawCfirDeclarationBuilder(
      * 头结束到最终 carrier 声明结束的源码切片恢复输入。
      */
     private fun macroExpressionDeclarationInputTokens(
-        inputNode: LighterASTNode,
         annotationSource: CjSourceElement,
         declarationNode: LighterASTNode,
-        hasParenthesizedInput: Boolean,
+        inputLeftDelimiter: LighterASTNode?,
+        inputRightDelimiter: LighterASTNode?,
+        hasAnyParenthesisDelimiter: Boolean,
+        parserErrorOffset: Int?,
     ): List<MacroSurfaceToken> {
-        if (hasParenthesizedInput) return tokenizeSurfacePayload(inputNode)
+        if (inputLeftDelimiter != null && inputRightDelimiter != null) {
+            return tokenizeSourceSlice(
+                tree.getEndOffset(inputLeftDelimiter),
+                minOf(tree.getStartOffset(inputRightDelimiter), parserErrorOffset ?: Int.MAX_VALUE),
+            )
+        }
+        if (hasAnyParenthesisDelimiter) return emptyList()
         return tokenizeSourceSlice(annotationSource.endOffset, declarationNode.endOffset)
+    }
+
+    /** 宏属性 token 只包含外层方括号之间的 payload，空属性由 hasAttr 单独表示。 */
+    private fun macroExpressionAttributePayloadTokens(attrNode: LighterASTNode?): List<MacroSurfaceToken> {
+        if (attrNode == null) return emptyList()
+        val leftDelimiter = tree.findChildByType(attrNode, CjTokens.LBRACKET) ?: return emptyList()
+        val rightDelimiter = tree.findChildByType(attrNode, CjTokens.RBRACKET) ?: return emptyList()
+        return tokenizeSourceSlice(
+            tree.getEndOffset(leftDelimiter),
+            minOf(
+                tree.getStartOffset(rightDelimiter),
+                tree.firstDirectParserErrorOffset(tree.findChildByType(attrNode, CjNodeTypes.QUOTE_TOKENS), source)
+                    ?: Int.MAX_VALUE,
+            ),
+        )
+    }
+
+    /** annotation VALUE_ARGUMENT_LIST 使用方括号；executor payload 不包含 wrapper delimiter。 */
+    private fun valueArgumentListAttributePayloadTokens(attrNode: LighterASTNode?): List<MacroSurfaceToken> {
+        if (attrNode == null) return emptyList()
+        val leftDelimiter = tree.findChildByType(attrNode, CjTokens.LBRACKET) ?: return emptyList()
+        val rightDelimiter = tree.findChildByType(attrNode, CjTokens.RBRACKET) ?: return emptyList()
+        return tokenizeSourceSlice(
+            tree.getEndOffset(leftDelimiter),
+            minOf(
+                tree.getStartOffset(rightDelimiter),
+                tree.firstDirectParserErrorOffset(attrNode, source) ?: Int.MAX_VALUE,
+            ),
+        )
     }
 
     /**

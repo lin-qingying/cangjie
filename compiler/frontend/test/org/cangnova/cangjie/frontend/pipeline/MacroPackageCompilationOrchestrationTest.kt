@@ -1165,6 +1165,7 @@ class MacroPackageCompilationOrchestrationTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("arg", 0, 3)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(

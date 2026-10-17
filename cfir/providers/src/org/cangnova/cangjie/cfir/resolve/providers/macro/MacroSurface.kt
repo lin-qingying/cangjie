@@ -14,7 +14,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  *
  * Baseline 第 7 节列出 surface 必须承载的字段集合：
  * - [surfaceId] / [qualifiedName] / [kind] / [hasParenthesis]
- * - [attrTokens] / [inputTokens]
+ * - [hasAttr] / [attrTokens] / [inputTokens]
  * - [sourceRange] / [scopeContext]
  * - [modifiers] / [carriedAnnotations]
  * - [capturedRawSyntax]
@@ -29,6 +29,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  * @property qualifiedName macro 调用限定名；解析失败或语法缺失时为 null。
  * @property kind macro 调用形式。
  * @property hasParenthesis 调用点是否显式带有参数括号。
+ * @property hasAttr 调用点是否显式带有属性方括号；空 `[]` 与未写属性不同。
  * @property attrTokens attr payload token 流。
  * @property inputTokens input payload token 流。
  * @property sourceRange surface 在宿主源码中的完整范围。
@@ -54,6 +55,9 @@ sealed class MacroSurface {
 
     /** 调用点是否显式带有参数括号。 */
     abstract val hasParenthesis: Boolean
+
+    /** 调用点是否显式带有属性方括号；不能从空属性 token 流推导。 */
+    abstract val hasAttr: Boolean
 
     /** attr payload token 流。 */
     abstract val attrTokens: List<MacroSurfaceToken>
@@ -257,6 +261,8 @@ data class MacroSurfaceDecl(
     override val hasParenthesis: Boolean,
     /** declaration macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 声明宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** declaration macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** declaration surface 在宿主源码中的范围。 */
@@ -288,6 +294,8 @@ data class MacroSurfaceExpr(
     override val hasParenthesis: Boolean,
     /** expression macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 表达式宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** expression macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** expression surface 在宿主源码中的范围。 */
@@ -319,6 +327,8 @@ data class MacroSurfaceParam(
     override val hasParenthesis: Boolean,
     /** parameter macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 参数宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** parameter macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** parameter surface 在宿主源码中的范围。 */
@@ -350,6 +360,8 @@ data class MacroSurfaceNode(
     override val hasParenthesis: Boolean,
     /** 通用 macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** 通用宏调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** 通用 macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** 通用 surface 在宿主源码中的范围。 */
@@ -390,6 +402,8 @@ data class IfAvailableSurface(
     override val hasParenthesis: Boolean,
     /** builtin non-macro 的 attr payload token 流。 */
     override val attrTokens: List<MacroSurfaceToken>,
+    /** builtin 调用是否显式写出属性方括号，包括空 `[]`。 */
+    override val hasAttr: Boolean,
     /** builtin non-macro 的 input payload token 流。 */
     override val inputTokens: List<MacroSurfaceToken>,
     /** builtin non-macro surface 在宿主源码中的范围。 */

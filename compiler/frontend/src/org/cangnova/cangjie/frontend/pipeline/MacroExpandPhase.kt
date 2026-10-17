@@ -36,6 +36,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagno
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedDeclarationReplacement
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDeclarationFragment
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedExpressionReplacement
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCycle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
@@ -53,6 +56,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSpliceResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
@@ -562,10 +566,15 @@ class FrontendMacroConstructionService(
                             registry = registry,
                         )
                     } ?: return@evaluate null
-                    (fragment as? MacroFragmentResult.Success)
-                        ?.payload
-                        ?.let { it as? CfirElement }
-                        ?.let { registry.registerGeneratedCfirElement(it, surface.surfaceId) }
+                    when (val payload = (fragment as? MacroFragmentResult.Success)?.payload) {
+                        is CfirElement -> registry.registerGeneratedCfirElement(payload, surface.surfaceId)
+                        // 声明片段只是构造期容器；来源映射必须落到每个最终 CFIR 声明及其子树上。
+                        is MacroDeclarationFragment -> payload.declarations.forEach { declaration ->
+                            registry.registerGeneratedCfirElement(declaration, surface.surfaceId)
+                        }
+
+                        null -> Unit
+                    }
                     val parentVisibleTokens = fragment.parentVisibleTokens(refreshedTokens)
 
                     if (surface is BuiltinNonMacroSurface) {
@@ -606,7 +615,9 @@ class FrontendMacroConstructionService(
 
         return runCatching {
             configuration.macroConstructionReadAccess.compute {
-                stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also {
+                stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also { spliceResult ->
+                    spliceResult.declarationReplacements.forEach(registry::registerAppliedDeclarationReplacement)
+                    spliceResult.expressionReplacements.forEach(registry::registerAppliedExpressionReplacement)
                     val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
                     if (metadataRegistry != null) {
                         val embeddedSurfaceIds = slots.flatMapTo(hashSetOf()) { it.embeddedSurfaceIds }
@@ -617,7 +628,7 @@ class FrontendMacroConstructionService(
                             metadataRegistry.migrate(carrier, replacement)
                         }
                     }
-                }
+                }.files
             }
         }.getOrElse { error ->
             for (slot in slots) {
@@ -1560,13 +1571,15 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     /**
      * 将一批宏替换槽稳定应用到 CFIR 文件树。
      */
-    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+    override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult {
         val embeddedSurfaceIds = slots.flatMapTo(hashSetOf()) { it.embeddedSurfaceIds }
         val independentlySplicedSlots = slots.filterNot { it.origin.surfaceId in embeddedSurfaceIds }
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
         val parameterSlotsWithCarrier = IdentityHashMap<CfirValueParameter, MacroReplaceSlot>()
         val annotationSlotsWithCarrier = linkedMapOf<CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
+        val appliedDeclarationReplacements = mutableListOf<MacroAppliedDeclarationReplacement>()
+        val appliedExpressionReplacements = mutableListOf<MacroAppliedExpressionReplacement>()
         val unsupportedSlots = mutableListOf<MacroReplaceSlot>()
 
         for (slot in independentlySplicedSlots) {
@@ -1581,7 +1594,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 is MacroSurfaceExpr -> {
                     val carrier = slot.handle.carrier
                     if (carrier is CfirExpression) {
-                        expressionSlotsWithCarrier[carrier] = slot
+                        check(expressionSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received multiple expression surfaces for one carrier identity."
+                        }
                     } else {
                         unsupportedSlots += slot
                     }
@@ -1590,7 +1605,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 is MacroSurfaceParam -> {
                     val carrier = slot.handle.carrier
                     if (carrier is CfirValueParameter) {
-                        parameterSlotsWithCarrier[carrier] = slot
+                        check(parameterSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received multiple parameter surfaces for one carrier identity."
+                        }
                     } else {
                         unsupportedSlots += slot
                     }
@@ -1599,7 +1616,9 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 is MacroSurfaceDecl, is MacroSurfaceNode, is BuiltinNonMacroSurface -> {
                     val carrier = origin.replaceHandle.carrier
                     if (carrier is CfirDeclaration) {
-                        declarationSlotsWithCarrier[carrier] = slot
+                        check(declarationSlotsWithCarrier.put(carrier, slot) == null) {
+                            "Stable splice received multiple declaration surfaces for one carrier identity."
+                        }
                     } else {
                         unsupportedSlots += slot
                     }
@@ -1611,6 +1630,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             "Stable splice is not implemented for macro surface(s) without typed carrier: " +
                     unsupportedSlots.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
+        val expectedExpressionReplacementCount = expressionSlotsWithCarrier.size
 
         for (file in files) {
             replaceDeclarationSlots(
@@ -1618,6 +1638,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 declarationSlotsWithCarrier,
                 parameterSlotsWithCarrier,
                 annotationSlotsWithCarrier,
+                appliedDeclarationReplacements,
             )
         }
         replaceAnnotationSlots(annotationSlotsWithCarrier)
@@ -1626,7 +1647,13 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             override fun transformErrorExpression(errorExpression: CfirErrorExpression, data: Unit): CfirExpression {
                 val slot = expressionSlotsWithCarrier.remove(errorExpression)
                     ?: return super.transformErrorExpression(errorExpression, data) as CfirExpression
-                return slot.toExpressionPayload()
+                val replacement = slot.toExpressionPayload()
+                appliedExpressionReplacements += MacroAppliedExpressionReplacement(
+                    carrier = errorExpression,
+                    replacement = replacement,
+                    surfaceId = slot.origin.surfaceId,
+                )
+                return replacement
             }
         }
 
@@ -1637,6 +1664,10 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         require(expressionSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find expression carrier for macro surface(s): " +
                     expressionSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+        }
+        check(appliedExpressionReplacements.size == expectedExpressionReplacementCount) {
+            "Stable splice applied ${appliedExpressionReplacements.size} expression replacements, " +
+                "but received $expectedExpressionReplacementCount independent expression slots."
         }
         require(declarationSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find declaration carrier for macro surface(s): " +
@@ -1650,7 +1681,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             "Stable splice could not find annotation carrier for macro surface(s): " +
                     annotationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
-        return files
+        return MacroStableSpliceResult(files, appliedDeclarationReplacements, appliedExpressionReplacements)
     }
 
     /**
@@ -1687,20 +1718,47 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
         annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+        appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement>,
     ) {
         val mutableDeclarations = declarations as? MutableList<CfirDeclaration>
             ?: error("Stable splice requires mutable declaration carrier list.")
         val iterator = mutableDeclarations.listIterator()
         while (iterator.hasNext()) {
             val declaration = iterator.next()
-            val replacement = declarationSlots.remove(declaration)?.toDeclarationPayload()
-            val current = replacement ?: declaration
-            if (replacement != null) {
-                replacement.consumeAnnotationSlotsFromOwner(declaration, annotationSlots)
-                iterator.set(replacement)
+            val slot = declarationSlots.remove(declaration)
+            if (slot == null) {
+                replaceParameterSlots(declaration, parameterSlots, annotationSlots)
+                replaceNestedDeclarationSlots(
+                    declaration,
+                    declarationSlots,
+                    parameterSlots,
+                    annotationSlots,
+                    appliedDeclarationReplacements,
+                )
+                continue
             }
-            replaceParameterSlots(current, parameterSlots, annotationSlots)
-            replaceNestedDeclarationSlots(current, declarationSlots, parameterSlots, annotationSlots)
+
+            val replacements = slot.toDeclarationPayloads()
+            appliedDeclarationReplacements += MacroAppliedDeclarationReplacement(
+                carrier = declaration,
+                replacements = replacements,
+                surfaceId = slot.origin.surfaceId,
+            )
+            // 嵌套注解宏的 token 已在宏森林求值时并入外层声明宏的输入；外层最终输出决定哪些
+            // token 成为声明。不能把旧 carrier 的 annotation slot 任意绑定到某一个替换声明。
+            annotationSlots.entries.removeIf { (carrier, _) -> carrier.owner === declaration }
+            iterator.remove()
+            for (replacement in replacements) {
+                iterator.add(replacement)
+                replaceParameterSlots(replacement, parameterSlots, annotationSlots)
+                replaceNestedDeclarationSlots(
+                    replacement,
+                    declarationSlots,
+                    parameterSlots,
+                    annotationSlots,
+                    appliedDeclarationReplacements,
+                )
+            }
         }
     }
 
@@ -1712,6 +1770,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declarationSlots: IdentityHashMap<CfirDeclaration, MacroReplaceSlot>,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
         annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+        appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement>,
     ) {
         when (declaration) {
             is CfirClassLikeDeclaration -> replaceDeclarationSlots(
@@ -1719,6 +1778,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 declarationSlots,
                 parameterSlots,
                 annotationSlots,
+                appliedDeclarationReplacements,
             )
 
             is CfirExtend -> replaceDeclarationSlots(
@@ -1726,6 +1786,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 declarationSlots,
                 parameterSlots,
                 annotationSlots,
+                appliedDeclarationReplacements,
             )
             else -> Unit
         }
@@ -1868,14 +1929,14 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
     /**
      * 从宏替换槽中读取声明 payload。
      */
-    private fun MacroReplaceSlot.toDeclarationPayload(): CfirDeclaration {
+    private fun MacroReplaceSlot.toDeclarationPayloads(): List<CfirDeclaration> {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
-        return success.payload as? CfirDeclaration
+        return (success.payload as? MacroDeclarationFragment)?.declarations
             ?: error(
                 "Macro fragment for `${
                     origin.qualifiedName?.asString().orEmpty()
-                }` did not produce a CfirDeclaration payload."
+                }` did not produce a MacroDeclarationFragment payload."
             )
     }
 
@@ -1920,7 +1981,7 @@ private fun MacroSurface.toMacroCallInfo(
     val start = sourceRange?.startOffset.toSourcePosition(linesMapping)
     val endOffset = sourceRange?.endOffset?.minus(1)?.coerceAtLeast(sourceRange?.startOffset ?: 0)
     val end = endOffset.toSourcePosition(linesMapping)
-    val hasAttrs = refreshedTokens.attrTokens.isNotEmpty()
+    val hasAttrs = hasAttr
     val packageName = entry.executablePackageFqName.asString().takeUnless { it == "<root>" }.orEmpty()
     return MacroCallInfo(
         idName = entry.name.asString(),

@@ -1,0 +1,29 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package ide_target_macro
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import ide_target_macro.GenerateReference
+    public func ideTarget(): R|Int64| {
+        RETURN {
+            INT(42)
+        }
+    }
+    public func generatedReferenceValue(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(ideTarget -> CfirNamedFunctionSymbol(ideTarget)) {
+            }
+        }
+    }
+    public func useGeneratedReference(): R|Int64| {
+        RETURN {
+            FUNCTION_CALL(generatedReferenceValue -> CfirNamedFunctionSymbol(generatedReferenceValue)) {
+            }
+        }
+    }

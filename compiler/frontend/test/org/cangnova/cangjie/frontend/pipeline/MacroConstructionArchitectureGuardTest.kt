@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSpliceResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplacementSlotType
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
@@ -308,9 +309,9 @@ class MacroConstructionArchitectureGuardTest {
             override fun applySlices(
                 files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
                 slots: List<MacroReplaceSlot>,
-            ): List<org.cangnova.cangjie.cfir.declarations.CfirFile> {
+            ): MacroStableSpliceResult {
                 this.slots += slots
-                return files
+                return MacroStableSpliceResult(files, emptyList())
             }
         }
 
@@ -780,6 +781,7 @@ class MacroConstructionArchitectureGuardTest {
             kind = MacroSurface.Kind.PLAIN,
             hasParenthesis = true,
             attrTokens = emptyList(),
+            hasAttr = false,
             inputTokens = inputTokens,
             sourceRange = MacroSurfaceSourceRange(null, startOffset, endOffset),
             scopeContext = MacroSurfaceScopeContext(

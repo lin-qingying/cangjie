@@ -47,6 +47,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSpliceResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -146,6 +147,49 @@ class FrontendMacroConstructionExecutionTest {
         assertTrue(result is MacroConstructionResult.Success)
         val statement = fixture.function.body!!.statements.single()
         assertInstanceOf(CfirErrorExpression::class.java, statement)
+    }
+
+    /** 空的 `[]` 仍选择 attribute wrapper，并通过 executor 协议保留属性存在标志。 */
+    @Test
+    fun emptyAttributeDelimiterUsesAttributeMacroWrapper() {
+        val fixture = macroExpressionCarrierFixture()
+        val surface = (fixture.pre.allSurfaces.single() as MacroSurfaceExpr).copy(hasAttr = true)
+        val pre = buildPreMacroRawFiles(
+            session = fixture.pre.session,
+            rawCfirFiles = fixture.pre.files.map { it.cfirFile },
+            fileSurfaces = listOf(listOf(surface)),
+        )
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "expanded")),
+                "expanded",
+            ),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult = MacroFragmentResult.Success(
+                originNode = input.node,
+                tokens = input.tokens,
+                mode = input.mode,
+                payload = buildErrorExpression {
+                    diagnostic = ConeSimpleDiagnostic("expanded macro payload")
+                },
+            )
+        }
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
+            pre = pre,
+            context = contextWithArtifact(pre, "Generated"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        val call = executor.calls.single()
+        assertTrue(call.hasAttrs)
+        assertTrue(call.methodName.startsWith("macroCall_a_"))
     }
 
     /**
@@ -560,6 +604,7 @@ class FrontendMacroConstructionExecutionTest {
         val differentQualification = constructCacheKey(parserModule = "", qualified = true)
         val differentAnnotationModule = constructCacheKey(parserModule = "", qualified = false, annotationModule = "std")
 
+        assertEquals(MacroConstructionService.ALGORITHM_VERSION, original.constructionAlgorithmVersion)
         assertEquals(original, constructCacheKey(parserModule = "", qualified = false))
         for (changed in listOf(differentModule, differentQualification, differentAnnotationModule)) {
             assertEquals(original.sourceContentHash, changed.sourceContentHash)
@@ -1644,6 +1689,7 @@ class FrontendMacroConstructionExecutionTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("arg", 0, 3)),
         sourceRange = sourceRange,
         scopeContext = MacroSurfaceScopeContext(
@@ -1682,6 +1728,7 @@ class FrontendMacroConstructionExecutionTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("decl", 0, 4)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
@@ -1720,6 +1767,7 @@ class FrontendMacroConstructionExecutionTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("param", 0, 5)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
@@ -1759,6 +1807,7 @@ class FrontendMacroConstructionExecutionTest {
         kind = MacroSurface.Kind.PLAIN,
         hasParenthesis = true,
         attrTokens = emptyList(),
+        hasAttr = false,
         inputTokens = listOf(MacroSurfaceToken("condition", 0, 9)),
         sourceRange = null,
         scopeContext = MacroSurfaceScopeContext(
@@ -2033,9 +2082,9 @@ class FrontendMacroConstructionExecutionTest {
         /**
          * 记录槽位并返回原文件列表，避免测试关注点扩散到真实拼接实现。
          */
-        override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> {
+        override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): MacroStableSpliceResult {
             this.slots += slots
-            return files
+            return MacroStableSpliceResult(files, emptyList())
         }
     }
 
