@@ -380,7 +380,13 @@ internal class Cfir2ChirFileConverter(
         )
 
     /**
-     * 将 enum constructor 转换为返回 enum case value 的 CHIR 函数。
+     * 将 enum constructor 转换为返回 enum case 值的 CHIR 函数。
+     *
+     * 无 payload 的 case：函数体发射 `jvm.getstatic`（owner 为枚举类
+     * internal name、name 为 case 名），与后端 enum `<clinit>` 实例化的
+     * 静态常量字段对齐，`cfir.enum_constructor` 占位被消化。
+     * 带 payload 的 case：构造需要枚举 payload ABI（后端 `<clinit>` 尚
+     * 只实例化无参 case），保留占位。
      */
     private fun convertEnumConstructor(constructor: CfirEnumConstructor): DefaultChirFunctionDeclaration {
         val header = storage.getFunctionHeader(constructor.symbol)
@@ -390,20 +396,21 @@ internal class Cfir2ChirFileConverter(
             type = header.returnType,
             name = expressionId.value,
         )
-        val expression = ChirOtherExpression(
-            semanticId = expressionId,
-            operation = Cfir2ChirOperation.CFIR_ENUM_CONSTRUCTOR.canonicalName,
-            operands = header.parameters.map { parameter ->
-                org.cangnova.cangjie.chir.core.value.ChirParameterValue(
-                    semanticId = parameter.semanticId,
-                    type = parameter.type,
-                    name = parameter.name,
-                    ownerFunctionId = header.semanticId,
-                )
-            },
-            resultType = header.returnType,
-            attributes = setOf(ChirStringAttribute("cfir.enumConstructor", constructor.name.asString())),
-        )
+        val caseExpression = enumCaseExpressionOrNull(constructor, header, expressionId)
+            ?: ChirOtherExpression(
+                semanticId = expressionId,
+                operation = Cfir2ChirOperation.CFIR_ENUM_CONSTRUCTOR.canonicalName,
+                operands = header.parameters.map { parameter ->
+                    org.cangnova.cangjie.chir.core.value.ChirParameterValue(
+                        semanticId = parameter.semanticId,
+                        type = parameter.type,
+                        name = parameter.name,
+                        ownerFunctionId = header.semanticId,
+                    )
+                },
+                resultType = header.returnType,
+                attributes = setOf(ChirStringAttribute("cfir.enumConstructor", constructor.name.asString())),
+            )
         return DefaultChirFunctionDeclaration(
             semanticId = header.semanticId,
             name = header.name,
@@ -413,7 +420,7 @@ internal class Cfir2ChirFileConverter(
                 ChirBlock(
                     semanticId = Cfir2ChirIds.generatedId("entry", header.semanticId, 1),
                     name = "entry",
-                    expressions = listOf(expression),
+                    expressions = listOf(caseExpression),
                     terminator = ChirReturnTerminator(
                         semanticId = Cfir2ChirIds.generatedId("return", header.semanticId, 2),
                         returnValue = resultValue,
@@ -422,6 +429,34 @@ internal class Cfir2ChirFileConverter(
             ),
             entryBlockId = Cfir2ChirIds.generatedId("entry", header.semanticId, 1),
             attributes = setOf(ChirStringAttribute("cfir.kind", "enumConstructor")),
+        )
+    }
+
+    /**
+     * 为无 payload 的 enum case 构造 `jvm.getstatic` 表达式。
+     *
+     * 返回类型必须是点分名称的 `ChirEnumType` 才能推导 owner；
+     * 否则返回 null 由调用方回退占位。
+     */
+    private fun enumCaseExpressionOrNull(
+        constructor: CfirEnumConstructor,
+        header: ChirFunctionHeader,
+        expressionId: org.cangnova.cangjie.chir.core.identity.ChirSemanticId,
+    ): ChirOtherExpression? {
+        if (header.parameters.isNotEmpty()) return null
+        val enumType = (header.returnType as? org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef)?.type
+            as? org.cangnova.cangjie.chir.core.type.ChirEnumType ?: return null
+        if (!enumType.name.contains('.')) return null
+        val ownerInternalName = enumType.name.replace('.', '/')
+        return ChirOtherExpression(
+            semanticId = expressionId,
+            operation = "jvm.getstatic",
+            operands = emptyList(),
+            resultType = header.returnType,
+            attributes = setOf(
+                ChirStringAttribute("jvm.owner", ownerInternalName),
+                ChirStringAttribute("jvm.name", constructor.name.asString()),
+            ),
         )
     }
 

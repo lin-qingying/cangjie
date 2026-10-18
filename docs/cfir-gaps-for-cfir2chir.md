@@ -153,15 +153,16 @@ this/super receiver（this 局部值）、成员字段读写（getfield/putfield
 VArray 字面量（newarray+arrayStore）、单下标读写（arrayLoad/arrayStore）、
 引用窄化 smart cast / as（checkcast）、局部/匿名函数（辅助声明收集 +
 MethodHandle 物化）、枚举 case 引用（getstatic 常量）、
-具名实参（透传内层值，见缺口 7 的排序前置）。
+具名实参（透传内层值，见缺口 7 的排序前置）、
+无 payload enum constructor（getstatic 常量函数体）。
 
-### 可消化（输入充分，待实现）
+### 需调用约定设计（inout 与带 payload 构造的引用/构造 ABI）
 
-- **`cfir.enum_constructor` 顶层形态**：`convertEnumConstructor` 生成的
-  case 构造函数体仍是占位。当 enum 声明经由 `ChirEnumDeclaration.cases`
-  由后端 `<clinit>` 实例化后，该函数只在"case 被当函数值引用"时才需要——
-  可与函数值路径合并处理。
-- **`cfir.inout_argument`**：实参侧的 inout 标记，配合已有的 ref 地址机制。
+- **`cfir.inout_argument`**：inout 是地址传参语义；JVM 没有引用传参，
+  需要调用约定层的模拟设计（临时变量 + 调用后写回，或 ref 载体对象）。
+  非纯透传，保留占位直到约定落地。
+- **带 payload enum constructor**：后端 enum `<clinit>` 尚只实例化
+  无参 case；带 payload 的构造需要枚举构造器 ABI（`NEW + <init>(payload)`）。
 
 ### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）
 
