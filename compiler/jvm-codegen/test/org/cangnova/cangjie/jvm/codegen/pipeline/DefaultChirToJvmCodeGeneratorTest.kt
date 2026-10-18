@@ -3,6 +3,7 @@ package org.cangnova.cangjie.jvm.codegen.pipeline
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
@@ -3710,6 +3711,107 @@ class DefaultChirToJvmCodeGeneratorTest {
             DefaultChirToJvmCodeGenerator().generate(inputWithDeclarations(interfaceWithField))
         }
         assertTrue(requireNotNull(exception.message).contains("JVM interface 'Stateful' cannot declare instance field 'cache'"))
+    }
+
+    /**
+     * 验证多 catch 类型分派会降低为按类型的 JVM 异常表条目：
+     * 抛出的异常按实际类型命中对应 catch 块。
+     */
+    @Test
+    fun `lowers CHIR typed catch dispatches to JVM exception table entries`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val argumentExceptionType = ChirResolvedTypeRef(ChirNamedType("java.lang.IllegalArgumentException"))
+        val stateExceptionType = ChirResolvedTypeRef(ChirNamedType("java.lang.IllegalStateException"))
+
+        fun dispatchFunction(name: String, thrownType: ChirResolvedTypeRef, expected: Int): DefaultChirFunctionDeclaration {
+            val entryBlockId = ChirSemanticId("block:$name:entry")
+            val catchArgumentBlockId = ChirSemanticId("block:$name:catch_argument")
+            val catchStateBlockId = ChirSemanticId("block:$name:catch_state")
+            val exceptionLocal = ChirLocalValue(
+                semanticId = ChirSemanticId("expr:$name:new-exception"),
+                type = thrownType,
+                name = "expr_${name}_new_exception",
+            )
+            return DefaultChirFunctionDeclaration(
+                semanticId = ChirSemanticId("fn:$name"),
+                name = name,
+                returnType = intType,
+                parameters = emptyList(),
+                blocks = listOf(
+                    ChirBlock(
+                        semanticId = entryBlockId,
+                        name = "entry",
+                        expressions = listOf(
+                            ChirOtherExpression(
+                                semanticId = ChirSemanticId("expr:$name:new-exception"),
+                                operation = "jvm.new",
+                                operands = emptyList(),
+                                resultType = thrownType,
+                            ),
+                        ),
+                        terminator = ChirThrowTerminator(
+                            semanticId = ChirSemanticId("term:$name:throw"),
+                            exceptionValue = exceptionLocal,
+                            unwindTargetBlockId = catchArgumentBlockId,
+                            catchDispatches = listOf(
+                                ChirCatchDispatchEntry(
+                                    catchBlockId = catchArgumentBlockId,
+                                    exceptionBinding = "argumentErr",
+                                    exceptionTypeName = "java.lang.IllegalArgumentException",
+                                ),
+                                ChirCatchDispatchEntry(
+                                    catchBlockId = catchStateBlockId,
+                                    exceptionBinding = "stateErr",
+                                    exceptionTypeName = "java.lang.IllegalStateException",
+                                ),
+                            ),
+                        ),
+                    ),
+                    ChirBlock(
+                        semanticId = catchArgumentBlockId,
+                        name = "catch_argument",
+                        expressions = emptyList(),
+                        terminator = ChirReturnTerminator(
+                            semanticId = ChirSemanticId("term:$name:return_argument"),
+                            returnValue = ChirConstantValue(
+                                semanticId = ChirSemanticId("const:$name:argument_result"),
+                                type = intType,
+                                literal = "11",
+                            ),
+                        ),
+                    ),
+                    ChirBlock(
+                        semanticId = catchStateBlockId,
+                        name = "catch_state",
+                        expressions = emptyList(),
+                        terminator = ChirReturnTerminator(
+                            semanticId = ChirSemanticId("term:$name:return_state"),
+                            returnValue = ChirConstantValue(
+                                semanticId = ChirSemanticId("const:$name:state_result"),
+                                type = intType,
+                                literal = "22",
+                            ),
+                        ),
+                    ),
+                ),
+                entryBlockId = entryBlockId,
+            )
+        }
+
+        val output = DefaultChirToJvmCodeGenerator().generate(
+            inputWith(
+                dispatchFunction("dispatchIllegalArgument", argumentExceptionType, 11),
+                dispatchFunction("dispatchIllegalState", stateExceptionType, 22),
+            ),
+        )
+        val artifact = output.classes.single()
+
+        verifyClass(artifact)
+        val generatedClass = GeneratedClassLoader().define(artifact)
+        // IllegalArgumentException 命中第一个 catch。
+        assertEquals(11, generatedClass.getMethod("dispatchIllegalArgument").invoke(null))
+        // IllegalStateException 越过第一个 catch 命中第二个。
+        assertEquals(22, generatedClass.getMethod("dispatchIllegalState").invoke(null))
     }
 
     /**
