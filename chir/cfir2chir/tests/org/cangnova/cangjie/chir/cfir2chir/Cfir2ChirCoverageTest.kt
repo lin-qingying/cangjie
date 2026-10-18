@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonOp
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSmartcastStability
+import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
@@ -109,6 +110,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildPatternBindingVariabl
 import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.declaration.ChirClassDeclaration
@@ -797,6 +799,86 @@ class Cfir2ChirCoverageTest {
             .filter { it.operation == "load" }
         assertTrue(loadOperations.isNotEmpty())
         assertTrue(loadOperations.all { (it.address as? ChirLocalValue)?.name == "err" })
+    }
+
+    /**
+     * 验证多 catch 场景的 throw 携带完整类型分派表：
+     * 每个分派条目对应对应 catch 块、绑定与异常类型名。
+     */
+    @Test
+    fun `lowers multi catch throws with typed dispatch table`() {
+        val errorType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("MyError")))
+        val warnType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("MyWarn")))
+        fun catchOf(type: org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType, binding: String): CfirCatch {
+            val symbol = CfirPatternBindingSymbol(CallableId(PackageName, Name.identifier(binding)))
+            val bindingVariable = buildPatternBindingVariable {
+                moduleData = TestModuleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Synthetic.Default
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
+                status = CfirDeclarationStatusImpl()
+                returnTypeRef = typeRef(type)
+                isVar = false
+                this.symbol = symbol
+                name = Name.identifier(binding)
+            }
+            return buildCatch {
+                coneTypeOrNull = type
+                pattern = buildCatchPattern {
+                    bindingName = Name.identifier(binding)
+                    isWildcard = false
+                    resolvedTypeRef = org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef {
+                        coneType = type
+                    }
+                    this.bindingVariable = bindingVariable
+                }
+                body = buildBlock {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    statements += intLiteral(1)
+                }
+            }
+        }
+
+        val tryExpression = buildTryExpression {
+            coneTypeOrNull = ConePrimitiveType.INT32
+            tryBlock = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.NOTHING
+                statements += buildThrowExpression {
+                    coneTypeOrNull = ConePrimitiveType.NOTHING
+                    exception = buildThisReceiverExpression {
+                        coneTypeOrNull = errorType
+                        calleeReference = buildThisReference {
+                            boundSymbol = CfirClassSymbol(classId("MyError"))
+                            isImplicit = false
+                        }
+                    }
+                }
+            }
+            catches += catchOf(errorType, "fatalErr")
+            catches += catchOf(warnType, "warnErr")
+        }
+        val function = functionReturningExpression(
+            name = "multiGuarded",
+            returnType = ConePrimitiveType.INT32,
+            expression = tryExpression,
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        val tryBlock = chirFunction.blocks.single { it.name == "try" }
+        val throwTerminator = tryBlock.terminator as ChirThrowTerminator
+        assertEquals(2, throwTerminator.catchDispatches.size)
+
+        val fatalDispatch = throwTerminator.catchDispatches.single { it.exceptionTypeName == "sample.MyError" }
+        assertEquals("fatalErr", fatalDispatch.exceptionBinding)
+        val catchFatalBlock = chirFunction.blocks.single { it.semanticId == fatalDispatch.catchBlockId }
+        assertEquals("catch_0", catchFatalBlock.name)
+
+        val warnDispatch = throwTerminator.catchDispatches.single { it.exceptionTypeName == "sample.MyWarn" }
+        assertEquals("warnErr", warnDispatch.exceptionBinding)
+        val catchWarnBlock = chirFunction.blocks.single { it.semanticId == warnDispatch.catchBlockId }
+        assertEquals("catch_1", catchWarnBlock.name)
     }
 
     /**
