@@ -78,6 +78,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
@@ -93,6 +94,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -1075,6 +1077,41 @@ class Cfir2ChirCoverageTest {
                 it is ChirStringAttribute && it.key == "cfir.binary.kind" && it.value == "+="
             },
         )
+    }
+
+    /**
+     * 验证枚举 case 引用会降级为带 jvm.owner/jvm.name ABI 的 `jvm.getstatic`，
+     * 而不是物化为函数值（case 构造函数体是占位操作，JVM 后端无法执行）。
+     */
+    @Test
+    fun `lowers enum case reference into jvm getstatic`() {
+        val colorType = ConeEnumType(ConeClassLikeLookupTagImpl(classId("Color")))
+        val redCaseSymbol = CfirEnumConstructorSymbol(CallableId(PackageName, Name.identifier("RED")))
+        val function = functionReturningExpression(
+            name = "pickRed",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildNamedAccessExpression {
+                coneTypeOrNull = colorType
+                calleeReference = buildResolvedNamedReference {
+                    name = Name.identifier("RED")
+                    resolvedSymbol = redCaseSymbol
+                }
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        val getStatic = otherExpressions.single { it.operation == "jvm.getstatic" }
+        assertTrue(
+            getStatic.attributes.any { it is ChirStringAttribute && it.key == "jvm.owner" && it.value == "sample/Color" },
+        )
+        assertTrue(
+            getStatic.attributes.any { it is ChirStringAttribute && it.key == "jvm.name" && it.value == "RED" },
+        )
+        assertEquals("sample.Color", getStatic.resultType?.renderName)
     }
 
     /**

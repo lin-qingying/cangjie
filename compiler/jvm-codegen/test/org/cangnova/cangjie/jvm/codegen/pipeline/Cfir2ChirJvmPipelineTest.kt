@@ -13,7 +13,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.builder.CfirEnumConstructorBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.buildClass
+import org.cangnova.cangjie.cfir.declarations.builder.buildEnum
+import org.cangnova.cangjie.cfir.declarations.builder.buildEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
@@ -39,12 +42,15 @@ import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -563,6 +569,89 @@ class Cfir2ChirJvmPipelineTest {
     }
 
     /**
+     * 验证枚举 case 引用能端到端降级：cfir2chir 产出 `jvm.getstatic`，
+     * JVM 后端为 enum 生成 case 静态常量字段（`<clinit>` 实例化），
+     * 函数返回的 case 与 enum classfile 的 `values()` 一致。
+     */
+    @Test
+    fun `lowers enum case reference to executable JVM enum constant`() {
+        val colorType = ConeEnumType(ConeClassLikeLookupTagImpl(ColorClassId))
+        val colorEnum = buildEnum {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            scopeProvider = UnusedScopeProvider
+            status = CfirDeclarationStatusImpl()
+            symbol = CfirEnumSymbol(ColorClassId)
+            name = Name.identifier("Color")
+            declarations += buildEnumConstructor {
+                commonEnumMemberDeclaration()
+                symbol = CfirEnumConstructorSymbol(CallableId(PackageName, Name.identifier("RED")))
+                name = Name.identifier("RED")
+                returnTypeRef = buildResolvedTypeRef { coneType = colorType }
+            }
+            declarations += buildEnumConstructor {
+                commonEnumMemberDeclaration()
+                symbol = CfirEnumConstructorSymbol(CallableId(PackageName, Name.identifier("GREEN")))
+                name = Name.identifier("GREEN")
+                returnTypeRef = buildResolvedTypeRef { coneType = colorType }
+            }
+        }
+        val pickRed = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef { coneType = colorType }
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("pickRed")))
+            name = Name.identifier("pickRed")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = colorType
+                statements += buildNamedAccessExpression {
+                    coneTypeOrNull = colorType
+                    calleeReference = buildResolvedNamedReference {
+                        name = Name.identifier("RED")
+                        resolvedSymbol = CfirEnumConstructorSymbol(CallableId(PackageName, Name.identifier("RED")))
+                    }
+                }
+            }
+        }
+        val file = fileWith(colorEnum, pickRed)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+        val colorArtifact = requireNotNull(artifactsByName["sample/Color"])
+
+        val loader = GeneratedClassLoader()
+        val colorClass = loader.define(colorArtifact)
+        val red = colorClass.getField("RED").get(null)
+        val green = colorClass.getField("GREEN").get(null)
+        val facadeClass = loader.define(requireNotNull(artifactsByName["sample/SampleCj"]))
+
+        val picked = facadeClass.getMethod("pickRed").invoke(null)
+        assertEquals(red, picked)
+        assertTrue(green != picked)
+        assertEquals("RED", (picked as Enum<*>).name)
+    }
+
+    /**
+     * 填充 enum constructor builder 的公共声明元数据。
+     */
+    private fun CfirEnumConstructorBuilder.commonEnumMemberDeclaration() {
+        moduleData = TestModuleData
+        resolvePhase = CfirResolvePhase.BODY_RESOLVE
+        origin = CfirDeclarationOrigin.Synthetic.Default
+        attributes = CfirDeclarationAttributes.EMPTY
+        status = CfirDeclarationStatusImpl()
+    }
+
+    /**
      * 构造带 dispatch receiver 的成员函数。
      */
     private fun memberFunction(
@@ -851,5 +940,6 @@ class Cfir2ChirJvmPipelineTest {
     private companion object {
         val PackageName = FqName("sample")
         val BoxClassId = ClassId(PackageName, Name.identifier("Box"))
+        val ColorClassId = ClassId(PackageName, Name.identifier("Color"))
     }
 }

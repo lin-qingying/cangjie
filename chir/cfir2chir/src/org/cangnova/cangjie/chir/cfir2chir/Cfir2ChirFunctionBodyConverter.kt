@@ -18,6 +18,7 @@ import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.type.ChirClassType
+import org.cangnova.cangjie.chir.core.type.ChirEnumType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
@@ -109,6 +110,7 @@ import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -618,7 +620,7 @@ internal class Cfir2ChirFunctionBodyConverter(
     /**
      * 把 class-like receiver 静态类型转换为 JVM owner internal name。
      *
-     * 只接受点分名称的 [ChirClassType]/[ChirStructType]/[ChirNamedType]；
+     * 只接受点分名称的 [ChirClassType]/[ChirStructType]/[ChirNamedType]/[ChirEnumType]；
      * 其它类型（元组、函数、泛型参数等）没有可推导的 classfile owner，返回 null。
      */
     private fun jvmOwnerInternalNameOrNull(typeRef: ChirTypeRef): String? {
@@ -626,6 +628,7 @@ internal class Cfir2ChirFunctionBodyConverter(
         val dotName = when (type) {
             is ChirClassType -> type.name
             is ChirStructType -> type.name
+            is ChirEnumType -> type.name
             is ChirNamedType -> type.renderName
             else -> return null
         }
@@ -1957,11 +1960,18 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * 将已解析 CFIR reference 映射为对应的 CHIR value。
+     *
+     * 枚举 case 引用（`CfirEnumConstructorSymbol`）降级为 `jvm.getstatic`：
+     * JVM 后端为 enum case 生成静态常量字段（`<clinit>` 实例化），
+     * owner 由表达式的枚举解析类型推导，字段名为 case 名。
      */
     private fun valueForResolvedReference(
         reference: CfirResolvedNamedReference,
         expression: CfirExpression,
     ): ChirValue {
+        if (reference.resolvedSymbol is CfirEnumConstructorSymbol) {
+            return enumCaseAccess(reference, expression)
+        }
         return when (val symbol = reference.resolvedSymbol) {
             is CfirValueParameterSymbol -> storage.getParameter(symbol).asValue()
             is CfirVariableSymbol<*> -> lowerLocalVariableAccess(symbol, expression)
@@ -1974,6 +1984,41 @@ internal class Cfir2ChirFunctionBodyConverter(
                 expression,
             )
         }
+    }
+
+    /**
+     * 把枚举 case 引用降级为 `jvm.getstatic` intrinsic。
+     *
+     * 表达式的解析类型必须是可推导 owner 的枚举类型；case 名来自 reference。
+     * 不满足条件时回退函数值路径（保持既有行为）。
+     */
+    private fun enumCaseAccess(
+        reference: CfirResolvedNamedReference,
+        expression: CfirExpression,
+    ): ChirValue {
+        val resultType = expression.requireResultType()
+        val ownerInternalName = jvmOwnerInternalNameOrNull(resultType)
+            ?: return storage.getFunctionHeaderOrNull(reference.resolvedSymbol)?.asValue()
+                ?: importedFunctionValue(
+                    reference.resolvedSymbol as CfirCallableSymbol<*>,
+                    resultType,
+                    emptyList(),
+                )
+        val expressionId = builder.nextElementId("enum_case", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.getstatic",
+                operands = emptyList(),
+                resultType = resultType,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", reference.name.asString()),
+                ),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+            ?: throw Cfir2ChirConversionException("enum case reference produced no value", expression)
     }
 
     /**
