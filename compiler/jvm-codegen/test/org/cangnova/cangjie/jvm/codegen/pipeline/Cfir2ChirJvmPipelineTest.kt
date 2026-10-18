@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
@@ -496,6 +497,69 @@ class Cfir2ChirJvmPipelineTest {
 
         val generatedClass = GeneratedClassLoader().define(output.classes.single())
         assertEquals(77, generatedClass.getMethod("arrayRoundTrip").invoke(null))
+    }
+
+    /**
+     * 验证局部函数声明能端到端降级：函数体进入 module 辅助声明，
+     * 函数引用物化为可调用的 JVM MethodHandle。
+     *
+     * `useLocal()` 声明局部函数 `localAnswer`（返回 5）并返回其引用；
+     * 测试反射拿 MethodHandle 后动态调用验证目标真实存在。
+     */
+    @Test
+    fun `lowers local function declaration to callable method handle end to end`() {
+        val functionType = ConeFunctionType(emptyList(), ConePrimitiveType.INT32)
+        val localAnswer = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = intTypeRef()
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("localAnswer")))
+            name = Name.identifier("localAnswer")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                statements += intLiteral(5)
+            }
+        }
+        val useLocal = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef { coneType = functionType }
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("useLocal")))
+            name = Name.identifier("useLocal")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = functionType
+                statements += localAnswer
+                statements += buildNamedAccessExpression {
+                    coneTypeOrNull = functionType
+                    calleeReference = buildResolvedNamedReference {
+                        name = localAnswer.name
+                        resolvedSymbol = localAnswer.symbol
+                    }
+                }
+            }
+        }
+        val file = fileWith(useLocal)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+        val facadeArtifact = requireNotNull(artifactsByName["sample/SampleCj"])
+
+        val generatedClass = GeneratedClassLoader().define(facadeArtifact)
+        val handle = generatedClass.getMethod("useLocal").invoke(null) as java.lang.invoke.MethodHandle
+        assertEquals(5, handle.invoke())
     }
 
     /**
