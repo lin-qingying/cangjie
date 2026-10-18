@@ -157,7 +157,9 @@ MethodHandle 物化）、枚举 case 引用（getstatic 常量）、
 无 payload enum constructor（getstatic 常量函数体）、
 try-catch 异常绑定与多 catch 类型分派（unwind 绑定 + 类型化异常表）、
 字符串插值（chir.string_build/append/result 平台中立 intrinsic 族，
-JVM 载体 StringBuilder）。
+JVM 载体 StringBuilder）、
+tuple 字面量与 pattern 提取（chir.tuple_pack/extract，
+JVM 载体 `Object[]`，元素装箱 + 下标取值）。
 
 ### 需调用约定设计（inout 与带 payload 构造的引用/构造 ABI）
 
@@ -169,8 +171,6 @@ JVM 载体 StringBuilder）。
 
 ### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）
 
-- **`cfir.tuple_literal` / `cfir.pattern_extract`**：CHIR 无元组布局
-  （JVM 载体是 Object）；需要元组 ABI 决策（匿名类 vs 长字段拆分）。
 - **finally 独立语义**：当前 finally 嵌在 try 表达式的块序列中，
   未对"任意路径（正常/异常/return 穿透）都执行"建模。
 
