@@ -67,6 +67,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildRangeExpression
 import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildStringInterpolation
 import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildTupleLiteral
@@ -900,6 +901,50 @@ class Cfir2ChirCoverageTest {
         val chirFunction = convertSingleFunction(function)
 
         assertTrue(Cfir2ChirOperation.CFIR_ARRAY_LITERAL.canonicalName in chirFunction.otherOperations())
+    }
+
+    /**
+     * 验证字符串插值会降级为 build → append* → result 的 intrinsic 序列，
+     * 而不是保留为 cfir.string_interpolation 占位操作。
+     */
+    @Test
+    fun `lowers string interpolation into build append result intrinsic sequence`() {
+        val stringType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("String")))
+        val function = functionReturningExpression(
+            name = "greet",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildStringInterpolation {
+                coneTypeOrNull = stringType
+                parts += stringLiteral("value = ")
+                parts += intLiteral(42)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_STRING_INTERPOLATION.canonicalName !in otherExpressions.map { it.operation })
+        val build = otherExpressions.single { it.operation == "chir.string_build" }
+        assertEquals("chir.StringBuilder", build.resultType?.renderName)
+        val appends = otherExpressions.filter { it.operation == "chir.string_append" }
+        assertEquals(2, appends.size)
+        appends.forEach { append ->
+            assertEquals(2, append.operands.size)
+            assertEquals("chir.StringBuilder", append.operands.first().type.renderName)
+        }
+        val result = otherExpressions.single { it.operation == "chir.string_result" }
+        assertEquals("sample.String", result.resultType?.renderName)
+    }
+
+    /**
+     * 构造字符串字面量片段。
+     */
+    private fun stringLiteral(value: String) = buildLiteralExpression {
+        kind = CfirLiteralKind.STRING
+        this.value = value
+        coneTypeOrNull = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("String")))
     }
 
     /**

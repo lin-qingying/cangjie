@@ -558,15 +558,54 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 字符串插值表达式，按插值片段收集操作数。
+     * Lower 字符串插值表达式。
+     *
+     * 降级为平台中立的字符串构建 intrinsic 序列：
+     * `chir.string_build`（创建构建器）→ 按插值顺序对每个片段
+     * `chir.string_append` → `chir.string_result`（取结果字符串）。
+     * 构建器载体类型为 `chir.StringBuilder` 命名类型，由后端映射为
+     * 平台实现（JVM StringBuilder / LLVM 运行时调用）。
      */
-    private fun lowerStringInterpolation(expression: CfirStringInterpolation): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_STRING_INTERPOLATION,
-            source = expression,
-            operands = expression.parts.mapValueOperands("string interpolation part"),
-            resultType = expression.requireResultType(),
+    private fun lowerStringInterpolation(expression: CfirStringInterpolation): ChirValue? {
+        val resultType = expression.requireResultType()
+        val builderType = ChirResolvedTypeRef(ChirNamedType("chir.StringBuilder"))
+        val buildId = builder.nextElementId("string_build", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = buildId,
+                operation = ChirOtherOperation.STRING_BUILD.canonicalName,
+                operands = emptyList(),
+                resultType = builderType,
+            ),
         )
+        val builderValue = ChirLocalValue(
+            semanticId = buildId,
+            type = builderType,
+            name = buildId.value,
+        )
+        expression.parts.forEach { part ->
+            val partValue = lowerExpression(part)
+                ?: throw Cfir2ChirConversionException("string interpolation part does not produce a value", part)
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = builder.nextElementId("string_append", expression),
+                    operation = ChirOtherOperation.STRING_APPEND.canonicalName,
+                    operands = listOf(builderValue, partValue),
+                    resultType = null,
+                ),
+            )
+        }
+        val resultId = builder.nextElementId("string_result", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = resultId,
+                operation = ChirOtherOperation.STRING_RESULT.canonicalName,
+                operands = listOf(builderValue),
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(resultId)
+    }
 
     /**
      * Lower 已解析的名称访问，区分成员字段访问、本地变量、参数和函数引用。

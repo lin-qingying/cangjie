@@ -759,6 +759,9 @@ class JvmFunctionCodegen(
         when (val operation = expression.operation.lowercase().trim()) {
             "select" -> emitSelectExpression(method, expression)
             "bitcast" -> emitJvmBitcast(method, expression)
+            "chir.string_build" -> emitStringBuild(method, expression)
+            "chir.string_append" -> emitStringAppend(method, expression)
+            "chir.string_result" -> emitStringResult(method, expression)
             "jvm.new" -> emitJvmNew(method, expression)
             "jvm.getfield" -> emitJvmGetField(method, expression)
             "jvm.putfield" -> emitJvmPutField(method, expression)
@@ -844,6 +847,83 @@ class JvmFunctionCodegen(
         }
         emitValue(method, source)
         storeExpressionResult(method, expression.semanticId, targetType)
+    }
+
+    /**
+     * 发射 `chir.string_build`：创建字符串构建器。
+     *
+     * 平台载体为 `java.lang.StringBuilder`；结果存入构建器 slot。
+     */
+    private fun emitStringBuild(method: MethodVisitor, expression: ChirOtherExpression) {
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.string_build requires result type", expression.semanticId)
+        val builderType = context.typeMapper.mapValueType(resultTypeRef)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_build carrier must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        method.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder")
+        method.visitInsn(Opcodes.DUP)
+        method.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false)
+        storeExpressionResult(method, expression.semanticId, builderType)
+    }
+
+    /**
+     * 发射 `chir.string_append`：向构建器追加片段。
+     *
+     * 片段按其 JVM 载体选择 append 重载：字符串走 `append(String)`，
+     * 原始类型装箱后走 `append(Object)`——StringBuilder 对装箱值调用 toString 语义。
+     */
+    private fun emitStringAppend(method: MethodVisitor, expression: ChirOtherExpression) {
+        val operands = expression.requireOperandCount("chir.string_append", 2)
+        expression.requireNoResultType("chir.string_append")
+        val builder = operands[0]
+        val builderType = context.typeMapper.mapValueType(builder.type)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_append builder must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        emitValue(method, builder)
+        emitBoxedValue(method, operands[1])
+        method.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "append",
+            "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
+            false,
+        )
+        method.visitInsn(Opcodes.POP)
+    }
+
+    /**
+     * 发射 `chir.string_result`：把构建器内容取为结果字符串。
+     */
+    private fun emitStringResult(method: MethodVisitor, expression: ChirOtherExpression) {
+        val builder = expression.singleOperand("chir.string_result")
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.string_result requires result type", expression.semanticId)
+        val builderType = context.typeMapper.mapValueType(builder.type)
+        if (builderType.descriptor != "Ljava/lang/StringBuilder;") {
+            throw JvmCodegenException(
+                "chir.string_result builder must be chir.StringBuilder, actual ${builderType.descriptor}",
+                expression.semanticId,
+            )
+        }
+        emitValue(method, builder)
+        method.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "toString",
+            "()Ljava/lang/String;",
+            false,
+        )
+        val resultType = context.typeMapper.mapValueType(resultTypeRef)
+        adaptStackValue(method, expression.semanticId, Type.getObjectType("java/lang/String"), resultType, "string result")
+        storeExpressionResult(method, expression.semanticId, resultType)
     }
 
     /**

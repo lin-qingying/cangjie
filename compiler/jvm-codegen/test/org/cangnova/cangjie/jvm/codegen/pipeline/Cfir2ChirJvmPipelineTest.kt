@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildStringInterpolation
 import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
@@ -428,6 +429,51 @@ class Cfir2ChirJvmPipelineTest {
         assertEquals(10, intArray[0])
         assertEquals(20, intArray[1])
         assertEquals(30, intArray[2])
+    }
+
+    /**
+     * 验证字符串插值能端到端降级为可执行的 JVM StringBuilder 链。
+     *
+     * `greet()` 返回插值 `"value = ${42}"`；cfir2chir 发射
+     * build → append → result 的 intrinsic 序列，JVM 后端映射为
+     * StringBuilder 字节码，反射执行验证拼接结果。
+     */
+    @Test
+    fun `lowers string interpolation to executable JVM string builder chain`() {
+        val stringType = ConeClassLikeType(ConeClassLikeLookupTagImpl(ClassId(FqName("std.core"), Name.identifier("String"))))
+        val greet = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef { coneType = stringType }
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("greet")))
+            name = Name.identifier("greet")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = stringType
+                statements += buildStringInterpolation {
+                    coneTypeOrNull = stringType
+                    parts += buildLiteralExpression {
+                        kind = CfirLiteralKind.STRING
+                        value = "value = "
+                        coneTypeOrNull = stringType
+                    }
+                    parts += intLiteral(42)
+                }
+            }
+        }
+        val file = fileWith(greet)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+
+        val generatedClass = GeneratedClassLoader().define(output.classes.single())
+        val result = generatedClass.getMethod("greet").invoke(null)
+        assertEquals("value = 42", result)
     }
 
     /**

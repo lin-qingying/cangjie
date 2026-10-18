@@ -100,6 +100,7 @@ class JvmTypeMapper(
     private fun mapNamedType(type: ChirNamedType): Type {
         return when (type.renderName) {
             "String", "std.core.String", "std/String", "java.lang.String" -> Type.getObjectType("java/lang/String")
+            "chir.StringBuilder" -> Type.getObjectType("java/lang/StringBuilder")
             else -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, type.renderName))
         }
     }

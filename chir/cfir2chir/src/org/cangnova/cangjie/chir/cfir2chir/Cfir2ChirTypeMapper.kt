@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -72,10 +73,16 @@ class Cfir2ChirTypeMapper {
     fun mapConeType(type: ConeCangJieType): ChirType {
         return when (type) {
             is ConePrimitiveType -> mapPrimitiveType(type.kind)
-            is ConeClassLikeType -> ChirClassType(
-                name = type.classId.asFqNameString(),
-                typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
-            )
+            // 内建 String 是语言内建名义类型，统一映射为 CHIR 命名类型形态，
+            // 与 mapBasicTypeRef 的 "String" 输出一致；后端据此识别字符串载体。
+            is ConeClassLikeType -> if (type.classId == StdlibClassIds.String) {
+                ChirNamedType("String")
+            } else {
+                ChirClassType(
+                    name = type.classId.asFqNameString(),
+                    typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },
+                )
+            }
             is ConeStructType -> ChirStructType(
                 name = type.classId.asFqNameString(),
                 typeArguments = type.typeArguments.map { mapConeTypeRef(it.type) },

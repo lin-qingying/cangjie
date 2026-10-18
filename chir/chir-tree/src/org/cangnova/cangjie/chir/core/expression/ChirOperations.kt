@@ -223,6 +223,9 @@ enum class ChirOtherOperation(
     FPTOSI("fptosi", ChirOtherOperationFamily.LLVM_CAST),
     FPTOUI("fptoui", ChirOtherOperationFamily.LLVM_CAST),
     PHI("phi", ChirOtherOperationFamily.LLVM_VALUE),
+    STRING_BUILD("chir.string_build", ChirOtherOperationFamily.STRING),
+    STRING_APPEND("chir.string_append", ChirOtherOperationFamily.STRING),
+    STRING_RESULT("chir.string_result", ChirOtherOperationFamily.STRING),
     JVM_NEW("jvm.new", ChirOtherOperationFamily.JVM),
     JVM_GET_FIELD("jvm.getfield", ChirOtherOperationFamily.JVM),
     JVM_PUT_FIELD("jvm.putfield", ChirOtherOperationFamily.JVM),
@@ -275,6 +278,13 @@ enum class ChirOtherOperation(
 enum class ChirOtherOperationFamily {
     LLVM_VALUE,
     LLVM_CAST,
+    /**
+     * 平台中立的字符串构建 intrinsic 族。
+     *
+     * 由各后端提供载体实现（JVM 为 StringBuilder，LLVM 为运行时调用）；
+     * cfir2chir 发射操作序列，后端负责载体映射。
+     */
+    STRING,
     JVM,
 }
 
