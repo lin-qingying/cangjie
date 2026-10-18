@@ -265,20 +265,35 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 函数体中的局部声明，并保留局部函数等声明值。
+     * Lower 函数体中的局部声明。
+     *
+     * 局部函数声明完成 header 登记与函数体转换，并把转换产物交给
+     * 辅助函数收集器（附加到 module 声明，函数值引用才有真实目标）；
+     * 声明语句本身对后端无副作用，不再发射占位操作。
+     * 其它局部声明（class 等）保留占位操作与源级属性。
      */
     private fun lowerLocalDeclaration(declaration: CfirDeclaration): ChirValue? {
-        val operands = when (declaration) {
+        when (declaration) {
             is CfirFunction -> {
                 registerFunctionHeaderIfNeeded(declaration)
-                listOf(storage.getFunctionHeader(declaration.symbol).asValue())
+                if (!storage.hasFunction(declaration.symbol)) {
+                    val declarationConverted = Cfir2ChirFunctionBodyConverter(
+                        components = components,
+                        packageName = packageName,
+                        function = declaration,
+                        header = storage.getFunctionHeader(declaration.symbol),
+                    ).convert()
+                    storage.registerFunction(declaration.symbol, declarationConverted)
+                    components.auxiliaryFunctions.register(declarationConverted)
+                }
+                return null
             }
-            else -> emptyList()
+            else -> Unit
         }
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_LOCAL_DECLARATION,
             source = declaration,
-            operands = operands,
+            operands = emptyList(),
             resultType = null,
             attributes = attributes(
                 "cfir.declaration.kind" to (declaration::class.simpleName ?: "anonymous"),
@@ -1674,6 +1689,7 @@ internal class Cfir2ChirFunctionBodyConverter(
                 header = anonymousHeader,
             ).convert()
             storage.registerFunction(expression.anonymousFunction.symbol, declaration)
+            components.auxiliaryFunctions.register(declaration)
         }
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_ANONYMOUS_FUNCTION,

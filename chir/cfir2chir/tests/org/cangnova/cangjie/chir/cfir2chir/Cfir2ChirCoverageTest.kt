@@ -1078,10 +1078,46 @@ class Cfir2ChirCoverageTest {
     }
 
     /**
-     * 转换单个 CFIR 函数并返回唯一 CHIR 函数声明。
+     * 验证 body 内的匿名函数声明会作为辅助函数追加到 module，
+     * 函数值引用的目标在 CHIR 输出中真实存在。
+     */
+    @Test
+    fun `collects anonymous function declarations as module auxiliary functions`() {
+        val anonymous = buildAnonymousFunction {
+            commonDeclaration()
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = typeRef(ConePrimitiveType.INT32)
+            body = blockOf(ConePrimitiveType.INT32, intLiteral(5))
+            symbol = CfirAnonymousFunctionSymbol()
+            hasExplicitParameterList = false
+            isLambda = true
+            typeRef = typeRef(ConeFunctionType(emptyList(), ConePrimitiveType.INT32, isClosureType = true))
+        }
+        val host = functionWithBody(
+            name = "useLambda",
+            returnType = ConePrimitiveType.UNIT,
+            bodyType = ConePrimitiveType.UNIT,
+            statements = listOf(buildAnonymousFunctionExpression { anonymousFunction = anonymous; isTrailingLambda = false }),
+        )
+
+        val module = convertModule(host)
+
+        val functionDeclarations = module.declarations.filterIsInstance<ChirFunctionDeclaration>()
+        // 宿主函数 + 匿名函数体都进入 module。
+        assertEquals(2, functionDeclarations.size)
+        assertTrue(functionDeclarations.any { it.name == org.cangnova.cangjie.name.SpecialNames.ANONYMOUS_STRING })
+    }
+
+    /**
+     * 转换单个 CFIR 函数并返回同名 CHIR 函数声明。
+     *
+     * body 内的匿名/局部函数会作为辅助声明追加到 module，
+     * 因此按函数名定位宿主函数而不是假设 module 内只有一个函数。
      */
     private fun convertSingleFunction(function: CfirNamedFunction): ChirFunctionDeclaration =
-        convertModule(function).declarations.filterIsInstance<ChirFunctionDeclaration>().single()
+        convertModule(function).declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == function.name.asString() }
 
     /**
      * 将一组测试声明包进 CFIR 文件并转换为唯一 CHIR module。

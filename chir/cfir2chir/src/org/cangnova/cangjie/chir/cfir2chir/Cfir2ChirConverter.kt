@@ -42,10 +42,21 @@ class DefaultCfir2ChirConverter : Cfir2ChirConverter {
             Cfir2ChirFileConverter(components, packageName).convertFile(file)
         }
 
+        // 函数体转换期间产出的匿名/局部函数附加到最后一个 module，
+        // 保证函数值引用（MethodHandle 物化）的目标声明真实存在。
+        val auxiliaryFunctions = components.auxiliaryFunctions.drain()
+        val modulesWithAuxiliaryFunctions = if (auxiliaryFunctions.isEmpty()) {
+            modules
+        } else {
+            modules.dropLast(1) + listOf(
+                modules.last().copy(declarations = modules.last().declarations + auxiliaryFunctions),
+            )
+        }
+
         return ChirPackage(
             semanticId = Cfir2ChirIds.packageId(packageName),
             name = packageName,
-            modules = modules,
+            modules = modulesWithAuxiliaryFunctions,
         )
     }
 }
