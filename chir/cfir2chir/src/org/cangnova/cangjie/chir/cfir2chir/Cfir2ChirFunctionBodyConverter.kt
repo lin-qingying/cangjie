@@ -25,6 +25,7 @@ import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirFunctionValue
@@ -1437,15 +1438,79 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 数组字面量为 CFIR 专有 array literal 操作。
+     * Lower 数组字面量。
+     *
+     * 当结果类型解析为 [ChirVArrayType] 且每个元素类型与之匹配时，降级为
+     * “`jvm.newarray` 分配 + 逐元素 `jvm.arrayStore`”序列：
+     * size 与下标使用 Int32 常量，元素按 CFIR 顺序写入。
+     * 其余形态（元素类型不一致）保留为 `cfir.array_literal` 占位。
      */
-    private fun lowerArrayLiteral(expression: CfirArrayLiteral): ChirValue? =
-        emitOtherValue(
+    private fun lowerArrayLiteral(expression: CfirArrayLiteral): ChirValue? {
+        val resultType = expression.requireResultType()
+        val arrayType = (resultType as? ChirResolvedTypeRef)?.type as? ChirVArrayType
+        if (arrayType != null) {
+            val elements = expression.elements.mapValueOperands("array element")
+            if (elements.all { it.type == arrayType.elementType }) {
+                return emitArrayLiteralSequence(expression, arrayType, elements)
+            }
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_ARRAY_LITERAL,
             source = expression,
             operands = expression.elements.mapValueOperands("array element"),
-            resultType = expression.requireResultType(),
+            resultType = resultType,
         )
+    }
+
+    /**
+     * 为数组字面量发射 `jvm.newarray` + 逐元素 `jvm.arrayStore` 序列。
+     */
+    private fun emitArrayLiteralSequence(
+        expression: CfirArrayLiteral,
+        arrayType: ChirVArrayType,
+        elements: List<ChirValue>,
+    ): ChirValue {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val allocateId = builder.nextElementId("newarray", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = allocateId,
+                operation = "jvm.newarray",
+                operands = listOf(
+                    ChirConstantValue(
+                        semanticId = builder.nextElementId("array_size", expression),
+                        type = intType,
+                        literal = elements.size.toString(),
+                    ),
+                ),
+                resultType = ChirResolvedTypeRef(arrayType),
+            ),
+        )
+        val arrayValue = ChirLocalValue(
+            semanticId = allocateId,
+            type = ChirResolvedTypeRef(arrayType),
+            name = allocateId.value,
+        )
+        elements.forEachIndexed { index, element ->
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = builder.nextElementId("array_store", expression),
+                    operation = "jvm.arrayStore",
+                    operands = listOf(
+                        arrayValue,
+                        ChirConstantValue(
+                            semanticId = builder.nextElementId("array_index", expression),
+                            type = intType,
+                            literal = index.toString(),
+                        ),
+                        element,
+                    ),
+                    resultType = null,
+                ),
+            )
+        }
+        return arrayValue
+    }
 
     /**
      * Lower tuple 字面量为 CFIR 专有 tuple literal 操作。

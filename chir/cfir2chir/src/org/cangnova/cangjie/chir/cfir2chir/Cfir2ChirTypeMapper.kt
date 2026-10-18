@@ -96,7 +96,10 @@ class Cfir2ChirTypeMapper {
             is ConeTupleType -> ChirTupleType(type.elementTypes.map(::mapConeTypeRef))
             is ConeVArrayType -> ChirVArrayType(
                 elementType = mapConeTypeRef(type.elementType),
-                rank = type.size.toIntExact("VArray size"),
+                // CFIR VArray 的 size 是编译期定长（元素个数）；CHIR rank 表达维度。
+                // VArray 是一维定长数组，维度恒为 1，长度语义由数组字面量的
+                // 分配大小常量承载，不在类型上保留。
+                rank = 1,
             )
             is ConePointerType -> ChirCPointerType(mapConeTypeRef(type.pointeeType))
             is ConeCStringType -> ChirCStringType
@@ -180,16 +183,6 @@ class Cfir2ChirTypeMapper {
             PrimitiveTypeKind.IDEAL_FLOAT,
             -> throw Cfir2ChirConversionException("ideal literal type $kind must be resolved before CHIR lowering")
         }
-    }
-
-    /**
-     * 将 Long 精确转换为 Int，越界时报告转换异常。
-     */
-    private fun Long.toIntExact(label: String): Int {
-        if (this < Int.MIN_VALUE || this > Int.MAX_VALUE) {
-            throw Cfir2ChirConversionException("$label $this cannot be represented by current CHIR VArray rank field")
-        }
-        return toInt()
     }
 
     /**

@@ -469,6 +469,62 @@ class Cfir2ChirCoverageTest {
     }
 
     /**
+     * 验证 VArray 字面量会降级为 `jvm.newarray` + 逐元素 `jvm.arrayStore` 序列，
+     * 而不是保留为 cfir.array_literal 占位操作。
+     */
+    @Test
+    fun `lowers varray literal into newarray and array store sequence`() {
+        val intArrayType = ConeVArrayType(ConePrimitiveType.INT32, size = 3)
+        val function = functionReturningExpression(
+            name = "intArray",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildArrayLiteral {
+                coneTypeOrNull = intArrayType
+                elements += intLiteral(10)
+                elements += intLiteral(20)
+                elements += intLiteral(30)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_ARRAY_LITERAL.canonicalName !in otherExpressions.map { it.operation })
+        val newArray = otherExpressions.single { it.operation == "jvm.newarray" }
+        assertEquals(1, newArray.operands.size)
+        assertEquals("3", (newArray.operands.single() as ChirConstantValue).literal)
+        val stores = otherExpressions.filter { it.operation == "jvm.arrayStore" }
+        assertEquals(3, stores.size)
+        stores.forEachIndexed { index, store ->
+            assertEquals(3, store.operands.size)
+            assertEquals(index.toString(), (store.operands[1] as ChirConstantValue).literal)
+        }
+    }
+
+    /**
+     * 验证元素类型与数组元素类型不一致的字面量保留为占位操作。
+     */
+    @Test
+    fun `keeps mismatched element array literal as placeholder`() {
+        val boolArrayType = ConeVArrayType(ConePrimitiveType.BOOLEAN, size = 2)
+        val function = functionReturningExpression(
+            name = "mixedArray",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildArrayLiteral {
+                coneTypeOrNull = boolArrayType
+                elements += boolLiteral(true)
+                elements += intLiteral(2)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        assertTrue(Cfir2ChirOperation.CFIR_ARRAY_LITERAL.canonicalName in chirFunction.otherOperations())
+    }
+
+    /**
      * 构造带 dispatch receiver 与指定 body 语句的成员函数。
      *
      * 赋值类语句不产出值，body 末尾追加 Int32 字面量 0 兜底返回。
@@ -587,8 +643,10 @@ class Cfir2ChirCoverageTest {
             returnType = ConePrimitiveType.UNIT,
             bodyType = ConePrimitiveType.UNIT,
             statements = listOf(
+                // 数组字面量已降级为 jvm.newarray/jvm.arrayStore 序列；
+                // 这里用元素类型不匹配的形态保留 cfir.array_literal 占位路径。
                 buildArrayLiteral {
-                    coneTypeOrNull = ConeVArrayType(ConePrimitiveType.INT32, size = 2)
+                    coneTypeOrNull = ConeVArrayType(ConePrimitiveType.BOOLEAN, size = 2)
                     elements += intLiteral(1)
                     elements += intLiteral(2)
                 },
@@ -666,8 +724,9 @@ class Cfir2ChirCoverageTest {
     fun `maps composite Cone types without depending on CFIR tree module from chir tree`() {
         val mapper = Cfir2ChirTypeMapper()
 
+        // CFIR VArray 的 size 是编译期长度；CHIR rank 表达维度，VArray 恒为一维。
         assertEquals(
-            ChirVArrayType(ChirResolvedTypeRef(ChirPrimitiveType.INT32), rank = 4),
+            ChirVArrayType(ChirResolvedTypeRef(ChirPrimitiveType.INT32), rank = 1),
             mapper.mapConeType(ConeVArrayType(ConePrimitiveType.INT32, size = 4)),
         )
         assertEquals(

@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
@@ -45,6 +46,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.jvm.codegen.api.ChirJvmCodegenInput
 import org.cangnova.cangjie.jvm.codegen.api.JvmClassFileArtifact
@@ -370,6 +372,53 @@ class Cfir2ChirJvmPipelineTest {
             .invoke(instance, 99)
         assertEquals(99, generatedClass.getMethod("getValue").invoke(instance))
         assertEquals(99, generatedClass.getField("value").getInt(instance))
+    }
+
+    /**
+     * 验证 VArray 字面量能端到端降级为可执行的 JVM 数组分配与填充。
+     *
+     * `makeArray()` 创建 `[10, 20, 30]` 并直接返回该数组；
+     * 反射拿到 `int[]` 后逐元素校验真实 JVM 数组内容。
+     */
+    @Test
+    fun `lowers varray literal to executable JVM array allocation and stores`() {
+        val intArrayType = ConeVArrayType(ConePrimitiveType.INT32, size = 3)
+        val arrayLiteral = buildArrayLiteral {
+            coneTypeOrNull = intArrayType
+            elements += intLiteral(10)
+            elements += intLiteral(20)
+            elements += intLiteral(30)
+        }
+
+        val function = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef { coneType = intArrayType }
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("makeArray")))
+            name = Name.identifier("makeArray")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = intArrayType
+                statements += arrayLiteral
+            }
+        }
+        val file = fileWith(function)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+
+        val generatedClass = GeneratedClassLoader().define(output.classes.single())
+        val result = generatedClass.getMethod("makeArray").invoke(null)
+        val intArray = result as IntArray
+        assertEquals(3, intArray.size)
+        assertEquals(10, intArray[0])
+        assertEquals(20, intArray[1])
+        assertEquals(30, intArray[2])
     }
 
     /**
