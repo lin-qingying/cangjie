@@ -52,8 +52,11 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildAugmentedAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
+import org.cangnova.cangjie.cfir.expressions.builder.buildCatch
 import org.cangnova.cangjie.cfir.expressions.builder.buildComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildThrowExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildTryExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
@@ -102,7 +105,12 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.declarations.builder.buildPatternBindingVariable
+import org.cangnova.cangjie.cfir.patterns.builder.buildCatchPattern
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
+import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
+import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.declaration.ChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
@@ -708,6 +716,87 @@ class Cfir2ChirCoverageTest {
             assertEquals(3, store.operands.size)
             assertEquals(index.toString(), (store.operands[1] as ChirConstantValue).literal)
         }
+    }
+
+    /**
+     * 验证 try-catch 的异常绑定降级：try 内 throw 携带 unwind 目标块与绑定名，
+     * catch 块为 pattern binding variable 注册局部 slot。
+     */
+    @Test
+    fun `lowers try catch with exception binding on unwind edges`() {
+        val exceptionType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("MyError")))
+        val bindingSymbol = CfirPatternBindingSymbol(
+            CallableId(PackageName, Name.identifier("err")),
+        )
+        val errBinding = buildPatternBindingVariable {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = typeRef(exceptionType)
+            isVar = false
+            symbol = bindingSymbol
+            name = Name.identifier("err")
+        }
+        val tryExpression = buildTryExpression {
+            coneTypeOrNull = exceptionType
+            tryBlock = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.UNIT
+                statements += buildThrowExpression {
+                    coneTypeOrNull = ConePrimitiveType.NOTHING
+                    exception = buildNamedAccessExpression {
+                        coneTypeOrNull = exceptionType
+                        calleeReference = buildResolvedNamedReference {
+                            name = Name.identifier("failure")
+                            resolvedSymbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("failure")))
+                        }
+                    }
+                }
+            }
+            catches += buildCatch {
+                coneTypeOrNull = exceptionType
+                pattern = buildCatchPattern {
+                    bindingName = Name.identifier("err")
+                    isWildcard = false
+                    resolvedTypeRef = org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef {
+                        coneType = exceptionType
+                    }
+                    this.bindingVariable = errBinding
+                }
+                body = buildBlock {
+                    coneTypeOrNull = exceptionType
+                    statements += buildNamedAccessExpression {
+                        coneTypeOrNull = exceptionType
+                        calleeReference = buildResolvedNamedReference {
+                            name = errBinding.name
+                            resolvedSymbol = bindingSymbol
+                        }
+                    }
+                }
+            }
+        }
+        val function = functionReturningExpression(
+            name = "guarded",
+            returnType = ConePrimitiveType.INT32,
+            expression = tryExpression,
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        // catch 块存在；try 内 throw 携带 unwind 目标与绑定名。
+        val catchBlock = chirFunction.blocks.single { it.name == "catch_0" }
+        val tryBlock = chirFunction.blocks.single { it.name == "try" }
+        val throwTerminator = tryBlock.terminator as ChirThrowTerminator
+        assertEquals(catchBlock.semanticId, throwTerminator.unwindTargetBlockId)
+        assertEquals("err", throwTerminator.unwindExceptionBinding)
+        // catch 体读取绑定变量：load 的地址名即绑定名。
+        val loadOperations = catchBlock.expressions
+            .filterIsInstance<ChirMemoryExpression>()
+            .filter { it.operation == "load" }
+        assertTrue(loadOperations.isNotEmpty())
+        assertTrue(loadOperations.all { (it.address as? ChirLocalValue)?.name == "err" })
     }
 
     /**

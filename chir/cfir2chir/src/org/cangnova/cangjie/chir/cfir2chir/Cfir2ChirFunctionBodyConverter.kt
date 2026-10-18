@@ -177,6 +177,15 @@ internal class Cfir2ChirFunctionBodyConverter(
     private val loopTargets = IdentityHashMap<CfirLoopExpression, LoopBlocks>()
 
     /**
+     * 活跃的 catch handler 上下文栈，内层 throw 降级时读取栈顶。
+     *
+     * 单 catch 场景：try 块 lowering 期间压入 (unwind 目标块, 异常绑定名)；
+     * `lowerThrowExpression` 依此为 `ChirThrowTerminator` 附加 unwind 目标与绑定。
+     * 多 catch 类型分派是后续模型演进项（见缺口文档分类）。
+     */
+    private val activeCatchHandlers = ArrayDeque<ActiveCatchHandler>()
+
+    /**
      * 执行完整函数体 lowering，并生成 CHIR 函数声明。
      */
     fun convert(): DefaultChirFunctionDeclaration {
@@ -1245,7 +1254,12 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower try 表达式，保留 catch/handle/finally 结构并为非 Unit 结果生成 phi 值。
+     * Lower try 表达式。
+     *
+     * 单 catch 场景：try 块 lowering 期间把 (catch 块 ID, 绑定名) 压入
+     * 活跃 handler 栈，try 内的 throw 据此携带 unwind 目标与异常绑定；
+     * catch 块入口把异常对象绑定到 pattern 的 binding variable local，
+     * catch 体通过既有局部变量机制读取。catch 类型分派是后续演进项。
      */
     private fun lowerTryExpression(expression: CfirTryExpression): ChirValue? {
         val resourceValues = expression.resources.mapNotNull { resource ->
@@ -1255,10 +1269,24 @@ internal class Cfir2ChirFunctionBodyConverter(
         val resultType = expression.resultTypeOrNull()
         val tryBlockId = builder.nextId("try")
         val continuationBlockId = builder.nextId("try_cont")
+        val firstCatch = expression.catches.firstOrNull()
+        val catchBlockId = firstCatch?.let { builder.nextId("catch") }
         builder.terminate(ChirBranchTerminator(builder.nextId("try_enter"), tryBlockId))
 
         builder.enterBlock(tryBlockId, "try")
+        val catchBindingName = firstCatch?.let(::catchExceptionBindingNameOrNull)
+        if (firstCatch != null) {
+            activeCatchHandlers.addLast(
+                ActiveCatchHandler(
+                    unwindTargetBlockId = requireNotNull(catchBlockId),
+                    exceptionBindingName = catchBindingName,
+                ),
+            )
+        }
         val tryValue = lowerBlock(expression.tryBlock)
+        if (firstCatch != null) {
+            activeCatchHandlers.removeLast()
+        }
         val tryPred = builder.currentBlockId
         val tryFallsThrough = builder.hasOpenCurrentBlock
         if (tryFallsThrough) {
@@ -1270,8 +1298,8 @@ internal class Cfir2ChirFunctionBodyConverter(
             incoming += IncomingValue(tryValue, tryPred, expression.tryBlock)
         }
         expression.catches.forEachIndexed { index, catch ->
-            val catchBlockId = builder.nextId("catch")
-            builder.enterBlock(catchBlockId, "catch_$index")
+            val targetCatchBlockId = if (index == 0) requireNotNull(catchBlockId) else builder.nextId("catch")
+            builder.enterBlock(targetCatchBlockId, "catch_$index")
             val value = lowerCatchExpression(catch)
             val pred = builder.currentBlockId
             if (builder.hasOpenCurrentBlock) {
@@ -1330,11 +1358,22 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower throw 表达式并终结当前 block。
+     *
+     * 活跃 catch 语境（try 块内）下，throw 携带 unwind 目标块与异常绑定名，
+     * 后端按此生成异常表条目并把异常对象存入绑定 local。
      */
     private fun lowerThrowExpression(expression: CfirThrowExpression) {
         val exception = lowerExpression(expression.exception)
             ?: throw Cfir2ChirConversionException("throw expression exception does not produce a value", expression.exception)
-        builder.terminate(ChirThrowTerminator(builder.nextId("throw"), exception))
+        val handler = activeCatchHandlers.lastOrNull()
+        builder.terminate(
+            ChirThrowTerminator(
+                semanticId = builder.nextId("throw"),
+                exceptionValue = exception,
+                unwindTargetBlockId = handler?.unwindTargetBlockId,
+                unwindExceptionBinding = handler?.exceptionBindingName,
+            ),
+        )
     }
 
     /**
@@ -1922,15 +1961,58 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower catch 子句，记录 pattern 类型并 lower catch body。
+     *
+     * pattern 携带 binding variable 时，为绑定注册异常类型的局部 slot
+     * （后端 handler 进入时按绑定名把栈顶异常对象存入该 slot），
+     * catch 体通过既有局部变量机制读取绑定。
      */
-    private fun lowerCatchExpression(expression: CfirCatch): ChirValue? =
+    private fun lowerCatchExpression(expression: CfirCatch): ChirValue? {
+        bindCatchExceptionVariable(expression)
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_CATCH,
             source = expression,
             operands = emptyList(),
             resultType = null,
             attributes = attributes("cfir.catch.pattern" to (expression.pattern::class.simpleName ?: "anonymous")),
-        ).let { lowerBlock(expression.body) }
+        )
+        return lowerBlock(expression.body)
+    }
+
+    /**
+     * 为 catch pattern 的 binding variable 注册异常对象局部 slot。
+     *
+     * 绑定 local 的类型取 binding variable 的声明类型（解析后的异常类型）；
+     * JVM 后端 handler 进入时以绑定名做 ASTORE 命中该 slot。
+     */
+    private fun bindCatchExceptionVariable(catch: CfirCatch) {
+        val binding = catch.pattern.bindingVariable ?: return
+        val bindingType = typeMapper.mapTypeRef(binding.returnTypeRef)
+        val declaration = DefaultChirVariableDeclaration(
+            semanticId = Cfir2ChirIds.declarationId(binding.symbol),
+            name = binding.name.asString(),
+            type = bindingType,
+            mutable = binding.isVar,
+        )
+        storage.registerLocalVariable(
+            binding.symbol,
+            ChirLocalVariableHeader(
+                declaration = declaration,
+                ownerFunctionId = header.semanticId,
+            ),
+        )
+    }
+
+    /**
+     * 读取 catch pattern 绑定变量的名称，作为异常绑定名。
+     *
+     * wildcard catch（`catch (_)`)或无绑定名时返回 null——
+     * unwind 边不携带绑定，后端丢弃异常对象。
+     */
+    private fun catchExceptionBindingNameOrNull(catch: CfirCatch): String? {
+        if (catch.pattern.isWildcard) return null
+        val bindingVariable = catch.pattern.bindingVariable ?: return null
+        return bindingVariable.name.asString()
+    }
 
     /**
      * Lower effect handle 子句，记录 command pattern 并 lower handler body。
@@ -2349,6 +2431,20 @@ internal class Cfir2ChirFunctionBodyConverter(
          * break 应跳转到的 block ID。
          */
         val breakBlockId: ChirSemanticId,
+    )
+
+    /**
+     * 活跃 catch handler 的 unwind 上下文。
+     */
+    private data class ActiveCatchHandler(
+        /**
+         * 异常恢复跳转目标 block ID。
+         */
+        val unwindTargetBlockId: ChirSemanticId,
+        /**
+         * handler 内绑定异常对象的局部名；null 表示丢弃异常对象。
+         */
+        val exceptionBindingName: String?,
     )
 
     /**

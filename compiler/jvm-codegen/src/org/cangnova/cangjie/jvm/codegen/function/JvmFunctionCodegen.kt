@@ -1273,7 +1273,10 @@ class JvmFunctionCodegen(
      * 发射 throw 终结符。
      *
      * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区和 catch-all handler，
-     * 在 handler 中执行 phi 边赋值并跳转到 unwind 目标块。
+     * handler 内执行 phi 边赋值并跳转到 unwind 目标块。
+     * 携带异常绑定时，handler 先把栈顶异常对象按绑定名存入 local
+     * （与 cfir2chir 的 catch 绑定变量 slot 对齐，catch 体按名读取）；
+     * 无绑定时丢弃异常对象。
      */
     private fun emitThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
         val exceptionType = context.typeMapper.mapValueType(terminator.exceptionValue.type)
@@ -1294,9 +1297,36 @@ class JvmFunctionCodegen(
         method.visitInsn(Opcodes.ATHROW)
         method.visitLabel(protectedEnd)
         method.visitLabel(handlerEntry)
-        method.visitInsn(Opcodes.POP)
+        val exceptionBinding = terminator.unwindExceptionBinding
+        if (exceptionBinding == null) {
+            method.visitInsn(Opcodes.POP)
+        } else {
+            storeHandlerException(method, exceptionBinding, terminator)
+        }
         emitPhiAssignmentsForEdge(method, block, unwindTargetBlockId)
         method.visitJumpInsn(Opcodes.GOTO, labelFor(unwindTargetBlockId))
+    }
+
+    /**
+     * 把 handler 栈顶的异常对象按绑定名存入 local slot。
+     *
+     * slot 首次分配时使用引用载体（`java/lang/Object`）：cfir2chir 的绑定
+     * 类型可能是任意异常子类型，catch 体读取时按绑定声明类型做栈值适配。
+     */
+    private fun storeHandlerException(method: MethodVisitor, bindingName: String, terminator: ChirThrowTerminator) {
+        val normalizedBinding = normalizeLocalName(bindingName)
+        val existing = localSlotsByName[normalizedBinding]
+        val slot = existing ?: LocalSlot(nextLocalSlot, Type.getObjectType("java/lang/Object")).also {
+            localSlotsByName[normalizedBinding] = it
+            nextLocalSlot += it.type.size
+        }
+        if (slot.type.sort != Type.OBJECT && slot.type.sort != Type.ARRAY) {
+            throw JvmCodegenException(
+                "JVM catch exception binding '$bindingName' must be a reference slot, actual ${slot.type.descriptor}",
+                terminator.semanticId,
+            )
+        }
+        method.visitVarInsn(Opcodes.ASTORE, slot.index)
     }
 
     /**
@@ -1646,6 +1676,10 @@ class JvmFunctionCodegen(
      * 确保 CHIR ref 地址拥有可读写的 JVM local slot。
      *
      * 对还没有绑定的地址分配新 slot，并用地址 semanticId 与名称同时登记。
+     *
+     * 已存在同名 slot 且类型不一致时：引用载体之间视为兼容（如 catch 绑定
+     * 以 Object 存入、按声明类型读取，读取侧经 checkcast 适配）；原始类型
+     * 冲突仍然报错。
      */
     private fun ensureAddressSlot(address: ChirValue, nodeId: ChirSemanticId): LocalSlot {
         val targetType = refTargetType(address, nodeId)
@@ -1654,7 +1688,8 @@ class JvmFunctionCodegen(
         val existing = localSlots[address.semanticId]
             ?: localSlotsByName[normalizeLocalName(name)]
         if (existing != null) {
-            if (existing.type != type) {
+            val referenceCompatible = existing.type.isReferenceCarrier() && type.isReferenceCarrier()
+            if (existing.type != type && !referenceCompatible) {
                 throw JvmCodegenException("JVM address slot type mismatch: expected ${existing.type}, actual $type", nodeId)
             }
             return existing

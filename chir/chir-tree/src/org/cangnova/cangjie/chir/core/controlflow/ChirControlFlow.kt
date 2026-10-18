@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.chir.core.controlflow
+package org.cangnova.cangjie.chir.core.controlflow
 
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
@@ -67,6 +67,10 @@ data class ChirConditionalBranchTerminator(
 
 /**
  * throw 终结指令。
+ *
+ * unwind 边携带可选的异常绑定信息：catch handler 进入时把栈顶异常对象
+ * 存入绑定的 local（按名称命中），供 catch 体通过绑定变量读取。
+ * 绑定为空表示该 unwind 边只做控制流恢复（如 finally 语义），异常对象被丢弃。
  */
 data class ChirThrowTerminator(
     /**
@@ -83,6 +87,11 @@ data class ChirThrowTerminator(
      * unwind 目标基本块标识；无异常恢复路径时为 `null`。
      */
     val unwindTargetBlockId: ChirSemanticId? = null,
+
+    /**
+     * unwind handler 内绑定异常对象的局部变量名；空表示丢弃异常对象。
+     */
+    val unwindExceptionBinding: String? = null,
 ) : ChirTerminator
 
 /**
