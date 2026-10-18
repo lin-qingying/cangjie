@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOpKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -39,6 +40,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -227,6 +229,147 @@ class Cfir2ChirJvmPipelineTest {
         val instance = generatedClass.getConstructor().newInstance()
         assertEquals(42, generatedClass.getMethod("answer").invoke(instance))
         assertEquals(42, generatedClass.getMethod("answerTwice").invoke(instance))
+    }
+
+    /**
+     * 验证成员字段读写能端到端降级为可执行的 JVM 实例字段访问。
+     *
+     * `Box.setValue(n)` 写 `this.value = n`；`Box.getValue()` 读 `this.value`。
+     * cfir2chir 把字段读写降级为 `jvm.putfield`/`jvm.getfield`，
+     * JVM 后端发射真实的 getfield/putfield 字节码。
+     */
+    @Test
+    fun `lowers member field access through this to executable JVM instance fields`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(BoxClassId))
+        val setValueSymbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("setValue")))
+        val valueField = buildFieldVariable {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            symbol = CfirFieldVariableSymbol(CallableId(PackageName, Name.identifier("value")))
+            name = Name.identifier("value")
+            returnTypeRef = intTypeRef()
+            initializer = null
+            isVar = true
+        }
+        val thisReceiver = buildThisReceiverExpression {
+            coneTypeOrNull = boxType
+            calleeReference = buildThisReference {
+                boundSymbol = CfirClassSymbol(BoxClassId)
+                isImplicit = true
+            }
+        }
+        val valueParameter = buildValueParameter {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            isNamed = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            symbol = CfirValueParameterSymbol(CallableId(PackageName, Name.identifier("n")))
+            containingDeclarationSymbol = setValueSymbol
+            name = Name.identifier("n")
+            returnTypeRef = intTypeRef()
+            defaultValue = null
+        }
+        val setValue = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = boxType
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef { coneType = ConePrimitiveType.UNIT }
+            symbol = setValueSymbol
+            name = Name.identifier("setValue")
+            isMut = false
+            valueParameters += valueParameter
+            body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.UNIT
+                statements += buildAssignment {
+                    coneTypeOrNull = ConePrimitiveType.UNIT
+                    lValue = buildNamedAccessExpression {
+                        coneTypeOrNull = ConePrimitiveType.INT32
+                        calleeReference = buildResolvedNamedReference {
+                            name = valueField.name
+                            resolvedSymbol = valueField.symbol
+                        }
+                        dispatchReceiver = thisReceiver
+                    }
+                    rValue = buildNamedAccessExpression {
+                        coneTypeOrNull = ConePrimitiveType.INT32
+                        calleeReference = buildResolvedNamedReference {
+                            name = valueParameter.name
+                            resolvedSymbol = valueParameter.symbol
+                        }
+                    }
+                }
+            }
+        }
+        val getValue = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = boxType
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = intTypeRef()
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("getValue")))
+            name = Name.identifier("getValue")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                statements += buildNamedAccessExpression {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    calleeReference = buildResolvedNamedReference {
+                        name = valueField.name
+                        resolvedSymbol = valueField.symbol
+                    }
+                    dispatchReceiver = buildThisReceiverExpression {
+                        coneTypeOrNull = boxType
+                        calleeReference = buildThisReference {
+                            boundSymbol = CfirClassSymbol(BoxClassId)
+                            isImplicit = true
+                        }
+                    }
+                }
+            }
+        }
+        val box = buildClass {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            scopeProvider = UnusedScopeProvider
+            status = CfirDeclarationStatusImpl()
+            symbol = CfirClassSymbol(BoxClassId)
+            name = Name.identifier("Box")
+            declarations += valueField
+            declarations += setValue
+            declarations += getValue
+        }
+        val file = fileWith(box)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+        val artifactsByName = output.classes.associateBy { it.internalName }
+        val boxArtifact = requireNotNull(artifactsByName["sample/Box"])
+
+        val generatedClass = GeneratedClassLoader().define(boxArtifact)
+        val instance = generatedClass.getConstructor().newInstance()
+        generatedClass
+            .getMethod("setValue", Int::class.javaPrimitiveType)
+            .invoke(instance, 99)
+        assertEquals(99, generatedClass.getMethod("getValue").invoke(instance))
+        assertEquals(99, generatedClass.getField("value").getInt(instance))
     }
 
     /**

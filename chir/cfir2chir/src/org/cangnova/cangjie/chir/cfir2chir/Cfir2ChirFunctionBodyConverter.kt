@@ -17,10 +17,13 @@ import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
 import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
+import org.cangnova.cangjie.chir.core.type.ChirClassType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
+import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirStructType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
@@ -537,22 +540,80 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 已解析的名称访问，区分成员访问、本地变量、参数和函数引用。
+     * Lower 已解析的名称访问，区分成员字段访问、本地变量、参数和函数引用。
+     *
+     * 成员字段访问（携带 receiver 且解析到字段 symbol）降级为 `jvm.getfield`：
+     * owner 由 receiver 静态类型推导，字段名/类型来自字段 header，
+     * 与 JVM 后端 `emitJvmGetField` 的 ABI 契约对齐。
+     * 其余成员访问（如成员函数引用、未知字段）保留为 `cfir.member_access` 占位。
      */
     private fun lowerNamedAccessExpression(expression: CfirNamedAccessExpression): ChirValue {
-        val receiverOperands = expression.receiverOperands()
-        if (receiverOperands.isNotEmpty()) {
+        val reference = expression.calleeReference as? CfirResolvedNamedReference
+            ?: throw Cfir2ChirConversionException("named access must be resolved before CHIR lowering", expression)
+
+        if (expression.dispatchReceiver != null || expression.explicitReceiver != null) {
+            memberFieldAccessOrNull(expression, reference)?.let { return it }
             return emitOtherValue(
                 operation = Cfir2ChirOperation.CFIR_MEMBER_ACCESS,
                 source = expression,
-                operands = receiverOperands,
+                operands = expression.receiverOperands(),
                 resultType = expression.requireResultType(),
                 attributes = referenceAttributes(expression.calleeReference),
             ) ?: throw Cfir2ChirConversionException("member access produced no value", expression)
         }
-        val reference = expression.calleeReference as? CfirResolvedNamedReference
-            ?: throw Cfir2ChirConversionException("named access must be resolved before CHIR lowering", expression)
         return valueForResolvedReference(reference, expression)
+    }
+
+    /**
+     * 尝试把成员字段访问降级为 `jvm.getfield` intrinsic。
+     *
+     * 仅当解析目标是已登记的字段 header、且 receiver 表达式产出 CHIR 值时降级。
+     * `jvm.owner` 从 receiver 静态类型的点分名转换（`sample.Box` → `sample/Box`），
+     * `jvm.name`/`jvm.descriptor` 来自字段声明；不满足条件时返回 null 保留占位。
+     */
+    private fun memberFieldAccessOrNull(
+        expression: CfirNamedAccessExpression,
+        reference: CfirResolvedNamedReference,
+    ): ChirValue? {
+        val variableHeader = storage.getVariableOrNull(reference.resolvedSymbol) ?: return null
+        val receiver = lowerExpression(expression.dispatchReceiver ?: expression.explicitReceiver ?: return null)
+            ?: return null
+        val resultType = expression.requireResultType()
+        if (resultType != variableHeader.declaration.type) return null
+        val ownerInternalName = jvmOwnerInternalNameOrNull(receiver.type) ?: return null
+
+        val expressionId = builder.nextElementId("getfield", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.getfield",
+                operands = listOf(receiver),
+                resultType = resultType,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", variableHeader.declaration.name),
+                ),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 把 class-like receiver 静态类型转换为 JVM owner internal name。
+     *
+     * 只接受点分名称的 [ChirClassType]/[ChirStructType]/[ChirNamedType]；
+     * 其它类型（元组、函数、泛型参数等）没有可推导的 classfile owner，返回 null。
+     */
+    private fun jvmOwnerInternalNameOrNull(typeRef: ChirTypeRef): String? {
+        val type = (typeRef as? ChirResolvedTypeRef)?.type ?: return null
+        val dotName = when (type) {
+            is ChirClassType -> type.name
+            is ChirStructType -> type.name
+            is ChirNamedType -> type.renderName
+            else -> return null
+        }
+        if (!dotName.contains('.')) return null
+        return dotName.replace('.', '/')
     }
 
     /**
@@ -579,9 +640,6 @@ internal class Cfir2ChirFunctionBodyConverter(
             attributes = referenceAttributes(expression.calleeReference),
         ) ?: throw Cfir2ChirConversionException("super receiver expression produced no value", expression)
 
-    /**
-     * Lower this 接收者表达式。
-     */
     /**
      * Lower this 接收者表达式。
      *
@@ -748,7 +806,8 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower 赋值表达式，优先降为内存 store，成员赋值保留为 CFIR 专有操作。
+     * Lower 赋值表达式：优先降为内存 store；成员字段赋值降为 `jvm.putfield`；
+     * 其余成员赋值保留为 CFIR 专有操作。
      */
     private fun lowerAssignmentExpression(expression: CfirAssignment) {
         val value = lowerExpression(expression.rValue)
@@ -764,6 +823,8 @@ internal class Cfir2ChirFunctionBodyConverter(
             return
         }
 
+        if (memberFieldStoreOrNull(expression, value)) return
+
         val target = lowerAssignmentTargetValue(expression.lValue)
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_MEMBER_ASSIGN,
@@ -772,6 +833,36 @@ internal class Cfir2ChirFunctionBodyConverter(
             resultType = null,
             attributes = attributes("cfir.assignment.target" to expression.lValue::class.qualifiedName.orEmpty()),
         )
+    }
+
+    /**
+     * 尝试把成员字段赋值降级为 `jvm.putfield` intrinsic。
+     *
+     * 仅当赋值目标是携带 receiver 的已解析字段访问、字段 header 已登记、
+     * receiver 静态类型可推导 owner 时降级；value 与字段声明类型必须一致。
+     */
+    private fun memberFieldStoreOrNull(expression: CfirAssignment, value: ChirValue): Boolean {
+        val namedAccess = expression.lValue as? CfirNamedAccessExpression ?: return false
+        val reference = namedAccess.calleeReference as? CfirResolvedNamedReference ?: return false
+        val variableHeader = storage.getVariableOrNull(reference.resolvedSymbol) ?: return false
+        if (value.type != variableHeader.declaration.type) return false
+        val receiverExpression = namedAccess.dispatchReceiver ?: namedAccess.explicitReceiver ?: return false
+        val receiver = lowerExpression(receiverExpression) ?: return false
+        val ownerInternalName = jvmOwnerInternalNameOrNull(receiver.type) ?: return false
+
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = builder.nextElementId("putfield", expression),
+                operation = "jvm.putfield",
+                operands = listOf(receiver, value),
+                resultType = null,
+                attributes = setOf(
+                    ChirStringAttribute("jvm.owner", ownerInternalName),
+                    ChirStringAttribute("jvm.name", variableHeader.declaration.name),
+                ),
+            ),
+        )
+        return true
     }
 
     /**

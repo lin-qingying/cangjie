@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.builder.CfirCodeFragmentBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirAnonymousFunctionBuilder
+import org.cangnova.cangjie.cfir.declarations.builder.CfirClassBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirExtendBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirFieldVariableBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirFileBuilder
@@ -24,6 +25,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.CfirNamedFunctionBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirStructBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.CfirTypeAliasBuilder
 import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildCodeFragment
 import org.cangnova.cangjie.cfir.declarations.builder.buildExtend
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
@@ -45,6 +47,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperationKind
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.builder.buildAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildAugmentedAssignment
 import org.cangnova.cangjie.cfir.expressions.builder.buildAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildBinaryOp
@@ -53,6 +56,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildIfAvailableExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildRangeExpression
@@ -94,6 +98,7 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
+import org.cangnova.cangjie.chir.core.declaration.ChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirExtendDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirInterfaceDeclaration
@@ -358,6 +363,133 @@ class Cfir2ChirCoverageTest {
         val chirFunction = convertSingleFunction(function)
 
         assertTrue(Cfir2ChirOperation.CFIR_THIS_RECEIVER.canonicalName in chirFunction.otherOperations())
+    }
+
+    /**
+     * 验证成员字段读取会降级为带 jvm.owner/jvm.name ABI 的 `jvm.getfield`，
+     * 而不是保留为 cfir.member_access 占位操作。
+     */
+    @Test
+    fun `lowers member field read into jvm getfield with abi attributes`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val valueField = field("value", ConePrimitiveType.INT32, mutable = true)
+        val reader = memberFunction(
+            name = "readValue",
+            receiverType = boxType,
+            body = buildNamedAccessExpression {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                calleeReference = buildResolvedNamedReference {
+                    name = valueField.name
+                    resolvedSymbol = valueField.symbol
+                }
+                dispatchReceiver = buildThisReceiverExpression {
+                    coneTypeOrNull = boxType
+                    calleeReference = buildThisReference {
+                        boundSymbol = CfirClassSymbol(classId("Box"))
+                        isImplicit = true
+                    }
+                }
+            },
+        )
+        val box = buildClass {
+            commonClassLikeDeclaration("Box", CfirClassSymbol(classId("Box")))
+            declarations += valueField
+            declarations += reader
+        }
+
+        val module = convertModule(box)
+        val boxDeclaration = module.declarations.filterIsInstance<ChirClassDeclaration>().single()
+        val chirReader = boxDeclaration.memberDeclarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == "readValue" }
+
+        assertTrue(Cfir2ChirOperation.CFIR_MEMBER_ACCESS.canonicalName !in chirReader.otherOperations())
+        val getField = chirReader.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+            .single { it.operation == "jvm.getfield" }
+        assertTrue(
+            getField.attributes.any { it is ChirStringAttribute && it.key == "jvm.owner" && it.value == "sample/Box" },
+        )
+        assertTrue(
+            getField.attributes.any { it is ChirStringAttribute && it.key == "jvm.name" && it.value == "value" },
+        )
+    }
+
+    /**
+     * 验证成员字段赋值会降级为 `jvm.putfield`，而不是保留为 cfir.member_assign 占位操作。
+     */
+    @Test
+    fun `lowers member field write into jvm putfield`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val valueField = field("value", ConePrimitiveType.INT32, mutable = true)
+        val writer = memberFunction(
+            name = "writeValue",
+            receiverType = boxType,
+            body = buildAssignment {
+                coneTypeOrNull = ConePrimitiveType.UNIT
+                lValue = buildNamedAccessExpression {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    calleeReference = buildResolvedNamedReference {
+                        name = valueField.name
+                        resolvedSymbol = valueField.symbol
+                    }
+                    dispatchReceiver = buildThisReceiverExpression {
+                        coneTypeOrNull = boxType
+                        calleeReference = buildThisReference {
+                            boundSymbol = CfirClassSymbol(classId("Box"))
+                            isImplicit = true
+                        }
+                    }
+                }
+                rValue = intLiteral(7)
+            },
+        )
+        val box = buildClass {
+            commonClassLikeDeclaration("Box", CfirClassSymbol(classId("Box")))
+            declarations += valueField
+            declarations += writer
+        }
+
+        val module = convertModule(box)
+        val boxDeclaration = module.declarations.filterIsInstance<ChirClassDeclaration>().single()
+        val chirWriter = boxDeclaration.memberDeclarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == "writeValue" }
+
+        assertTrue(Cfir2ChirOperation.CFIR_MEMBER_ASSIGN.canonicalName !in chirWriter.otherOperations())
+        val putField = chirWriter.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+            .single { it.operation == "jvm.putfield" }
+        assertEquals(2, putField.operands.size)
+        assertTrue(
+            putField.attributes.any { it is ChirStringAttribute && it.key == "jvm.owner" && it.value == "sample/Box" },
+        )
+    }
+
+    /**
+     * 构造带 dispatch receiver 与指定 body 语句的成员函数。
+     *
+     * 赋值类语句不产出值，body 末尾追加 Int32 字面量 0 兜底返回。
+     */
+    private fun memberFunction(
+        name: String,
+        receiverType: ConeSimpleCangJieType,
+        body: CfirStatement,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(name)))
+        return buildNamedFunction {
+            commonNamedFunctionDeclaration(symbol)
+            this.name = Name.identifier(name)
+            dispatchReceiverType = receiverType
+            returnTypeRef = typeRef(ConePrimitiveType.INT32)
+            this.body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                statements += body
+                statements += intLiteral(0)
+            }
+        }
     }
 
     /**
@@ -875,6 +1007,23 @@ class Cfir2ChirCoverageTest {
         symbol: CfirInterfaceSymbol,
     ) {
         commonDeclaration()
+        scopeProvider = UnusedScopeProvider
+        status = CfirDeclarationStatusImpl()
+        this.name = Name.identifier(name)
+        this.symbol = symbol
+    }
+
+    /**
+     * 填充 class builder 的 class-like 公共字段。
+     */
+    private fun CfirClassBuilder.commonClassLikeDeclaration(
+        name: String,
+        symbol: CfirClassSymbol,
+    ) {
+        moduleData = TestModuleData
+        resolvePhase = CfirResolvePhase.BODY_RESOLVE
+        origin = CfirDeclarationOrigin.Synthetic.Default
+        attributes = CfirDeclarationAttributes.EMPTY
         scopeProvider = UnusedScopeProvider
         status = CfirDeclarationStatusImpl()
         this.name = Name.identifier(name)
