@@ -64,10 +64,12 @@ import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildSuperReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeConversion
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeOperator
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -565,6 +567,110 @@ class Cfir2ChirCoverageTest {
         val arrayStore = otherExpressions.single { it.operation == "jvm.arrayStore" }
         assertEquals(3, arrayStore.operands.size)
         assertEquals(null, arrayStore.resultType)
+    }
+
+    /**
+     * 验证成员函数体内的 super 接收者会降级为名为 `this` 的局部值引用
+     * （与 this 降级共用 JVM slot 0 绑定），而不是保留为占位操作。
+     */
+    @Test
+    fun `lowers super receiver in member function into this local value`() {
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val baseType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Base")))
+        val superUser = memberFunction(
+            name = "useSuper",
+            receiverType = boxType,
+            body = buildSuperReceiverExpression {
+                coneTypeOrNull = baseType
+                calleeReference = buildSuperReference {
+                    superTypeRef = typeRef(baseType)
+                }
+            },
+        )
+
+        val module = convertModule(superUser)
+        val chirUser = module.declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .single { it.name == "useSuper" }
+
+        // super 已不再是占位操作，而是名为 this 的局部值引用。
+        assertTrue(Cfir2ChirOperation.CFIR_SUPER_RECEIVER.canonicalName !in chirUser.otherOperations())
+    }
+
+    /**
+     * 验证引用类型 smart cast 会降级为带 jvm.type ABI 的 `jvm.checkcast`，
+     * 数值类型 smart cast 保留为占位操作。
+     */
+    @Test
+    fun `lowers reference smart cast into jvm checkcast`() {
+        val anyType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Any")))
+        val boxType = ConeClassLikeType(ConeClassLikeLookupTagImpl(classId("Box")))
+        val referenceCast = memberFunctionReturningExpression(
+            name = "referenceCast",
+            receiverType = boxType,
+            expression = buildSmartCastExpression {
+                coneTypeOrNull = boxType
+                originalExpression = buildThisReceiverExpression {
+                    coneTypeOrNull = anyType
+                    calleeReference = buildThisReference {
+                        boundSymbol = CfirClassSymbol(classId("Any"))
+                        isImplicit = false
+                    }
+                }
+                smartcastType = typeRef(boxType)
+                upperTypesFromSmartCast = listOf(boxType)
+                lowerTypesFromSmartCast = emptyList()
+                smartcastStability = CfirSmartcastStability.STABLE_VALUE
+            },
+        )
+        val primitiveCast = functionReturningExpression(
+            name = "primitiveCast",
+            returnType = ConePrimitiveType.INT64,
+            expression = buildSmartCastExpression {
+                coneTypeOrNull = ConePrimitiveType.INT64
+                originalExpression = intLiteral(1)
+                smartcastType = typeRef(ConePrimitiveType.INT64)
+                upperTypesFromSmartCast = listOf(ConePrimitiveType.INT64)
+                lowerTypesFromSmartCast = listOf(ConePrimitiveType.INT32)
+                smartcastStability = CfirSmartcastStability.STABLE_VALUE
+            },
+        )
+
+        val module = convertModule(referenceCast, primitiveCast)
+        val functionsByName = module.declarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .associateBy { it.name }
+
+        val referenceCastFunction = requireNotNull(functionsByName["referenceCast"])
+        val referenceOther = referenceCastFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+        assertTrue(Cfir2ChirOperation.CFIR_SMART_CAST.canonicalName !in referenceCastFunction.otherOperations())
+        val checkCast = referenceOther.single { it.operation == "jvm.checkcast" }
+        assertTrue(
+            checkCast.attributes.any { it is ChirStringAttribute && it.key == "jvm.type" && it.value == "sample/Box" },
+        )
+
+        val primitiveCastFunction = requireNotNull(functionsByName["primitiveCast"])
+        assertTrue(Cfir2ChirOperation.CFIR_SMART_CAST.canonicalName in primitiveCastFunction.otherOperations())
+    }
+
+    /**
+     * 构造带 dispatch receiver、返回指定表达式值的成员函数。
+     */
+    private fun memberFunctionReturningExpression(
+        name: String,
+        receiverType: ConeSimpleCangJieType,
+        expression: CfirExpression,
+    ): CfirNamedFunction {
+        val symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier(name)))
+        return buildNamedFunction {
+            commonNamedFunctionDeclaration(symbol)
+            this.name = Name.identifier(name)
+            dispatchReceiverType = receiverType
+            returnTypeRef = typeRef(ConePrimitiveType.INT32)
+            body = blockOf(ConePrimitiveType.INT32, expression, intLiteral(0))
+        }
     }
 
     /**

@@ -632,15 +632,30 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower super 接收者表达式。
+     *
+     * super 语境的 receiver 就是当前实例：成员函数体内 header 携带 receiverType 时，
+     * 降级为名为 `this` 的局部值引用（与 this 降级共用 JVM slot 0 绑定），
+     * 类型采用 super 表达式的解析类型（父类型视图）——后端实例调用
+     * （如 invokespecial）以 this 为 receiver，类型不参与 owner 推导。
+     * 静态上下文（header 无 receiverType）保留为 CFIR 专有操作。
      */
-    private fun lowerSuperReceiverExpression(expression: CfirSuperReceiverExpression): ChirValue =
-        emitOtherValue(
+    private fun lowerSuperReceiverExpression(expression: CfirSuperReceiverExpression): ChirValue {
+        if (header.receiverType != null) {
+            return ChirLocalValue(
+                semanticId = builder.nextElementId("super", expression),
+                type = expression.requireResultType(),
+                name = "this",
+            )
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SUPER_RECEIVER,
             source = expression,
             operands = expression.receiverOperands(),
             resultType = expression.requireResultType(),
-            attributes = referenceAttributes(expression.calleeReference),
+            attributes = referenceAttributes(expression.calleeReference) +
+                    attributes("cfir.this.fallbackReason" to "no-receiver"),
         ) ?: throw Cfir2ChirConversionException("super receiver expression produced no value", expression)
+    }
 
     /**
      * Lower this 接收者表达式。
@@ -1420,18 +1435,23 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower 类型转换表达式并记录目标类型。
+     *
+     * 引用类型窄化（如 `x as SubType`）降级为 `jvm.checkcast`；
+     * 其余转换保留为 CFIR 专有操作并记录目标类型。
      */
-    private fun lowerTypeConversion(expression: CfirTypeConversion): ChirValue? =
-        emitOtherValue(
+    private fun lowerTypeConversion(expression: CfirTypeConversion): ChirValue? {
+        val argument = lowerExpression(expression.argument)
+            ?: throw Cfir2ChirConversionException("type conversion argument does not produce a value", expression.argument)
+        val resultType = expression.requireResultType()
+        referenceNarrowingOrNull(expression, argument, resultType)?.let { return it }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_TYPE_CONVERSION,
             source = expression,
-            operands = listOf(
-                lowerExpression(expression.argument)
-                    ?: throw Cfir2ChirConversionException("type conversion argument does not produce a value", expression.argument),
-            ),
-            resultType = expression.requireResultType(),
+            operands = listOf(argument),
+            resultType = resultType,
             attributes = attributes("cfir.targetType" to expression.targetTypeRef.renderName()),
         )
+    }
 
     /**
      * Lower 类型操作表达式并记录操作种类和目标类型。
@@ -1767,15 +1787,21 @@ internal class Cfir2ChirFunctionBodyConverter(
 
     /**
      * Lower smart cast 表达式，并记录目标类型、稳定性与上下界信息。
+     *
+     * 引用类型窄化（原值与目标都是可推导 JVM internal name 的引用载体）降级为
+     * `jvm.checkcast`：smart cast 已由前端校验过类型关系，运行期只需窄化引用。
+     * 其余形态保留为 CFIR 专有操作，附带完整 smartcast 元数据。
      */
     private fun lowerSmartCastExpression(expression: CfirSmartCastExpression): ChirValue {
         val originalValue = lowerExpression(expression.originalExpression)
             ?: throw Cfir2ChirConversionException("smart cast original expression does not produce a CHIR value", expression.originalExpression)
+        val resultType = typeMapper.mapTypeRef(expression.smartcastType)
+        referenceNarrowingOrNull(expression, originalValue, resultType)?.let { return it }
         return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SMART_CAST,
             source = expression,
             operands = listOf(originalValue),
-            resultType = typeMapper.mapTypeRef(expression.smartcastType),
+            resultType = resultType,
             attributes = attributes(
                 "cfir.smartcast.targetType" to expression.smartcastType.renderName(),
                 "cfir.smartcast.stability" to expression.smartcastStability.name,
@@ -1783,6 +1809,34 @@ internal class Cfir2ChirFunctionBodyConverter(
                 "cfir.smartcast.lowerTypes" to expression.lowerTypesFromSmartCast.joinToString("|") { it.renderName() },
             ),
         ) ?: throw Cfir2ChirConversionException("smart cast expression produced no value", expression)
+    }
+
+    /**
+     * 尝试把引用窄化降级为 `jvm.checkcast` intrinsic。
+     *
+     * 仅当原值与目标类型都是点分名称的引用载体（class-like/named）时降级：
+     * `jvm.type` 携带目标 internal name，后端发射 checkcast 指令。
+     * 原值与目标 JVM 载体一致（同为引用），不涉及数值转换。
+     */
+    private fun referenceNarrowingOrNull(
+        source: CfirExpression,
+        originalValue: ChirValue,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        val targetInternalName = jvmOwnerInternalNameOrNull(resultType) ?: return null
+        if (jvmOwnerInternalNameOrNull(originalValue.type) == null) return null
+
+        val expressionId = builder.nextElementId("checkcast", source)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.checkcast",
+                operands = listOf(originalValue),
+                resultType = resultType,
+                attributes = setOf(ChirStringAttribute("jvm.type", targetInternalName)),
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
     }
 
     /**

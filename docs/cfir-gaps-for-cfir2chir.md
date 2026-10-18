@@ -102,6 +102,29 @@
 
 ---
 
+## 缺口 6：`CfirForInExpression` 不携带循环协议方法的解析 symbol
+
+- **现象**：cfir2chir 对 for-in 循环生成三个专有操作
+  （`cfir.for_in_iterator` / `cfir.for_in_has_next` / `cfir.for_in_next`），
+  后端全部 unsupported。要把它们降级为真实调用
+  （iterable.iterator() / iterator.hasNext() / iterator.next()），
+  需要这三个协议方法的 JVM ABI（owner/name/descriptor）。
+- **cfir2chir 侧现状**：`CfirForInExpression` 只携带 iterable 表达式和循环变量，
+  **不携带解析后的 iterator/hasNext/next 函数 symbol**——resolve 层只解析
+  iterable 本身，循环协议方法是隐式约定的，没有落到 CFIR 树上。
+- **根因归属**：CFIR resolve——for-in 的循环协议调用没有显式化。
+  官方编译器在 Sema 阶段就把 for-in 降为显式的协议方法调用序列
+  （见 `external/cangjie_compiler/src/CHIR/CHIRBuilder.cpp` 的 ForIn 处理），
+  CFIR 对齐后 cfir2chir 即可按普通成员调用降级。
+- **预期修复方向**（CFIR 侧）：BODY_RESOLVE 阶段把 for-in 展开为
+  显式的 `val it = iterable.iterator(); while (it.hasNext()) { val x = it.next(); ... }`
+  调用序列，或至少在 `CfirForInExpression` 上附加三个协议方法的
+  resolved symbol。**不修改 CFIR 前，cfir2chir 无法安全降级**：
+  硬编码 std.core 方法名违反"后端禁止从展示名猜 ABI"的架构约定。
+- **临时状态**：for-in 保持 `cfir.for_in_*` 三占位操作；JVM 后端继续拒绝。
+
+---
+
 ## 已确认**不是** CFIR 缺口的事项（避免误登记）
 
 - **`cfir.*` 占位操作的消化**（member_access、call_with_receiver、
