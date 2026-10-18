@@ -63,6 +63,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildRangeExpression
 import org.cangnova.cangjie.cfir.expressions.buildInaccessibleReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.buildSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildTupleLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeConversion
 import org.cangnova.cangjie.cfir.expressions.builder.buildTypeOperator
@@ -466,6 +467,104 @@ class Cfir2ChirCoverageTest {
         assertTrue(
             putField.attributes.any { it is ChirStringAttribute && it.key == "jvm.owner" && it.value == "sample/Box" },
         )
+    }
+
+    /**
+     * 验证单下标数组读取会降级为 `jvm.arrayLoad`，
+     * 而不是保留为 cfir.subscript 占位操作。
+     */
+    @Test
+    fun `lowers single index array read into jvm arrayLoad`() {
+        val intArrayType = ConeVArrayType(ConePrimitiveType.INT32, size = 3)
+        val arraySymbol = CfirFieldVariableSymbol(CallableId(PackageName, Name.identifier("arr")))
+        val arrayVariable = buildFieldVariable {
+            commonFieldVariableDeclaration(arraySymbol)
+            name = Name.identifier("arr")
+            returnTypeRef = typeRef(intArrayType)
+            initializer = null
+            isVar = true
+        }
+        val function = functionWithBody(
+            name = "readIndex",
+            returnType = ConePrimitiveType.INT32,
+            bodyType = ConePrimitiveType.INT32,
+            statements = listOf(
+                arrayVariable,
+                buildSubscriptExpression {
+                    coneTypeOrNull = ConePrimitiveType.INT32
+                    receiver = buildNamedAccessExpression {
+                        coneTypeOrNull = intArrayType
+                        calleeReference = buildResolvedNamedReference {
+                            name = arrayVariable.name
+                            resolvedSymbol = arraySymbol
+                        }
+                    }
+                    indices += intLiteral(1)
+                },
+            ),
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_SUBSCRIPT.canonicalName !in otherExpressions.map { it.operation })
+        val arrayLoad = otherExpressions.single { it.operation == "jvm.arrayLoad" }
+        assertEquals(2, arrayLoad.operands.size)
+        assertEquals(ChirResolvedTypeRef(ChirPrimitiveType.INT32), arrayLoad.resultType)
+    }
+
+    /**
+     * 验证数组下标赋值会降级为 `jvm.arrayStore`，
+     * 而不是保留为 cfir.member_assign 占位操作。
+     */
+    @Test
+    fun `lowers array index assignment into jvm arrayStore`() {
+        val intArrayType = ConeVArrayType(ConePrimitiveType.INT32, size = 3)
+        val arraySymbol = CfirFieldVariableSymbol(CallableId(PackageName, Name.identifier("arr")))
+        val arrayVariable = buildFieldVariable {
+            commonFieldVariableDeclaration(arraySymbol)
+            name = Name.identifier("arr")
+            returnTypeRef = typeRef(intArrayType)
+            initializer = null
+            isVar = true
+        }
+        val function = functionWithBody(
+            name = "writeIndex",
+            returnType = ConePrimitiveType.INT32,
+            bodyType = ConePrimitiveType.INT32,
+            statements = listOf(
+                arrayVariable,
+                buildAssignment {
+                    coneTypeOrNull = ConePrimitiveType.UNIT
+                    lValue = buildSubscriptExpression {
+                        coneTypeOrNull = ConePrimitiveType.INT32
+                        receiver = buildNamedAccessExpression {
+                            coneTypeOrNull = intArrayType
+                            calleeReference = buildResolvedNamedReference {
+                                name = arrayVariable.name
+                                resolvedSymbol = arraySymbol
+                            }
+                        }
+                        indices += intLiteral(0)
+                    }
+                    rValue = intLiteral(7)
+                },
+                intLiteral(0),
+            ),
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_MEMBER_ASSIGN.canonicalName !in otherExpressions.map { it.operation })
+        assertTrue(Cfir2ChirOperation.CFIR_SUBSCRIPT.canonicalName !in otherExpressions.map { it.operation })
+        val arrayStore = otherExpressions.single { it.operation == "jvm.arrayStore" }
+        assertEquals(3, arrayStore.operands.size)
+        assertEquals(null, arrayStore.resultType)
     }
 
     /**

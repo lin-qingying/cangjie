@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.buildThisReceiverExpression
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
@@ -419,6 +420,82 @@ class Cfir2ChirJvmPipelineTest {
         assertEquals(10, intArray[0])
         assertEquals(20, intArray[1])
         assertEquals(30, intArray[2])
+    }
+
+    /**
+     * 验证数组完整生命周期能端到端降级为可执行 JVM 字节码。
+     *
+     * `arrayRoundTrip()` 创建 `[10, 20, 30]`，把 `a[1]` 改写为 77，返回 `a[1]`。
+     * 覆盖数组字面量分配、下标赋值与下标读取三条降级路径；
+     * 改写成功则返回 77 而不是初始值 20。
+     */
+    @Test
+    fun `lowers array literal subscript store and load round trip to executable JVM bytecode`() {
+        val intArrayType = ConeVArrayType(ConePrimitiveType.INT32, size = 3)
+
+        val arraySymbol = CfirFieldVariableSymbol(CallableId(PackageName, Name.identifier("a")))
+        val arrayVariable = buildFieldVariable {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            symbol = arraySymbol
+            name = Name.identifier("a")
+            returnTypeRef = buildResolvedTypeRef { coneType = intArrayType }
+            initializer = buildArrayLiteral {
+                coneTypeOrNull = intArrayType
+                elements += intLiteral(10)
+                elements += intLiteral(20)
+                elements += intLiteral(30)
+            }
+            isVar = true
+        }
+        val arrayAccess = buildNamedAccessExpression {
+            coneTypeOrNull = intArrayType
+            calleeReference = buildResolvedNamedReference {
+                name = arrayVariable.name
+                resolvedSymbol = arraySymbol
+            }
+        }
+        val loadAtIndex = fun(index: Int) = buildSubscriptExpression {
+            coneTypeOrNull = ConePrimitiveType.INT32
+            receiver = arrayAccess
+            indices += intLiteral(index)
+        }
+
+        val function = buildNamedFunction {
+            moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = false
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = intTypeRef()
+            symbol = CfirNamedFunctionSymbol(CallableId(PackageName, Name.identifier("arrayRoundTrip")))
+            name = Name.identifier("arrayRoundTrip")
+            isMut = false
+            body = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.INT32
+                statements += arrayVariable
+                statements += buildAssignment {
+                    coneTypeOrNull = ConePrimitiveType.UNIT
+                    lValue = loadAtIndex(1)
+                    rValue = intLiteral(77)
+                }
+                statements += loadAtIndex(1)
+            }
+        }
+        val file = fileWith(function)
+
+        val chirPackage = DefaultCfir2ChirConverter().convert(listOf(file))
+        val output = DefaultChirToJvmCodeGenerator().generate(ChirJvmCodegenInput(chirPackage))
+
+        val generatedClass = GeneratedClassLoader().define(output.classes.single())
+        assertEquals(77, generatedClass.getMethod("arrayRoundTrip").invoke(null))
     }
 
     /**

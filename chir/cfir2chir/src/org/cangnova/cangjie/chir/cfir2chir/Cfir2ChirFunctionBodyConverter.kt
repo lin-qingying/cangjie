@@ -21,6 +21,7 @@ import org.cangnova.cangjie.chir.core.type.ChirClassType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
+import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
@@ -826,6 +827,8 @@ internal class Cfir2ChirFunctionBodyConverter(
 
         if (memberFieldStoreOrNull(expression, value)) return
 
+        if (arrayStoreOrNull(expression.lValue, value, expression)) return
+
         val target = lowerAssignmentTargetValue(expression.lValue)
         emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_MEMBER_ASSIGN,
@@ -861,6 +864,32 @@ internal class Cfir2ChirFunctionBodyConverter(
                     ChirStringAttribute("jvm.owner", ownerInternalName),
                     ChirStringAttribute("jvm.name", variableHeader.declaration.name),
                 ),
+            ),
+        )
+        return true
+    }
+
+    /**
+     * 尝试把数组下标赋值（`array[index] = value`）降级为 `jvm.arrayStore` intrinsic。
+     *
+     * 仅当赋值目标是单下标 `CfirSubscriptExpression`、receiver 产出数组类型值、
+     * value 与数组元素类型一致、下标为整数类原始类型时降级。
+     */
+    private fun arrayStoreOrNull(lValue: CfirExpression, value: ChirValue, source: CfirElement): Boolean {
+        val subscript = lValue as? CfirSubscriptExpression ?: return false
+        if (subscript.indices.size != 1) return false
+        val receiver = lowerExpression(subscript.receiver) ?: return false
+        val elementType = arrayElementTypeOrNull(receiver.type) ?: return false
+        if (value.type != elementType) return false
+        val index = lowerExpression(subscript.indices.single()) ?: return false
+        if (!isIntegerLikeIndex(index.type)) return false
+
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = builder.nextElementId("array_store", subscript),
+                operation = "jvm.arrayStore",
+                operands = listOf(receiver, index, value),
+                resultType = null,
             ),
         )
         return true
@@ -1544,10 +1573,17 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 下标访问表达式，保留 receiver 和 index 操作数。
+     * Lower 下标访问表达式。
+     *
+     * receiver 解析为数组类型且恰好携带一个下标时，降级为 `jvm.arrayLoad`：
+     * operands 为 [数组值, 下标]，结果类型为数组元素类型。
+     * 其余形态（多维、非数组 receiver）保留为 `cfir.subscript` 占位。
      */
-    private fun lowerSubscriptExpression(expression: CfirSubscriptExpression): ChirValue? =
-        emitOtherValue(
+    private fun lowerSubscriptExpression(expression: CfirSubscriptExpression): ChirValue? {
+        val arrayLoad = arrayLoadOrNull(expression)
+        if (arrayLoad != null) return arrayLoad
+
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_SUBSCRIPT,
             source = expression,
             operands = listOf(
@@ -1556,6 +1592,53 @@ internal class Cfir2ChirFunctionBodyConverter(
             ) + expression.indices.mapValueOperands("subscript index"),
             resultType = expression.requireResultType(),
         )
+    }
+
+    /**
+     * 尝试把单下标数组访问降级为 `jvm.arrayLoad` intrinsic。
+     *
+     * 仅当 receiver 表达式产出数组类型值、下标恰好一个、且结果类型
+     * 与数组元素类型一致时降级；下标类型须为整数类原始类型。
+     */
+    private fun arrayLoadOrNull(expression: CfirSubscriptExpression): ChirValue? {
+        if (expression.indices.size != 1) return null
+        val resultType = expression.resultTypeOrNull() ?: return null
+        val receiver = lowerExpression(expression.receiver) ?: return null
+        val elementType = arrayElementTypeOrNull(receiver.type) ?: return null
+        if (resultType != elementType) return null
+        val index = lowerExpression(expression.indices.single()) ?: return null
+        if (!isIntegerLikeIndex(index.type)) return null
+
+        val expressionId = builder.nextElementId("array_load", expression)
+        builder.emit(
+            ChirOtherExpression(
+                semanticId = expressionId,
+                operation = "jvm.arrayLoad",
+                operands = listOf(receiver, index),
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 读取数组类型引用的元素类型；非数组类型返回 null。
+     */
+    private fun arrayElementTypeOrNull(typeRef: ChirTypeRef): ChirTypeRef? {
+        return when (val type = (typeRef as? ChirResolvedTypeRef)?.type) {
+            is ChirVArrayType -> type.elementType
+            is ChirRawArrayType -> type.elementType
+            else -> null
+        }
+    }
+
+    /**
+     * 判断类型引用是否为可作为数组下标的整数类原始类型。
+     */
+    private fun isIntegerLikeIndex(typeRef: ChirTypeRef): Boolean {
+        val primitive = (typeRef as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return false
+        return primitive in integerLikeIndexTypes
+    }
 
     /**
      * Lower 匿名函数表达式，确保匿名函数声明只转换一次。
@@ -2151,6 +2234,27 @@ internal class Cfir2ChirFunctionBodyConverter(
          */
         val breakBlockId: ChirSemanticId,
     )
+
+    /**
+     * 当前函数 lowering 的私有常量。
+     */
+    private companion object {
+        /**
+         * 可作为数组下标输入的整数类 CHIR 原始类型。
+         */
+        val integerLikeIndexTypes = setOf(
+            ChirPrimitiveType.INT8,
+            ChirPrimitiveType.INT16,
+            ChirPrimitiveType.INT32,
+            ChirPrimitiveType.INT64,
+            ChirPrimitiveType.INT_NATIVE,
+            ChirPrimitiveType.UINT8,
+            ChirPrimitiveType.UINT16,
+            ChirPrimitiveType.UINT32,
+            ChirPrimitiveType.UINT64,
+            ChirPrimitiveType.UINT_NATIVE,
+        )
+    }
 
     /**
      * 需要参与 phi 合并的分支 fallthrough 值。
