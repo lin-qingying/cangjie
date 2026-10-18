@@ -66,6 +66,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
@@ -583,6 +584,8 @@ class Cfir2ChirJvmPipelineTest {
             attributes = CfirDeclarationAttributes.EMPTY
             scopeProvider = UnusedScopeProvider
             status = CfirDeclarationStatusImpl()
+            isRefEnum = false
+            isNonExhaustive = false
             symbol = CfirEnumSymbol(ColorClassId)
             name = Name.identifier("Color")
             declarations += buildEnumConstructor {
@@ -648,6 +651,7 @@ class Cfir2ChirJvmPipelineTest {
         resolvePhase = CfirResolvePhase.BODY_RESOLVE
         origin = CfirDeclarationOrigin.Synthetic.Default
         attributes = CfirDeclarationAttributes.EMPTY
+        isLocal = false
         status = CfirDeclarationStatusImpl()
     }
 
