@@ -154,7 +154,10 @@ VArray 字面量（newarray+arrayStore）、单下标读写（arrayLoad/arraySto
 引用窄化 smart cast / as（checkcast）、局部/匿名函数（辅助声明收集 +
 MethodHandle 物化）、枚举 case 引用（getstatic 常量）、
 具名实参（透传内层值，见缺口 7 的排序前置）、
-无 payload enum constructor（getstatic 常量函数体）。
+无 payload enum constructor（getstatic 常量函数体）、
+try-catch 异常绑定与多 catch 类型分派（unwind 绑定 + 类型化异常表）、
+字符串插值（chir.string_build/append/result 平台中立 intrinsic 族，
+JVM 载体 StringBuilder）。
 
 ### 需调用约定设计（inout 与带 payload 构造的引用/构造 ABI）
 
@@ -166,13 +169,10 @@ MethodHandle 物化）、枚举 case 引用（getstatic 常量）、
 
 ### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）
 
-- **`cfir.try` / `cfir.catch`**：需要 unwind 边的异常对象绑定
-  （catch pattern 的绑定变量）与异常类型分派表；当前 JVM 后端
-  unwind 只有 catch-all。
 - **`cfir.tuple_literal` / `cfir.pattern_extract`**：CHIR 无元组布局
   （JVM 载体是 Object）；需要元组 ABI 决策（匿名类 vs 长字段拆分）。
-- **`cfir.string_interpolation`**：需要平台 StringBuilder ABI；
-  cfir2chir 是平台无关层，应由后端提供"字符串构建" intrinsic 族。
+- **finally 独立语义**：当前 finally 嵌在 try 表达式的块序列中，
+  未对"任意路径（正常/异常/return 穿透）都执行"建模。
 
 ### CFIR 缺口（本文档登记，等 CFIR 侧修复）
 
