@@ -159,7 +159,9 @@ try-catch 异常绑定与多 catch 类型分派（unwind 绑定 + 类型化异�
 字符串插值（chir.string_build/append/result 平台中立 intrinsic 族，
 JVM 载体 StringBuilder）、
 tuple 字面量与 pattern 提取（chir.tuple_pack/extract，
-JVM 载体 `Object[]`，元素装箱 + 下标取值）。
+JVM 载体 `Object[]`，元素装箱 + 下标取值）、
+finally 出口内联（try/catch 各 fallthrough 出口复制 finally 体，
+对齐 javac 的出口复制方案）。
 
 ### 需调用约定设计（inout 与带 payload 构造的引用/构造 ABI）
 
@@ -171,8 +173,10 @@ JVM 载体 `Object[]`，元素装箱 + 下标取值）。
 
 ### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）
 
-- **finally 独立语义**：当前 finally 嵌在 try 表达式的块序列中，
-  未对"任意路径（正常/异常/return 穿透）都执行"建模。
+- **finally 的 return/throw 穿透**：出口内联已覆盖正常与 catch 路径；
+  try/catch 体内直接 return/throw 时 finally 不执行——完整语义需要
+  return 重写机制（把 return 改写为"暂存结果 → 执行 finally → 真正 return"），
+  属于 CHIR 控制流层的更深的演进。
 
 ### CFIR 缺口（本文档登记，等 CFIR 侧修复）
 
