@@ -125,6 +125,50 @@
 
 ---
 
+## 剩余 `cfir.*` 占位操作的消化分类（2026-10-18 盘点）
+
+### 已消化（cfir2chir 已降级，JVM 后端可执行）
+
+短路 AND/OR（控制流+phi）、成员函数调用（receiver-first）、
+this/super receiver（this 局部值）、成员字段读写（getfield/putfield）、
+VArray 字面量（newarray+arrayStore）、单下标读写（arrayLoad/arrayStore）、
+引用窄化 smart cast / as（checkcast）、局部/匿名函数（辅助声明收集 +
+MethodHandle 物化）、枚举 case 引用（getstatic 常量）。
+
+### 可消化（输入充分，待实现）
+
+- **`cfir.enum_constructor` 顶层形态**：`convertEnumConstructor` 生成的
+  case 构造函数体仍是占位。当 enum 声明经由 `ChirEnumDeclaration.cases`
+  由后端 `<clinit>` 实例化后，该函数只在"case 被当函数值引用"时才需要——
+  可与函数值路径合并处理。
+- **`cfir.named_argument`**：纯属性透传（参数名），按位置发射即可；
+  后端已按实参顺序消费，验证后可直接消化。
+- **`cfir.inout_argument`**：实参侧的 inout 标记，配合已有的 ref 地址机制。
+
+### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）
+
+- **`cfir.try` / `cfir.catch`**：需要 unwind 边的异常对象绑定
+  （catch pattern 的绑定变量）与异常类型分派表；当前 JVM 后端
+  unwind 只有 catch-all。
+- **`cfir.tuple_literal` / `cfir.pattern_extract`**：CHIR 无元组布局
+  （JVM 载体是 Object）；需要元组 ABI 决策（匿名类 vs 长字段拆分）。
+- **`cfir.string_interpolation`**：需要平台 StringBuilder ABI；
+  cfir2chir 是平台无关层，应由后端提供"字符串构建" intrinsic 族。
+
+### CFIR 缺口（本文档登记，等 CFIR 侧修复）
+
+- **`cfir.for_in_iterator/has_next/next`**：缺口 6。
+- **`cfir.range`**：Range 类型的构造/迭代 ABI 来自 std.core，
+  CFIR 未携带协议 symbol（与 for-in 同根因）。
+
+### 语言特性类（暂缓，真实程序占比低）
+
+`cfir.spawn`（线程 ABI）、`cfir.synchronized`（monitor ABI）、
+`cfir.perform/resume/handle`（effect 系统）、`cfir.quote`（宏展开期应已消除）、
+`cfir.annotation*`（注解求值期语义）。
+
+---
+
 ## 已确认**不是** CFIR 缺口的事项（避免误登记）
 
 - **`cfir.*` 占位操作的消化**（member_access、call_with_receiver、
