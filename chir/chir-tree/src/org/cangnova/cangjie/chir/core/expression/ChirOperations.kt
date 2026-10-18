@@ -226,6 +226,8 @@ enum class ChirOtherOperation(
     STRING_BUILD("chir.string_build", ChirOtherOperationFamily.STRING),
     STRING_APPEND("chir.string_append", ChirOtherOperationFamily.STRING),
     STRING_RESULT("chir.string_result", ChirOtherOperationFamily.STRING),
+    TUPLE_PACK("chir.tuple_pack", ChirOtherOperationFamily.TUPLE),
+    TUPLE_EXTRACT("chir.tuple_extract", ChirOtherOperationFamily.TUPLE),
     JVM_NEW("jvm.new", ChirOtherOperationFamily.JVM),
     JVM_GET_FIELD("jvm.getfield", ChirOtherOperationFamily.JVM),
     JVM_PUT_FIELD("jvm.putfield", ChirOtherOperationFamily.JVM),
@@ -285,6 +287,14 @@ enum class ChirOtherOperationFamily {
      * cfir2chir 发射操作序列，后端负责载体映射。
      */
     STRING,
+    /**
+     * 平台中立的元组打包/解包 intrinsic 族。
+     *
+     * JVM 载体为 `Object[]`；LLVM 为匿名结构体。
+     * pack 携带全部元素与元组结果类型，extract 携带元组值与
+     * 下标常量（结果类型即元组该位置的元素类型）。
+     */
+    TUPLE,
     JVM,
 }
 

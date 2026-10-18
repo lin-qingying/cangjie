@@ -939,6 +939,34 @@ class Cfir2ChirCoverageTest {
     }
 
     /**
+     * 验证元素类型逐位匹配的 tuple 字面量会降级为 `chir.tuple_pack`，
+     * 而不是保留为 cfir.tuple_literal 占位操作。
+     */
+    @Test
+    fun `lowers matching tuple literal into chir tuple_pack`() {
+        val intBoolTuple = ConeTupleType(listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN))
+        val function = functionReturningExpression(
+            name = "makePair",
+            returnType = ConePrimitiveType.INT32,
+            expression = buildTupleLiteral {
+                coneTypeOrNull = intBoolTuple
+                elements += intLiteral(7)
+                elements += boolLiteral(true)
+            },
+        )
+
+        val chirFunction = convertSingleFunction(function)
+        val otherExpressions = chirFunction.blocks
+            .flatMap { it.expressions }
+            .filterIsInstance<ChirOtherExpression>()
+
+        assertTrue(Cfir2ChirOperation.CFIR_TUPLE_LITERAL.canonicalName !in otherExpressions.map { it.operation })
+        val pack = otherExpressions.single { it.operation == "chir.tuple_pack" }
+        assertEquals(2, pack.operands.size)
+        assertEquals("(int32, bool)", pack.resultType?.renderName)
+    }
+
+    /**
      * 构造字符串字面量片段。
      */
     private fun stringLiteral(value: String) = buildLiteralExpression {
@@ -1073,8 +1101,10 @@ class Cfir2ChirCoverageTest {
                     elements += intLiteral(1)
                     elements += intLiteral(2)
                 },
+                // tuple 字面量已降级为 chir.tuple_pack；这里用元素类型
+                // 不匹配的形态保留 cfir.tuple_literal 占位路径。
                 buildTupleLiteral {
-                    coneTypeOrNull = ConeTupleType(listOf(ConePrimitiveType.INT32, ConePrimitiveType.BOOLEAN))
+                    coneTypeOrNull = ConeTupleType(listOf(ConePrimitiveType.BOOLEAN, ConePrimitiveType.INT32))
                     elements += intLiteral(1)
                     elements += boolLiteral(true)
                 },

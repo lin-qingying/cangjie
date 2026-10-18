@@ -32,6 +32,7 @@ import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.chir.core.value.ChirFunctionValue
@@ -3812,6 +3813,70 @@ class DefaultChirToJvmCodeGeneratorTest {
         assertEquals(11, generatedClass.getMethod("dispatchIllegalArgument").invoke(null))
         // IllegalStateException 越过第一个 catch 命中第二个。
         assertEquals(22, generatedClass.getMethod("dispatchIllegalState").invoke(null))
+    }
+
+    /**
+     * 验证 tuple 打包/解包 intrinsic 会降低为可执行的 Object[] 载体操作：
+     * pack (7, true) 后 extract 下标 0 返回 7。
+     */
+    @Test
+    fun `lowers CHIR tuple pack and extract to executable JVM object arrays`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        val tupleType = ChirResolvedTypeRef(ChirTupleType(listOf(intType, boolType)))
+        val packLocal = ChirLocalValue(
+            semanticId = ChirSemanticId("expr:tuple:pack"),
+            type = tupleType,
+            name = "expr_tuple_pack",
+        )
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:tupleExtractFirst"),
+            name = "tupleExtractFirst",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:tuple:entry"),
+                    name = "entry",
+                    expressions = listOf(
+                        ChirOtherExpression(
+                            semanticId = ChirSemanticId("expr:tuple:pack"),
+                            operation = "chir.tuple_pack",
+                            operands = listOf(
+                                ChirConstantValue(ChirSemanticId("const:tuple:seven"), intType, "7"),
+                                ChirConstantValue(ChirSemanticId("const:tuple:yes"), boolType, "true"),
+                            ),
+                            resultType = tupleType,
+                        ),
+                        ChirOtherExpression(
+                            semanticId = ChirSemanticId("expr:tuple:extract"),
+                            operation = "chir.tuple_extract",
+                            operands = listOf(
+                                packLocal,
+                                ChirConstantValue(ChirSemanticId("const:tuple:index"), intType, "0"),
+                            ),
+                            resultType = intType,
+                        ),
+                    ),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:tuple:return"),
+                        returnValue = ChirLocalValue(
+                            semanticId = ChirSemanticId("expr:tuple:extract"),
+                            type = intType,
+                            name = "expr_tuple_extract",
+                        ),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:tuple:entry"),
+        )
+
+        val output = DefaultChirToJvmCodeGenerator().generate(inputWith(function))
+        val artifact = output.classes.single()
+
+        verifyClass(artifact)
+        val generatedClass = GeneratedClassLoader().define(artifact)
+        assertEquals(7, generatedClass.getMethod("tupleExtractFirst").invoke(null))
     }
 
     /**

@@ -27,6 +27,7 @@ import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
@@ -368,17 +369,58 @@ internal class Cfir2ChirFunctionBodyConverter(
             val value = if (bindingVariables.size == 1) {
                 initializerValue
             } else {
-                emitOtherValue(
-                    operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
-                    source = binding,
-                    operands = listOf(initializerValue),
-                    resultType = bindingType,
-                    attributes = patternAttributes(variable.pattern) + attributes("cfir.binding.index" to index.toString()),
-                ) ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", binding)
+                patternExtractValue(binding, initializerValue, bindingType, index, variable)
             }
             lowerLocalBindingVariable(binding, value, binding)
         }
         return null
+    }
+
+    /**
+     * 为 pattern binding 提取容器中的第 [index] 个值。
+     *
+     * 容器是 `ChirTupleType` 且对应位置类型与 binding 匹配时，降级为
+     * `chir.tuple_extract` intrinsic（下标常量 + 期望元素类型）；
+     * 其余形态保留为 `cfir.pattern_extract` 占位并记录 binding index。
+     */
+    private fun patternExtractValue(
+        binding: CfirPatternBindingVariable,
+        containerValue: ChirValue,
+        bindingType: ChirTypeRef,
+        index: Int,
+        source: CfirElement,
+    ): ChirValue {
+        val tupleType = (containerValue.type as? ChirResolvedTypeRef)?.type as? ChirTupleType
+        if (tupleType != null && index < tupleType.elementTypes.size &&
+            tupleType.elementTypes[index] == bindingType
+        ) {
+            val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+            val expressionId = builder.nextId("tuple_extract_$index")
+            builder.emit(
+                ChirOtherExpression(
+                    semanticId = expressionId,
+                    operation = ChirOtherOperation.TUPLE_EXTRACT.canonicalName,
+                    operands = listOf(
+                        containerValue,
+                        ChirConstantValue(
+                            semanticId = builder.nextId("tuple_index"),
+                            type = intType,
+                            literal = index.toString(),
+                        ),
+                    ),
+                    resultType = bindingType,
+                ),
+            )
+            return bindingType.valueOrNull(expressionId)
+                ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", source)
+        }
+        return emitOtherValue(
+            operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
+            source = source,
+            operands = listOf(containerValue),
+            resultType = bindingType,
+            attributes = attributes("cfir.binding.index" to index.toString()),
+        ) ?: throw Cfir2ChirConversionException("pattern binding extract produced no value", source)
     }
 
     /**
@@ -1178,13 +1220,7 @@ internal class Cfir2ChirFunctionBodyConverter(
             val value = if (bindingVariables.size == 1) {
                 initializerValue
             } else {
-                emitOtherValue(
-                    operation = Cfir2ChirOperation.CFIR_PATTERN_EXTRACT,
-                    source = binding,
-                    operands = listOf(initializerValue),
-                    resultType = bindingType,
-                    attributes = patternAttributes(variable.pattern) + attributes("cfir.binding.index" to index.toString()),
-                ) ?: throw Cfir2ChirConversionException("for-in pattern extract produced no value", binding)
+                patternExtractValue(binding, initializerValue, bindingType, index, variable)
             }
             lowerLocalBindingVariable(binding, value, binding)
         }
@@ -1681,15 +1717,37 @@ internal class Cfir2ChirFunctionBodyConverter(
     }
 
     /**
-     * Lower tuple 字面量为 CFIR 专有 tuple literal 操作。
+     * Lower tuple 字面量。
+     *
+     * 结果类型解析为 `ChirTupleType` 且元素类型逐位匹配时，降级为
+     * `chir.tuple_pack` intrinsic（平台中立打包，JVM 载体 `Object[]`）；
+     * 其余形态保留为 `cfir.tuple_literal` 占位。
      */
-    private fun lowerTupleLiteral(expression: CfirTupleLiteral): ChirValue? =
-        emitOtherValue(
+    private fun lowerTupleLiteral(expression: CfirTupleLiteral): ChirValue? {
+        val resultType = expression.requireResultType()
+        val tupleType = (resultType as? ChirResolvedTypeRef)?.type as? ChirTupleType
+        if (tupleType != null && tupleType.elementTypes.size == expression.elements.size) {
+            val elements = expression.elements.mapValueOperands("tuple element")
+            if (elements.zip(tupleType.elementTypes).all { (element, expected) -> element.type == expected }) {
+                val expressionId = builder.nextElementId("tuple_pack", expression)
+                builder.emit(
+                    ChirOtherExpression(
+                        semanticId = expressionId,
+                        operation = ChirOtherOperation.TUPLE_PACK.canonicalName,
+                        operands = elements,
+                        resultType = resultType,
+                    ),
+                )
+                return resultType.valueOrNull(expressionId)
+            }
+        }
+        return emitOtherValue(
             operation = Cfir2ChirOperation.CFIR_TUPLE_LITERAL,
             source = expression,
             operands = expression.elements.mapValueOperands("tuple element"),
-            resultType = expression.requireResultType(),
+            resultType = resultType,
         )
+    }
 
     /**
      * Lower range 表达式并记录是否为闭区间。

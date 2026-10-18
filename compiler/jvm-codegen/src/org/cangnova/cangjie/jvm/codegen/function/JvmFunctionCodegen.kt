@@ -23,6 +23,7 @@ import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirBlockGroupValue
 import org.cangnova.cangjie.chir.core.value.ChirBlockValue
@@ -762,6 +763,8 @@ class JvmFunctionCodegen(
             "chir.string_build" -> emitStringBuild(method, expression)
             "chir.string_append" -> emitStringAppend(method, expression)
             "chir.string_result" -> emitStringResult(method, expression)
+            "chir.tuple_pack" -> emitTuplePack(method, expression)
+            "chir.tuple_extract" -> emitTupleExtract(method, expression)
             "jvm.new" -> emitJvmNew(method, expression)
             "jvm.getfield" -> emitJvmGetField(method, expression)
             "jvm.putfield" -> emitJvmPutField(method, expression)
@@ -923,6 +926,80 @@ class JvmFunctionCodegen(
         )
         val resultType = context.typeMapper.mapValueType(resultTypeRef)
         adaptStackValue(method, expression.semanticId, Type.getObjectType("java/lang/String"), resultType, "string result")
+        storeExpressionResult(method, expression.semanticId, resultType)
+    }
+
+    /**
+     * 发射 `chir.tuple_pack`：把 n 个元素打包为元组载体。
+     *
+     * 元组载体为 `Object[]`：anewarray + 逐元素装箱 aastore；
+     * 结果类型必须是 `ChirTupleType` 且元素数与操作数一致。
+     */
+    private fun emitTuplePack(method: MethodVisitor, expression: ChirOtherExpression) {
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.tuple_pack requires result type", expression.semanticId)
+        val tupleType = (resultTypeRef as? ChirResolvedTypeRef)?.type as? ChirTupleType
+            ?: throw JvmCodegenException(
+                "chir.tuple_pack result must be ChirTupleType, actual ${resultTypeRef.renderName}",
+                expression.semanticId,
+            )
+        if (tupleType.elementTypes.size != expression.operands.size) {
+            throw JvmCodegenException(
+                "chir.tuple_pack element count ${tupleType.elementTypes.size} does not match operands ${expression.operands.size}",
+                expression.semanticId,
+            )
+        }
+        val tupleCarrier = context.typeMapper.mapValueType(resultTypeRef)
+        if (tupleCarrier.descriptor != "[Ljava/lang/Object;") {
+            throw JvmCodegenException(
+                "chir.tuple_pack carrier must be Object[], actual ${tupleCarrier.descriptor}",
+                expression.semanticId,
+            )
+        }
+        method.visitLdcInsn(expression.operands.size)
+        method.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object")
+        expression.operands.forEachIndexed { index, element ->
+            method.visitInsn(Opcodes.DUP)
+            method.visitLdcInsn(index)
+            emitBoxedValue(method, element)
+            method.visitInsn(Opcodes.AASTORE)
+        }
+        storeExpressionResult(method, expression.semanticId, tupleCarrier)
+    }
+
+    /**
+     * 发射 `chir.tuple_extract`：按索引从元组载体取元素。
+     *
+     * 操作数 [tuple, index]；结果类型即元组该位置元素类型，
+     * 装箱值经 checkcast/拆箱适配到结果载体。
+     */
+    private fun emitTupleExtract(method: MethodVisitor, expression: ChirOtherExpression) {
+        val operands = expression.requireOperandCount("chir.tuple_extract", 2)
+        val resultTypeRef = expression.resultType
+            ?: throw JvmCodegenException("chir.tuple_extract requires result type", expression.semanticId)
+        val tupleType = (operands[0].type as? ChirResolvedTypeRef)?.type as? ChirTupleType
+            ?: throw JvmCodegenException(
+                "chir.tuple_extract operand must be ChirTupleType, actual ${operands[0].type.renderName}",
+                expression.semanticId,
+            )
+        val indexConstant = operands[1] as? ChirConstantValue
+            ?: throw JvmCodegenException("chir.tuple_extract index must be a constant", expression.semanticId)
+        val index = indexConstant.literal.trim().toIntOrNull()
+            ?: throw JvmCodegenException(
+                "chir.tuple_extract index must be integer constant, actual '${indexConstant.literal}'",
+                expression.semanticId,
+            )
+        if (index < 0 || index >= tupleType.elementTypes.size) {
+            throw JvmCodegenException(
+                "chir.tuple_extract index $index out of bounds for tuple of ${tupleType.elementTypes.size} elements",
+                expression.semanticId,
+            )
+        }
+        val resultType = context.typeMapper.mapValueType(resultTypeRef)
+        emitValue(method, operands[0])
+        method.visitLdcInsn(index)
+        method.visitInsn(Opcodes.AALOAD)
+        adaptStackValue(method, expression.semanticId, Type.getObjectType("java/lang/Object"), resultType, "tuple extract")
         storeExpressionResult(method, expression.semanticId, resultType)
     }
 
