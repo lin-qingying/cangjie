@@ -967,6 +967,65 @@ class Cfir2ChirCoverageTest {
     }
 
     /**
+     * 验证 finally 块会内联到 try 与 catch 的每个 fallthrough 出口：
+     * finally 内的局部 store 在两个出口各出现一次。
+     */
+    @Test
+    fun `inlines finally into try and catch fallthrough exits`() {
+        val intType = ConePrimitiveType.INT32
+        val cleanupSymbol = CfirFieldVariableSymbol(CallableId(PackageName, Name.identifier("cleanupCount")))
+        val tryExpression = buildTryExpression {
+            coneTypeOrNull = intType
+            tryBlock = buildBlock {
+                coneTypeOrNull = intType
+                statements += intLiteral(1)
+            }
+            catches += buildCatch {
+                coneTypeOrNull = intType
+                pattern = buildCatchPattern {
+                    isWildcard = true
+                }
+                body = buildBlock {
+                    coneTypeOrNull = intType
+                    statements += intLiteral(2)
+                }
+            }
+            finallyBlock = buildBlock {
+                coneTypeOrNull = ConePrimitiveType.UNIT
+                statements += buildFieldVariable {
+                    commonFieldVariableDeclaration(cleanupSymbol)
+                    isLocal = true
+                    name = Name.identifier("cleanupCount")
+                    returnTypeRef = typeRef(intType)
+                    initializer = intLiteral(1)
+                    isVar = true
+                }
+            }
+        }
+        val function = functionReturningExpression(
+            name = "withFinally",
+            returnType = intType,
+            expression = tryExpression,
+        )
+
+        val chirFunction = convertSingleFunction(function)
+
+        // finally 内联后不再存在独立的 finally 块。
+        assertTrue(chirFunction.blocks.none { it.name.startsWith("finally") })
+        // try 与 catch 两个出口块各包含一次 finally 内局部变量的初始化 store。
+        val tryBlock = chirFunction.blocks.single { it.name == "try" }
+        val catchBlock = chirFunction.blocks.single { it.name == "catch_0" }
+        val tryStores = tryBlock.expressions
+            .filterIsInstance<ChirMemoryExpression>()
+            .filter { it.operation == "store" }
+        val catchStores = catchBlock.expressions
+            .filterIsInstance<ChirMemoryExpression>()
+            .filter { it.operation == "store" }
+        assertEquals(1, tryStores.size)
+        assertEquals(1, catchStores.size)
+    }
+
+    /**
      * 构造字符串字面量片段。
      */
     private fun stringLiteral(value: String) = buildLiteralExpression {

@@ -443,7 +443,11 @@ internal class Cfir2ChirFunctionBodyConverter(
             declaration = declaration,
             ownerFunctionId = header.semanticId,
         )
-        storage.registerLocalVariable(variable.symbol, localVariable)
+        // finally 出口内联会让同一局部声明多次进入降级；局部 slot 在
+        // 函数内唯一，已注册时复用 header，只重新发射 alloca 与初始化 store。
+        if (storage.getLocalVariableOrNull(variable.symbol) == null) {
+            storage.registerLocalVariable(variable.symbol, localVariable)
+        }
         builder.emit(
             ChirMemoryExpression(
                 semanticId = builder.nextId("alloca"),
@@ -1368,7 +1372,10 @@ internal class Cfir2ChirFunctionBodyConverter(
         val tryPred = builder.currentBlockId
         val tryFallsThrough = builder.hasOpenCurrentBlock
         if (tryFallsThrough) {
-            builder.terminate(ChirBranchTerminator(builder.nextId("try_exit"), continuationBlockId))
+            lowerFinallyBeforeContinuation(expression)
+            if (builder.hasOpenCurrentBlock) {
+                builder.terminate(ChirBranchTerminator(builder.nextId("try_exit"), continuationBlockId))
+            }
         }
 
         val incoming = mutableListOf<IncomingValue>()
@@ -1380,7 +1387,10 @@ internal class Cfir2ChirFunctionBodyConverter(
             val value = lowerCatchExpression(catch)
             val pred = builder.currentBlockId
             if (builder.hasOpenCurrentBlock) {
-                builder.terminate(ChirBranchTerminator(builder.nextId("catch_exit"), continuationBlockId))
+                lowerFinallyBeforeContinuation(expression)
+                if (builder.hasOpenCurrentBlock) {
+                    builder.terminate(ChirBranchTerminator(builder.nextId("catch_exit"), continuationBlockId))
+                }
                 incoming += IncomingValue(value, pred, catch.body)
             }
         }
@@ -1390,14 +1400,6 @@ internal class Cfir2ChirFunctionBodyConverter(
             lowerHandleClause(handler)
             if (builder.hasOpenCurrentBlock) {
                 builder.terminate(ChirBranchTerminator(builder.nextId("handle_exit"), continuationBlockId))
-            }
-        }
-        expression.finallyBlock?.let { finallyBlock ->
-            val finallyBlockId = builder.nextId("finally")
-            builder.enterBlock(finallyBlockId, "finally")
-            lowerBlock(finallyBlock)
-            if (builder.hasOpenCurrentBlock) {
-                builder.terminate(ChirBranchTerminator(builder.nextId("finally_exit"), continuationBlockId))
             }
         }
 
@@ -2096,6 +2098,19 @@ internal class Cfir2ChirFunctionBodyConverter(
             attributes = attributes("cfir.catch.pattern" to (expression.pattern::class.simpleName ?: "anonymous")),
         )
         return lowerBlock(expression.body)
+    }
+
+    /**
+     * 在跳转 continuation 之前内联 lower finally 块。
+     *
+     * finally 语义要求所有出口路径都执行清理：这里把 finally 体
+     * 内联到 try/catch 各 fallthrough 出口（对齐 javac 的出口复制方案）。
+     * 出口以 return/throw 终结时内联不发生——return 穿透需要
+     * return 重写机制（见缺口文档"finally 独立语义"剩余边界）。
+     */
+    private fun lowerFinallyBeforeContinuation(expression: CfirTryExpression) {
+        val finallyBlock = expression.finallyBlock ?: return
+        lowerBlock(finallyBlock)
     }
 
     /**
