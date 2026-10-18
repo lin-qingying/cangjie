@@ -3,6 +3,7 @@ package org.cangnova.cangjie.jvm.codegen.function
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
+import org.cangnova.cangjie.chir.core.controlflow.ChirCatchDispatchEntry
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
@@ -1272,11 +1273,11 @@ class JvmFunctionCodegen(
     /**
      * 发射 throw 终结符。
      *
-     * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区和 catch-all handler，
-     * handler 内执行 phi 边赋值并跳转到 unwind 目标块。
-     * 携带异常绑定时，handler 先把栈顶异常对象按绑定名存入 local
-     * （与 cfir2chir 的 catch 绑定变量 slot 对齐，catch 体按名读取）；
-     * 无绑定时丢弃异常对象。
+     * 没有 unwind 目标时直接 `athrow`；存在 unwind 目标时生成保护区。
+     * 多 catch 类型分派（`catchDispatches` 非空）时为每个分派生成独立的
+     * `tryCatchBlock(type)` 异常表条目与 handler 入口（各 handler 存入
+     * 自己的绑定后跳转各自 catch 块）。
+     * 单 catch（无分派表）保持 catch-all 快捷形态。
      */
     private fun emitThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
         val exceptionType = context.typeMapper.mapValueType(terminator.exceptionValue.type)
@@ -1285,6 +1286,11 @@ class JvmFunctionCodegen(
         if (unwindTargetBlockId == null) {
             emitValue(method, terminator.exceptionValue)
             method.visitInsn(Opcodes.ATHROW)
+            return
+        }
+
+        if (terminator.catchDispatches.isNotEmpty()) {
+            emitMultiCatchThrow(method, block, terminator)
             return
         }
 
@@ -1305,6 +1311,40 @@ class JvmFunctionCodegen(
         }
         emitPhiAssignmentsForEdge(method, block, unwindTargetBlockId)
         method.visitJumpInsn(Opcodes.GOTO, labelFor(unwindTargetBlockId))
+    }
+
+    /**
+     * 发射多 catch 类型分派的 throw：保护区 + 每分派一条类型化异常表条目。
+     *
+     * 各 handler 把异常对象存入自己的绑定（或丢弃）后跳转对应 catch 块；
+     * 兜底分派（类型为 null）生成 catch-all 条目。
+     */
+    private fun emitMultiCatchThrow(method: MethodVisitor, block: ChirBlock, terminator: ChirThrowTerminator) {
+        val protectedStart = Label()
+        val protectedEnd = Label()
+        val handlers = terminator.catchDispatches.map { dispatch ->
+            val handlerEntry = Label()
+            val typeInternalName = dispatch.exceptionTypeName?.let { typeName ->
+                if (typeName.contains('.')) typeName.replace('.', '/') else typeName
+            }
+            method.visitTryCatchBlock(protectedStart, protectedEnd, handlerEntry, typeInternalName)
+            handlerEntry to dispatch
+        }
+        method.visitLabel(protectedStart)
+        emitValue(method, terminator.exceptionValue)
+        method.visitInsn(Opcodes.ATHROW)
+        method.visitLabel(protectedEnd)
+        handlers.forEach { (handlerEntry, dispatch) ->
+            method.visitLabel(handlerEntry)
+            val binding = dispatch.exceptionBinding
+            if (binding == null) {
+                method.visitInsn(Opcodes.POP)
+            } else {
+                storeHandlerException(method, binding, terminator)
+            }
+            emitPhiAssignmentsForEdge(method, block, dispatch.catchBlockId)
+            method.visitJumpInsn(Opcodes.GOTO, labelFor(dispatch.catchBlockId))
+        }
     }
 
     /**

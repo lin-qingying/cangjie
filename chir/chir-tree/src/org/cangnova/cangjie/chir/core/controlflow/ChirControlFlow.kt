@@ -66,11 +66,36 @@ data class ChirConditionalBranchTerminator(
 ) : ChirTerminator
 
 /**
+ * throw 终结指令 unwind 边上的单条 catch 分派。
+ *
+ * JVM 后端为每个分派生成一条 `tryCatchBlock(start, end, handler, type)`
+ * 异常表条目；`exceptionTypeName` 为点分异常类型名（映射为 internal name）。
+ */
+data class ChirCatchDispatchEntry(
+    /**
+     * 该异常类型匹配时跳转的 catch 块标识。
+     */
+    val catchBlockId: ChirSemanticId,
+    /**
+     * handler 内绑定异常对象的局部变量名；null 表示丢弃异常对象。
+     */
+    val exceptionBinding: String?,
+    /**
+     * 分派的异常类型点分名；null 表示 catch-all 兜底条目。
+     */
+    val exceptionTypeName: String?,
+)
+
+/**
  * throw 终结指令。
  *
  * unwind 边携带可选的异常绑定信息：catch handler 进入时把栈顶异常对象
  * 存入绑定的 local（按名称命中），供 catch 体通过绑定变量读取。
  * 绑定为空表示该 unwind 边只做控制流恢复（如 finally 语义），异常对象被丢弃。
+ *
+ * 多 catch 场景使用 [catchDispatches] 表达按类型分派；
+ * [unwindTargetBlockId]/[unwindExceptionBinding] 保留为单 catch 的快捷形态
+ * （等价于一条 catch-all 分派），供既有消费方与 LLVM 后端兼容。
  */
 data class ChirThrowTerminator(
     /**
@@ -92,6 +117,11 @@ data class ChirThrowTerminator(
      * unwind handler 内绑定异常对象的局部变量名；空表示丢弃异常对象。
      */
     val unwindExceptionBinding: String? = null,
+
+    /**
+     * 多 catch 的类型分派表；空表示单 catch（用 unwind 目标 + 绑定的快捷形态）。
+     */
+    val catchDispatches: List<ChirCatchDispatchEntry> = emptyList(),
 ) : ChirTerminator
 
 /**
