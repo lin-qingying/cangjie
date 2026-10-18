@@ -1734,16 +1734,17 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
 
     /**
-     * Lower 具名实参表达式，保留参数名以便后端诊断和调用侧还原。
+     * Lower 具名实参表达式。
+     *
+     * 具名实参是纯透传包装：参数名在 CFIR resolve 层已完成形参绑定，
+     * 后端按实参位置发射，名字对后端无意义。这里直接返回内层表达式的
+     * CHIR 值，不发射占位操作。
+     * 前置契约：BODY_RESOLVE 后实参列表已按形参顺序排列
+     * （具名实参乱序由 resolve 重排；未重排前按位置消费是后端唯一可执行语义，
+     * 错位属于 CFIR 缺口，见 docs/cfir-gaps-for-cfir2chir.md）。
      */
     private fun lowerNamedArgumentExpression(expression: CfirNamedArgumentExpression): ChirValue? =
-        emitOtherValue(
-            operation = Cfir2ChirOperation.CFIR_NAMED_ARGUMENT,
-            source = expression,
-            operands = listOfNotNull(lowerExpression(expression.expression)),
-            resultType = expression.resultTypeOrNull(),
-            attributes = attributes("cfir.argumentName" to expression.argumentName.asString()),
-        )
+        lowerExpression(expression.expression)
 
     /**
      * Lower `if (available(x))` 条件可用表达式为保留三分支结构的 CFIR 操作。

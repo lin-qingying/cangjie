@@ -125,6 +125,25 @@
 
 ---
 
+## 缺口 7：具名实参在 BODY_RESOLVE 后未按形参顺序重排
+
+- **现象**：cfir2chir 已把 `CfirNamedArgumentExpression` 消化为内层值透传
+  （后端按实参位置发射）。当源码具名实参乱序（`f(b = 1, a = 2)`）时，
+  `argumentList.arguments` 仍保持源码顺序，与形参顺序不匹配——
+  按位置消费的后端会错位。
+- **cfir2chir 侧现状**：透传语义正确（这是后端唯一可执行的消费方式）；
+  具名实参的正确性完全取决于 CFIR 是否在 resolve 后按形参顺序重排实参列表。
+- **根因归属**：CFIR resolve——对齐官方行为，具名实参在调用绑定完成后
+  应解包（unwrap）并按形参槽位重排（官方 FIR 在 `FirCallCompleter` 中完成；
+  仓颉官方编译器在 Sema 调用绑定后同样消除 named wrapper）。
+- **预期修复方向**（CFIR 侧）：BODY_RESOLVE 的调用完成阶段把
+  `CfirNamedArgumentExpression` 解包并按 `argumentName` 匹配形参重排到
+  正确槽位。修复后 cfir2chir 透传自动正确。
+- **风险控制**：修复前，乱序具名实参的调用在 JVM 后端产生错误绑定；
+  正序具名实参（常见场景）不受影响。
+
+---
+
 ## 剩余 `cfir.*` 占位操作的消化分类（2026-10-18 盘点）
 
 ### 已消化（cfir2chir 已降级，JVM 后端可执行）
@@ -133,7 +152,8 @@
 this/super receiver（this 局部值）、成员字段读写（getfield/putfield）、
 VArray 字面量（newarray+arrayStore）、单下标读写（arrayLoad/arrayStore）、
 引用窄化 smart cast / as（checkcast）、局部/匿名函数（辅助声明收集 +
-MethodHandle 物化）、枚举 case 引用（getstatic 常量）。
+MethodHandle 物化）、枚举 case 引用（getstatic 常量）、
+具名实参（透传内层值，见缺口 7 的排序前置）。
 
 ### 可消化（输入充分，待实现）
 
@@ -141,8 +161,6 @@ MethodHandle 物化）、枚举 case 引用（getstatic 常量）。
   case 构造函数体仍是占位。当 enum 声明经由 `ChirEnumDeclaration.cases`
   由后端 `<clinit>` 实例化后，该函数只在"case 被当函数值引用"时才需要——
   可与函数值路径合并处理。
-- **`cfir.named_argument`**：纯属性透传（参数名），按位置发射即可；
-  后端已按实参顺序消费，验证后可直接消化。
 - **`cfir.inout_argument`**：实参侧的 inout 标记，配合已有的 ref 地址机制。
 
 ### 需 CHIR 模型扩展（chir-tree 演进项，先设计后实现）

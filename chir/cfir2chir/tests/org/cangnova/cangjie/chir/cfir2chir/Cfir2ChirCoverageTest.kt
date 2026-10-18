@@ -1017,7 +1017,8 @@ class Cfir2ChirCoverageTest {
     }
 
     /**
-     * 验证 named argument、if-available 与 augmented assignment 会以独立操作名 lowering，并保留语义属性。
+     * 验证 named argument 透传内层值、if-available 与 augmented assignment
+     * 以独立操作名 lowering 并保留语义属性。
      */
     @Test
     fun `lowers named argument if-available and augmented assignment expressions`() {
@@ -1053,16 +1054,11 @@ class Cfir2ChirCoverageTest {
             .flatMap { it.expressions }
             .filterIsInstance<ChirOtherExpression>()
 
-        assertTrue(Cfir2ChirOperation.CFIR_NAMED_ARGUMENT.canonicalName in operations)
+        // 具名实参是纯透传包装：不发射占位操作，内层字面量直接保留。
+        assertTrue(Cfir2ChirOperation.CFIR_NAMED_ARGUMENT.canonicalName !in operations)
         assertTrue(Cfir2ChirOperation.CFIR_IF_AVAILABLE.canonicalName in operations)
         assertTrue(Cfir2ChirOperation.CFIR_AUGMENTED_ASSIGNMENT.canonicalName in operations)
 
-        val namedArgument = otherExpressions.single { it.operation == Cfir2ChirOperation.CFIR_NAMED_ARGUMENT.canonicalName }
-        assertTrue(
-            namedArgument.attributes.any {
-                it is ChirStringAttribute && it.key == "cfir.argumentName" && it.value == "value"
-            },
-        )
         val ifAvailable = otherExpressions.single { it.operation == Cfir2ChirOperation.CFIR_IF_AVAILABLE.canonicalName }
         assertEquals(3, ifAvailable.operands.size)
         assertTrue(
