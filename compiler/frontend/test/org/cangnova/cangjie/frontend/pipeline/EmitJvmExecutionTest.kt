@@ -123,6 +123,85 @@ class EmitJvmExecutionTest {
     }
 
     /**
+     * 编译并执行类成员方法与 while 循环：Counter 类在循环中累加。
+     *
+     * `Counter.step(a, b)`：从 a 出发，`while (total < b)` 每轮 `total = total + a`，
+     * 返回循环结束时的 total。a=3, b=10 → 3,6,9,12 → 返回 12。
+     */
+    @Test
+    fun compiledProgramExecutesClassMethodAndWhileLoop(@TempDir tempDir: Path) {
+        val source = Files.writeString(
+            tempDir.resolve("counter.cj"),
+            """
+            package demo.counter
+
+            class Counter {
+                func step(from: Int64, until: Int64): Int64 {
+                    var total = from
+                    while (total < until) {
+                        total = total + from
+                    }
+                    return total
+                }
+            }
+            """.trimIndent(),
+            Charsets.UTF_8,
+        )
+        val outputRoot = Files.createDirectories(tempDir.resolve("classes"))
+        val disposable = Disposer.newDisposable("emit-jvm-counter")
+        try {
+            val collector = RecordingMessageCollector()
+            val configuration = CompilerConfiguration().apply {
+                moduleName = "emit_jvm_counter"
+                messageCollector = collector
+                diagnosticsCollector = DiagnosticsCollectorImpl()
+                addCangJieSourceRoot(source.toString())
+                enableChirJvmCodegen = true
+                jvmClassOutputDirectory = outputRoot.toString()
+            }
+
+            runCatching {
+                cfirFrontendPipeline().invokeToplevel(
+                    PhaseConfig(),
+                    PipelineContext(configuration),
+                    ConfigurationPipelineArtifact(configuration, disposable),
+                )
+            }.onFailure { pipelineFailure ->
+                throw AssertionError(
+                    "管线执行失败：$pipelineFailure\n消息收集器内容：${collector.all.joinToString("\n")}",
+                    pipelineFailure,
+                )
+            }
+
+            assertEquals(0, collector.errors.size, "编译不应报错：${collector.errors}")
+
+            val classFiles = Files.walk(outputRoot).use { paths ->
+                paths.filter(Files::isRegularFile).filter { it.toString().endsWith(".class") }.toList()
+            }
+            assertTrue(classFiles.isNotEmpty(), "必须产出 class 文件")
+
+            val loader = GeneratedClassLoader()
+            val definedClasses = classFiles.associate { file ->
+                val internalName = outputRoot.relativize(file).toString()
+                    .removeSuffix(".class").replace('\\', '/')
+                internalName to loader.define(internalName, Files.readAllBytes(file))
+            }
+            val counterClass = requireNotNull(
+                definedClasses.entries.singleOrNull { it.key.endsWith("Counter") }?.value,
+            ) { "未找到 Counter 类，实际：${definedClasses.keys}" }
+
+            val instance = counterClass.getConstructor().newInstance()
+            // step(3, 10)：3 → 6 → 9 → 12（12 >= 10 停）→ 返回 12。
+            val stepResult = counterClass
+                .getMethod("step", java.lang.Long.TYPE, java.lang.Long.TYPE)
+                .invoke(instance, 3L, 10L)
+            assertEquals(12L, stepResult)
+        } finally {
+            Disposer.dispose(disposable)
+        }
+    }
+
+    /**
      * 从内存 class 字节定义并加载生成类的 classloader。
      */
     private class GeneratedClassLoader : ClassLoader(EmitJvmExecutionTest::class.java.classLoader) {

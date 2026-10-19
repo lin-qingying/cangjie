@@ -89,7 +89,7 @@ internal class Cfir2ChirFileConverter(
      * 将已经登记 header 的 CFIR 文件转换为完整 CHIR module。
      */
     fun convertFile(file: CfirFile): ChirModule {
-        val declarations = file.declarations.map(::convertDeclaration)
+        val declarations = file.declarations.mapNotNull(::convertDeclaration)
         return ChirModule(
             semanticId = Cfir2ChirIds.moduleId(file),
             name = Cfir2ChirIds.moduleName(file),
@@ -198,8 +198,10 @@ internal class Cfir2ChirFileConverter(
 
     /**
      * 将单个 CFIR 声明转换为 CHIR 声明。
+     *
+     * 无 body 的隐式构造器返回 null（由 JVM 后端的默认构造器生成路径接管）。
      */
-    private fun convertDeclaration(declaration: CfirDeclaration): ChirDeclaration {
+    private fun convertDeclaration(declaration: CfirDeclaration): ChirDeclaration? {
         return when (declaration) {
             is CfirErrorFunction -> throw Cfir2ChirConversionException(
                 "error CFIR function cannot be lowered to CHIR: ${declaration.diagnostic.reason}",
@@ -297,8 +299,13 @@ internal class Cfir2ChirFileConverter(
 
     /**
      * 将 CFIR 函数及其 body 转换为 CHIR 函数声明。
+     *
+     * 无 body 的构造器是类的隐式默认构造器：JVM 后端在无显式构造器时
+     * 自动生成 `public <init>()`（generateDefaultConstructor），CHIR 侧
+     * 跳过以避免产出无语义的 absent_body 函数体。
      */
-    private fun convertFunction(function: CfirFunction): DefaultChirFunctionDeclaration {
+    private fun convertFunction(function: CfirFunction): DefaultChirFunctionDeclaration? {
+        if (function is CfirConstructor && function.body == null) return null
         val header = storage.getFunctionHeader(function.symbol)
         val declaration = Cfir2ChirFunctionBodyConverter(
             components = components,
