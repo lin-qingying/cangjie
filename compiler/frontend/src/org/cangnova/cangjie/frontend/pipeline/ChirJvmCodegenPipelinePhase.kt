@@ -9,6 +9,7 @@ import org.cangnova.cangjie.config.messageCollector
 import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
 import org.cangnova.cangjie.jvm.codegen.api.ChirJvmCodegenInput
 import org.cangnova.cangjie.jvm.codegen.api.writeClasses
+import org.cangnova.cangjie.jvm.codegen.diagnostics.JvmCodegenException
 import org.cangnova.cangjie.jvm.codegen.pipeline.DefaultChirToJvmCodeGenerator
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import java.nio.file.Files
@@ -61,6 +62,28 @@ object ChirJvmCodegenPipelinePhase : PipelinePhase<DefaultCfirFrontendPipelineAr
             configuration.messageCollector.report(
                 CompilerMessageSeverity.ERROR,
                 "CFIR to CHIR conversion failed: ${failure.message}",
+            )
+            null
+        } catch (failure: JvmCodegenException) {
+            // CHIR 校验失败（消息以 invalid CHIR 开头）附上完整 CHIR dump：
+            // 占位降级的定位需要看到表达式的 attributes 与 block 结构。
+            val chirDump = if (failure.message?.startsWith("invalid CHIR") == true) {
+                "\nCHIR dump:\n" + input.frontendOutput.outputs.joinToString("\n") { moduleOutput ->
+                    moduleOutput.fir.groupBy { it.packageDirective.packageFqName.asString() }
+                        .values.joinToString("\n") { files ->
+                            runCatching {
+                                org.cangnova.cangjie.chir.core.printer.ChirPrinter.print(
+                                    org.cangnova.cangjie.chir.cfir2chir.DefaultCfir2ChirConverter().convert(files),
+                                )
+                            }.getOrElse { "chir dump failed: $it" }
+                        }
+                }
+            } else {
+                ""
+            }
+            configuration.messageCollector.report(
+                CompilerMessageSeverity.ERROR,
+                "JVM codegen failed: ${failure.message ?: failure::class.simpleName}$chirDump",
             )
             null
         } catch (failure: Throwable) {

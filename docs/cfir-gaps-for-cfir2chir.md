@@ -144,6 +144,33 @@
 
 ---
 
+## 缺口 8：调用实参的理想字面量类型在 BODY_RESOLVE 后未回写定型
+
+- **现象**：`--emit-jvm` 管线探针（含 `add(1, 2)` 形态的调用）在
+  cfir2chir 处失败：`ideal literal type IDEAL_INT must be resolved
+  before CHIR lowering`。字面量 `1`/`2` 作为 `add(Int64, Int64)` 的
+  实参，BODY_RESOLVE 完成后仍是 IDEAL_INT——期望类型导向的定型
+  没有回写到字面量的 `coneTypeOrNull`。
+- **cfir2chir 侧现状**：契约上拒绝 IDEAL_* 是正确行为（官方后端同样
+  不消费理想类型）；无法在 cfir2chir 侧补定型——期望类型信息
+  （形参类型）只在 resolve 阶段可用。
+- **根因归属**：CFIR resolve 的调用完成阶段。`IdealTypeResolver`
+  （cfir-cones）已提供 `resolveIfIdeal(type, targetType)` 基建，
+  但 BODY_RESOLVE 的实参目标类型传播没有把定型结果回写到
+  `CfirLiteralExpression.coneTypeOrNull`。对齐官方：Sema 的
+  `ReplaceIdealTy` 在调用绑定完成后对实参执行（见
+  `external/cangjie_compiler/src/sema` 的 TypeChecker 对位）。
+- **影响面**：这是 `--emit-jvm` 真实程序编译的**首个硬阻塞**——
+  任何含整数字面量实参的调用（几乎所有真实程序）都会触发。
+- **预期修复方向**（CFIR 侧）：调用完成（CallCompleter 对位）阶段
+  对每个实参执行 `resolveIfIdeal(argument.coneType, parameterType)`
+  并 `replaceConeTypeOrNull` 回写；`let` 初始化器、match selector
+  等独立场景已由 `replaceIdealTypes` 覆盖（基建在，回写缺）。
+- **临时探针调整**：管线执行验证测试用显式类型标注的源码
+  （如 `let x: Int64 = 1`）回避，待 CFIR 修复后移除标注。
+
+---
+
 ## 剩余 `cfir.*` 占位操作的消化分类（2026-10-18 盘点）
 
 ### 已消化（cfir2chir 已降级，JVM 后端可执行）

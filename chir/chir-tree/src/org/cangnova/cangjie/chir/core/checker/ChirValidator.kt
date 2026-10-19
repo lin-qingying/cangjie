@@ -316,10 +316,16 @@ class DefaultChirValidator : ChirValidator {
                         }
                         expression.resultType?.let { validateTypeRef(it, expression.semanticId, "other.result", issues) }
                         if (operation == null) {
+                            // attributes 进入诊断消息：cfir.* 占位的 fallbackReason 等
+                            // 键是定位真实降级原因的第一手信息。
+                            val attributeDetails = expression.attributes
+                                .filterIsInstance<org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute>()
+                                .joinToString(", ") { "${it.key}=${it.value}" }
                             issues += ChirValidationIssue(
                                 code = "UNSUPPORTED_OTHER_OPERATION",
                                 severity = ChirValidationSeverity.ERROR,
-                                message = "unsupported other expression operation '${expression.operation}'",
+                                message = "unsupported other expression operation '${expression.operation}'" +
+                                        if (attributeDetails.isEmpty()) "" else " [$attributeDetails]",
                                 nodeId = expression.semanticId,
                             )
                         }

@@ -64,6 +64,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
@@ -833,6 +834,12 @@ internal class Cfir2ChirFunctionBodyConverter(
         val resolvedReference = functionCall.calleeReference as? CfirResolvedNamedReference
         val callee = resolvedReference?.let { valueForCallableReference(it, functionCall, arguments, resultType) }
 
+        // 运算符 intrinsic：primitive 操作数上的双元运算符调用（`a + b` 等）
+        // 在 CFIR resolve 后是 BuiltinPrimitiveOperators 直接完成的调用（origin=Operator，
+        // 引用不解析到 symbol）；primitive carrier 上直接降为 CHIR 二元表达式，
+        // 不经过 std.core ABI（对齐官方：primitive 运算生成指令级 BinaryOp 而非调用）。
+        primitiveOperatorBinaryOrNull(functionCall, arguments, resultType)?.let { return it }
+
         val memberCall = calleeMemberReceiverCallOrNull(functionCall, callee, arguments, resultType)
         if (memberCall != null) return memberCall
 
@@ -865,6 +872,11 @@ internal class Cfir2ChirFunctionBodyConverter(
                 resultType = resultType,
                 attributes = referenceAttributes(functionCall.calleeReference) + attributes(
                     "cfir.call.origin" to functionCall.origin.name,
+                    "cfir.call.fallbackReason" to buildString {
+                        if (callee == null) append("unresolved-callee")
+                        if (functionCall.dispatchReceiver != null) append("|dispatch-receiver")
+                        if (functionCall.explicitReceiver != null) append("|explicit-receiver")
+                    },
                     "cfir.call.trailingLambda" to functionCall.hasTrailingLambda.toString(),
                     "cfir.call.varraySize" to (functionCall.varraySizeLiteral ?: ""),
                 ),
@@ -872,6 +884,91 @@ internal class Cfir2ChirFunctionBodyConverter(
         )
         return resultType.valueOrNull(expressionId)
     }
+
+    /**
+     * 尝试把 primitive 上的双元运算符调用降级为 [ChirBinaryExpression]。
+     *
+     * CFIR 把 `a + b` 解析为 `a.*operator_plus*(b)` 运算符调用
+     * （origin=Operator，left 在 explicitReceiver，right 是唯一实参）；
+     * primitive carrier 上没有用户可见的运算符重载，该调用唯一正确的
+     * JVM 语义就是指令级二元运算。这里按运算符约定名映射为 CHIR 二元
+     * 操作符并要求左右操作数类型一致；结果类型为 bool 的比较走 CHIR
+     * 比较操作符，其余沿用操作数类型。
+     * 非 primitive 操作数或未映射的运算符返回 null，由调用方保留占位
+     * （用户自定义运算符重载走正常函数调用路径）。
+     */
+    private fun primitiveOperatorBinaryOrNull(
+        functionCall: CfirFunctionCall,
+        arguments: List<ChirValue>,
+        resultType: ChirTypeRef,
+    ): ChirValue? {
+        if (functionCall.origin != CfirFunctionCallOrigin.Operator) return null
+        if (functionCall.dispatchReceiver != null) return null
+        // 内建 primitive 运算符的 calleeReference 不解析到 symbol（BuiltinPrimitiveOperators
+        // 在类型系统层直接完成），名字保留在 CfirNamedReference 上。
+        val operatorName = (functionCall.calleeReference as? CfirNamedReference)?.name?.asString() ?: return null
+        val chirOperator = when (operatorName) {
+            "*operator_plus" -> "+"
+            "*operator_minus" -> "-"
+            "*operator_times" -> "*"
+            "*operator_div" -> "/"
+            "*operator_rem" -> "%"
+            "*operator_and" -> "and"
+            "*operator_or" -> "or"
+            "*operator_xor" -> "xor"
+            "*operator_left_shift" -> "shl"
+            "*operator_right_shift" -> "ashr"
+            "*operator_equals" -> "=="
+            "*operator_not_equals" -> "!="
+            "*operator_compare_lt" -> "<"
+            "*operator_compare_lteq" -> "<="
+            "*operator_compare_gt" -> ">"
+            "*operator_compare_gteq" -> ">="
+            else -> return null
+        }
+        // 运算符调用的左操作数在 explicitReceiver，右操作数是唯一实参。
+        if (arguments.size != 1) return null
+        val receiverExpression = functionCall.explicitReceiver ?: return null
+        val left = lowerExpression(receiverExpression) ?: return null
+        val right = arguments.single()
+        // 双操作数 carrier 必须一致且为数值 primitive；结果类型要么与操作数一致
+        //（算术/位运算），要么为 bool（比较）。
+        if (left.type != right.type) return null
+        val operandPrimitive = (left.type as? ChirResolvedTypeRef)?.type as? ChirPrimitiveType ?: return null
+        if (operandPrimitive !in numericOperatorPrimitives) return null
+        if (left.type != resultType && resultType != ChirResolvedTypeRef(ChirPrimitiveType.BOOL)) return null
+
+        val expressionId = builder.nextElementId("operator", functionCall)
+        builder.emit(
+            ChirBinaryExpression(
+                semanticId = expressionId,
+                operator = chirOperator,
+                left = left,
+                right = right,
+                resultType = resultType,
+            ),
+        )
+        return resultType.valueOrNull(expressionId)
+    }
+
+    /**
+     * 支持 primitive 运算符 intrinsic 降级的 CHIR 数值类型集合。
+     */
+    private val numericOperatorPrimitives = setOf(
+        ChirPrimitiveType.INT8,
+        ChirPrimitiveType.INT16,
+        ChirPrimitiveType.INT32,
+        ChirPrimitiveType.INT64,
+        ChirPrimitiveType.INT_NATIVE,
+        ChirPrimitiveType.UINT8,
+        ChirPrimitiveType.UINT16,
+        ChirPrimitiveType.UINT32,
+        ChirPrimitiveType.UINT64,
+        ChirPrimitiveType.UINT_NATIVE,
+        ChirPrimitiveType.FLOAT32,
+        ChirPrimitiveType.FLOAT64,
+        ChirPrimitiveType.RUNE,
+    )
 
     /**
      * 尝试把成员函数调用降级为带 receiver 实参的 `ChirCallExpression`。
