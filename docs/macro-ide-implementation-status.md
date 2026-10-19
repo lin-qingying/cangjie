@@ -1,6 +1,6 @@
 # 宏 IDE 辅助功能实现对照（Macro IDE Implementation Status）
 
-本文是 [`macro-ide-feature-spec.md`](macro-ide-feature-spec.md) 41 条需求（`#N`）与当前实现的**逐条对照快照**。快照时间 2026-10-15。产品宿主测试覆盖 #9/#17 的真实 PSI → MacroExpansionService → LSPMacroServer → 预览面板、来源着色与嵌套下钻；#26 的宏执行日志、宏源码断点和单步；#38 的真实宏 artifact 编译、变化后的重编译、语义快照刷新、Analysis API 补全 / 解析 / 类型查询和重载诊断回归；#39 真实生成节点导航和 #40 真实 LL 快照 Find Usages。矩阵状态按源码链路、扩展点、产物装配和已执行的宿主测试评估；**41 项实现状态为完成不等于全部真实桌面交互已经验收**，本轮的桌面交互验证仍待 computer-use 窗口控制恢复。
+本文是 [`macro-ide-feature-spec.md`](macro-ide-feature-spec.md) 41 条需求（`#N`）与当前实现的**逐条对照快照**。快照时间 2026-10-19。产品宿主测试覆盖 #9/#17 的真实 PSI → MacroExpansionService → LSPMacroServer → 预览面板、来源着色与嵌套下钻；#26 的宏执行日志、宏源码断点和单步；#38 的真实宏 artifact 编译、变化后的重编译、语义快照刷新、Analysis API 补全 / 解析 / 类型查询和重载诊断回归；#39 真实生成节点导航和 #40 真实 LL 快照 Find Usages。矩阵状态按源码链路、扩展点、产物装配和已执行的宿主测试评估，**不代表 41 条需求都已完成，也不代表所有真实桌面交互都已验收**。2026-10-19 的 `generatedApiValue` 转到声明用例执行了 IntelliJ 编辑器动作并通过；该用例以 `untitled89` 源码文本构造测试模块，不等于在用户当前窗口中手工按键验证。真实 `untitled89` 开发 IDE 已重新打开并完成宏快照发布，桌面窗口操作仍未由 computer-use 确认。
 
 状态符号：
 
@@ -532,3 +532,25 @@ cd intellij-ide
 **重新启动 `untitled89` 的开发 IDE：** `:product:idea-plugin:runIde` 成功打开 `C:/Users/lin17/IdeaProjects/untitled89`；CJPM 同步成功，宏管线完成，随后只发布一份 production snapshot：`sourceFiles=[src/macros/ide_smoke_macros.cj, src/main.cj]`、`expandedFiles=2`、`generatedSources=40`。不再包含 `src/.macro-build/**/*.cjo`；此前日志中这类文件导致 `expandedFiles=5`。启动后未发现新的仓颉宏快照构造/发布错误。IDE 日志仍有 JetBrains Kubernetes 插件 `No remote API found` 异常，属于另一插件，需与仓颉宏错误区分。
 
 本轮未取得真实桌面截图；弹窗已由产品宿主 Swing 测试验证首选宽度、高度上限、编辑器可视区和信息行溢出。开发 IDE 已重新打开并保持运行，仍可由用户检查当前屏幕表现。
+
+## 12. 2026-10-19 生成 API 转到声明与真实工程复验
+
+**`generatedApiValue()` 可解析但转到声明没有可靠物理目标：上游来源追踪已修复，IDE 平台编辑器动作测试通过。** 根因是 stable splice 替换后的生成声明没有完整记录来源宏调用；按值比较源码元素还会把相同偏移的不同来源合并。修复在上游宏构造与 Analysis API：parameter macro splice 记录实际 carrier/replacement 关系；`MacroExpansionRegistry` 以对象身份索引生成源码和来源；`LLCfirMacroSemanticSnapshot` 在发布时冻结导航来源索引；生成引用只导航到唯一、有效且位于当前分析范围内的物理宏调用 PSI，并移除会绕过来源校验的原始 symbol PSI fallback。
+
+真实 IntelliJ 平台用例从 `untitled89/src/main.cj` 和 `src/macros/ide_smoke_macros.cj` 读取源码构造测试模块，验证 `generatedApiValue()` 唯一解析到宏生成 API、引用 PSI 有效、目标是 `@DeclareGeneratedApi` 物理调用，并通过 `IdeActions.ACTION_GOTO_DECLARATION` 检查编辑器 caret 落在该调用上。完整 `CjMacroSemanticSnapshotIntegrationTest` 为 6 tests，0 failures、0 errors、0 skipped；主仓库 providers 身份回归测试、frontend 宏构造测试通过，`low-level-api-cfir` 与 `analysis-api-cfir` 编译通过；实际 `untitled89` 的 `cjpm build` 成功。
+
+真实开发 IDE 已通过 `runIde --args C:\Users\lin17\IdeaProjects\untitled89` 打开，进程窗口标题为 `untitled89 – main.cj` 且响应中。`idea.log` 记录宏编译完成（1 个包、2 个输出文件）和 production semantic snapshot 发布（2 个 expanded files、47 个 generated sources）。同一启动日志中的 `No remote API found` 异常归属 IDEA 自带 Kubernetes 插件；日志未见仓颉宏管线错误。当前 IntelliJ Go to Declaration 测试运行在平台测试编辑器中，**尚未直接在此开发 IDE 窗口上按 Ctrl+B/鼠标操作**；该交互边界与测试通过状态分开记录。
+
+```text
+:cfir:providers:test --tests org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionArchitectureTest
+:analysis:low-level-api-cfir:compileKotlin :analysis:analysis-api-cfir:compileKotlin
+→ BUILD SUCCESSFUL
+
+:product:idea-plugin:test --tests org.cangnova.cangjie.ide.references.CjMacroSemanticSnapshotIntegrationTest
+→ BUILD SUCCESSFUL；6 tests，0 failures/errors/skips
+
+实际 Cangjie 1.0.5 工程：cjpm build --target-dir target/codex-cjpm-navigation-validation --jobs 2
+→ cjpm build success
+```
+
+**整体宏 IDE 目标仍在进行中。** 以上只记录本次生成 API 导航修复与实时工程启动证据，不据此把 41 条需求或全方位桌面验收判为完成。

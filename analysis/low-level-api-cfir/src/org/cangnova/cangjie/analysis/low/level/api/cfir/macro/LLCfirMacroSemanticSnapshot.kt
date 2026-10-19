@@ -13,6 +13,8 @@ import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedDeclarationReplacement
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedExpressionReplacement
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -194,6 +196,12 @@ class LLCfirMacroSemanticSnapshot internal constructor(
     /** 原始物理 PSI 文件到最终 CFIR 文件的身份映射。 */
     private val filesBySourceIdentity: Map<CjFile, CfirFile>
 
+    /** 发布时冻结的 surface 索引，避免后续 construction 写入改变已发布导航目标。 */
+    private val originSurfacesById: Map<Long, MacroSurface> = Collections.unmodifiableMap(registry.originSurfaceById)
+
+    /** 发布时冻结的生成 source 身份集合。 */
+    private val generatedSourceIdentities: Set<AbstractCjSourceElement> = registry.generatedSources
+
     /** 每个最终文件所属的包。 */
     val filesByPackage: Map<FqName, List<CfirFile>>
 
@@ -231,6 +239,9 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     /** 展开后每个 CFIR 声明对应的最终容器文件，使用对象身份避免结构相等误匹配。 */
     private val containerByDeclaration: Map<CfirDeclaration, CfirFile>
+
+    /** 最终 CFIR 声明到其最近宏替换来源的身份索引；值可多来源以显式保留歧义。 */
+    private val macroSurfaceIdsByDeclarationIdentity: Map<CfirDeclaration, Set<Long>>
 
     init {
         require(sourceFiles.size == files.size) {
@@ -341,6 +352,48 @@ class LLCfirMacroSemanticSnapshot internal constructor(
             }
         }
 
+        val directSurfaceIdsByDeclaration = IdentityHashMap<CfirDeclaration, MutableSet<Long>>()
+        for (capturedSource in constructionInputs.declarationReplacementSources) {
+            val replacement = capturedSource.replacement
+            check(originSurface(replacement.surfaceId) != null) {
+                "A published declaration provenance must refer to a registered macro surface."
+            }
+            replacement.replacements.forEach { declaration ->
+                check(declarationContainers.containsKey(declaration)) {
+                    "A declaration provenance output must belong to the published semantic snapshot."
+                }
+                directSurfaceIdsByDeclaration.getOrPut(declaration, ::linkedSetOf) += replacement.surfaceId
+            }
+        }
+
+        val expressionSurfaceIds = IdentityHashMap<CfirExpression, MutableSet<Long>>()
+        for (capturedSource in constructionInputs.expressionReplacementSources) {
+            val replacement = capturedSource.replacement
+            check(originSurface(replacement.surfaceId) != null) {
+                "A published expression provenance must refer to a registered macro surface."
+            }
+            expressionSurfaceIds.getOrPut(replacement.replacement, ::linkedSetOf) += replacement.surfaceId
+        }
+
+        val generatedSurfaceIdsByDeclaration = IdentityHashMap<CfirDeclaration, MutableSet<Long>>()
+        for (file in files) {
+            file.accept(object : CfirDefaultVisitor<Unit, Set<Long>>() {
+                override fun visitElement(element: CfirElement, inheritedSurfaceIds: Set<Long>) {
+                    ProgressManager.checkCanceled()
+                    val directSurfaceIds = when (element) {
+                        is CfirDeclaration -> directSurfaceIdsByDeclaration[element]
+                        is CfirExpression -> expressionSurfaceIds[element]
+                        else -> null
+                    }
+                    val currentSurfaceIds = directSurfaceIds ?: inheritedSurfaceIds
+                    if (element is CfirDeclaration && currentSurfaceIds.isNotEmpty()) {
+                        generatedSurfaceIdsByDeclaration.getOrPut(element, ::linkedSetOf).addAll(currentSurfaceIds)
+                    }
+                    element.acceptChildren(this, currentSurfaceIds)
+                }
+            }, emptySet())
+        }
+
         filesByPackage = freezeLists(packageFiles)
         classifiersByClassId = freezeLists(classifiers)
         declarationsBySourceIdentity = freezeIdentityLists(declarationsBySource)
@@ -355,6 +408,13 @@ class LLCfirMacroSemanticSnapshot internal constructor(
         macroGeneratedClassifierNamesByPackage = freezeSets(macroGeneratedClassifierNames)
         macroGeneratedCallableNamesByPackage = freezeSets(macroGeneratedCallableNames)
         containerByDeclaration = Collections.unmodifiableMap(declarationContainers)
+        macroSurfaceIdsByDeclarationIdentity = Collections.unmodifiableMap(
+            IdentityHashMap<CfirDeclaration, Set<Long>>().also { frozen ->
+                generatedSurfaceIdsByDeclaration.forEach { (declaration, surfaceIds) ->
+                    frozen[declaration] = Collections.unmodifiableSet(surfaceIds.toSet())
+                }
+            },
+        )
     }
 
     /** 返回包内最终语义文件；快照发布后结果可精确为空。 */
@@ -458,6 +518,16 @@ class LLCfirMacroSemanticSnapshot internal constructor(
 
     /** 返回声明所在的最终容器文件。 */
     fun containerFile(declaration: CfirDeclaration): CfirFile? = containerByDeclaration[declaration]
+
+    /** 按最终 CFIR 对象身份返回声明的最近宏 surface 来源；多个来源表示歧义。 */
+    fun macroSurfaceIdsForDeclaration(declaration: CfirDeclaration): Set<Long>? =
+        macroSurfaceIdsByDeclarationIdentity[declaration]
+
+    /** 查询发布时冻结的 surface，供声明导航使用稳定来源。 */
+    fun originSurface(surfaceId: Long): MacroSurface? = originSurfacesById[surfaceId]
+
+    /** 按发布时冻结的对象身份集合判断 CFIR source 是否由宏生成。 */
+    fun isGeneratedSource(source: AbstractCjSourceElement): Boolean = source in generatedSourceIdentities
 
     private fun <K, V> freezeLists(source: Map<K, List<V>>): Map<K, List<V>> =
         Collections.unmodifiableMap(source.mapValues { (_, values) -> values.toList() })
@@ -584,7 +654,7 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
                 check(replacement.carrier !== replacement.replacement) {
                     "A macro expression replacement must not reuse its construction-only carrier."
                 }
-                val surface = registry.originSurfaceById[replacement.surfaceId]
+                val surface = registry.originSurface(replacement.surfaceId)
                     as? org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
                     ?: error("A recorded expression replacement must refer to its original expression macro surface.")
                 check(surface.replaceHandle.carrier === replacement.carrier) {

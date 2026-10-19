@@ -226,7 +226,7 @@ class FrontendMacroConstructionExecutionTest {
             mode = MacroConstructionService.Mode.STRICT,
         )
 
-        assertTrue(result is MacroConstructionResult.Success)
+        assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
         assertSame(replacement, file.declarations.single())
     }
 
@@ -292,7 +292,7 @@ class FrontendMacroConstructionExecutionTest {
             mode = MacroConstructionService.Mode.STRICT,
         )
 
-        assertTrue(result is MacroConstructionResult.Success)
+        assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
         assertSame(expandedClass, file.declarations.single())
         assertSame(expandedMember, (file.declarations.single() as CfirClass).declarations.single())
         assertEquals(2, executor.calls.size)
@@ -335,6 +335,10 @@ class FrontendMacroConstructionExecutionTest {
         )
 
         assertTrue(result is MacroConstructionResult.Success)
+        val parameterReplacement = result.registry.appliedDeclarationReplacements.single()
+        assertSame(original, parameterReplacement.carrier)
+        assertSame(replacement, parameterReplacement.replacements.single())
+        assertEquals(surface.surfaceId, parameterReplacement.surfaceId)
         assertSame(replacement, function.valueParameters.single())
     }
 
@@ -591,7 +595,7 @@ class FrontendMacroConstructionExecutionTest {
                 mode = MacroConstructionService.Mode.STRICT,
             )
 
-            assertTrue(result is MacroConstructionResult.Success)
+            assertTrue(result is MacroConstructionResult.Success, "Construction failed: $result; diagnostics=${result.registry.diagnostics}")
             assertTrue(result.registry.diagnostics.isEmpty())
             assertEquals("Generated", executor.calls.single().idName)
             assertSame(replacement, file.declarations.single())

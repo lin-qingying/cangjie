@@ -6,9 +6,11 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CJ_DIAGNOSTIC_CONVERTER
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
@@ -32,6 +34,7 @@ import org.cangnova.cangjie.source.CjFakePsiSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjRealPsiSourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
+import org.cangnova.cangjie.source.psiOrNull
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
@@ -278,6 +281,22 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Proje
  * Otherwise, behaves the same way as [findPsi] returns exact PSI declaration corresponding to passed [CfirDeclaration]
  */
 internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
+    val declarationSource = source
+    val cfirSession = moduleData.session
+    val macroSnapshot = (cfirSession as? LLCfirResolvableModuleSession)?.macroSemanticSnapshot
+    val macroSurfaceIds = macroSnapshot?.macroSurfaceIdsForDeclaration(this)
+    val isGeneratedSource = declarationSource != null && macroSnapshot?.isGeneratedSource(declarationSource) == true
+    if (macroSurfaceIds != null || isGeneratedSource) {
+        val surfaceId = macroSurfaceIds?.singleOrNull() ?: return null
+        val macroOrigin = macroSnapshot?.originSurface(surfaceId)?.sourceRange?.source
+            ?: return null
+        return macroOrigin.psiOrNull
+            ?.restoreCurrentCompiledPsi(preferredProject)
+            ?.takeIf { psi ->
+                psi.isValid && psi.isPhysical && psi.containingFile?.virtualFile?.let(scope::contains) == true
+            }
+    }
+
     return (if (
         this is CfirCallableDeclaration /*&&
         !this.symbol.isTypeAliasedConstructor*/ // typealiased constructors should not be unwrapped

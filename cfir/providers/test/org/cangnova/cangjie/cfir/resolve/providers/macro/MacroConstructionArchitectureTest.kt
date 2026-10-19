@@ -387,6 +387,34 @@ class MacroConstructionArchitectureTest {
         assertEquals(42L, registry.generatedSourceOriginById[generatedSource])
     }
 
+    /** 验证偏移相同但对象身份不同的生成 source 不会被宏来源索引合并。 */
+    @Test
+    fun `registry preserves generated source identity for equal source ranges`() {
+        val firstSource = CjOffsetsOnlySourceElement(startOffset = 10, endOffset = 20)
+        val secondSource = CjOffsetsOnlySourceElement(startOffset = 10, endOffset = 20)
+        assertEquals(firstSource, secondSource, "该用例必须覆盖 source 元素按偏移相等的情形。")
+
+        val registry = MacroExpansionRegistry()
+        registry.registerGeneratedSource(firstSource, originSurfaceId = 42L)
+        registry.registerGeneratedSource(secondSource, originSurfaceId = 43L)
+
+        assertTrue(registry.isGeneratedSource(firstSource))
+        assertTrue(registry.isGeneratedSource(secondSource))
+        assertEquals(2, registry.generatedSources.size)
+        assertEquals(42L, registry.generatedSourceOriginById[firstSource])
+        assertEquals(43L, registry.generatedSourceOriginById[secondSource])
+
+        val originsBySource = registry.generatedSourceOriginsBySource
+        assertEquals(2, originsBySource.size)
+        assertEquals(setOf(42L), originsBySource[firstSource])
+        assertEquals(setOf(43L), originsBySource[secondSource])
+
+        val snapshot = registry.snapshotGeneratedSourceOrigins {}
+        assertEquals(2, snapshot.originsBySource.size)
+        assertEquals(setOf(42L), snapshot.originsBySource[firstSource])
+        assertEquals(setOf(43L), snapshot.originsBySource[secondSource])
+    }
+
     /** 验证 Analysis API raw surface 使用事实覆盖表达式与声明宏，并按 CFIR/source identity 隔离。 */
     @Test
     fun `raw macro surfaces are stored per cfir file and source identity`() {

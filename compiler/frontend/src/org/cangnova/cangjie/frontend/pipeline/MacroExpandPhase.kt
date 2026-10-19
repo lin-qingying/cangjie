@@ -1727,7 +1727,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             val declaration = iterator.next()
             val slot = declarationSlots.remove(declaration)
             if (slot == null) {
-                replaceParameterSlots(declaration, parameterSlots, annotationSlots)
+                replaceParameterSlots(declaration, parameterSlots, annotationSlots, appliedDeclarationReplacements)
                 replaceNestedDeclarationSlots(
                     declaration,
                     declarationSlots,
@@ -1750,7 +1750,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             iterator.remove()
             for (replacement in replacements) {
                 iterator.add(replacement)
-                replaceParameterSlots(replacement, parameterSlots, annotationSlots)
+                replaceParameterSlots(replacement, parameterSlots, annotationSlots, appliedDeclarationReplacements)
                 replaceNestedDeclarationSlots(
                     replacement,
                     declarationSlots,
@@ -1799,11 +1799,18 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         declaration: CfirDeclaration,
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
         annotationSlots: MutableMap<CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+        appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement>,
     ) {
         if (declaration !is CfirFunction || declaration.valueParameters.isEmpty()) return
         val newParameters = declaration.valueParameters.map { parameter ->
-            parameterSlots.remove(parameter)?.toValueParameterPayload()?.also { replacement ->
+            val slot = parameterSlots.remove(parameter)
+            slot?.toValueParameterPayload()?.also { replacement ->
                 replacement.consumeAnnotationSlotsFromOwner(parameter, annotationSlots)
+                appliedDeclarationReplacements += MacroAppliedDeclarationReplacement(
+                    carrier = parameter,
+                    replacements = listOf(replacement),
+                    surfaceId = slot.origin.surfaceId,
+                )
             } ?: parameter
         }
         declaration.replaceValueParameters(newParameters)

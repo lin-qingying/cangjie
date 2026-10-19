@@ -88,9 +88,7 @@ internal class CaCfirSimpleNameReference(
             }
         }
         val referenceTargetSymbols = resolveToSymbols()
-        val psiOfReferenceTarget = super.getResolvedToPsi(analysisSession, referenceTargetSymbols)
-        if (psiOfReferenceTarget.isNotEmpty()) return psiOfReferenceTarget
-        referenceTargetSymbols.mapNotNull { symbol -> symbol.psi }
+        return super.getResolvedToPsi(analysisSession, referenceTargetSymbols)
     }
 
     /**

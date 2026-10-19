@@ -53,7 +53,7 @@ class TokenBackedMacroFragmentParserTest {
 
         assertTrue(result is MacroFragmentResult.Success)
         val success = result as MacroFragmentResult.Success
-        assertEquals(emptyList(), (success.payload as MacroDeclarationFragment).declarations)
+        assertTrue((success.payload as MacroDeclarationFragment).declarations.isEmpty())
         assertEquals(0, reparseCalls)
     }
 

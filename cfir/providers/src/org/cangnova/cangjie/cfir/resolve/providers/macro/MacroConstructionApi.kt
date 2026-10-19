@@ -13,6 +13,8 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.isInSameSourceTree
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * Raw CFIR 构建产物中、尚未注册到 source provider 的单个文件包装。
@@ -346,12 +348,13 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     /** degraded placeholder id 到原始 surface id 的映射。 */
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
     /** 展开产物 source 到原始 surface id 的映射。 */
-    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = mutableMapOf()
+    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = IdentityHashMap()
     /** 所有生成 source 的身份集合；provenance 冲突不能让 IDE 丢失文件身份。 */
-    private val _generatedSources: MutableSet<AbstractCjSourceElement> = linkedSetOf()
+    private val _generatedSources: MutableSet<AbstractCjSourceElement> =
+        Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>())
     /** 精确 source key 对应的全部 surface 来源；多来源 key 必须保持歧义而不能覆盖。 */
-    private val _generatedSourceOriginsBySource: MutableMap<AbstractCjSourceElement, MutableSet<Long>> = mutableMapOf()
-    /** stable splice 实际应用的 raw declaration carrier 到其输出声明的精确身份关系。 */
+    private val _generatedSourceOriginsBySource: MutableMap<AbstractCjSourceElement, MutableSet<Long>> = IdentityHashMap()
+    /** stable splice 实际应用的 raw declaration/parameter carrier 到其输出声明的精确身份关系。 */
     private val _appliedDeclarationReplacements: MutableList<MacroAppliedDeclarationReplacement> = mutableListOf()
     /** stable splice 实际应用的 raw expression carrier 到其输出表达式的精确身份关系。 */
     private val _appliedExpressionReplacements: MutableList<MacroAppliedExpressionReplacement> = mutableListOf()
@@ -377,6 +380,9 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     val originSurfaceById: Map<Long, MacroSurface>
         get() = _originSurfaceById.toMap()
 
+    /** 按稳定 surface 身份查询单个宏来源，避免热路径复制完整来源表。 */
+    fun originSurface(surfaceId: Long): MacroSurface? = _originSurfaceById[surfaceId]
+
     /**
      * `placeholderId -> originSurfaceId` 反查。
      *
@@ -395,11 +401,22 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * 调用 source。
      */
     val generatedSourceOriginById: Map<AbstractCjSourceElement, Long>
-        get() = _generatedSourceOriginById.toMap()
+        get() = Collections.unmodifiableMap(IdentityHashMap(_generatedSourceOriginById))
 
     /** successful splice 产生的完整 source 集合，不因 provenance 冲突而丢失文件身份。 */
     val generatedSources: Set<AbstractCjSourceElement>
-        get() = _generatedSources.toSet()
+        get() = Collections.unmodifiableSet(
+            Collections.newSetFromMap(IdentityHashMap<AbstractCjSourceElement, Boolean>()).also { snapshot ->
+                snapshot.addAll(_generatedSources)
+            },
+        )
+
+    /**
+     * 直接查询 source 是否由宏展开生成，避免为单次语义解析复制完整 source 快照。
+     *
+     * PSI/Analysis 导航会对多个符号重复执行此判定；这里保持注册表内部身份集合查询为 O(1)。
+     */
+    fun isGeneratedSource(source: AbstractCjSourceElement): Boolean = source in _generatedSources
 
     /**
      * 生成 source 到全部 surface 来源的不可变快照。
@@ -408,7 +425,13 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * 反复线性扫描整张 registry，同时不把 PSI 身份引入 CFIR 数据结构。
      */
     val generatedSourceOriginsBySource: Map<AbstractCjSourceElement, Set<Long>>
-        get() = _generatedSourceOriginsBySource.mapValues { (_, origins) -> origins.toSet() }
+        get() = Collections.unmodifiableMap(
+            IdentityHashMap<AbstractCjSourceElement, Set<Long>>(_generatedSourceOriginsBySource.size).also { snapshot ->
+                _generatedSourceOriginsBySource.forEach { (source, origins) ->
+                    snapshot[source] = Collections.unmodifiableSet(LinkedHashSet(origins))
+                }
+            },
+        )
 
     /**
      * 以调用方提供的取消检查器捕获宏来源映射。
@@ -416,17 +439,20 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
      * IDE 在 PSI 读访问之外复制大 registry；取消检查器避免快照复制成为不可中断的分析任务。
      */
     fun snapshotGeneratedSourceOrigins(checkCanceled: () -> Unit): MacroGeneratedSourceOriginsSnapshot {
-        val originsBySource = LinkedHashMap<AbstractCjSourceElement, Set<Long>>(_generatedSourceOriginsBySource.size)
+        val originsBySource = IdentityHashMap<AbstractCjSourceElement, Set<Long>>(_generatedSourceOriginsBySource.size)
         _generatedSourceOriginsBySource.forEach { (source, origins) ->
             checkCanceled()
-            originsBySource[source] = origins.toSet()
+            originsBySource[source] = Collections.unmodifiableSet(LinkedHashSet(origins))
         }
         val resolvedOriginIds = linkedSetOf<Long>()
         _originSurfaceById.forEach { (surfaceId, surface) ->
             checkCanceled()
             if (surface.sourceRange?.source != null) resolvedOriginIds += surfaceId
         }
-        return MacroGeneratedSourceOriginsSnapshot(originsBySource, resolvedOriginIds)
+        return MacroGeneratedSourceOriginsSnapshot(
+            originsBySource = Collections.unmodifiableMap(originsBySource),
+            resolvedOriginIds = Collections.unmodifiableSet(resolvedOriginIds),
+        )
     }
 
     /** stable splice 实际应用的声明替换关系快照，输出列表保留官方 1→N / 1→0 语义。 */
@@ -601,7 +627,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     }
 
     /**
-     * 登记 stable splicer 在 carrier 槽位实际写入的声明。
+     * 登记 stable splicer 在声明或参数 carrier 槽位实际写入的声明。
      *
      * 该关系以 CFIR 对象身份为准，供 Analysis/IDE 关联物理 PSI 与最终语义树；
      * embedded surface 和 annotation-only 替换不会调用此方法。
@@ -824,6 +850,20 @@ sealed class MacroConstructionResult {
     abstract val registry: MacroExpansionRegistry
 
     /**
+     * 拥有完整、按原始源码文件顺序关联的 CFIR 批次。
+     *
+     * CLI strict 模式仍会区分 [Success] 与 [Degraded]；IDE 与 analysis 则可消费两者共有的批次，
+     * 使单个可诊断的宏错误不会丢弃同一 construction 中其它成功宏的结果。
+     */
+    sealed interface Recordable {
+        /** 经 construction 处理、可进入 source provider 的完整文件批次。 */
+        val recordableFiles: RecordableRawCfirFiles
+
+        /** 与文件批次同一 construction 产生的宏诊断和来源 registry。 */
+        val registry: MacroExpansionRegistry
+    }
+
+    /**
      * construction 完全成功，文件可直接注册进 source provider。
      *
      * @property recordableFiles 可注册的 expanded raw CFIR 文件。
@@ -831,10 +871,10 @@ sealed class MacroConstructionResult {
      */
     data class Success(
         /** 可注册的 expanded raw CFIR 文件。 */
-        val recordableFiles: RecordableRawCfirFiles,
+        override val recordableFiles: RecordableRawCfirFiles,
         /** construction 过程信息与诊断 registry。 */
         override val registry: MacroExpansionRegistry,
-    ) : MacroConstructionResult()
+    ) : MacroConstructionResult(), Recordable
 
     /**
      * construction 降级成功，文件含 typed error placeholder，可供 IDE / analysis 继续工作。
@@ -844,10 +884,10 @@ sealed class MacroConstructionResult {
      */
     data class Degraded(
         /** 含 degraded placeholder 的可注册文件。 */
-        val recordableFiles: RecordableRawCfirFiles,
+        override val recordableFiles: RecordableRawCfirFiles,
         /** construction 过程信息与诊断 registry。 */
         override val registry: MacroExpansionRegistry,
-    ) : MacroConstructionResult()
+    ) : MacroConstructionResult(), Recordable
 
     /**
      * construction 失败且没有可注册文件。
@@ -948,10 +988,10 @@ interface MacroConstructionService {
         /**
          * Macro construction 算法版本（baseline §11 cache key 第 10 维）。
          *
-         * 主流程顺序、forest 推进策略、payload/delimiter 语义、splice 语义、
-         * degraded placeholder 形态任一变更都必须递增；上游 cache 据此整体失效。
+         * 主流程顺序、forest 推进策略、宏 token 源码重建、payload/delimiter 语义、
+         * splice 语义、degraded placeholder 形态任一变更都必须递增；上游 cache 据此整体失效。
          */
-        const val ALGORITHM_VERSION: Int = 2
+        const val ALGORITHM_VERSION: Int = 3
 
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，
