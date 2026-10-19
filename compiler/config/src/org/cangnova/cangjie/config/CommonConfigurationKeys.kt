@@ -106,6 +106,19 @@ object CommonConfigurationKeys {
     /** 官方 `--mock=on|off|runtime-error` 配置；默认值为 [MockSupportKind.DEFAULT]。 */
     @JvmField
     val MOCK_SUPPORT_KIND = CompilerConfigurationKey.create<MockSupportKind>("MOCK_SUPPORT_KIND")
+
+    /**
+     * 是否启用 CFIR2CHIR → JVM codegen 后端阶段。
+     *
+     * 对应核心管线的可选 CFIR2CHIR → CODEGEN 阶段；未启用时前端止步于 SAVE_CJO，
+     * 与既有行为一致。
+     */
+    @JvmField
+    val ENABLE_CHIR_JVM_CODEGEN = CompilerConfigurationKey.create<Boolean>("ENABLE_CHIR_JVM_CODEGEN")
+
+    /** JVM codegen 的 class 输出目录。 */
+    @JvmField
+    val JVM_CLASS_OUTPUT_DIRECTORY = CompilerConfigurationKey.create<String>("JVM_CLASS_OUTPUT_DIRECTORY")
 }
 
 /**
@@ -323,6 +336,24 @@ var CompilerConfiguration.enableCompileTest: Boolean
     get() = getBoolean(CommonConfigurationKeys.ENABLE_COMPILE_TEST)
     set(value) {
         put(CommonConfigurationKeys.ENABLE_COMPILE_TEST, value)
+    }
+
+/** 是否启用 CFIR2CHIR → JVM codegen 后端阶段；默认关闭。 */
+var CompilerConfiguration.enableChirJvmCodegen: Boolean
+    get() = getBoolean(CommonConfigurationKeys.ENABLE_CHIR_JVM_CODEGEN)
+    set(value) {
+        put(CommonConfigurationKeys.ENABLE_CHIR_JVM_CODEGEN, value)
+    }
+
+/** JVM codegen 的 class 输出目录；未配置时后端阶段在内存中产出。 */
+var CompilerConfiguration.jvmClassOutputDirectory: String?
+    get() = get(CommonConfigurationKeys.JVM_CLASS_OUTPUT_DIRECTORY)
+    set(value) {
+        if (value == null) {
+            remove(CommonConfigurationKeys.JVM_CLASS_OUTPUT_DIRECTORY)
+            return
+        }
+        put(CommonConfigurationKeys.JVM_CLASS_OUTPUT_DIRECTORY, value)
     }
 
 /** 官方 mock 支持选项；不设置时保持 DEFAULT，而不是根据文件路径猜测。 */

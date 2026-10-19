@@ -20,7 +20,8 @@ val cangjieCompilerArguments = compilerArguments {
 
             compilerArgument {
                 name = "verbose"
-                description = "Enable verbose logging".asReleaseDependent()
+                shortName = "V"
+                description = "Enable verbose".asReleaseDependent()
                 argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
                 // Official v1.0.0 Options.inc already exposes --verbose.
@@ -56,8 +57,9 @@ val cangjieCompilerArguments = compilerArguments {
 
             compilerArgument {
                 name = "output"
+                shortName = "o"
                 compilerName = "outputFile"
-                description = "Product name or output directory".asReleaseDependent()
+                description = "Specify product name or output directory when compiling a package".asReleaseDependent()
                 argumentType = StringType(defaultValue = ReleaseDependent(null))
                 valueType = StringType(defaultValue = ReleaseDependent(null))
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
@@ -66,11 +68,268 @@ val cangjieCompilerArguments = compilerArguments {
             compilerArgument {
                 name = "output-dir"
                 compilerName = "outputDirectory"
-                description = "Output directory".asReleaseDependent()
+                description = "Specify output directory (it affects '--output' option)".asReleaseDependent()
                 argumentType = StringType(defaultValue = ReleaseDependent(null))
                 valueType = StringType(defaultValue = ReleaseDependent(null))
                 lifecycle(CangJieReleaseVersion.V_1_0_0)
             }
+
+            // ------------------------------------------------------------------
+            // 输入与模块结构（官方 GLOBAL 组对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "import-path"
+                compilerName = "importPath"
+                description = "Add .cjo search path".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.PathSeparator
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "module-name"
+                compilerName = "moduleName"
+                description = "Tell compiler name of the module".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "package"
+                shortName = "p"
+                compilerName = "compilePackage"
+                description = "Specify package directory to be compiled".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "no-sub-pkg"
+                compilerName = "noSubPackage"
+                description = "The package doesn't have sub-packages".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "no-prelude"
+                compilerName = "noPrelude"
+                description =
+                    "Not import cangjie std.core package by default, only applicable when compiling std.core".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // 条件编译（官方 --cfg 对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "cfg"
+                compilerName = "conditionalCompilationConfig"
+                description = "User defined condition to compile".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // 测试编译模式（官方 CJNATIVE GLOBAL 组对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "test"
+                compilerName = "compileTest"
+                description = "Enable compile test".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "test-only"
+                compilerName = "compileTestsOnly"
+                description =
+                    "Compile test files only (`<filename>_test.cj`), production parts should be added as a dependency separately".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "export-for-test"
+                compilerName = "exportForTest"
+                description =
+                    "Export some additional kinds of declaration specifically for using them in tests".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "mock"
+                compilerName = "mock"
+                description =
+                    "Specify whether mock features are enabled, or disabled, or a runtime exception is thrown when trying to use mock features".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // CHIR → JVM codegen（核心管线可选 CFIR2CHIR → CODEGEN 阶段）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "emit-jvm"
+                compilerName = "emitJvm"
+                description = "Emit JVM class files through the CHIR backend after frontend analysis".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "jvm-output-dir"
+                compilerName = "jvmOutputDirectory"
+                description = "Directory for emitted JVM class files (implies --emit-jvm)".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // 宏编译（官方 GLOBAL/FRONTEND 组对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "compile-macro"
+                compilerName = "compileMacro"
+                description = "Options to compile the macro define package".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "debug-macro"
+                compilerName = "debugMacro"
+                description = "Enable debug macro".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "parallel-macro-expansion"
+                compilerName = "parallelMacroExpansion"
+                description = "Enable parallel macro expansion".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "dump-macro"
+                compilerName = "dumpMacro"
+                description = "Dump tokens after macro expansion".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // 诊断控制（官方 GLOBAL 组对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "diagnostic-format"
+                compilerName = "diagnosticFormat"
+                description = "Diagnostic format. Candidate modes: json, txt".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "warn-on"
+                compilerName = "warnOn"
+                description = "Report a specific group of warning".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "warn-off"
+                compilerName = "warnOff"
+                description = "Suppress a specific group of warning".asReleaseDependent()
+                argumentType = StringArrayType()
+                valueType = StringArrayType()
+                delimiter = CangJieCompilerArgument.Delimiter.Semicolon
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "error-count-limit"
+                compilerName = "errorCountLimit"
+                description =
+                    "Emit specified <number> of errors only. Available options: all, <number> (8 by default)".asReleaseDependent()
+                argumentType = StringType(defaultValue = ReleaseDependent(null))
+                valueType = StringType(defaultValue = ReleaseDependent(null))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // dump/调试族（官方 FRONTEND 组对位）
+            // ------------------------------------------------------------------
+
+            compilerArgument {
+                name = "dump-tokens"
+                compilerName = "dumpTokens"
+                description = "Dump tokens".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "dump-parse"
+                compilerName = "dumpParse"
+                description = "Dump parser tree".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "dump-ast"
+                compilerName = "dumpAst"
+                description = "Dump abstract syntax tree".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            compilerArgument {
+                name = "typecheck"
+                compilerName = "typecheck"
+                description = "Parse and check type of input file(s)".asReleaseDependent()
+                argumentType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                valueType = BooleanType(defaultValue = ReleaseDependent(false), isNullable = ReleaseDependent(false))
+                lifecycle(CangJieReleaseVersion.V_1_0_0)
+            }
+
+            // ------------------------------------------------------------------
+            // CLI 与 CJMP（保留既有条目）
+            // ------------------------------------------------------------------
 
             compilerArgument {
                 // 官方 `--common-part-cjo`：CJMP specific 编译加载的 common part cjo 列表。

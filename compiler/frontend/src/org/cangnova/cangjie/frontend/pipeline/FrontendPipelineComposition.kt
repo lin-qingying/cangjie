@@ -17,9 +17,14 @@ internal infix fun <I : PipelineArtifact, M : PipelineArtifact, O : PipelineArti
  * CFIR 前端管线的完整阶段序列：前端分析，随后写出 CJO。
  *
  * 测试基建与生产入口共用同一个序列：阶段顺序只有这一处定义，新增阶段不会在两边悄悄分叉。
+ *
+ * 可选的 CHIR → JVM codegen 阶段由配置开关控制（`enableChirJvmCodegen`）：
+ * 未启用时该阶段是明确空操作，管线行为与既有完全一致。
  */
 fun cfirFrontendPipeline(): PipelinePhase<ConfigurationPipelineArtifact, DefaultCfirFrontendPipelineArtifact> {
-    return CfirFrontendPipelinePhase then CjoWritePipelinePhase
+    return CfirFrontendPipelinePhase then
+            CjoWritePipelinePhase then
+            ChirJvmCodegenPipelinePhase
 }
 
 /**
