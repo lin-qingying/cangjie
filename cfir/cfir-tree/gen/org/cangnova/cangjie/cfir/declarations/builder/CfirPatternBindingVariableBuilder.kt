@@ -15,7 +15,6 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternBindingVariableImpl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -34,7 +33,6 @@ class CfirPatternBindingVariableBuilder {
     var deprecationsProvider: DeprecationsProvider = UnresolvedDeprecationProvider
     var dispatchReceiverType: ConeSimpleCangJieType? = null
     lateinit var status: CfirDeclarationStatus
-    var initializer: CfirExpression? = null
     var isVar: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isTypeImplicit: Boolean = false
     lateinit var symbol: CfirPatternBindingSymbol
@@ -55,7 +53,6 @@ class CfirPatternBindingVariableBuilder {
             deprecationsProvider,
             dispatchReceiverType,
             status,
-            initializer,
             isVar,
             isTypeImplicit,
             symbol,
@@ -91,7 +88,6 @@ inline fun buildPatternBindingVariableCopy(original: CfirPatternBindingVariable,
     copyBuilder.deprecationsProvider = original.deprecationsProvider
     copyBuilder.dispatchReceiverType = original.dispatchReceiverType
     copyBuilder.status = original.status
-    copyBuilder.initializer = original.initializer
     copyBuilder.isVar = original.isVar
     copyBuilder.isTypeImplicit = original.isTypeImplicit
     copyBuilder.typeParameters.addAll(original.typeParameters)

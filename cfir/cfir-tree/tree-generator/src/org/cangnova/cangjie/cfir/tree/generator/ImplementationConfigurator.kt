@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Element
 import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.model.Implementation
 import org.cangnova.cangjie.generators.tree.ImplementationKind
+import org.cangnova.cangjie.generators.tree.Visibility
 import org.cangnova.cangjie.generators.tree.config.AbstractImplementationConfigurator
 
 /**
@@ -146,6 +147,182 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         impl(valueParameter){
             configureCommonValueParameter()
         }
+
+        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeOwner(
+            fieldName: String,
+        ) {
+            default(fieldName) {
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = """
+                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                        field = value
+                    } else {
+                        val previousValue = field
+                        val previousTree = org.cangnova.cangjie.cfir.patterns.capturePatternTree(previousValue)
+                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeReplacement(this, value)
+                        field = value
+                        try {
+                            org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(this, previousTree, patternTreeRoot())
+                        } catch (failure: Throwable) {
+                            field = previousValue
+                            throw failure
+                        }
+                    }
+                """.trimIndent()
+            }
+            initializationStatements(
+                "org.cangnova.cangjie.cfir.patterns.bindPatternTree(this, patternTreeRoot())",
+            )
+        }
+
+        impl(patternVariable) {
+            default("initializer") {
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = """
+                    field = value
+                """.trimIndent()
+            }
+            configurePatternTreeOwner("pattern")
+        }
+        impl(patternBindingVariable) {
+            default("initializer") {
+                value = "org.cangnova.cangjie.cfir.patterns.wholeValueInitializer(patternTreeOwner, this)"
+                withGetter = true
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = "error(\"CfirPatternBindingVariable.initializer is derived from its owner and cannot be changed.\")"
+                customTransform = "error(\"CfirPatternBindingVariable.initializer is derived from its owner and cannot be transformed independently.\")"
+            }
+            default("patternTreeOwner") {
+                value = "null"
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = """
+                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                        field = value
+                    } else {
+                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                        field = value
+                    }
+                """.trimIndent()
+            }
+        }
+
+        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeNode() {
+            default("patternTreeOwner") {
+                value = "null"
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = """
+                    if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                        field = value
+                    } else {
+                        org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                        field = value
+                    }
+                """.trimIndent()
+            }
+        }
+
+        fun AbstractImplementationConfigurator<Implementation, Element, Field>.ImplementationContext.configurePatternTreeChild(
+            fieldName: String,
+            listField: Boolean = false,
+        ) {
+            default(fieldName) {
+                if (listField) {
+                    // 模式节点列表只能通过生成的 replace/transform API 改写，避免调用方绕过 owner 同步。
+                    readOnlyImplementationList = true
+                }
+                customSetterVisibility = Visibility.PRIVATE
+                customSetter = """
+                    val owner = patternTreeOwner
+                    val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+                    val previousValue = field
+                    field = ${if (listField) "java.util.Collections.unmodifiableList(value.toList())" else "value"}
+                    try {
+                        if (owner != null) {
+                            org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+                        } else {
+                            org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+                        }
+                    } catch (failure: Throwable) {
+                        field = previousValue
+                        throw failure
+                    }
+                """.trimIndent()
+                customTransform = if (listField) {
+                    """
+                        val owner = patternTreeOwner
+                        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+                        try {
+                            $fieldName = $fieldName.map { it.transform(transformer, data) }
+                        } finally {
+                            if (owner != null) {
+                                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+                            } else {
+                                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+                            }
+                        }
+                    """.trimIndent()
+                } else {
+                    """
+                        val owner = patternTreeOwner
+                        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+                        try {
+                            $fieldName = $fieldName?.transform(transformer, data)
+                        } finally {
+                            if (owner != null) {
+                                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+                            } else {
+                                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+                            }
+                        }
+                    """.trimIndent()
+                }
+                if (listField) {
+                    val newValue = "new${fieldName.replaceFirstChar(Char::uppercaseChar)}"
+                    customReplace = """
+                        $fieldName = $newValue
+                    """.trimIndent()
+                }
+            }
+        }
+
+        impl(constPattern) { configurePatternTreeNode() }
+        impl(wildcardPattern) { configurePatternTreeNode() }
+        impl(expressionPattern) { configurePatternTreeNode() }
+        impl(catchPattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("bindingVariable")
+        }
+        impl(commandTypePattern) { configurePatternTreeNode() }
+        impl(bindingPattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("bindingVariable")
+            configurePatternTreeChild("nestedPattern")
+        }
+        impl(varOrEnumPattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("bindingVariable")
+        }
+        impl(tuplePattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("elements", listField = true)
+        }
+        impl(enumPattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("arguments", listField = true)
+        }
+        impl(typePattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("bindingVariable")
+        }
+        impl(orPattern) {
+            configurePatternTreeNode()
+            configurePatternTreeChild("alternatives", listField = true)
+        }
+
+        impl(letPatternExpression) { configurePatternTreeOwner("pattern") }
+        impl(matchBranch) { configurePatternTreeOwner("pattern") }
+        impl(catchClause) { configurePatternTreeOwner("pattern") }
+        impl(handleClause) { configurePatternTreeOwner("commandPattern") }
 
 // resolvedImportDirective：委托字段给 delegate
         impl(resolvedImportDirective) {

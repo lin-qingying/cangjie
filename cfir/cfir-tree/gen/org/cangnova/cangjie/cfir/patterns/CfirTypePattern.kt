@@ -18,6 +18,10 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirTypePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val matchingKind: CfirTypePatternMatchingKind
     abstract val typeRef: CfirTypeRef
     abstract val bindingName: Name?
@@ -30,7 +34,13 @@ abstract class CfirTypePattern : CfirPattern() {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTypePattern(this, data) as E
 
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
     abstract fun replaceMatchingKind(newMatchingKind: CfirTypePatternMatchingKind)
+
+    abstract fun replaceTypeRef(newTypeRef: CfirTypeRef)
+
+    abstract fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?)
 
     abstract fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypePattern
 

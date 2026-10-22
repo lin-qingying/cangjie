@@ -8,6 +8,7 @@
 package org.cangnova.cangjie.cfir.patterns.impl
 
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -21,6 +22,15 @@ internal class CfirCommandTypePatternImpl(
     override val isWildcard: Boolean,
     override val typeRefs: MutableList<CfirTypeRef>,
 ) : CfirCommandTypePattern() {
+    override var patternTreeOwner: CfirPatternTreeOwner? = null
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                field = value
+            }
+        }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         typeRefs.forEach { it.accept(visitor, data) }
@@ -34,5 +44,15 @@ internal class CfirCommandTypePatternImpl(
     override fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCommandTypePatternImpl {
         typeRefs.transformInplace(transformer, data)
         return this
+    }
+
+    override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
+        patternTreeOwner = newPatternTreeOwner
+    }
+
+    override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>) {
+        if (typeRefs === newTypeRefs) return
+        typeRefs.clear()
+        typeRefs.addAll(newTypeRefs)
     }
 }

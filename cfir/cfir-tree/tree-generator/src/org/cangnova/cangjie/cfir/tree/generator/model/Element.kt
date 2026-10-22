@@ -57,6 +57,9 @@ class Element(name: String, override val propertyName: String, kind: Kind) : Abs
      */
     var _needTransformOtherChildren: Boolean = false
 
+    /** 该节点直接拥有的模式根字段名；非模式宿主保持为 null。 */
+    var patternTreeRootFieldName: String? = null
+
     /**
      * CFIR 元素始终生成 accept 方法。
      */

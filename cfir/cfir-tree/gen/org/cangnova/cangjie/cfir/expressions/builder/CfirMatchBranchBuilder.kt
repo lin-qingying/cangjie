@@ -60,7 +60,6 @@ inline fun buildMatchBranchCopy(original: CfirMatchBranch, init: CfirMatchBranch
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
-    copyBuilder.pattern = original.pattern
     copyBuilder.guard = original.guard
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()

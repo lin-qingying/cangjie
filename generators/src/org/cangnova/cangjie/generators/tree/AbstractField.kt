@@ -141,6 +141,36 @@ abstract class AbstractField<Field : AbstractField<Field>> {
     abstract var customSetter: String?
 
     /**
+     * 字段专属的 transform 方法体。
+     *
+     * 该配置用于字段变换需要维护跨字段不变量的场景；生成器仍按常规方式声明方法，
+     * 但将默认的子节点赋值逻辑替换为此处提供的完整变换步骤。
+     */
+    open var customTransform: String? = null
+
+    /** 字段 replace 方法的自定义完整方法体。 */
+    open var customReplace: String? = null
+
+    /**
+     * 是否将字段自身类型对应的 replace 声明标记为 override。
+     *
+     * 属性可能覆盖父类型中的同名属性，但其窄化类型对应的 replace 重载未必覆盖父方法；
+     * 只有框架模型无法表示的接口契约才应显式开启此配置。
+     */
+    open var replaceOverride: Boolean = false
+
+    /** 列表字段在实现类中以只读 List 视图暴露，同时保留私有可替换状态。 */
+    open var readOnlyImplementationList: Boolean = false
+
+    /**
+     * 实现属性自定义 setter 的可见性。
+     *
+     * 默认与属性一致；当字段参与内部维护的不变量时，可将 setter 限制在实现类内，
+     * 让外部调用方只能通过生成的 replace/transform API 修改状态。
+     */
+    var customSetterVisibility: Visibility = Visibility.PUBLIC
+
+    /**
      * @see org.cangnova.cangjie.generators.tree.detectBaseTransformerTypes
      */
     var useInBaseTransformerDetection = true
@@ -204,6 +234,11 @@ abstract class AbstractField<Field : AbstractField<Field>> {
         copy.isMutable = isMutable
         copy.deprecation = deprecation
         copy.visibility = visibility
+        copy.customSetterVisibility = customSetterVisibility
+        copy.customTransform = customTransform
+        copy.customReplace = customReplace
+        copy.replaceOverride = replaceOverride
+        copy.readOnlyImplementationList = readOnlyImplementationList
         copy.isOverride = isOverride
         copy.useInBaseTransformerDetection = useInBaseTransformerDetection
         copy.overriddenFields += overriddenFields

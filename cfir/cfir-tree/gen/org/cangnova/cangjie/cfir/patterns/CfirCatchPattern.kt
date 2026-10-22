@@ -18,11 +18,12 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.catchPattern]
  */
-abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement {
+abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement, CfirPatternTreeNode, CfirPatternTypeReferences {
     abstract override val source: CjSourceElement?
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val bindingName: Name?
     abstract val isWildcard: Boolean
-    abstract val typeRefs: List<CfirTypeRef>
+    abstract override val typeRefs: List<CfirTypeRef>
     abstract val resolvedTypeRef: CfirResolvedTypeRef?
     abstract val bindingVariable: CfirPatternBindingVariable?
 
@@ -33,9 +34,13 @@ abstract class CfirCatchPattern : CfirPureAbstractElement(), CfirElement {
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCatchPattern(this, data) as E
 
-    abstract fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
+    abstract override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
 
     abstract fun replaceResolvedTypeRef(newResolvedTypeRef: CfirResolvedTypeRef?)
+
+    abstract fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?)
 
     abstract fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCatchPattern
 

@@ -16,6 +16,10 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirEnumPattern : CfirPattern() {
     abstract override val source: CjSourceElement?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val constructorReference: CfirReference
     abstract val arguments: List<CfirPattern>
 
@@ -25,6 +29,10 @@ abstract class CfirEnumPattern : CfirPattern() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformEnumPattern(this, data) as E
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
+    abstract fun replaceArguments(newArguments: List<CfirPattern>)
 
     abstract fun <D> transformConstructorReference(transformer: CfirTransformer<D>, data: D): CfirEnumPattern
 

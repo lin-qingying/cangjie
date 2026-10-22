@@ -45,10 +45,10 @@ class CfirMainFunctionImpl @CfirImplementationDetail constructor(
     override var controlFlowGraphReference: CfirControlFlowGraphReference? = null
 
     init {
-        symbol.bind(this)
-        resolveState = resolvePhase.asResolveState()
         @Suppress("SENSELESS_COMPARISON")
         require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
     }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

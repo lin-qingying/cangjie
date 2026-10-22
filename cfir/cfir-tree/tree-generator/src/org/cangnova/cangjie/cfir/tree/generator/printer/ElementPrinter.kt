@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.tree.generator.model.Field
 import org.cangnova.cangjie.cfir.tree.generator.util.replaceFunctionDeclaration
 import org.cangnova.cangjie.generators.tree.AbstractElementPrinter
 import org.cangnova.cangjie.generators.tree.AbstractFieldPrinter
+import org.cangnova.cangjie.generators.tree.ImplementationKind
 import org.cangnova.cangjie.generators.tree.TypeRefWithNullability
 import org.cangnova.cangjie.generators.tree.TypeVariable
 import org.cangnova.cangjie.generators.tree.printer.ImportCollectingPrinter
@@ -47,6 +48,14 @@ internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElemen
     override fun ImportCollectingPrinter.printAdditionalMethods(element: Element) {
         val kind = element.kind ?: error("Expected non-null element kind")
         with(element) {
+            if (patternTreeRootFieldName != null) {
+                println()
+                val abstractModifier = if (kind == ImplementationKind.Interface || kind == ImplementationKind.SealedInterface) "" else "abstract "
+                println("${abstractModifier}override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement")
+                println("${abstractModifier}override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)")
+                println("${abstractModifier}override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)")
+            }
+
             val treeName = "CFIR"
             printAcceptMethod(element, cfirVisitorType, hasImplementation = true, treeName = treeName)
             printTransformMethod(
@@ -77,7 +86,7 @@ internal class ElementPrinter(printer: ImportCollectingPrinter) : AbstractElemen
                     .map { it.typeRef.copy(nullable = false) }
                     .distinctBy { it.render() }
 
-                val override = overriddenClasses.any { it.render() == clazzRender } && !(field.name == "source" && element in elementsWithReplaceSource)
+                val override = (field.replaceOverride || overriddenClasses.any { it.render() == clazzRender }) && !(field.name == "source" && element in elementsWithReplaceSource)
                 field.replaceDeclaration(override, forceNullable = field.receiveNullableTypeInReplace)
 
                 for (overriddenClass in overriddenClasses.filter { it.render() != clazzRender }) {

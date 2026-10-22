@@ -9,6 +9,7 @@ package org.cangnova.cangjie.cfir.patterns.impl
 
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
@@ -17,6 +18,15 @@ internal class CfirExpressionPatternImpl(
     override val source: CjSourceElement?,
     override var expression: CfirExpression,
 ) : CfirExpressionPattern() {
+    override var patternTreeOwner: CfirPatternTreeOwner? = null
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                field = value
+            }
+        }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         expression.accept(visitor, data)
@@ -30,5 +40,9 @@ internal class CfirExpressionPatternImpl(
     override fun <D> transformExpression(transformer: CfirTransformer<D>, data: D): CfirExpressionPatternImpl {
         expression = expression.transform(transformer, data)
         return this
+    }
+
+    override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
+        patternTreeOwner = newPatternTreeOwner
     }
 }

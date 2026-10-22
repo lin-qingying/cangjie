@@ -16,11 +16,12 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.commandTypePattern]
  */
-abstract class CfirCommandTypePattern : CfirPureAbstractElement(), CfirElement {
+abstract class CfirCommandTypePattern : CfirPureAbstractElement(), CfirElement, CfirPatternTreeNode, CfirPatternTypeReferences {
     abstract override val source: CjSourceElement?
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val bindingName: Name?
     abstract val isWildcard: Boolean
-    abstract val typeRefs: List<CfirTypeRef>
+    abstract override val typeRefs: List<CfirTypeRef>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitCommandTypePattern(this, data)
@@ -28,6 +29,10 @@ abstract class CfirCommandTypePattern : CfirPureAbstractElement(), CfirElement {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformCommandTypePattern(this, data) as E
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
+    abstract override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>)
 
     abstract fun <D> transformTypeRefs(transformer: CfirTransformer<D>, data: D): CfirCommandTypePattern
 }

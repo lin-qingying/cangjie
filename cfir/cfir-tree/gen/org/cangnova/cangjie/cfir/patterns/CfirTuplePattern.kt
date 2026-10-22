@@ -15,6 +15,10 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirTuplePattern : CfirPattern() {
     abstract override val source: CjSourceElement?
+    /**
+     * 该 pattern 节点所属的唯一模式树宿主；反向 owner 不属于 CFIR 子树。
+     */
+    abstract override val patternTreeOwner: CfirPatternTreeOwner?
     abstract val elements: List<CfirPattern>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -23,6 +27,10 @@ abstract class CfirTuplePattern : CfirPattern() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformTuplePattern(this, data) as E
+
+    abstract override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?)
+
+    abstract fun replaceElements(newElements: List<CfirPattern>)
 
     abstract fun <D> transformElements(transformer: CfirTransformer<D>, data: D): CfirTuplePattern
 }

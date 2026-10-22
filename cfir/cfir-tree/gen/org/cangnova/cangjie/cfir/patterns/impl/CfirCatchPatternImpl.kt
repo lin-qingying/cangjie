@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.patterns.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -24,8 +25,34 @@ class CfirCatchPatternImpl @CfirImplementationDetail constructor(
     override val isWildcard: Boolean,
     override val typeRefs: MutableList<CfirTypeRef>,
     override var resolvedTypeRef: CfirResolvedTypeRef?,
-    override var bindingVariable: CfirPatternBindingVariable?,
+    bindingVariable: CfirPatternBindingVariable?,
 ) : CfirCatchPattern() {
+    override var patternTreeOwner: CfirPatternTreeOwner? = null
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeNodeOwnerChange(this, field, value)
+                field = value
+            }
+        }
+    override var bindingVariable: CfirPatternBindingVariable? = bindingVariable
+        private set(value) {
+            val owner = patternTreeOwner
+            val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+            val previousValue = field
+            field = value
+            try {
+                if (owner != null) {
+                    org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+                } else {
+                    org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+                }
+            } catch (failure: Throwable) {
+                field = previousValue
+                throw failure
+            }
+        }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         typeRefs.forEach { it.accept(visitor, data) }
@@ -51,8 +78,22 @@ class CfirCatchPatternImpl @CfirImplementationDetail constructor(
     }
 
     override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirCatchPatternImpl {
-        bindingVariable = bindingVariable?.transform(transformer, data)
+        val owner = patternTreeOwner
+        val previousTree = owner?.let { org.cangnova.cangjie.cfir.patterns.capturePatternTree(it.patternTreeRoot()) }
+        try {
+            bindingVariable = bindingVariable?.transform(transformer, data)
+        } finally {
+            if (owner != null) {
+                org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(owner, previousTree!!, owner.patternTreeRoot())
+            } else {
+                org.cangnova.cangjie.cfir.patterns.validateDetachedPatternTree(this)
+            }
+        }
         return this
+    }
+
+    override fun replacePatternTreeOwner(newPatternTreeOwner: CfirPatternTreeOwner?) {
+        patternTreeOwner = newPatternTreeOwner
     }
 
     override fun replaceTypeRefs(newTypeRefs: List<CfirTypeRef>) {
@@ -63,5 +104,9 @@ class CfirCatchPatternImpl @CfirImplementationDetail constructor(
 
     override fun replaceResolvedTypeRef(newResolvedTypeRef: CfirResolvedTypeRef?) {
         resolvedTypeRef = newResolvedTypeRef
+    }
+
+    override fun replaceBindingVariable(newBindingVariable: CfirPatternBindingVariable?) {
+        bindingVariable = newBindingVariable
     }
 }

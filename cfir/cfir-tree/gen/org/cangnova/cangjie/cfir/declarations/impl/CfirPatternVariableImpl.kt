@@ -35,20 +35,48 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
     override var deprecationsProvider: DeprecationsProvider,
     override val dispatchReceiverType: ConeSimpleCangJieType?,
     override var status: CfirDeclarationStatus,
-    override var initializer: CfirExpression?,
+    initializer: CfirExpression?,
     override val isVar: Boolean,
     override val isTypeImplicit: Boolean,
     override val symbol: CfirPatternVariableSymbol,
     override val typeParameters: MutableList<CfirTypeParameter>,
     override var returnTypeRef: CfirTypeRef,
-    override var pattern: CfirPattern,
+    pattern: CfirPattern,
 ) : CfirPatternVariable() {
+    override var initializer: CfirExpression? = initializer
+        private set(value) {
+            field = value
+        }
+    override var pattern: CfirPattern = pattern
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                val previousValue = field
+                val previousTree = org.cangnova.cangjie.cfir.patterns.capturePatternTree(previousValue)
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeReplacement(this, value)
+                field = value
+                try {
+                    org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(this, previousTree, patternTreeRoot())
+                } catch (failure: Throwable) {
+                    field = previousValue
+                    throw failure
+                }
+            }
+        }
+
+    override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement = pattern
+    override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) {
+        require(newPatternTreeRoot is CfirPattern) { "Pattern tree root has an incompatible CFIR node type." }
+    }
+    override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replacePattern(newPatternTreeRoot as CfirPattern)
 
     init {
-        symbol.bind(this)
-        resolveState = resolvePhase.asResolveState()
         @Suppress("SENSELESS_COMPARISON")
         require(source != null || origin != CfirDeclarationOrigin.Source) { "${this::class.simpleName} with Source origin was instantiated without a source element." }
+        org.cangnova.cangjie.cfir.patterns.bindPatternTree(this, patternTreeRoot())
+        symbol.bind(this)
+        resolveState = resolvePhase.asResolveState()
     }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
@@ -115,5 +143,9 @@ class CfirPatternVariableImpl @CfirImplementationDetail constructor(
 
     override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef) {
         returnTypeRef = newReturnTypeRef
+    }
+
+    override fun replacePattern(newPattern: CfirPattern) {
+        pattern = newPattern
     }
 }

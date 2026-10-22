@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -15,12 +16,19 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.handleClause]
  */
-abstract class CfirHandleClause : CfirExpression() {
+abstract class CfirHandleClause : CfirExpression(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
+    /**
+     * command 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。
+     */
     abstract val commandPattern: CfirCommandTypePattern
     abstract val body: CfirBlock
+
+    abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
+    abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+    abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitHandleClause(this, data)
@@ -32,6 +40,8 @@ abstract class CfirHandleClause : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replaceCommandPattern(newCommandPattern: CfirCommandTypePattern)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirHandleClause
 

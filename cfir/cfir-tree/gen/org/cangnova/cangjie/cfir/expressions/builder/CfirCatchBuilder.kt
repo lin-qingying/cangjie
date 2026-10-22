@@ -57,7 +57,6 @@ inline fun buildCatchCopy(original: CfirCatch, init: CfirCatchBuilder.() -> Unit
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
-    copyBuilder.pattern = original.pattern
     copyBuilder.body = original.body
     return copyBuilder.apply(init).build()
 }

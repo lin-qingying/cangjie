@@ -7,6 +7,7 @@ package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -15,12 +16,19 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.letPatternExpression]
  */
-abstract class CfirLetPatternExpression : CfirExpression() {
+abstract class CfirLetPatternExpression : CfirExpression(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val initializer: CfirExpression
+    /**
+     * 模式子树具有唯一 owner；浅拷贝必须由调用方显式提供独立模式树。
+     */
     abstract val pattern: CfirPattern
+
+    abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
+    abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+    abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitLetPatternExpression(this, data)
@@ -32,6 +40,8 @@ abstract class CfirLetPatternExpression : CfirExpression() {
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
+
+    abstract fun replacePattern(newPattern: CfirPattern)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpression
 

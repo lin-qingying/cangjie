@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -20,7 +21,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.patternVariable]
  */
-abstract class CfirPatternVariable : CfirVariable() {
+abstract class CfirPatternVariable : CfirVariable(), CfirPatternTreeOwner {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>
@@ -36,7 +37,15 @@ abstract class CfirPatternVariable : CfirVariable() {
     abstract override val symbol: CfirPatternVariableSymbol
     abstract override val typeParameters: List<CfirTypeParameter>
     abstract override val returnTypeRef: CfirTypeRef
+    /**
+     * 该 pattern 含有由本声明 owner 管理的 binding initializer 语义引用。
+     * 浅拷贝必须由调用方显式提供独立 pattern，避免两个 owner 竞争同一 binding。
+     */
     abstract val pattern: CfirPattern
+
+    abstract override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement
+    abstract override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
+    abstract override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement)
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitPatternVariable(this, data)
@@ -54,6 +63,8 @@ abstract class CfirPatternVariable : CfirVariable() {
     abstract override fun replaceInitializer(newInitializer: CfirExpression?)
 
     abstract override fun replaceReturnTypeRef(newReturnTypeRef: CfirTypeRef)
+
+    abstract fun replacePattern(newPattern: CfirPattern)
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirPatternVariable
 

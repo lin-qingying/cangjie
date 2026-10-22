@@ -58,6 +58,5 @@ inline fun buildLetPatternExpressionCopy(original: CfirLetPatternExpression, ini
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.initializer = original.initializer
-    copyBuilder.pattern = original.pattern
     return copyBuilder.apply(init).build()
 }

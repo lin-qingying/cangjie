@@ -25,10 +25,37 @@ class CfirMatchBranchImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override var pattern: CfirPattern,
+    pattern: CfirPattern,
     override var guard: CfirExpression?,
     override var body: CfirBlock,
 ) : CfirMatchBranch() {
+    override var pattern: CfirPattern = pattern
+        private set(value) {
+            if (org.cangnova.cangjie.cfir.patterns.isPatternTreeRootRestoreInProgress()) {
+                field = value
+            } else {
+                val previousValue = field
+                val previousTree = org.cangnova.cangjie.cfir.patterns.capturePatternTree(previousValue)
+                org.cangnova.cangjie.cfir.patterns.validatePatternTreeReplacement(this, value)
+                field = value
+                try {
+                    org.cangnova.cangjie.cfir.patterns.reconcilePatternTree(this, previousTree, patternTreeRoot())
+                } catch (failure: Throwable) {
+                    field = previousValue
+                    throw failure
+                }
+            }
+        }
+
+    override fun patternTreeRoot(): org.cangnova.cangjie.cfir.CfirElement = pattern
+    override fun validatePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) {
+        require(newPatternTreeRoot is CfirPattern) { "Pattern tree root has an incompatible CFIR node type." }
+    }
+    override fun replacePatternTreeRoot(newPatternTreeRoot: org.cangnova.cangjie.cfir.CfirElement) = replacePattern(newPatternTreeRoot as CfirPattern)
+
+    init {
+        org.cangnova.cangjie.cfir.patterns.bindPatternTree(this, patternTreeRoot())
+    }
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
@@ -71,5 +98,9 @@ class CfirMatchBranchImpl @CfirImplementationDetail constructor(
 
     override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?) {
         coneTypeOrNull = newConeTypeOrNull
+    }
+
+    override fun replacePattern(newPattern: CfirPattern) {
+        pattern = newPattern
     }
 }
