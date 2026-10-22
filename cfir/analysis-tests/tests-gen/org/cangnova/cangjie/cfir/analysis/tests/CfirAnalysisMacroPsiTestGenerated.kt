@@ -25,16 +25,52 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
         runTest("cfir/analysis-tests/testData/macro/missingMacroArtifactWithoutSourceRoot.cj")
     }
 
+    @TestMetadata("samePackageCrossFileGeneratedDeclarationConflict.cj")
+    @Test
+    fun testSamePackageCrossFileGeneratedDeclarationConflict() {
+        runTest("cfir/analysis-tests/testData/macro/samePackageCrossFileGeneratedDeclarationConflict.cj")
+    }
+
+    @TestMetadata("sameProjectGeneratedDeclarationConflict.cj")
+    @Test
+    fun testSameProjectGeneratedDeclarationConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectGeneratedDeclarationConflict.cj")
+    }
+
     @TestMetadata("sameProjectMacroExpressionBodySemantics.cj")
     @Test
     fun testSameProjectMacroExpressionBodySemantics() {
         runTest("cfir/analysis-tests/testData/macro/sameProjectMacroExpressionBodySemantics.cj")
     }
 
+    @TestMetadata("sameProjectMacroGeneratedAlphaEquivalentGenericConflict.cj")
+    @Test
+    fun testSameProjectMacroGeneratedAlphaEquivalentGenericConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedAlphaEquivalentGenericConflict.cj")
+    }
+
+    @TestMetadata("sameProjectMacroGeneratedParameterOverload.cj")
+    @Test
+    fun testSameProjectMacroGeneratedParameterOverload() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedParameterOverload.cj")
+    }
+
     @TestMetadata("sameProjectMacroGeneratedReferenceDoesNotConflict.cj")
     @Test
     fun testSameProjectMacroGeneratedReferenceDoesNotConflict() {
         runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedReferenceDoesNotConflict.cj")
+    }
+
+    @TestMetadata("sameProjectMacroGeneratedTypeAliasConflict.cj")
+    @Test
+    fun testSameProjectMacroGeneratedTypeAliasConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGeneratedTypeAliasConflict.cj")
+    }
+
+    @TestMetadata("sameProjectMacroGroupConflict.cj")
+    @Test
+    fun testSameProjectMacroGroupConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroGroupConflict.cj")
     }
 
     @TestMetadata("sameProjectMacroPackageDeclarationReference.cj")
@@ -83,6 +119,12 @@ class CfirAnalysisMacroPsiTestGenerated : AbstractCfirPsiMacroDiagnosticsTest() 
     @Test
     fun testSameProjectMacroPackagePublicImportExpression() {
         runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackagePublicImportExpression.cj")
+    }
+
+    @TestMetadata("sameProjectMacroReturnTypeOnlyConflict.cj")
+    @Test
+    fun testSameProjectMacroReturnTypeOnlyConflict() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroReturnTypeOnlyConflict.cj")
     }
 
     @TestMetadata("diagnostics")

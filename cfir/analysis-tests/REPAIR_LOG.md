@@ -10993,3 +10993,50 @@ ExtendsImplementsInterfaceDuplicated）集合差 **ADDED=0、REMOVED=12**（本�
 - repair: 更新 `test.cj`、`g1/test2.cj`、`test_macro.cj` 的期望标记；CFIR 实现未改。标记覆盖完整标识符 token，没有裁剪单个 token。
 - targeted verification: `:cfir:analysis-tests:test --tests '*DefaultParameterPkg02'`：18 tests，0 failures、0 errors、0 skipped。
 - full verification: `:cfir:analysis-tests:test --console=plain --max-workers=1`：`BUILD SUCCESSFUL in 38m 30s`；共 9,225 tests，0 failures、0 errors、460 skipped。报告：`cfir/analysis-tests/build/reports/tests/test/index.html`。
+
+## 2026-10-18：宏 token 协议重建导致字符串字面量误解析
+
+- problem type: Macro expansion input reconstruction / CFIR parse and diagnostics — 宏生成的字符串字面量丢失引号后被 CFIR 解析为名称访问，产生多余的 `UNRESOLVED_REFERENCE`；同一宏诊断还必须区分真实同签名冲突与宏函数体内对既有声明的引用。
+- root cause: CJC 宏协议分别传输 token kind、token value 与 multiline/raw string 的 `delimiterNum`；旧 `MacroMsgCodec` 仅拼接 value 并用文本启发式插空格，丢失了字符串 token 的定界符，导致 `"generated"` 变成 `generated`。状态分类也没有按 CJC 的 EVAL/SUCCESS/FINISH 成功集合统一判断，且把单个 ILLEGAL 哨兵视为展开结果。
+- official Cangjie evidence: `external/cangjie_compiler/src/Macro/MacroEvalMsgSerializer.cpp` 序列化 token kind/value/delimiterNum；`external/cangjie_compiler/src/Macro/MacroCommon.cpp` 按 token kind 重建源文本并定义空格规则。CJC 1.0.5 对 `sameProjectMacroReturnTypeOnlyConflict.cj` 的等价 probe 报一个 `sema_overload_conflicts`：同名同参数、仅返回类型不同确实冲突；`sameProjectMacroGeneratedReferenceDoesNotConflict.cj` 中宏生成函数体调用已有 `ideTarget()` 不创建第二个声明。`external/cangjie_compiler/src/Sema/PreCheck.cpp:1501-1528` 与 `Diags.cpp:163-192` 分别负责同签名分组和冲突诊断。
+- Kotlin counterpart files consulted: 不适用；该问题归属 CJC 定义的宏 token 线协议与本仓解析前源文本重建，不是 Kotlin FIR 语言语义或 checker 架构问题。
+- CFIR owner files changed: `macro/macro-common/src/org/cangnova/cangjie/macro/MacroTokenKind.kt`、`macro/macro-common/src/org/cangnova/cangjie/macro/protocol/MacroMsgCodec.kt`；协议结果变化通过 `cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroConstructionApi.kt` 的算法版本递增使旧快照失效。测试覆盖 `macro/macro-process/.../ProcessMacroExecutorTest.kt`、IDE codec 测试及 `sameProjectMacroReturnTypeOnlyConflict.cj` 的诊断期望 / CFIR snapshot。
+- repair principle: 在 CJC 协议到 CFIR parser 的共享边界依 token kind/value/delimiter 重建真实源文本，并由同一共享协议层判定展开状态；不在 CFIR checker 中抑制合法诊断，也不按 fixture 名称绕过语义。
+- fixtures covered: `testData/macro/sameProjectMacroReturnTypeOnlyConflict.cj`、`sameProjectMacroGeneratedReferenceDoesNotConflict.cj`、`sameProjectGeneratedDeclarationConflict.cj`、`sameProjectMacroGroupConflict.cj`、`samePackageCrossFileGeneratedDeclarationConflict.cj`、`sameProjectMacroGeneratedParameterOverload.cj`；此外覆盖 PSI 与 LightTree 两条入口下本次执行的完整 `CfirAnalysisMacroTestGenerated` / `CfirAnalysisMacroPsiTestGenerated` 宏测试集。
+- remaining investigation: 本次 IDE 日志在 `17:52:23` 和 `17:53:08` 两次为同一 source path / macro surface 列表发布 production snapshot。单个 session/store 会拒绝第二次发布；`Temporary file` 是独立 dangling session。当前日志没有 session identity 或失效原因，故还不能证明这两次生产发布来自哪次 session 重建，也不能把它们当作重复注入已排除。已报告的 IDE 七条诊断也没有从当前 editor 逐条取出与 CJC 对照。
+- verification command(s) and outcome:
+  - `gradlew-queue.bat :macro:macro-process:test --tests "org.cangnova.cangjie.macro.process.ProcessMacroExecutorTest" --max-workers=1 --console=plain`：18 tests，0 failures、0 errors。
+  - `gradlew-queue.bat :cfir:analysis-tests:test --tests "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroTestGenerated*" --tests "org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisMacroPsiTestGenerated*" --max-workers=1 --console=plain`：PSI 与 LightTree 共 666 tests，0 failures、0 errors。
+  - `cjpm build` in `C:\Users\lin17\IdeaProjects\untitled89`：成功；仅有 smoke 宏未使用参数及刻意 warning 的提示。
+  - 本次 `runIde` 日志中宏展开快照构建成功，未记录 `CONFLICTING_OVERLOADS`、`UNRESOLVED_REFERENCE` 或 `MACRO_EXPAND_FAILED`；该日志没有诊断清单，故不作为当前编辑器全部诊断正确性的证明。
+
+## 2026-10-22 真实项目 CFIR 回归修复（amqp / Cliver4cj）
+
+- problem types: LL 类体容器缺失（private 可见性/private 调用候选）；顶层 pattern binding 隐式类型未从 owner 投影；pattern binding 派生 initializer 被状态保持器改写；无 body 枚举构造器被当作 BODY 目标；单 element 异常终止整文件诊断；包级 const/let 的 binding 名未进入平台/LL/宏快照索引；跨文件 typealias 作为 Option 元素类型未展开；标准库宏注解被误报 NOT_A_TYPE。
+- evidence:
+  - 基线 amqp 405 ERROR / 2 异常文件；Cliver 0 ERROR（假象）/ 6 异常文件（build/baseline-20261021）。
+  - LL private 访问失败链：CfirAccessibilityChecker.privateAccessible -> context.containingDeclarations 缺 class；LL eager 对照不报。
+  - pattern binding 异常链：LLCfirImplicitTypesLazyResolver.phaseSpecificCheckIsResolved -> checkReturnTypeRefIsResolved。
+  - initializer 异常链：BodyStateKeepers.VARIABLE -> CfirPatternBindingVariableImpl.replaceInitializer。
+  - enum body 异常链：LLCfirBodyTargetResolver.doLazyResolveUnderLock -> throwUnexpectedCfirElementError。
+  - 隔离前红日志 analysis/low-level-api-cfir/build/red-llt.log；隔离开启后的红 isolation-red-proof.log / isolation-red-proof4.log。
+- owner files:
+  - analysis/low-level-api-cfir/.../transformers/LLCfirAbstractBodyTargetResolver.kt
+  - analysis/low-level-api-cfir/.../transformers/LLCfirImplicitTypesLazyResolver.kt
+  - analysis/low-level-api-cfir/.../transformers/LLCfirBodyLazyResolver.kt
+  - analysis/low-level-api-cfir/.../diagnostics/{LLCfirDiagnosticVisitor,DiagnosticCollectionFailures,DiagnosticCollectionIsolation}.kt
+  - analysis/low-level-api-cfir/.../file/structure/FileStructure.kt
+  - analysis/low-level-api-cfir/.../symbolProviders/LLCangJieSourceSymbolProvider.kt
+  - analysis/low-level-api-cfir/.../macro/LLCfirMacroSemanticSnapshot.kt
+  - analysis/low-level-api-cfir/.../util/CfirElementFinder.kt
+  - analysis/low-level-api-cfir/.../lazy/resolve/RawCfirNonLocalDeclarationBuilder.kt
+  - analysis/analysis-api-platform-interface/.../CangJieFileBasedDeclarationProvider.kt
+  - cfir/cfir-tree/src/.../patterns/CfirPatternBindingUtils.kt
+  - cfir/resolve/src/.../CfirTypeResolver.kt、CfirTypeCandidateCollector.kt、body/CfirPatternBindingResolution.kt
+- tests: analysis/low-level-api-cfir/.../diagnostic/SourcePostSemaDiagnosticsTest.kt（15 个方法）与 .../diagnostics/DiagnosticCollectionIsolationTest.kt（2 个方法）；testData/diagnostics/postSema 下新增最小/多文件用例。
+- verification:
+  - 新测试 BUILD SUCCESSFUL；全 :analysis:low-level-api-cfir:test 183 tests / 3 failed（均为既有，见 summary）。
+  - :cfir:resolve:test 152 / 1 failed（CfirMapArgumentsTest$Defaults，既有）；:cfir:providers:test 43 / 1 failed（CfirOffsetsOnlyDiagnosticAnchorGuardTest，既有）。
+  - 定向 LLT：Class/PSI testClassAccessControl、Extend testExtendAccessControl1、Class testClassStatic04 BUILD SUCCESSFUL。
+  - 真实项目：BUILD SUCCESSFUL；amqp 0 ERROR / 0 异常 / 0 collectionFailure；Cliver 0/0/0；两项目 cjpm clean/build exit 0；XML interrupted=0。
+- remaining: 普通函数注解的官方 no-match 诊断未实现；顶层拆分 pattern 的 IMPLICIT_TYPES 直接目标未覆盖；既有 CJMP/ContextCollector/guard 测试失败未由本 diff 修改。

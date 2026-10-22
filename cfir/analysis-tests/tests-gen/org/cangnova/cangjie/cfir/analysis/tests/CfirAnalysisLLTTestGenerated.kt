@@ -12798,6 +12798,12 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             runTest("cfir/analysis-tests/testData/llt/function/recursive_ctor_08.cj")
         }
 
+        @TestMetadata("static_nonstatic_same_signature.cj")
+        @Test
+        fun testStaticNonstaticSameSignature() {
+            runTest("cfir/analysis-tests/testData/llt/function/static_nonstatic_same_signature.cj")
+        }
+
         @TestMetadata("throwable_00.cj")
         @Test
         fun testThrowable00() {

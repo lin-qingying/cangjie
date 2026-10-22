@@ -1,0 +1,24 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package generated_type_alias_conflict
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import generated_type_alias_conflict.GenerateAliasConflict
+    internal? typealias NumberAlias = R|Int64|
+    public func aliasTarget(value: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+        }
+    }
+    public func aliasTarget(value: R|Int64|): R|Int64| {
+        RETURN {
+            NAMED_ACCESS(value -> CfirValueParameterSymbol(value))
+        }
+    }
+    <element: CfirMainFunction>
