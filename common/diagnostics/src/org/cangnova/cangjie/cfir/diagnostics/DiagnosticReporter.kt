@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.LanguageVersionSettingsImpl
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import java.util.concurrent.ConcurrentHashMap
 
 
 /**
@@ -106,6 +107,27 @@ fun DiagnosticContext.withRelatedInformation(
  */
 abstract class DiagnosticReporter {
     /**
+     * 当前 reporter 对应诊断收集轮次的共享状态。
+     *
+     * 一次模块诊断收集可能分文件创建 checker visitor；这些 visitor 需要共享去重与跨文件
+     * 事实，但状态不能挂到长期存活的 session，否则后续编辑轮次会错误沿用旧结果。
+     */
+    @Volatile
+    private var collectionState = DiagnosticCollectionState()
+
+    /** 开始新的完整诊断收集轮次，丢弃上一轮的 checker 共享事实。 */
+    @Synchronized
+    fun beginDiagnosticCollection() {
+        collectionState = DiagnosticCollectionState()
+    }
+
+    /** 在当前诊断收集轮次内按类型化 key 创建并复用状态。 */
+    fun <T : Any> getOrCreateCollectionState(
+        key: DiagnosticCollectionStateKey<T>,
+        factory: () -> T,
+    ): T = collectionState.getOrCreate(key, factory)
+
+    /**
      * 上报一个诊断；diagnostic 为 null 时表示当前配置禁用了该诊断。
      */
     abstract fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext)
@@ -119,6 +141,21 @@ abstract class DiagnosticReporter {
      */
     abstract val hasWarningsForWError: Boolean
 }
+
+/** 一轮诊断收集内供不同 visitor 共享的类型化状态表。 */
+private class DiagnosticCollectionState {
+    private val values = ConcurrentHashMap<DiagnosticCollectionStateKey<*>, Any>()
+
+    fun <T : Any> getOrCreate(key: DiagnosticCollectionStateKey<T>, factory: () -> T): T {
+        val value = values.computeIfAbsent(key) { factory() }
+        return key.type.cast(value)
+    }
+}
+
+/** 诊断收集状态的强类型 key；key 的类型令状态读取无需 unchecked cast。 */
+class DiagnosticCollectionStateKey<T : Any>(
+    internal val type: Class<T>,
+)
 
 /**
  * No diagnostic reported with [DiagnosticReporter.report] wouldn't be commited to resulting diagnostic

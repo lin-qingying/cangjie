@@ -81,7 +81,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 处理同名分类器、可调用声明冲突
      */
     val REDECLARATION by object : DiagnosticGroup("Redeclaration") {
-        val CONFLICTING_OVERLOADS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        /**
+         * 冲突可由宏生成声明触发；其来源映射到调用表达式时不再是命名声明 PSI。
+         * 定位策略对普通声明仍标记名称，对宏调用则标记调用源范围。
+         */
+        val CONFLICTING_OVERLOADS by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Collection<String>>("conflictingSymbols")
         }
 

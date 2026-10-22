@@ -6,9 +6,11 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -17,6 +19,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -28,6 +31,8 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingClass
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedTypeUsingAbbreviation
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -45,14 +50,21 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConePlaceholderType
+import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.utils.SmartSet
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 同一名称下的顶层声明分桶。
@@ -159,6 +171,9 @@ internal class CfirDeclarationCollector<D : CfirBasedSymbol<*>>(
      */
     internal val context: CheckerContext,
 ) {
+    /** 宏来源归一化后的声明顺序，供此 collector 的全部冲突边共用。 */
+    internal val sourceOrder = CfirDeclarationConflictSourceOrder(context.session)
+
     /**
      * 每个声明符号对应的冲突符号集合。
      */
@@ -467,6 +482,17 @@ private fun CfirDeclarationCollector<*>.getConflictState(
         if (declarationPresentation != conflictingPresentation) {
             return ConflictState.NoConflict
         }
+
+        if (isFunctionConflictParticipant(declaration) && isFunctionConflictParticipant(conflicting)) {
+            val declarationFunctionSignature = functionConflictSignature(declaration)
+            val conflictingFunctionSignature = functionConflictSignature(conflicting)
+            if (
+                declarationFunctionSignature == null || conflictingFunctionSignature == null ||
+                declarationFunctionSignature != conflictingFunctionSignature
+            ) {
+                return ConflictState.NoConflict
+            }
+        }
     }
     return ConflictState.Conflict
 }
@@ -484,12 +510,17 @@ private fun <D : CfirBasedSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
 
         val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
         for (otherDeclaration in declarations) {
-            if (
-                otherDeclaration != declaration &&
-                declaration.shouldReportRedeclarationWith(otherDeclaration) &&
-                getConflictState(declaration, otherDeclaration) == ConflictState.Conflict
-            ) {
-                conflicts += otherDeclaration
+            if (otherDeclaration != declaration && getConflictState(declaration, otherDeclaration) == ConflictState.Conflict) {
+                if (declaration.isSameSignatureFunctionConflictWith(otherDeclaration)) {
+                    // 同签名函数簇需要保留双方参与关系；报告层再按完整冲突簇选择唯一源码代表。
+                    conflicts += otherDeclaration
+                    declarationConflictingSymbols.getOrPut(otherDeclaration) { SmartSet.create() }.add(declaration)
+                } else if (sourceOrder.compareForDiagnosticRepresentative(otherDeclaration, declaration) <= 0) {
+                    // 非函数簇重定义由源码顺序较后的声明承载，避免同一对声明两侧重复报告。
+                    conflicts += otherDeclaration
+                } else {
+                    declarationConflictingSymbols.getOrPut(otherDeclaration) { SmartSet.create() }.add(declaration)
+                }
             }
         }
 
@@ -558,11 +589,18 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
     }
 
     if (
-        declaration.shouldReportRedeclarationWith(conflictingSymbol) &&
-        getConflictState(declaration, conflictingSymbol) == ConflictState.Conflict
+        getConflictState(declaration, conflictingSymbol) == ConflictState.Conflict &&
+        sourceOrder.compareForDiagnosticRepresentative(conflictingSymbol, declaration) <= 0
     ) {
         declarationConflictingSymbols.getOrPut(declaration) { SmartSet.create() }.add(conflictingSymbol)
     }
+}
+
+/** 同一完整签名的函数冲突需要在图中保留双向参与关系，其他重定义按单一源码代表定向。 */
+private fun CfirBasedSymbol<*>.isSameSignatureFunctionConflictWith(other: CfirBasedSymbol<*>): Boolean {
+    if (!isFunctionConflictParticipant(this) || !isFunctionConflictParticipant(other)) return false
+    val signature = functionConflictSignature(this) ?: return false
+    return signature == functionConflictSignature(other)
 }
 
 /**
@@ -601,16 +639,13 @@ private fun CfirDeclaration.isExemptCrossFileTopLevelPrivate(
  */
 private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectFunctionNameRedeclarations(group: DeclarationBuckets) {
     val nonFunctionDeclarations = (group.classLikes + group.properties + group.extensionProperties)
-        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
-
     val functions = group.simpleFunctions
-        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
 
     for ((function, _) in functions) {
-        val functionSource = function.boundSourceOrNull() ?: continue
+        if (function.boundSourceOrNull() == null) continue
         if (functions.any { (otherFunction, _) ->
                 otherFunction != function &&
-                    (otherFunction.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset
+                    sourceOrder.compareKnown(otherFunction, function)?.let { it < 0 } == true
             }
         ) {
             continue
@@ -619,20 +654,11 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectFunctionNameRede
         nonFunctionDeclarations
             .asSequence()
             .map { (symbol, _) -> symbol }
-            .filter { (it.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset }
+            .filter { sourceOrder.compareKnown(it, function)?.let { order -> order < 0 } == true }
             .forEach { previous ->
                 declarationConflictingSymbols.getOrPut(function) { SmartSet.create() }.add(previous)
             }
     }
-}
-
-/**
- * 判断当前声明是否应作为与另一个声明冲突的报告主体。
- */
-private fun CfirBasedSymbol<*>.shouldReportRedeclarationWith(conflicting: CfirBasedSymbol<*>): Boolean {
-    val declarationSource = boundSourceOrNull() ?: return true
-    val conflictingSource = conflicting.boundSourceOrNull() ?: return true
-    return declarationSource.startOffset >= conflictingSource.startOffset
 }
 
 /**
@@ -720,9 +746,7 @@ internal fun checkForLocalRedeclarations(elements: List<org.cangnova.cangjie.cfi
     groupedByName.values.forEach { conflictingSymbols ->
         if (conflictingSymbols.size <= 1) return@forEach
         val rendered = conflictingSymbols.renderNames()
-        conflictingSymbols.sortedBy { symbol ->
-            symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE
-        }.drop(1).forEach { conflictingSymbol ->
+        conflictingSymbols.drop(1).forEach { conflictingSymbol ->
             reporter.reportOn(conflictingSymbol.boundSourceOrNull(), CfirErrors.REDECLARATION, rendered)
         }
     }
@@ -870,6 +894,7 @@ internal object CfirRedeclarationPresenter {
      */
     fun represent(symbol: CfirCallableSymbol<*>): String? {
         if (!symbol.isBound) return symbol.name.asString()
+        val session = symbol.cfir.moduleData.session
 
         return when (symbol) {
             is CfirConstructorSymbol -> {
@@ -883,27 +908,47 @@ internal object CfirRedeclarationPresenter {
                 } else {
                     ownerClassName.asString()
                 }
-                constructorRepresentation(Name.identifier(ownerText), constructor.valueParameters.map(CfirVariable::returnTypeRef))
+                constructorRepresentation(
+                    Name.identifier(ownerText),
+                    constructor.valueParameters.map(CfirVariable::returnTypeRef),
+                    session,
+                    constructor,
+                )
             }
 
             is CfirEnumConstructorSymbol -> {
                 val enumConstructor = symbol.cfir
-                constructorRepresentation(symbol.name, enumConstructor.valueParameters.map(CfirVariable::returnTypeRef))
+                constructorRepresentation(
+                    symbol.name,
+                    enumConstructor.valueParameters.map(CfirVariable::returnTypeRef),
+                    session,
+                    enumConstructor,
+                )
             }
 
             is CfirFunctionSymbol<*> -> {
                 val function = symbol.cfir
-                val receiverPrefix = function.dispatchReceiverType?.renderForDebugging()?.let { "$it." }.orEmpty()
+                val substitutor = function.redeclarationTypeSubstitutor(session)
+                val receiverPrefix = function.dispatchReceiverType
+                    ?.fullyExpandedTypeUsingAbbreviation(session)
+                    ?.let(substitutor::substituteOrSelf)
+                    ?.renderForDebugging()
+                    ?.let { "$it." }
+                    .orEmpty()
                 val parameters = function.valueParameters.joinToString(",") { parameter ->
-                    parameter.returnTypeRef.toStableSignatureKey()
+                    parameter.returnTypeRef.toRedeclarationSignatureKey(session, substitutor)
                 }
                 receiverPrefix + symbol.name.asString() + "(" + parameters + ")"
             }
 
             else -> {
                 val callable = symbol.cfir
-                val receiverPrefix = callable.dispatchReceiverType?.renderForDebugging()?.let { "$it." }.orEmpty()
-                receiverPrefix + constructorRepresentation(symbol.name, emptyList())
+                val receiverPrefix = callable.dispatchReceiverType
+                    ?.fullyExpandedTypeUsingAbbreviation(session)
+                    ?.renderForDebugging()
+                    ?.let { "$it." }
+                    .orEmpty()
+                receiverPrefix + constructorRepresentation(symbol.name, emptyList(), session)
             }
         }
     }
@@ -917,14 +962,24 @@ internal object CfirRedeclarationPresenter {
         return constructorRepresentation(
             containingClass.classId.shortClassName,
             constructor.valueParameters.map(CfirVariable::returnTypeRef),
+            constructor.moduleData.session,
+                    constructor,
         )
     }
 
     /**
      * 渲染构造器样式的 `Name(paramTypes)` 表示。
      */
-    fun constructorRepresentation(name: Name, parameterTypeRefs: List<CfirTypeRef>): String {
-        val parameterTypes = parameterTypeRefs.joinToString(",") { it.toStableSignatureKey() }
+    fun constructorRepresentation(
+        name: Name,
+        parameterTypeRefs: List<CfirTypeRef>,
+        session: CfirSession,
+        declaration: CfirCallableDeclaration? = null,
+    ): String {
+        val substitutor = declaration?.redeclarationTypeSubstitutor(session) ?: ConeSubstitutor.Empty
+        val parameterTypes = parameterTypeRefs.joinToString(",") {
+            it.toRedeclarationSignatureKey(session, substitutor)
+        }
         return "${name.asString()}($parameterTypes)"
     }
 
@@ -936,6 +991,74 @@ internal object CfirRedeclarationPresenter {
         is CfirCallableSymbol<*> -> symbol.name.asString()
         else -> symbol.debugName
     }
+}
+
+/**
+ * 可调用声明的已展开、alpha 归一化参数类型；该结构用于语义相等判断，展示文本仅用于诊断与分桶。
+ */
+internal data class CfirCallableRedeclarationTypes(
+    val dispatchReceiverType: ConeCangJieType?,
+    val parameterTypes: List<ConeCangJieType>,
+)
+
+/**
+ * 以类型参数声明顺序构造 alpha 归一化的类型替换器。
+ *
+ * 同一可调用声明内的第 N 个类型参数会替换为共享的第 N 个规范占位类型，
+ * 因而 `f<T>(T)` 与 `f<U>(U)` 的参数类型结构相等。
+ */
+private fun CfirCallableDeclaration.redeclarationTypeSubstitutor(session: CfirSession): ConeSubstitutor {
+    val replacements = buildMap<TypeConstructorMarker, ConeCangJieType> {
+        typeParameters.forEachIndexed { index, typeParameter ->
+            put(typeParameter.symbol.toLookupTag(), RedeclarationSignatureTypeParameters.at(index))
+        }
+    }
+    return createTypeSubstitutorByTypeConstructor(
+        map = replacements,
+        context = session.typeContext,
+        approximateIntegerLiterals = false,
+    )
+}
+
+/**
+ * 构造当前声明的语义冲突签名类型。尚未解析的参数类型会等待后续解析阶段再比较。
+ */
+internal fun CfirCallableDeclaration.redeclarationTypesForConflict(): CfirCallableRedeclarationTypes? {
+    val parameters: List<CfirValueParameter> = when (this) {
+        is CfirFunction -> valueParameters
+        is CfirConstructor -> valueParameters
+        is CfirEnumConstructor -> valueParameters
+        else -> return null
+    }
+    val session = moduleData.session
+    val substitutor = redeclarationTypeSubstitutor(session)
+    val receiverType = dispatchReceiverType
+        ?.fullyExpandedTypeUsingAbbreviation(session)
+        ?.let(substitutor::substituteOrSelf)
+    val parameterTypes = parameters.map { parameter ->
+        val resolvedType = parameter.returnTypeRef as? CfirResolvedTypeRef ?: return null
+        substitutor.substituteOrSelf(resolvedType.coneType.fullyExpandedTypeUsingAbbreviation(session))
+    }
+    return CfirCallableRedeclarationTypes(receiverType, parameterTypes)
+}
+
+/** 将声明类型别名完全展开并做类型参数 alpha 归一化后渲染为分桶 key。 */
+private fun CfirTypeRef.toRedeclarationSignatureKey(
+    session: CfirSession,
+    substitutor: ConeSubstitutor,
+): String = when (this) {
+    is CfirResolvedTypeRef -> substitutor
+        .substituteOrSelf(coneType.fullyExpandedTypeUsingAbbreviation(session))
+        .renderForDebugging()
+    else -> toString()
+}
+
+/** 供同一函数签名位置共享的 alpha 规范类型参数占位节点。 */
+private object RedeclarationSignatureTypeParameters {
+    private val canonicalTypes = ConcurrentHashMap<Int, ConePlaceholderType>()
+
+    fun at(index: Int): ConePlaceholderType =
+        canonicalTypes.computeIfAbsent(index) { ConePlaceholderType("__redeclaration_type_parameter_$it") }
 }
 
 /**
