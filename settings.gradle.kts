@@ -128,6 +128,8 @@ include(":analysis:analysis-tools")
 
 
 include(":analysis:analysis-test-framework")
+// 真实项目对照测试：先用 cjpm 编译确认真实项目无错误，再在同一项目上运行 CFIR 分析
+include(":analysis:analysis-real-project-test")
 
 // Analysis API 性能/统计测试入口：独立模块承载 OpenTelemetry SDK 与统计断言基类
 include(":analysis:analysis-performance-test")
