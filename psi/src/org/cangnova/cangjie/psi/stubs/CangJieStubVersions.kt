@@ -79,9 +79,11 @@ object CangJieStubVersions {
     const val CLASSFILE_STUB_VERSION = BINARY_STUB_VERSION + 0
 
     /**
-     * 保存 `BUILTIN_STUB_VERSION`，供PSI Stub流程读取节点结构或语义信息。
+     * 218:
+     * - `.cjo` 错误类型不再把 `<error>` 占位名物化为用户类型（改为 delegatedType 或 `std.core.Any`），
+     *   保证反编译文本可被重新解析，stub 树与 AST 的 stubbed spine 节点数一致
      */
-    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 5
+    const val BUILTIN_STUB_VERSION = BINARY_STUB_VERSION + 6
 
 
 }

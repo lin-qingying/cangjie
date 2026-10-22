@@ -14,7 +14,6 @@ import org.junit.jupiter.api.BeforeEach
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -64,7 +63,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
     @Test
     fun rangePsiRemainsAstBasedInsideAValueArgument() {
         val call = CjPsiFactory(project).createExpression("consume(1..=10:3)")
-        val range = assertNotNull(PsiTreeUtil.findChildOfType(call, CjRangeExpression::class.java))
+        val range = requireNotNull(PsiTreeUtil.findChildOfType(call, CjRangeExpression::class.java))
 
         assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
         val rangeExpression: CjExpression = range
@@ -87,7 +86,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
 
         cases.forEach { case ->
             val expression = CjPsiFactory(project).createExpression(case.text)
-            val slice = assertNotNull(PsiTreeUtil.findChildOfType(expression, CjSliceExpression::class.java))
+            val slice = requireNotNull(PsiTreeUtil.findChildOfType(expression, CjSliceExpression::class.java))
 
             assertEquals(case.text.substringAfter('[').substringBeforeLast(']'), slice.text)
             assertSame(CjNodeTypes.SLICE_EXPRESSION, slice.elementType)
@@ -111,7 +110,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
 
         cases.forEach { case ->
             val expression = CjPsiFactory(project).createExpression(case.text)
-            val range = assertNotNull(PsiTreeUtil.findChildOfType(expression, CjRangeExpression::class.java))
+            val range = requireNotNull(PsiTreeUtil.findChildOfType(expression, CjRangeExpression::class.java))
 
             assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
             assertEquals(case.operator == CjTokens.RANGEEQ, range.isInclusive)
@@ -129,7 +128,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
     fun closedIndexSlicesRequireAnEndExpression() {
         listOf("array[..=]", "array[1..=]").forEach { text ->
             val expression = CjPsiFactory(project).createExpression(text)
-            val slice = assertNotNull(PsiTreeUtil.findChildOfType(expression, CjSliceExpression::class.java))
+            val slice = requireNotNull(PsiTreeUtil.findChildOfType(expression, CjSliceExpression::class.java))
 
             assertSame(CjTokens.RANGEEQ, slice.rangeOperatorToken)
             assertTrue(PsiTreeUtil.findChildrenOfType(expression, PsiErrorElement::class.java).isNotEmpty())

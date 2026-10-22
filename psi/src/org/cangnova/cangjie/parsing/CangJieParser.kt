@@ -57,6 +57,13 @@ class CangJieParser(project: Project) : PsiParser {
 
     companion object {
         /**
+         * PsiBuilder 的 debug 模式会为每个 `mark()` 抓取完整分配栈，并在 `done()`/`drop()` 时做
+         * O(n) 的 marker 平衡检查（整文件 O(n²)）。它只用于定位 unbalanced marker，
+         * 默认必须关闭；需要排查时用 `-Dcangjie.parser.debug=true` 临时打开。
+         */
+        private val PARSER_DEBUG: Boolean = java.lang.Boolean.getBoolean("cangjie.parser.debug")
+
+        /**
          * 优先继承已完成解析的模块来源，已确认的空模块同样是有效结果。
          * 组织名属于官方 prefixPaths；不能把 org::std.foo 的语义包 std.foo 再解释为 std 模块。
          */
@@ -153,7 +160,9 @@ class CangJieParser(project: Project) : PsiParser {
         @JvmStatic
         fun parse(psiBuilder: PsiBuilder, psiFile: PsiFile): ASTNode =
             CangjiePsiParseTimingService.getInstance(psiBuilder.project).measure(CangjiePsiParseKind.FILE) {
-            psiBuilder.setDebugMode(true)
+            if (PARSER_DEBUG) {
+                psiBuilder.setDebugMode(true)
+            }
 
             // 当前文件的 AST 尚未建立，不能在这里读取它自己的 packageFqName。
             // factory 已从外部 context 写入片段 seed；真实 package 由 parser 随后覆盖。
@@ -198,7 +207,9 @@ class CangJieParser(project: Project) : PsiParser {
         fun parseBlockExpression(psiBuilder: PsiBuilder, languageModuleName: String = ""): ASTNode =
             CangjiePsiParseTimingService.getInstance(psiBuilder.project)
                 .measure(CangjiePsiParseKind.BLOCK_EXPRESSION) {
-                    psiBuilder.setDebugMode(true)
+                    if (PARSER_DEBUG) {
+                        psiBuilder.setDebugMode(true)
+                    }
                     val cjParsing: CangJieParsing =
                         createForTopLevel(
                             SemanticWhitespaceAwarePsiBuilderImpl(psiBuilder),

@@ -161,10 +161,14 @@ abstract class CjTypeStatement :
 
     /**
      * 暴露 `primaryConstructor`，实现仓颉 PSI节点对上层接口的属性契约。
+     *
+     * 对齐 Kotlin `KtClassOrObject.getPrimaryConstructor()`：只走 stub-first 访问，
+     * 不再用 `PsiTreeUtil` 对 stub-based 元素做 AST 兜底。
+     * 库/反编译 PSI 一旦被强制建 AST，会触发 `FileTrees.reconcilePsi` 的
+     * “Stub count != stubbed node length” 断言，并把整文件解析拖进前台请求。
      */
     override val primaryConstructor: CjPrimaryConstructor?
         get() = body?.getStubOrPsiChild(CjStubElementTypes.PRIMARY_CONSTRUCTOR)
-            ?: body?.let { PsiTreeUtil.findChildrenOfType(it, CjPrimaryConstructor::class.java).firstOrNull() }
 
     /**
      * 暴露 `primaryConstructorModifierList`，实现仓颉 PSI节点对上层接口的属性契约。
