@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.CallableId
@@ -418,10 +419,19 @@ internal class LLCangJieSourceSymbolProvider(
 
     /**
      * 从当前 [CfirFile] 的顶层声明中收集指定 [name] 与 [TYPE] 类型匹配的 callable 符号。
+     *
+     * 顶层 `const` / `let` 是 [CfirPatternVariable]，其自身 symbol 名固定为内部占位名；
+     * 真正进入包级作用域的是 pattern 内的 binding 名。这里必须把 binding symbol 与普通
+     * 顶层 callable 一视同仁，否则跨文件引用包级常量/变量会全部退化为 unresolved。
      */
     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {
         declarations.mapNotNullTo(result) { declaration ->
-            if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
+            if (declaration is CfirPatternVariable) {
+                declaration.pattern.bindingVariables()
+                    .firstOrNull { binding -> binding.name == name }
+                    ?.symbol
+                    ?.let { symbol -> symbol as? TYPE }
+            } else if (declaration is CfirCallableDeclaration && declaration.symbol.name == name) {
                 declaration.symbol as? TYPE
             } else null
         }

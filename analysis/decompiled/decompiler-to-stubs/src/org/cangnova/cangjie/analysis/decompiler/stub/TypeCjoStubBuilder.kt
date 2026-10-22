@@ -141,6 +141,10 @@ internal class TypeCjoStubBuilder {
                 segments = listOf(coneType.lookupTag.name to false),
                 typeArguments = emptyList(),
             )
+            // 错误类型不能按普通 classifier 物化：其占位 ClassId 是 `<error>`，
+            // 写进反编译文本会让整段源码不可解析（进而触发 stub/AST 计数断言）。
+            // 与 Kotlin 一致：优先使用 delegatedType，否则退化为合法的 std.core.Any。
+            is ConeErrorType -> createErrorTypeReferenceStub(parent, coneType.lookupTag)
             is ConeClassifierType -> {
                 val classId = coneType.lookupTag.classId
                 createQualifiedUserTypeReferenceStub(
@@ -173,6 +177,42 @@ internal class TypeCjoStubBuilder {
     }
 
     /**
+     * 为错误类型创建合法的 type reference stub。
+     *
+     * 错误类型的 lookup tag 携带占位 ClassId `<error>`，直接物化会把占位名写进反编译文本；
+     * 这里按 Kotlin 的兜底语义处理：
+     * - 有 [ConeClassLikeErrorLookupTag.delegatedType] 时渲染委托类型；
+     * - 否则退化为 `std.core.Any`，保证渲染结果仍是合法类型表达式。
+     */
+    private fun createErrorTypeReferenceStub(
+        parent: StubElement<*>,
+        errorTag: ConeClassLikeErrorLookupTag,
+    ) {
+        val delegatedType = errorTag.delegatedType
+        if (delegatedType != null) {
+            createTypeReferenceStub(parent, delegatedType)
+            return
+        }
+        createAnyTypeReferenceStub(parent)
+    }
+
+    /**
+     * 创建 `std.core.Any` 的 type reference stub，作为无法表达的类型占位。
+     *
+     * 占位必须是合法类型表达式，否则渲染出的反编译源码无法被 parser 重新解析。
+     */
+    private fun createAnyTypeReferenceStub(parent: StubElement<*>) {
+        createQualifiedUserTypeReferenceStub(
+            parent = parent,
+            segments = buildList {
+                StdlibClassIds.Any.packageFqName.pathSegments().forEach { add(it to false) }
+                add(StdlibClassIds.Any.shortClassName to true)
+            },
+            typeArguments = emptyList(),
+        )
+    }
+
+    /**
      * 创建基础类型引用 stub。
      *
      * 如果输入文本不是仓颉内建基础类型名，则按已渲染用户类型处理，避免丢失复杂类型文本。
@@ -201,6 +241,11 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         renderedType: String,
     ) {
+        // 兜底：任何来源的 `<error>` 占位都不能进入反编译文本，否则整段源码不可解析。
+        if (renderedType.contains(ERROR_TYPE_NAME_PLACEHOLDER)) {
+            createAnyTypeReferenceStub(parent)
+            return
+        }
         val typeReferenceStub = CangJiePlaceHolderStubImpl<CjTypeReference>(parent, CjStubElementTypes.TYPE_REFERENCE)
         createRenderedUserTypeStub(typeReferenceStub, renderedType)
     }
@@ -566,6 +611,11 @@ internal class TypeCjoStubBuilder {
     }
 
     private companion object {
+        /**
+         * 错误类型在 lookup tag 中使用的占位 ClassId 名；它不能出现在反编译文本里。
+         */
+        const val ERROR_TYPE_NAME_PLACEHOLDER = "<error>"
+
         /**
          * 反编译 stub 可以直接映射为 basic type stub 的仓颉基础类型名集合。
          */

@@ -267,11 +267,15 @@ internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
  * callable 会先剥离 fake override 或 delegated 包装，再限制结果必须落在给定搜索范围内。
  */
 fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
-    return (if (this is CfirCallableSymbol<*>) {
+    val psi = (if (this is CfirCallableSymbol<*>) {
         cfir.unwrapFakeOverridesOrDelegated().findPsi(preferredProject)
     } else {
         cfir.findPsi(preferredProject)
-    })?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
+    }) ?: return null
+
+    // 宏生成或 fake 声明的 PSI 锚点可能没有 containing file；这种 PSI 不属于项目搜索范围，不能传给 contains。
+    val virtualFile = psi.containingFile?.virtualFile ?: return null
+    return psi.takeIf { scope.contains(virtualFile) }
 }
 
 

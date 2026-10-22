@@ -883,6 +883,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
                 -> {
                 // No bodies here
             }
+            is CfirEnumConstructor -> {
+                // 枚举构造器没有函数体；返回类型由所属 enum 在 TYPES 阶段写入。
+            }
             else -> throwUnexpectedCfirElementError(target)
         }
     }
@@ -959,7 +962,12 @@ internal object BodyStateKeepers {
     val VARIABLE: StateKeeper<CfirVariable, CfirDesignation> = stateKeeper { builder, variable, _ ->
         builder.add(CfirVariable::returnTypeRef, CfirVariable::replaceReturnTypeRef)
 
-        if (!isCallableWithSpecialBody(variable)) {
+        /*
+         * pattern binding 的 initializer 由其唯一模式树 owner 派生，不是 binding 自己拥有的
+         * 可变状态。状态保持器只能保存真正由该声明拥有的槽位；对派生槽位调用 replaceInitializer
+         * 会违反模式树所有权不变量。
+         */
+        if (variable !is CfirPatternBindingVariable && !isCallableWithSpecialBody(variable)) {
             variable.initializerGetterIfUnresolved?.let {
                 builder.add(it, CfirVariable::replaceInitializer, ::expressionGuard)
             }

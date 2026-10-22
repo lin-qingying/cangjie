@@ -9,7 +9,9 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.DiagnosticCollectionFailures
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.LLCfirDiagnosticVisitor
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.forEachWithDiagnosticIsolation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.getNonLocalContainingOrThisElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.isAutonomousElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.elementCanBeLazilyResolved
@@ -202,6 +204,8 @@ internal class FileStructure private constructor(
      * 收集整个文件所有 structure element 的 diagnostics。
      */
     fun getAllDiagnosticsForFile(diagnosticCheckerFilter: DiagnosticCheckerFilter): List<CjPsiDiagnostic> {
+        // 每次顶层收集前重置隔离异常记录，避免 IDE 长生命周期线程累积上一次收集的 Throwable。
+        DiagnosticCollectionFailures.clear()
         val structureElements = getAllStructureElements()
         return buildList {
             collectDiagnosticsFromStructureElements(structureElements, diagnosticCheckerFilter)
@@ -215,9 +219,12 @@ internal class FileStructure private constructor(
         structureElements: Collection<FileStructureElement>,
         diagnosticCheckerFilter: DiagnosticCheckerFilter,
     ) {
-        structureElements.forEach { structureElement ->
-            ProgressManager.checkCanceled()
-
+        /*
+         * 单个 structure element 的解析/收集失败不能丢弃整份文件其余元素的诊断。
+         * 隔离边界放在 element 级；[forEachWithDiagnosticIsolation] 同时把失败写入
+         * DiagnosticCollectionFailures，测试/报告必须断言该计数为 0。
+         */
+        forEachWithDiagnosticIsolation(structureElements) { structureElement ->
             structureElement.diagnostics.forEach(diagnosticCheckerFilter) { diagnostics ->
                 addAll(diagnostics)
             }

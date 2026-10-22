@@ -16,6 +16,7 @@ import org.cangnova.cangjie.analysis.api.resolution.CaCallResolutionAttempt
 import org.cangnova.cangjie.analysis.api.resolution.CaSymbolResolutionAttempt
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.utils.caches.softCachedValue
 import org.cangnova.cangjie.psi.CjElement
@@ -90,7 +91,13 @@ internal class CaCfirInternalCacheStorage(private val analysisSession: CaCfirSes
      * [in-block modification][org.jetbrains.kotlin.analysis.low.level.api.fir.file.structure.LLCfirDeclarationModificationService].
      */
     private inline fun <T> softCachedValueWithPsiKey(crossinline createValue: () -> T): CachedValue<T> {
-        return softCachedValue(project, LLCfirInBlockModificationTracker.getInstance(project)) {
+        val invalidationTrackers = buildList {
+            add(LLCfirInBlockModificationTracker.getInstance(project))
+            (analysisSession.cfirSession as? LLCfirResolvableModuleSession)
+                ?.macroSemanticSnapshotModificationTracker
+                ?.let(::add)
+        }
+        return softCachedValue(project, *invalidationTrackers.toTypedArray()) {
             createValue()
         }
     }

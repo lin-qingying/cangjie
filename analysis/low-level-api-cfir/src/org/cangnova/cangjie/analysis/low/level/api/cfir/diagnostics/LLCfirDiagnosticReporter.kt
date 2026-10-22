@@ -84,6 +84,7 @@ internal class LLCfirDiagnosticReporter(
         val currentElement = when (this) {
             is CjPsiDiagnostic -> element
             is CjDiagnosticWithSource -> element
+            is CjOffsetsOnlyDiagnostic -> element
             else -> error("Unknown diagnostic type ${this::class.simpleName}")
         }
         val mappedElement = sourceMapper(currentElement)

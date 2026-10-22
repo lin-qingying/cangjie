@@ -19,16 +19,22 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.withCfirSymbolEntry
+import org.cangnova.cangjie.cfir.patterns.wholeValueBindingOrNull
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.ImplicitBodyResolveComputationSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -201,6 +207,14 @@ internal class LLCfirImplicitBodyTargetResolver(
                 // 枚举构造器返回类型由所属 enum 在 TYPES 阶段写入，且没有函数体可供隐式返回类型推断。
             }
 
+            is CfirPatternBindingVariable -> {
+                // 非局部 pattern binding 的隐式类型必须由 owner 的 pattern 投影写入；
+                // 绑定自身没有 independent initializer，不能走普通变量 body resolve。
+                if (target.returnTypeRef is CfirImplicitTypeRef) {
+                    projectPatternBindingTypeFromOwner(target)
+                }
+            }
+
             is CfirCallableDeclaration if target.canHaveDeferredReturnTypeCalculation -> {
                 transformer.context.returnTypeCalculator.callableCopyTypeCalculator.computeReturnType(target)
             }
@@ -228,6 +242,28 @@ internal class LLCfirImplicitBodyTargetResolver(
             }
 
             else -> throwUnexpectedCfirElementError(target)
+        }
+    }
+
+    /**
+     * 把 owner pattern 的已解析类型投影到唯一承载完整值的 binding。
+     *
+     * 顶层 `const` / `let` 的 binding 没有独立 initializer；其类型只存在于 owner
+     * pattern variable 上。IMPLICIT_TYPES 直接以 binding 为目标时必须先推进 owner，
+     * 再把同一 `CfirResolvedTypeRef` 投影到 binding，否则阶段完成性检查会看到
+     * `CfirImplicitTypeRef`。拆分绑定由 pattern 形状在 body resolve 中逐元素投影，
+     * 这里不处理。
+     */
+    private fun projectPatternBindingTypeFromOwner(binding: CfirPatternBindingVariable) {
+        val owner = (binding.patternTreeOwner as? CfirPatternVariable)
+            ?: resolveTargetSession.cfirProvider.getCfirPatternVariableForBinding(binding.symbol)
+            ?: return
+        if (!owner.isLocal) {
+            owner.lazyResolveToPhase(CfirResolvePhase.IMPLICIT_TYPES)
+        }
+        val ownerTypeRef = owner.returnTypeRef as? CfirResolvedTypeRef ?: return
+        if (owner.pattern.wholeValueBindingOrNull() === binding) {
+            binding.replaceReturnTypeRef(ownerTypeRef)
         }
     }
 

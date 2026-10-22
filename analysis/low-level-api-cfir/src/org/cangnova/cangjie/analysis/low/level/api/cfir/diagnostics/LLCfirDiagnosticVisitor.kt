@@ -144,6 +144,12 @@ internal open class LLCfirDiagnosticVisitor(
          * an alternative handler.
          *
          * For instance, the IntelliJ plugin reports such exceptions and doesn't interrupt the execution flow.
+         *
+         * 偏差说明：默认测试 logger 的 `error` 会抛出 AssertionError，从而让一个元素的失败
+         * 终止整份文件的诊断收集。这里以 warn 记录完整异常并继续，保证诊断隔离粒度是
+         * “单个 checker / structure element”，而不是整个文件。被隔离的异常同时写入
+         * [DiagnosticCollectionFailures]，测试与真实项目报告必须显式断言其数量为 0，
+         * 因此异常不会被静默忽略。
          */
         inline fun <T> suppressAndLogExceptions(block: () -> T): T? = try {
             block()
@@ -152,7 +158,8 @@ internal open class LLCfirDiagnosticVisitor(
                 throw e
             }
 
-            thisLogger().error("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
+            DiagnosticCollectionFailures.record(e)
+            thisLogger().warn("The diagnostic collector has been interrupted by an exception. The result may be incomplete", e)
             null
         }
     }

@@ -17,9 +17,11 @@ import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.stubs.elements.getAllPatternDeclarations
 import org.cangnova.cangjie.utils.addIfNotNull
 import org.cangnova.cangjie.utils.yieldIfNotNull
 
@@ -203,7 +205,31 @@ class CangJieFileBasedDeclarationProvider private constructor(
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelMacros(callableId).mapTo(this) { it.containingCjFile }
+            /*
+             * 仓颉顶层 `const` / `let` 在 PSI 中是 CjPatternVariable，不是 property/function。
+             * 它们同样进入包级 callable 索引，因此文件级查找也必须返回其 carrier 文件，
+             * 否则跨文件引用包级常量/变量时会在文件索引阶段就被误判为不存在。
+             */
+            addAll(getTopLevelPatternVariableFiles(callableId))
         }
+    }
+
+    /**
+     * 获取指定 callable id 对应的顶层模式变量声明所在的文件。
+     *
+     * [CjPatternVariable] 自身没有单一名称，名称位于 pattern 的绑定声明中；因此不能复用
+     * 按 `nameAsName` 过滤的通用 callable 查找。
+     */
+    private fun getTopLevelPatternVariableFiles(callableId: CallableId): Collection<CjFile> {
+        if (filePackageFqName != callableId.packageName) return emptyList()
+        return topLevelDeclarations
+            .filterIsInstance<CjPatternVariable>()
+            .filter { variable ->
+                variable.pattern.getAllPatternDeclarations().any { pattern -> pattern.nameAsName == callableId.callableName }
+            }
+            .map { it.containingCjFile }
+            .distinct()
+            .toList()
     }
 
     /**
@@ -222,9 +248,26 @@ class CangJieFileBasedDeclarationProvider private constructor(
 
     /**
      * 获取指定包中的顶层 callable 名称。
+     *
+     * 顶层 `const` / `let` 的 `CjPatternVariable` 没有单一 `nameAsName`；名称来自 pattern
+     * 内的绑定声明。名称索引必须暴露这些绑定名，否则 `mayHaveTopLevelCallable` 会在
+     * 符号查找前把包级常量/变量过滤掉。
      */
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
-        return getTopLevelDeclarationNames<CjCallableDeclaration>(packageFqName)
+        if (filePackageFqName != packageFqName) {
+            return emptySet()
+        }
+
+        return buildSet {
+            for (declaration in topLevelDeclarations) {
+                when (declaration) {
+                    is CjPatternVariable ->
+                        declaration.pattern.getAllPatternDeclarations().mapNotNullTo(this) { it.nameAsName }
+
+                    is CjCallableDeclaration -> addIfNotNull(declaration.nameAsName)
+                }
+            }
+        }
     }
 
     /**

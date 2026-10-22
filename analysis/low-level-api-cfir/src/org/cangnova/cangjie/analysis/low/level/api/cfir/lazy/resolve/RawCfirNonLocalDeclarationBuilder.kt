@@ -12,6 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.builder.MacroSurfaceCollectionMode
 import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
@@ -91,12 +92,21 @@ internal object RawCfirNonLocalDeclarationBuilder {
                 CfirElementFinder.findPatternVariable(rebuiltFile, patternVariablePsi)
             }
 
-            else -> CfirElementFinder.findDeclaration(rebuiltFile, declaration)
+            else -> CfirElementFinder.findDeclaration(
+                cfirFile = rebuiltFile,
+                nonLocalDeclaration = declaration,
+                containerClassIds = designation.path
+                    .filterIsInstance<CfirClassLikeDeclaration>()
+                    .map { classLike -> classLike.symbol.classId },
+            )
         }
 
         return rebuiltDeclaration
             ?: errorWithCfirSpecificEntries(
-                "No rebuilt CFIR declaration was found for PSI",
+                "No rebuilt CFIR declaration was found for PSI " +
+                    "${declaration::class.simpleName} " +
+                    "`${declaration.text.take(80).replace('\n', ' ')}` " +
+                    "in ${declaration.containingCjFile?.name}",
                 psi = declaration,
                 cfir = designation.target,
             )

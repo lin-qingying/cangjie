@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedDeclarationReplacement
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroAppliedExpressionReplacement
@@ -294,6 +295,21 @@ class LLCfirMacroSemanticSnapshot internal constructor(
                     callableNames.getOrPut(packageFqName, ::linkedSetOf).add(callableName)
                     if (macroGenerated) {
                         macroGeneratedCallableNames.getOrPut(packageFqName, ::linkedSetOf).add(callableName)
+                    }
+
+                    /*
+                     * 顶层 `const` / `let` 是 CfirPatternVariable，其自身 symbol 名是内部占位名；
+                     * 包级可见的是 pattern 内的 binding 名。快照名称索引必须与
+                     * CfirSourceSymbolProvider 一样按 binding 名登记，否则跨文件引用会 unresolved。
+                     */
+                    if (declaration is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable) {
+                        for (binding in declaration.pattern.bindingVariables()) {
+                            callables.getOrPut(CallableId(packageFqName, binding.name), ::mutableListOf).add(binding)
+                            callableNames.getOrPut(packageFqName, ::linkedSetOf).add(binding.name)
+                            if (macroGenerated) {
+                                macroGeneratedCallableNames.getOrPut(packageFqName, ::linkedSetOf).add(binding.name)
+                            }
+                        }
                     }
                 }
             }

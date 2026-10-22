@@ -70,7 +70,15 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
         val context = declarationsTransformer.context
         val actionWithScopes = {
             context.withScopesForClass(cfirClassLike, declarationsTransformer.components) {
-                action()
+                /*
+                 * 类体解析的容器栈必须包含当前 class-like，与 eager 路径
+                 * `forRegularClassBody` 以及 ContextCollector 的 class-like body 入口保持一致。
+                 * 否则 components.containingDeclarations 只剩文件和函数，private/protected
+                 * 成员会被误判为跨类访问，private 成员也不再参与成员候选解析。
+                 */
+                context.withContainer(cfirClassLike) {
+                    action()
+                }
             }
         }
 

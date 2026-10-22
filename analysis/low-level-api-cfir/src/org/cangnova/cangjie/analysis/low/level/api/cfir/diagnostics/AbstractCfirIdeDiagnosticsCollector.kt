@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.analysis.collectors.components.AbstractDiagnost
 import org.cangnova.cangjie.cfir.analysis.collectors.components.CfirChirArithmeticDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ControlFlowAnalysisDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
+import org.cangnova.cangjie.cfir.analysis.collectors.components.MacroConstructionDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ReportCommitterDiagnosticComponent
 import org.cangnova.cangjie.cfir.analysis.extensions.CfirAdditionalCheckersExtension
 import org.cangnova.cangjie.cfir.analysis.extensions.additionalCheckers
@@ -91,6 +92,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(DeclarationCheckersDiagnosticComponent(session, reporter, declarationCheckers))
             add(ExpressionCheckersDiagnosticComponent(session, reporter, expressionCheckers))
             add(TypeCheckersDiagnosticComponent(session, reporter, typeCheckers))
+            if (filter.runDefaultCheckers) {
+                add(MacroConstructionDiagnosticCollectorComponent(session, reporter))
+            }
         }.toTypedArray()
 
         // 与 regularComponents 严格同序，且必须跟着上面那条条件分支同步增减：
@@ -102,6 +106,9 @@ internal class LLCheckersFactory(val session: LLCfirSession) : CfirSessionCompon
             add(CfirCheckerComponentKind.DECLARATION)
             add(CfirCheckerComponentKind.EXPRESSION)
             add(CfirCheckerComponentKind.TYPE)
+            if (filter.runDefaultCheckers) {
+                add(CfirCheckerComponentKind.MACRO_CONSTRUCTION)
+            }
         }.toTypedArray()
 
         val postSemaComponents = if (filter.runDefaultCheckers) {

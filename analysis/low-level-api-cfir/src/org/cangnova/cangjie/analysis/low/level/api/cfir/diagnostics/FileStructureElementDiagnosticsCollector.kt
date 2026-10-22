@@ -29,6 +29,7 @@ internal fun collectForStructureElement(
     val reporter = LLCfirDiagnosticReporter(
         sourceMapper = { source -> session.macroExpansionRegistry?.originSourceForGeneratedSource(source) },
     )
+    reporter.beginDiagnosticCollection()
     val collector = LLCfirStructureElementDiagnosticsCollector(
         session,
         createVisitor,

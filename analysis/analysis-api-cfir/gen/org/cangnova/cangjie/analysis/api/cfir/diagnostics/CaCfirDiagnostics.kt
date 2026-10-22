@@ -55,7 +55,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val enumName: Name
     }
 
-    interface ConflictingOverloads : CaCfirDiagnostic<CjNamedDeclaration> {
+    interface ConflictingOverloads : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = ConflictingOverloads::class
         val conflictingSymbols: List<String>
     }

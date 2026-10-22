@@ -65,7 +65,7 @@ internal class ConflictingOverloadsImpl(
     override val conflictingSymbols: List<String>,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.ConflictingOverloads
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConflictingOverloads
 
 internal class RedeclarationImpl(
     override val conflictingSymbols: List<String>,

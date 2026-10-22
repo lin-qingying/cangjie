@@ -3,6 +3,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.ModificationTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveComponents
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.projectStructure.contextModule
@@ -39,20 +40,27 @@ abstract class LLCfirResolvableModuleSession(
         return moduleComponents.scopeSessionProvider.getScopeSession()
     }
 
-    /** 已发布的完整宏语义快照；构造尚未成功时为空。 */
+    /** 已发布的完整宏语义快照；尚未产生可记录的完整 construction 批次时为空。 */
     val macroSemanticSnapshot: LLCfirMacroSemanticSnapshot?
         get() = moduleComponents.macroSemanticSnapshotStore.snapshot
+
+    /**
+     * 宏快照发布版本，用于使依赖当前模块语义视图的 Analysis API 缓存失效。
+     */
+    val macroSemanticSnapshotModificationTracker: ModificationTracker
+        get() = moduleComponents.macroSemanticSnapshotStore
 
     /**
      * 基于同一 pre-macro 输入批次，在不发布的情况下预构建语义快照索引。
      *
      * 输入是本次构造独占的 CFIR 树，索引构建不依赖实时 PSI 查询；调用方应在后台、读写访问之外执行，
-     * 再把返回快照交给 [publishMacroSemanticSnapshot]。
+     * 再把返回快照交给 [publishMacroSemanticSnapshot]。完整批次可以带有 typed error placeholder，
+     * 但仍必须保留每个输入源文件的顺序与身份。
      */
     @OptIn(CaExperimentalApi::class)
     fun prepareMacroSemanticSnapshot(
         pre: PreMacroRawBuildResult,
-        result: MacroConstructionResult.Success,
+        result: MacroConstructionResult.Recordable,
     ): LLCfirMacroSemanticSnapshot? {
         val sourceFiles = sourceFilesFor(pre, result) ?: return null
         if (moduleComponents.macroSemanticSnapshotStore.snapshot != null) return null
@@ -61,6 +69,16 @@ abstract class LLCfirResolvableModuleSession(
             files = result.recordableFiles.files,
             registry = result.registry,
         )
+    }
+
+    /** 保留已有 Success 调用方的 JVM 方法签名，同时复用通用的完整批次路径。 */
+    @OptIn(CaExperimentalApi::class)
+    fun prepareMacroSemanticSnapshot(
+        pre: PreMacroRawBuildResult,
+        result: MacroConstructionResult.Success,
+    ): LLCfirMacroSemanticSnapshot? {
+        val recordableResult: MacroConstructionResult.Recordable = result
+        return prepareMacroSemanticSnapshot(pre, recordableResult)
     }
 
     /**
@@ -72,7 +90,7 @@ abstract class LLCfirResolvableModuleSession(
     @OptIn(CaExperimentalApi::class)
     fun publishMacroSemanticSnapshot(
         pre: PreMacroRawBuildResult,
-        result: MacroConstructionResult.Success,
+        result: MacroConstructionResult.Recordable,
         preparedSnapshot: LLCfirMacroSemanticSnapshot,
     ): Boolean {
         check(ApplicationManager.getApplication().isWriteAccessAllowed) {
@@ -108,10 +126,21 @@ abstract class LLCfirResolvableModuleSession(
         return published
     }
 
+    /** 保留已有 Success 调用方的 JVM 方法签名，同时复用通用的完整批次路径。 */
+    @OptIn(CaExperimentalApi::class)
+    fun publishMacroSemanticSnapshot(
+        pre: PreMacroRawBuildResult,
+        result: MacroConstructionResult.Success,
+        preparedSnapshot: LLCfirMacroSemanticSnapshot,
+    ): Boolean {
+        val recordableResult: MacroConstructionResult.Recordable = result
+        return publishMacroSemanticSnapshot(pre, recordableResult, preparedSnapshot)
+    }
+
     /** 校验构造批次和源文件身份，避免发布另一个会话或另一次展开的结果。 */
     private fun sourceFilesFor(
         pre: PreMacroRawBuildResult,
-        result: MacroConstructionResult.Success,
+        result: MacroConstructionResult.Recordable,
     ): List<CjFile>? {
         if (pre.session !== this || result.recordableFiles.session !== this) return null
         if (pre.constructionIdentity !== result.recordableFiles.constructionIdentity) return null
