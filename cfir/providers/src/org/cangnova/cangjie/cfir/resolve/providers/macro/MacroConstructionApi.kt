@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.isInSameSourceTree
 import java.util.Collections
@@ -715,32 +716,46 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 
     /** 普通 checker 在 generated source 上报错时，反查原 macro 调用 source。 */
     fun originSourceForGeneratedSource(source: AbstractCjSourceElement): CjSourceElement? {
-        val exactOrigins = _generatedSourceOriginsBySource[source]
-        val originId = when {
-            exactOrigins != null -> exactOrigins.singleOrNull() ?: return null
-            source !is CjSourceElement -> return null
-            else -> {
-                val candidates = _generatedSourceOriginsBySource.entries.asSequence()
-                    .mapNotNull { (registeredSource, origins) ->
-                        val registeredElement = registeredSource as? CjSourceElement ?: return@mapNotNull null
-                        if (!source.isInSameSourceTree(registeredElement)) return@mapNotNull null
-                        if (source.startOffset < registeredElement.startOffset ||
-                            source.endOffset > registeredElement.endOffset
-                        ) {
-                            return@mapNotNull null
-                        }
-                        (registeredElement.endOffset - registeredElement.startOffset) to origins
-                    }
-                    .toList()
-                val mostSpecificWidth = candidates.minOfOrNull { it.first } ?: return null
-                val matchingOrigins = candidates.asSequence()
-                    .filter { it.first == mostSpecificWidth }
-                    .flatMap { it.second.asSequence() }
-                    .toSet()
-                matchingOrigins.singleOrNull() ?: return null
-            }
-        }
+        val originId = originSurfaceIdForGeneratedSource(source) ?: return null
         return _originSurfaceById[originId]?.sourceRange?.source
+    }
+
+    /**
+     * 解析 generated source 的 surface 身份。
+     *
+     * PSI / LightTree source 先按同一棵树中的最窄包含范围匹配。Offsets-only source 没有树身份，
+     * 因此只能在所有已登记生成树中检查包含范围；只有最窄候选唯一指向一个 surface 时才映射，
+     * 多个宏调用共享该区间时保留歧义，不把诊断误指向任意调用点。
+     */
+    private fun originSurfaceIdForGeneratedSource(source: AbstractCjSourceElement): Long? {
+        val exactOrigins = _generatedSourceOriginsBySource[source]
+        if (exactOrigins != null) return exactOrigins.singleOrNull()
+
+        val sourceElement = source as? CjSourceElement
+        if (sourceElement == null && source !is CjOffsetsOnlySourceElement) return null
+        val candidates = _generatedSourceOriginsBySource.entries.asSequence()
+            .mapNotNull { (registeredSource, origins) ->
+                val registeredElement = registeredSource as? CjSourceElement
+                    ?: registeredSource as? CjOffsetsOnlySourceElement
+                    ?: return@mapNotNull null
+                if (sourceElement != null) {
+                    val registeredTreeElement = registeredElement as? CjSourceElement ?: return@mapNotNull null
+                    if (!sourceElement.isInSameSourceTree(registeredTreeElement)) return@mapNotNull null
+                }
+                if (source.startOffset < registeredElement.startOffset ||
+                    source.endOffset > registeredElement.endOffset
+                ) {
+                    return@mapNotNull null
+                }
+                (registeredElement.endOffset - registeredElement.startOffset) to origins
+            }
+            .toList()
+        val mostSpecificWidth = candidates.minOfOrNull { it.first } ?: return null
+        val matchingOrigins = candidates.asSequence()
+            .filter { it.first == mostSpecificWidth }
+            .flatMap { it.second.asSequence() }
+            .toSet()
+        return matchingOrigins.singleOrNull()
     }
 
     /** Macro expansion registry 的共享常量。 */

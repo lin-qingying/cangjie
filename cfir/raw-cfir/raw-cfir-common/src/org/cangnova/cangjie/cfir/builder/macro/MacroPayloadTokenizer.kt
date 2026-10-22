@@ -45,8 +45,14 @@ object MacroPayloadTokenizer {
      *
      * 任何会改变 token 拆分结果（lexer 规则、whitespace 处理、kind 命名）
      * 的修改都必须递增此值，从而触发上游 macro cache 失效。
+     *
+     * v2：把 lexer 拆分出的字符串片段合并为 CJC 的整段字符串 token。
      */
-    const val VERSION: Int = 1
+    const val VERSION: Int = 2
+
+    private const val OPEN_QUOTE_KIND = "OPEN_QUOTE"
+    private const val CLOSING_QUOTE_KIND = "CLOSING_QUOTE"
+    private const val ILLEGAL_KIND = "ILLEGAL"
 
     /**
      * 把 [payload] 拆为 token 流。
@@ -77,7 +83,83 @@ object MacroPayloadTokenizer {
             )
             lexer.advance()
         }
-        return tokens
+        return mergeStringLiterals(tokens)
+    }
+
+    /**
+     * 把 IntelliJ lexer 的字符串片段合并成 CJC 的整段字符串 token。
+     *
+     * IntelliJ lexer 把 `"..."` 拆成 `OPEN_QUOTE` / 内容 / `CLOSING_QUOTE`（插值内部还可能嵌套字符串），
+     * 而 CJC 把整段字符串（含 `${...}` 插值）产出一个 `STRING_LITERAL` / `MULTILINE_STRING` /
+     * `MULTILINE_RAW_STRING` token。宏协议必须发送后者，否则 `MacroTokenKind.fromLexerToken`
+     * 找不到 `OPEN_QUOTE` 的映射而直接失败。
+     */
+    private fun mergeStringLiterals(tokens: List<MacroPayloadToken>): List<MacroPayloadToken> {
+        if (tokens.none { it.kindName == OPEN_QUOTE_KIND }) return tokens
+
+        val merged = ArrayList<MacroPayloadToken>(tokens.size)
+        var index = 0
+        while (index < tokens.size) {
+            val token = tokens[index]
+            if (token.kindName != OPEN_QUOTE_KIND) {
+                merged += token
+                index++
+                continue
+            }
+
+            var depth = 0
+            var closingIndex = -1
+            for (probe in index until tokens.size) {
+                when (tokens[probe].kindName) {
+                    OPEN_QUOTE_KIND -> depth++
+                    CLOSING_QUOTE_KIND -> {
+                        depth--
+                        if (depth == 0) {
+                            closingIndex = probe
+                            break
+                        }
+                    }
+                }
+            }
+
+            if (closingIndex < 0) {
+                // 未闭合字符串：整体收敛为单个非法 token（与 CJC 的非法 token 语义一致），
+                // 避免残留 OPEN_QUOTE/REGULAR_STRING_PART 让下游因无映射而中断分析。
+                val text = buildString {
+                    for (part in index until tokens.size) {
+                        append(tokens[part].text)
+                    }
+                }
+                merged += MacroPayloadToken(
+                    text = text,
+                    startOffset = token.startOffset,
+                    endOffset = tokens.last().endOffset,
+                    kindName = ILLEGAL_KIND,
+                )
+                break
+            }
+
+            val text = buildString {
+                for (part in index..closingIndex) {
+                    append(tokens[part].text)
+                }
+            }
+            merged += MacroPayloadToken(
+                text = text,
+                startOffset = token.startOffset,
+                endOffset = tokens[closingIndex].endOffset,
+                kindName = cjcStringKindName(token.text),
+            )
+            index = closingIndex + 1
+        }
+        return merged
+    }
+
+    /** 依据开头引号形态选择 CJC 的字符串 token kind。 */
+    private fun cjcStringKindName(openingQuote: String): String = when {
+        openingQuote.contains('#') -> "MULTILINE_RAW_STRING"
+        openingQuote.contains("\"\"\"") || openingQuote.contains("'''") -> "MULTILINE_STRING"
+        else -> "STRING_LITERAL"
     }
 
     /**

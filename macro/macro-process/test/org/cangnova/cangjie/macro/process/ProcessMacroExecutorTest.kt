@@ -162,6 +162,189 @@ class ProcessMacroExecutorTest {
         )
     }
 
+    /** 验证 CJC 字面量 token 的定界符和相邻 token 排版都按 kind 还原。 */
+    @Test
+    fun macroResultRebuildsStringLiteralAndDelimiterBasedTokens() {
+        val result = MacroMsgCodec.parseMacroResult(
+            macroResultPayload(
+                TokenInfo(kind = MacroTokenKind.kindOf("IDENTIFIER"), value = "target"),
+                TokenInfo(kind = MacroTokenKind.kindOf("LPAREN"), value = "("),
+                TokenInfo(kind = MacroTokenKind.kindOf("STRING_LITERAL"), value = "generated"),
+                TokenInfo(kind = MacroTokenKind.kindOf("RPAREN"), value = ")"),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(
+                    kind = MacroTokenKind.kindOf("MULTILINE_RAW_STRING"),
+                    value = "raw body",
+                    delimiterNum = 3,
+                ),
+            ),
+        ) as MacroExpansionResult.Success
+
+        assertEquals("target(\"generated\")${System.lineSeparator()}###\"raw body\"###", result.expandedText)
+        assertEquals(3, result.tokens.last().delimiterNum)
+    }
+
+    /** 验证协议中所有 CJC 字符串字面量类别都恢复为可重新解析的语法。 */
+    @Test
+    fun macroResultRebuildsCjcLiteralFormsAndEscaping() {
+        val result = MacroMsgCodec.parseMacroResult(
+            macroResultPayload(
+                TokenInfo(
+                    kind = MacroTokenKind.kindOf("STRING_LITERAL"),
+                    value = "with \"quotes\" and\nnewline",
+                ),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(kind = MacroTokenKind.kindOf("JSTRING_LITERAL"), value = "json \"quoted\""),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(kind = MacroTokenKind.kindOf("RUNE_LITERAL"), value = "'"),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(kind = MacroTokenKind.kindOf("MULTILINE_STRING"), value = "body \"\"\" tail"),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(
+                    kind = MacroTokenKind.kindOf("MULTILINE_RAW_STRING"),
+                    value = "raw #\" body",
+                    delimiterNum = 2,
+                ),
+                TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+                TokenInfo(
+                    kind = MacroTokenKind.kindOf("MULTILINE_RAW_STRING"),
+                    value = "raw without hash delimiter",
+                    delimiterNum = 0,
+                ),
+            ),
+        ) as MacroExpansionResult.Success
+
+        val newline = System.lineSeparator()
+        assertEquals(
+            "\"with \\\"quotes\\\" and\\nnewline\"${newline}" +
+                "J\"json \\\"quoted\\\"\"${newline}" +
+                "r'\\''${newline}" +
+                "\"\"\"${newline}body \\\"\\\"\\\" tail\"\"\"${newline}" +
+                "##\"raw #\" body\"##${newline}\"raw without hash delimiter\"",
+            result.expandedText,
+        )
+    }
+
+    /** 验证奇偶反斜杠和插值块引号保留 CJC 字符串的原有词法含义。 */
+    @Test
+    fun expandedStringsPreserveBackslashParityAndInterpolationQuotes() {
+        val oddBackslash = "odd\\\"quote"
+        val newlineValue = "line\nnext\rreturn"
+        val interpolationValue = "prefix \${\"inner\"} suffix"
+        val multilineInterpolationValue = "multi \${\"inner\"} tail"
+        val tokens = listOf(
+            TokenInfo(kind = MacroTokenKind.kindOf("STRING_LITERAL"), value = oddBackslash),
+            TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+            TokenInfo(kind = MacroTokenKind.kindOf("STRING_LITERAL"), value = "even\\\\\"quote"),
+            TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+            TokenInfo(kind = MacroTokenKind.kindOf("STRING_LITERAL"), value = newlineValue),
+            TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+            TokenInfo(kind = MacroTokenKind.kindOf("STRING_LITERAL"), value = interpolationValue),
+            TokenInfo(kind = MacroTokenKind.kindOf("NL"), value = "\n"),
+            TokenInfo(kind = MacroTokenKind.kindOf("MULTILINE_STRING"), value = multilineInterpolationValue),
+        )
+
+        val expected = listOf(
+            "\"$oddBackslash\"",
+            "\"even${"\\".repeat(3)}\"quote\"",
+            "\"line\\nnext\\rreturn\"",
+            "\"prefix \${\"inner\"} suffix\"",
+            "\"\"\"${System.lineSeparator()}multi \${\"inner\"} tail\"\"\"",
+        ).joinToString(System.lineSeparator())
+
+        assertEquals(expected, MacroMsgCodec.rebuildExpandedText(tokens))
+    }
+
+    /** 验证源码空格与官方 CJC `CheckAddSpace` 的 kind 集合和成对例外一致。 */
+    @Test
+    fun expandedTokenSpacingMatchesCjcTokenKinds() {
+        fun render(vararg parts: Pair<String, String>): String = MacroMsgCodec.rebuildExpandedText(
+            parts.map { (kind, value) -> TokenInfo(kind = MacroTokenKind.kindOf(kind), value = value) },
+        )
+
+        val noSpaceAfter = listOf(
+            "DOT" to ".",
+            "QUEST" to "?",
+            "DOLLAR" to "\$",
+            "LPAREN" to "(",
+            "LSQUARE" to "[",
+            "AT" to "@",
+            "AT_EXCL" to "@!",
+            "ILLEGAL" to "invalid",
+        )
+        noSpaceAfter.forEach { (kind, value) ->
+            assertEquals("${value}name", render(kind to value, "IDENTIFIER" to "name"), "after $kind")
+        }
+        assertEquals(
+            "${System.lineSeparator()}name",
+            render("NL" to "\n", "IDENTIFIER" to "name"),
+            "after NL",
+        )
+
+        val noSpaceBefore = listOf(
+            "DOT" to ".",
+            "COLON" to ":",
+            "COMMA" to ",",
+            "SEMI" to ";",
+            "QUEST" to "?",
+            "LPAREN" to "(",
+            "RPAREN" to ")",
+            "LSQUARE" to "[",
+            "RSQUARE" to "]",
+        )
+        noSpaceBefore.forEach { (kind, value) ->
+            assertEquals("name$value", render("IDENTIFIER" to "name", kind to value), "before $kind")
+        }
+        assertEquals("name${System.lineSeparator()}", render("IDENTIFIER" to "name", "NL" to "\n"))
+        assertEquals("name", render("IDENTIFIER" to "name", "END" to ""))
+
+        assertEquals("left right", render("IDENTIFIER" to "left", "IDENTIFIER" to "right"))
+        assertEquals(">>", render("GT" to ">", "GT" to ">"))
+        assertEquals(">=", render("GT" to ">", "ASSIGN" to "="))
+        assertEquals("??", render("QUEST" to "?", "QUEST" to "?"))
+        assertEquals("()", render("LPAREN" to "(", "RPAREN" to ")"))
+        assertEquals("[]", render("LSQUARE" to "[", "RSQUARE" to "]"))
+        assertEquals("name!", render("IDENTIFIER" to "name", "NOT" to "!"))
+        assertEquals("~init", render("BITNOT" to "~", "INIT" to "init"))
+    }
+
+    /** 验证官方 TokenKind 编号用于宏失败标记时不与有效 DOT token 冲突。 */
+    @Test
+    fun macroResultDistinguishesIllegalTokenFromDotToken() {
+        val dotResult = MacroMsgCodec.parseMacroResult(
+            macroResultPayload(TokenInfo(kind = MacroTokenKind.kindOf("DOT"), value = ".")),
+        )
+        val illegalResult = MacroMsgCodec.parseMacroResult(
+            macroResultPayload(TokenInfo(kind = MacroTokenKind.kindOf("ILLEGAL"), value = "illegal")),
+        )
+
+        assertTrue(dotResult is MacroExpansionResult.Success)
+        assertEquals(".", (dotResult as MacroExpansionResult.Success).expandedText)
+        assertTrue(illegalResult is MacroExpansionResult.Failure)
+
+        val evaluationFailure = MacroMsgCodec.parseMacroResult(
+            macroResultPayloadWithStatus(
+                MacroMsgCodec.STATUS_EVAL,
+                TokenInfo(kind = MacroTokenKind.kindOf("ILLEGAL"), value = "failed expansion"),
+            ),
+        )
+        val readyStatus = MacroMsgCodec.parseMacroResult(
+            macroResultPayloadWithStatus(
+                MacroMsgCodec.STATUS_READY,
+                TokenInfo(kind = MacroTokenKind.kindOf("IDENTIFIER"), value = "text"),
+            ),
+        )
+        val unknownStatus = MacroMsgCodec.parseMacroResult(
+            macroResultPayloadWithStatus(
+                9u.toUByte(),
+                TokenInfo(kind = MacroTokenKind.kindOf("IDENTIFIER"), value = "text"),
+            ),
+        )
+        assertTrue(evaluationFailure is MacroExpansionResult.Failure)
+        assertTrue(readyStatus is MacroExpansionResult.Failure)
+        assertTrue(unknownStatus is MacroExpansionResult.Failure)
+    }
+
     /** 验证 CJC 的 assertParentContext 失败信息不会被协议解析器折叠成无上下文的 status=4。 */
     @Test
     fun failedParentContextAssertionPreservesRequiredMacroName() {
@@ -413,13 +596,18 @@ class ProcessMacroExecutorTest {
      * 构造包含指定 token 的成功 MacroResult 消息。
      */
     private fun macroResultPayload(vararg tokens: TokenInfo): ByteArray {
+        return macroResultPayloadWithStatus(MacroMsgCodec.STATUS_SUCCESS, *tokens)
+    }
+
+    /** 构造包含指定状态与 token 的 MacroResult，用于覆盖协议状态分类。 */
+    private fun macroResultPayloadWithStatus(status: UByte, vararg tokens: TokenInfo): ByteArray {
         val builder = FlatBufferBuilder(256)
         val tokenOffsets = tokens.map { token -> buildToken(builder, token) }.toIntArray()
         val tokensVector = MacroResult.createTksVector(builder, tokenOffsets)
         val result = MacroResult.createMacroResult(
             builder,
             0,
-            MacroMsgCodec.STATUS_SUCCESS,
+            status,
             tokensVector,
             0,
             0,

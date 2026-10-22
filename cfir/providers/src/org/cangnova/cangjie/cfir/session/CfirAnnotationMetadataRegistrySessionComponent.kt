@@ -27,3 +27,14 @@ fun CfirSession.ensureAnnotationMetadataRegistry(): CfirAnnotationMetadataRegist
         register(CfirAnnotationMetadataRegistry::class, it)
     }
 }
+
+/**
+ * 为一轮新的源码快照构造创建独立 metadata registry。
+ *
+ * IDE 可能在宏展开期间观察到 PSI revision 变化，并在同一 session 中重新采集 raw CFIR。
+ * 上一轮 construction 已冻结的 registry 属于旧输入，不能被下一轮 raw builder 复用。
+ */
+fun CfirSession.beginAnnotationMetadataRegistryGeneration(): CfirAnnotationMetadataRegistry =
+    CfirAnnotationMetadataRegistry().also {
+        register(CfirAnnotationMetadataRegistry::class, it)
+    }

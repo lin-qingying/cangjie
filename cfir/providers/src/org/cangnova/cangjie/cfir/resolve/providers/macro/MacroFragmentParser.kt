@@ -187,13 +187,13 @@ data class MacroReplaceSlot(
 /**
  * 记录 stable splice 实际应用的一条声明替换关系。
  *
- * Cangjie 声明宏可以把一个 carrier 替换成零个、一个或多个声明；每个 replacement
+ * Cangjie 声明宏和参数宏会把一个 carrier 替换成零个、一个或多个声明；每个 replacement
  * 都保留与原始 carrier 的对象身份关系，供 Analysis/IDE 构建源码结构和语义快照使用。
  */
 data class MacroAppliedDeclarationReplacement(
-    /** 被宏替换的原始声明 carrier。 */
+    /** 被宏替换的原始声明或参数 carrier。 */
     val carrier: org.cangnova.cangjie.cfir.declarations.CfirDeclaration,
-    /** 本次 splice 在 carrier 槽位中写入的全部声明；空列表表示该宏删除了 carrier。 */
+    /** 本次 splice 在 carrier 槽位中写入的全部声明；空列表表示声明宏删除了 carrier。 */
     val replacements: List<org.cangnova.cangjie.cfir.declarations.CfirDeclaration>,
     /** 产生此次替换的原始宏 surface。 */
     val surfaceId: Long,
@@ -214,11 +214,11 @@ data class MacroAppliedExpressionReplacement(
     val surfaceId: Long,
 )
 
-/** stable splice 的最终 CFIR 与精确声明来源关系。 */
+/** stable splice 的最终 CFIR 与精确声明/参数来源关系。 */
 data class MacroStableSpliceResult(
     /** 执行完所有 stable replacements 的文件。 */
     val files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
-    /** 仅包含实际应用的声明替换，不包含 embedded surface 或 annotation-only 替换。 */
+    /** 仅包含实际应用的声明和参数替换，不包含 embedded surface 或 annotation-only 替换。 */
     val declarationReplacements: List<MacroAppliedDeclarationReplacement>,
     /** 仅包含实际应用的表达式替换，不包含由父 surface 重新解析吸收的 embedded surface。 */
     val expressionReplacements: List<MacroAppliedExpressionReplacement> = emptyList(),

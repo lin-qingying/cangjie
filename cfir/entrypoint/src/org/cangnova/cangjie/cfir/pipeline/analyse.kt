@@ -208,6 +208,7 @@ fun CfirSession.runCheckers(
         delegate = diagnosticsCollector,
         sourceMapper = { source -> registry?.originSourceForGeneratedSource(source) },
     )
+    diagnosticsReporter.beginDiagnosticCollection()
     for (file in firFiles) {
         withFileAnalysisExceptionWrapping(file) {
             collector.collectDiagnostics(file, diagnosticsReporter)

@@ -237,7 +237,7 @@ private class WindowsLspMacroServerConnection(
                 null,
                 null,
                 true,
-                DWORD(CREATE_UNICODE_ENVIRONMENT.toLong()),
+                DWORD((CREATE_UNICODE_ENVIRONMENT or CREATE_NO_WINDOW).toLong()),
                 environment,
                 executable.parent,
                 startupInfo,
@@ -470,6 +470,8 @@ private const val SIZE_PREFIX_BYTES: Int = 8
  * CreateProcessW 的 Unicode 环境变量块标志。
  */
 private const val CREATE_UNICODE_ENVIRONMENT: Int = 0x00000400
+/** IDE 中启动宏服务时不附加控制台，避免控制台窗口抢占编辑器前台焦点。 */
+private const val CREATE_NO_WINDOW: Int = 0x08000000
 /**
  * WaitForSingleObject 表示等待超时的返回值。
  */

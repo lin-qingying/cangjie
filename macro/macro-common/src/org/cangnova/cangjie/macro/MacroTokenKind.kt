@@ -119,6 +119,13 @@ object MacroTokenKind {
         "true" to "BOOL_LITERAL",
     )
 
+    /** 返回官方 CJC TokenKind 名称对应的协议编号。 */
+    fun kindOf(name: String): UByte = cjcKindByName.getValue(name)
+
+    /** 根据官方宏协议编号取得 CJC TokenKind 名称。 */
+    fun nameOf(kind: UByte): String = cjcTokenNames.getOrNull(kind.toInt())
+        ?: error("宏协议包含无效的 CJC TokenKind 编号：${kind.toInt()}。")
+
     /**
      * 将仓颉 IntelliJ lexer token 编码为 CJC 宏协议 token；普通空白返回 null。
      * 未支持的 lexer token 明确失败，避免以错误 kind 静默损坏 AST。

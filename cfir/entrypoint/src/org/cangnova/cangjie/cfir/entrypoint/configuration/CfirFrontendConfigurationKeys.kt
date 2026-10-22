@@ -239,8 +239,11 @@ var CompilerConfiguration.targetInteropLanguage: CfirInteropTarget
 var CompilerConfiguration.conditionalCompilationSettings: CfirConditionalCompilationSettings?
     get() = get(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS)
     set(value) {
-        if (value == null) return
-        put(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS, value)
+        if (value == null) {
+            remove(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS)
+        } else {
+            put(CfirFrontendConfigurationKeys.CONDITIONAL_COMPILATION_SETTINGS, value)
+        }
     }
 
 /**

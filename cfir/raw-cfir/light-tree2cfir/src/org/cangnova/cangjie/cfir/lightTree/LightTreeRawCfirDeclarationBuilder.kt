@@ -3409,7 +3409,6 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.isLocal = isLocal
                 dispatchReceiverType = null
                 this.status = bindingStatus
-                initializer = null
                 this.isVar = isVar
                 this.returnTypeRef = returnTypeRef
                 this.name = name

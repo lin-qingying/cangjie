@@ -458,6 +458,9 @@ private val OFFICIAL_STDLIB_MACRO_PACKAGES: Set<FqName> = setOf(
     StandardNames.STD_UNITTEST_MOCK_MOCKMACRO_PACKAGE_FQ_NAME,
 )
 
+/** 判断包是否是官方标准库宏包；类型解析的注解命名空间判定复用同一来源，避免 allowlist 漂移。 */
+fun isOfficialStdlibMacroPackage(fqName: FqName): Boolean = fqName in OFFICIAL_STDLIB_MACRO_PACKAGES
+
 /** 判定当前 surface 是否只是 macro 定义签名的一部分，而不是 macro 调用需求。 */
 private fun MacroSurface.isMacroDefinitionSignatureSurfaceForClassification(): Boolean {
     val carrier = replaceHandle.carrier
