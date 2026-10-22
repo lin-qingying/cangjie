@@ -1,6 +1,7 @@
 package org.cangnova.cangjie
 
 import org.cangnova.cangjie.config.CompilerConfiguration
+import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.cjoOutputDirectory
 import org.cangnova.cangjie.config.cjoOutputFile
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -10,6 +11,19 @@ import org.junit.jupiter.api.Test
 /** 验证可复用编译配置不会泄漏上一轮 `.cj.d` 输出路径。 */
 @OptIn(CompilerConfiguration.Internals::class)
 class CompilerConfigurationTest {
+    @Test
+    fun copiedConfigurationOwnsItsMutableCollectionContainers() {
+        val rootsKey = CompilerConfigurationKey.create<List<String>>("TEST_ROOTS")
+        val configuration = CompilerConfiguration()
+        configuration.add(rootsKey, "caller-root")
+
+        val copy = configuration.copy()
+        copy.add(rootsKey, "invocation-root")
+
+        assertEquals(listOf("caller-root"), configuration.getList(rootsKey))
+        assertEquals(listOf("caller-root", "invocation-root"), copy.getList(rootsKey))
+    }
+
     @Test
     fun nullableCjoOutputPropertiesRemovePreviousInvocationState() {
         val configuration = CompilerConfiguration()
