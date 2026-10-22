@@ -113,12 +113,14 @@ class CfirRawQualifiedTypeResolutionTest {
     }
 
     @Test
-    fun `macro name lookup does not attach package diagnostic`() {
+    fun `macro name used as type reports not-a-type without package diagnostic`() {
         val fixture = Fixture(includeNetMacro = true)
         val result = fixture.resolve(fixture.typeRef("std", "net", "MacroType"))
 
         assertInstanceOf(ConeErrorType::class.java, result.type)
-        assertInstanceOf(ConeUnresolvedTypeQualifierError::class.java, result.diagnostic)
+        // 官方 PreCheck 对非注解类型位置的非类型声明报 not_a_type；这里同时确认没有
+        // 被误判成“包名不能作为类型”诊断。
+        assertInstanceOf(ConeNotATypeError::class.java, result.diagnostic)
     }
 
     @Test

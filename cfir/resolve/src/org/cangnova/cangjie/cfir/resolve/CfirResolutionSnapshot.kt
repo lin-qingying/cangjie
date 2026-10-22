@@ -20,11 +20,9 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirControlFlowGraphOwner
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.declarations.ResolveStateAccess
-import org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl
 import org.cangnova.cangjie.cfir.declarations.lambdaParameterShapeExpectedFunctionType
 import org.cangnova.cangjie.cfir.declarations.isInsideFailedArgumentMapping
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -33,15 +31,16 @@ import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirPatternMutableState
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTreeOwner
+import org.cangnova.cangjie.cfir.patterns.CfirPatternTypeReferences
+import org.cangnova.cangjie.cfir.patterns.restorePatternTreeRoots
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -81,14 +80,14 @@ internal class CfirResolutionSnapshot private constructor(
     private val variableTypes: IdentityHashMap<CfirVariable, CfirTypeRef>,
     /** block 语句列表快照。 */
     private val blockStatements: IdentityHashMap<CfirBlock, List<CfirStatement>>,
-    /** 模式变量当前 pattern 快照。 */
-    private val patternVariablePatterns: IdentityHashMap<CfirPatternVariable, CfirPattern>,
-    /** match branch 当前 pattern 快照。 */
-    private val matchBranchPatterns: IdentityHashMap<CfirMatchBranch, CfirPattern>,
+    /** 所有模式宿主当前根节点快照，覆盖声明、表达式、match、catch 与 handle。 */
+    private val patternTreeRoots: List<Pair<CfirPatternTreeOwner, CfirElement>>,
     /** pattern 内部可变状态快照。 */
     private val patternStates: IdentityHashMap<CfirPattern, CfirPatternMutableState>,
-    /** catch 模式的声明类型与整体语义类型必须一起回滚，避免候选试跑污染后续分析。 */
-    private val catchPatternStates: IdentityHashMap<CfirCatchPattern, CatchPatternState>,
+    /** catch 与 handle 共用的声明类型引用状态。 */
+    private val patternTypeReferences: IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>,
+    /** catch 模式整体语义类型必须和源码类型引用一起回滚。 */
+    private val catchPatternResolvedTypes: IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>,
     /** 下标语法节点与已解析 get/set 调用的关联必须随候选试跑一起回滚。 */
     private val subscriptCallStates: IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>,
     /** qualified access 接收者与类型实参快照。 */
@@ -130,22 +129,15 @@ internal class CfirResolutionSnapshot private constructor(
         for ((function, body) in anonymousFunctionBodies) {
             function.replaceBody(body)
         }
-        for ((patternVariable, pattern) in patternVariablePatterns) {
-            val impl = patternVariable as? CfirPatternVariableImpl
-                ?: error("CfirPatternVariable must be backed by generated implementation")
-            impl.pattern = pattern
-        }
-        for ((branch, pattern) in matchBranchPatterns) {
-            val impl = branch as? CfirMatchBranchImpl
-                ?: error("CfirMatchBranch must be backed by generated implementation")
-            impl.pattern = pattern
-        }
+        restorePatternTreeRoots(patternTreeRoots)
         for ((_, state) in patternStates) {
             state.restore()
         }
-        for ((pattern, state) in catchPatternStates) {
-            pattern.replaceTypeRefs(state.typeRefs)
-            pattern.replaceResolvedTypeRef(state.resolvedTypeRef)
+        for ((pattern, typeRefs) in patternTypeReferences) {
+            pattern.replaceTypeRefs(typeRefs)
+        }
+        for ((pattern, resolvedTypeRef) in catchPatternResolvedTypes) {
+            pattern.replaceResolvedTypeRef(resolvedTypeRef)
         }
         for ((subscript, state) in subscriptCallStates) {
             subscript.replaceResolvedGetCall(state.getCall)
@@ -182,11 +174,6 @@ internal class CfirResolutionSnapshot private constructor(
         val typeArguments: List<CfirTypeRef>,
     )
 
-    private data class CatchPatternState(
-        val typeRefs: List<CfirTypeRef>,
-        val resolvedTypeRef: CfirResolvedTypeRef?,
-    )
-
     private data class SubscriptCallState(
         val getCall: CfirFunctionCall?,
         val setCall: CfirFunctionCall?,
@@ -208,10 +195,10 @@ internal class CfirResolutionSnapshot private constructor(
             val anonymousFunctionBodies = IdentityHashMap<CfirAnonymousFunction, CfirBlock?>()
             val variableTypes = IdentityHashMap<CfirVariable, CfirTypeRef>()
             val blockStatements = IdentityHashMap<CfirBlock, List<CfirStatement>>()
-            val patternVariablePatterns = IdentityHashMap<CfirPatternVariable, CfirPattern>()
-            val matchBranchPatterns = IdentityHashMap<CfirMatchBranch, CfirPattern>()
+            val patternTreeRoots = mutableListOf<Pair<CfirPatternTreeOwner, CfirElement>>()
             val patternStates = IdentityHashMap<CfirPattern, CfirPatternMutableState>()
-            val catchPatternStates = IdentityHashMap<CfirCatchPattern, CatchPatternState>()
+            val patternTypeReferences = IdentityHashMap<CfirPatternTypeReferences, List<CfirTypeRef>>()
+            val catchPatternResolvedTypes = IdentityHashMap<CfirCatchPattern, CfirResolvedTypeRef?>()
             val subscriptCallStates = IdentityHashMap<CfirSubscriptExpression, SubscriptCallState>()
             // set 的 RHS 可以引用同一个 get 节点；语义调用引用因此形成共享图而非纯树。
             val visitedElements = java.util.Collections.newSetFromMap(IdentityHashMap<CfirElement, Boolean>())
@@ -256,19 +243,19 @@ internal class CfirResolutionSnapshot private constructor(
                         if (element is CfirBlock) {
                             blockStatements[element] = element.statements.toList()
                         }
-                        if (element is CfirPatternVariable) {
-                            patternVariablePatterns[element] = element.pattern
-                        }
-                        if (element is CfirMatchBranch) {
-                            matchBranchPatterns[element] = element.pattern
+                        if (element is CfirPatternTreeOwner) {
+                            patternTreeRoots += element to element.patternTreeRoot()
                         }
                         if (element is CfirPattern) {
                             CfirPatternMutableState.capture(element)?.let { patternState ->
                                 patternStates[element] = patternState
                             }
                         }
+                        if (element is CfirPatternTypeReferences) {
+                            patternTypeReferences[element] = element.typeRefs.toList()
+                        }
                         if (element is CfirCatchPattern) {
-                            catchPatternStates[element] = CatchPatternState(element.typeRefs.toList(), element.resolvedTypeRef)
+                            catchPatternResolvedTypes[element] = element.resolvedTypeRef
                         }
                         if (element is CfirSubscriptExpression) {
                             subscriptCallStates[element] = SubscriptCallState(element.resolvedGetCall, element.resolvedSetCall)
@@ -305,10 +292,10 @@ internal class CfirResolutionSnapshot private constructor(
                 anonymousFunctionBodies,
                 variableTypes,
                 blockStatements,
-                patternVariablePatterns,
-                matchBranchPatterns,
+                patternTreeRoots,
                 patternStates,
-                catchPatternStates,
+                patternTypeReferences,
+                catchPatternResolvedTypes,
                 subscriptCallStates,
                 qualifiedAccessStates,
                 functionCallArgumentLists,

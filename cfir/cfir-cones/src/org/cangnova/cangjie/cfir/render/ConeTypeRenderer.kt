@@ -244,7 +244,10 @@ open class ConeTypeRenderer(
      * 因此这里保持统一输出；仅在 this-type 追加标记。
      */
     protected open fun renderClassLikeType(type: ConeClassLikeType) {
-        idRenderer.renderClassId(type.classId)
+        // 对齐 Kotlin `ConeTypeRenderer.renderSimpleType`：统一走 renderConstructor，
+        // 这样带 error lookup tag 的 class-like 会命中 `ConeClassLikeErrorLookupTag` 分支，
+        // 输出 `ERROR CLASS: ...` 而不是占位 ClassId `<error>`。
+        renderConstructor(type.lookupTag)
         renderTypeArguments(type.typeArguments)
         if (type.isThisType) {
             builder.append(".This")

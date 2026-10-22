@@ -46,15 +46,19 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespaceContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
 import org.cangnova.cangjie.cfir.resolve.providers.lookupOriginForAccessibility
+import org.cangnova.cangjie.cfir.resolve.providers.macro.isOfficialStdlibMacroPackage
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.name.ClassId
@@ -62,6 +66,7 @@ import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.source.CjBinarySourceElement
+import org.cangnova.cangjie.source.psi
 
 /**
  * CFIR 类型解析器抽象。
@@ -131,6 +136,19 @@ fun interface SupertypeSupplier {
          */
         val Default: SupertypeSupplier = SupertypeSupplier { emptyList() }
     }
+}
+
+/**
+ * 判断 callable 是否属于宏命名空间。
+ *
+ * 外部 `.cjo` 可能把宏注解暴露成普通函数，因此不能只依赖 [CfirMacroDeclarationSymbol]：
+ * 官方标准宏包与当前 session 已声明的宏包同样携带宏身份。
+ */
+internal fun CfirCallableSymbol<*>.isMacroLikeName(session: CfirSession): Boolean {
+    if (this is CfirMacroDeclarationSymbol) return true
+    val packageFqName = callableId.packageName
+    if (isOfficialStdlibMacroPackage(packageFqName)) return true
+    return session.macroExpansionRegistry?.isDeclaredMacroPackage(packageFqName) == true
 }
 
 /**
@@ -500,7 +518,11 @@ class CfirTypeResolverImpl(
                 return QualifiedClassLikeResolution(
                     classId = null,
                     declaration = null,
-                    diagnostic = ConeNotATypeError(lastQualifier.name),
+                    diagnostic = notATypeDiagnostic(
+                        typeRef = typeRef,
+                        name = lastQualifier.name,
+                        isMacroOnly = !simpleNameLookup.hasNonMacroBinding,
+                    ),
                 )
             }
             val simpleCandidate = (
@@ -523,10 +545,14 @@ class CfirTypeResolverImpl(
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
             } else {
-                val diagnostic = if (simpleNameResolvesToCallable(lastQualifier.name, configuration)) {
-                    ConeNotATypeError(lastQualifier.name)
-                } else {
-                    ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                val callables = visibleCallablesForTypeName(lastQualifier.name, configuration)
+                val diagnostic = when {
+                    callables.isEmpty() -> ConeUnresolvedTypeQualifierError(typeRef.qualifier)
+                    else -> notATypeDiagnostic(
+                        typeRef = typeRef,
+                        name = lastQualifier.name,
+                        isMacroOnly = callables.all { callable -> callable.isMacroLikeName(session) },
+                    )
                 }
                 QualifiedClassLikeResolution(classId, null, diagnostic)
             }
@@ -653,9 +679,12 @@ class CfirTypeResolverImpl(
         }
 
         val callables = namespace.callables(lastQualifier.name)
+            .filterNot { it is CfirEnumConstructorSymbol }
         if (callables.isNotEmpty()) {
             // 宏注解继续交由宏名解析路径处理；普通 callable 在类型位置报告 not-a-type。
-            if (callables.all { it is CfirMacroDeclarationSymbol }) {
+            val annotationMacroName = typeRef.isAnnotationTypeReference() &&
+                callables.all { callable -> callable.isMacroLikeName(session) }
+            if (annotationMacroName) {
                 return QualifiedClassLikeResolution(
                     classId = null,
                     declaration = null,
@@ -703,11 +732,15 @@ class CfirTypeResolverImpl(
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
         if (packageExists(fullPackageFqName)) {
-            val topLevelCallables = session.symbolProvider.getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
+            val topLevelCallables = session.symbolProvider
+                .getTopLevelCallableSymbols(fullPackageFqName, lastQualifier.name)
+                .filterNot { it is CfirEnumConstructorSymbol }
             if (topLevelCallables.isNotEmpty()) {
                 // 官方语义：宏名是合法的宏调用/注解目标（`@Pkg.MacroName`），不算 NOT_A_TYPE；
                 // 交给 macro demand classification 按名字裁决。
-                if (topLevelCallables.all { it is CfirMacroDeclarationSymbol }) {
+                val annotationMacroName = typeRef.isAnnotationTypeReference() &&
+                    topLevelCallables.all { callable -> callable.isMacroLikeName(session) }
+                if (annotationMacroName) {
                     return QualifiedClassLikeResolution(fullClassId, null, null)
                 }
                 return QualifiedClassLikeResolution(
@@ -863,18 +896,49 @@ class CfirTypeResolverImpl(
     }
 
     /**
-     * 判断简单类型名称是否已经解析到当前可见的顶层 callable。
-     *
-     * 类型解析仍以 classifier namespace 为主；只有 classifier 全部解析失败后才调用该入口，
-     * 因而 callable 只负责把“未声明”细化为“已声明但不是类型”，不会抢占同名类型声明。
+     * 判断类型引用是否位于注解名位置。
      */
-    private fun simpleNameResolvesToCallable(
+    private fun CfirUserTypeRef.isAnnotationTypeReference(): Boolean {
+        val parent = source?.psi?.parent
+        return parent is org.cangnova.cangjie.psi.CjAnnotation ||
+            parent is org.cangnova.cangjie.psi.CjMacroExpression
+    }
+
+    /**
+     * 类型位置上的名称已解析到 callable 时的诊断。
+     *
+     * 官方把注解名（`@Name`）当作宏调用目标：只有宏名（宏声明或宏包中的 callable）在注解
+     * 位置不报类型诊断；普通函数注解仍应暴露为“已声明但不是类型”，不能静默变成空诊断。
+     * 非注解类型位置（例如 `let x: MacroName`）仍按官方 `PreCheck` 报 `NOT_A_TYPE`。
+     */
+    private fun notATypeDiagnostic(
+        typeRef: CfirUserTypeRef,
+        name: Name,
+        isMacroOnly: Boolean,
+    ): ConeDiagnostic {
+        val diagnostic = ConeNotATypeError(name)
+        return if (isMacroOnly && typeRef.isAnnotationTypeReference()) {
+            ConeUnreportedDuplicateDiagnostic(diagnostic)
+        } else {
+            diagnostic
+        }
+    }
+
+    /**
+     * 返回类型位置简单名在第一个可见 scope 中解析到的全部 callable。
+     *
+     * 只有 classifier namespace 全部解析失败后才调用该入口；返回 callable 列表是为了让
+     * 调用方区分“宏名注解”和“普通函数注解”，而不是把所有 callable 当成同一类。
+     */
+    private fun visibleCallablesForTypeName(
         shortName: Name,
         configuration: TypeResolutionConfiguration,
-    ): Boolean {
+    ): List<CfirCallableSymbol<*>> {
         for (scope in configuration.scopes) {
-            var found = false
+            val callables = mutableListOf<CfirCallableSymbol<*>>()
             scope.processCallablesByName(shortName) { symbol ->
+                // enum 构造器不是类型，也不是宏注解目标；其类型位置诊断由专用路径处理。
+                if (symbol is CfirEnumConstructorSymbol) return@processCallablesByName
                 if (
                     session.accessibilityChecker.checkCallable(
                         symbol,
@@ -883,12 +947,12 @@ class CfirTypeResolverImpl(
                         ),
                     ) is CfirAccessibilityResult.Accessible
                 ) {
-                    found = true
+                    callables += symbol
                 }
             }
-            if (found) return true
+            if (callables.isNotEmpty()) return callables
         }
-        return false
+        return emptyList()
     }
 
     /**

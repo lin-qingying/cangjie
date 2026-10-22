@@ -235,25 +235,6 @@ internal fun CfirPartialBodyResolveTransformer.registerPatternBindings(pattern: 
 }
 
 /**
- * 简单 `let/var x = initializer` 中，名字解析指向内层 binding variable，
- * 但 initializer 归属于外层 pattern variable。这里把“整个绑定值”的来源同步到
- * 内层变量，供后续数据流、可达性和诊断按普通局部变量读取。
- */
-internal fun propagateWholeInitializerToSimplePatternBinding(
-    pattern: CfirPattern,
-    initializer: CfirExpression?,
-) {
-    if (initializer == null) return
-    val binding = when (pattern) {
-        is CfirBindingPattern if pattern.nestedPattern == null -> pattern.bindingVariable
-        is CfirVarOrEnumPattern -> pattern.bindingVariable
-        is CfirTypePattern -> pattern.bindingVariable
-        else -> null
-    } ?: return
-    binding.replaceInitializer(initializer)
-}
-
-/**
  * 解析 pattern 显式类型引用；已解析或隐式类型引用直接复用。
  */
 private fun CfirPartialBodyResolveTransformer.resolvePatternTypeRefIfNeeded(
@@ -281,7 +262,7 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType?,
 ): List<ConeCangJieType> {
-    val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypes(pattern, it) }
+    val optionArgumentTypes = expectedType?.let { resolveStdlibOptionArgumentTypes(pattern, it, session) }
     if (optionArgumentTypes != null) return optionArgumentTypes
 
     val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
@@ -307,11 +288,17 @@ internal fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
 private fun resolveStdlibOptionArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType,
+    session: org.cangnova.cangjie.cfir.session.CfirSession,
 ): List<ConeCangJieType>? {
     val constructorAccess = pattern.constructorReference.enumPatternConstructorAccessOrNull()
         ?.takeIf { it.matchesStdlibOptionOwner(expectedType) }
     val constructorName = constructorAccess?.constructorName
-    val optionArgumentType = expectedType.optionElementType ?: return null
+    /*
+     * Option 的元素类型可能是跨文件 typealias（例如 `?MessageHandler`）。
+     * 绑定类型必须投影其展开后的类型；否则 `Some(handler)` 得到的函数值仍是 alias 类型，
+     * 后续 `handler(x)` 会因看不到函数类型而报 WRONG_NUMBER_OF_ARGUMENTS。
+     */
+    val optionArgumentType = expectedType.optionElementType?.fullyExpandedType(session) ?: return null
     return when {
         constructorName == OPTION_SOME_CONSTRUCTOR_NAME &&
                 pattern.arguments.size == 1 &&

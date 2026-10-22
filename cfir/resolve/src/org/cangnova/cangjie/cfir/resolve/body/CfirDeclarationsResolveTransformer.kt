@@ -999,8 +999,6 @@ dataFlowAnalyzer.enterFunction(constructor)
             }
 
             patternVariable.resolveImplicitReturnTypeFromInitializer()
-            propagateWholeInitializerToSimplePatternBinding(patternVariable.pattern, patternVariable.initializer)
-
             resolvePatternValueExpressions(patternVariable.pattern, patternVariable.returnTypeRef.coneTypeOrNull)
             resolvePatternBindingTypes(
                 pattern = patternVariable.pattern,

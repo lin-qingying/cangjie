@@ -2989,9 +2989,7 @@ open class CfirExpressionsResolveTransformer(
         return withNewLocalScope {
             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
             resolvePatternValueExpressions(branch.pattern, subjectType)
-            if (branch is org.cangnova.cangjie.cfir.expressions.impl.CfirMatchBranchImpl) {
-                branch.pattern = resolveDeferredMatchPattern(branch.pattern, subjectType)
-            }
+            branch.replacePattern(resolveDeferredMatchPattern(branch.pattern, subjectType))
             val patternError = resolvePatternBindingTypes(branch.pattern, subjectType, specificTypeResolverTransformer)
             val bindingError = registerScopedPatternBindings(branch.pattern, CfirPatternBindingScope(branch.body), subjectType)
 
@@ -3521,12 +3519,12 @@ open class CfirExpressionsResolveTransformer(
             pattern = letPatternExpression.pattern,
             initializerType = letPatternExpression.initializer.coneTypeOrNull,
         ) ?: letPatternExpression.initializer.coneTypeOrNull
-        if (letPatternExpression is org.cangnova.cangjie.cfir.expressions.impl.CfirLetPatternExpressionImpl) {
-            letPatternExpression.pattern = resolveDeferredMatchPattern(
+        letPatternExpression.replacePattern(
+            resolveDeferredMatchPattern(
                 pattern = letPatternExpression.pattern,
                 expectedType = patternExpectedType,
-            )
-        }
+            ),
+        )
         val patternError = resolvePatternBindingTypes(
             pattern = letPatternExpression.pattern,
             expectedType = patternExpectedType,
@@ -5598,10 +5596,10 @@ open class CfirExpressionsResolveTransformer(
 
         resolvePatternValueExpressions(varDecl.pattern, varDecl.returnTypeRef.coneTypeOrNull)
         if (varDecl is org.cangnova.cangjie.cfir.declarations.impl.CfirPatternVariableImpl) {
-            varDecl.pattern = resolveDeferredMatchPattern(
+            varDecl.replacePattern(resolveDeferredMatchPattern(
                 pattern = varDecl.pattern,
                 expectedType = varDecl.returnTypeRef.coneTypeOrNull ?: iterVarType,
-            )
+            ))
         }
         resolvePatternBindingTypes(
             pattern = varDecl.pattern,

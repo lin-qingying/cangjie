@@ -2108,7 +2108,6 @@ class CfirDeclDeserializer private constructor(
             dispatchReceiverType = dispatchReceiverTypeForCurrentOwner(status),
             status = status,
             deprecationsProvider = deprecationsProviderFor(deserializedAnnotations),
-            initializer = null,
             isVar = outerIsVar,
             isTypeImplicit = false,
             symbol = symbol,
