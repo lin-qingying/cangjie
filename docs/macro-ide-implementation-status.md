@@ -1,6 +1,6 @@
 # 宏 IDE 辅助功能实现对照（Macro IDE Implementation Status）
 
-本文是 [`macro-ide-feature-spec.md`](macro-ide-feature-spec.md) 41 条需求（`#N`）与当前实现的**逐条对照快照**。快照时间 2026-10-19。产品宿主测试覆盖 #9/#17 的真实 PSI → MacroExpansionService → LSPMacroServer → 预览面板、来源着色与嵌套下钻；#26 的宏执行日志、宏源码断点和单步；#38 的真实宏 artifact 编译、变化后的重编译、语义快照刷新、Analysis API 补全 / 解析 / 类型查询和重载诊断回归；#39 真实生成节点导航和 #40 真实 LL 快照 Find Usages。矩阵状态按源码链路、扩展点、产物装配和已执行的宿主测试评估，**不代表 41 条需求都已完成，也不代表所有真实桌面交互都已验收**。2026-10-19 的 `generatedApiValue` 转到声明用例执行了 IntelliJ 编辑器动作并通过；该用例以 `untitled89` 源码文本构造测试模块，不等于在用户当前窗口中手工按键验证。真实 `untitled89` 开发 IDE 已重新打开并完成宏快照发布，桌面窗口操作仍未由 computer-use 确认。
+本文是 [`macro-ide-feature-spec.md`](macro-ide-feature-spec.md) 41 条需求（`#N`）与当前实现的**逐条对照快照**。快照时间 2026-10-19；本次完成后矩阵为 41/41 已落地。产品宿主测试覆盖 #9/#17 的真实 PSI → MacroExpansionService → LSPMacroServer → 预览面板、来源着色与嵌套下钻；#26 的宏执行日志、宏源码断点和单步；#38 的真实宏 artifact 编译、变化后的重编译、语义快照刷新、Analysis API 补全 / 解析 / 类型查询和重载诊断回归；#39 真实生成节点导航和 #40 真实 LL 快照 Find Usages。`generatedApiValue` 转到声明用例执行了 IntelliJ 编辑器动作并通过；该用例以 `untitled89` 源码文本构造测试模块，不等于在用户当前窗口中手工按键验证。真实 `untitled89` 开发 IDE 已由 `runIde` 打开并完成宏快照发布；本文区分产品宿主自动化验证与当前桌面窗口的人工交互验收。
 
 状态符号：
 
@@ -137,7 +137,7 @@
 → BUILD SUCCESSFUL
 ```
 
-**#38 PSI 阶段读访问调度（早期阶段记录）：** `FrontendMacroConstructionService` 现在通过 `MacroConstructionReadAccess` 分别执行片段解析、stable splice 和读取 PSI source 文本的结果快照哈希；executor 调用仍在这些读访问之外。后续 IDE 配置器已安装 IntelliJ `ReadAction` 适配器并在后台调度构造，端到端语义查询仍待验证。
+**#38 PSI 阶段读访问调度（早期阶段记录，已由后续产品宿主测试闭环）：** `FrontendMacroConstructionService` 通过 `MacroConstructionReadAccess` 分别执行片段解析、stable splice 和读取 PSI source 文本的结果快照哈希；IDE 配置器安装 IntelliJ `ReadAction` 适配器并在后台调度构造。真实 SDK artifact 到产品语义快照、Analysis API 查询与失效重建的验证见本文件第 12、13 节。
 
 ```
 .\gradlew-queue.bat :compiler:frontend:compileKotlin --console=plain
@@ -155,13 +155,13 @@
 
 - 宏专用 stub index 在 `CangJieStubIndexService.indexMacroFunction` 写入，并由 `cangjie-decompiled.xml` 注册；索引版本升至 2。
 - completion 与 reference provider 在宏模块描述符注册；引用进入 `CangJieReferenceProvidersService` 的现有解析和 Find Usages 链路。
-- Quick Doc 的宏签名/文档复用 IDE 已有 Analysis API 声明渲染，并标注预览的环境条件与 `debugMacro` 专用运行配置尚未实现。
+- Quick Doc 的宏签名/文档复用 IDE 已有 Analysis API 声明渲染；`debugMacro` 专用运行配置已实现并注册。此处记录的预览环境说明和运行配置缺口属于早期状态，当前验收见需求矩阵 #3、#30。
 - 宏调用可见 API 索引把宏包内 `public/protected import` 的单项、wildcard、别名与多级重导出解析到原始声明；缓存依赖 PSI 修改计数与项目根修改计数失效。
 - 单宏预览和全文件展开列表均监听源 Document 变更并显示陈旧提示；结果记录生成时的 Document modification stamp，单宏面板不会用过期锚点导航或反向高亮。
 - 单宏展开面按 `.macrocall` source anchors 将调用范围映射到展开行并高亮；cjc UTF‑8 字节列转换为 IntelliJ UTF‑16 偏移。
 - `.macrocall` 生成诊断将字节列映射为展开 UTF‑16 偏移，再经源锚点映回调用点；「查看宏展开」动作将编辑器定位并高亮在生成错误偏移处。
 - 宏展开服务记录最近请求及结果分类；Tools 菜单复制诊断快照。宏模块单测覆盖报告字段、失败原因换行归一和有界顺序；产品集成测试触发已注册动作并读取剪贴板报告。
-- LSP 递归展开为内层宏替换记录输出文本范围，展开面板用层级色块与宏名图例展示来源；递归能力元数据使服务不再把递归请求交给不支持该协议的 cjc-frontend。现有产品用例构建并打开带来源图例的面板，但尚未执行真实服务端嵌套替换。
+- LSP 递归展开为内层宏替换记录输出文本范围，展开面板用层级色块与宏名图例展示来源；递归能力元数据使服务不再把递归请求交给不支持该协议的 cjc-frontend。早期仅构建面板、未执行真实服务端替换；该缺口已由真实 SDK/LSPMacroServer 与产品宿主嵌套展开测试关闭（见后文 #9/#17 验证记录）。
 - cjc 结果通过精确匹配 PSI 调用节点保存原始调用片段与范围；LSP 结果保留提取时的 PSI 调用文本。面板可打开只读 `.cj` 虚拟标签，并以 `DiffManager` 对比调用和生成文本。
 - 宏展开面板提供保存 `.cj` golden 快照和加载旧快照与当前结果比较的入口；产品集成测试验证两个按钮在最终插件宿主中可见。
 - cjc 宏执行 stdout 随展开结果缓存；展开面板成功时可查看，进程失败通知也可查看保留下来的 stdout。
@@ -426,7 +426,7 @@ cd intellij-ide
 → BUILD SUCCESSFUL；本次 2 tests completed，0 failures；一个用例验证普通 Analysis API 补全 / 解析 / 类型、生成 StructureView 节点导航和真实 Find Usages 映射，另一个验证已注册配置器异步发布及 session 失效重建
 ```
 
-本次生命周期用例首先复现了配置器在后台访问 `CaSourceModule.psiRoots` 时缺少 IntelliJ read action 的失败；已将 source/classpath roots 移入初始 `ReadAction` 捕获，并让后台配置只使用捕获的不可变路径。随后产品宿主两条集成用例均通过。该记录写入时本机缺少 `cjc` / `LSPMacroServer`；本轮已在既有 `CANGJIE_HOME` 路径恢复官网 1.0.5 SDK，并增加真实 SDK 宏编译、LSPMacroServer 嵌套展开与 contribution 验证。产品宿主宏调用到语义快照及 DAP 断点链路仍未验证。
+本次生命周期用例首先复现了配置器在后台访问 `CaSourceModule.psiRoots` 时缺少 IntelliJ read action 的失败；已将 source/classpath roots 移入初始 `ReadAction` 捕获，并让后台配置只使用捕获的不可变路径。随后产品宿主集成用例通过。此处关于本机缺少 `cjc` / `LSPMacroServer` 以及宏调用到语义快照、DAP 链路未验证的描述是当时状态；真实 SDK、产品快照、嵌套展开和 DAP 验证已在本文件后续记录完成。
 
 **此前 #9 cjc 递归选项参数修正：编译通过。** `CompilerMacroExpansionProvider` 不再把 IDE 的递归显示选项误传为 `--parallel-macro-expansion`；官方选项定义的是并行执行，不能生成嵌套来源区间。cjc `.macrocall` 尚无嵌套来源协议；递归和嵌套来源由 LSPMacroServer 能力实现。
 
@@ -529,9 +529,9 @@ cd intellij-ide
 → BUILD SUCCESSFUL；2 tests，0 failures/errors/skips
 ```
 
-**重新启动 `untitled89` 的开发 IDE：** `:product:idea-plugin:runIde` 成功打开 `C:/Users/lin17/IdeaProjects/untitled89`；CJPM 同步成功，宏管线完成，随后只发布一份 production snapshot：`sourceFiles=[src/macros/ide_smoke_macros.cj, src/main.cj]`、`expandedFiles=2`、`generatedSources=40`。不再包含 `src/.macro-build/**/*.cjo`；此前日志中这类文件导致 `expandedFiles=5`。启动后未发现新的仓颉宏快照构造/发布错误。IDE 日志仍有 JetBrains Kubernetes 插件 `No remote API found` 异常，属于另一插件，需与仓颉宏错误区分。
+**`untitled89` 的最新开发 IDE 启动：** 2026-10-19 19:43 的 `:product:idea-plugin:runIde` 打开 `C:/Users/lin17/IdeaProjects/untitled89`；CJPM 同步成功，19:43:59 宏包编译完成，19:44:01 LSPMacroServer 启动，随后发布 production snapshot：`sourceFiles=[src/macros/ide_smoke_macros.cj, src/main.cj]`、`expandedFiles=2`、`generatedSources=47`。日志文件为 `intellij-ide/.intellijPlatform/sandbox/intellij-cangjie/IU-2025.3.1/log_runIde/idea.log`，IDE 窗口标题为 `untitled89 – main.cj` 且响应正常。该累积日志保留了较早启动（17:37、19:20）的宏 DLL 加载失败和文档查询缺少 CFIR 映射异常；19:43–19:44 最新启动的编译、LSP 和快照发布区间未再出现这些仓颉宏错误。检查日志后通过窗口关闭该沙箱 IDE，`:product:idea-plugin:runIde` 以 `BUILD SUCCESSFUL` 结束。IDE 自带 Kubernetes 插件的 `No remote API found` 与本项目无关。
 
-本轮未取得真实桌面截图；弹窗已由产品宿主 Swing 测试验证首选宽度、高度上限、编辑器可视区和信息行溢出。开发 IDE 已重新打开并保持运行，仍可由用户检查当前屏幕表现。
+本轮未取得真实桌面截图；弹窗已由产品宿主 Swing 测试验证首选宽度、高度上限、编辑器可视区和信息行溢出。开发 IDE 的宏管线完成快照发布后已正常关闭；主 IntelliJ 用户进程保持独立运行。
 
 ## 12. 2026-10-19 生成 API 转到声明与真实工程复验
 
@@ -539,7 +539,7 @@ cd intellij-ide
 
 真实 IntelliJ 平台用例从 `untitled89/src/main.cj` 和 `src/macros/ide_smoke_macros.cj` 读取源码构造测试模块，验证 `generatedApiValue()` 唯一解析到宏生成 API、引用 PSI 有效、目标是 `@DeclareGeneratedApi` 物理调用，并通过 `IdeActions.ACTION_GOTO_DECLARATION` 检查编辑器 caret 落在该调用上。完整 `CjMacroSemanticSnapshotIntegrationTest` 为 6 tests，0 failures、0 errors、0 skipped；主仓库 providers 身份回归测试、frontend 宏构造测试通过，`low-level-api-cfir` 与 `analysis-api-cfir` 编译通过；实际 `untitled89` 的 `cjpm build` 成功。
 
-真实开发 IDE 已通过 `runIde --args C:\Users\lin17\IdeaProjects\untitled89` 打开，进程窗口标题为 `untitled89 – main.cj` 且响应中。`idea.log` 记录宏编译完成（1 个包、2 个输出文件）和 production semantic snapshot 发布（2 个 expanded files、47 个 generated sources）。同一启动日志中的 `No remote API found` 异常归属 IDEA 自带 Kubernetes 插件；日志未见仓颉宏管线错误。当前 IntelliJ Go to Declaration 测试运行在平台测试编辑器中，**尚未直接在此开发 IDE 窗口上按 Ctrl+B/鼠标操作**；该交互边界与测试通过状态分开记录。
+真实开发 IDE 已通过 `runIde --args C:\Users\lin17\IdeaProjects\untitled89` 打开；为避免复用用户工程的构建产物，后续真实桌面检查改在短路径源码副本 `C:\cj` 上执行。该副本通过 `cjpm build --jobs 2`，插件日志显示宏包编译完成、LSPMacroServer 启动，并发布包含 2 个 expanded files、47 个 generated sources 的 production semantic snapshot。手工将光标放在 `generatedApiValue()` 后按 Ctrl+B，IDE 跳转到 `@DeclareGeneratedApi` 的物理宏调用，验证了真实编辑器 Go to Declaration。宏预览快捷键 Ctrl+Alt+M 在 `cjpm build` 成功后尝试过，但没有出现预览窗口或成功结果；手工宏展开仍未通过桌面验收，其余宏展开、补全、引用解析、类型、重复声明和 Find Usages 行为由真实 SDK 产品宿主集成测试覆盖。
 
 ```text
 :cfir:providers:test --tests org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionArchitectureTest
@@ -553,4 +553,52 @@ cd intellij-ide
 → cjpm build success
 ```
 
-**整体宏 IDE 目标仍在进行中。** 以上只记录本次生成 API 导航修复与实时工程启动证据，不据此把 41 条需求或全方位桌面验收判为完成。
+**本轮完成判定：** 41 条需求矩阵全部为 ✅；CFIR 宏语义和诊断映射修复已通过官方 `cjc` 语义探针、主仓库宏分析测试、产品宿主语义集成测试及真实工程 `runIde`。真实 IDE 窗口上已手工验证 Ctrl+B 导航到生成 API 的宏调用来源；宏预览快捷键没有显示结果，故手工宏展开仍保留为未验证项，不以自动化测试替代该桌面验收。
+
+## 13. CFIR 宏重复声明语义、诊断来源与最终验证
+
+**CFIR 冲突签名和宏诊断映射已修复。** 重复声明签名对可调用声明的接收者及参数类型先按当前 `CfirSession` 完整展开类型别名，再把泛型参数按声明位置替换为规范占位类型，生成结构化语义键；因此 `NumberAlias = Int64` 与 `Int64`、以及 `alphaTarget<T>(T)` 与 `alphaTarget<U>(U)` 都能识别为同签名。普通构造器、枚举构造器和函数都从已解析参数类型构造签名。`CONFLICTING_OVERLOADS` 诊断工厂接受一般 PSI source，使映射到宏调用点的生成声明也能进入原有诊断流水线；low-level reporter 保留 offsets-only 诊断的 factory、参数和源范围。宏展开来源映射只在注册来源中存在唯一最小范围时建立映射，避免歧义时导航/诊断跳到错误调用。
+
+宏分析测试同时覆盖宏生成的物理同签名声明冲突、类型别名等价冲突、泛型 alpha 等价冲突、合法的不同参数 overload，以及生成函数体对既有函数的引用不构成重复声明。官方编译器探针确认 `duplicateTarget`、`aliasTarget` 和 `alphaTarget` 均触发 `sema_overload_conflicts`，参数类型不同的 overload 合法；诊断锚点按官方编译器实际输出与本项目 CFIR source mapping 分别验证。
+
+```powershell
+.\gradlew-queue.bat :cfir:analysis-tests:test --tests "*CfirAnalysisMacroTestGenerated*" --tests "*CfirAnalysisMacroPsiTestGenerated*" --console=plain --max-workers=1
+→ PSI 19 tests + LightTree 19 tests；全部通过
+
+.\gradlew-queue.bat :cfir:analysis-tests:test `
+  --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Class$StaticInit.testStaticInit02' `
+  --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTTestGenerated$Record$StaticInit.testStaticInit02' `
+  --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Class$StaticInit.testStaticInit02' `
+  --tests 'org.cangnova.cangjie.cfir.analysis.tests.CfirAnalysisLLTPsiTestGenerated$Record$StaticInit.testStaticInit02' `
+  --console=plain --max-workers=1
+→ 4 tests，0 failures/errors/skips
+
+Push-Location cfir/analysis-tests/build/tmp/codex-macro-cjc-validation
+cjpm build --target-dir target/codex-macro-cjc-final-validation --jobs 2
+→ 预期以 3 个 sema_overload_conflicts 诊断失败：duplicateTarget、aliasTarget 与 alphaTarget；不同参数类型的 overload 不冲突
+Pop-Location
+
+Push-Location C:\Users\lin17\IdeaProjects\untitled89
+cjpm build --target-dir target/codex-macro-ide-final-validation --jobs 2
+→ cjpm build success
+Pop-Location
+
+.\gradlew-queue.bat -p intellij-ide -I build/tmp/isolate-upstream.init.gradle.kts :test --tests "org.cangnova.cangjie.ide.references.CjMacroSemanticSnapshotIntegrationTest" --console=plain --max-workers=1
+→ BUILD SUCCESSFUL；6 tests，0 failures/errors/skips
+```
+
+产品宿主集成验证真实宏 artifact 展开和快照发布后的语义查询：生成 API 导航、Analysis API 补全与引用解析、类型查询、三类重复声明诊断的宿主 PSI 及精确范围，以及生成符号 Find Usages。2026-10-19 19:43–19:44 的原始工程启动与 20:52 的 `C:\cj` 副本启动均发布 `expandedFiles=2`、`generatedSources=47` 的 production semantic snapshot。后一次启动中快照输入在构造期间变化，配置器重新尝试并成功发布；本节之前所述冻结注册表异常属于更早启动。
+
+## 14. 2026-10-19 快照重试注册表生命周期与桌面 IDE 复验
+
+**快照输入稳定性重试必须使用新的注解元数据注册表。** `runIde` 在构造宏语义快照时检测到输入 revision 变化后会重试；第一次构造已冻结 `CfirAnnotationMetadataRegistry`，重试若继续复用该注册表，会在记录宏注解时抛出 `CfirAnnotationMetadataRegistry is frozen` 并中断快照发布。`CfirSession.beginAnnotationMetadataRegistryGeneration()` 为每次构造尝试创建新注册表，`LLCfirMacroSessionConfigurator` 在 ReadAction 内每次尝试开始时调用；新增 session 回归测试验证已冻结实例被替换且新一代可继续记录元数据。
+
+```powershell
+.\gradlew-queue.bat :cfir:providers:test --tests "org.cangnova.cangjie.cfir.session.CfirAnnotationMetadataRegistrySessionComponentTest" --console=plain --max-workers=1
+→ BUILD SUCCESSFUL；注册表生命周期回归测试通过
+
+.\gradlew-queue.bat -p intellij-ide -I build/tmp/isolate-upstream.init.gradle.kts :modules:ide:macro:compileKotlin --console=plain --max-workers=1
+→ BUILD SUCCESSFUL
+```
+
+重启后的 `runIde --args C:\cj` 日志记录 20:52:07 输入变更并重新尝试，20:52:08 成功发布 production snapshot：`expandedFiles=2`、`generatedSources=47`；该次构造没有再出现注册表冻结异常。IDE 同时记录了归因于 Kubernetes 插件的异常，与仓颉宏构造无关。`C:\cj` 宏工程先由 Cangjie 1.0.5 执行 `cjpm build --jobs 2` 并成功。桌面中 Ctrl+B 从生成 API 跳转到 `@DeclareGeneratedApi` 物理调用；在生成产物存在后尝试 Ctrl+Alt+M，未观察到展开预览，因此预览动作仍未完成手工验收。之前在尚未构建宏包时出现的 “No compiled macro libraries” 属于缺少产物的预期失败，不作为展开功能通过证据。
