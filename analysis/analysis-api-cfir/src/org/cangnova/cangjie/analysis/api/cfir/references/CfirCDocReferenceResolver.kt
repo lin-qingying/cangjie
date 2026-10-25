@@ -451,8 +451,12 @@ internal object CfirCDocReferenceResolver {
             inferenceComponents,
         )
         val substitutor = constraintSystem.registerTypeVariables(typeParameters)
-        val actualReceiverType = substitutor.safeSubstitute(receiverType) as ConeCangJieType
-        val freshExpectedReceiverType = substitutor.safeSubstitute(expectedReceiverType) as ConeCangJieType
+        val actualReceiverType = with(constraintSystem.context) {
+            substitutor.safeSubstitute(receiverType) as ConeCangJieType
+        }
+        val freshExpectedReceiverType = with(constraintSystem.context) {
+            substitutor.safeSubstitute(expectedReceiverType) as ConeCangJieType
+        }
         constraintSystem.addSubtypeConstraint(actualReceiverType, freshExpectedReceiverType)
         return !constraintSystem.hasContradiction()
     }
