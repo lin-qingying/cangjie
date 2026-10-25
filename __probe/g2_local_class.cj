@@ -1,0 +1,4 @@
+func f() {
+    class Local {
+    }
+}
