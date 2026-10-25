@@ -30,6 +30,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceKind
+import org.cangnova.cangjie.annotations.BuiltInAnnotationKind
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.*
@@ -69,6 +70,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.parsing.CjMemberBodyFacts
+import org.cangnova.cangjie.parsing.CjMemberBodyPolicy
+import org.cangnova.cangjie.parsing.CjScopeKind
+import org.cangnova.cangjie.parsing.CjmpOverlayFacts
 import org.cangnova.cangjie.psi.CjNodeTypes.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
@@ -4121,45 +4126,79 @@ class PsiRawCfirBuilder(
         }
 
         /**
-         * 官方 parser 在 class/interface 体内把无 body 函数、无属性体且无 getter/setter 的属性标记为 abstract。
-         * 这里处于 PSI -> Raw CFIR 层，应承接 parser 产物，而不是等待后续 checker 猜测。
+         * class / interface 成员的隐式 abstract 判定：只做 PSI 事实提取，规则统一委托
+         * [CjMemberBodyPolicy]。
          *
-         * ⚠️ 声明文件（`.cj.d`）是**唯一例外**：官方在 `CheckFuncBody`（`ParseDecl.cpp:1550`）里用
-         * `isMember && !parseDeclFile` 整体跳过，因此 `.cj.d` 的无体函数**既不打 `ABSTRACT` 也不报错**（R3/P6）。
+         * 官方 parser 在 class/interface 体内把无 body 函数、无属性体且无 getter/setter 的
+         * 属性标记为 abstract。这里处于 PSI -> Raw CFIR 层，应承接 parser 产物，而不是等待
+         * 后续 checker 猜测。
          *
-         * ⚠️ 例外**只作用于函数**：属性分支**绝不能**加同样的判断 ——
-         * 官方 `Parser.cpp:371-390` 的"无 `{}` 即 abstract"没有 `parseDeclFile` 门禁（R4）。
+         * ⚠️ 两个过程由策略对象分开承载，本函数只按声明种类选择入口：
+         * - 函数：`.cj.d` 下 `parseDeclFile` 罩住整个分支（`ParseDecl.cpp:1550`），
+         *   无体函数**既不打 `ABSTRACT` 也不报错**；
+         * - 属性：官方 `Parser.cpp:371-390` 的"无 `{}` 即 abstract"**没有** `parseDeclFile`
+         *   门禁，也**没有** `FOREIGN` / `INTRINSIC` 因子。
          * 两者不对称，不要"统一处理"。
+         *
+         * 诊断字段（`hasReturnType` / `isSignatureBroken`）只服务 parser 适配器；
+         * CFIR 只消费 `markImplicitAbstract`，不在此层重算诊断事实。
          */
         private fun isImplicitAbstractClassLikeMember(
             declaration: CjDeclaration,
             owner: CjModifierListOwner,
         ): Boolean {
-            if (containerSymbolIfAny !is CfirClassSymbol && containerSymbolIfAny !is CfirInterfaceSymbol) return false
-            if (owner.hasModifier(CjTokens.FOREIGN_KEYWORD)) return false
-            if (containerSymbolIfAny is CfirClassSymbol) {
-                // cjc 1.1.3 `ParserImpl::CanBeAbstract`：class 体内 common 成员不隐式 abstract
-                //（无体的 common 成员由 specific 提供实现，不是抽象成员）
-                if (owner.hasModifier(CjTokens.COMMON_KEYWORD)) return false
-                // cjc 1.1.3 `CheckClassLikeFuncBodyAbstractness`：common/specific abstract class 中
-                // 未显式写 abstract 的函数不是抽象成员
-                if (declaration is CjNamedFunction &&
-                    !owner.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
-                    PsiTreeUtil.getParentOfType(declaration, CjTypeStatement::class.java)?.let { outer ->
-                        outer.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
-                                (outer.hasModifier(CjTokens.COMMON_KEYWORD) || outer.hasModifier(CjTokens.SPECIFIC_KEYWORD))
-                    } == true
-                ) return false
+            val scopeKind = when (containerSymbolIfAny) {
+                is CfirClassSymbol -> CjScopeKind.CLASS_BODY
+                is CfirInterfaceSymbol -> CjScopeKind.INTERFACE_BODY
+                else -> return false
             }
+            val facts = when (declaration) {
+                is CjNamedFunction -> CjMemberBodyFacts(
+                    scopeKind = scopeKind,
+                    hasBody = declaration.hasBody(),
+                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD),
+                    isIntrinsic = declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
+                    isDeclarationFile = declaration.sourceKind.isDeclaration,
+                    cjmp = cjmpOverlayFacts(declaration, owner),
+                )
+                is CjProperty -> CjMemberBodyFacts(
+                    scopeKind = scopeKind,
+                    hasBody = declaration.body != null,
+                    hasAccessors = declaration.getter != null || declaration.setter != null,
+                    isForeign = owner.hasModifier(CjTokens.FOREIGN_KEYWORD),
+                    isIntrinsic = declaration.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
+                    isDeclarationFile = declaration.sourceKind.isDeclaration,
+                    cjmp = cjmpOverlayFacts(declaration, owner),
+                )
+                else -> return false
+            }
+            val decision = when (declaration) {
+                is CjNamedFunction -> CjMemberBodyPolicy.checkFunctionBody(facts)
+                else -> CjMemberBodyPolicy.checkPropertyBody(facts)
+            }
+            return CjMemberBodyPolicy.applyCjmpOverlay(decision, facts).markImplicitAbstract
+        }
 
-            return when (declaration) {
-                is CjNamedFunction ->
-                    !declaration.hasBuiltinAnnotation(org.cangnova.cangjie.annotations.BuiltInAnnotationKind.INTRINSIC) &&
-                            !declaration.sourceKind.isDeclaration &&
-                            !declaration.hasBody()
-                is CjProperty -> declaration.body == null && declaration.getter == null && declaration.setter == null
-                else -> false
-            }
+        /**
+         * 提取 1.1.3 CJMP 例外事实。
+         *
+         * 仅 `class` 体返回非 null，与 `CanBeAbstract` 的宿主条件一致；interface 的
+         * common 成员规则（`CheckClassLikeFuncBodyAbstractness` 的 `isCommon && outer is INTERFACE`
+         * 分支）不在本 overlay 内，登记为分层偏差。
+         */
+        private fun cjmpOverlayFacts(
+            declaration: CjDeclaration,
+            owner: CjModifierListOwner,
+        ): CjmpOverlayFacts? {
+            if (containerSymbolIfAny !is CfirClassSymbol) return null
+            val outer = PsiTreeUtil.getParentOfType(declaration, CjTypeStatement::class.java) ?: return null
+            return CjmpOverlayFacts(
+                memberIsCommon = owner.hasModifier(CjTokens.COMMON_KEYWORD),
+                memberIsExplicitAbstract = owner.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                enclosingClassIsAbstract = outer.hasModifier(CjTokens.ABSTRACT_KEYWORD),
+                enclosingClassIsCommonOrSpecific = outer.hasModifier(CjTokens.COMMON_KEYWORD) ||
+                        outer.hasModifier(CjTokens.SPECIFIC_KEYWORD),
+            )
         }
 
         /**

@@ -75,6 +75,16 @@ object MacroPayloadTokenizer {
             val end = lexer.tokenEnd
             val text = payload.substring(start, end)
             val kind = lexer.tokenType?.toString()
+
+            // CJC 宏协议没有 `<:`（LT_COLON）这一 TokenKind；官方词法把它视为 `<` 与 `:` 两个 token。
+            // 这里按同样的方式拆分，避免直接失败。
+            if (kind == "LT_COLON" && text == "<:") {
+                tokens += MacroPayloadToken("<", baseOffset + start, baseOffset + start + 1, "LT")
+                tokens += MacroPayloadToken(":", baseOffset + start + 1, baseOffset + end, "COLON")
+                lexer.advance()
+                continue
+            }
+
             tokens += MacroPayloadToken(
                 text = text,
                 startOffset = baseOffset + start,

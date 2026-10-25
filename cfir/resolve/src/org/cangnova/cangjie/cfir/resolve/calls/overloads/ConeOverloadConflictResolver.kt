@@ -1409,17 +1409,13 @@ private fun CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {
 }
 
 /**
- * 签名比较使用的简化约束系统实现。
+ * 与 Kotlin FIR `ConeSimpleConstraintSystemImpl` 同文件、同包职责的轻量约束系统包装。
+ * 重载特异性与 Analysis API 类型关系检查共用这套 fresh type variable 和上界注册规则。
  */
-private class ConeSimpleConstraintSystemImpl(
-    /** 底层约束系统实现。 */
-    private val system: ConstraintSystemImpl,
-    /** 推断组件集合。 */
-    private val inferenceComponents: InferenceComponents,
+class ConeSimpleConstraintSystemImpl(
+    val system: ConstraintSystemImpl,
+    val inferenceComponents: InferenceComponents,
 ) : SimpleConstraintSystem {
-    /**
-     * 为签名比较注册类型变量，并返回类型参数到 fresh 变量默认类型的 substitutor。
-     */
     override fun registerTypeVariables(typeParameters: Collection<TypeParameterMarker>): TypeSubstitutorMarker {
         val builder = system.getBuilder()
         val substitutionMap = linkedMapOf<org.cangnova.cangjie.type.model.TypeConstructorMarker, ConeCangJieType>()
@@ -1455,24 +1451,15 @@ private class ConeSimpleConstraintSystemImpl(
         return substitutor
     }
 
-    /**
-     * 添加 subtype 约束。
-     */
     override fun addSubtypeConstraint(subType: CangJieTypeMarker, superType: CangJieTypeMarker) {
         system.addSubtypeConstraint(subType, superType, SimpleConstraintSystemConstraintPosition)
     }
 
-    /**
-     * 当前约束系统是否存在矛盾。
-     */
     override fun hasContradiction(): Boolean = system.hasContradiction
 
-
-    /** 类型系统推断扩展上下文。 */
     override val context: TypeSystemInferenceExtensionContext
         get() = system
 
-    /** 通用约束系统 marker 视图。 */
     override val constraintSystemMarker: org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemMarker
         get() = system
 }

@@ -82,6 +82,10 @@ import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.parsing.CjMemberBodyFacts
+import org.cangnova.cangjie.parsing.CjMemberBodyPolicy
+import org.cangnova.cangjie.parsing.CjScopeKind
+import org.cangnova.cangjie.parsing.CjmpOverlayFacts
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.ImportPathPrefix
 import org.cangnova.cangjie.resolveImportPath
@@ -3501,26 +3505,35 @@ class LightTreeRawCfirDeclarationBuilder(
         !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
 
     /**
-     * 官方 parser 在 class/interface 体内把无 body 函数、无属性体且无 getter/setter 的属性标记为 abstract。
-     * LightTree 路径必须基于源码语法判断，不能受 lazy body 构建模式影响。
+     * class / interface 成员的隐式 abstract 判定：只做 LightTree 事实提取，规则统一委托
+     * [CjMemberBodyPolicy]。
      *
-     * ⚠️ 声明文件（`.cj.d`）是**唯一例外**：官方在 `CheckFuncBody`（`ParseDecl.cpp:1550`）里用
-     * `isMember && !parseDeclFile` 整体跳过，因此 `.cj.d` 的无体函数**既不打 `ABSTRACT` 也不报错**（R3/P6）。
-     *
-     * ⚠️ 例外**只作用于函数**：属性侧（[isImplicitAbstractClassLikeProperty]）**绝不能**加同样的判断 ——
-     * 官方 `Parser.cpp:371-390` 的"无 `{}` 即 abstract"没有 `parseDeclFile` 门禁（R4）。
+     * ⚠️ 两个过程由策略对象分开承载：
+     * - 函数：`.cj.d` 下 `parseDeclFile` 罩住整个分支（`ParseDecl.cpp:1550`），
+     *   无体函数**既不打 `ABSTRACT` 也不报错**；
+     * - 属性：官方 `Parser.cpp:371-390` 的"无 `{}` 即 abstract"**没有** `parseDeclFile`
+     *   门禁，也**没有** `FOREIGN` / `INTRINSIC` 因子。
      * 两者不对称，不要"统一处理"。
+     *
+     * 诊断字段（`hasReturnType` / `isSignatureBroken`）只服务 parser 适配器；
+     * CFIR 只消费 `markImplicitAbstract`，不在此层重算诊断事实。
      */
     private fun isImplicitAbstractClassLikeFunction(
         node: LighterASTNode,
         modifiers: LightTreeModifierList,
-    ): Boolean =
-        isInClassOrInterfaceMemberContext() &&
-                !modifiers.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC) &&
-                !modifiers.isForeign &&
-                !sourceKind.isDeclaration &&
-                !hasSyntaxBody(node) &&
-                !isCjmpNonAbstractClassMember(modifiers, isFunction = true)
+    ): Boolean {
+        if (!isInClassOrInterfaceMemberContext()) return false
+        val facts = memberBodyFacts(
+            scopeKind = currentMemberScopeKind(),
+            hasBody = hasSyntaxBody(node),
+            hasAccessors = false,
+            modifiers = modifiers,
+        )
+        return CjMemberBodyPolicy.applyCjmpOverlay(
+            CjMemberBodyPolicy.checkFunctionBody(facts),
+            facts,
+        ).markImplicitAbstract
+    }
 
     /**
      * 当前 class 体的修饰符（供 CJMP 隐式 abstract 例外判定；interface/struct/enum 体为 null）。
@@ -3539,15 +3552,20 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     /**
-     * cjc 1.1.3 的 CJMP 隐式 abstract 例外（仅 class 体）：
-     * - `ParserImpl::CanBeAbstract`：common 成员不隐式 abstract；
-     * - `CheckClassLikeFuncBodyAbstractness`：common/specific abstract class 中未显式 abstract 的函数不是抽象成员。
+     * 提取 1.1.3 CJMP 例外事实。
+     *
+     * 仅 `class` 体返回非 null，与 `CanBeAbstract` 的宿主条件一致；interface 的
+     * common 成员规则不在本 overlay 内，登记为分层偏差。
      */
-    private fun isCjmpNonAbstractClassMember(modifiers: LightTreeModifierList, isFunction: Boolean): Boolean {
-        if (containerSymbolIfAny !is CfirClassSymbol) return false
-        if (modifiers.isCommon) return true
-        val outer = enclosingClassModifiers ?: return false
-        return isFunction && !modifiers.isAbstract && outer.isAbstract && (outer.isCommon || outer.isSpecific)
+    private fun cjmpOverlayFacts(modifiers: LightTreeModifierList): CjmpOverlayFacts? {
+        if (containerSymbolIfAny !is CfirClassSymbol) return null
+        val outer = enclosingClassModifiers ?: return null
+        return CjmpOverlayFacts(
+            memberIsCommon = modifiers.isCommon,
+            memberIsExplicitAbstract = modifiers.isAbstract,
+            enclosingClassIsAbstract = outer.isAbstract,
+            enclosingClassIsCommonOrSpecific = outer.isCommon || outer.isSpecific,
+        )
     }
 
     /**
@@ -3569,18 +3587,50 @@ class LightTreeRawCfirDeclarationBuilder(
     /**
      * 判断 class/interface 成员属性是否应由无体语法隐式标记为 abstract。
      *
-     * foreign 属性不走隐式 abstract；存在属性体或显式 accessor 时由更具体的 accessor/default 逻辑处理。
+     * foreign 属性在官方属性过程里**不是**排除因子；该因子只在函数过程存在。
+     * 存在属性体或显式 accessor 时由更具体的 accessor/default 逻辑处理。
      */
     private fun isImplicitAbstractClassLikeProperty(
         node: LighterASTNode,
         modifiers: LightTreeModifierList,
         accessors: List<LighterASTNode>,
-    ): Boolean =
-        isInClassOrInterfaceMemberContext() &&
-                !modifiers.isForeign &&
-                !hasPropertyBody(node) &&
-                accessors.isEmpty() &&
-                !isCjmpNonAbstractClassMember(modifiers, isFunction = false)
+    ): Boolean {
+        if (!isInClassOrInterfaceMemberContext()) return false
+        val facts = memberBodyFacts(
+            scopeKind = currentMemberScopeKind(),
+            hasBody = hasPropertyBody(node),
+            hasAccessors = accessors.isNotEmpty(),
+            modifiers = modifiers,
+        )
+        return CjMemberBodyPolicy.applyCjmpOverlay(
+            CjMemberBodyPolicy.checkPropertyBody(facts),
+            facts,
+        ).markImplicitAbstract
+    }
+
+    /** 构造缺体策略所需的纯事实；前端类型到此为止，不进入策略。 */
+    private fun memberBodyFacts(
+        scopeKind: CjScopeKind,
+        hasBody: Boolean,
+        hasAccessors: Boolean,
+        modifiers: LightTreeModifierList,
+    ): CjMemberBodyFacts = CjMemberBodyFacts(
+        scopeKind = scopeKind,
+        hasBody = hasBody,
+        hasAccessors = hasAccessors,
+        isForeign = modifiers.isForeign,
+        isIntrinsic = modifiers.hasBuiltinAnnotation(BuiltInAnnotationKind.INTRINSIC),
+        isDeclarationFile = sourceKind.isDeclaration,
+        cjmp = cjmpOverlayFacts(modifiers),
+    )
+
+    /** 当前成员所在的 class/interface 作用域。调用前必须已通过 [isInClassOrInterfaceMemberContext]。 */
+    private fun currentMemberScopeKind(): CjScopeKind =
+        if (containerSymbolIfAny is CfirInterfaceSymbol) {
+            CjScopeKind.INTERFACE_BODY
+        } else {
+            CjScopeKind.CLASS_BODY
+        }
 
     /**
      * 判断当前声明转换是否处在 class 或 interface 成员上下文。

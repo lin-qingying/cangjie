@@ -472,26 +472,15 @@ dataFlowAnalyzer.enterFunction(constructor)
 
     /**
      * 解析构造器 body 中第一条委托构造调用。
+     *
+     * partial body 路径同样需要调用，否则委托调用的 callee 会停在 `CfirNamedReferenceImpl`。
      */
-    private fun transformDelegatedConstructorCall(
+    protected fun transformDelegatedConstructorCall(
         constructor: CfirConstructor,
         data: ResolutionMode,
     ) {
-        val call = constructor.body?.statements?.firstOrNull()?.delegatedConstructorCallOrNull() ?: return
+        val call = constructor.delegatedConstructor ?: return
         call.transform<CfirExpression, ResolutionMode>(transformer, data)
-    }
-
-    /**
-     * 从语句包装层中抽取委托构造调用表达式。
-     */
-    private fun CfirStatement.delegatedConstructorCallOrNull(): CfirFunctionCall? {
-        val expression = when (this) {
-            is CfirWrappedExpression -> this.expression
-            is CfirExpression -> this
-            else -> return null
-        }
-        val call = expression as? CfirFunctionCall ?: return null
-        return call.takeIf { it.origin.isConstructorDelegation }
     }
 
     // ── Enum constructor ──────────────────────────────────────────────────

@@ -40,6 +40,9 @@ object MacroTokenKind {
         "ATEXCL" to "AT_EXCL",
         "BLOCK_COMMENT" to "COMMENT",
         "BOOL_KEYWORD" to "BOOLEAN",
+        // 文档注释在 lexer 中是 CDOC（CjTokens.DOC_COMMENT = CDocTokens.CDOC），
+        // 与 BLOCK_COMMENT/EOL_COMMENT 一样属于注释 trivia，必须映射为 COMMENT 而不是让宏协议报未知 kind。
+        "CDOC" to "COMMENT",
         "CHARACTER_BYTE_LITERAL" to "RUNE_BYTE_LITERAL",
         "DANGLING_NEWLINE" to "NL",
         "DIVEQ" to "DIV_ASSIGN",
@@ -139,8 +142,11 @@ object MacroTokenKind {
                 null
             }
         }
-        if (kindName == "BAD_CHARACTER" && text == "#") {
-            return EncodedMacroToken(cjcKindByName.getValue("HASH"), text)
+        if (kindName == "BAD_CHARACTER") {
+            // `#` 是合法的宏调用前缀；其余非法字符（例如被 payload 边界拆开的转义标识符反引号）
+            // 统一降级为协议里的 ILLEGAL，避免单个坏 token 让整模块宏快照构造失败。
+            val cjcName = if (text == "#") "HASH" else "ILLEGAL"
+            return EncodedMacroToken(cjcKindByName.getValue(cjcName), text)
         }
 
         val directName = aliases[kindName] ?: kindName
@@ -151,7 +157,9 @@ object MacroTokenKind {
             kindName.uppercase(),
         ).filterNotNull().firstOrNull(cjcKindByName::containsKey)
         val kind = cjcKindByName[cjcName]
-            ?: error("CangJieLexer token `$kindName` has no CJC TokenKind mapping (text=`$text`).")
+            // 未知 lexer token 降级为协议里的 ILLEGAL：单个 token 没有映射不应让整模块宏快照
+            // 构造失败（宏执行器会把它当作非法 token 处理）。已确认的映射仍走上面的别名表。
+            ?: return EncodedMacroToken(cjcKindByName.getValue("ILLEGAL"), text)
         return EncodedMacroToken(kind, text)
     }
 

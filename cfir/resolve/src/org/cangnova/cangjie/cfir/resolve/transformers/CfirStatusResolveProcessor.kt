@@ -1189,6 +1189,12 @@ class CfirStatusResolver(
      * 解析默认模态。
      *
      * class-like、顶层 callable、interface 成员和 override 成员各自遵循不同默认规则。
+     *
+     * ⚠️ interface 成员的抽象性**以 raw builder 写入的 [CfirDeclarationStatus.isAbstract] 为准**，
+     * 不在这里按"有没有 body"重新推导。raw builder 的 `isAbstract` 来自
+     * `CjMemberBodyPolicy`（官方 parser 的隐式 ABSTRACT 决策），其中函数过程在 `.cj.d`
+     * 下整体跳过、属性过程不受 `parseDeclFile` 门禁；若 STATUS 阶段再次按 body 推导，
+     * 就会撤销 `.cj.d` 的声明文件抑制，并让 DEFAULT 与 ABSTRACT 同时成立。
      */
     private fun resolveModality(
         declaration: CfirDeclaration,
@@ -1207,7 +1213,7 @@ class CfirStatusResolver(
                     containingClass is CfirInterface -> {
                         when {
                             declaration.status.visibility == Visibilities.Private -> Modality.FINAL
-                            !declaration.hasOwnBodyOrAccessorBody() -> Modality.ABSTRACT
+                            declaration.status.isAbstract -> Modality.ABSTRACT
                             else -> Modality.OPEN
                         }
                     }
@@ -1304,18 +1310,5 @@ private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
         is CfirExtend -> status
         is CfirTypeAlias -> status
         else -> null
-    }
-}
-
-/**
- * 判断 callable 是否拥有自身实现体或属性访问器实现体。
- *
- * interface 成员默认模态需要区分抽象成员与带默认实现的成员。
- */
-private fun CfirDeclaration.hasOwnBodyOrAccessorBody(): Boolean {
-    return when (this) {
-        is CfirFunction -> body != null
-        is CfirProperty -> getter?.body != null || setter?.body != null
-        else -> true
     }
 }
