@@ -43,8 +43,8 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
             val range = expression as CjRangeExpression
 
             assertEquals(case.text, range.text)
-            assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
-            assertEquals(range.elementType, range.node.elementType)
+            assertSame(CjNodeTypes.RANGE_EXPRESSION, range.node.elementType)
+            assertEquals(range.node.elementType, range.node.elementType)
             assertFalse(expression is StubBasedPsiElement<*>)
             assertFalse(expression is CjBinaryExpression)
             assertSame(case.operator, range.operationToken)
@@ -65,7 +65,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
         val call = CjPsiFactory(project).createExpression("consume(1..=10:3)")
         val range = requireNotNull(PsiTreeUtil.findChildOfType(call, CjRangeExpression::class.java))
 
-        assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
+        assertSame(CjNodeTypes.RANGE_EXPRESSION, range.node.elementType)
         val rangeExpression: CjExpression = range
         assertFalse(rangeExpression is StubBasedPsiElement<*>)
         assertFalse(rangeExpression is CjBinaryExpression)
@@ -89,8 +89,8 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
             val slice = requireNotNull(PsiTreeUtil.findChildOfType(expression, CjSliceExpression::class.java))
 
             assertEquals(case.text.substringAfter('[').substringBeforeLast(']'), slice.text)
-            assertSame(CjNodeTypes.SLICE_EXPRESSION, slice.elementType)
-            assertEquals(slice.elementType, slice.node.elementType)
+            assertSame(CjNodeTypes.SLICE_EXPRESSION, slice.node.elementType)
+            assertEquals(slice.node.elementType, slice.node.elementType)
             val sliceExpression: CjExpression = slice
             assertFalse(sliceExpression is StubBasedPsiElement<*>)
             assertFalse(sliceExpression is CjUnaryExpression)
@@ -112,7 +112,7 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
             val expression = CjPsiFactory(project).createExpression(case.text)
             val range = requireNotNull(PsiTreeUtil.findChildOfType(expression, CjRangeExpression::class.java))
 
-            assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
+            assertSame(CjNodeTypes.RANGE_EXPRESSION, range.node.elementType)
             assertEquals(case.operator == CjTokens.RANGEEQ, range.isInclusive)
             assertEquals(case.start, range.startExpression?.text)
             assertEquals(case.stop, range.stopExpression?.text)
@@ -149,8 +149,8 @@ class CjRangeExpressionPsiTest : CjParsingTestCase(
         val range = PsiTreeUtil.findChildrenOfType(file, CjRangeExpression::class.java).single()
         val slice = PsiTreeUtil.findChildrenOfType(file, CjSliceExpression::class.java).single()
 
-        assertSame(CjNodeTypes.RANGE_EXPRESSION, range.elementType)
-        assertSame(CjNodeTypes.SLICE_EXPRESSION, slice.elementType)
+        assertSame(CjNodeTypes.RANGE_EXPRESSION, range.node.elementType)
+        assertSame(CjNodeTypes.SLICE_EXPRESSION, slice.node.elementType)
         assertEquals("1", range.startExpression?.text)
         assertEquals("10", range.stopExpression?.text)
         assertEquals("3", range.step?.text)

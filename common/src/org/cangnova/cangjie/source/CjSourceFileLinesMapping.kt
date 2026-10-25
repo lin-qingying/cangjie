@@ -55,16 +55,19 @@ class CjPsiSourceFileLinesMapping(
      */
     override fun getLineAndColumnByOffset(offset: Int): Pair<Int, Int> =
         document?.let {
-            val lineNumber = it.getLineNumber(offset)
+            // 宏 payload 的 token 可能正好落在文件末尾（offset == textLength）或来自稍旧的快照，
+            // 直接传给 Document 会抛 IndexOutOfBoundsException；这里钳制到合法范围。
+            val clamped = offset.coerceIn(0, it.textLength)
+            val lineNumber = it.getLineNumber(clamped)
             val lineStartOffset = it.getLineStartOffset(lineNumber)
-            lineNumber to offset - lineStartOffset
+            lineNumber to clamped - lineStartOffset
         } ?: (-1 to -1)
 
     /**
      * 通过 document 返回偏移所在行号。
      */
     override fun getLineByOffset(offset: Int): Int =
-        document?.getLineNumber(offset) ?: -1
+        document?.let { it.getLineNumber(offset.coerceIn(0, it.textLength)) } ?: -1
 
     /**
      * document 的文本长度。

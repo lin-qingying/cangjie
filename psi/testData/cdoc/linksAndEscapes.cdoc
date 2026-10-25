@@ -1,0 +1,11 @@
+/**
+ * 链接与引用：标签后的限定名引用、[qualified.name] 代码链接、行内链接与转义字符。
+ *
+ * @return[Int64] 返回值的类型引用。
+ *
+ * @param[service] 服务实例引用。
+ *
+ * 行内引用 [org.cangnova.cangjie.psi.CjFile] 与普通链接 [text](https://example.com)。
+ *
+ * 转义字符：\* 不是列表、\# 不是标题、\[ 不是链接。
+ */

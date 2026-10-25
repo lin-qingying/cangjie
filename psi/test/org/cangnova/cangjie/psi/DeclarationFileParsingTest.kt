@@ -275,9 +275,12 @@ class DeclarationFileParsingTest : CjParsingTestCase(
 }
 
 /**
- * 反向验证：**同样的文本在 `.cj` 下必须报错**。
+ * 反向验证：**同样的文本在 `.cj` 与 `.cj.d` 下行为一致的部分**，以及 `.cj` 仍必须报错的形态。
  *
- * 这是 P1 的关键防线 —— 抑制逻辑一旦"漏到"普通源文件上，本类的用例会立刻失败。
+ * 关键点：class / interface 体内的无体成员在**两种**文件里都不是 parse 错误
+ * （官方 `CheckFuncBody` / `ParsePropDecl` 对 CLASS_BODY / INTERFACE_BODY 一律置 `ABSTRACT`，
+ * 与 `parseDeclFile` 无关）；"缺体"真正的 parse 错误只在顶层 / struct / enum / extend 出现。
+ * 因此本类锁定的是后者 —— 抑制逻辑一旦"漏到"这些作用域，用例会立刻失败。
  */
 class DeclarationModeReverseParsingTest : CjParsingTestCase(
     dataPath = "",
@@ -301,18 +304,45 @@ class DeclarationModeReverseParsingTest : CjParsingTestCase(
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java).map { it.errorDescription }
         assertTrue(
             errors.isNotEmpty(),
-            "`.cj` 中不允许无体声明，必须报错，但没有任何 PsiErrorElement：\n$text",
+            "`.cj` 中该形态必须报语法错误，但没有任何 PsiErrorElement：\n$text",
+        )
+    }
+
+    /** 断言 `.cj` 文本**没有**任何 parse 错误（错误属于语义阶段，不属于 PSI 层）。 */
+    private fun assertNoParseError(text: String) {
+        val file = createPsiFile("source", text) as CjFile
+        assertEquals(CjSourceKind.SOURCE, file.sourceKind)
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java).map { it.errorDescription }
+        assertTrue(
+            errors.isEmpty(),
+            "`.cj` 中该形态不应产生 parse 错误，但得到：$errors\n--- source ---\n$text",
+        )
+    }
+
+    /** 断言 `.cj` 文本报错且错误文案包含 [expectedFragment]。 */
+    private fun assertStillReports(text: String, expectedFragment: String) {
+        val file = createPsiFile("source", text) as CjFile
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java).map { it.errorDescription }
+        assertTrue(
+            errors.any { it.contains(expectedFragment, ignoreCase = true) },
+            "`.cj` 下必须仍报 `$expectedFragment`，但得到：$errors\n--- source ---\n$text",
         )
     }
 
     @Test
-    fun testBodylessClassMemberFunctionReportsError() {
-        assertReportsError("class C {\n    func f(): Int64\n}")
+    fun testBodylessClassMemberFunctionIsImplicitAbstractNotSyntaxError() {
+        // 官方 `ParserImpl::CheckFuncBody`（ParseDecl.cpp:1548-1561）：class/interface 体内的无体函数
+        // 被置 `ABSTRACT`，**不报缺体**；"function 'f' can not be abstract" 由语义阶段
+        // （`sema_missing_func_body`）给出，本仓对应 CFIR 的 MISSING_FUNC_BODY。
+        // 因此这里在 `.cj` 下也必须零 parse 错误 —— 语义诊断不属于 PSI 层。
+        assertNoParseError("class C {\n    func f(): Int64\n}")
     }
 
     @Test
-    fun testBodylessMemberPropertyReportsError() {
-        assertReportsError("class C {\n    prop p: Int64\n}")
+    fun testBodylessMemberPropertyIsImplicitAbstractNotSyntaxError() {
+        // 官方 `ParserImpl::ParsePropDecl`（Parser.cpp:371-390）：CLASS_BODY / INTERFACE_BODY /
+        // UNKNOWN_SCOPE 下无 `{}` 的属性同样被置 `ABSTRACT`，不产生 parse 诊断。
+        assertNoParseError("class C {\n    prop p: Int64\n}")
     }
 
     @Test
@@ -338,5 +368,28 @@ class DeclarationModeReverseParsingTest : CjParsingTestCase(
     @Test
     fun testBodylessTopLevelFunctionReportsError() {
         assertReportsError("func topLevel(): Int64")
+    }
+
+    @Test
+    fun testBodylessStructMemberFunctionReportsError() {
+        // struct / enum / extend 体不产生隐式 abstract，官方走 `DiagMissingBody`。
+        assertReportsError("struct S {\n    func f(): Int64\n}")
+    }
+
+    @Test
+    fun testBodylessEnumMemberFunctionReportsError() {
+        assertReportsError("enum E {\n    | A\n    func f(): Int64\n}")
+    }
+
+    @Test
+    fun testBodylessExtendMemberFunctionReportsError() {
+        assertReportsError("extend Int64 {\n    func f(): Int64\n}")
+    }
+
+    @Test
+    fun testBodylessAbstractFunctionWithoutReturnTypeReportsError() {
+        // 官方在同分支额外检查 `parse_abstract_func_must_have_return_type`：
+        // 隐式 abstract 函数必须有返回类型。
+        assertStillReports("class C {\n    func f()\n}", "return type")
     }
 }

@@ -3191,7 +3191,7 @@ open class CangJieExpressionParsing(
         val detector: CangJieParsing.ModifierDetector = CangJieParsing.ModifierDetector()
 
         // 局部声明与文件/成员声明共享注解前缀解析；不是声明时由 decl 一并回滚。
-        cangJieParsing.parseAnnotations()
+        cangJieParsing.parseAnnotations(detector)
         cangJieParsing.parseModifierList(detector, TokenSet.EMPTY, rollbackMacro)
         val declType: IElementType? = parseDeclarationRest(detector, rollbackIfDefinitelyNotExpression, scope)
 
@@ -3253,7 +3253,8 @@ open class CangJieExpressionParsing(
         val keyword = tt()
         if (failIfDefinitelyNotExpression) {
             if (keyword != FUNC_KEYWORD) return null
-            return cangJieParsing.parseFunction()
+            // 局部 / 表达式位置没有 class 宿主，缺体按官方 DiagMissingBody 处理。
+            return cangJieParsing.parseFunction(detector = detector, scopeKind = CjScopeKind.TOPLEVEL)
         }
 
         return cangJieParsing.parseCommonDeclaration(
@@ -3539,7 +3540,7 @@ open class CangJieExpressionParsing(
 
             val modifiterDetector = CangJieParsing.ModifierDetector()
 
-            cangJieParsing.parseAnnotations()
+            cangJieParsing.parseAnnotations(modifiterDetector)
             cangJieParsing.parseModifierList(modifiterDetector, TokenSet.EMPTY)
 
             val declType = parseMacroInputExprWithoutParens(modifiterDetector, declarationParsingMode)
@@ -3645,13 +3646,19 @@ open class CangJieExpressionParsing(
     ): IElementType? {
         return when (getTokenId()) {
             AT_Id -> with(context.copy(backToken = true)) { parseMacroExpression(declarationParsingMode) }
-            FUNC_KEYWORD_Id -> cangJieParsing.parseFunction(detector = modifiterDetector)
+            FUNC_KEYWORD_Id -> cangJieParsing.parseFunction(
+                detector = modifiterDetector,
+                scopeKind = CjScopeKind.UNKNOWN_SCOPE,
+            )
             EXTEND_KEYWORD_Id, ENUM_KEYWORD_Id, STRUCT_KEYWORD_Id, INTERFACE_KEYWORD_Id, CLASS_KEYWORD_Id ->
                 cangJieParsing.parseClass(modifiterDetector)
 
-            LET_KEYWORD_Id, VAR_KEYWORD_Id, CONST_KEYWORD_Id -> cangJieParsing.parseVariable(modifiterDetector)
+            LET_KEYWORD_Id, VAR_KEYWORD_Id, CONST_KEYWORD_Id -> cangJieParsing.parseVariable()
 
-            PROP_KEYWORD_Id -> cangJieParsing.parseProperty(detector = modifiterDetector)
+            PROP_KEYWORD_Id -> cangJieParsing.parseProperty(
+                detector = modifiterDetector,
+                scopeKind = CjScopeKind.UNKNOWN_SCOPE,
+            )
             INIT_KEYWORD_Id -> {
                 cangJieParsing.parseInitFunc()
                 SECONDARY_CONSTRUCTOR

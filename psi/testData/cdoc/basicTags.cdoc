@@ -1,0 +1,7 @@
+/**
+ * 一段简单的文档注释，覆盖纯文本、@brief / @param / @return 标签与行首星号。
+ *
+ * @brief 摘要
+ * @param value 参数说明
+ * @return 返回值说明
+ */

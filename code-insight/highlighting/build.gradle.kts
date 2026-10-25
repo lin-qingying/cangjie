@@ -12,11 +12,17 @@ dependencies {
 
     implementation(project(":common"))
     implementation(project(":psi"))
+    // CDoc → Quick Doc 渲染（对位上游 KDocRenderer 使用的 org.jetbrains:markdown）。
+    implementation(libs.markdown)
 
     testImplementation(intellijCore())
     testImplementation(kotlin("test"))
     testImplementation(testFixtures(project(":tests:test-infrastructure")))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.markdown)
+    // 渲染测试需要 MockApplication 注册服务，以及 editor-ex 的 EditorColorsScheme 实现。
+    testImplementation("com.jetbrains.intellij.platform:editor-ex:${property("intellijSdkVersion")}") { isTransitive = false }
+    testImplementation("com.jetbrains.intellij.platform:editor-ui:${property("intellijSdkVersion")}") { isTransitive = false }
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 

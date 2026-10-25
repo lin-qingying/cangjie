@@ -26,17 +26,30 @@ package org.cangnova.cangjie.lexer.cdoc.psi.impl
 
 import org.cangnova.cangjie.lexer.cdoc.psi.CDoc
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjElementImpl
 import org.cangnova.cangjie.psi.psiUtil.getChildOfType
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.util.TextRange
+import com.intellij.psi.PsiReference
 import org.cangnova.cangjie.name.*
 
 /**
  * 标签主题或链接中限定名称的单个部分。
  */
 class CDocName(node: ASTNode) : CjElementImpl(node) {
+
+    /**
+     * 返回 CDoc 名称上的引用。
+     *
+     * 与 [CDocSection] 一样显式转交 reference provider：`ASTWrapperPsiElement` 的空实现会盖住
+     * `CjElement` 的接口默认实现，不覆写的话 `[Link]` 永远解析不出目标。
+     */
+    override fun getReferences(): Array<PsiReference> {
+        return CangJieReferenceProvidersService.getReferencesFromProviders(this)
+    }
+
     /**
      * 提供 `getContainingDoc` 操作，封装仓颉词法与文档注释节点的访问、构造或判断逻辑。
      */
