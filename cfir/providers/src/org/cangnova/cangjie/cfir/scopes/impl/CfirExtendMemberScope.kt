@@ -8,8 +8,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
+import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
+import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
+import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.isCjmpShadowedCommonDeclaration
@@ -21,6 +25,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
@@ -72,7 +77,7 @@ class CfirExtendMemberScope(
      * owner scope，否则会在类继承合并时先隐藏接口默认成员。
      */
     private val memberOwnerExtend: CfirExtend? = null,
-) : CfirTypeScope() {
+) : CfirTypeScope(), CfirPotentialDirectExtendCallableScope {
 
     /**
      * 当前目标可见 extend 成员索引。
@@ -121,6 +126,58 @@ class CfirExtendMemberScope(
         memberIndex.functions[name]?.forEach(processor)
         memberIndex.properties[name]?.forEach(processor)
         memberIndex.variables[name]?.forEach(processor)
+    }
+
+    /**
+     * 按 K2 CDoc 的候选协议，枚举该 receiver target 上的直接成员，暂不做适用性过滤。
+     *
+     * 返回值保留 extend 来源，调用方必须完成 fresh-variable 类型关系与 use-site 可见性检查；
+     * 运行期普通成员查询继续使用 [memberIndex] 的严格候选集合。
+     */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        for ((extend, _) in extendsForTarget()) {
+            if (includedExtends != null && extend !in includedExtends) continue
+            if (extend === excludingExtend) continue
+            extend.lazyResolveToPhase(CfirResolvePhase.TYPES)
+
+            for (declaration in extend.declarations) {
+                if (memberOwnerExtend != null && extend !== memberOwnerExtend &&
+                    declaration is CfirMemberDeclaration &&
+                    declaration.status.visibility == Visibilities.Private
+                ) {
+                    continue
+                }
+                if (session.isCjmpShadowedCommonDeclaration(declaration)) continue
+
+                val symbol = when (declaration) {
+                    is CfirNamedFunction -> {
+                        if (declaration.callableNameOrNull() != name) continue
+                        declaration.symbol ?: continue
+                    }
+
+                    is CfirProperty -> {
+                        if (declaration.name != name) continue
+                        declaration.symbol as? CfirPropertySymbol ?: continue
+                    }
+
+                    is CfirFieldVariable -> {
+                        if (declaration.name != name) continue
+                        declaration.symbol as? CfirVariableSymbol<*> ?: continue
+                    }
+
+                    else -> continue
+                }
+                val candidate = CfirCallableWithLookupProvenance(
+                    symbol = symbol,
+                    provenance = CfirCallableLookupProvenance.directExtendMember(extend),
+                )
+                if (emitted.add(candidate)) processor(candidate)
+            }
+        }
     }
 
     /**

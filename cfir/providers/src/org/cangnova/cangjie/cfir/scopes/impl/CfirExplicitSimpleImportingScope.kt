@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -29,13 +30,15 @@ class CfirExplicitSimpleImportingScope(
     /**
      * 按有效名称索引的已解析导入绑定。
      */
+    val resolvedImports: List<CfirResolvedImportBinding> = resolvedImports.toList()
+
     private val resolvedImportsByName: Map<Name, List<CfirResolvedImportBinding>>
 
     init {
         require(resolvedImports.none { it.importDirective.isAllUnder }) {
             "Simple importing scope received an all-under import binding"
         }
-        resolvedImportsByName = resolvedImports
+        resolvedImportsByName = this.resolvedImports
             .groupBy { it.effectiveName }
     }
 
@@ -65,6 +68,11 @@ class CfirExplicitSimpleImportingScope(
      * 按名称处理精确导入的属性。
      */
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
+        resolvedImportsByName[name]?.forEachCallableTarget(processor)
+    }
+
+    /** 按名称处理显式导入的顶层模式绑定变量。 */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
         resolvedImportsByName[name]?.forEachCallableTarget(processor)
     }
 

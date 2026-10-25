@@ -449,9 +449,12 @@ private class ContextCollectorVisitor(
         }
 
         onActive {
-            context.withContainer(extend) {
-                dumpContext(extend, ContextKind.BODY)
-                processChildren(extend)
+            val holder = getSessionHolder(extend)
+            context.withScopesForExtend(extend, holder) {
+                context.withContainer(extend) {
+                    dumpContext(extend, ContextKind.BODY)
+                    processChildren(extend)
+                }
             }
         }
     }
@@ -1050,13 +1053,7 @@ private inline fun BodyResolveContext.forConstructorBodyCompat(
     constructor: CfirConstructor,
     block: () -> Unit,
 ) {
-    withTowerDataCleanup {
-        addLocalScope(CfirLocalScope(constructor.moduleData.session))
-        for (valueParameter in constructor.valueParameters) {
-            storeValueParameterIfNeeded(valueParameter, constructor.moduleData.session)
-        }
-        block()
-    }
+    forConstructorBody(constructor, constructor.moduleData.session, block)
 }
 
 /**

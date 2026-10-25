@@ -101,6 +101,8 @@ internal object LLCfirPhaseUpdater {
      * 这里只处理类型参数、值参数、访问器等不会单独发布阶段事件的关联声明。
      */
     private fun updatePhaseForNonLocals(element: CfirElementWithResolveState, newPhase: CfirResolvePhase, isTargetDeclaration: Boolean) {
+        // 注意：这里不能直接对齐 Kotlin 的 `>=`。我们的目标声明阶段可能已由发布事件提前置为
+        // newPhase，若相等就返回会跳过访问器/参数等子结构的阶段更新（property accessor 会停在 TYPES）。
         if (element.resolvePhase > newPhase) return
         if (!isTargetDeclaration) {
             // phase update for target declaration happens as a declaration publication event after resolve is finished

@@ -75,7 +75,11 @@ internal object LLCfirBodyLazyResolver : LLCfirLazyResolver(CfirResolvePhase.BOD
         when (target) {
             is CfirValueParameter -> checkDefaultValueIsResolved(target)
             is CfirVariable -> checkInitializerIsResolved(target)
-            is CfirConstructor -> checkBodyIsResolved(target)
+            is CfirConstructor -> {
+                // 对齐 Kotlin：构造器除了 body，还要校验委托构造调用的 callee 已 resolve。
+                checkDelegatedConstructorIsResolved(target)
+                checkBodyIsResolved(target)
+            }
             is CfirFunction -> checkBodyIsResolved(target)
         }
     }
@@ -129,8 +133,18 @@ private class CfirPartialBodyDeclarationResolveTransformer(
      */
     override fun transformConstructorContent(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
         if (constructor.partialBodyAnalysisState != null) {
-            resolveDeclarationAnnotations(constructor, data)
-            constructor.transformBody(this, data)
+            // 对齐 Kotlin `LLFirBodyLazyResolver.transformConstructorContent`：
+            // 构造器 body 必须在 `forConstructor` / `forConstructorBody` 上下文中解析，
+            // 否则构造器参数作用域与 tower data mode 不完整，resolveState 不会推进到 BODY_RESOLVE。
+            context.forConstructor(constructor) {
+                resolveDeclarationAnnotations(constructor, data)
+                transformDelegatedConstructorCall(constructor, data)
+                context.forConstructorBody(constructor, session) {
+                    constructor.transformBody(this, data)
+                }
+            }
+
+            constructor.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(constructor))
             return constructor
         }
 

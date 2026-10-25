@@ -79,7 +79,7 @@ internal fun CjExpression.asPublicAnnotationValue(
         }
 
         is CjCollectionLiteralExpression -> {
-            return CaBaseAnnotationValues.tupleValue(
+            return CaBaseAnnotationValues.arrayValue(
                 values = innerExpressions.map { element -> element.asPublicAnnotationValue(session, token) },
                 sourcePsi = this,
                 token = token,
@@ -186,7 +186,7 @@ private fun CaCompileTimeValue.asPublicAnnotationValue(
             token = token,
         )
 
-        is CaCollectionCompileTimeValue -> CaBaseAnnotationValues.tupleValue(
+        is CaCollectionCompileTimeValue -> CaBaseAnnotationValues.arrayValue(
             values = elements.map { element -> element.asPublicAnnotationValue(sourcePsi, session, token) },
             sourcePsi = sourcePsi,
             token = token,

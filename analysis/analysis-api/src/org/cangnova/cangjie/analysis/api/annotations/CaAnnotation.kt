@@ -307,7 +307,7 @@ sealed interface CaAnnotationValue : CaLifetimeOwner {
 /**
  * 具名注解参数。
  *
- * 注解参数总以 `name = value` 的形式出现,这里统一封装为(名称, 值)二元组。
+ * 仓颉注解命名参数使用 `name: value` 形式,这里统一封装为(名称, 值)二元组。
  */
 interface CaNamedAnnotationValue : CaLifetimeOwner {
     /** 参数名。 */

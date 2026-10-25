@@ -49,6 +49,7 @@ import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenance
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
+import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -242,6 +243,7 @@ class CfirClassUseSiteMemberScope private constructor(
     /** 当前 generic-instantiation extend owner；作为本 scope 与父 scope 的 private peer 过滤上下文。 */
     private val memberOwnerExtend: CfirExtend? = null,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
+    CfirPotentialDirectExtendCallableScope,
     CfirMemberLookupCompletenessScope {
     /**
      * 创建 class-like use-site 成员 scope。
@@ -1122,6 +1124,25 @@ class CfirClassUseSiteMemberScope private constructor(
                 ) {
                     processor(candidate)
                 }
+            }
+        }
+    }
+
+    /** 将 K2 CDoc receiver 关系检查所需的原始直接 extend 候选委托给目标索引 scope。 */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        extendScope?.processPotentialDirectExtendCallablesByName(name) { candidate ->
+            if (emitted.add(candidate)) processor(candidate)
+        }
+
+        for (parent in parentScopes) {
+            val potentialExtendScope = parent as? CfirPotentialDirectExtendCallableScope
+                ?: error("Class parent use-site scope must expose direct extend candidates")
+            potentialExtendScope.processPotentialDirectExtendCallablesByName(name) { candidate ->
+                if (emitted.add(candidate)) processor(candidate)
             }
         }
     }

@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.low.level.api.cfir.caches.getNotNullValueForNotNullContext
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
 import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.utils.exceptions.CangJieIllegalStateExceptionWithAttachments
 import org.cangnova.cangjie.utils.exceptions.ExceptionAttachmentBuilder
 
 /**
@@ -146,3 +148,24 @@ internal open class LLPsiAwareClassLikeSymbolCache<E : PsiElement, V : CfirClass
     internal val cachedValues: List<V>
         get() = mainCache.cachedValues + ambiguityCache.cachedValues
 }
+
+/**
+ * 把“非空 context 必返回非空”的缓存契约失败降级为“未找到”。
+ *
+ * 未知 classId（stub 里引用了不在依赖中的类型）会让缓存修复路径重算后仍为 null 并抛异常；
+ * 若直接向上传播，一次缺失的类会被放大成整次类型解析/诊断失败。Kotlin 侧通过“只查询索引中
+ * 已知的 classId”避免走到这里，Cangjie 需要这层兜底。
+ */
+internal fun <T> tolerateMissingCachedSymbol(classId: ClassId, action: () -> T?): T? =
+    try {
+        action()
+    } catch (failure: CangJieIllegalStateExceptionWithAttachments) {
+        if (failure.message?.contains("must not be null due to the contract") == true) {
+            LOG.debug("Class-like symbol for $classId is absent; treating it as unresolved", failure)
+            null
+        } else {
+            throw failure
+        }
+    }
+
+private val LOG = Logger.getInstance("org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache")

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.scopes.CfirCallableLookupProvenanceScope
 import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
+import org.cangnova.cangjie.cfir.scopes.CfirPotentialDirectExtendCallableScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.processCallablesByNameWithLookupProvenance
@@ -30,7 +31,7 @@ class CfirCompositeTypeScope(
      * 类型等价判断使用的 use-site session。
      */
     private val session: CfirSession,
-) : CfirTypeScope(), CfirCallableLookupProvenanceScope {
+) : CfirTypeScope(), CfirCallableLookupProvenanceScope, CfirPotentialDirectExtendCallableScope {
 
     /**
      * 在所有子 scope 中处理直接覆盖函数。
@@ -174,6 +175,20 @@ class CfirCompositeTypeScope(
                 }
                 if (emitted.add(candidate)) processor(candidate)
             }
+        }
+    }
+
+    /** 组合上界/交集 scope 中所有直接 extend 的原始候选，不进行符号签名归并。 */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        val emitted = linkedSetOf<CfirCallableWithLookupProvenance>()
+        for (scope in scopes) {
+            (scope as? CfirPotentialDirectExtendCallableScope)
+                ?.processPotentialDirectExtendCallablesByName(name) { candidate ->
+                    if (emitted.add(candidate)) processor(candidate)
+                }
         }
     }
 

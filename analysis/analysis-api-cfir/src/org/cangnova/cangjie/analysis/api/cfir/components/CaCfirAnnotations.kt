@@ -192,15 +192,15 @@ private fun publicFloatingConstant(
     }
 }
 
-/** 对象字段来自 const 解释器的实际存储，不能把 ctor 调用实参冒充字段值。 */
+/** CFIR 常量只关联根表达式 PSI; 嵌套值没有独立位置时不继承根 PSI。 */
 private fun CfirConstantValue.asPublicValue(psi: CjElement?, token: CaLifetimeToken): CaAnnotationValue = when (this) {
     is CfirConstantValue.Primitive -> CaBaseAnnotationValues.constant(asPublicConstant(psi), psi, token)
-    is CfirConstantValue.Tuple -> CaBaseAnnotationValues.tupleValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.ArrayValue -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.VArray -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(psi, token) }, psi, token)
-    is CfirConstantValue.EnumValue -> CaBaseAnnotationValues.enumValue(constructor.callableId, arguments.map { it.asPublicValue(psi, token) }, psi, token)
+    is CfirConstantValue.Tuple -> CaBaseAnnotationValues.tupleValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.ArrayValue -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.VArray -> CaBaseAnnotationValues.arrayValue(elements.map { it.asPublicValue(null, token) }, psi, token)
+    is CfirConstantValue.EnumValue -> CaBaseAnnotationValues.enumValue(constructor.callableId, arguments.map { it.asPublicValue(null, token) }, psi, token)
     is CfirConstantValue.ObjectValue -> {
-        val fields = fields.map { (symbol, value) -> CaBaseNamedAnnotationValue(symbol.name, value.asPublicValue(psi, token)) }
+        val fields = fields.map { (symbol, value) -> CaBaseNamedAnnotationValue(symbol.name, value.asPublicValue(null, token)) }
         if (type is ConeStructType) CaBaseAnnotationValues.structInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
         else CaBaseAnnotationValues.classInstanceValue(type.classIdOrPrimitiveClassId, fields, psi, token)
     }

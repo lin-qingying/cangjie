@@ -51,6 +51,17 @@ abstract class LLCfirResolvableModuleSession(
         get() = moduleComponents.macroSemanticSnapshotStore
 
     /**
+     * 丢弃当前模块已发布的宏语义快照。
+     *
+     * 快照按模块共享并跨 session 复用（见 `LLCfirGlobalResolveComponents`），
+     * 因此模块输入（PSI / roots / 编译器设置 / SDK）变化时必须显式失效，
+     * 不能依赖 session 生命周期。
+     */
+    fun invalidateMacroSemanticSnapshot() {
+        moduleComponents.macroSemanticSnapshotStore.invalidate()
+    }
+
+    /**
      * 基于同一 pre-macro 输入批次，在不发布的情况下预构建语义快照索引。
      *
      * 输入是本次构造独占的 CFIR 树，索引构建不依赖实时 PSI 查询；调用方应在后台、读写访问之外执行，

@@ -1,19 +1,26 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
+import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
+import org.cangnova.cangjie.idea.references.CDocReference
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
-import org.cangnova.cangjie.psi.CjImplementationDetail
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocLink
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocName
+import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjImplementationDetail
+import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjNonPublicApi
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(
@@ -83,4 +90,49 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
             assertEquals(1, referenceDescriptor?.additionalSections?.size)
         }
     }
+
+    /**
+     * 验证 `[Link]` 的 CDoc 名称引用能解析到对应声明。
+     *
+     * 覆盖单段名（`[Document]`）、包限定名（`[sample.cdoc.Document]`），
+     * 以及 `@param [value]` 的形参解析。
+     */
+    @Test
+    fun cdocReference(mainFile: CjFile) {
+        val docComment = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
+            .single { it.name == "describe" }
+            .docComment
+        assertNotNull(docComment, "describe 应带 CDoc")
+
+        val names = PsiTreeUtil.findChildrenOfType(docComment, CDocName::class.java)
+        val documentTargets = names.single { it.ownLinkText() == "[Document]" }.cdocReferenceTargets()
+        assertTrue(
+            documentTargets.any { it is CjClass && it.name == "Document" },
+            "`[Document]` 应解析到 class Document，实际: $documentTargets",
+        )
+
+        val packageQualifiedTargets = names.single { it.ownLinkText() == "[sample.cdoc.Document]" }.cdocReferenceTargets()
+        assertTrue(
+            packageQualifiedTargets.any { it is CjClass && it.name == "Document" },
+            "`[sample.cdoc.Document]` 应解析到 class Document，实际: $packageQualifiedTargets",
+        )
+
+        val parameterTargets = names.single { it.ownLinkText() == "[value]" }.cdocReferenceTargets()
+        assertTrue(
+            parameterTargets.any { it is CjParameter && it.name == "value" },
+            "`@param [value]` 应解析到形参，实际: $parameterTargets",
+        )
+    }
+
+    /**
+     * 直接承载该 CDoc 名称的链接文本；限定名会拆成多个 [CDocName]，用链接文本区分是哪一条。
+     */
+    private fun CDocName.ownLinkText(): String? = (parent as? CDocLink)?.text
+
+    /**
+     * 收集 CDoc 名称引用解析出的 PSI 目标。
+     */
+    private fun CDocName.cdocReferenceTargets(): List<PsiElement> =
+        references.filterIsInstance<CDocReference>()
+            .flatMap { reference -> reference.multiResolve(false).mapNotNull { it.element } }
 }

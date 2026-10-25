@@ -6,6 +6,7 @@
   <xi:include href="/META-INF/analysis-api/cangjie-symbol-light-declarations.xml"/>
 <extensions defaultExtensionNs="org.cangnova.cangjie">
   <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.api.cfir.references.CaCfirSimpleNameReference$Provider"/>
+  <psiReferenceProvider implementation="org.cangnova.cangjie.analysis.api.cfir.references.CaCfirCDocReference$Provider"/>
 
 </extensions>
   <extensions defaultExtensionNs="com.intellij">

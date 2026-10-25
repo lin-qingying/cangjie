@@ -275,6 +275,10 @@ class CfirProviderImpl(
                 names().callableTargets[name]?.let(::loadTargetFunctionSymbols).orEmpty()
             override fun properties(name: Name): List<CfirPropertySymbol> =
                 names().callableTargets[name]?.let(::loadTargetPropertySymbols).orEmpty()
+
+            override fun classifierNames(): Set<Name> = names().classifierNames
+
+            override fun callableNames(): Set<Name> = names().callableNames
         }
 
         /**

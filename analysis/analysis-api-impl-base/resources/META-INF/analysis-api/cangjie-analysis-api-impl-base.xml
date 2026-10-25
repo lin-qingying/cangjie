@@ -8,6 +8,12 @@
         area="IDEA_PROJECT"
         dynamic="true"
     />
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.analysis.caAdditionalCDocResolutionProvider"
+        interface="org.cangnova.cangjie.analysis.api.symbols.CaAdditionalCDocResolutionProvider"
+        area="IDEA_PROJECT"
+        dynamic="true"
+    />
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">

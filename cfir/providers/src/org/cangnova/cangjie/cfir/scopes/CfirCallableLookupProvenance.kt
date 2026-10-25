@@ -84,6 +84,20 @@ interface CfirCallableLookupProvenanceScope {
     )
 }
 
+/**
+ * 暴露尚未按 receiver 适用性过滤的直接 extend callable 候选。
+ *
+ * K2 的类型限定 KDoc 查询先枚举作用域中的扩展 callable，再用 fresh-variable 子类型约束
+ * 判断 receiver 适用性。仓颉 use-site member scope 会提前按完整实例 receiver 过滤 extend，
+ * 因此 CDoc 需要一个只供该关系检查读取的原始候选通道；常规成员查询仍保持严格过滤。
+ */
+interface CfirPotentialDirectExtendCallableScope {
+    fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    )
+}
+
 /** 对不提供来源能力的普通 scope 生成显式 [CfirCallableLookupProvenance.None]。 */
 fun CfirScope.processCallablesByNameWithLookupProvenance(
     name: Name,

@@ -1279,6 +1279,10 @@ CaStubIndexFacade.public val packageIndex: CaStubPackageIndex
 CaStubIndexFacade.public fun getClassMemberNames(classId: ClassId): Set<Name>
 CaStubIndexFacade.public companion object
 CaStubIndexFacade.Companion.public fun getInstance(project: Project): CaStubIndexFacade
+## org/cangnova/cangjie/analysis/api/symbols/CaAdditionalCDocResolutionProvider.kt
+package org.cangnova.cangjie.analysis.api.symbols
+public interface CaAdditionalCDocResolutionProvider
+CaAdditionalCDocResolutionProvider.public fun resolveCDocFqName(analysisSession: CaSession, fqName: FqName, contextElement: CjElement): Collection<CaSymbol>
 ## org/cangnova/cangjie/analysis/api/symbols/CaAnnotatedSymbol.kt
 package org.cangnova.cangjie.analysis.api.symbols
 public interface CaAnnotatedSymbol : CaSymbol, CaAnnotated

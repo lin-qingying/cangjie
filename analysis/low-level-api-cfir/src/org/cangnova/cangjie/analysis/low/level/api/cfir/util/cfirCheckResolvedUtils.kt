@@ -108,6 +108,22 @@ internal fun checkBodyIsResolved(function: CfirFunction) {
 }
 
 /**
+ * 校验 [constructor] 的委托构造调用已解析为正常命名引用或错误命名引用。
+ *
+ * 对齐 Kotlin `checkDelegatedConstructorIsResolved`：构造器 body 的第一条语句可能是
+ * `this(...)` / `super(...)`，其 callee 必须已经 resolve，否则 body resolve 结果不完整。
+ */
+internal fun checkDelegatedConstructorIsResolved(constructor: CfirConstructor) {
+    val delegatedConstructor = constructor.delegatedConstructor ?: return
+    checkReferenceIsResolved(
+        reference = delegatedConstructor.calleeReference,
+        owner = delegatedConstructor,
+    ) {
+        withCfirEntry("constructor", constructor)
+    }
+}
+
+/**
  * 校验 [reference] 已解析为正常命名引用或错误命名引用。
  */
 internal fun checkReferenceIsResolved(

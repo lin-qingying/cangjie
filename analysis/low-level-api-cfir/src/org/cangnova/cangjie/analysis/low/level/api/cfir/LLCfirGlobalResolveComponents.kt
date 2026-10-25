@@ -6,8 +6,10 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir
 
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirLockProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirLazyResolveContractChecker
+import org.cangnova.cangjie.analysis.low.level.api.cfir.macro.LLCfirMacroSemanticSnapshotStore
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDeserializationStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.domains.LLDiagnosticsStatistics
@@ -16,6 +18,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.llDeserializa
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.llDiagnosticsStatistics
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.llSessionStatistics
 import org.cangnova.cangjie.cfir.session.CfirSession
+import java.util.Collections
+import java.util.WeakHashMap
 
 
 /**
@@ -71,4 +75,23 @@ internal class LLCfirGlobalResolveComponents(
      * 为 CFIR 文件构建和 lazy resolve 提供阶段锁的 provider。
      */
     internal val lockProvider: LLCfirLockProvider = LLCfirLockProvider(checker)
+
+    /**
+     * 按模块共享的宏语义快照存储。
+     *
+     * 快照构建成本远高于普通缓存，且内容只依赖模块输入（PSI / roots / 编译器设置 / SDK），
+     * 因此必须跨 session 复用：session 会因内存压力被清理，但模块级快照不应随之重建。
+     * 失效由 IDE 层在输入 revision 变化时调用 [LLCfirMacroSemanticSnapshotStore.invalidate]。
+     *
+     * 使用弱键：模块从项目结构移除且不再被引用后，对应条目自然回收，不需要额外的移除事件。
+     * 同步由 [Collections.synchronizedMap] 提供；[MutableMap.computeIfAbsent] 在该包装下是原子的。
+     */
+    private val macroSemanticSnapshotStores: MutableMap<CaModule, LLCfirMacroSemanticSnapshotStore> =
+        Collections.synchronizedMap(WeakHashMap<CaModule, LLCfirMacroSemanticSnapshotStore>())
+
+    /**
+     * 取得 [module] 对应的模块级宏语义快照存储。
+     */
+    internal fun getMacroSemanticSnapshotStore(module: CaModule): LLCfirMacroSemanticSnapshotStore =
+        macroSemanticSnapshotStores.computeIfAbsent(module) { LLCfirMacroSemanticSnapshotStore() }
 }

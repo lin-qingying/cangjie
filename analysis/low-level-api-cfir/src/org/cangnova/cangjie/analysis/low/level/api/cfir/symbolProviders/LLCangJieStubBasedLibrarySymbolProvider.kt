@@ -19,6 +19,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsOnlyApi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.tolerateMissingCachedSymbol
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.CfirCacheInternals
@@ -544,7 +545,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val cache = if (classLikeDeclaration is CjTypeStatement) classCache else typeAliasCache
         cache.getCachedSymbolByClassId(classId)?.let { return it }
 
-        return cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+        return tolerateMissingCachedSymbol(classId) {
+            cache.getSymbolByClassId(classId, createClassLikeDeserializationContext(classId, classLikeDeclaration))
+        }
     }
 
     /**
@@ -557,7 +560,9 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         val cache = if (declaration is CjTypeStatement) classCache else typeAliasCache
         cache.getCachedSymbolByPsi(classId, declaration)?.let { return it }
 
-        return cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
+        return tolerateMissingCachedSymbol(classId) {
+            cache.getSymbolByPsi(classId, declaration, createClassLikeDeserializationContext(classId, declaration))
+        }
     }
 
     /**
@@ -721,3 +726,5 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
         }
     }
 }
+
+

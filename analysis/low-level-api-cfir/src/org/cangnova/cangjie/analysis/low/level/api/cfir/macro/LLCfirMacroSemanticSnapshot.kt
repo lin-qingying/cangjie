@@ -32,6 +32,7 @@ import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjMacroExpression
+import java.lang.ref.SoftReference
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -583,13 +584,20 @@ class LLCfirMacroSemanticSnapshot internal constructor(
  * 源码模块宏语义快照的原子发布点，同时作为 scope-session 缓存的修改跟踪器。
  */
 class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
-    private data class State(val modificationCount: Long, val snapshot: LLCfirMacroSemanticSnapshot?)
+    private data class State(
+        val modificationCount: Long,
+        /**
+         * 快照按模块共享，可能长时间驻留；用软引用让 GC 在真正缺内存时回收，
+         * 而不是每次低内存信号都丢弃并触发整模块重建。
+         */
+        val snapshot: SoftReference<LLCfirMacroSemanticSnapshot>?,
+    )
 
     private val state = AtomicReference(State(0L, null))
 
-    /** 当前完整语义快照；在发布成功前为 null。 */
+    /** 当前完整语义快照；发布成功前或已被 GC 回收时为 null。 */
     val snapshot: LLCfirMacroSemanticSnapshot?
-        get() = state.get().snapshot
+        get() = state.get().snapshot?.get()
 
     override fun getModificationCount(): Long = state.get().modificationCount
 
@@ -724,8 +732,22 @@ class LLCfirMacroSemanticSnapshotStore : ModificationTracker {
     @Synchronized
     internal fun publish(snapshot: LLCfirMacroSemanticSnapshot): Boolean {
         val current = state.get()
-        if (current.snapshot != null) return false
-        state.set(State(current.modificationCount + 1, snapshot))
+        if (current.snapshot?.get() != null) return false
+        state.set(State(current.modificationCount + 1, SoftReference(snapshot)))
+        return true
+    }
+
+    /**
+     * 丢弃已发布的快照，允许下一次构造重新准备与发布。
+     *
+     * 快照现在按模块共享（见 [org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents]），
+     * 因此必须在模块输入（PSI / roots / 编译器设置 / SDK）变化时显式失效，不能依赖 session 生命周期。
+     */
+    @Synchronized
+    internal fun invalidate(): Boolean {
+        val current = state.get()
+        if (current.snapshot?.get() == null) return false
+        state.set(State(current.modificationCount + 1, null))
         return true
     }
 

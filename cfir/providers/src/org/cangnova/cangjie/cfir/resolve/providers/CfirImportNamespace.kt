@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -19,6 +20,13 @@ interface CfirImportNamespace {
     fun callables(name: Name): List<CfirCallableSymbol<*>>
     fun functions(name: Name): List<CfirNamedFunctionSymbol>
     fun properties(name: Name): List<CfirPropertySymbol>
+    fun variables(name: Name): List<CfirVariableSymbol<*>> = callables(name).filterIsInstance<CfirVariableSymbol<*>>()
+
+    /** 返回该组织限定导入命名空间中可能导出的顶层 classifier 名称。 */
+    fun classifierNames(): Set<Name>?
+
+    /** 返回该组织限定导入命名空间中可能导出的顶层 callable 名称。 */
+    fun callableNames(): Set<Name>?
 }
 
 /** 没有重导出协议的普通 provider 通过声明归属识别命名空间。 */
@@ -54,6 +62,12 @@ internal class CfirDirectImportNamespace(
     override fun properties(name: Name): List<CfirPropertySymbol> =
         provider.getTopLevelPropertySymbols(context.packageFqName, name)
             .filter { it.belongsToImportOrganization(context.organizationName, context.packageFqName) }
+
+    override fun classifierNames(): Set<Name>? =
+        provider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(context.packageFqName)
+
+    override fun callableNames(): Set<Name>? =
+        provider.symbolNamesProvider.getTopLevelCallableNamesInPackage(context.packageFqName)
 }
 
 /** 聚合器必须向每个实际来源传递命名空间，不能先合并最终符号再按声明组织过滤。 */
@@ -67,4 +81,14 @@ fun compositeImportNamespace(
     override fun callables(name: Name): List<CfirCallableSymbol<*>> = namespaces.flatMap { it.callables(name) }.distinct()
     override fun functions(name: Name): List<CfirNamedFunctionSymbol> = namespaces.flatMap { it.functions(name) }.distinct()
     override fun properties(name: Name): List<CfirPropertySymbol> = namespaces.flatMap { it.properties(name) }.distinct()
+    override fun classifierNames(): Set<Name>? = namespaces.namesOrNull(CfirImportNamespace::classifierNames)
+    override fun callableNames(): Set<Name>? = namespaces.namesOrNull(CfirImportNamespace::callableNames)
+}
+
+private fun List<CfirImportNamespace>.namesOrNull(selector: (CfirImportNamespace) -> Set<Name>?): Set<Name>? {
+    val result = linkedSetOf<Name>()
+    for (namespace in this) {
+        result += selector(namespace) ?: return null
+    }
+    return result
 }

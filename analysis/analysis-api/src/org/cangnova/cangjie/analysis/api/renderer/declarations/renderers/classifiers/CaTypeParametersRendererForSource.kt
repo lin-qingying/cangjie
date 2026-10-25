@@ -24,7 +24,30 @@ object CaTypeParametersRendererForSource {
                 prefix = "<",
                 postfix = ">",
             ) { typeParameter ->
-                append(typeParameter.name.asString())
+                declarationRenderer.codeStyle.getSeparatorBetweenAnnotationAndOwner(analysisSession, typeParameter).separated(
+                    {
+                        declarationRenderer.annotationRenderer.renderAnnotations(
+                            analysisSession,
+                            typeParameter,
+                            this,
+                        )
+                    },
+                    {
+                        declarationRenderer.modifiersRenderer.renderDeclarationModifiers(
+                            analysisSession,
+                            typeParameter,
+                            this,
+                        )
+                    },
+                    {
+                        declarationRenderer.nameRenderer.renderName(
+                            analysisSession,
+                            typeParameter,
+                            declarationRenderer,
+                            this,
+                        )
+                    },
+                )
             }
 
             if (boundedParameters.isNotEmpty()) {

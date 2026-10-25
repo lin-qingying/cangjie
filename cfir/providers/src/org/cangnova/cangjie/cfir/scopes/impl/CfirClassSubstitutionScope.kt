@@ -70,6 +70,7 @@ class CfirClassSubstitutionScope(
      */
     private val substitutionOwnerType: ConeCangJieType? = null,
 ) : CfirTypeScope(), CfirFunctionInheritanceScope, CfirPropertyInheritanceScope, CfirCallableLookupProvenanceScope,
+    CfirPotentialDirectExtendCallableScope,
     CfirMemberLookupCompletenessScope {
     /** substitution 只改变成员签名，lookup completeness 来源保持不变。 */
     override val memberLookupBlockers: List<CfirMemberLookupBlocker>
@@ -281,6 +282,15 @@ class CfirClassSubstitutionScope(
                 )
             )
         }
+    }
+
+    /** 原始直接 extend 候选仍由底层 use-site scope 按 target index 供给。 */
+    override fun processPotentialDirectExtendCallablesByName(
+        name: Name,
+        processor: (CfirCallableWithLookupProvenance) -> Unit,
+    ) {
+        (useSiteMemberScope as? CfirPotentialDirectExtendCallableScope)
+            ?.processPotentialDirectExtendCallablesByName(name, processor)
     }
 
     /**

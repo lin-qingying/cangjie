@@ -19,9 +19,11 @@ import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.isTopLevel
 import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
@@ -30,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
@@ -130,6 +133,17 @@ internal class CaCfirSymbolRelationProvider(
             }
 
             return@withValidityAssertion getContainingDeclarationByPsi(this@containingDeclaration)
+        }
+
+    /**
+     * 返回 CFIR 在主构造器 `let`/`var` 参数上建立的对应属性关系。
+     */
+    override val CaValueParameterSymbol.correspondingProperty: CaPropertySymbol?
+        get() = withValidityAssertion {
+            require(this is CaCfirValueParameterSymbol) { "${this::class}" }
+
+            val cfirProperty = cfirSymbol.cfir.correspondingProperty ?: return@withValidityAssertion null
+            analysisSession.cfirSymbolBuilder.buildSymbol(cfirProperty.symbol) as? CaPropertySymbol
         }
 
     /**
@@ -264,9 +278,14 @@ internal class CaCfirSymbolRelationProvider(
             CjFakeSourceElementKind.PropertyFromParameter -> (source.psi as CjParameter).ownerFunction as? CjPrimaryConstructor
             CjFakeSourceElementKind.EnumGeneratedDeclaration -> source.psi as CjDeclaration
             CjFakeSourceElementKind.PatternBindingVariable -> {
-                val bindingPattern = source.psi as? CjBindingPattern ?: return null
-                val patternVariable = bindingPattern.variable ?: return null
-                patternVariable.parents.filterIsInstance<CjDeclaration>().firstOrNull { it != patternVariable }
+                // fake PSI 可能没有挂到真实父链上（documentation 渲染是典型场景），
+                // 此时回退到 PSI 父链查找最近的声明，而不是让整次文档渲染失败。
+                val bindingPattern = source.psi as? CjBindingPattern
+                val patternVariable = bindingPattern?.variable
+                patternVariable?.parents
+                    ?.filterIsInstance<CjDeclaration>()
+                    ?.firstOrNull { it != patternVariable }
+                    ?: (source.psi as? PsiElement)?.getContainingPsiDeclaration()
             }
             CjFakeSourceElementKind.DataClassGeneratedMembers -> when (val psi = source.psi) {
                 is CjTypeStatement -> psi

@@ -49,8 +49,12 @@ internal class LLCfirModuleResolveComponents(
 
     /**
      * 源码模块最终宏语义视图的原子发布点。
+     *
+     * 存储在 project 级组件中按模块共享，不随 session 失效而丢弃：
+     * session 会因内存压力被回收，但整模块宏展开结果应当跨 session 复用。
      */
-    val macroSemanticSnapshotStore = LLCfirMacroSemanticSnapshotStore()
+    val macroSemanticSnapshotStore: LLCfirMacroSemanticSnapshotStore =
+        globalResolveComponents.getMacroSemanticSnapshotStore(module)
 
     /**
      * 当前模块的 lazy declaration resolver。

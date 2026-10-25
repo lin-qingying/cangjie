@@ -126,7 +126,6 @@ internal open class LLCfirDiagnosticVisitor(
             else -> return
         }
 
-        // Casting to `CfirDeclaration` is required in K1.
         @Suppress("USELESS_CAST")
         (declarationContainer as CfirDeclaration).forEachDeclaration { declaration ->
             withAnnotationContainer(declaration) {

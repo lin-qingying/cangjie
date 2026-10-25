@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -34,7 +35,7 @@ class CfirExplicitStarImportingScope(
     /**
      * 所有星号导入的目标包名。
      */
-    private val starImportPackages: List<CfirResolvedImportTarget.Package>
+    val starImportPackages: List<CfirResolvedImportTarget.Package>
 
     init {
         require(resolvedImports.all { it.importDirective.isAllUnder }) {
@@ -59,6 +60,23 @@ class CfirExplicitStarImportingScope(
             symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
                 .classifiers(name).forEach(processor)
         }
+    }
+
+    /** 该星号导入 scope 可能暴露的顶层 classifier 名称。 */
+    fun getClassifierNames(): Set<Name>? = starImportPackages.namesOrNull { namespace -> namespace.classifierNames() }
+
+    /** 该星号导入 scope 可能暴露的顶层 callable 名称。 */
+    fun getCallableNames(): Set<Name>? = starImportPackages.namesOrNull { namespace -> namespace.callableNames() }
+
+    private fun List<CfirResolvedImportTarget.Package>.namesOrNull(
+        names: (org.cangnova.cangjie.cfir.resolve.providers.CfirImportNamespace) -> Set<Name>?,
+    ): Set<Name>? {
+        val result = linkedSetOf<Name>()
+        for (target in this) {
+            val namespace = symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+            result += names(namespace) ?: return null
+        }
+        return result
     }
 
     /**
@@ -88,6 +106,14 @@ class CfirExplicitStarImportingScope(
         for (target in starImportPackages) {
             symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
                 .properties(name).forEach(processor)
+        }
+    }
+
+    /** 在星号导入的包中处理顶层模式绑定变量。 */
+    override fun processVariablesByName(name: Name, processor: (CfirVariableSymbol<*>) -> Unit) {
+        for (target in starImportPackages) {
+            symbolProvider.getImportNamespace(CfirImportNamespaceContext(target.fqName, target.organizationName))
+                .variables(name).forEach(processor)
         }
     }
 }

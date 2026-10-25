@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.components.CaUseSiteVisibilityChecker
 import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
@@ -26,6 +27,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.resolve.calls.visibility.moduleVisibilityChecker
@@ -33,6 +35,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessContext
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessKind
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityResult
 import org.cangnova.cangjie.cfir.resolve.providers.CfirLookupOrigin
+import org.cangnova.cangjie.cfir.scopes.CfirCallableWithLookupProvenance
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
@@ -40,6 +43,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.cfir.session.accessibilityChecker
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.psi.CjExpression
 
 /**
@@ -151,6 +155,72 @@ private class CaCfirUseSiteVisibilityChecker(
             position = position,
         )
     }
+}
+
+/**
+ * 为 type-qualified CDoc 扩展成员查找保留 CFIR lookup provenance 的可见性检查器。
+ *
+ * 普通 [CaUseSiteVisibilityChecker] 接收最终公开符号，适用于不需要区分来源的通用声明检查。
+ * 扩展成员的跨包导出面依赖其来源 extend 与 receiver 实例，必须在公开符号投影丢失 lookup
+ * provenance 前把 CFIR 保留的完整来源交给编译器访问检查器。
+ */
+internal class CaCfirUseSiteMemberCallableVisibilityChecker(
+    private val analysisSession: CaCfirSession,
+    private val position: PsiElement,
+    private val positionModule: CaModule,
+    private val containingDeclarations: List<CfirDeclaration>,
+    private val useSiteFile: CfirFile,
+    private val receiverType: ConeCangJieType,
+    override val token: CaLifetimeToken,
+) : CaLifetimeOwner {
+    /**
+     * 用候选自身的 extend 来源和 receiver 上下文执行 CFIR 唯一的访问检查。
+     */
+    fun isVisible(candidate: CfirCallableWithLookupProvenance): Boolean = withValidityAssertion {
+        val declaration = checkNotNull(candidate.symbol.cfir as? CfirMemberDeclaration) {
+            "CFIR extend callable candidates must be backed by member declarations: ${candidate.symbol}"
+        }
+        if (declaration is CfirCallableDeclaration && declaration.isLocal) {
+            return@withValidityAssertion isLocalDeclarationVisible(declaration, position)
+        }
+
+        val accessContext = CfirAccessContext(
+            useSiteFile = useSiteFile,
+            containingDeclarations = containingDeclarations,
+            receiverType = receiverType,
+            qualifierSymbol = null,
+            lookupOrigin = CfirLookupOrigin.MEMBER,
+            kind = CfirAccessKind.CALLABLE,
+        )
+        val targetSession = analysisSession.getTargetSession(positionModule, declaration)
+        targetSession.accessibilityChecker.checkCallable(
+            symbol = candidate.symbol,
+            context = accessContext,
+            provenance = candidate.provenance,
+        ) is CfirAccessibilityResult.Accessible
+    }
+}
+
+/**
+ * 为 type-qualified 成员查找建立与普通 use-site visibility checker 相同的文件、模块和声明链上下文，
+ * 但将 receiver 类型留给扩展成员的 provenance-aware 检查路径。
+ */
+internal fun CaCfirSession.createUseSiteMemberCallableVisibilityChecker(
+    useSiteFile: CfirFile,
+    receiverType: ConeCangJieType,
+    position: PsiElement,
+): CaCfirUseSiteMemberCallableVisibilityChecker {
+    val positionModule = resolutionFacade.moduleProvider.getModule(position)
+    val containingDeclarations = collectUseSiteContainers(position, resolutionFacade).orEmpty()
+    return CaCfirUseSiteMemberCallableVisibilityChecker(
+        analysisSession = this,
+        position = position,
+        positionModule = positionModule,
+        containingDeclarations = containingDeclarations,
+        useSiteFile = useSiteFile,
+        receiverType = receiverType,
+        token = token,
+    )
 }
 
 /**

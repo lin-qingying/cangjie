@@ -109,7 +109,7 @@ internal class CaCfirScopeContext(
 
         listOfNotNull(
             org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope(contextCfirFile)
-                .toPublicScopeOrNull(session.cfirSymbolBuilder)
+                .toPublicScopeOrNull(session.cfirSymbolBuilder, session)
                 ?.let { publicScope ->
                     CaCfirScopeWithKind(
                         token = session.token,
@@ -155,7 +155,7 @@ internal class CaCfirScopeContext(
     private fun toScopeEntries(element: CfirTowerDataElement): List<CaScopeWithKind> =
         element.getAvailableScopes().mapNotNull { cfirScope ->
             if (cfirScope === CfirTypeScope.Empty) return@mapNotNull null
-            val publicScope = cfirScope.toPublicScopeOrNull(session.cfirSymbolBuilder) ?: return@mapNotNull null
+            val publicScope = cfirScope.toPublicScopeOrNull(session.cfirSymbolBuilder, session) ?: return@mapNotNull null
             CaCfirScopeWithKind(
                 token = session.token,
                 scope = publicScope,
@@ -200,7 +200,7 @@ internal fun CaCfirSession.fileLevelScopeEntries(cfirFile: CfirFile): List<CaSco
         )
     }
     return cfirScopes.mapNotNull { cfirScope ->
-        val publicScope = cfirScope.toPublicScopeOrNull(cfirSymbolBuilder) ?: return@mapNotNull null
+        val publicScope = cfirScope.toPublicScopeOrNull(cfirSymbolBuilder, this) ?: return@mapNotNull null
         CaCfirScopeWithKind(
             token = token,
             scope = publicScope,
@@ -246,8 +246,26 @@ private fun CfirScope.toScopeKind(isLocal: Boolean): CaScopeKind = when {
  * 把底层 CFIR 作用域包装为公开作用域；当前只映射 names-aware 作用域，
  * 未映射的类型返回 `null`，避免伪造不完整的成员集合。
  */
-private fun CfirScope.toPublicScopeOrNull(builder: CaSymbolByCfirBuilder): CaScope? =
-    (this as? CfirContainingNamesAwareScope)?.let { CaCfirDelegatingNamesAwareScope(it, builder) }
+private fun CfirScope.toPublicScopeOrNull(builder: CaSymbolByCfirBuilder, session: CaCfirSession): CaScope? = when (this) {
+    is CfirExplicitSimpleImportingScope -> CaCfirNonStarImportingScope(this, builder)
+    is CfirExplicitStarImportingScope -> {
+        // K2 的 star-importing scope 从 DeclarationsInPackageProvider 取名称；
+        // CFIR 名称索引不可枚举时，使用同一 use-site 搜索范围的声明索引作为候选名集合。
+        // 名称索引允许多报候选，实际符号仍由原 star scope 按组织与命名空间解析。
+        val callableNames = getCallableNames() ?: starImportPackages
+            .flatMapTo(linkedSetOf()) { target ->
+                session.useSiteScopeDeclarationProvider.getTopLevelCallableNamesInPackage(target.fqName)
+            }
+        val classifierNames = getClassifierNames() ?: starImportPackages
+            .flatMapTo(linkedSetOf()) { target ->
+                session.useSiteScopeDeclarationProvider.getTopLevelCangJieClassLikeDeclarationNamesInPackage(target.fqName)
+            }
+        CaCfirStarImportingScope(this, builder, callableNames, classifierNames)
+    }
+
+    is CfirContainingNamesAwareScope -> CaCfirDelegatingNamesAwareScope(this, builder)
+    else -> null
+}
 
 /**
  * 单个作用域条目的实现。

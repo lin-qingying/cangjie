@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirModuleResolveCompo
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.LLPsiAwareClassLikeSymbolCache
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.caches.tolerateMissingCachedSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.cfir.caches.CfirCache
 import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
@@ -134,11 +135,13 @@ internal class LLCangJieSourceSymbolProvider(
         classId: ClassId,
         classLikeDeclaration: CjClassLikeDeclaration?,
     ): CfirClassLikeSymbol<*>? {
-        return classLikeCache.getSymbolByClassId(
-            classId,
-            classLikeDeclaration,
-            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-        )
+        return tolerateMissingCachedSymbol(classId) {
+            classLikeCache.getSymbolByClassId(
+                classId,
+                classLikeDeclaration,
+                buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
+            )
+        }
     }
 
     /**
@@ -152,11 +155,13 @@ internal class LLCangJieSourceSymbolProvider(
                 .filter { it.symbol.classId == classId }
             return sourceClassifiers.singleOrNull()?.symbol
         }
-        return classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
-            classId,
-            declaration,
-            buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
-        ) { it }
+        return tolerateMissingCachedSymbol(classId) {
+            classLikeCache.getSymbolByPsi<CjClassLikeDeclaration>(
+                classId,
+                declaration,
+                buildAdditionalAttachments = buildAdditionalAttachmentsForClassLikeSymbol,
+            ) { it }
+        }
     }
 
     /**
